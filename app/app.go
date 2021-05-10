@@ -4,6 +4,16 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"time"
+
+	"github.com/ethereum/go-ethereum/ethdb"
+	"github.com/sisu-network/dcore/core/rawdb"
+	dcore "github.com/sisu-network/dcore/core/types"
+	"github.com/sisu-network/dcore/eth"
+	"github.com/sisu-network/dcore/extra"
+	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/ethchain"
+	"github.com/sisu-network/sisu/utils"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec/types"
@@ -19,7 +29,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/rpc"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server/api"
-	"github.com/cosmos/cosmos-sdk/server/config"
+	cConfig "github.com/cosmos/cosmos-sdk/server/config"
 	servertypes "github.com/cosmos/cosmos-sdk/server/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -165,6 +175,12 @@ func init() {
 // They are exported for convenience in creating helper functions, as object
 // capabilities aren't needed for testing.
 type App struct {
+	appConfigs *config.AppConfig
+	ethConfig  *config.ETHConfig
+	chain      *ethchain.ETHChain
+
+	///////////////////////////////////////////////////////////////
+
 	*baseapp.BaseApp
 
 	cdc               *codec.LegacyAmino
@@ -534,7 +550,7 @@ func (app *App) GetSubspace(moduleName string) paramstypes.Subspace {
 
 // RegisterAPIRoutes registers all application module routes with the provided
 // API server.
-func (app *App) RegisterAPIRoutes(apiSvr *api.Server, apiConfig config.APIConfig) {
+func (app *App) RegisterAPIRoutes(apiSvr *api.Server, apiConfig cConfig.APIConfig) {
 	clientCtx := apiSvr.ClientCtx
 	rpc.RegisterRoutes(clientCtx, apiSvr.Router)
 	// Register legacy tx routes.
@@ -585,4 +601,102 @@ func initParamsKeeper(appCodec codec.BinaryMarshaler, legacyAmino *codec.LegacyA
 	// this line is used by starport scaffolding # stargate/app/paramSubspace
 
 	return paramsKeeper
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+//// SISU Methods
+////////////////////////////////////////////////////////////////////////////////////
+
+func (app *App) Initialize() error {
+	app.createConfigDir()
+
+	err := app.createChain()
+	if err != nil {
+		return err
+	}
+
+	// Start the ETH chain
+	go func() {
+		app.chain.Start()
+
+		app.chain.BlockChain().Accept(app.chain.GetGenesisBlock())
+
+		if app.ethConfig.ImportAccount {
+			app.chain.ImportAccounts()
+		}
+	}()
+
+	// Start ETH API server
+	go app.startApiServer()
+
+	return nil
+}
+
+func (app *App) createConfigDir() {
+	if _, err := os.Stat(app.appConfigs.ConfigDir); os.IsNotExist(err) {
+		utils.LogInfo("Creating app configuration directory:", app.appConfigs.ConfigDir)
+		os.Mkdir(app.appConfigs.ConfigDir, os.ModeDir|0755)
+	}
+}
+
+// startApiServer starts an ETH RPC api server
+func (app *App) startApiServer() {
+	chain := app.chain
+	s := &ethchain.Server{}
+
+	handler := chain.NewRPCHandler(time.Second * 10)
+	handler.RegisterName("web3", &extra.Web3API{})
+	handler.RegisterName("net", &extra.NetAPI{NetworkId: "1"})
+	handler.RegisterName("evm", &extra.EvmApi{})
+
+	chain.AttachEthService(handler, []string{"eth", "personal", "txpool", "debug"})
+
+	s.Initialize("localhost", uint16(app.ethConfig.Port), []string{}, handler)
+
+	go s.Dispatch()
+}
+
+func (app *App) createChain() error {
+	db, err := app.getChainDb()
+	if err != nil {
+		return err
+	}
+	chain := ethchain.NewETHChain(app.ethConfig, db, eth.DefaultSettings, true,
+		app.broadcastSubmittedTx)
+
+	err = chain.Initialize()
+	if err != nil {
+		return err
+	}
+
+	app.chain = chain
+
+	return nil
+}
+
+func (app *App) getChainDb() (ethdb.Database, error) {
+	var db ethdb.Database
+	var err error
+
+	if app.ethConfig.UseInMemDb {
+		utils.LogInfo("Use In memory for ETH")
+		db = rawdb.NewMemoryDatabase()
+	} else {
+		utils.LogInfo("Use real DB for ETH")
+		// Use level DB.
+		// TODO: Create new configs.
+		db, err = rawdb.NewLevelDBDatabase(app.ethConfig.DbPath, 1024, 500, "metrics_")
+	}
+
+	return db, err
+}
+
+func (app *App) Shutdown() error {
+	app.chain.Stop()
+
+	return nil
+}
+
+func (app *App) broadcastSubmittedTx(tx *dcore.Transaction) {
+	// TODO: Broadcast to cosmos network here.
 }
