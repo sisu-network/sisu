@@ -3,6 +3,7 @@ module github.com/sisu-network/sisu
 go 1.15
 
 require (
+	github.com/ava-labs/avalanchego v1.3.2
 	github.com/btcsuite/btcd v0.21.0-beta
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-sdk v0.42.1

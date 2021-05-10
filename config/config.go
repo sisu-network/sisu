@@ -12,6 +12,7 @@ type AppConfig struct {
 type ETHConfig struct {
 	Home          string
 	Eth           *eth.Config
+	Host          string
 	Port          int
 	UseInMemDb    bool
 	DbPath        string
