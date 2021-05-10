@@ -5,5 +5,7 @@ import (
 )
 
 func (app *App) DeliverTx(req abci.RequestDeliverTx) abci.ResponseDeliverTx {
-	return abci.ResponseDeliverTx{}
+	app.BaseApp.DeliverTx(req)
+
+	return abci.ResponseDeliverTx{Code: 0}
 }

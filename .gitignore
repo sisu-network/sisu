@@ -2,3 +2,5 @@ vue/node_modules
 vue/dist
 secret.yml
 cmd/sisud/sisud
+cmd/sisud/output/
+cmd/sisud/mytestnet/
