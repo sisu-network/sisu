@@ -3,7 +3,6 @@ package cmd
 import (
 	"errors"
 	"io"
-	"os"
 	"path/filepath"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -13,21 +12,15 @@ import (
 	"github.com/cosmos/cosmos-sdk/snapshots"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/sisu-network/dcore/eth"
 	"github.com/sisu-network/sisu/app"
 	"github.com/sisu-network/sisu/app/params"
-	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/ethchain"
 	"github.com/spf13/cast"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
-
-	ethLog "github.com/ethereum/go-ethereum/log"
 )
 
 type appCreator struct {
 	encCfg params.EncodingConfig
-	chain  *ethchain.ETHChain
 }
 
 // newApp is an AppCreator
@@ -54,12 +47,6 @@ func (a appCreator) newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, a
 		panic(err)
 	}
 	snapshotStore, err := snapshots.NewStore(snapshotDB, snapshotDir)
-	if err != nil {
-		panic(err)
-	}
-
-	// Initialize chain first
-	err = a.initEthChain()
 	if err != nil {
 		panic(err)
 	}
@@ -130,21 +117,4 @@ func (a appCreator) appExport(
 	}
 
 	return anApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs)
-}
-
-func (a appCreator) initEthChain() error {
-	ethLog.Root().SetHandler(ethLog.LvlFilterHandler(
-		ethLog.LvlDebug, ethLog.StreamHandler(os.Stderr, ethLog.TerminalFormat(false))))
-
-	ethConfig := config.LocalETHConfig("")
-
-	chain := ethchain.NewETHChain(ethConfig, eth.DefaultSettings, nil)
-
-	err := chain.Initialize()
-	if err != nil {
-		return err
-	}
-
-	a.chain = chain
-	return nil
 }
