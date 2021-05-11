@@ -80,6 +80,8 @@ import (
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	appparams "github.com/sisu-network/sisu/app/params"
+	"github.com/sisu-network/sisu/x/evm"
+	evmKeeper "github.com/sisu-network/sisu/x/evm/keeper"
 	"github.com/sisu-network/sisu/x/sisu"
 	sisukeeper "github.com/sisu-network/sisu/x/sisu/keeper"
 	sisutypes "github.com/sisu-network/sisu/x/sisu/types"
@@ -202,6 +204,8 @@ type App struct {
 
 	sisuKeeper sisukeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
+
+	evmKeeper evmKeeper.Keeper
 
 	// the module manager
 	mm *module.Manager
@@ -327,6 +331,8 @@ func New(
 		appCodec, keys[sisutypes.StoreKey], keys[sisutypes.MemStoreKey],
 	)
 
+	app.evmKeeper = *evmKeeper.NewKeeper(appCodec)
+
 	// this line is used by starport scaffolding # stargate/app/keeperDefinition
 
 	app.GovKeeper = govkeeper.NewKeeper(
@@ -370,6 +376,7 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
 		sisu.NewAppModule(appCodec, app.sisuKeeper),
+		evm.NewAppModule(appCodec, app.evmKeeper),
 		// this line is used by starport scaffolding # stargate/app/appModule
 	)
 

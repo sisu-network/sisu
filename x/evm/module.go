@@ -1,4 +1,4 @@
-package sisu
+package evm
 
 import (
 	"encoding/json"
@@ -17,10 +17,10 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
-	"github.com/sisu-network/sisu/x/sisu/client/cli"
-	"github.com/sisu-network/sisu/x/sisu/client/rest"
-	"github.com/sisu-network/sisu/x/sisu/keeper"
-	"github.com/sisu-network/sisu/x/sisu/types"
+	"github.com/sisu-network/sisu/x/evm/client/cli"
+	"github.com/sisu-network/sisu/x/evm/client/rest"
+	"github.com/sisu-network/sisu/x/evm/keeper"
+	"github.com/sisu-network/sisu/x/evm/types"
 )
 
 var (
