@@ -5,9 +5,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/ethchain"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/spf13/cast"
@@ -168,10 +165,6 @@ func init() {
 // They are exported for convenience in creating helper functions, as object
 // capabilities aren't needed for testing.
 type App struct {
-	appConfigs *config.AppConfig
-	ethConfig  *config.ETHConfig
-	chain      *ethchain.ETHChain
-
 	///////////////////////////////////////////////////////////////
 
 	*baseapp.BaseApp
@@ -358,7 +351,7 @@ func New(
 
 	app.mm = module.NewManager(
 		genutil.NewAppModule(
-			app.AccountKeeper, app.StakingKeeper, app.DeliverTx,
+			app.AccountKeeper, app.StakingKeeper, app.BaseApp.DeliverTx,
 			encodingConfig.TxConfig,
 		),
 		auth.NewAppModule(appCodec, app.AccountKeeper, nil),
@@ -452,11 +445,6 @@ func New(
 
 	app.ScopedIBCKeeper = scopedIBCKeeper
 	app.ScopedTransferKeeper = scopedTransferKeeper
-
-	// Initialize ETH chain
-	if err := app.InitializeEth(); err != nil {
-		panic(err)
-	}
 
 	return app
 }
@@ -591,4 +579,14 @@ func initParamsKeeper(appCodec codec.BinaryMarshaler, legacyAmino *codec.LegacyA
 	// this line is used by starport scaffolding # stargate/app/paramSubspace
 
 	return paramsKeeper
+}
+
+// BeginBlocker application updates every begin block
+func (app *App) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+	return app.mm.BeginBlock(ctx, req)
+}
+
+// EndBlocker application updates every end block
+func (app *App) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+	return app.mm.EndBlock(ctx, req)
 }

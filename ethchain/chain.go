@@ -4,8 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"os"
 	"sync"
 	"time"
+
+	ethLog "github.com/ethereum/go-ethereum/log"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethdb"
@@ -14,9 +17,11 @@ import (
 	"github.com/sisu-network/dcore/accounts/keystore"
 	"github.com/sisu-network/dcore/consensus/dummy"
 	"github.com/sisu-network/dcore/core"
+	"github.com/sisu-network/dcore/core/rawdb"
 	"github.com/sisu-network/dcore/core/state"
 	"github.com/sisu-network/dcore/core/types"
 	"github.com/sisu-network/dcore/eth"
+	"github.com/sisu-network/dcore/extra"
 	"github.com/sisu-network/dcore/miner"
 	"github.com/sisu-network/dcore/node"
 	"github.com/sisu-network/dcore/rpc"
@@ -68,12 +73,15 @@ type ETHChain struct {
 // this variable. Keep it for now to check potential bugs.
 func NewETHChain(
 	chainConfig *config.ETHConfig,
-	chainDb ethdb.Database,
 	settings eth.Settings,
-	initGenesis bool,
 	onTxSubmitted func(*types.Transaction),
 ) *ETHChain {
 	node, err := node.New(chainConfig.Node)
+	if err != nil {
+		panic(err)
+	}
+
+	chainDb, err := getChainDb(chainConfig)
 	if err != nil {
 		panic(err)
 	}
@@ -82,7 +90,7 @@ func NewETHChain(
 	mcb := new(miner.MinerCallbacks)
 	backendCb := new(types.BackendAPICallback)
 	backendCb.OnTxSubmitted = onTxSubmitted
-	backend, err := eth.New(node, chainConfig.Eth, cb, mcb, backendCb, chainDb, settings, initGenesis)
+	backend, err := eth.New(node, chainConfig.Eth, cb, mcb, backendCb, chainDb, settings, true)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create new eth backend due to %s", err))
 	}
@@ -106,7 +114,28 @@ func NewETHChain(
 	return chain
 }
 
+func getChainDb(chainConfig *config.ETHConfig) (ethdb.Database, error) {
+	var db ethdb.Database
+	var err error
+
+	if chainConfig.UseInMemDb {
+		utils.LogInfo("Use In memory for ETH")
+		db = rawdb.NewMemoryDatabase()
+	} else {
+		utils.LogInfo("Use real DB for ETH")
+		// Use level DB.
+		// TODO: Create new configs.
+		db, err = rawdb.NewLevelDBDatabase(chainConfig.DbPath, 1024, 500, "metrics_")
+	}
+
+	return db, err
+}
+
 func (self *ETHChain) Initialize() error {
+	// Setting log level
+	ethLog.Root().SetHandler(ethLog.LvlFilterHandler(
+		ethLog.LvlDebug, ethLog.StreamHandler(os.Stderr, ethLog.TerminalFormat(false))))
+
 	lastAcceptedBytes, lastAcceptedErr := self.chainDb.Get(lastAcceptedKey)
 	var lastAccepted *types.Block
 	// TODO: handle corrupted DB
@@ -139,6 +168,24 @@ func (self *ETHChain) Initialize() error {
 func (self *ETHChain) Start() {
 	self.backend.StartMining()
 	self.backend.Start()
+	self.startApiServer()
+
+	self.BlockChain().Accept(self.GetGenesisBlock())
+}
+
+func (self *ETHChain) startApiServer() {
+	s := &Server{}
+
+	handler := self.NewRPCHandler(time.Second * 10)
+	handler.RegisterName("web3", &extra.Web3API{})
+	handler.RegisterName("net", &extra.NetAPI{NetworkId: "1"})
+	handler.RegisterName("evm", &extra.EvmApi{})
+
+	self.AttachEthService(handler, []string{"eth", "personal", "txpool", "debug"})
+
+	s.Initialize(self.chainConfig.Host, uint16(self.chainConfig.Port), []string{}, handler)
+
+	go s.Dispatch()
 }
 
 func (self *ETHChain) Stop() {
