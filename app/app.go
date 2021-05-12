@@ -331,7 +331,7 @@ func New(
 		appCodec, keys[sisutypes.StoreKey], keys[sisutypes.MemStoreKey],
 	)
 
-	app.evmKeeper = *evmKeeper.NewKeeper(appCodec)
+	app.evmKeeper = *evmKeeper.NewKeeper(appCodec, CosmosHome)
 
 	// this line is used by starport scaffolding # stargate/app/keeperDefinition
 

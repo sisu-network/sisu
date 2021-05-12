@@ -6,10 +6,11 @@ import (
 
 	ethLog "github.com/ethereum/go-ethereum/log"
 	"github.com/tendermint/tendermint/libs/log"
+	"google.golang.org/grpc"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	dcore "github.com/sisu-network/dcore/core/types"
+
 	"github.com/sisu-network/dcore/eth"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/evm/ethchain"
@@ -17,16 +18,21 @@ import (
 )
 
 type Keeper struct {
+	txSubmitter *TxSubmitter
+
+	client    *grpc.ClientConn
 	cdc       codec.Marshaler
 	ethConfig *config.ETHConfig
 	chain     *ethchain.ETHChain
 }
 
-func NewKeeper(cdc codec.Marshaler) *Keeper {
+func NewKeeper(cdc codec.Marshaler, cosmosHome string) *Keeper {
 	keeper := &Keeper{
-		cdc: cdc,
+		cdc:         cdc,
+		txSubmitter: NewTxSubmitter(cosmosHome),
 	}
 
+	// TODO: Put this in the config file.
 	baseDir := os.Getenv("HOME") + "/.sisu"
 	keeper.ethConfig = config.LocalETHConfig(baseDir)
 
@@ -46,14 +52,13 @@ func NewKeeper(cdc codec.Marshaler) *Keeper {
 		if keeper.ethConfig.ImportAccount {
 			keeper.chain.ImportAccounts()
 		}
-
 	}()
 
 	return keeper
 }
 
 func (k *Keeper) createChain() error {
-	k.chain = ethchain.NewETHChain(k.ethConfig, eth.DefaultSettings, k.onTxSubmitted)
+	k.chain = ethchain.NewETHChain(k.ethConfig, eth.DefaultSettings, k.txSubmitter.onTxSubmitted)
 
 	err := k.chain.Initialize()
 	if err != nil {
@@ -65,8 +70,4 @@ func (k *Keeper) createChain() error {
 
 func (k *Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
-}
-
-func (k *Keeper) onTxSubmitted(*dcore.Transaction) {
-
 }
