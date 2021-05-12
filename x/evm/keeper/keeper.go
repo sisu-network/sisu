@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	etypes "github.com/sisu-network/dcore/core/types"
 	"github.com/sisu-network/dcore/eth"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/evm/ethchain"
@@ -24,6 +25,7 @@ type Keeper struct {
 	cdc       codec.Marshaler
 	ethConfig *config.ETHConfig
 	chain     *ethchain.ETHChain
+	softState *ethchain.SoftState
 }
 
 func NewKeeper(cdc codec.Marshaler, cosmosHome string) *Keeper {
@@ -70,4 +72,18 @@ func (k *Keeper) createChain() error {
 
 func (k *Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
+}
+
+func (k *Keeper) DeliverTx(etx *etypes.Transaction) error {
+	return nil
+}
+
+func (k *Keeper) BeginBlock() error {
+	// Create a new softstate for execution in this block.
+
+	return nil
+}
+
+func (k *Keeper) EndBlock() error {
+	return nil
 }

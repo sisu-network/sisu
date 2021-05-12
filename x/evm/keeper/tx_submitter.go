@@ -35,15 +35,14 @@ type TxSubmitter struct {
 }
 
 var (
-	nodeAddress      = "http://0.0.0.0:26657"
-	chainId          = "sisu"
-	submitterAccount = "firstAccount"
+	nodeAddress = "http://0.0.0.0:26657"
+	// TODO: Use correct chain id
+	chainId = "chain-Gbme39"
 )
 
 func NewTxSubmitter(cosmosHome string) *TxSubmitter {
-	utils.LogDebug("New Submitter")
-
-	kb, err := keyring.New(sdk.KeyringServiceName(), flags.DefaultKeyringBackend, cosmosHome, os.Stdin)
+	// TODO: Fix this
+	kb, err := keyring.New(sdk.KeyringServiceName(), "test", cosmosHome, os.Stdin)
 	if err != nil {
 		utils.LogError("Cannot create keyring")
 		return nil
@@ -75,6 +74,9 @@ func (t *TxSubmitter) onTxSubmitted(ethTx *dcore.Transaction) {
 		msg := types.NewMsgEthTx(t.clientCtx.GetFromAddress().String(), js)
 		if err := tx.BroadcastTx(t.clientCtx, t.factory, msg); err != nil {
 			utils.LogError("Cannot broadcast transaction", err)
+			return
+		} else {
+			utils.LogDebug("TX Submitted successfully")
 		}
 	}()
 }
