@@ -306,11 +306,6 @@ func (self *ETHChain) DeliverTx(tx *types.Transaction) (uint64, error) {
 
 // EndBlock tries to generate an ETH block
 func (self *ETHChain) EndBlock() error {
-	return nil
-}
-
-// Commit executes txs in the ETH mempool.
-func (self *ETHChain) Commit() {
 	utils.LogDebug("Start gen block")
 
 	self.backend.Miner().GenBlock()
@@ -320,6 +315,12 @@ func (self *ETHChain) Commit() {
 	case <-self.genBlockDoneCh:
 	case <-time.After(COMMIT_TIMEOUT):
 	}
+
+	return nil
+}
+
+// Commit executes txs in the ETH mempool.
+func (self *ETHChain) Commit() {
 }
 
 func (self *ETHChain) transition(newState ChainState) {

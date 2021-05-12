@@ -3,6 +3,7 @@ package keeper
 import (
 	"fmt"
 	"os"
+	"sync"
 
 	ethLog "github.com/ethereum/go-ethereum/log"
 	"github.com/tendermint/tendermint/libs/log"
@@ -14,6 +15,7 @@ import (
 	etypes "github.com/sisu-network/dcore/core/types"
 	"github.com/sisu-network/dcore/eth"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/evm/ethchain"
 	"github.com/sisu-network/sisu/x/evm/types"
 )
@@ -25,13 +27,16 @@ type Keeper struct {
 	cdc       codec.Marshaler
 	ethConfig *config.ETHConfig
 	chain     *ethchain.ETHChain
+
 	softState *ethchain.SoftState
+	ssLock    *sync.RWMutex
 }
 
 func NewKeeper(cdc codec.Marshaler, cosmosHome string) *Keeper {
 	keeper := &Keeper{
 		cdc:         cdc,
 		txSubmitter: NewTxSubmitter(cosmosHome),
+		ssLock:      &sync.RWMutex{},
 	}
 
 	// TODO: Put this in the config file.
@@ -75,15 +80,22 @@ func (k *Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 func (k *Keeper) DeliverTx(etx *etypes.Transaction) error {
-	return nil
+	_, err := k.chain.DeliverTx(etx)
+
+	return err
 }
 
 func (k *Keeper) BeginBlock() error {
 	// Create a new softstate for execution in this block.
+	k.chain.BeginBlock()
 
 	return nil
 }
 
 func (k *Keeper) EndBlock() error {
+	utils.LogDebug("End of block")
+
+	k.chain.EndBlock()
+
 	return nil
 }
