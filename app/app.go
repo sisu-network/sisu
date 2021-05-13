@@ -111,8 +111,10 @@ func getGovProposalHandlers() []govclient.ProposalHandler {
 }
 
 var (
-	// CosmosHome default home directories for the application daemon
-	CosmosHome string
+	// SisuHome default home directories for the application daemon
+	SisuHome string
+
+	KeyringBackend string
 
 	// ModuleBasics defines the module BasicManager is in charge of setting up basic,
 	// non-dependant module elements, such as codec registration
@@ -157,12 +159,19 @@ var (
 )
 
 func init() {
-	userHomeDir, err := os.UserHomeDir()
-	if err != nil {
-		panic(err)
+	SisuHome = os.Getenv("SISU_HOME")
+
+	if SisuHome == "" {
+		userHomeDir, err := os.UserHomeDir()
+		if err != nil {
+			panic(err)
+		}
+
+		SisuHome = filepath.Join(userHomeDir, "."+Name, "main")
 	}
 
-	CosmosHome = filepath.Join(userHomeDir, "."+Name, "main")
+	// Keyring
+	KeyringBackend = os.Getenv("KEYRING_BACKEND")
 }
 
 // App extends an ABCI application, but with most of its parameters exported.
@@ -333,7 +342,7 @@ func New(
 		appCodec, keys[sisutypes.StoreKey], keys[sisutypes.MemStoreKey],
 	)
 
-	app.evmKeeper = *evmKeeper.NewKeeper(appCodec, CosmosHome)
+	app.evmKeeper = *evmKeeper.NewKeeper(appCodec, SisuHome, KeyringBackend)
 
 	// this line is used by starport scaffolding # stargate/app/keeperDefinition
 

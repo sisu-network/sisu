@@ -32,10 +32,10 @@ type Keeper struct {
 	ssLock    *sync.RWMutex
 }
 
-func NewKeeper(cdc codec.Marshaler, cosmosHome string) *Keeper {
+func NewKeeper(cdc codec.Marshaler, sisuHome string, keyRingBackend string) *Keeper {
 	keeper := &Keeper{
 		cdc:         cdc,
-		txSubmitter: NewTxSubmitter(cosmosHome),
+		txSubmitter: NewTxSubmitter(sisuHome, keyRingBackend),
 		ssLock:      &sync.RWMutex{},
 	}
 

@@ -43,7 +43,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		WithInput(os.Stdin).
 		WithAccountRetriever(types.AccountRetriever{}).
 		WithBroadcastMode(flags.BroadcastBlock).
-		WithHomeDir(app.CosmosHome)
+		WithHomeDir(app.SisuHome)
 
 	rootCmd := &cobra.Command{
 		Use:   app.Name + "d",
@@ -70,12 +70,12 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 	authclient.Codec = encodingConfig.Marshaler
 
 	rootCmd.AddCommand(
-		genutilcli.InitCmd(app.ModuleBasics, app.CosmosHome),
-		genutilcli.CollectGenTxsCmd(banktypes.GenesisBalancesIterator{}, app.CosmosHome),
+		genutilcli.InitCmd(app.ModuleBasics, app.SisuHome),
+		genutilcli.CollectGenTxsCmd(banktypes.GenesisBalancesIterator{}, app.SisuHome),
 		genutilcli.MigrateGenesisCmd(),
-		genutilcli.GenTxCmd(app.ModuleBasics, encodingConfig.TxConfig, banktypes.GenesisBalancesIterator{}, app.CosmosHome),
+		genutilcli.GenTxCmd(app.ModuleBasics, encodingConfig.TxConfig, banktypes.GenesisBalancesIterator{}, app.SisuHome),
 		genutilcli.ValidateGenesisCmd(app.ModuleBasics),
-		AddGenesisAccountCmd(app.CosmosHome),
+		AddGenesisAccountCmd(app.SisuHome),
 		tmcli.NewCompletionCmd(rootCmd, true),
 		debug.Cmd(),
 		// this line is used by starport scaffolding # stargate/root/commands
@@ -84,14 +84,14 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 	a := appCreator{
 		encCfg: encodingConfig,
 	}
-	server.AddCommands(rootCmd, app.CosmosHome, a.newApp, a.appExport, addModuleInitFlags)
+	server.AddCommands(rootCmd, app.SisuHome, a.newApp, a.appExport, addModuleInitFlags)
 
 	// add keybase, auxiliary RPC, query, and tx child commands
 	rootCmd.AddCommand(
 		rpc.StatusCommand(),
 		queryCommand(),
 		txCommand(),
-		keys.Commands(app.CosmosHome),
+		keys.Commands(app.SisuHome),
 		testnetCmd(app.ModuleBasics, banktypes.GenesisBalancesIterator{}),
 	)
 }

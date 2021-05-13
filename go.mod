@@ -12,6 +12,7 @@ require (
 	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
+	github.com/joho/godotenv v1.3.0 // indirect
 	github.com/sisu-network/dcore v0.0.0-20210506045741-7290daa45280
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.1

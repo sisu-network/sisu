@@ -4,3 +4,5 @@ secret.yml
 cmd/sisud/sisud
 cmd/sisud/output/
 cmd/sisud/mytestnet/
+.env
+sisu

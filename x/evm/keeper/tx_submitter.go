@@ -28,10 +28,10 @@ const (
 )
 
 type TxSubmitter struct {
-	cosmosHome string
-	kr         keyring.Keyring
-	clientCtx  client.Context
-	factory    tx.Factory
+	sisuHome  string
+	kr        keyring.Keyring
+	clientCtx client.Context
+	factory   tx.Factory
 }
 
 var (
@@ -40,9 +40,9 @@ var (
 	chainId = "chain-Gbme39"
 )
 
-func NewTxSubmitter(cosmosHome string) *TxSubmitter {
+func NewTxSubmitter(sisuHome string, keyRingBackend string) *TxSubmitter {
 	// TODO: Fix this
-	kb, err := keyring.New(sdk.KeyringServiceName(), "test", cosmosHome, os.Stdin)
+	kb, err := keyring.New(sdk.KeyringServiceName(), keyRingBackend, sisuHome, os.Stdin)
 	if err != nil {
 		utils.LogError("Cannot create keyring")
 		return nil
@@ -86,7 +86,7 @@ func (t *TxSubmitter) buildClientCtx(accountName string) (client.Context, error)
 	}
 
 	client, err := rpchttp.New(nodeAddress, "/websocket")
-	clientCtx := NewClientCtx(t.kr, client, &bytes.Buffer{}, t.cosmosHome)
+	clientCtx := NewClientCtx(t.kr, client, &bytes.Buffer{}, t.sisuHome)
 
 	return clientCtx.
 		WithFromName(accountName).
