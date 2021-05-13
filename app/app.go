@@ -2,8 +2,6 @@ package app
 
 import (
 	"io"
-	"os"
-	"path/filepath"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec/types"
@@ -114,6 +112,7 @@ var (
 	// SisuHome default home directories for the application daemon
 	SisuHome string
 
+	// Backend used for keyringd
 	KeyringBackend string
 
 	// ModuleBasics defines the module BasicManager is in charge of setting up basic,
@@ -157,22 +156,6 @@ var (
 	_ CosmosApp               = (*App)(nil)
 	_ servertypes.Application = (*App)(nil)
 )
-
-func init() {
-	SisuHome = os.Getenv("SISU_HOME")
-
-	if SisuHome == "" {
-		userHomeDir, err := os.UserHomeDir()
-		if err != nil {
-			panic(err)
-		}
-
-		SisuHome = filepath.Join(userHomeDir, "."+Name, "main")
-	}
-
-	// Keyring
-	KeyringBackend = os.Getenv("KEYRING_BACKEND")
-}
 
 // App extends an ABCI application, but with most of its parameters exported.
 // They are exported for convenience in creating helper functions, as object
@@ -230,7 +213,6 @@ func New(
 	// this line is used by starport scaffolding # stargate/app/newArgument
 	appOpts servertypes.AppOptions, baseAppOptions ...func(*baseapp.BaseApp),
 ) *App {
-
 	appCodec := encodingConfig.Marshaler
 	cdc := encodingConfig.Amino
 	interfaceRegistry := encodingConfig.InterfaceRegistry

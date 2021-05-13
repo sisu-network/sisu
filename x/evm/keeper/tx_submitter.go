@@ -39,10 +39,11 @@ var (
 )
 
 func NewTxSubmitter(sisuHome string, keyRingBackend string) *TxSubmitter {
+	utils.LogInfo("keyRingBackend = ", keyRingBackend)
+
 	kb, err := keyring.New(sdk.KeyringServiceName(), keyRingBackend, sisuHome, os.Stdin)
 	if err != nil {
-		utils.LogError("Cannot create keyring")
-		return nil
+		panic(err)
 	}
 
 	t := &TxSubmitter{
@@ -55,7 +56,7 @@ func NewTxSubmitter(sisuHome string, keyRingBackend string) *TxSubmitter {
 	t.factory = newFactory(t.clientCtx)
 
 	if err != nil {
-		return nil
+		panic(err)
 	}
 
 	return t
