@@ -36,12 +36,9 @@ type TxSubmitter struct {
 
 var (
 	nodeAddress = "http://0.0.0.0:26657"
-	// TODO: Use correct chain id
-	chainId = "chain-Gbme39"
 )
 
 func NewTxSubmitter(sisuHome string, keyRingBackend string) *TxSubmitter {
-	// TODO: Fix this
 	kb, err := keyring.New(sdk.KeyringServiceName(), keyRingBackend, sisuHome, os.Stdin)
 	if err != nil {
 		utils.LogError("Cannot create keyring")
@@ -86,14 +83,15 @@ func (t *TxSubmitter) buildClientCtx(accountName string) (client.Context, error)
 	}
 
 	client, err := rpchttp.New(nodeAddress, "/websocket")
-	clientCtx := NewClientCtx(t.kr, client, &bytes.Buffer{}, t.sisuHome)
+	chainId := os.Getenv("CHAIN_ID")
+	clientCtx := NewClientCtx(t.kr, client, &bytes.Buffer{}, t.sisuHome, chainId)
 
 	return clientCtx.
 		WithFromName(accountName).
 		WithFromAddress(info.GetAddress()), nil
 }
 
-func NewClientCtx(kr keyring.Keyring, c *rpchttp.HTTP, out io.Writer, home string) client.Context {
+func NewClientCtx(kr keyring.Keyring, c *rpchttp.HTTP, out io.Writer, home, chainId string) client.Context {
 	encodingConfig := params.MakeEncodingConfig()
 	authtypes.RegisterInterfaces(encodingConfig.InterfaceRegistry)
 	cryptocodec.RegisterInterfaces(encodingConfig.InterfaceRegistry)
