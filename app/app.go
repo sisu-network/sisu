@@ -22,7 +22,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
-	"github.com/cosmos/cosmos-sdk/x/auth"
+
 	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
@@ -78,6 +78,7 @@ import (
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	appparams "github.com/sisu-network/sisu/app/params"
+	"github.com/sisu-network/sisu/x/auth"
 	"github.com/sisu-network/sisu/x/evm"
 	evmKeeper "github.com/sisu-network/sisu/x/evm/keeper"
 	evmtypes "github.com/sisu-network/sisu/x/evm/types"
@@ -86,6 +87,8 @@ import (
 	sisutypes "github.com/sisu-network/sisu/x/sisu/types"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
+
+	sisuAuth "github.com/sisu-network/sisu/x/auth"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 )
 
@@ -213,6 +216,8 @@ func New(
 	// this line is used by starport scaffolding # stargate/app/newArgument
 	appOpts servertypes.AppOptions, baseAppOptions ...func(*baseapp.BaseApp),
 ) *App {
+	_ = sisuAuth.AppModule{}
+
 	appCodec := encodingConfig.Marshaler
 	cdc := encodingConfig.Amino
 	interfaceRegistry := encodingConfig.InterfaceRegistry
