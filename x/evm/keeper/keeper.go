@@ -3,7 +3,8 @@ package keeper
 import (
 	"fmt"
 	"os"
-	"sync"
+	"os/signal"
+	"syscall"
 
 	ethLog "github.com/ethereum/go-ethereum/log"
 	"github.com/tendermint/tendermint/libs/log"
@@ -29,14 +30,12 @@ type Keeper struct {
 	chain     *ethchain.ETHChain
 
 	softState *ethchain.SoftState
-	ssLock    *sync.RWMutex
 }
 
 func NewKeeper(cdc codec.Marshaler, sisuHome string, keyRingBackend string) *Keeper {
 	keeper := &Keeper{
 		cdc:         cdc,
 		txSubmitter: NewTxSubmitter(sisuHome, keyRingBackend),
-		ssLock:      &sync.RWMutex{},
 	}
 
 	// TODO: Put this in the config file.
@@ -47,21 +46,34 @@ func NewKeeper(cdc codec.Marshaler, sisuHome string, keyRingBackend string) *Kee
 	ethLog.Root().SetHandler(ethLog.LvlFilterHandler(
 		ethLog.LvlDebug, ethLog.StreamHandler(os.Stderr, ethLog.TerminalFormat(false))))
 
-	err := keeper.createChain()
+	return keeper
+}
+
+func (k *Keeper) Initialize() {
+	err := k.createChain()
 	if err != nil {
 		panic(err)
 	}
 
-	keeper.chain.Start()
+	k.chain.Start()
+	k.listenSignalKill()
 
 	go func() {
 		// Import account if needed. Used in dev mode only
-		if keeper.ethConfig.ImportAccount {
-			keeper.chain.ImportAccounts()
+		if k.ethConfig.ImportAccount {
+			k.chain.ImportAccounts()
 		}
 	}()
+}
 
-	return keeper
+func (k *Keeper) listenSignalKill() {
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+		<-c
+
+		k.chain.Stop()
+	}()
 }
 
 func (k *Keeper) createChain() error {

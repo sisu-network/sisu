@@ -325,6 +325,7 @@ func New(
 	)
 
 	app.evmKeeper = *evmKeeper.NewKeeper(appCodec, SisuHome, KeyringBackend)
+	app.evmKeeper.Initialize()
 
 	// this line is used by starport scaffolding # stargate/app/keeperDefinition
 

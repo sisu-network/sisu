@@ -51,7 +51,6 @@ func NewTxSubmitter(sisuHome string, keyRingBackend string) *TxSubmitter {
 	}
 
 	infos, err := kb.List()
-
 	t.clientCtx, err = t.buildClientCtx(infos[0].GetName())
 	t.factory = newFactory(t.clientCtx)
 
@@ -73,6 +72,8 @@ func (t *TxSubmitter) onTxSubmitted(ethTx *dcore.Transaction) {
 		if err := tx.BroadcastTx(t.clientCtx, t.factory, msg); err != nil {
 			utils.LogError("Cannot broadcast transaction", err)
 			return
+		} else {
+			utils.LogDebug("Tx submitted successfully")
 		}
 	}()
 }
