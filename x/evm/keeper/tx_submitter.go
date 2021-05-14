@@ -2,8 +2,11 @@ package keeper
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"os"
+	"sync"
+	"time"
 
 	dcore "github.com/sisu-network/dcore/core/types"
 	"github.com/sisu-network/sisu/app/params"
@@ -29,12 +32,32 @@ const (
 	defaultGasLimit      = 300000
 )
 
+var (
+	QUEUE_TIME = time.Second / 2
+	ERR_NONE   = errors.New("This is not an error")
+)
+
+type QElementPair struct {
+	msg   sdk.Msg
+	index int64
+}
+
 type TxSubmitter struct {
-	sisuHome  string
-	ak        *authKeepr.AccountKeeper
-	kr        keyring.Keyring
-	clientCtx client.Context
-	factory   tx.Factory
+	sisuHome string
+	ak       *authKeepr.AccountKeeper
+	kr       keyring.Keyring
+
+	// internal
+	clientCtx   client.Context
+	factory     tx.Factory
+	fromAccount sdk.AccAddress
+
+	// Tx queue
+	queue           []*QElementPair
+	queueLock       *sync.RWMutex
+	msgIndex        int64
+	msgStatuses     map[int64]error
+	submitRequestCh chan bool
 }
 
 var (
@@ -50,11 +73,20 @@ func NewTxSubmitter(sisuHome string, keyRingBackend string, ak *authKeepr.Accoun
 	}
 
 	t := &TxSubmitter{
-		kr: kb,
-		ak: ak,
+		kr:              kb,
+		ak:              ak,
+		queueLock:       &sync.RWMutex{},
+		queue:           make([]*QElementPair, 0),
+		submitRequestCh: make(chan bool),
+		msgStatuses:     make(map[int64]error),
 	}
 
 	infos, err := kb.List()
+	if err != nil {
+		panic(err)
+	}
+
+	t.fromAccount = infos[0].GetAddress()
 	t.clientCtx, err = t.buildClientCtx(infos[0].GetName())
 	t.factory = newFactory(t.clientCtx)
 
@@ -65,21 +97,124 @@ func NewTxSubmitter(sisuHome string, keyRingBackend string, ak *authKeepr.Accoun
 	return t
 }
 
-func (t *TxSubmitter) onTxSubmitted(ethTx *dcore.Transaction) {
-	go func() {
-		js, err := ethTx.MarshalJSON()
-		if err != nil {
-			return
-		}
+func (t *TxSubmitter) submitMessage(msg sdk.Msg) error {
+	index := t.addMessage(msg)
+	var err error
 
-		msg := types.NewMsgEthTx(t.clientCtx.GetFromAddress().String(), js)
-		if err := tx.BroadcastTx(t.clientCtx, t.factory, msg); err != nil {
-			utils.LogError("Cannot broadcast transaction", err)
-			return
-		} else {
-			utils.LogDebug("Tx submitted successfully")
+	// Delay a short period to accumulate more transactions before sending.
+	t.schedule()
+
+	for {
+		time.Sleep(QUEUE_TIME)
+		err = t.msgStatuses[index]
+		if err != nil {
+			break
 		}
-	}()
+	}
+	defer t.removeMessage(index)
+
+	if err != ERR_NONE {
+		return err
+	}
+
+	return nil
+}
+
+func (t *TxSubmitter) addMessage(msg sdk.Msg) int64 {
+	t.queueLock.Lock()
+	defer t.queueLock.Unlock()
+
+	t.msgIndex++
+	t.queue = append(t.queue, &QElementPair{
+		msg:   msg,
+		index: t.msgIndex,
+	})
+
+	return t.msgIndex
+}
+
+func (t *TxSubmitter) removeMessage(msgIndex int64) {
+	t.queueLock.Lock()
+	defer t.queueLock.Unlock()
+
+	delete(t.msgStatuses, msgIndex)
+}
+
+func (t *TxSubmitter) schedule() {
+	t.submitRequestCh <- true
+}
+
+func (t *TxSubmitter) StartLoop() {
+	for {
+		select {
+		case <-t.submitRequestCh:
+			// 1. Gets all pending messages in the queue.
+			// Use read lock since it's cheaper
+			t.queueLock.RLock()
+			if len(t.queue) == 0 {
+				t.queueLock.RUnlock()
+				continue
+			}
+			copy := t.queue
+			t.queueLock.RUnlock()
+
+			t.queueLock.Lock()
+			t.queue = make([]*QElementPair, 0) // Clear the queue
+			t.queueLock.Unlock()
+
+			if len(copy) == 0 {
+				continue
+			}
+
+			utils.LogDebug("Queue size = ", len(copy))
+
+			// 2. Get account sequence
+			accRet, err := authtypes.AccountRetriever{}.GetAccount(t.clientCtx, t.fromAccount)
+			if err != nil {
+				t.updateStatus(copy, err)
+				continue
+			}
+			seq := accRet.GetSequence()
+			utils.LogDebug("Sequence = ", seq)
+			t.factory.WithSequence(seq)
+
+			// 3. Send all messages
+			msgs := convert(copy)
+			if err := tx.BroadcastTx(t.clientCtx, t.factory, msgs...); err != nil {
+				utils.LogError("Cannot broadcast transaction", err)
+				t.updateStatus(copy, err)
+			} else {
+				utils.LogDebug("Tx submitted successfully")
+				t.updateStatus(copy, ERR_NONE)
+			}
+		}
+	}
+}
+
+func (t *TxSubmitter) updateStatus(list []*QElementPair, err error) {
+	t.queueLock.Lock()
+	defer t.queueLock.Unlock()
+
+	for _, pair := range list {
+		t.msgStatuses[pair.index] = err
+	}
+}
+
+func (t *TxSubmitter) onTxSubmitted(ethTx *dcore.Transaction) {
+	js, err := ethTx.MarshalJSON()
+	if err != nil {
+		return
+	}
+	msg := types.NewMsgEthTx(t.clientCtx.GetFromAddress().String(), js)
+	t.submitMessage(msg)
+}
+
+func convert(list []*QElementPair) []sdk.Msg {
+	msgs := make([]sdk.Msg, len(list))
+	for i, pair := range list {
+		msgs[i] = pair.msg
+	}
+	return msgs
 }
 
 func (t *TxSubmitter) buildClientCtx(accountName string) (client.Context, error) {

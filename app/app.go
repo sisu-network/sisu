@@ -332,6 +332,7 @@ func New(
 	)
 
 	txSubmitter := evmKeeper.NewTxSubmitter(SisuHome, KeyringBackend, &app.AccountKeeper)
+	go txSubmitter.StartLoop()
 	app.evmKeeper = *evmKeeper.NewKeeper(appCodec, txSubmitter)
 	app.evmKeeper.Initialize()
 
