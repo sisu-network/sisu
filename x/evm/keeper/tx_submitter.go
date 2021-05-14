@@ -17,6 +17,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
+	authKeepr "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
@@ -30,6 +31,7 @@ const (
 
 type TxSubmitter struct {
 	sisuHome  string
+	ak        *authKeepr.AccountKeeper
 	kr        keyring.Keyring
 	clientCtx client.Context
 	factory   tx.Factory
@@ -39,7 +41,7 @@ var (
 	nodeAddress = "http://0.0.0.0:26657"
 )
 
-func NewTxSubmitter(sisuHome string, keyRingBackend string) *TxSubmitter {
+func NewTxSubmitter(sisuHome string, keyRingBackend string, ak *authKeepr.AccountKeeper) *TxSubmitter {
 	utils.LogInfo("keyRingBackend = ", keyRingBackend)
 
 	kb, err := keyring.New(sdk.KeyringServiceName(), keyRingBackend, sisuHome, os.Stdin)
@@ -49,6 +51,7 @@ func NewTxSubmitter(sisuHome string, keyRingBackend string) *TxSubmitter {
 
 	t := &TxSubmitter{
 		kr: kb,
+		ak: ak,
 	}
 
 	infos, err := kb.List()

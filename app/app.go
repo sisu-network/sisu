@@ -164,6 +164,8 @@ var (
 // They are exported for convenience in creating helper functions, as object
 // capabilities aren't needed for testing.
 type App struct {
+	txSubmitter *evmKeeper.TxSubmitter
+
 	///////////////////////////////////////////////////////////////
 
 	*baseapp.BaseApp
@@ -329,7 +331,8 @@ func New(
 		appCodec, keys[sisutypes.StoreKey], keys[sisutypes.MemStoreKey],
 	)
 
-	app.evmKeeper = *evmKeeper.NewKeeper(appCodec, SisuHome, KeyringBackend)
+	txSubmitter := evmKeeper.NewTxSubmitter(SisuHome, KeyringBackend, &app.AccountKeeper)
+	app.evmKeeper = *evmKeeper.NewKeeper(appCodec, txSubmitter)
 	app.evmKeeper.Initialize()
 
 	// this line is used by starport scaffolding # stargate/app/keeperDefinition

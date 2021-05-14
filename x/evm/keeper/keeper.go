@@ -12,6 +12,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authKeepr "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 
 	etypes "github.com/sisu-network/dcore/core/types"
 	"github.com/sisu-network/dcore/eth"
@@ -27,14 +28,15 @@ type Keeper struct {
 	cdc       codec.Marshaler
 	ethConfig *config.ETHConfig
 	chain     *ethchain.ETHChain
+	ak        *authKeepr.AccountKeeper
 
 	softState *ethchain.SoftState
 }
 
-func NewKeeper(cdc codec.Marshaler, sisuHome string, keyRingBackend string) *Keeper {
+func NewKeeper(cdc codec.Marshaler, txSubmitter *TxSubmitter) *Keeper {
 	keeper := &Keeper{
 		cdc:         cdc,
-		txSubmitter: NewTxSubmitter(sisuHome, keyRingBackend),
+		txSubmitter: txSubmitter,
 	}
 
 	// TODO: Put this in the config file.
