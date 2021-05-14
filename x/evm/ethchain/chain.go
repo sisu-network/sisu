@@ -125,7 +125,7 @@ func getChainDb(chainConfig *config.ETHConfig) (ethdb.Database, error) {
 		utils.LogInfo("Use real DB for ETH")
 		// Use level DB.
 		// TODO: Create new configs.
-		db, err = rawdb.NewLevelDBDatabase(chainConfig.DbPath, 1024, 500, "metrics_")
+		db, err = rawdb.NewLevelDBDatabase(chainConfig.DbPath, 1024, 500, "metrics_", false)
 	}
 
 	return db, err
@@ -159,7 +159,6 @@ func (self *ETHChain) Initialize() error {
 		return fmt.Errorf("could not initialize VM with last accepted hash %s: %w", lastAccepted.Hash(), err)
 	}
 
-	self.BlockChain().UnlockIndexing()
 	self.lastBlockState, _ = self.backend.BlockChain().State()
 
 	return nil
@@ -190,10 +189,6 @@ func (self *ETHChain) startApiServer() {
 
 func (self *ETHChain) Stop() {
 	self.backend.Stop()
-}
-
-func (self *ETHChain) UnlockIndexing() {
-	self.backend.BlockChain().UnlockIndexing()
 }
 
 func (self *ETHChain) NewRPCHandler(maximumDuration time.Duration) *rpc.Server {
@@ -276,7 +271,7 @@ func (self *ETHChain) valdiateTx(tx *types.Transaction) error {
 	}
 
 	// Ensure the transaction has more gas than the basic tx fee.
-	intrGas, err := core.IntrinsicGas(tx.Data(), tx.To() == nil, true, true)
+	intrGas, err := core.IntrinsicGas(tx.Data(), tx.AccessList(), tx.To() == nil, true, true)
 	if err != nil {
 		return err
 	}

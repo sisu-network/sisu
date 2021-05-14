@@ -7,7 +7,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/sisu-network/dcore/core"
-	"github.com/sisu-network/dcore/eth"
+	"github.com/sisu-network/dcore/eth/ethconfig"
 	"github.com/sisu-network/dcore/node"
 	"github.com/sisu-network/dcore/params"
 	"github.com/sisu-network/sisu/utils"
@@ -48,8 +48,8 @@ func LocalETHConfig(baseDir string) *ETHConfig {
 }
 
 // getLocalEthConfig returns ETH configuration used for localhost or testing.
-func getLocalEthConfig() *eth.Config {
-	config := eth.NewDefaultConfig()
+func getLocalEthConfig() *ethconfig.Config {
+	config := ethconfig.NewDefaultConfig()
 	chainConfig := &params.ChainConfig{
 		ChainID:             chainID,
 		HomesteadBlock:      big.NewInt(0),
@@ -63,7 +63,6 @@ func getLocalEthConfig() *eth.Config {
 		ConstantinopleBlock: big.NewInt(0),
 		PetersburgBlock:     big.NewInt(0),
 		IstanbulBlock:       big.NewInt(0),
-		Ethash:              nil,
 	}
 
 	accounts := utils.GetLocalAccounts()
