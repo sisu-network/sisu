@@ -16,7 +16,6 @@ import (
 	etypes "github.com/sisu-network/dcore/core/types"
 	"github.com/sisu-network/dcore/eth"
 	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/evm/ethchain"
 	"github.com/sisu-network/sisu/x/evm/types"
 )
@@ -105,8 +104,6 @@ func (k *Keeper) BeginBlock() error {
 }
 
 func (k *Keeper) EndBlock() error {
-	utils.LogDebug("End of block")
-
 	k.chain.EndBlock()
 
 	return nil

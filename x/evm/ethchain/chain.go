@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ava-labs/avalanchego/database"
 	ethLog "github.com/ethereum/go-ethereum/log"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -41,6 +42,8 @@ var (
 		1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	}
+
+	ERR_SHUTTING_DOWN = errors.New("Chain is shutting down")
 )
 
 var (
@@ -59,6 +62,7 @@ type ETHChain struct {
 	gasLowestLimit *big.Int
 	lastBlockState *state.StateDB
 	genBlockDoneCh chan bool
+	stopping       bool
 
 	// Soft state
 	softState *SoftState
@@ -86,11 +90,16 @@ func NewETHChain(
 		panic(err)
 	}
 
+	// TODO: Handle corrupted database here.
+	_, lastAcceptedErr := chainDb.Get(lastAcceptedKey)
+	initGenesis := lastAcceptedErr == database.ErrNotFound
+	utils.LogInfo("initGenesis = ", initGenesis)
+
 	cb := new(dummy.ConsensusCallbacks)
 	mcb := new(miner.MinerCallbacks)
 	backendCb := new(types.BackendAPICallback)
 	backendCb.OnTxSubmitted = onTxSubmitted
-	backend, err := eth.New(node, chainConfig.Eth, cb, mcb, backendCb, chainDb, settings, true)
+	backend, err := eth.New(node, chainConfig.Eth, cb, mcb, backendCb, chainDb, settings, initGenesis)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create new eth backend due to %s", err))
 	}
@@ -136,16 +145,19 @@ func (self *ETHChain) Initialize() error {
 	ethLog.Root().SetHandler(ethLog.LvlFilterHandler(
 		ethLog.LvlDebug, ethLog.StreamHandler(os.Stderr, ethLog.TerminalFormat(false))))
 
+	// TODO: handle corrupted DB
 	lastAcceptedBytes, lastAcceptedErr := self.chainDb.Get(lastAcceptedKey)
 	var lastAccepted *types.Block
-	// TODO: handle corrupted DB
+	utils.LogInfo("lastAcceptedErr = ", lastAcceptedErr)
+
 	if lastAcceptedErr == nil {
 		var hash common.Hash
 		if err := rlp.DecodeBytes(lastAcceptedBytes, &hash); err == nil {
 			if block := self.GetBlockByHash(hash); block == nil {
-				utils.LogDebug("lastAccepted block not found in chaindb")
+				utils.LogInfo("lastAccepted block not found in chaindb")
 			} else {
 				lastAccepted = block
+				utils.LogInfo("Last accepted block found, number =", block.Number())
 			}
 		}
 	}
@@ -160,6 +172,8 @@ func (self *ETHChain) Initialize() error {
 	}
 
 	self.lastBlockState, _ = self.backend.BlockChain().State()
+	lastBlock := self.backend.BlockChain().LastAcceptedBlock()
+	utils.LogInfo("lastBlock = ", lastBlock.Number())
 
 	return nil
 }
@@ -188,6 +202,8 @@ func (self *ETHChain) startApiServer() {
 }
 
 func (self *ETHChain) Stop() {
+	self.stopping = true
+	utils.LogInfo("Stopping backend....")
 	self.backend.Stop()
 }
 
@@ -285,6 +301,9 @@ func (self *ETHChain) valdiateTx(tx *types.Transaction) error {
 // DeliverTx adds a tx to the ETH tx pool. It does not do actual execution. The TX execution and
 // db state change is done in the Commit function.
 func (self *ETHChain) DeliverTx(tx *types.Transaction) (uint64, error) {
+	if self.stopping {
+		return 0, ERR_SHUTTING_DOWN
+	}
 	utils.LogDebug("Delivering tx.....")
 
 	var gasUsed uint64
@@ -301,6 +320,10 @@ func (self *ETHChain) DeliverTx(tx *types.Transaction) (uint64, error) {
 
 // EndBlock tries to generate an ETH block
 func (self *ETHChain) EndBlock() error {
+	if self.stopping {
+		return ERR_SHUTTING_DOWN
+	}
+
 	utils.LogDebug("Start gen block")
 
 	self.backend.Miner().GenBlock()
@@ -323,7 +346,7 @@ func (self *ETHChain) transition(newState ChainState) {
 }
 
 func (self *ETHChain) OnSealFinish(block *types.Block) error {
-	utils.LogDebug("Done one seal")
+	utils.LogDebug("Block is sealed, number =", block.Number())
 
 	self.mu.Lock()
 	self.lastBlock = block
@@ -344,6 +367,8 @@ func (self *ETHChain) OnSealFinish(block *types.Block) error {
 	} else {
 		utils.LogError("Cannot get last block state.")
 	}
+
+	utils.LogDebug("Last accepted block = ", self.backend.BlockChain().LastAcceptedBlock().Number())
 
 	self.genBlockDoneCh <- true
 
@@ -381,6 +406,7 @@ func (self *ETHChain) GetBlockByHash(hash common.Hash) *types.Block {
 
 func (self *ETHChain) Accept(block *types.Block) error {
 	if err := self.BlockChain().Accept(block); err != nil {
+		utils.LogError("Failed to accept block", err)
 		return err
 	}
 
