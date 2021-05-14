@@ -23,7 +23,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
 
-	"github.com/cosmos/cosmos-sdk/x/auth/ante"
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
@@ -79,6 +78,7 @@ import (
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	appparams "github.com/sisu-network/sisu/app/params"
 	"github.com/sisu-network/sisu/x/auth"
+	"github.com/sisu-network/sisu/x/auth/ante"
 	"github.com/sisu-network/sisu/x/evm"
 	evmKeeper "github.com/sisu-network/sisu/x/evm/keeper"
 	evmtypes "github.com/sisu-network/sisu/x/evm/types"
@@ -430,8 +430,8 @@ func New(
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetAnteHandler(
 		ante.NewAnteHandler(
-			app.AccountKeeper, app.BankKeeper, ante.DefaultSigVerificationGasConsumer,
-			encodingConfig.TxConfig.SignModeHandler(),
+			app.AccountKeeper, app.BankKeeper, app.evmKeeper,
+			ante.DefaultSigVerificationGasConsumer, encodingConfig.TxConfig.SignModeHandler(),
 		),
 	)
 	app.SetEndBlocker(app.EndBlocker)

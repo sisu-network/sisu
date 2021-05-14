@@ -3,3 +3,4 @@ vue/dist
 secret.yml
 .env
 sisu
+cmd/sisud/sisud
