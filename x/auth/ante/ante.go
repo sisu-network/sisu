@@ -2,16 +2,11 @@ package ante
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/tx"
 	cosmosAnte "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/cosmos-sdk/x/auth/signing"
 	evmKeeper "github.com/sisu-network/sisu/x/evm/keeper"
 	evmTypes "github.com/sisu-network/sisu/x/evm/types"
 )
-
-type WrapperTx interface {
-	GetProtoTx() *tx.Tx
-}
 
 func NewAnteHandler(
 	ak AccountKeeper,

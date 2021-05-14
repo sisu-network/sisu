@@ -23,6 +23,7 @@ import (
 )
 
 const (
+	// TODO: put these values into config file.
 	defaultGasAdjustment = 1.0
 	defaultGasLimit      = 300000
 )
