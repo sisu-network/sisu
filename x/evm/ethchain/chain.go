@@ -172,8 +172,7 @@ func (self *ETHChain) Initialize() error {
 	}
 
 	self.lastBlockState, _ = self.backend.BlockChain().State()
-	lastBlock := self.backend.BlockChain().LastAcceptedBlock()
-	utils.LogInfo("lastBlock = ", lastBlock.Number())
+	utils.LogInfo("lastBlock = ", lastAccepted.Number())
 
 	return nil
 }
