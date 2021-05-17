@@ -65,8 +65,6 @@ var (
 )
 
 func NewTxSubmitter(sisuHome string, keyRingBackend string, ak *authKeepr.AccountKeeper) *TxSubmitter {
-	utils.LogInfo("keyRingBackend = ", keyRingBackend)
-
 	kb, err := keyring.New(sdk.KeyringServiceName(), keyRingBackend, sisuHome, os.Stdin)
 	if err != nil {
 		panic(err)
