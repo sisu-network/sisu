@@ -22,4 +22,8 @@ do
   sed -i '' -e 's/addr_book_strict = true/addr_book_strict = false/' ./$OUTPUT/node$i/main/config/config.toml
 done
 
+# Create the network
+docker network remove sisu-local
+docker network create --subnet=192.168.0.0/16 --driver=bridge sisu-local
+
 cd ..

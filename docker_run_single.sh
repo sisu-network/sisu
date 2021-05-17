@@ -9,4 +9,4 @@ fi
 
 echo Running $1
 
-docker run --rm -v $(pwd)/build/output/$1:/root/.sisu sisu /dist/sisu start
+docker run --rm --network sisu-local -v $(pwd)/build/output/$1:/root/.sisu sisu /dist/sisu start
