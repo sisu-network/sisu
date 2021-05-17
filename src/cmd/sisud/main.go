@@ -17,15 +17,15 @@ func loadConfig() {
 		panic(err)
 	}
 
-	app.SisuHome = os.Getenv("SISU_HOME")
+	app.MainAppHome = os.Getenv("SISU_HOME")
 
-	if app.SisuHome == "" {
+	if app.MainAppHome == "" {
 		userHomeDir, err := os.UserHomeDir()
 		if err != nil {
 			panic(err)
 		}
 
-		app.SisuHome = filepath.Join(userHomeDir, "."+app.Name, "main")
+		app.MainAppHome = filepath.Join(userHomeDir, "."+app.Name, "main")
 	}
 
 	app.KeyringBackend = os.Getenv("KEYRING_BACKEND")
@@ -35,7 +35,7 @@ func main() {
 	loadConfig()
 
 	rootCmd, _ := cmd.NewRootCmd()
-	if err := svrcmd.Execute(rootCmd, app.SisuHome); err != nil {
+	if err := svrcmd.Execute(rootCmd, app.MainAppHome); err != nil {
 		os.Exit(1)
 	}
 }

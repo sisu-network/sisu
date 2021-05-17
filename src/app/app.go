@@ -112,8 +112,8 @@ func getGovProposalHandlers() []govclient.ProposalHandler {
 }
 
 var (
-	// SisuHome default home directories for the application daemon
-	SisuHome string
+	// MainAppHome default home directories for the application daemon
+	MainAppHome string
 
 	// Backend used for keyringd
 	KeyringBackend string
@@ -331,7 +331,7 @@ func New(
 		appCodec, keys[sisutypes.StoreKey], keys[sisutypes.MemStoreKey],
 	)
 
-	txSubmitter := evmKeeper.NewTxSubmitter(SisuHome, KeyringBackend, &app.AccountKeeper)
+	txSubmitter := evmKeeper.NewTxSubmitter(MainAppHome, KeyringBackend, &app.AccountKeeper)
 	go txSubmitter.StartLoop()
 	app.evmKeeper = *evmKeeper.NewKeeper(appCodec, txSubmitter)
 	app.evmKeeper.Initialize()
