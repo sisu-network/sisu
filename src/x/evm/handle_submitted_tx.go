@@ -19,10 +19,15 @@ func handleSubmittedTx(ctx sdk.Context, k keeper.Keeper, etxMsg *types.EthTx) (*
 	}
 
 	from := common.HexToAddress(etxMsg.Author)
-	err = k.DeliverTx(from, etx)
+	data, err := k.DeliverTx(from, etx)
 	if err != nil {
-		return &sdk.Result{}, err
+		return &sdk.Result{
+			Data: data,
+		}, err
 	}
 
-	return &sdk.Result{Events: ctx.EventManager().ABCIEvents()}, nil
+	return &sdk.Result{
+		Data:   data,
+		Events: ctx.EventManager().ABCIEvents(),
+	}, nil
 }

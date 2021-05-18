@@ -408,17 +408,19 @@ func (self *ETHChain) ImportAccounts() {
 
 // DeliverTx adds a tx to the ETH tx pool. It does not do actual execution. The TX execution and
 // db state change is done in the Commit function.
-func (self *ETHChain) DeliverTx(from common.Address, tx *types.Transaction) (uint64, error) {
+func (self *ETHChain) DeliverTx(from common.Address, tx *types.Transaction) (uint64, common.Hash, error) {
 	if self.stopping {
-		return 0, ERR_SHUTTING_DOWN
+		return 0, common.Hash{}, ERR_SHUTTING_DOWN
 	}
 	utils.LogDebug("Delivering tx.....")
 
-	receipt := self.backend.Miner().ExecuteTx(from, tx)
+	receipt, rootHash := self.backend.Miner().ExecuteTx(from, tx)
+	utils.LogDebug("rootHash = ", rootHash.String())
+
 	if receipt == nil {
 		// Handle failed transaction here.
-		return 0, errors.New("Failed to execute transaction")
+		return 0, rootHash, errors.New("Failed to execute transaction")
 	}
 
-	return receipt.GasUsed, nil
+	return receipt.GasUsed, rootHash, nil
 }

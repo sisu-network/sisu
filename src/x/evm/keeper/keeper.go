@@ -30,8 +30,6 @@ type Keeper struct {
 	ethConfig *config.ETHConfig
 	chain     *ethchain.ETHChain
 	ak        *authKeepr.AccountKeeper
-
-	softState *ethchain.SoftState
 }
 
 func NewKeeper(cdc codec.Marshaler, txSubmitter *TxSubmitter) *Keeper {
@@ -93,10 +91,10 @@ func (k *Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-func (k *Keeper) DeliverTx(from common.Address, etx *etypes.Transaction) error {
-	_, err := k.chain.DeliverTx(etx)
+func (k *Keeper) DeliverTx(from common.Address, etx *etypes.Transaction) ([]byte, error) {
+	_, rootHash, err := k.chain.DeliverTx(from, etx)
 
-	return err
+	return rootHash.Bytes(), err
 }
 
 func (k *Keeper) BeginBlock() error {
