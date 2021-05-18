@@ -24,6 +24,6 @@ done
 
 # Create the network
 docker network remove sisu-local
-docker network create --subnet=192.168.0.0/16 --driver=bridge sisu-local
+docker network create --subnet=192.168.10.0/24 --driver=bridge sisu-local
 
 cd ..
