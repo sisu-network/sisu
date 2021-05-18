@@ -16,7 +16,6 @@ var (
 )
 
 func genLocalhostAccounts() {
-	LogInfo("Generating test accounts")
 	var err error
 	localWallet, err = hdwallet.NewFromMnemonic(LOCALHOST_MNEMONIC)
 	if err != nil {
