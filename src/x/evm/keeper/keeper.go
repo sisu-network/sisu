@@ -14,6 +14,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authKeepr "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 
+	"github.com/ethereum/go-ethereum/common"
 	etypes "github.com/sisu-network/dcore/core/types"
 	"github.com/sisu-network/dcore/eth"
 	"github.com/sisu-network/sisu/config"
@@ -92,7 +93,7 @@ func (k *Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-func (k *Keeper) DeliverTx(etx *etypes.Transaction) error {
+func (k *Keeper) DeliverTx(from common.Address, etx *etypes.Transaction) error {
 	_, err := k.chain.DeliverTx(etx)
 
 	return err

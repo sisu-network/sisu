@@ -64,10 +64,6 @@ type ETHChain struct {
 	genBlockDoneCh chan bool
 	stopping       bool
 
-	// Soft state
-	softState *SoftState
-	ssLock    *sync.RWMutex
-
 	mu        *sync.RWMutex
 	lastBlock *types.Block
 	chainDb   ethdb.Database
@@ -112,7 +108,6 @@ func NewETHChain(
 		mcb:            mcb,
 		chainDb:        chainDb,
 		mu:             &sync.RWMutex{},
-		ssLock:         &sync.RWMutex{},
 		genBlockDoneCh: make(chan bool),
 		signer:         types.NewEIP155Signer(chainConfig.Eth.Genesis.Config.ChainID),
 
@@ -230,19 +225,8 @@ func (self *ETHChain) GetGenesisBlock() *types.Block {
 	return self.backend.BlockChain().Genesis()
 }
 
-// BeginBlock is called when at the beginning of tendermint block. It prepares
 func (self *ETHChain) BeginBlock() error {
-	// Create a new softstate for execution in this block.
-	self.createNewSoftState()
-
 	return nil
-}
-
-func (self *ETHChain) CheckTx(tx *types.Transaction) error {
-	self.ssLock.Lock()
-	defer self.ssLock.Unlock()
-
-	return self.valdiateTx(tx)
 }
 
 // Validates a transaction. Many part of this function is borrowed from tx_pool.validateTx().
@@ -295,26 +279,6 @@ func (self *ETHChain) valdiateTx(tx *types.Transaction) error {
 	}
 
 	return nil
-}
-
-// DeliverTx adds a tx to the ETH tx pool. It does not do actual execution. The TX execution and
-// db state change is done in the Commit function.
-func (self *ETHChain) DeliverTx(tx *types.Transaction) (uint64, error) {
-	if self.stopping {
-		return 0, ERR_SHUTTING_DOWN
-	}
-	utils.LogDebug("Delivering tx.....")
-
-	var gasUsed uint64
-	receipt, err := self.softState.ApplyTx(tx)
-	if err == nil {
-		gasUsed = receipt.GasUsed
-	} else {
-		gasUsed = 0
-	}
-
-	errs := self.backend.TxPool().AddRemotesSync([]*types.Transaction{tx})
-	return gasUsed, errs[0]
 }
 
 // EndBlock tries to generate an ETH block
@@ -372,24 +336,6 @@ func (self *ETHChain) OnSealFinish(block *types.Block) error {
 	self.genBlockDoneCh <- true
 
 	return nil
-}
-
-func (self *ETHChain) createNewSoftState() {
-	self.ssLock.Lock()
-	defer self.ssLock.Unlock()
-
-	dbState, err := self.backend.BlockChain().State()
-	if err != nil {
-		return
-	}
-
-	self.softState = NewSoftState(
-		dbState,
-		self.backend.BlockChain().LastAcceptedBlock(),
-		self.chainConfig.Eth.Genesis.Config,
-		*self.backend.BlockChain().GetVMConfig(),
-		self.backend.BlockChain(),
-	)
 }
 
 func (self *ETHChain) GetLastBlockDetails() ([]byte, *big.Int) {
@@ -458,4 +404,21 @@ func (self *ETHChain) ImportAccounts() {
 		ks.Unlock(account, utils.LOCAL_KEYSTORE_PASS)
 	}
 	utils.LogDebug("Done importing. Accounts length = ", len(ks.Accounts()))
+}
+
+// DeliverTx adds a tx to the ETH tx pool. It does not do actual execution. The TX execution and
+// db state change is done in the Commit function.
+func (self *ETHChain) DeliverTx(from common.Address, tx *types.Transaction) (uint64, error) {
+	if self.stopping {
+		return 0, ERR_SHUTTING_DOWN
+	}
+	utils.LogDebug("Delivering tx.....")
+
+	receipt := self.backend.Miner().ExecuteTx(from, tx)
+	if receipt == nil {
+		// Handle failed transaction here.
+		return 0, errors.New("Failed to execute transaction")
+	}
+
+	return receipt.GasUsed, nil
 }
