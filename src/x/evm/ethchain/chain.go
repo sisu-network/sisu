@@ -48,6 +48,7 @@ var (
 
 var (
 	lastAcceptedKey = []byte("lastAccepted")
+	emptyRootHash   = common.Hash{}
 )
 
 type ETHChain struct {
@@ -226,6 +227,7 @@ func (self *ETHChain) GetGenesisBlock() *types.Block {
 }
 
 func (self *ETHChain) BeginBlock() error {
+	self.backend.Miner().PrepareNewBlock()
 	return nil
 }
 
@@ -408,18 +410,16 @@ func (self *ETHChain) ImportAccounts() {
 
 // DeliverTx adds a tx to the ETH tx pool. It does not do actual execution. The TX execution and
 // db state change is done in the Commit function.
-func (self *ETHChain) DeliverTx(from common.Address, tx *types.Transaction) (uint64, common.Hash, error) {
+func (self *ETHChain) DeliverTx(tx *types.Transaction) (uint64, common.Hash, error) {
 	if self.stopping {
-		return 0, common.Hash{}, ERR_SHUTTING_DOWN
+		return 0, emptyRootHash, ERR_SHUTTING_DOWN
 	}
 	utils.LogDebug("Delivering tx.....")
 
-	receipt, rootHash := self.backend.Miner().ExecuteTx(from, tx)
-	utils.LogDebug("rootHash = ", rootHash.String())
-
-	if receipt == nil {
-		// Handle failed transaction here.
-		return 0, rootHash, errors.New("Failed to execute transaction")
+	receipt, rootHash, err := self.backend.Miner().ExecuteTxSync(tx)
+	if err != nil {
+		utils.LogError("Failed to execute the transaction", err)
+		return 0, emptyRootHash, err
 	}
 
 	return receipt.GasUsed, rootHash, nil

@@ -6,8 +6,6 @@ import (
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/evm/keeper"
 	"github.com/sisu-network/sisu/x/evm/types"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
 func handleSubmittedTx(ctx sdk.Context, k keeper.Keeper, etxMsg *types.EthTx) (*sdk.Result, error) {
@@ -18,8 +16,7 @@ func handleSubmittedTx(ctx sdk.Context, k keeper.Keeper, etxMsg *types.EthTx) (*
 		return &sdk.Result{}, err
 	}
 
-	from := common.HexToAddress(etxMsg.Author)
-	data, err := k.DeliverTx(from, etx)
+	data, err := k.DeliverTx(etx)
 	if err != nil {
 		return &sdk.Result{
 			Data: data,

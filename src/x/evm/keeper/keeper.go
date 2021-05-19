@@ -14,7 +14,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authKeepr "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 
-	"github.com/ethereum/go-ethereum/common"
 	etypes "github.com/sisu-network/dcore/core/types"
 	"github.com/sisu-network/dcore/eth"
 	"github.com/sisu-network/sisu/config"
@@ -91,14 +90,13 @@ func (k *Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
-func (k *Keeper) DeliverTx(from common.Address, etx *etypes.Transaction) ([]byte, error) {
-	_, rootHash, err := k.chain.DeliverTx(from, etx)
+func (k *Keeper) DeliverTx(etx *etypes.Transaction) ([]byte, error) {
+	_, rootHash, err := k.chain.DeliverTx(etx)
 
 	return rootHash.Bytes(), err
 }
 
 func (k *Keeper) BeginBlock() error {
-	// Create a new softstate for execution in this block.
 	k.chain.BeginBlock()
 
 	return nil
