@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"os"
 	"os/signal"
@@ -17,6 +19,7 @@ import (
 	etypes "github.com/sisu-network/dcore/core/types"
 	"github.com/sisu-network/dcore/eth"
 	"github.com/sisu-network/sisu/config"
+	evmCodec "github.com/sisu-network/sisu/x/evm/codec"
 	"github.com/sisu-network/sisu/x/evm/ethchain"
 	"github.com/sisu-network/sisu/x/evm/types"
 )
@@ -91,9 +94,26 @@ func (k *Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 func (k *Keeper) DeliverTx(etx *etypes.Transaction) ([]byte, error) {
-	_, rootHash, err := k.chain.DeliverTx(etx)
+	receipt, _, err := k.chain.DeliverTx(etx)
 
-	return rootHash.Bytes(), err
+	if err != nil {
+		return []byte{}, nil
+	}
+
+	// RLP encode of the receipt
+	var buff bytes.Buffer
+	err = receipt.EncodeRLP(bufio.NewWriter(&buff))
+	if err != nil {
+		return []byte{}, nil
+	}
+
+	// Prefixed length encoded
+	prefixedData, err := evmCodec.EncodePrefixedLength(buff.Bytes())
+	if err != nil {
+		return []byte{}, nil
+	}
+
+	return prefixedData, err
 }
 
 func (k *Keeper) BeginBlock() error {
