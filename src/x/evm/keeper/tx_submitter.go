@@ -3,6 +3,7 @@ package keeper
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"sync"
@@ -20,7 +21,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
-	authKeepr "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
@@ -30,6 +31,7 @@ const (
 	// TODO: put these values into config file.
 	defaultGasAdjustment = 1.0
 	defaultGasLimit      = 300000
+	UN_INITIALIZED_SEQ   = 18446744073709551615 // Max of uint64. This means it's not initialized
 )
 
 var (
@@ -44,7 +46,6 @@ type QElementPair struct {
 
 type TxSubmitter struct {
 	sisuHome string
-	ak       *authKeepr.AccountKeeper
 	kr       keyring.Keyring
 
 	// internal
@@ -58,25 +59,30 @@ type TxSubmitter struct {
 	msgIndex        int64
 	msgStatuses     map[int64]error
 	submitRequestCh chan bool
+
+	// Sequence
+	sequenceLock *sync.RWMutex
+	curSequence  uint64
 }
 
 var (
 	nodeAddress = "http://0.0.0.0:26657"
 )
 
-func NewTxSubmitter(sisuHome string, keyRingBackend string, ak *authKeepr.AccountKeeper) *TxSubmitter {
-	kb, err := keyring.New(sdk.KeyringServiceName(), keyRingBackend, sisuHome, os.Stdin)
+func NewTxSubmitter(mainAppHome string, keyRingBackend string) *TxSubmitter {
+	kb, err := keyring.New(sdk.KeyringServiceName(), keyRingBackend, mainAppHome, os.Stdin)
 	if err != nil {
 		panic(err)
 	}
 
 	t := &TxSubmitter{
 		kr:              kb,
-		ak:              ak,
+		sequenceLock:    &sync.RWMutex{},
 		queueLock:       &sync.RWMutex{},
 		queue:           make([]*QElementPair, 0),
 		submitRequestCh: make(chan bool),
 		msgStatuses:     make(map[int64]error),
+		curSequence:     UN_INITIALIZED_SEQ,
 	}
 
 	infos, err := kb.List()
@@ -96,6 +102,11 @@ func NewTxSubmitter(sisuHome string, keyRingBackend string, ak *authKeepr.Accoun
 }
 
 func (t *TxSubmitter) submitMessage(msg sdk.Msg) error {
+	seq := t.getSequence()
+	if seq == UN_INITIALIZED_SEQ {
+		return fmt.Errorf("Server is not ready")
+	}
+
 	index := t.addMessage(msg)
 	var err error
 
@@ -142,7 +153,7 @@ func (t *TxSubmitter) schedule() {
 	t.submitRequestCh <- true
 }
 
-func (t *TxSubmitter) StartLoop() {
+func (t *TxSubmitter) Start() {
 	for {
 		select {
 		case <-t.submitRequestCh:
@@ -164,17 +175,12 @@ func (t *TxSubmitter) StartLoop() {
 				continue
 			}
 
-			utils.LogDebug("Queue size = ", len(copy))
+			utils.LogInfo("Queue size = ", len(copy))
 
 			// 2. Get account sequence
-			accRet, err := authtypes.AccountRetriever{}.GetAccount(t.clientCtx, t.fromAccount)
-			if err != nil {
-				t.updateStatus(copy, err)
-				continue
-			}
-			seq := accRet.GetSequence()
-			utils.LogDebug("Sequence = ", seq)
-			t.factory.WithSequence(seq)
+			seq := t.getSequence()
+			utils.LogInfo("Sequence = ", seq)
+			t.factory = t.factory.WithSequence(seq)
 
 			// 3. Send all messages
 			msgs := convert(copy)
@@ -184,9 +190,31 @@ func (t *TxSubmitter) StartLoop() {
 			} else {
 				utils.LogDebug("Tx submitted successfully")
 				t.updateStatus(copy, ERR_NONE)
+				t.incSequence()
 			}
 		}
 	}
+}
+
+func (t *TxSubmitter) SyncBlockSequence(ctx sdk.Context, ak authkeeper.AccountKeeper) {
+	t.sequenceLock.Lock()
+	defer t.sequenceLock.Unlock()
+
+	t.curSequence = ak.GetAccount(ctx, t.fromAccount).GetSequence()
+}
+
+func (t *TxSubmitter) getSequence() uint64 {
+	t.sequenceLock.RLock()
+	defer t.sequenceLock.RUnlock()
+
+	return t.curSequence
+}
+
+func (t *TxSubmitter) incSequence() {
+	t.sequenceLock.Lock()
+	defer t.sequenceLock.Unlock()
+
+	t.curSequence++
 }
 
 func (t *TxSubmitter) updateStatus(list []*QElementPair, err error) {
@@ -198,6 +226,7 @@ func (t *TxSubmitter) updateStatus(list []*QElementPair, err error) {
 	}
 }
 
+// TODO: Return error fi submission fails.
 func (t *TxSubmitter) onTxSubmitted(ethTx *dcore.Transaction) {
 	js, err := ethTx.MarshalJSON()
 	if err != nil {
@@ -248,7 +277,7 @@ func NewClientCtx(kr keyring.Keyring, c *rpchttp.HTTP, out io.Writer, home, chai
 		WithInput(os.Stdin).
 		WithOutput(out).
 		WithAccountRetriever(authtypes.AccountRetriever{}).
-		WithBroadcastMode(flags.BroadcastBlock).
+		WithBroadcastMode(flags.BroadcastSync).
 		WithHomeDir(home).
 		WithClient(c).
 		WithSkipConfirmation(true)
