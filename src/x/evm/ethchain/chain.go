@@ -75,7 +75,7 @@ type ETHChain struct {
 func NewETHChain(
 	chainConfig *config.ETHConfig,
 	settings eth.Settings,
-	onTxSubmitted func(*types.Transaction),
+	onTxSubmitted func(*types.Transaction) error,
 ) *ETHChain {
 	node, err := node.New(chainConfig.Node)
 	if err != nil {

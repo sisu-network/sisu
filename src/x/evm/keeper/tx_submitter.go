@@ -227,13 +227,13 @@ func (t *TxSubmitter) updateStatus(list []*QElementPair, err error) {
 }
 
 // TODO: Return error fi submission fails.
-func (t *TxSubmitter) onTxSubmitted(ethTx *dcore.Transaction) {
+func (t *TxSubmitter) onTxSubmitted(ethTx *dcore.Transaction) error {
 	js, err := ethTx.MarshalJSON()
 	if err != nil {
-		return
+		return err
 	}
 	msg := types.NewMsgEthTx(t.clientCtx.GetFromAddress().String(), js)
-	t.submitMessage(msg)
+	return t.submitMessage(msg)
 }
 
 func convert(list []*QElementPair) []sdk.Msg {
