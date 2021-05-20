@@ -179,7 +179,7 @@ func (t *TxSubmitter) Start() {
 
 			// 2. Get account sequence
 			seq := t.getSequence()
-			utils.LogDebug("Sequence = ", seq)
+			utils.LogInfo("Sequence = ", seq)
 			t.factory = t.factory.WithSequence(seq)
 
 			// 3. Send all messages

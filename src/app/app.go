@@ -598,8 +598,6 @@ func initParamsKeeper(appCodec codec.BinaryMarshaler, legacyAmino *codec.LegacyA
 
 // BeginBlocker application updates every begin block
 func (app *App) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
-	fmt.Println("Begin of block")
-
 	return app.mm.BeginBlock(ctx, req)
 }
 
