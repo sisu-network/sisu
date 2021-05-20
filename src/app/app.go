@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -331,9 +332,9 @@ func New(
 		appCodec, keys[sisutypes.StoreKey], keys[sisutypes.MemStoreKey],
 	)
 
-	txSubmitter := evmKeeper.NewTxSubmitter(MainAppHome, KeyringBackend, &app.AccountKeeper)
-	go txSubmitter.StartLoop()
-	app.evmKeeper = *evmKeeper.NewKeeper(appCodec, txSubmitter)
+	app.txSubmitter = evmKeeper.NewTxSubmitter(MainAppHome, KeyringBackend)
+	go app.txSubmitter.Start()
+	app.evmKeeper = *evmKeeper.NewKeeper(appCodec, app.txSubmitter)
 	app.evmKeeper.Initialize()
 
 	// this line is used by starport scaffolding # stargate/app/keeperDefinition
@@ -468,6 +469,7 @@ func (app *App) Name() string { return app.BaseApp.Name() }
 // InitChainer application update at chain initialization
 func (app *App) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	var genesisState GenesisState
+	fmt.Println("initializing chain....")
 	if err := tmjson.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
 		panic(err)
 	}
@@ -601,5 +603,7 @@ func (app *App) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.R
 
 // EndBlocker application updates every end block
 func (app *App) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+	app.txSubmitter.SyncBlockSequence(ctx, app.AccountKeeper)
+
 	return app.mm.EndBlock(ctx, req)
 }
