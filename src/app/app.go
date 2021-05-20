@@ -332,7 +332,7 @@ func New(
 		appCodec, keys[sisutypes.StoreKey], keys[sisutypes.MemStoreKey],
 	)
 
-	app.txSubmitter = evmKeeper.NewTxSubmitter(MainAppHome, KeyringBackend, &app.AccountKeeper)
+	app.txSubmitter = evmKeeper.NewTxSubmitter(MainAppHome, KeyringBackend)
 	go app.txSubmitter.Start()
 	app.evmKeeper = *evmKeeper.NewKeeper(appCodec, app.txSubmitter)
 	app.evmKeeper.Initialize()

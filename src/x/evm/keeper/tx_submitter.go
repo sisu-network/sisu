@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -22,7 +21,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
-	authKeepr "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -33,6 +31,7 @@ const (
 	// TODO: put these values into config file.
 	defaultGasAdjustment = 1.0
 	defaultGasLimit      = 300000
+	UN_INITIALIZED_SEQ   = 18446744073709551615 // Max of uint64. This means it's not initialized
 )
 
 var (
@@ -53,7 +52,6 @@ type TxSubmitter struct {
 	clientCtx   client.Context
 	factory     tx.Factory
 	fromAccount sdk.AccAddress
-	isConnected bool
 
 	// Tx queue
 	queue           []*QElementPair
@@ -71,8 +69,8 @@ var (
 	nodeAddress = "http://0.0.0.0:26657"
 )
 
-func NewTxSubmitter(sisuHome string, keyRingBackend string, ak *authKeepr.AccountKeeper) *TxSubmitter {
-	kb, err := keyring.New(sdk.KeyringServiceName(), keyRingBackend, sisuHome, os.Stdin)
+func NewTxSubmitter(mainAppHome string, keyRingBackend string) *TxSubmitter {
+	kb, err := keyring.New(sdk.KeyringServiceName(), keyRingBackend, mainAppHome, os.Stdin)
 	if err != nil {
 		panic(err)
 	}
@@ -84,6 +82,7 @@ func NewTxSubmitter(sisuHome string, keyRingBackend string, ak *authKeepr.Accoun
 		queue:           make([]*QElementPair, 0),
 		submitRequestCh: make(chan bool),
 		msgStatuses:     make(map[int64]error),
+		curSequence:     UN_INITIALIZED_SEQ,
 	}
 
 	infos, err := kb.List()
@@ -103,6 +102,11 @@ func NewTxSubmitter(sisuHome string, keyRingBackend string, ak *authKeepr.Accoun
 }
 
 func (t *TxSubmitter) submitMessage(msg sdk.Msg) error {
+	seq := t.getSequence()
+	if seq == UN_INITIALIZED_SEQ {
+		return fmt.Errorf("Server is not ready")
+	}
+
 	index := t.addMessage(msg)
 	var err error
 
@@ -150,10 +154,6 @@ func (t *TxSubmitter) schedule() {
 }
 
 func (t *TxSubmitter) Start() {
-	// t.SyncBlockSequence()
-
-	t.connectServer()
-
 	for {
 		select {
 		case <-t.submitRequestCh:
@@ -179,65 +179,31 @@ func (t *TxSubmitter) Start() {
 
 			// 2. Get account sequence
 			seq := t.getSequence()
-			utils.LogDebug("Sequence = 1", seq)
+			utils.LogDebug("Sequence = ", seq)
 			t.factory = t.factory.WithSequence(seq)
-			utils.LogDebug("Sequence = 2", seq)
 
 			// 3. Send all messages
 			msgs := convert(copy)
 			if err := tx.BroadcastTx(t.clientCtx, t.factory, msgs...); err != nil {
 				utils.LogError("Cannot broadcast transaction", err)
 				t.updateStatus(copy, err)
-				t.incSequence()
 			} else {
 				utils.LogDebug("Tx submitted successfully")
 				t.updateStatus(copy, ERR_NONE)
+				t.incSequence()
 			}
 		}
 	}
 }
 
-func (t *TxSubmitter) connectServer() {
-	for {
-		_, err := t.clientCtx.Client.Status(context.Background())
-		if err != nil {
-			utils.LogInfo("Connected to tendermint server")
-			t.isConnected = true
-			return
-		}
-
-		fmt.Println("err = ", err)
-		time.Sleep(time.Second)
-	}
-}
-
 func (t *TxSubmitter) SyncBlockSequence(ctx sdk.Context, ak authkeeper.AccountKeeper) {
-	if !t.isConnected {
-		return
-	}
-
-	utils.LogDebug("Syncing block sequence....")
-
 	t.sequenceLock.Lock()
 	defer t.sequenceLock.Unlock()
 
 	t.curSequence = ak.GetAccount(ctx, t.fromAccount).GetSequence()
-	utils.LogDebug("t.curSequence  = ", t.curSequence)
-
-	// utils.LogDebug("Getting accRet....")
-	// accRet, err := authtypes.AccountRetriever{}.GetAccount(t.clientCtx, t.fromAccount)
-	// if err != nil {
-	// 	utils.LogError("Cannot get account retrieval", err)
-	// 	return
-	// }
-
-	// utils.LogDebug("Getting Sequence....")
-	// t.curSequence = accRet.GetSequence()
 }
 
 func (t *TxSubmitter) getSequence() uint64 {
-	utils.LogDebug("Getting ....")
-
 	t.sequenceLock.RLock()
 	defer t.sequenceLock.RUnlock()
 
