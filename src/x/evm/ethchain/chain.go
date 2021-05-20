@@ -65,9 +65,8 @@ type ETHChain struct {
 	genBlockDoneCh chan bool
 	stopping       bool
 
-	mu        *sync.RWMutex
-	lastBlock *types.Block
-	chainDb   ethdb.Database
+	mu      *sync.RWMutex
+	chainDb ethdb.Database
 }
 
 // TODO: Remove initGenesis in both this repo & coreth. The coreth already had support for removing
@@ -315,7 +314,6 @@ func (self *ETHChain) OnSealFinish(block *types.Block) error {
 	utils.LogDebug("Block is sealed, number =", block.Number())
 
 	self.mu.Lock()
-	self.lastBlock = block
 	self.mu.Unlock()
 
 	if err := self.Accept(block); err != nil {
@@ -339,13 +337,6 @@ func (self *ETHChain) OnSealFinish(block *types.Block) error {
 	self.genBlockDoneCh <- true
 
 	return nil
-}
-
-func (self *ETHChain) GetLastBlockDetails() ([]byte, *big.Int) {
-	self.mu.RLock()
-	defer self.mu.RUnlock()
-
-	return self.lastBlock.Hash().Bytes(), self.lastBlock.Number()
 }
 
 func (self *ETHChain) GetBlockByHash(hash common.Hash) *types.Block {
