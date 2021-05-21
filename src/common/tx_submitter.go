@@ -118,7 +118,10 @@ func (t *TxSubmitter) submitMessage(msg sdk.Msg) error {
 
 	for {
 		time.Sleep(QUEUE_TIME)
+
+		t.queueLock.RLock()
 		err = t.msgStatuses[index]
+		t.queueLock.RUnlock()
 		if err != nil {
 			break
 		}

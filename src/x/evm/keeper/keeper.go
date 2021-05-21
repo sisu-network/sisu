@@ -117,6 +117,10 @@ func (k *Keeper) DeliverTx(etx *etypes.Transaction) ([]byte, error) {
 	return prefixedData, err
 }
 
+func (k *Keeper) GetEthValidator() ethchain.EthValidator {
+	return k.chain
+}
+
 func (k *Keeper) BeginBlock() error {
 	k.chain.BeginBlock()
 

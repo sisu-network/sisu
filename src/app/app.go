@@ -437,6 +437,7 @@ func New(
 		ante.NewAnteHandler(
 			app.AccountKeeper, app.BankKeeper, app.evmKeeper,
 			ante.DefaultSigVerificationGasConsumer, encodingConfig.TxConfig.SignModeHandler(),
+			app.evmKeeper.GetEthValidator(),
 		),
 	)
 	app.SetEndBlocker(app.EndBlocker)

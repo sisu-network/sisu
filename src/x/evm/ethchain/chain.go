@@ -14,6 +14,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethdb"
 	"github.com/ethereum/go-ethereum/rlp"
+	lru "github.com/hashicorp/golang-lru"
 	"github.com/sisu-network/dcore/accounts"
 	"github.com/sisu-network/dcore/accounts/keystore"
 	"github.com/sisu-network/dcore/consensus/dummy"
@@ -36,6 +37,7 @@ type ChainState int
 const (
 	TX_MAX_SIZE    = 128 * 1024
 	COMMIT_TIMEOUT = time.Second * 5
+	TX_CACHE_SIZE  = 4096
 )
 
 var (
@@ -53,21 +55,22 @@ var (
 )
 
 type ETHChain struct {
-	chainConfig    *config.ETHConfig
-	backend        *eth.Ethereum
-	cb             *dummy.ConsensusCallbacks
-	mcb            *miner.MinerCallbacks
-	backendCb      *types.BackendAPICallback
-	chainState     ChainState
-	chainMode      string
-	signer         types.EIP155Signer
-	gasLowestLimit *big.Int
-	lastBlockState *state.StateDB
-	genBlockDoneCh chan bool
-	stopping       bool
-	txSubmit       sisuCommon.TxSubmit
+	chainConfig     *config.ETHConfig
+	backend         *eth.Ethereum
+	cb              *dummy.ConsensusCallbacks
+	mcb             *miner.MinerCallbacks
+	backendCb       *types.BackendAPICallback
+	chainState      ChainState
+	chainMode       string
+	signer          types.Signer
+	gasLowestLimit  *big.Int
+	lastBlockState  *state.StateDB
+	lastBlockLock   *sync.RWMutex
+	genBlockDoneCh  chan bool
+	stopping        bool
+	txSubmit        sisuCommon.TxSubmit
+	acceptedTxCache *lru.Cache
 
-	mu      *sync.RWMutex
 	chainDb ethdb.Database
 }
 
@@ -102,16 +105,22 @@ func NewETHChain(
 	}
 	backend.SetEtherbase(BlackholeAddr)
 
+	txCache, err := lru.New(TX_CACHE_SIZE)
+	if err != nil {
+		panic(err)
+	}
+
 	chain := &ETHChain{
-		chainConfig:    chainConfig,
-		backend:        backend,
-		cb:             cb,
-		mcb:            mcb,
-		chainDb:        chainDb,
-		txSubmit:       txSubmit,
-		mu:             &sync.RWMutex{},
-		genBlockDoneCh: make(chan bool),
-		signer:         types.NewEIP155Signer(chainConfig.Eth.Genesis.Config.ChainID),
+		chainConfig:     chainConfig,
+		backend:         backend,
+		cb:              cb,
+		mcb:             mcb,
+		chainDb:         chainDb,
+		txSubmit:        txSubmit,
+		lastBlockLock:   &sync.RWMutex{},
+		acceptedTxCache: txCache,
+		genBlockDoneCh:  make(chan bool),
+		signer:          types.NewEIP2930Signer(chainConfig.Eth.Genesis.Config.ChainID),
 
 		gasLowestLimit: new(big.Int).SetUint64(chainConfig.Eth.TxPool.PriceLimit),
 	}
@@ -281,8 +290,8 @@ func (self *ETHChain) valdiateTx(tx *types.Transaction) error {
 }
 
 func (self *ETHChain) checkNonceAndBalance(tx *types.Transaction, from common.Address) error {
-	self.mu.RLock()
-	defer self.mu.RUnlock()
+	self.lastBlockLock.Lock()
+	defer self.lastBlockLock.Unlock()
 
 	// Ensure the transaction adheres to nonce ordering
 	if self.lastBlockState.GetNonce(from) > tx.Nonce() {
@@ -337,9 +346,9 @@ func (self *ETHChain) OnSealFinish(block *types.Block) error {
 
 	lastState, err := self.backend.BlockChain().State()
 	if err == nil {
-		self.mu.Lock()
+		self.lastBlockLock.Lock()
 		self.lastBlockState = lastState
-		self.mu.Unlock()
+		self.lastBlockLock.Unlock()
 	} else {
 		utils.LogError("Cannot get last block state.")
 	}
@@ -348,7 +357,19 @@ func (self *ETHChain) OnSealFinish(block *types.Block) error {
 
 	self.genBlockDoneCh <- true
 
+	size, err := self.PendingSize()
+	utils.LogDebug("Pending size = ", size)
+
 	return nil
+}
+
+func (self *ETHChain) PendingSize() (int, error) {
+	pending, err := self.backend.TxPool().Pending()
+	count := 0
+	for _, txs := range pending {
+		count += len(txs)
+	}
+	return count, err
 }
 
 func (self *ETHChain) GetBlockByHash(hash common.Hash) *types.Block {
@@ -412,6 +433,28 @@ func (self *ETHChain) ImportAccounts() {
 	utils.LogDebug("Done importing. Accounts length = ", len(ks.Accounts()))
 }
 
+func (self *ETHChain) CheckTx(txs []*types.Transaction) error {
+	err := fmt.Errorf("No ETH transaction is accepted")
+
+	size, _ := self.PendingSize()
+	utils.LogDebug("BEFORE adding txs, pending size =", size)
+
+	errs := self.backend.TxPool().AddRemotesSync(txs)
+	for i, tx := range txs {
+		if errs[i] == nil {
+			self.acceptedTxCache.Add(tx.Hash().String(), tx)
+			err = nil
+		} else {
+			utils.LogDebug("Accept tx error: ", i, errs[i])
+		}
+	}
+
+	size, _ = self.PendingSize()
+	utils.LogDebug("AFTER adding txs, pending size =", size)
+
+	return err
+}
+
 // DeliverTx adds a tx to the ETH tx pool. It does not do actual execution. The TX execution and
 // db state change is done in the Commit function.
 func (self *ETHChain) DeliverTx(tx *types.Transaction) (*types.Receipt, common.Hash, error) {
@@ -432,6 +475,7 @@ func (self *ETHChain) DeliverTx(tx *types.Transaction) (*types.Receipt, common.H
 
 func (self *ETHChain) onEthTxSubmitted(tx *types.Transaction) error {
 	if err := self.valdiateTx(tx); err != nil {
+		utils.LogDebug("Chain: onEthTxSubmitted err = ", err)
 		return err
 	}
 
@@ -440,5 +484,16 @@ func (self *ETHChain) onEthTxSubmitted(tx *types.Transaction) error {
 		return err
 	}
 
-	return self.txSubmit.SubmitTx(js)
+	if err := self.txSubmit.SubmitTx(js); err != nil {
+		return err
+	}
+
+	// Check if the tx pool has the tx or not.
+	_, ok := self.acceptedTxCache.Get(tx.Hash().String())
+	if !ok {
+		utils.LogError("Cannot find transaction in the pool.")
+		return fmt.Errorf("Failed to add transaction to the pool")
+	}
+
+	return nil
 }
