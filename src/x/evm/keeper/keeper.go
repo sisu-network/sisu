@@ -18,6 +18,7 @@ import (
 
 	etypes "github.com/sisu-network/dcore/core/types"
 	"github.com/sisu-network/dcore/eth"
+	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	evmCodec "github.com/sisu-network/sisu/x/evm/codec"
 	"github.com/sisu-network/sisu/x/evm/ethchain"
@@ -25,7 +26,7 @@ import (
 )
 
 type Keeper struct {
-	txSubmitter *TxSubmitter
+	txSubmitter common.TxSubmit
 
 	client    *grpc.ClientConn
 	cdc       codec.Marshaler
@@ -34,7 +35,7 @@ type Keeper struct {
 	ak        *authKeepr.AccountKeeper
 }
 
-func NewKeeper(cdc codec.Marshaler, txSubmitter *TxSubmitter) *Keeper {
+func NewKeeper(cdc codec.Marshaler, txSubmitter common.TxSubmit) *Keeper {
 	keeper := &Keeper{
 		cdc:         cdc,
 		txSubmitter: txSubmitter,
@@ -79,7 +80,7 @@ func (k *Keeper) listenSignalKill() {
 }
 
 func (k *Keeper) createChain() error {
-	k.chain = ethchain.NewETHChain(k.ethConfig, eth.DefaultSettings, k.txSubmitter.onTxSubmitted)
+	k.chain = ethchain.NewETHChain(k.ethConfig, eth.DefaultSettings, k.txSubmitter)
 
 	err := k.chain.Initialize()
 	if err != nil {

@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -89,6 +88,7 @@ import (
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
+	"github.com/sisu-network/sisu/common"
 	sisuAuth "github.com/sisu-network/sisu/x/auth"
 	// this line is used by starport scaffolding # stargate/app/moduleImport
 )
@@ -165,7 +165,7 @@ var (
 // They are exported for convenience in creating helper functions, as object
 // capabilities aren't needed for testing.
 type App struct {
-	txSubmitter *evmKeeper.TxSubmitter
+	txSubmitter *common.TxSubmitter
 
 	///////////////////////////////////////////////////////////////
 
@@ -332,7 +332,7 @@ func New(
 		appCodec, keys[sisutypes.StoreKey], keys[sisutypes.MemStoreKey],
 	)
 
-	app.txSubmitter = evmKeeper.NewTxSubmitter(MainAppHome, KeyringBackend)
+	app.txSubmitter = common.NewTxSubmitter(MainAppHome, KeyringBackend)
 	go app.txSubmitter.Start()
 	app.evmKeeper = *evmKeeper.NewKeeper(appCodec, app.txSubmitter)
 	app.evmKeeper.Initialize()
@@ -469,7 +469,6 @@ func (app *App) Name() string { return app.BaseApp.Name() }
 // InitChainer application update at chain initialization
 func (app *App) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	var genesisState GenesisState
-	fmt.Println("initializing chain....")
 	if err := tmjson.Unmarshal(req.AppStateBytes, &genesisState); err != nil {
 		panic(err)
 	}
