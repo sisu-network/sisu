@@ -1,6 +1,8 @@
 package ante
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	cosmosAnte "github.com/cosmos/cosmos-sdk/x/auth/ante"
 	"github.com/cosmos/cosmos-sdk/x/auth/signing"
@@ -17,6 +19,8 @@ func NewAnteHandler(
 ) sdk.AnteHandler {
 	return func(ctx sdk.Context, tx sdk.Tx, sim bool) (newCtx sdk.Context, err error) {
 		var anteHandler sdk.AnteHandler
+
+		fmt.Println("Running ante. checkTx = ", ctx.IsCheckTx())
 
 		// If the tx contains a non-evm message, we calculate the transaction like normal with
 		// gas fee taken into account. Otherwise, use EvmAnteHandler which does not subtract gas fee

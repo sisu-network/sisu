@@ -26,6 +26,7 @@ import (
 	"github.com/sisu-network/dcore/miner"
 	"github.com/sisu-network/dcore/node"
 	"github.com/sisu-network/dcore/rpc"
+	sisuCommon "github.com/sisu-network/sisu/common"
 	config "github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 )
@@ -64,6 +65,7 @@ type ETHChain struct {
 	lastBlockState *state.StateDB
 	genBlockDoneCh chan bool
 	stopping       bool
+	txSubmit       sisuCommon.TxSubmit
 
 	mu      *sync.RWMutex
 	chainDb ethdb.Database
@@ -74,7 +76,7 @@ type ETHChain struct {
 func NewETHChain(
 	chainConfig *config.ETHConfig,
 	settings eth.Settings,
-	onTxSubmitted func(*types.Transaction) error,
+	txSubmit sisuCommon.TxSubmit,
 ) *ETHChain {
 	node, err := node.New(chainConfig.Node)
 	if err != nil {
@@ -94,7 +96,6 @@ func NewETHChain(
 	cb := new(dummy.ConsensusCallbacks)
 	mcb := new(miner.MinerCallbacks)
 	backendCb := new(types.BackendAPICallback)
-	backendCb.OnTxSubmitted = onTxSubmitted
 	backend, err := eth.New(node, chainConfig.Eth, cb, mcb, backendCb, chainDb, settings, initGenesis)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create new eth backend due to %s", err))
@@ -107,6 +108,7 @@ func NewETHChain(
 		cb:             cb,
 		mcb:            mcb,
 		chainDb:        chainDb,
+		txSubmit:       txSubmit,
 		mu:             &sync.RWMutex{},
 		genBlockDoneCh: make(chan bool),
 		signer:         types.NewEIP155Signer(chainConfig.Eth.Genesis.Config.ChainID),
@@ -114,6 +116,7 @@ func NewETHChain(
 		gasLowestLimit: new(big.Int).SetUint64(chainConfig.Eth.TxPool.PriceLimit),
 	}
 	chain.mcb.OnSealFinish = chain.OnSealFinish
+	backendCb.OnTxSubmitted = chain.onEthTxSubmitted
 
 	return chain
 }
@@ -233,6 +236,7 @@ func (self *ETHChain) BeginBlock() error {
 
 // Validates a transaction. Many part of this function is borrowed from tx_pool.validateTx().
 func (self *ETHChain) valdiateTx(tx *types.Transaction) error {
+	// TODO: Add
 	// Reject transactions over defined size to prevent DOS attacks
 	if uint64(tx.Size()) > TX_MAX_SIZE {
 		return core.ErrOversizedData
@@ -260,15 +264,8 @@ func (self *ETHChain) valdiateTx(tx *types.Transaction) error {
 		return core.ErrUnderpriced
 	}
 
-	// Ensure the transaction adheres to nonce ordering
-	if self.lastBlockState.GetNonce(from) > tx.Nonce() {
-		return core.ErrNonceTooLow
-	}
-
-	// Transactor should have enough funds to cover the costs
-	// cost == V + GP * GL
-	if balance := self.lastBlockState.GetBalance(from); balance.Cmp(tx.Cost()) < 0 {
-		return fmt.Errorf("insufficient funds for gas * price + value, balance: %d, cost: %d", balance, tx.Cost())
+	if err := self.checkNonceAndBalance(tx, from); err != nil {
+		return err
 	}
 
 	// Ensure the transaction has more gas than the basic tx fee.
@@ -278,6 +275,24 @@ func (self *ETHChain) valdiateTx(tx *types.Transaction) error {
 	}
 	if tx.Gas() < intrGas {
 		return core.ErrIntrinsicGas
+	}
+
+	return nil
+}
+
+func (self *ETHChain) checkNonceAndBalance(tx *types.Transaction, from common.Address) error {
+	self.mu.RLock()
+	defer self.mu.RUnlock()
+
+	// Ensure the transaction adheres to nonce ordering
+	if self.lastBlockState.GetNonce(from) > tx.Nonce() {
+		return core.ErrNonceTooLow
+	}
+
+	// Transactor should have enough funds to cover the costs
+	// cost == V + GP * GL
+	if balance := self.lastBlockState.GetBalance(from); balance.Cmp(tx.Cost()) < 0 {
+		return fmt.Errorf("insufficient funds for gas * price + value, balance: %d, cost: %d", balance, tx.Cost())
 	}
 
 	return nil
@@ -312,9 +327,6 @@ func (self *ETHChain) transition(newState ChainState) {
 
 func (self *ETHChain) OnSealFinish(block *types.Block) error {
 	utils.LogDebug("Block is sealed, number =", block.Number())
-
-	self.mu.Lock()
-	self.mu.Unlock()
 
 	if err := self.Accept(block); err != nil {
 		utils.LogError(err)
@@ -416,4 +428,17 @@ func (self *ETHChain) DeliverTx(tx *types.Transaction) (*types.Receipt, common.H
 	}
 
 	return receipt, rootHash, nil
+}
+
+func (self *ETHChain) onEthTxSubmitted(tx *types.Transaction) error {
+	if err := self.valdiateTx(tx); err != nil {
+		return err
+	}
+
+	js, err := tx.MarshalJSON()
+	if err != nil {
+		return err
+	}
+
+	return self.txSubmit.SubmitTx(js)
 }

@@ -1,4 +1,4 @@
-package keeper
+package common
 
 import (
 	"bytes"
@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	dcore "github.com/sisu-network/dcore/core/types"
 	"github.com/sisu-network/sisu/app/params"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/evm/types"
@@ -42,6 +41,10 @@ var (
 type QElementPair struct {
 	msg   sdk.Msg
 	index int64
+}
+
+type TxSubmit interface {
+	SubmitTx(data []byte) error
 }
 
 type TxSubmitter struct {
@@ -226,13 +229,8 @@ func (t *TxSubmitter) updateStatus(list []*QElementPair, err error) {
 	}
 }
 
-// TODO: Return error fi submission fails.
-func (t *TxSubmitter) onTxSubmitted(ethTx *dcore.Transaction) error {
-	js, err := ethTx.MarshalJSON()
-	if err != nil {
-		return err
-	}
-	msg := types.NewMsgEthTx(t.clientCtx.GetFromAddress().String(), js)
+func (t *TxSubmitter) SubmitTx(data []byte) error {
+	msg := types.NewMsgEthTx(t.clientCtx.GetFromAddress().String(), data)
 	return t.submitMessage(msg)
 }
 
