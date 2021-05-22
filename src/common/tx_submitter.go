@@ -65,7 +65,12 @@ type TxSubmitter struct {
 
 	// Sequence
 	sequenceLock *sync.RWMutex
-	curSequence  uint64
+	// Current sequence is the current sequence that will be used for transaction. It's possible that
+	// multiple transactions could submitted within a block and account's sequence could be out
+	// of sync with account keeper.
+	curSequence uint64
+	// blockSequence is the sequence for the account in the last block.
+	blockSequence uint64
 }
 
 var (
@@ -193,6 +198,11 @@ func (t *TxSubmitter) Start() {
 			if err := tx.BroadcastTx(t.clientCtx, t.factory, msgs...); err != nil {
 				utils.LogError("Cannot broadcast transaction", err)
 				t.updateStatus(copy, err)
+
+				// Use block sequence for the sequence.
+				t.sequenceLock.Lock()
+				t.curSequence = t.blockSequence
+				t.sequenceLock.Unlock()
 			} else {
 				utils.LogDebug("Tx submitted successfully")
 				t.updateStatus(copy, ERR_NONE)
@@ -206,7 +216,10 @@ func (t *TxSubmitter) SyncBlockSequence(ctx sdk.Context, ak authkeeper.AccountKe
 	t.sequenceLock.Lock()
 	defer t.sequenceLock.Unlock()
 
-	t.curSequence = ak.GetAccount(ctx, t.fromAccount).GetSequence()
+	t.blockSequence = ak.GetAccount(ctx, t.fromAccount).GetSequence()
+	if t.curSequence == UN_INITIALIZED_SEQ {
+		t.curSequence = t.blockSequence
+	}
 }
 
 func (t *TxSubmitter) getSequence() uint64 {
