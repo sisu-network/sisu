@@ -436,21 +436,15 @@ func (self *ETHChain) ImportAccounts() {
 func (self *ETHChain) CheckTx(txs []*types.Transaction) error {
 	err := fmt.Errorf("No ETH transaction is accepted")
 
-	size, _ := self.PendingSize()
-	utils.LogDebug("BEFORE adding txs, pending size =", size)
-
 	errs := self.backend.TxPool().AddRemotesSync(txs)
 	for i, tx := range txs {
 		if errs[i] == nil {
 			self.acceptedTxCache.Add(tx.Hash().String(), tx)
 			err = nil
 		} else {
-			utils.LogDebug("Accept tx error: ", i, errs[i])
+			utils.LogError("Accept tx error: ", i, errs[i])
 		}
 	}
-
-	size, _ = self.PendingSize()
-	utils.LogDebug("AFTER adding txs, pending size =", size)
 
 	return err
 }
@@ -474,8 +468,12 @@ func (self *ETHChain) DeliverTx(tx *types.Transaction) (*types.Receipt, common.H
 }
 
 func (self *ETHChain) onEthTxSubmitted(tx *types.Transaction) error {
+	_, ok := self.acceptedTxCache.Get(tx.Hash().String())
+	if ok {
+		return fmt.Errorf("The transaction is already accepted for execution.")
+	}
+
 	if err := self.valdiateTx(tx); err != nil {
-		utils.LogDebug("Chain: onEthTxSubmitted err = ", err)
 		return err
 	}
 
@@ -489,7 +487,7 @@ func (self *ETHChain) onEthTxSubmitted(tx *types.Transaction) error {
 	}
 
 	// Check if the tx pool has the tx or not.
-	_, ok := self.acceptedTxCache.Get(tx.Hash().String())
+	_, ok = self.acceptedTxCache.Get(tx.Hash().String())
 	if !ok {
 		utils.LogError("Cannot find transaction in the pool.")
 		return fmt.Errorf("Failed to add transaction to the pool")
