@@ -15,7 +15,7 @@ import (
 
 var (
 	basicTxGasLimit = 21000
-	initialBalance  = new(big.Int).Mul(big.NewInt(100), utils.ONE_ETHER_IN_WEI) // 100 ETHER
+	initialBalance  = new(big.Int).Mul(big.NewInt(10000), utils.ONE_ETHER_IN_WEI) // 10,000 ETHER
 	chainID         = big.NewInt(1)
 )
 
@@ -97,6 +97,7 @@ func getLocalEthNodeConfig(ethHome string) *node.Config {
 	ksDir := ethHome + "/keystore"
 
 	return &node.Config{
-		KeyStoreDir: ksDir,
+		KeyStoreDir:         ksDir,
+		AllowUnprotectedTxs: true,
 	}
 }
