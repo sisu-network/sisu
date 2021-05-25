@@ -482,7 +482,7 @@ func (self *ETHChain) onEthTxSubmitted(tx *types.Transaction) error {
 		return err
 	}
 
-	if err := self.txSubmit.SubmitTx(js); err != nil {
+	if err := self.txSubmit.SubmitEThTx(js); err != nil {
 		return err
 	}
 

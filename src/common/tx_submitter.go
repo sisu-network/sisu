@@ -44,7 +44,8 @@ type QElementPair struct {
 }
 
 type TxSubmit interface {
-	SubmitTx(data []byte) error
+	SubmitEThTx(data []byte) error
+	SubmitTssTx(data []byte) error
 }
 
 type TxSubmitter struct {
@@ -245,9 +246,13 @@ func (t *TxSubmitter) updateStatus(list []*QElementPair, err error) {
 	}
 }
 
-func (t *TxSubmitter) SubmitTx(data []byte) error {
+func (t *TxSubmitter) SubmitEThTx(data []byte) error {
 	msg := types.NewMsgEthTx(t.clientCtx.GetFromAddress().String(), data)
 	return t.submitMessage(msg)
+}
+
+func (t *TxSubmitter) SubmitTssTx(data []byte) error {
+	return nil
 }
 
 func convert(list []*QElementPair) []sdk.Msg {
