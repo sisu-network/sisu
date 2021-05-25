@@ -85,6 +85,8 @@ import (
 	"github.com/sisu-network/sisu/x/sisu"
 	sisukeeper "github.com/sisu-network/sisu/x/sisu/keeper"
 	sisutypes "github.com/sisu-network/sisu/x/sisu/types"
+	tss "github.com/sisu-network/sisu/x/tss"
+	tssKeeper "github.com/sisu-network/sisu/x/tss/keeper"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
@@ -206,6 +208,7 @@ type App struct {
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	evmKeeper evmKeeper.Keeper
+	tssKeeper tssKeeper.Keeper
 
 	// the module manager
 	mm *module.Manager
@@ -328,6 +331,8 @@ func New(
 	// If evidence needs to be handled for the app, set routes in router here and seal
 	app.EvidenceKeeper = *evidenceKeeper
 
+	////////////// Sisu related keeper //////////////
+
 	app.sisuKeeper = *sisukeeper.NewKeeper(
 		appCodec, keys[sisutypes.StoreKey], keys[sisutypes.MemStoreKey],
 	)
@@ -337,7 +342,9 @@ func New(
 	app.evmKeeper = *evmKeeper.NewKeeper(appCodec, app.txSubmitter)
 	app.evmKeeper.Initialize()
 
-	// this line is used by starport scaffolding # stargate/app/keeperDefinition
+	app.tssKeeper = *&tssKeeper.Keeper{}
+
+	//////////////////////////////////////////////////////////////////////
 
 	app.GovKeeper = govkeeper.NewKeeper(
 		appCodec, keys[govtypes.StoreKey], app.GetSubspace(govtypes.ModuleName), app.AccountKeeper, app.BankKeeper,
@@ -379,9 +386,10 @@ func New(
 		ibc.NewAppModule(app.IBCKeeper),
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
+
 		sisu.NewAppModule(appCodec, app.sisuKeeper),
 		evm.NewAppModule(appCodec, app.evmKeeper),
-		// this line is used by starport scaffolding # stargate/app/appModule
+		tss.NewAppModule(appCodec, app.tssKeeper),
 	)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
