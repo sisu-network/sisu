@@ -28,37 +28,46 @@ func NewKeeper(tssConfig *config.TssConfig) *Keeper {
 }
 
 func (k *Keeper) Initialize() {
+	go func() {
+		k.connectTutTuk()
+		k.waitForAppReady()
+	}()
+}
+
+func (k *Keeper) connectTutTuk() {
 	var err error
-	k.client, err = tuktukclient.Dial(fmt.Sprintf("http://%s:%d", k.tssConfig.Host, k.tssConfig.Port))
+	url := fmt.Sprintf("http://%s:%d", k.tssConfig.Host, k.tssConfig.Port)
+	k.client, err = tuktukclient.Dial(url)
 	if err != nil {
 		panic(err)
 	}
 
-	go func() {
-		k.waitForAppReady()
-	}()
+	for {
+		_, err := k.client.GetVersion()
+		if err == nil {
+			utils.LogInfo("Connected to TukTuk")
+			return
+		}
+
+		fmt.Println("Sleeping for tuktuk")
+		time.Sleep(time.Second * 3)
+	}
 }
 
 // Wait until this app catch up with the rest of the its tendermint peers so that we do not sign
 // old transactions.
 func (k *Keeper) waitForAppReady() {
 	utils.LogInfo("Waiting to for app to catch up with its peers....")
-	validatorCount := -1
 
 	for {
-		var err error
-		validatorCount, err = k.getValidatorCount()
-		if err == nil && validatorCount == 1 {
-			utils.LogInfo("We are the only validator.")
-			return
-		}
 
 		catchup, err := k.isCatchingUp()
 		if err != nil {
 			utils.LogError(err)
+			continue
 		}
 
-		if catchup {
+		if !catchup {
 			utils.LogInfo("App is catched up with its peers!")
 			break
 		}
@@ -88,26 +97,4 @@ func (k *Keeper) isCatchingUp() (bool, error) {
 	}
 
 	return resp.Result.SyncInfo.CatchingUp, nil
-}
-
-func (k *Keeper) getValidatorCount() (int, error) {
-	// TODO: put this into a config file.
-	url := "http://127.0.0.1:1317/validatorsets/latest"
-	body, _, err := utils.HttpGet(k.httpClient, url)
-	if err != nil {
-		return 0, fmt.Errorf("Cannot get status data: %w", err)
-	}
-
-	var resp struct {
-		Result struct {
-			Validators []struct {
-			} `json:"validators"`
-		} `json:"result"`
-	}
-
-	if err := json.Unmarshal(body, &resp); err != nil {
-		return 0, fmt.Errorf("Cannot parse validator count response: %w", err)
-	}
-
-	return len(resp.Result.Validators), nil
 }
