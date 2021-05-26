@@ -28,6 +28,7 @@ type ETHConfig struct {
 }
 
 type TssConfig struct {
-	Host string
-	Port int
+	Enable bool
+	Host   string
+	Port   int
 }

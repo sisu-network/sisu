@@ -283,7 +283,10 @@ func New(
 	if !ok {
 		panic("Cannot find TSS configuration")
 	}
-	app.tssKeeper = *tssKeeper.NewKeeper(tssConfig)
+	if tssConfig.Enable {
+		app.tssKeeper = *tssKeeper.NewKeeper(tssConfig)
+		app.tssKeeper.Initialize()
+	}
 
 	//////////////////////////////////////////////////////////////////////
 

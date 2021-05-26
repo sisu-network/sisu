@@ -104,7 +104,8 @@ func getLocalEthNodeConfig(ethHome string) *node.Config {
 
 func LoadTssConfig() *TssConfig {
 	return &TssConfig{
-		Host: "localhost",
-		Port: 5678,
+		Enable: true,
+		Host:   "localhost",
+		Port:   5678,
 	}
 }
