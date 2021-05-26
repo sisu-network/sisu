@@ -210,6 +210,7 @@ type App struct {
 
 	evmKeeper evmKeeper.Keeper
 	tssKeeper tssKeeper.Keeper
+	tssBridge *tss.Bridge
 
 	// the module manager
 	mm *module.Manager
@@ -284,8 +285,10 @@ func New(
 		panic("Cannot find TSS configuration")
 	}
 	if tssConfig.Enable {
-		app.tssKeeper = *tssKeeper.NewKeeper(tssConfig)
-		app.tssKeeper.Initialize()
+		app.tssKeeper = *tssKeeper.NewKeeper()
+
+		app.tssBridge = tss.NewBridge(tssConfig)
+		app.tssBridge.Initialize()
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -306,7 +309,7 @@ func New(
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
 
-	app.mm = module.NewManager(
+	modules := []module.AppModule{
 		genutil.NewAppModule(
 			app.AccountKeeper, app.StakingKeeper, app.BaseApp.DeliverTx,
 			encodingConfig.TxConfig,
@@ -329,8 +332,13 @@ func New(
 
 		sisu.NewAppModule(appCodec, app.sisuKeeper),
 		evm.NewAppModule(appCodec, app.evmKeeper),
-		tss.NewAppModule(appCodec, app.tssKeeper),
-	)
+	}
+
+	if tssConfig.Enable {
+		modules = append(modules, tss.NewAppModule(appCodec, app.tssKeeper))
+	}
+
+	app.mm = module.NewManager(modules...)
 
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
