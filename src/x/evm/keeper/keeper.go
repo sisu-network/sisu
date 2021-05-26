@@ -35,15 +35,12 @@ type Keeper struct {
 	ak        *authKeepr.AccountKeeper
 }
 
-func NewKeeper(cdc codec.Marshaler, txSubmitter common.TxSubmit) *Keeper {
+func NewKeeper(cdc codec.Marshaler, txSubmitter common.TxSubmit, ethConfig *config.ETHConfig) *Keeper {
 	keeper := &Keeper{
 		cdc:         cdc,
 		txSubmitter: txSubmitter,
+		ethConfig:   ethConfig,
 	}
-
-	// TODO: Put this in the config file.
-	baseDir := os.Getenv("HOME") + "/.sisu"
-	keeper.ethConfig = config.LocalETHConfig(baseDir)
 
 	// 	// Setting log level
 	ethLog.Root().SetHandler(ethLog.LvlFilterHandler(

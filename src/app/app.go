@@ -77,6 +77,7 @@ import (
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	appparams "github.com/sisu-network/sisu/app/params"
+	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/auth"
 	"github.com/sisu-network/sisu/x/auth/ante"
 	"github.com/sisu-network/sisu/x/evm"
@@ -264,13 +265,25 @@ func New(
 	app.sisuKeeper = *sisukeeper.NewKeeper(
 		appCodec, keys[sisutypes.StoreKey], keys[sisutypes.MemStoreKey],
 	)
-
 	app.txSubmitter = common.NewTxSubmitter(MainAppHome, KeyringBackend)
 	go app.txSubmitter.Start()
-	app.evmKeeper = *evmKeeper.NewKeeper(appCodec, app.txSubmitter)
+
+	// EVM keeper
+	interf := appOpts.Get(config.ETH_CONFIG)
+	ethConfig, ok := interf.(*config.ETHConfig)
+	if !ok {
+		panic("Cannot find ETH configuration")
+	}
+	app.evmKeeper = *evmKeeper.NewKeeper(appCodec, app.txSubmitter, ethConfig)
 	app.evmKeeper.Initialize()
 
-	app.tssKeeper = *&tssKeeper.Keeper{}
+	// TSS keeper
+	interf = appOpts.Get(config.TSS_CONFIG)
+	tssConfig, ok := interf.(*config.TssConfig)
+	if !ok {
+		panic("Cannot find TSS configuration")
+	}
+	app.tssKeeper = *tssKeeper.NewKeeper(tssConfig)
 
 	//////////////////////////////////////////////////////////////////////
 
