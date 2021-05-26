@@ -14,13 +14,38 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/app"
 	"github.com/sisu-network/sisu/app/params"
+	"github.com/sisu-network/sisu/config"
 	"github.com/spf13/cast"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 )
 
 type appCreator struct {
-	encCfg params.EncodingConfig
+	encCfg    params.EncodingConfig
+	appConfig *config.AppConfig
+	ethConfig *config.ETHConfig
+	tssConfig *config.TssConfig
+}
+
+type AppOptionWrapper struct {
+	appOpts servertypes.AppOptions
+
+	appConfig *config.AppConfig
+	ethConfig *config.ETHConfig
+	tssConfig *config.TssConfig
+}
+
+func (wrapper *AppOptionWrapper) Get(key string) interface{} {
+	switch key {
+	case config.SISU_CONFIG:
+		return wrapper.appConfig
+	case config.ETH_CONFIG:
+		return wrapper.ethConfig
+	case config.TSS_CONFIG:
+		return wrapper.tssConfig
+	default:
+		return wrapper.appOpts.Get(key)
+	}
 }
 
 // newApp is an AppCreator
@@ -57,7 +82,7 @@ func (a appCreator) newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, a
 		cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod)),
 		a.encCfg,
 		// this line is used by starport scaffolding # stargate/root/appArgument
-		appOpts,
+		a.getAppOptionsWrapper(appOpts),
 		baseapp.SetPruning(pruningOpts),
 		baseapp.SetMinGasPrices(cast.ToString(appOpts.Get(server.FlagMinGasPrices))),
 		baseapp.SetMinRetainBlocks(cast.ToUint64(appOpts.Get(server.FlagMinRetainBlocks))),
@@ -95,7 +120,7 @@ func (a appCreator) appExport(
 			uint(1),
 			a.encCfg,
 			// this line is used by starport scaffolding # stargate/root/exportArgument
-			appOpts,
+			a.getAppOptionsWrapper(appOpts),
 		)
 
 		if err := anApp.LoadHeight(height); err != nil {
@@ -112,9 +137,18 @@ func (a appCreator) appExport(
 			uint(1),
 			a.encCfg,
 			// this line is used by starport scaffolding # stargate/root/noHeightExportArgument
-			appOpts,
+			a.getAppOptionsWrapper(appOpts),
 		)
 	}
 
 	return anApp.ExportAppStateAndValidators(forZeroHeight, jailAllowedAddrs)
+}
+
+func (a appCreator) getAppOptionsWrapper(appOpts servertypes.AppOptions) *AppOptionWrapper {
+	return &AppOptionWrapper{
+		appOpts:   appOpts,
+		appConfig: a.appConfig,
+		ethConfig: a.ethConfig,
+		tssConfig: a.tssConfig,
+	}
 }

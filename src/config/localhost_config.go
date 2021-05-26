@@ -101,3 +101,10 @@ func getLocalEthNodeConfig(ethHome string) *node.Config {
 		AllowUnprotectedTxs: true,
 	}
 }
+
+func LoadTssConfig() *TssConfig {
+	return &TssConfig{
+		Host: "localhost",
+		Port: 5678,
+	}
+}

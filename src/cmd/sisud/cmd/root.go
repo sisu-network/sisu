@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/sisu-network/sisu/app/params"
+	"github.com/sisu-network/sisu/config"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -81,8 +82,13 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		// this line is used by starport scaffolding # stargate/root/commands
 	)
 
+	appConfig, ethConfig, tssConfig := GetConfigs()
+
 	a := appCreator{
-		encCfg: encodingConfig,
+		encCfg:    encodingConfig,
+		appConfig: appConfig,
+		ethConfig: ethConfig,
+		tssConfig: tssConfig,
 	}
 	server.AddCommands(rootCmd, app.MainAppHome, a.newApp, a.appExport, addModuleInitFlags)
 
@@ -168,4 +174,19 @@ func overwriteFlagDefaults(c *cobra.Command, defaults map[string]string) {
 	for _, c := range c.Commands() {
 		overwriteFlagDefaults(c, defaults)
 	}
+}
+
+func GetConfigs() (*config.AppConfig, *config.ETHConfig, *config.TssConfig) {
+	var appConfig *config.AppConfig
+	var ethConfig *config.ETHConfig
+	var tssConfig *config.TssConfig
+
+	mode := os.Getenv("MODE")
+	if mode == "dev" {
+		appConfig = config.LocalAppConfig()
+		ethConfig = config.LocalETHConfig(appConfig.ConfigDir)
+		tssConfig = config.LoadTssConfig()
+	}
+
+	return appConfig, ethConfig, tssConfig
 }
