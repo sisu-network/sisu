@@ -41,19 +41,19 @@ var (
 	flagNodeIps           = "node-ips"
 )
 
-// get cmd to initialize all files for tendermint testnet and application
-func testnetCmd(mbm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *cobra.Command {
+// get cmd to initialize all files for tendermint localnet and application
+func localnetCmd(mbm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "testnet",
-		Short: "Initialize files for a simapp testnet",
-		Long: `testnet will create "v" number of directories and populate each with
+		Use:   "localnet",
+		Short: "Initialize files for a simapp localnet",
+		Long: `localnet will create "v" number of directories and populate each with
 necessary files (private validator, genesis, config, etc.).
 Note, strict routability for addresses is turned off in the config file.
 Example:
 	For running single instance:
-		sisud testnet --v 1 --output-dir ./output --starting-ip-address 127.0.0.1
+		sisud localnet --v 1 --output-dir ./output --starting-ip-address 127.0.0.1
 	For multiple nodes (running with docker):
-	  sisud testnet --v 4 --output-dir ./output --starting-ip-address 192.168.10.2
+	  sisud localnet --v 4 --output-dir ./output --starting-ip-address 192.168.10.2
 	`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -76,15 +76,15 @@ Example:
 			chainID := os.Getenv("CHAIN_ID")
 			keyringBackend := os.Getenv("KEYRING_BACKEND")
 
-			return InitTestnet(
+			return InitLocalnet(
 				clientCtx, cmd, config, mbm, genBalIterator, outputDir, chainID, minGasPrices,
 				nodeDirPrefix, nodeDaemonHome, startingIPAddress, keyringBackend, algo, numValidators,
 			)
 		},
 	}
 
-	cmd.Flags().Int(flagNumValidators, 1, "Number of validators to initialize the testnet with")
-	cmd.Flags().StringP(flagOutputDir, "o", "./output", "Directory to store initialization data for the testnet")
+	cmd.Flags().Int(flagNumValidators, 1, "Number of validators to initialize the localnet with")
+	cmd.Flags().StringP(flagOutputDir, "o", "./output", "Directory to store initialization data for the localnet")
 	cmd.Flags().String(flagNodeDirPrefix, "node", "Prefix the directory name for each node with (node results in node0, node1, ...)")
 	cmd.Flags().String(flagNodeDaemonHome, "main", "Home directory of the node's daemon configuration")
 	cmd.Flags().String(flagStartingIPAddress, "127.0.0.1", "Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
@@ -96,8 +96,8 @@ Example:
 
 const nodeDirPerm = 0755
 
-// Initialize the testnet
-func InitTestnet(
+// Initialize the localnet
+func InitLocalnet(
 	clientCtx client.Context,
 	cmd *cobra.Command,
 	nodeConfig *tmconfig.Config,
