@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ava-labs/avalanchego/database"
 	ethLog "github.com/ethereum/go-ethereum/log"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -47,6 +46,7 @@ var (
 	}
 
 	ERR_SHUTTING_DOWN = errors.New("Chain is shutting down")
+	ERR_NOT_FOUND     = errors.New("not found")
 )
 
 var (
@@ -93,7 +93,7 @@ func NewETHChain(
 
 	// TODO: Handle corrupted database here.
 	_, lastAcceptedErr := chainDb.Get(lastAcceptedKey)
-	initGenesis := lastAcceptedErr == database.ErrNotFound
+	initGenesis := lastAcceptedErr == ERR_NOT_FOUND
 	utils.LogInfo("initGenesis = ", initGenesis)
 
 	cb := new(dummy.ConsensusCallbacks)
