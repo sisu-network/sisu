@@ -3,7 +3,6 @@ module github.com/sisu-network/sisu
 go 1.15
 
 require (
-	github.com/ava-labs/avalanchego v1.3.3-0.20210504165449-9d4329b2c788
 	github.com/btcsuite/btcd v0.21.0-beta
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-sdk v0.42.1
@@ -14,7 +13,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
 	github.com/joho/godotenv v1.3.0 // indirect
-	github.com/sisu-network/dcore v0.1.6-alpha3
+	github.com/sisu-network/dcore v0.1.7-alpha2
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.1
 	github.com/hashicorp/go-retryablehttp v0.7.0
