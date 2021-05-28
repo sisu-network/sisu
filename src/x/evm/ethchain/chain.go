@@ -265,6 +265,7 @@ func (self *ETHChain) valdiateTx(tx *types.Transaction) error {
 	// Make sure the transaction is signed properly
 	from, err := types.Sender(self.signer, tx)
 	if err != nil {
+		utils.LogError("Validation failed: ", err)
 		return core.ErrInvalidSender
 	}
 
@@ -295,6 +296,7 @@ func (self *ETHChain) checkNonceAndBalance(tx *types.Transaction, from common.Ad
 
 	// Ensure the transaction adheres to nonce ordering
 	if self.lastBlockState.GetNonce(from) > tx.Nonce() {
+		fmt.Println("self.lastBlockState.GetNonce(from) = ", self.lastBlockState.GetNonce(from))
 		return core.ErrNonceTooLow
 	}
 
@@ -342,6 +344,7 @@ func (self *ETHChain) OnSealFinish(block *types.Block) error {
 		return err
 	}
 
+	utils.LogDebug("Inserting the block into the chain...")
 	self.backend.BlockChain().InsertChain([]*types.Block{block})
 
 	lastState, err := self.backend.BlockChain().State()
@@ -377,10 +380,13 @@ func (self *ETHChain) GetBlockByHash(hash common.Hash) *types.Block {
 }
 
 func (self *ETHChain) Accept(block *types.Block) error {
+	utils.LogDebug("Trying to accept the block...")
 	if err := self.BlockChain().Accept(block); err != nil {
 		utils.LogError("Failed to accept block", err)
 		return err
 	}
+
+	utils.LogDebug("Block is accepted.")
 
 	b, err := rlp.EncodeToBytes(block.Hash())
 	if err != nil {
@@ -435,6 +441,7 @@ func (self *ETHChain) ImportAccounts() {
 
 func (self *ETHChain) CheckTx(txs []*types.Transaction) error {
 	err := fmt.Errorf("No ETH transaction is accepted")
+	utils.LogDebug("Checking tx ....")
 
 	errs := self.backend.TxPool().AddRemotesSync(txs)
 	for i, tx := range txs {
@@ -458,7 +465,6 @@ func (self *ETHChain) DeliverTx(tx *types.Transaction) (*types.Receipt, common.H
 	utils.LogDebug("Delivering tx.....")
 
 	receipt, rootHash, err := self.backend.Miner().ExecuteTxSync(tx)
-
 	if err != nil {
 		utils.LogError("Failed to execute the transaction", err)
 		return nil, emptyRootHash, err
@@ -474,6 +480,7 @@ func (self *ETHChain) onEthTxSubmitted(tx *types.Transaction) error {
 	}
 
 	if err := self.valdiateTx(tx); err != nil {
+		utils.LogError("Failed to validate tx", err)
 		return err
 	}
 
