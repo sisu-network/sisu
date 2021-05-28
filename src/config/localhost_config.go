@@ -49,22 +49,22 @@ func LocalETHConfig(baseDir string) *ETHConfig {
 
 // getLocalEthConfig returns ETH configuration used for localhost or testing.
 func getLocalEthConfig() *ethconfig.Config {
-	config := ethconfig.NewDefaultConfig()
+	config := ethconfig.Defaults
+	// config := ethconfig.NewDefaultConfig()
 	chainConfig := &params.ChainConfig{
-		ChainID:                     chainID,
-		HomesteadBlock:              big.NewInt(0),
-		DAOForkBlock:                big.NewInt(0),
-		DAOForkSupport:              true,
-		EIP150Block:                 big.NewInt(0),
-		EIP150Hash:                  common.HexToHash("0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0"),
-		EIP155Block:                 big.NewInt(0),
-		EIP158Block:                 big.NewInt(0),
-		ByzantiumBlock:              big.NewInt(0),
-		ConstantinopleBlock:         big.NewInt(0),
-		PetersburgBlock:             big.NewInt(0),
-		IstanbulBlock:               big.NewInt(0),
-		ApricotPhase1BlockTimestamp: big.NewInt(0),
-		ApricotPhase2BlockTimestamp: big.NewInt(0),
+		ChainID:             chainID,
+		HomesteadBlock:      big.NewInt(0),
+		DAOForkBlock:        big.NewInt(0),
+		DAOForkSupport:      true,
+		EIP150Block:         big.NewInt(0),
+		EIP150Hash:          common.HexToHash("0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0"),
+		EIP155Block:         big.NewInt(0),
+		EIP158Block:         big.NewInt(0),
+		ByzantiumBlock:      big.NewInt(0),
+		ConstantinopleBlock: big.NewInt(0),
+		PetersburgBlock:     big.NewInt(0),
+		IstanbulBlock:       big.NewInt(0),
+		BerlinBlock:         big.NewInt(0),
 	}
 
 	accounts := utils.GetLocalAccounts()
@@ -104,8 +104,8 @@ func getLocalEthNodeConfig(ethHome string) *node.Config {
 
 func LoadTssConfig() *TssConfig {
 	return &TssConfig{
-		Enable: true,
-		Host:   "localhost",
-		Port:   5678,
+		// Enable: true,
+		Host: "localhost",
+		Port: 5678,
 	}
 }
