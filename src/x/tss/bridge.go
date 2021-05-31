@@ -49,7 +49,6 @@ func (b *Bridge) connectTutTuk() {
 			return
 		}
 
-		fmt.Println("Sleeping for tuktuk")
 		time.Sleep(time.Second * 3)
 	}
 }
