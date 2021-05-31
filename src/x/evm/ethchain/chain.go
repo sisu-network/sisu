@@ -296,7 +296,7 @@ func (self *ETHChain) checkNonceAndBalance(tx *types.Transaction, from common.Ad
 
 	// Ensure the transaction adheres to nonce ordering
 	if self.lastBlockState.GetNonce(from) > tx.Nonce() {
-		fmt.Println("self.lastBlockState.GetNonce(from) = ", self.lastBlockState.GetNonce(from))
+		utils.LogDebug("self.lastBlockState.GetNonce(from) = ", self.lastBlockState.GetNonce(from))
 		return core.ErrNonceTooLow
 	}
 
