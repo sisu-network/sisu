@@ -6,6 +6,7 @@ import (
 )
 
 const (
+	APP_CONFIG  = "app_config"
 	SISU_CONFIG = "sisu_config"
 	ETH_CONFIG  = "eth_config"
 	TSS_CONFIG  = "tss_config"
@@ -21,6 +22,7 @@ type AppConfig struct {
 	ConfigDir      string
 	EnableTss      bool
 	KeyringBackend string
+	ChainId        string
 }
 
 type ETHConfig struct {

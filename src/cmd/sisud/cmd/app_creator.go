@@ -32,6 +32,8 @@ type AppOptionWrapper struct {
 
 func (wrapper *AppOptionWrapper) Get(key string) interface{} {
 	switch key {
+	case config.APP_CONFIG:
+		return wrapper.cfg
 	case config.SISU_CONFIG:
 		return wrapper.cfg.GetAppConfig()
 	case config.ETH_CONFIG:
