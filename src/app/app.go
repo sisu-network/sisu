@@ -266,7 +266,7 @@ func New(
 	app.sisuKeeper = *sisukeeper.NewKeeper(
 		appCodec, keys[sisutypes.StoreKey], keys[sisutypes.MemStoreKey],
 	)
-	app.txSubmitter = common.NewTxSubmitter(MainAppHome, cfg.GetAppConfig().KeyringBackend, cfg)
+	app.txSubmitter = common.NewTxSubmitter(MainAppHome, cfg.GetSisuConfig().KeyringBackend, cfg)
 	go app.txSubmitter.Start()
 
 	// EVM keeper

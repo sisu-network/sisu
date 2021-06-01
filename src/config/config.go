@@ -13,12 +13,12 @@ const (
 )
 
 type Config interface {
-	GetAppConfig() *AppConfig
+	GetSisuConfig() *SisuConfig
 	GetETHConfig() *ETHConfig
 	GetTssConfig() *TssConfig
 }
 
-type AppConfig struct {
+type SisuConfig struct {
 	ConfigDir      string
 	EnableTss      bool
 	KeyringBackend string

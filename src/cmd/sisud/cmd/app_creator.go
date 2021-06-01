@@ -35,7 +35,7 @@ func (wrapper *AppOptionWrapper) Get(key string) interface{} {
 	case config.APP_CONFIG:
 		return wrapper.cfg
 	case config.SISU_CONFIG:
-		return wrapper.cfg.GetAppConfig()
+		return wrapper.cfg.GetSisuConfig()
 	case config.ETH_CONFIG:
 		return wrapper.cfg.GetETHConfig()
 	case config.TSS_CONFIG:
