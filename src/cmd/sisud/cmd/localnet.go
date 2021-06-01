@@ -74,7 +74,7 @@ Example:
 
 			// Get Chain id and keyring backend from .env file.
 			chainID := os.Getenv("CHAIN_ID")
-			keyringBackend := os.Getenv("KEYRING_BACKEND")
+			keyringBackend := keyring.BackendTest
 
 			return InitLocalnet(
 				clientCtx, cmd, config, mbm, genBalIterator, outputDir, chainID, minGasPrices,

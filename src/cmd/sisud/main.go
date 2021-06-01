@@ -30,10 +30,6 @@ func loadConfig() {
 		app.MainAppHome = filepath.Join(userHomeDir, "."+app.Name, "main")
 	}
 
-	// Keyring
-	app.KeyringBackend = os.Getenv("KEYRING_BACKEND")
-	utils.LogInfo("keyRingBackend = ", app.KeyringBackend)
-
 	// Print IP address
 	ip, err := server.ExternalIP()
 	if err != nil {

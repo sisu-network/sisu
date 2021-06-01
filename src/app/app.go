@@ -119,9 +119,6 @@ var (
 	// MainAppHome default home directories for the application daemon
 	MainAppHome string
 
-	// Backend used for keyringd
-	KeyringBackend string
-
 	// ModuleBasics defines the module BasicManager is in charge of setting up basic,
 	// non-dependant module elements, such as codec registration
 	// and genesis verification.
@@ -263,14 +260,17 @@ func New(
 
 	////////////// Sisu related keeper //////////////
 
+	interf := appOpts.Get(config.SISU_CONFIG)
+	appConfig, ok := interf.(*config.AppConfig)
+
 	app.sisuKeeper = *sisukeeper.NewKeeper(
 		appCodec, keys[sisutypes.StoreKey], keys[sisutypes.MemStoreKey],
 	)
-	app.txSubmitter = common.NewTxSubmitter(MainAppHome, KeyringBackend)
+	app.txSubmitter = common.NewTxSubmitter(MainAppHome, appConfig.KeyringBackend)
 	go app.txSubmitter.Start()
 
 	// EVM keeper
-	interf := appOpts.Get(config.ETH_CONFIG)
+	interf = appOpts.Get(config.ETH_CONFIG)
 	ethConfig, ok := interf.(*config.ETHConfig)
 	if !ok {
 		panic("Cannot find ETH configuration")

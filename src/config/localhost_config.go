@@ -4,6 +4,7 @@ import (
 	"math/big"
 	"os"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/sisu-network/dcore/core"
@@ -57,7 +58,8 @@ func LocalAppConfig() *AppConfig {
 	}
 
 	appConfig := &AppConfig{
-		ConfigDir: appDir,
+		ConfigDir:      appDir,
+		KeyringBackend: keyring.BackendTest,
 	}
 
 	return appConfig
