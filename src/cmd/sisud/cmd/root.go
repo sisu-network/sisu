@@ -175,8 +175,10 @@ func GetConfigs() config.Config {
 	var c config.Config
 
 	mode := os.Getenv("MODE")
-	if mode == "dev" {
-		c = &config.LocalConfig{}
+	if mode == "testnet" {
+		c = config.NewTestnetConfig()
+	} else {
+		c = config.NewLocalConfig()
 	}
 
 	return c

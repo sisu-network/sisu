@@ -41,3 +41,11 @@ type TssConfig struct {
 	Host   string
 	Port   int
 }
+
+func NewLocalConfig() Config {
+	return &LocalConfig{}
+}
+
+func NewTestnetConfig() Config {
+	return &TestnetConfig{}
+}
