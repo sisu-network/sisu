@@ -21,28 +21,23 @@ import (
 )
 
 type appCreator struct {
-	encCfg    params.EncodingConfig
-	appConfig *config.AppConfig
-	ethConfig *config.ETHConfig
-	tssConfig *config.TssConfig
+	encCfg params.EncodingConfig
+	cfg    config.Config
 }
 
 type AppOptionWrapper struct {
 	appOpts servertypes.AppOptions
-
-	appConfig *config.AppConfig
-	ethConfig *config.ETHConfig
-	tssConfig *config.TssConfig
+	cfg     config.Config
 }
 
 func (wrapper *AppOptionWrapper) Get(key string) interface{} {
 	switch key {
 	case config.SISU_CONFIG:
-		return wrapper.appConfig
+		return wrapper.cfg.GetAppConfig()
 	case config.ETH_CONFIG:
-		return wrapper.ethConfig
+		return wrapper.cfg.GetETHConfig()
 	case config.TSS_CONFIG:
-		return wrapper.tssConfig
+		return wrapper.cfg.GetTssConfig()
 	default:
 		return wrapper.appOpts.Get(key)
 	}
@@ -146,9 +141,7 @@ func (a appCreator) appExport(
 
 func (a appCreator) getAppOptionsWrapper(appOpts servertypes.AppOptions) *AppOptionWrapper {
 	return &AppOptionWrapper{
-		appOpts:   appOpts,
-		appConfig: a.appConfig,
-		ethConfig: a.ethConfig,
-		tssConfig: a.tssConfig,
+		appOpts: appOpts,
+		cfg:     a.cfg,
 	}
 }
