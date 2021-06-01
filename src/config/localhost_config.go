@@ -21,52 +21,52 @@ var (
 )
 
 type LocalConfig struct {
-	appConfig *AppConfig
-	ethConfig *ETHConfig
-	tssConfig *TssConfig
+	sisuConfig *SisuConfig
+	ethConfig  *ETHConfig
+	tssConfig  *TssConfig
 }
 
-func (c *LocalConfig) GetAppConfig() *AppConfig {
-	if c.appConfig == nil {
-		c.appConfig = LocalAppConfig()
+func (c *LocalConfig) GetSisuConfig() *SisuConfig {
+	if c.sisuConfig == nil {
+		c.sisuConfig = localSisuConfig()
 	}
-	return c.appConfig
+	return c.sisuConfig
 }
 
 func (c *LocalConfig) GetETHConfig() *ETHConfig {
-	appConfig := c.GetAppConfig()
+	sisuConfig := c.GetSisuConfig()
 
 	if c.ethConfig == nil {
-		c.ethConfig = LocalETHConfig(appConfig.ConfigDir)
+		c.ethConfig = localETHConfig(sisuConfig.ConfigDir)
 	}
 	return c.ethConfig
 }
 
 func (c *LocalConfig) GetTssConfig() *TssConfig {
-	appConfig := c.GetAppConfig()
+	sisuConfig := c.GetSisuConfig()
 
 	if c.tssConfig == nil {
-		c.tssConfig = LoadTssConfig(appConfig.ConfigDir)
+		c.tssConfig = localTssConfig(sisuConfig.ConfigDir)
 	}
 	return c.tssConfig
 }
 
-func LocalAppConfig() *AppConfig {
+func localSisuConfig() *SisuConfig {
 	appDir := os.Getenv("APP_DIR")
 	if appDir == "" {
 		appDir = os.Getenv("HOME") + "/.sisu"
 	}
 
-	appConfig := &AppConfig{
+	sisuConfig := &SisuConfig{
 		ConfigDir:      appDir,
 		KeyringBackend: keyring.BackendTest,
 		ChainId:        "sisu-dev",
 	}
 
-	return appConfig
+	return sisuConfig
 }
 
-func LocalETHConfig(baseDir string) *ETHConfig {
+func localETHConfig(baseDir string) *ETHConfig {
 	home := baseDir + "/eth"
 
 	return &ETHConfig{
@@ -136,7 +136,7 @@ func getLocalEthNodeConfig(ethHome string) *node.Config {
 	}
 }
 
-func LoadTssConfig(baseDir string) *TssConfig {
+func localTssConfig(baseDir string) *TssConfig {
 	return &TssConfig{
 		// Enable: true,
 		Host: "localhost",

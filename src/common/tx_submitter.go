@@ -273,7 +273,7 @@ func (t *TxSubmitter) buildClientCtx(accountName string) (client.Context, error)
 	}
 
 	client, err := rpchttp.New(nodeAddress, "/websocket")
-	chainId := t.cfg.GetAppConfig().ChainId
+	chainId := t.cfg.GetSisuConfig().ChainId
 	clientCtx := NewClientCtx(t.kr, client, &bytes.Buffer{}, t.sisuHome, chainId)
 
 	return clientCtx.
