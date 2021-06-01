@@ -17,7 +17,7 @@ import (
 var (
 	basicTxGasLimit = 21000
 	initialBalance  = new(big.Int).Mul(big.NewInt(10000), utils.ONE_ETHER_IN_WEI) // 10,000 ETHER
-	chainID         = big.NewInt(1)
+	ethChainId      = big.NewInt(1)
 )
 
 type LocalConfig struct {
@@ -86,7 +86,7 @@ func getLocalEthConfig() *ethconfig.Config {
 	config := ethconfig.Defaults
 	// config := ethconfig.NewDefaultConfig()
 	chainConfig := &params.ChainConfig{
-		ChainID:             chainID,
+		ChainID:             ethChainId,
 		HomesteadBlock:      big.NewInt(0),
 		DAOForkBlock:        big.NewInt(0),
 		DAOForkSupport:      true,
