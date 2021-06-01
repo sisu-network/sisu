@@ -11,6 +11,12 @@ const (
 	TSS_CONFIG  = "tss_config"
 )
 
+type Config interface {
+	GetAppConfig() *AppConfig
+	GetETHConfig() *ETHConfig
+	GetTssConfig() *TssConfig
+}
+
 type AppConfig struct {
 	ConfigDir string
 	EnableTss bool

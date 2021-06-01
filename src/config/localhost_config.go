@@ -19,6 +19,37 @@ var (
 	chainID         = big.NewInt(1)
 )
 
+type LocalConfig struct {
+	appConfig *AppConfig
+	ethConfig *ETHConfig
+	tssConfig *TssConfig
+}
+
+func (c *LocalConfig) GetAppConfig() *AppConfig {
+	if c.appConfig == nil {
+		c.appConfig = LocalAppConfig()
+	}
+	return c.appConfig
+}
+
+func (c *LocalConfig) GetETHConfig() *ETHConfig {
+	appConfig := c.GetAppConfig()
+
+	if c.ethConfig == nil {
+		c.ethConfig = LocalETHConfig(appConfig.ConfigDir)
+	}
+	return c.ethConfig
+}
+
+func (c *LocalConfig) GetTssConfig() *TssConfig {
+	appConfig := c.GetAppConfig()
+
+	if c.tssConfig == nil {
+		c.tssConfig = LoadTssConfig(appConfig.ConfigDir)
+	}
+	return c.tssConfig
+}
+
 func LocalAppConfig() *AppConfig {
 	appDir := os.Getenv("APP_DIR")
 	if appDir == "" {
@@ -102,7 +133,7 @@ func getLocalEthNodeConfig(ethHome string) *node.Config {
 	}
 }
 
-func LoadTssConfig() *TssConfig {
+func LoadTssConfig(baseDir string) *TssConfig {
 	return &TssConfig{
 		// Enable: true,
 		Host: "localhost",

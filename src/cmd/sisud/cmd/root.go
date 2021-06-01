@@ -82,13 +82,9 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		// this line is used by starport scaffolding # stargate/root/commands
 	)
 
-	appConfig, ethConfig, tssConfig := GetConfigs()
-
 	a := appCreator{
-		encCfg:    encodingConfig,
-		appConfig: appConfig,
-		ethConfig: ethConfig,
-		tssConfig: tssConfig,
+		encCfg: encodingConfig,
+		cfg:    GetConfigs(),
 	}
 	server.AddCommands(rootCmd, app.MainAppHome, a.newApp, a.appExport, addModuleInitFlags)
 
@@ -176,17 +172,13 @@ func overwriteFlagDefaults(c *cobra.Command, defaults map[string]string) {
 	}
 }
 
-func GetConfigs() (*config.AppConfig, *config.ETHConfig, *config.TssConfig) {
-	var appConfig *config.AppConfig
-	var ethConfig *config.ETHConfig
-	var tssConfig *config.TssConfig
+func GetConfigs() config.Config {
+	var c config.Config
 
 	mode := os.Getenv("MODE")
 	if mode == "dev" {
-		appConfig = config.LocalAppConfig()
-		ethConfig = config.LocalETHConfig(appConfig.ConfigDir)
-		tssConfig = config.LoadTssConfig()
+		c = &config.LocalConfig{}
 	}
 
-	return appConfig, ethConfig, tssConfig
+	return c
 }
