@@ -18,8 +18,9 @@ type Config interface {
 }
 
 type AppConfig struct {
-	ConfigDir string
-	EnableTss bool
+	ConfigDir      string
+	EnableTss      bool
+	KeyringBackend string
 }
 
 type ETHConfig struct {
