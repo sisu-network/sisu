@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"strings"
 
 	"github.com/sisu-network/sisu/app/params"
 	"github.com/sisu-network/sisu/config"
@@ -47,7 +48,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		WithHomeDir(app.MainAppHome)
 
 	rootCmd := &cobra.Command{
-		Use:   app.Name + "d",
+		Use:   app.Name,
 		Short: "Stargate CosmosHub App",
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
 			if err := client.SetCmdClientContextHandler(initClientCtx, cmd); err != nil {
@@ -62,6 +63,8 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	overwriteFlagDefaults(rootCmd, map[string]string{
 		flags.FlagChainID: ChainID,
 	})
+
+	changeDescription(rootCmd)
 
 	return rootCmd, encodingConfig
 }
@@ -182,4 +185,20 @@ func GetConfigs() config.Config {
 	}
 
 	return c
+}
+
+// change cosmos prefix to terra
+func changeDescription(command *cobra.Command) {
+	childCommands := command.Commands()
+	if len(childCommands) == 0 {
+		return
+	}
+
+	for _, childCommand := range childCommands {
+		childCommand.Long = strings.ReplaceAll(childCommand.Long, "cosmos", "sisu")
+		childCommand.Long = strings.ReplaceAll(childCommand.Long, "<appcli>", "sisucli")
+		childCommand.Long = strings.ReplaceAll(childCommand.Long, "Atoms", "Sisu")
+
+		changeDescription(childCommand)
+	}
 }

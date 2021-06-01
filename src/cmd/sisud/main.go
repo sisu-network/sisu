@@ -8,7 +8,6 @@ import (
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 	"github.com/sisu-network/sisu/app"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd"
-	"github.com/sisu-network/sisu/utils"
 
 	"github.com/joho/godotenv"
 )
@@ -31,11 +30,10 @@ func loadConfig() {
 	}
 
 	// Print IP address
-	ip, err := server.ExternalIP()
+	_, err = server.ExternalIP()
 	if err != nil {
 		panic(err)
 	}
-	utils.LogInfo("IP address = ", ip)
 }
 
 func main() {
