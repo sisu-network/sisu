@@ -73,7 +73,7 @@ Example:
 			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
 
 			// Get Chain id and keyring backend from .env file.
-			chainID := os.Getenv("CHAIN_ID")
+			chainID := "sisu-dev"
 			keyringBackend := keyring.BackendTest
 
 			return InitLocalnet(

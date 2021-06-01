@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/sisu-network/sisu/app/params"
+	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/evm/types"
 
@@ -51,6 +52,7 @@ type TxSubmit interface {
 type TxSubmitter struct {
 	sisuHome string
 	kr       keyring.Keyring
+	cfg      config.Config
 
 	// internal
 	clientCtx   client.Context
@@ -78,7 +80,7 @@ var (
 	nodeAddress = "http://0.0.0.0:26657"
 )
 
-func NewTxSubmitter(mainAppHome string, keyRingBackend string) *TxSubmitter {
+func NewTxSubmitter(mainAppHome string, keyRingBackend string, cfg config.Config) *TxSubmitter {
 	kb, err := keyring.New(sdk.KeyringServiceName(), keyRingBackend, mainAppHome, os.Stdin)
 	if err != nil {
 		panic(err)
@@ -86,6 +88,7 @@ func NewTxSubmitter(mainAppHome string, keyRingBackend string) *TxSubmitter {
 
 	t := &TxSubmitter{
 		kr:              kb,
+		cfg:             cfg,
 		sequenceLock:    &sync.RWMutex{},
 		queueLock:       &sync.RWMutex{},
 		queue:           make([]*QElementPair, 0),
@@ -270,7 +273,7 @@ func (t *TxSubmitter) buildClientCtx(accountName string) (client.Context, error)
 	}
 
 	client, err := rpchttp.New(nodeAddress, "/websocket")
-	chainId := os.Getenv("CHAIN_ID")
+	chainId := t.cfg.GetAppConfig().ChainId
 	clientCtx := NewClientCtx(t.kr, client, &bytes.Buffer{}, t.sisuHome, chainId)
 
 	return clientCtx.

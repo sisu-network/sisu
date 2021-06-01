@@ -60,6 +60,7 @@ func LocalAppConfig() *AppConfig {
 	appConfig := &AppConfig{
 		ConfigDir:      appDir,
 		KeyringBackend: keyring.BackendTest,
+		ChainId:        "sisu-dev",
 	}
 
 	return appConfig

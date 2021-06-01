@@ -260,13 +260,13 @@ func New(
 
 	////////////// Sisu related keeper //////////////
 
-	interf := appOpts.Get(config.SISU_CONFIG)
-	appConfig, ok := interf.(*config.AppConfig)
+	interf := appOpts.Get(config.APP_CONFIG)
+	cfg, ok := interf.(config.Config)
 
 	app.sisuKeeper = *sisukeeper.NewKeeper(
 		appCodec, keys[sisutypes.StoreKey], keys[sisutypes.MemStoreKey],
 	)
-	app.txSubmitter = common.NewTxSubmitter(MainAppHome, appConfig.KeyringBackend)
+	app.txSubmitter = common.NewTxSubmitter(MainAppHome, cfg.GetAppConfig().KeyringBackend, cfg)
 	go app.txSubmitter.Start()
 
 	// EVM keeper
