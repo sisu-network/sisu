@@ -1,6 +1,10 @@
 package config
 
-import "os"
+import (
+	"os"
+
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+)
 
 type TestnetConfig struct {
 	sisuConfig *SisuConfig
@@ -40,7 +44,8 @@ func testnetSisuConfig() *SisuConfig {
 	appDir := os.Getenv("HOME") + "/.sisu"
 
 	sisuConfig := &SisuConfig{
-		ConfigDir: appDir,
+		ConfigDir:      appDir,
+		KeyringBackend: keyring.BackendFile,
 	}
 
 	return sisuConfig

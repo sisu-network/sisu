@@ -43,6 +43,7 @@ type Setting struct {
 	nodeDirPrefix  string
 	nodeDaemonHome string
 	ips            []string
+	monikers       []string
 	keyringBackend string
 	algoStr        string
 	numValidators  int
@@ -64,6 +65,7 @@ func InitNetwork(settings *Setting) error {
 	keyringBackend := settings.keyringBackend
 	algoStr := settings.algoStr
 	numValidators := settings.numValidators
+	monikers := settings.monikers
 
 	if chainID == "" {
 		chainID = "chain-" + tmrand.NewRand().Str(6)
@@ -101,7 +103,11 @@ func InitNetwork(settings *Setting) error {
 			return err
 		}
 
-		nodeConfig.Moniker = nodeDirName
+		if monikers == nil || len(monikers) == 0 {
+			nodeConfig.Moniker = nodeDirName
+		} else {
+			nodeConfig.Moniker = monikers[i]
+		}
 
 		ip := ips[i]
 
