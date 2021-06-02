@@ -1,9 +1,14 @@
 package config
 
 import (
+	"math/big"
 	"os"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+)
+
+var (
+	testnetEthChainId = big.NewInt(31416)
 )
 
 type TestnetConfig struct {
@@ -45,6 +50,7 @@ func testnetSisuConfig() *SisuConfig {
 
 	sisuConfig := &SisuConfig{
 		ConfigDir:      appDir,
+		ChainId:        "talon-1",
 		KeyringBackend: keyring.BackendFile,
 	}
 
