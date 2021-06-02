@@ -25,7 +25,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
 	"github.com/sisu-network/sisu/app"
-	// this line is used by starport scaffolding # stargate/root/import
+	gen "github.com/sisu-network/sisu/cmd/sisud/cmd/gen"
 )
 
 var ChainID string
@@ -96,7 +96,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		queryCommand(),
 		txCommand(),
 		keys.Commands(app.MainAppHome),
-		localnetCmd(app.ModuleBasics, banktypes.GenesisBalancesIterator{}),
+		gen.LocalnetCmd(app.ModuleBasics, banktypes.GenesisBalancesIterator{}),
 		resetCmd(),
 	)
 }
