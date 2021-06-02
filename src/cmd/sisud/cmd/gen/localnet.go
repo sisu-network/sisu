@@ -2,6 +2,7 @@ package gen
 
 import (
 	"fmt"
+	"net"
 
 	"github.com/spf13/cobra"
 
@@ -60,23 +61,23 @@ Example:
 			keyringBackend := keyring.BackendTest
 
 			settings := &Setting{
-				clientCtx:         clientCtx,
-				cmd:               cmd,
-				nodeConfig:        config,
-				mbm:               mbm,
-				genBalIterator:    genBalIterator,
-				outputDir:         outputDir,
-				chainID:           chainID,
-				minGasPrices:      minGasPrices,
-				nodeDirPrefix:     nodeDirPrefix,
-				nodeDaemonHome:    nodeDaemonHome,
-				startingIPAddress: startingIPAddress,
-				keyringBackend:    keyringBackend,
-				algoStr:           algo,
-				numValidators:     numValidators,
+				clientCtx:      clientCtx,
+				cmd:            cmd,
+				nodeConfig:     config,
+				mbm:            mbm,
+				genBalIterator: genBalIterator,
+				outputDir:      outputDir,
+				chainID:        chainID,
+				minGasPrices:   minGasPrices,
+				nodeDirPrefix:  nodeDirPrefix,
+				nodeDaemonHome: nodeDaemonHome,
+				ips:            getLocalIps(startingIPAddress, numValidators),
+				keyringBackend: keyringBackend,
+				algoStr:        algo,
+				numValidators:  numValidators,
 			}
 
-			return InitLocalnet(settings)
+			return InitNetwork(settings)
 		},
 	}
 
@@ -89,4 +90,41 @@ Example:
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
 
 	return cmd
+}
+
+func getLocalIps(startingIPAddress string, count int) []string {
+	ips := make([]string, count)
+	for i := 0; i < count; i++ {
+		ip, err := getIP(i, startingIPAddress)
+		if err != nil {
+			panic(err)
+		}
+		ips[i] = ip
+	}
+
+	return ips
+}
+
+func getIP(i int, startingIPAddr string) (ip string, err error) {
+	if len(startingIPAddr) == 0 {
+		ip, err = server.ExternalIP()
+		if err != nil {
+			return "", err
+		}
+		return ip, nil
+	}
+	return calculateIP(startingIPAddr, i)
+}
+
+func calculateIP(ip string, i int) (string, error) {
+	ipv4 := net.ParseIP(ip).To4()
+	if ipv4 == nil {
+		return "", fmt.Errorf("%v: non ipv4 address", ip)
+	}
+
+	for j := 0; j < i; j++ {
+		ipv4[3]++
+	}
+
+	return ipv4.String(), nil
 }
