@@ -1,4 +1,4 @@
-package cmd
+package gen
 
 import (
 	"bufio"
@@ -42,7 +42,7 @@ var (
 )
 
 // get cmd to initialize all files for tendermint localnet and application
-func localnetCmd(mbm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *cobra.Command {
+func LocalnetCmd(mbm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "localnet",
 		Short: "Initialize files for a simapp localnet",
@@ -51,9 +51,9 @@ necessary files (private validator, genesis, config, etc.).
 Note, strict routability for addresses is turned off in the config file.
 Example:
 	For running single instance:
-		sisud localnet --v 1 --output-dir ./output --starting-ip-address 127.0.0.1
+		sisu localnet --v 1 --output-dir ./output --starting-ip-address 127.0.0.1
 	For multiple nodes (running with docker):
-	  sisud localnet --v 4 --output-dir ./output --starting-ip-address 192.168.10.2
+	  sisu localnet --v 4 --output-dir ./output --starting-ip-address 192.168.10.2
 	`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
