@@ -2,5 +2,4 @@ vue/node_modules
 vue/dist
 secret.yml
 .env
-./sisu
 cmd/sisud/sisud

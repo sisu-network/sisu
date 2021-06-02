@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"net"
 	"os"
 	"path/filepath"
 
@@ -33,24 +32,24 @@ import (
 const nodeDirPerm = 0755
 
 type Setting struct {
-	clientCtx         client.Context
-	cmd               *cobra.Command
-	nodeConfig        *tmconfig.Config
-	mbm               module.BasicManager
-	genBalIterator    banktypes.GenesisBalancesIterator
-	outputDir         string
-	chainID           string
-	minGasPrices      string
-	nodeDirPrefix     string
-	nodeDaemonHome    string
-	startingIPAddress string
-	keyringBackend    string
-	algoStr           string
-	numValidators     int
+	clientCtx      client.Context
+	cmd            *cobra.Command
+	nodeConfig     *tmconfig.Config
+	mbm            module.BasicManager
+	genBalIterator banktypes.GenesisBalancesIterator
+	outputDir      string
+	chainID        string
+	minGasPrices   string
+	nodeDirPrefix  string
+	nodeDaemonHome string
+	ips            []string
+	keyringBackend string
+	algoStr        string
+	numValidators  int
 }
 
 // Initialize the localnet
-func InitLocalnet(settings *Setting) error {
+func InitNetwork(settings *Setting) error {
 	clientCtx := settings.clientCtx
 	cmd := settings.cmd
 	nodeConfig := settings.nodeConfig
@@ -61,7 +60,7 @@ func InitLocalnet(settings *Setting) error {
 	minGasPrices := settings.minGasPrices
 	nodeDirPrefix := settings.nodeDirPrefix
 	nodeDaemonHome := settings.nodeDaemonHome
-	startingIPAddress := settings.startingIPAddress
+	ips := settings.ips
 	keyringBackend := settings.keyringBackend
 	algoStr := settings.algoStr
 	numValidators := settings.numValidators
@@ -104,12 +103,9 @@ func InitLocalnet(settings *Setting) error {
 
 		nodeConfig.Moniker = nodeDirName
 
-		ip, err := getIP(i, startingIPAddress)
-		if err != nil {
-			_ = os.RemoveAll(outputDir)
-			return err
-		}
+		ip := ips[i]
 
+		var err error
 		nodeIDs[i], valPubKeys[i], err = genutil.InitializeNodeValidatorFiles(nodeConfig)
 		if err != nil {
 			_ = os.RemoveAll(outputDir)
@@ -309,30 +305,6 @@ func collectGenFiles(
 	}
 
 	return nil
-}
-
-func getIP(i int, startingIPAddr string) (ip string, err error) {
-	if len(startingIPAddr) == 0 {
-		ip, err = server.ExternalIP()
-		if err != nil {
-			return "", err
-		}
-		return ip, nil
-	}
-	return calculateIP(startingIPAddr, i)
-}
-
-func calculateIP(ip string, i int) (string, error) {
-	ipv4 := net.ParseIP(ip).To4()
-	if ipv4 == nil {
-		return "", fmt.Errorf("%v: non ipv4 address", ip)
-	}
-
-	for j := 0; j < i; j++ {
-		ipv4[3]++
-	}
-
-	return ipv4.String(), nil
 }
 
 func writeFile(name string, dir string, contents []byte) error {
