@@ -27,6 +27,8 @@ jobs:
           GOARCH: ${{ matrix.arch }}
 
       - name: Compile
+        with:
+          token: ${{ secrets.SISU_ACCESS_TOKEN }}
         run: |
           cd src
           go mod download
