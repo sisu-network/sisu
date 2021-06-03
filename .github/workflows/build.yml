@@ -27,9 +27,8 @@ jobs:
           GOARCH: ${{ matrix.arch }}
 
       - name: Compile
-        with:
-          token: ${{ secrets.SISU_ACCESS_TOKEN }}
         run: |
+          git config --global url."https://${{ secrets.SISU_ACCESS_TOKEN }}:x-oauth-basic@github.com/sisu-network".insteadOf "https://github.com/sisu-network"
           cd src
           go mod download
           cd cmd/sisud
