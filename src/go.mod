@@ -5,16 +5,14 @@ go 1.15
 require (
 	github.com/btcsuite/btcd v0.21.0-beta
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
-	github.com/consensys/gurvy v0.3.8 // indirect
 	github.com/cosmos/cosmos-sdk v0.42.1
 	github.com/ethereum/go-ethereum v1.10.3
 	github.com/gogo/protobuf v1.3.3
-	github.com/google/go-cmp v0.5.4 // indirect
 	github.com/gorilla/mux v1.8.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/go-retryablehttp v0.7.0
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
-	github.com/joho/godotenv v1.3.0 // indirect
+	github.com/joho/godotenv v1.3.0
 	github.com/sisu-network/dcore v0.1.8-alpha7
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.1
