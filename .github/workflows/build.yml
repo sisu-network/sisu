@@ -21,13 +21,15 @@ jobs:
       - name: Setup go
         uses: actions/setup-go@v1
         with:
-          go-version: 1.15
+          go-version: 1.16
         env:
           GOOS: ${{ matrix.targetos }}
           GOARCH: ${{ matrix.arch }}
 
       - name: Compile
         run: |
+          git config --global url."https://${{ secrets.ACCESS_TOKEN }}:x-oauth-basic@github.com/sisu-network".insteadOf "https://github.com/sisu-network"
+          cd src
           go mod download
           cd cmd/sisud
           go build .
@@ -36,4 +38,3 @@ jobs:
         with:
           name: sisud ${{ matrix.targetos }} ${{ matrix.arch }}
           path: cmd/sisud/sisud
-
