@@ -2,9 +2,11 @@ package app
 
 import (
 	"io"
+	"os"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/spf13/cast"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -78,6 +80,7 @@ import (
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	appparams "github.com/sisu-network/sisu/app/params"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/auth"
 	"github.com/sisu-network/sisu/x/auth/ante"
 	"github.com/sisu-network/sisu/x/evm"
@@ -166,6 +169,7 @@ var (
 // capabilities aren't needed for testing.
 type App struct {
 	txSubmitter *common.TxSubmitter
+	kr          keyring.Keyring
 
 	///////////////////////////////////////////////////////////////
 
@@ -257,7 +261,6 @@ func New(
 	}
 
 	app.setupDefaultKeepers(homePath, bApp, skipUpgradeHeights)
-
 	////////////// Sisu related keeper //////////////
 
 	interf := appOpts.Get(config.APP_CONFIG)
@@ -266,7 +269,9 @@ func New(
 	app.sisuKeeper = *sisukeeper.NewKeeper(
 		appCodec, keys[sisutypes.StoreKey], keys[sisutypes.MemStoreKey],
 	)
-	app.txSubmitter = common.NewTxSubmitter(MainAppHome, cfg.GetSisuConfig().KeyringBackend, cfg)
+
+	app.initKeyring(MainAppHome, cfg.GetSisuConfig().KeyringBackend, cfg)
+	app.txSubmitter = common.NewTxSubmitter(app.kr, cfg)
 	go app.txSubmitter.Start()
 
 	// EVM keeper
@@ -634,6 +639,25 @@ func initParamsKeeper(appCodec codec.BinaryMarshaler, legacyAmino *codec.LegacyA
 	// this line is used by starport scaffolding # stargate/app/paramSubspace
 
 	return paramsKeeper
+}
+
+func (app *App) initKeyring(mainAppHome string, keyRingBackend string, cfg config.Config) {
+	if app.kr == nil {
+		var err error
+		app.kr, err = keyring.New(sdk.KeyringServiceName(), keyRingBackend, mainAppHome, os.Stdin)
+		if err != nil {
+			panic(err)
+		}
+
+		infos, err := app.kr.List()
+		if len(infos) == 0 {
+			utils.LogError(`Please create at least one account before running this node.
+If this is a localhost network, run the gen file. If this is a testnet or
+mainnet, generate account using "sisu keys" command.
+`)
+			os.Exit(1)
+		}
+	}
 }
 
 // BeginBlocker application updates every begin block
