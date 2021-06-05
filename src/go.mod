@@ -24,6 +24,7 @@ require (
 	golang.org/x/sys v0.0.0-20210507161434-a76c4d0a0096 // indirect
 	google.golang.org/genproto v0.0.0-20210207032614-bba0dbe2a9ea
 	google.golang.org/grpc v1.35.0
+	github.com/BurntSushi/toml v0.3.1
 )
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.33.2

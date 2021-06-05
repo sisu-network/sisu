@@ -16,3 +16,11 @@ func AppendToFile(filePath string, content string) {
 		LogError(err)
 	}
 }
+
+func IsFileExisted(filePath string) bool {
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		return false
+	}
+
+	return true
+}
