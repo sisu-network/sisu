@@ -80,14 +80,9 @@ var (
 	nodeAddress = "http://0.0.0.0:26657"
 )
 
-func NewTxSubmitter(mainAppHome string, keyRingBackend string, cfg config.Config) *TxSubmitter {
-	kb, err := keyring.New(sdk.KeyringServiceName(), keyRingBackend, mainAppHome, os.Stdin)
-	if err != nil {
-		panic(err)
-	}
-
+func NewTxSubmitter(kr keyring.Keyring, cfg config.Config) *TxSubmitter {
 	t := &TxSubmitter{
-		kr:              kb,
+		kr:              kr,
 		cfg:             cfg,
 		sequenceLock:    &sync.RWMutex{},
 		queueLock:       &sync.RWMutex{},
@@ -97,7 +92,7 @@ func NewTxSubmitter(mainAppHome string, keyRingBackend string, cfg config.Config
 		curSequence:     UN_INITIALIZED_SEQ,
 	}
 
-	infos, err := kb.List()
+	infos, err := kr.List()
 	if err != nil {
 		panic(err)
 	}
