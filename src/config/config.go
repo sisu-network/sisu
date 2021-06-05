@@ -36,10 +36,23 @@ type ETHConfig struct {
 	ImportAccount bool
 }
 
+type TssChainConfig struct {
+	Symbol string `toml:"symbol"`
+	Id     int    `toml:"id"`
+	Url    string `toml:"url"`
+}
+
+// Example of supported chains in the toml config file.
+// [supported_chains]
+// 	[supported_chains.eth]
+// 	  symbol = "eth"
+// 		id = 1
+// 		url = "ethereum.go"
 type TssConfig struct {
-	Enable bool
-	Host   string
-	Port   int
+	Enable         bool   `toml:"enable"`
+	Host           string `toml:"host"`
+	Port           int    `toml:"port"`
+	SupportedChain string `toml:"supported_chain"`
 }
 
 func NewLocalConfig() Config {
