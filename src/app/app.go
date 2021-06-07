@@ -353,11 +353,15 @@ func New(
 	app.mm.SetOrderBeginBlockers(
 		upgradetypes.ModuleName, minttypes.ModuleName, distrtypes.ModuleName, slashingtypes.ModuleName,
 		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName,
-		evmtypes.ModuleName,
+		evmtypes.ModuleName, tsstypes.ModuleName,
 	)
 
 	app.mm.SetOrderEndBlockers(
-		evmtypes.ModuleName, crisistypes.ModuleName, govtypes.ModuleName, stakingtypes.ModuleName)
+		evmtypes.ModuleName,
+		tsstypes.ModuleName,
+		crisistypes.ModuleName,
+		govtypes.ModuleName,
+		stakingtypes.ModuleName)
 
 	// NOTE: The genutils module must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
@@ -380,6 +384,7 @@ func New(
 		ibctransfertypes.ModuleName,
 		sisutypes.ModuleName,
 		evmtypes.ModuleName,
+		tsstypes.ModuleName,
 		// this line is used by starport scaffolding # stargate/app/initGenesis
 	)
 
