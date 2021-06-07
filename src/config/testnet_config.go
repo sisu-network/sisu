@@ -51,7 +51,9 @@ func testnetSisuConfig() *SisuConfig {
 	appDir := os.Getenv("HOME") + "/.sisu"
 
 	sisuConfig := &SisuConfig{
+		SignerName:     "owner",
 		ConfigDir:      appDir,
+		Home:           appDir + "/main",
 		ChainId:        "talon-1",
 		KeyringBackend: keyring.BackendFile,
 	}

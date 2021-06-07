@@ -19,7 +19,10 @@ type Config interface {
 }
 
 type SisuConfig struct {
-	ConfigDir      string
+	ConfigDir string
+
+	Home           string
+	SignerName     string
 	EnableTss      bool
 	KeyringBackend string
 	ChainId        string

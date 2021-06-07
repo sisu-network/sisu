@@ -51,7 +51,7 @@ type TxSubmit interface {
 
 type TxSubmitter struct {
 	sisuHome string
-	kr       keyring.Keyring
+	appKeys  *AppKeys
 	cfg      config.Config
 
 	// internal
@@ -80,9 +80,9 @@ var (
 	nodeAddress = "http://0.0.0.0:26657"
 )
 
-func NewTxSubmitter(kr keyring.Keyring, cfg config.Config) *TxSubmitter {
+func NewTxSubmitter(cfg config.Config, appKeys *AppKeys) *TxSubmitter {
 	t := &TxSubmitter{
-		kr:              kr,
+		appKeys:         appKeys,
 		cfg:             cfg,
 		sequenceLock:    &sync.RWMutex{},
 		queueLock:       &sync.RWMutex{},
@@ -92,13 +92,9 @@ func NewTxSubmitter(kr keyring.Keyring, cfg config.Config) *TxSubmitter {
 		curSequence:     UN_INITIALIZED_SEQ,
 	}
 
-	infos, err := kr.List()
-	if err != nil {
-		panic(err)
-	}
-
-	t.fromAccount = infos[0].GetAddress()
-	t.clientCtx, err = t.buildClientCtx(infos[0].GetName())
+	var err error
+	t.fromAccount = appKeys.GetSignerInfo().GetAddress()
+	t.clientCtx, err = t.buildClientCtx(appKeys.GetSignerInfo().GetName())
 	t.factory = newFactory(t.clientCtx)
 
 	if err != nil {
@@ -262,14 +258,15 @@ func convert(list []*QElementPair) []sdk.Msg {
 }
 
 func (t *TxSubmitter) buildClientCtx(accountName string) (client.Context, error) {
-	info, err := t.kr.Key(accountName)
-	if err != nil {
-		return client.Context{}, err
-	}
+	info := t.appKeys.GetSignerInfo()
 
 	client, err := rpchttp.New(nodeAddress, "/websocket")
+	if err != nil {
+		panic(err)
+	}
+
 	chainId := t.cfg.GetSisuConfig().ChainId
-	clientCtx := NewClientCtx(t.kr, client, &bytes.Buffer{}, t.sisuHome, chainId)
+	clientCtx := NewClientCtx(t.appKeys.GetKeyring(), client, &bytes.Buffer{}, t.sisuHome, chainId)
 
 	return clientCtx.
 		WithFromName(accountName).
