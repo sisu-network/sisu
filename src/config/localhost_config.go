@@ -59,7 +59,9 @@ func localSisuConfig() *SisuConfig {
 	}
 
 	sisuConfig := &SisuConfig{
+		SignerName:     "owner",
 		ConfigDir:      appDir,
+		Home:           appDir + "/main",
 		KeyringBackend: keyring.BackendTest,
 		ChainId:        "sisu-dev",
 	}

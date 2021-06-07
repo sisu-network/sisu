@@ -2,11 +2,9 @@ package app
 
 import (
 	"io"
-	"os"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec/types"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/spf13/cast"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -80,7 +78,6 @@ import (
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	appparams "github.com/sisu-network/sisu/app/params"
 	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/auth"
 	"github.com/sisu-network/sisu/x/auth/ante"
 	"github.com/sisu-network/sisu/x/evm"
@@ -170,7 +167,7 @@ var (
 // capabilities aren't needed for testing.
 type App struct {
 	txSubmitter *common.TxSubmitter
-	kr          keyring.Keyring
+	appKeys     *common.AppKeys
 
 	///////////////////////////////////////////////////////////////
 
@@ -271,8 +268,10 @@ func New(
 		appCodec, keys[sisutypes.StoreKey], keys[sisutypes.MemStoreKey],
 	)
 
-	app.initKeyring(MainAppHome, cfg.GetSisuConfig().KeyringBackend, cfg)
-	app.txSubmitter = common.NewTxSubmitter(app.kr, cfg)
+	app.appKeys = common.NewAppKeys(*cfg.GetSisuConfig())
+	app.appKeys.Init()
+
+	app.txSubmitter = common.NewTxSubmitter(cfg, app.appKeys)
 	go app.txSubmitter.Start()
 
 	// EVM keeper
@@ -346,22 +345,29 @@ func New(
 
 	app.mm = module.NewManager(modules...)
 
+	// Set module begin
+	beginBlockers := []string{upgradetypes.ModuleName, minttypes.ModuleName, distrtypes.ModuleName, slashingtypes.ModuleName,
+		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName,
+		evmtypes.ModuleName}
+
+	if tssConfig.Enable {
+		beginBlockers = append(beginBlockers, tsstypes.ModuleName)
+	}
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
 	// NOTE: staking module is required if HistoricalEntries param > 0
-	app.mm.SetOrderBeginBlockers(
-		upgradetypes.ModuleName, minttypes.ModuleName, distrtypes.ModuleName, slashingtypes.ModuleName,
-		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName,
-		evmtypes.ModuleName, tsstypes.ModuleName,
-	)
+	app.mm.SetOrderBeginBlockers(beginBlockers...)
 
-	app.mm.SetOrderEndBlockers(
-		evmtypes.ModuleName,
-		tsstypes.ModuleName,
+	// Set module end blocker
+	endBlockers := []string{evmtypes.ModuleName,
 		crisistypes.ModuleName,
 		govtypes.ModuleName,
-		stakingtypes.ModuleName)
+		stakingtypes.ModuleName}
+	if tssConfig.Enable {
+		endBlockers = append(endBlockers, tsstypes.ModuleName)
+	}
+	app.mm.SetOrderEndBlockers(endBlockers...)
 
 	// NOTE: The genutils module must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
@@ -645,25 +651,6 @@ func initParamsKeeper(appCodec codec.BinaryMarshaler, legacyAmino *codec.LegacyA
 	// this line is used by starport scaffolding # stargate/app/paramSubspace
 
 	return paramsKeeper
-}
-
-func (app *App) initKeyring(mainAppHome string, keyRingBackend string, cfg config.Config) {
-	if app.kr == nil {
-		var err error
-		app.kr, err = keyring.New(sdk.KeyringServiceName(), keyRingBackend, mainAppHome, os.Stdin)
-		if err != nil {
-			panic(err)
-		}
-
-		infos, err := app.kr.List()
-		if len(infos) == 0 {
-			utils.LogError(`Please create at least one account before running this node.
-If this is a localhost network, run the gen file. If this is a testnet or
-mainnet, generate account using "sisu keys" command.
-`)
-			os.Exit(1)
-		}
-	}
 }
 
 // BeginBlocker application updates every begin block
