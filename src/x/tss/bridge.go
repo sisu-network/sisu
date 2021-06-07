@@ -11,13 +11,14 @@ import (
 	"github.com/sisu-network/sisu/x/tss/tuktukclient"
 )
 
+// This is the communication bridge between sisu and tss server.
 type Bridge struct {
-	tssConfig  *config.TssConfig
+	tssConfig  config.TssConfig
 	client     *tuktukclient.Client
 	httpClient *retryablehttp.Client
 }
 
-func NewBridge(tssConfig *config.TssConfig) *Bridge {
+func NewBridge(tssConfig config.TssConfig) *Bridge {
 	httpClient := retryablehttp.NewClient()
 	httpClient.Logger = nil
 

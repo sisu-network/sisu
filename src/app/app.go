@@ -91,6 +91,7 @@ import (
 	sisutypes "github.com/sisu-network/sisu/x/sisu/types"
 	tss "github.com/sisu-network/sisu/x/tss"
 	tssKeeper "github.com/sisu-network/sisu/x/tss/keeper"
+	tsstypes "github.com/sisu-network/sisu/x/tss/types"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
@@ -241,7 +242,7 @@ func New(
 		minttypes.StoreKey, distrtypes.StoreKey, slashingtypes.StoreKey,
 		govtypes.StoreKey, paramstypes.StoreKey, ibchost.StoreKey, upgradetypes.StoreKey,
 		evidencetypes.StoreKey, ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
-		sisutypes.StoreKey,
+		sisutypes.StoreKey, tsstypes.StoreKey,
 		// this line is used by starport scaffolding # stargate/app/storeKey
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
@@ -290,9 +291,9 @@ func New(
 		panic("Cannot find TSS configuration")
 	}
 	if tssConfig.Enable {
-		app.tssKeeper = *tssKeeper.NewKeeper()
+		app.tssKeeper = *tssKeeper.NewKeeper(keys[tsstypes.StoreKey])
 
-		app.tssBridge = tss.NewBridge(tssConfig)
+		app.tssBridge = tss.NewBridge(*tssConfig)
 		app.tssBridge.Initialize()
 	}
 
@@ -340,7 +341,7 @@ func New(
 	}
 
 	if tssConfig.Enable {
-		modules = append(modules, tss.NewAppModule(appCodec, app.tssKeeper))
+		modules = append(modules, tss.NewAppModule(appCodec, app.tssKeeper, app.tssBridge, *tssConfig))
 	}
 
 	app.mm = module.NewManager(modules...)
