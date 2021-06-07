@@ -16,7 +16,7 @@ type KeyGen struct {
 	keeper keeper.Keeper
 	config config.TssConfig
 
-	lastProposeBlockHeight int
+	lastProposeBlockHeight int64
 }
 
 func NewKeyGen(keeper keeper.Keeper, config config.TssConfig) *KeyGen {
@@ -26,7 +26,7 @@ func NewKeyGen(keeper keeper.Keeper, config config.TssConfig) *KeyGen {
 	}
 }
 
-func (kg *KeyGen) CheckTssKeygen(ctx sdk.Context, blockHeight int) {
+func (kg *KeyGen) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 	chainsInfo, err := kg.keeper.GetRecordedChainsOnSisu(ctx)
 	if err != nil {
 		return
@@ -38,6 +38,8 @@ func (kg *KeyGen) CheckTssKeygen(ctx sdk.Context, blockHeight int) {
 	for _, chain := range chainsInfo.Chains {
 		recordedChains[chain.Symbol] = chain
 	}
+
+	utils.LogDebug("recordedChains = ", recordedChains)
 
 	unavailableChains := make([]string, 0)
 	for _, chainConfig := range kg.config.SupportedChains {
