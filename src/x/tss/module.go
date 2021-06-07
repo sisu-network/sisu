@@ -17,6 +17,8 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/client/cli"
 	"github.com/sisu-network/sisu/x/tss/client/rest"
 	"github.com/sisu-network/sisu/x/tss/keeper"
@@ -101,13 +103,20 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 
-	keeper keeper.Keeper
+	keeper        keeper.Keeper
+	bridge        *Bridge
+	keygen        *KeyGen
+	blockCaughtUp bool
+	config        config.TssConfig
 }
 
-func NewAppModule(cdc codec.Marshaler, keeper keeper.Keeper) AppModule {
+func NewAppModule(cdc codec.Marshaler, keeper keeper.Keeper, bridge *Bridge, config config.TssConfig) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),
+		keygen:         NewKeyGen(keeper, config),
 		keeper:         keeper,
+		bridge:         bridge,
+		config:         config,
 	}
 }
 
@@ -158,10 +167,18 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json
 
 // BeginBlock executes all ABCI BeginBlock logic respective to the capability module.
 func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {
+	if !am.blockCaughtUp {
+		isCatchingUp, err := am.bridge.isCatchingUp()
+		if err == nil && !isCatchingUp {
+			// App has done replaying block!
+			utils.LogInfo("All blocks are caught up")
+			am.blockCaughtUp = true
+		}
+	}
 }
 
 // EndBlock executes all ABCI EndBlock logic respective to the capability module. It
 // returns no validator updates.
-func (am AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}
 }

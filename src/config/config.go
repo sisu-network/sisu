@@ -49,10 +49,10 @@ type TssChainConfig struct {
 // 		id = 1
 // 		url = "ethereum.go"
 type TssConfig struct {
-	Enable         bool   `toml:"enable"`
-	Host           string `toml:"host"`
-	Port           int    `toml:"port"`
-	SupportedChain string `toml:"supported_chain"`
+	Enable          bool                      `toml:"enable"`
+	Host            string                    `toml:"host"`
+	Port            int                       `toml:"port"`
+	SupportedChains map[string]TssChainConfig `toml:"supported_chains"`
 }
 
 func NewLocalConfig() Config {
