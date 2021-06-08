@@ -60,7 +60,7 @@ Example:
 			}
 
 			ips := strings.Split(strings.TrimSpace(nodeIps), ",")
-			utils.LogDebug("ips = ", ips)
+			utils.LogInfo("ips = ", ips)
 
 			settings := &Setting{
 				clientCtx:      clientCtx,

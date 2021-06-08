@@ -2,6 +2,6 @@ syntax = "proto3";
 package types;
 
 message KeygenProposal {
-  string author = 1;
+  string signer = 1;
   string chainSymbol = 2;
 }

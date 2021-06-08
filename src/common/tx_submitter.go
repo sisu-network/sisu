@@ -46,7 +46,7 @@ type QElementPair struct {
 
 type TxSubmit interface {
 	SubmitEThTx(data []byte) error
-	SubmitTssTx(data []byte) error
+	SubmitMessage(msg sdk.Msg) error
 }
 
 type TxSubmitter struct {
@@ -104,7 +104,7 @@ func NewTxSubmitter(cfg config.Config, appKeys *AppKeys) *TxSubmitter {
 	return t
 }
 
-func (t *TxSubmitter) submitMessage(msg sdk.Msg) error {
+func (t *TxSubmitter) SubmitMessage(msg sdk.Msg) error {
 	seq := t.getSequence()
 	if seq == UN_INITIALIZED_SEQ {
 		return fmt.Errorf("Server is not ready")
@@ -242,11 +242,7 @@ func (t *TxSubmitter) updateStatus(list []*QElementPair, err error) {
 
 func (t *TxSubmitter) SubmitEThTx(data []byte) error {
 	msg := types.NewMsgEthTx(t.clientCtx.GetFromAddress().String(), data)
-	return t.submitMessage(msg)
-}
-
-func (t *TxSubmitter) SubmitTssTx(data []byte) error {
-	return nil
+	return t.SubmitMessage(msg)
 }
 
 func convert(list []*QElementPair) []sdk.Msg {
