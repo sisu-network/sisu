@@ -47,10 +47,10 @@ type TssChainConfig struct {
 
 // Example of supported chains in the toml config file.
 // [supported_chains]
-// 	[supported_chains.eth]
-// 	  symbol = "eth"
-// 		id = 1
-// 		url = "ethereum.go"
+// [supported_chains.eth]
+//   symbol = "eth"
+// 	id = 1
+// 	url = "localhost:7545"
 type TssConfig struct {
 	Enable          bool                      `toml:"enable"`
 	Host            string                    `toml:"host"`

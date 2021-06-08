@@ -142,7 +142,7 @@ var (
 		vesting.AppModuleBasic{},
 		sisu.AppModuleBasic{},
 		evm.AppModuleBasic{},
-		// this line is used by starport scaffolding # stargate/app/moduleBasic
+		tss.AppModuleBasic{},
 	)
 
 	// module account permissions
@@ -340,7 +340,7 @@ func New(
 	}
 
 	if tssConfig.Enable {
-		modules = append(modules, tss.NewAppModule(appCodec, app.tssKeeper, app.tssBridge, *tssConfig))
+		modules = append(modules, tss.NewAppModule(appCodec, app.tssKeeper, app.tssBridge, *tssConfig, app.appKeys, app.txSubmitter))
 	}
 
 	app.mm = module.NewManager(modules...)

@@ -49,6 +49,10 @@ func (ak *AppKeys) GetSignerInfo() keyring.Info {
 	return ak.signerInfo
 }
 
+func (ak *AppKeys) GetSignerAddress() sdk.AccAddress {
+	return ak.signerInfo.GetAddress()
+}
+
 func (ak *AppKeys) GetKeyring() keyring.Keyring {
 	return ak.kr
 }

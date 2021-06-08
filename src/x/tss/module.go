@@ -17,6 +17,7 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/client/cli"
@@ -108,15 +109,25 @@ type AppModule struct {
 	keygen        *KeyGen
 	blockCaughtUp bool
 	config        config.TssConfig
+	appKeys       *common.AppKeys
+	txSubmit      common.TxSubmit
 }
 
-func NewAppModule(cdc codec.Marshaler, keeper keeper.Keeper, bridge *Bridge, config config.TssConfig) AppModule {
+func NewAppModule(cdc codec.Marshaler,
+	keeper keeper.Keeper,
+	bridge *Bridge,
+	config config.TssConfig,
+	appKeys *common.AppKeys,
+	txSubmit common.TxSubmit,
+) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),
-		keygen:         NewKeyGen(keeper, config),
+		txSubmit:       txSubmit,
+		keygen:         NewKeyGen(keeper, config, appKeys, txSubmit),
 		keeper:         keeper,
 		bridge:         bridge,
 		config:         config,
+		appKeys:        appKeys,
 	}
 }
 
@@ -127,7 +138,7 @@ func (am AppModule) Name() string {
 
 // Route returns the capability module's message routing key.
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.txSubmit))
 }
 
 // QuerierRoute returns the capability module's query routing key.
@@ -174,13 +185,15 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 			// App has done replaying block!
 			utils.LogInfo("All blocks are caught up")
 			am.blockCaughtUp = true
-			am.keygen.CheckTssKeygen(ctx, req.Header.Height)
+
+			// Check to see if we can do a keygen
+			go am.keygen.CheckTssKeygen(ctx, req.Header.Height)
 		}
 	}
 }
 
 // EndBlock executes all ABCI EndBlock logic respective to the capability module. It
 // returns no validator updates.
-func (am AppModule) EndBlock(ctx sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}
 }

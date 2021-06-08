@@ -7,9 +7,9 @@ import (
 
 var _ sdk.Msg = &KeygenProposal{}
 
-func NewMsgKeygenProposal(author string, chainSymbol string) *KeygenProposal {
+func NewMsgKeygenProposal(signer string, chainSymbol string) *KeygenProposal {
 	return &KeygenProposal{
-		Author:      author,
+		Signer:      signer,
 		ChainSymbol: chainSymbol,
 	}
 }
@@ -26,7 +26,7 @@ func (msg *KeygenProposal) Type() string {
 
 // GetSigners ...
 func (msg *KeygenProposal) GetSigners() []sdk.AccAddress {
-	author, err := sdk.AccAddressFromBech32(msg.Author)
+	author, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		panic(err)
 	}
@@ -45,7 +45,7 @@ func (msg *KeygenProposal) GetSignBytes() []byte {
 
 // ValidateBasic ...
 func (msg *KeygenProposal) ValidateBasic() error {
-	_, err := sdk.AccAddressFromBech32(msg.Author)
+	_, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid creator address (%s)", err)
 	}
