@@ -374,7 +374,7 @@ func New(
 	// NOTE: Capability module must occur first so that it can initialize any capabilities
 	// so that other modules that want to create or claim capabilities afterwards in InitChain
 	// can do so safely.
-	app.mm.SetOrderInitGenesis(
+	initGenesisModules := []string{
 		capabilitytypes.ModuleName,
 		authtypes.ModuleName,
 		banktypes.ModuleName,
@@ -390,9 +390,12 @@ func New(
 		ibctransfertypes.ModuleName,
 		sisutypes.ModuleName,
 		evmtypes.ModuleName,
-		tsstypes.ModuleName,
-		// this line is used by starport scaffolding # stargate/app/initGenesis
-	)
+	}
+
+	if tssConfig.Enable {
+		initGenesisModules = append(beginBlockers, tsstypes.ModuleName)
+	}
+	app.mm.SetOrderInitGenesis(initGenesisModules...)
 
 	app.mm.RegisterInvariants(&app.CrisisKeeper)
 	app.mm.RegisterRoutes(app.Router(), app.QueryRouter(), encodingConfig.Amino)
