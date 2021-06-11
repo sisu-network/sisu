@@ -67,7 +67,7 @@ func testnetETHConfig(baseDir string) *ETHConfig {
 	return &ETHConfig{
 		Home:          home,
 		Eth:           getLocalEthConfig(),
-		Host:          "localhost",
+		Host:          "0.0.0.0",
 		Port:          1234,
 		UseInMemDb:    false,
 		DbPath:        home + "leveldb",
