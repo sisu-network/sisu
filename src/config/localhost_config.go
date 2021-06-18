@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/sisu-network/dcore/core"
 	"github.com/sisu-network/dcore/eth/ethconfig"
+	"github.com/sisu-network/dcore/miner"
 	"github.com/sisu-network/dcore/node"
 	"github.com/sisu-network/dcore/params"
 	"github.com/sisu-network/sisu/utils"
@@ -113,14 +114,20 @@ func getLocalEthConfig() *ethconfig.Config {
 		}
 	}
 
+	blockGasLimit := uint64(15000000)
+
 	config.Genesis = &core.Genesis{
 		Config:     chainConfig,
 		Nonce:      0,
 		Number:     0,
 		ExtraData:  hexutil.MustDecode("0x00"),
-		GasLimit:   1000000000000,
+		GasLimit:   blockGasLimit,
 		Difficulty: big.NewInt(0),
 		Alloc:      alloc,
+	}
+
+	config.Miner = miner.Config{
+		BlockGasLimit: blockGasLimit,
 	}
 
 	config.TxPool = core.TxPoolConfig{

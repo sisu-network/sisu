@@ -195,7 +195,7 @@ func (self *ETHChain) Start() {
 func (self *ETHChain) startApiServer() {
 	s := &Server{}
 
-	handler := self.NewRPCHandler(time.Second * 10)
+	handler := self.NewRPCHandler()
 	handler.RegisterName("web3", &extra.Web3API{})
 	handler.RegisterName("net", &extra.NetAPI{NetworkId: "1"})
 	handler.RegisterName("evm", &extra.EvmApi{})
@@ -213,8 +213,8 @@ func (self *ETHChain) Stop() {
 	self.backend.Stop()
 }
 
-func (self *ETHChain) NewRPCHandler(maximumDuration time.Duration) *rpc.Server {
-	return rpc.NewServer(maximumDuration)
+func (self *ETHChain) NewRPCHandler() *rpc.Server {
+	return rpc.NewServer()
 }
 
 func (self *ETHChain) BlockChain() *core.BlockChain {
