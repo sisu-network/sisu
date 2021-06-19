@@ -6,6 +6,13 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/sisu-network/dcore/core"
+	"github.com/sisu-network/dcore/eth/ethconfig"
+	"github.com/sisu-network/dcore/miner"
+	"github.com/sisu-network/dcore/node"
+	"github.com/sisu-network/dcore/params"
 	"github.com/sisu-network/sisu/utils"
 )
 
@@ -66,13 +73,71 @@ func testnetETHConfig(baseDir string) *ETHConfig {
 
 	return &ETHConfig{
 		Home:          home,
-		Eth:           getLocalEthConfig(),
+		Eth:           testTestnetEthConfig(),
 		Host:          "0.0.0.0",
 		Port:          1234,
 		UseInMemDb:    false,
 		DbPath:        home + "leveldb",
-		Node:          getLocalEthNodeConfig(home),
+		Node:          getTestnetEthNodeConfig(home),
 		ImportAccount: false,
+	}
+}
+
+func testTestnetEthConfig() *ethconfig.Config {
+	config := ethconfig.Defaults
+	chainConfig := &params.ChainConfig{
+		ChainID:             big.NewInt(34567),
+		HomesteadBlock:      big.NewInt(0),
+		DAOForkBlock:        big.NewInt(0),
+		DAOForkSupport:      true,
+		EIP150Block:         big.NewInt(0),
+		EIP150Hash:          common.HexToHash("0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0"),
+		EIP155Block:         big.NewInt(0),
+		EIP158Block:         big.NewInt(0),
+		ByzantiumBlock:      big.NewInt(0),
+		ConstantinopleBlock: big.NewInt(0),
+		PetersburgBlock:     big.NewInt(0),
+		IstanbulBlock:       big.NewInt(0),
+		BerlinBlock:         big.NewInt(0),
+	}
+
+	blockGasLimit := uint64(15000000)
+	alloc := make(map[common.Address]core.GenesisAccount)
+
+	addrs := []common.Address{common.HexToAddress("0xbeF23B2AC7857748fEA1f499BE8227c5fD07E70c")}
+	for _, addr := range addrs {
+		alloc[addr] = core.GenesisAccount{
+			Balance: initialBalance,
+		}
+	}
+
+	config.Genesis = &core.Genesis{
+		Config:     chainConfig,
+		Nonce:      0,
+		Number:     0,
+		ExtraData:  hexutil.MustDecode("0x00"),
+		GasLimit:   blockGasLimit,
+		Difficulty: big.NewInt(0),
+		Alloc:      alloc,
+	}
+
+	config.Miner = miner.Config{
+		BlockGasLimit: blockGasLimit,
+	}
+
+	config.TxPool = core.TxPoolConfig{
+		PriceLimit: 50,
+	}
+
+	return &config
+}
+
+func getTestnetEthNodeConfig(ethHome string) *node.Config {
+	ksDir := ethHome + "/keystore"
+
+	return &node.Config{
+		KeyStoreDir:         ksDir,
+		AllowUnprotectedTxs: false,
 	}
 }
 
