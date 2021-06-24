@@ -237,9 +237,9 @@ func (self *ETHChain) GetGenesisBlock() *types.Block {
 	return self.backend.BlockChain().Genesis()
 }
 
-func (self *ETHChain) BeginBlock() error {
+func (self *ETHChain) BeginBlock(timestamp time.Time) error {
 	utils.LogDebug("Preparing new block....")
-	self.backend.Miner().PrepareNewBlock()
+	self.backend.Miner().PrepareNewBlock(timestamp)
 	return nil
 }
 

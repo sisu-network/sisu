@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	ethLog "github.com/ethereum/go-ethereum/log"
 	"github.com/tendermint/tendermint/libs/log"
@@ -118,8 +119,8 @@ func (k *Keeper) GetEthValidator() ethchain.EthValidator {
 	return k.chain
 }
 
-func (k *Keeper) BeginBlock() error {
-	k.chain.BeginBlock()
+func (k *Keeper) BeginBlock(timestamp time.Time) error {
+	k.chain.BeginBlock(timestamp)
 
 	return nil
 }
