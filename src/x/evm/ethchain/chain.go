@@ -34,9 +34,10 @@ import (
 type ChainState int
 
 const (
-	TX_MAX_SIZE    = 128 * 1024
-	COMMIT_TIMEOUT = time.Second * 5
-	TX_CACHE_SIZE  = 4096
+	TX_MAX_SIZE       = 128 * 1024
+	COMMIT_TIMEOUT    = time.Second * 5
+	TX_CACHE_SIZE     = 4096
+	SUBMIT_TX_TIMEOUT = time.Second * 6
 )
 
 var (
@@ -492,6 +493,20 @@ func (self *ETHChain) onEthTxSubmitted(tx *types.Transaction) error {
 
 	if err := self.txSubmit.SubmitEThTx(js); err != nil {
 		return err
+	}
+
+	deadline := time.Now().Add(SUBMIT_TX_TIMEOUT)
+	for {
+		_, ok = self.acceptedTxCache.Get(tx.Hash().String())
+		if ok {
+			break
+		}
+
+		if time.Now().After(deadline) {
+			break
+		}
+
+		time.Sleep(1000)
 	}
 
 	// Check if the tx pool has the tx or not.
