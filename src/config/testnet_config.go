@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	testnetEthChainId = big.NewInt(31416)
+	testnetEthChainId = big.NewInt(34567)
 )
 
 type TestnetConfig struct {
@@ -86,7 +86,7 @@ func testnetETHConfig(baseDir string) *ETHConfig {
 func testTestnetEthConfig() *ethconfig.Config {
 	config := ethconfig.Defaults
 	chainConfig := &params.ChainConfig{
-		ChainID:             big.NewInt(34567),
+		ChainID:             testnetEthChainId,
 		HomesteadBlock:      big.NewInt(0),
 		DAOForkBlock:        big.NewInt(0),
 		DAOForkSupport:      true,
