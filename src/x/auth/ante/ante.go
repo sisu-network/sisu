@@ -29,6 +29,7 @@ func NewAnteHandler(
 		if hasNonEvmTx(tx) {
 			anteHandler = cosmosAnte.NewAnteHandler(ak, bankKeeper, sigGasConsumer, signModeHandler)
 		} else {
+			utils.LogDebug("This is an EVM transaction")
 			anteHandler = EvmAnteHandler(ctx, tx, ak, bankKeeper, evmKeeper, sigGasConsumer, signModeHandler, validator)
 		}
 
