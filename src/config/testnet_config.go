@@ -104,7 +104,7 @@ func testTestnetEthConfig() *ethconfig.Config {
 	blockGasLimit := uint64(15000000)
 	alloc := make(map[common.Address]core.GenesisAccount)
 
-	addrs := []common.Address{common.HexToAddress("0xbeF23B2AC7857748fEA1f499BE8227c5fD07E70c")}
+	addrs := []common.Address{common.HexToAddress("0x018309Ce82ED587F568B3ae04549897d88066eE1")}
 	for _, addr := range addrs {
 		alloc[addr] = core.GenesisAccount{
 			Balance: initialBalance,
