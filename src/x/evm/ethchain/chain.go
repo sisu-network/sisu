@@ -447,6 +447,7 @@ func (self *ETHChain) CheckTx(txs []*types.Transaction) error {
 	for i, tx := range txs {
 		if errs[i] == nil {
 			self.acceptedTxCache.Add(tx.Hash().String(), tx)
+			utils.LogDebug("Tx is accepted", tx.Hash().String())
 			err = nil
 		} else {
 			utils.LogError("Accept tx error: ", i, errs[i])
@@ -496,7 +497,7 @@ func (self *ETHChain) onEthTxSubmitted(tx *types.Transaction) error {
 	// Check if the tx pool has the tx or not.
 	_, ok = self.acceptedTxCache.Get(tx.Hash().String())
 	if !ok {
-		utils.LogError("Cannot find transaction in the pool.")
+		utils.LogError("Cannot find transaction in the pool.", tx.Hash().String())
 		return fmt.Errorf("Failed to add transaction to the pool")
 	}
 
