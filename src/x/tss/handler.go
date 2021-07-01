@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/keeper"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
@@ -14,7 +15,6 @@ import (
 func NewHandler(k keeper.Keeper, txSubmit common.TxSubmit) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
-
 
 		switch msg := msg.(type) {
 		case *types.KeygenProposal:
@@ -27,5 +27,6 @@ func NewHandler(k keeper.Keeper, txSubmit common.TxSubmit) sdk.Handler {
 }
 
 func handleKeygenProposal(msg *types.KeygenProposal, txSubmit common.TxSubmit) (*sdk.Result, error) {
+	utils.LogDebug("Handling keygen proposal....")
 	return &sdk.Result{}, nil
 }

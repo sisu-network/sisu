@@ -339,8 +339,9 @@ func New(
 		evm.NewAppModule(appCodec, app.evmKeeper),
 	}
 
+	tssProcessor := tss.NewProcessor(app.tssKeeper, *tssConfig, app.appKeys, app.txSubmitter)
 	if tssConfig.Enable {
-		modules = append(modules, tss.NewAppModule(appCodec, app.tssKeeper, app.tssBridge, *tssConfig, app.appKeys, app.txSubmitter))
+		modules = append(modules, tss.NewAppModule(appCodec, app.tssKeeper, app.tssBridge, app.appKeys, app.txSubmitter, tssProcessor))
 	}
 
 	app.mm = module.NewManager(modules...)
@@ -411,9 +412,10 @@ func New(
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetAnteHandler(
 		ante.NewAnteHandler(
+			tssConfig,
 			app.AccountKeeper, app.BankKeeper, app.evmKeeper,
 			ante.DefaultSigVerificationGasConsumer, encodingConfig.TxConfig.SignModeHandler(),
-			app.evmKeeper.GetEthValidator(),
+			app.evmKeeper.GetEthValidator(), tssProcessor,
 		),
 	)
 	app.SetEndBlocker(app.EndBlocker)
