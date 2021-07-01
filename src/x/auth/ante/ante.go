@@ -1,6 +1,8 @@
 package ante
 
 import (
+	"fmt"
+
 	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	cosmosAnte "github.com/cosmos/cosmos-sdk/x/auth/ante"
@@ -8,7 +10,14 @@ import (
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/evm/ethchain"
 	evmKeeper "github.com/sisu-network/sisu/x/evm/keeper"
-	evmTypes "github.com/sisu-network/sisu/x/evm/types"
+)
+
+type SisuTxType int
+
+const (
+	TYPE_TX_COSMOS SisuTxType = iota
+	TYPE_TX_ETH
+	TYPE_TX_TSS
 )
 
 func NewAnteHandler(
@@ -19,34 +28,51 @@ func NewAnteHandler(
 	signModeHandler signing.SignModeHandler,
 	validator ethchain.EthValidator,
 ) sdk.AnteHandler {
-	return func(ctx sdk.Context, tx sdk.Tx, sim bool) (newCtx sdk.Context, err error) {
+	return func(ctx sdk.Context, tx sdk.Tx, sim bool) (sdk.Context, error) {
 		var anteHandler sdk.AnteHandler
 		utils.LogDebug("Running ante. checkTx & recheck = ", ctx.IsCheckTx(), ctx.IsReCheckTx())
 
-		// If the tx contains a non-evm message, we calculate the transaction like normal with
-		// gas fee taken into account. Otherwise, use EvmAnteHandler which does not subtract gas fee
-		// from the sender.
-		if hasNonEvmTx(tx) {
-			anteHandler = cosmosAnte.NewAnteHandler(ak, bankKeeper, sigGasConsumer, signModeHandler)
-		} else {
-			utils.LogDebug("This is an EVM transaction")
+		txType, err := getTxType(tx)
+		if err != nil {
+			// TODO: Handle when there are errors here.
+			return ctx, err
+		}
+
+		switch txType {
+		case TYPE_TX_ETH:
 			anteHandler = EvmAnteHandler(ctx, tx, ak, bankKeeper, evmKeeper, sigGasConsumer, signModeHandler, validator)
+		case TYPE_TX_TSS:
+			// Add TSS AnteHandler here.
+		case TYPE_TX_COSMOS:
+			anteHandler = cosmosAnte.NewAnteHandler(ak, bankKeeper, sigGasConsumer, signModeHandler)
 		}
 
 		return anteHandler(ctx, tx, sim)
 	}
 }
 
-func hasNonEvmTx(tx sdk.Tx) bool {
+func getTxType(tx sdk.Tx) (SisuTxType, error) {
+	var txType, lastType SisuTxType
+
 	msgs := tx.GetMsgs()
-	for _, msg := range msgs {
-		_, ok := msg.(*evmTypes.EthTx)
-		if !ok {
-			return true
+
+	for i, msg := range msgs {
+		switch msg.Route() {
+		case "evm":
+			txType = TYPE_TX_ETH
+		case "tss":
+			txType = TYPE_TX_TSS
+		default:
+			txType = TYPE_TX_COSMOS
 		}
+		if i > 0 && txType != lastType {
+			return txType, fmt.Errorf("There are more than 1 message types in a transaction")
+		}
+
+		lastType = txType
 	}
 
-	return false
+	return txType, nil
 }
 
 func EvmAnteHandler(
