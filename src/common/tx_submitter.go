@@ -105,6 +105,7 @@ func NewTxSubmitter(cfg config.Config, appKeys *AppKeys) *TxSubmitter {
 }
 
 func (t *TxSubmitter) SubmitMessage(msg sdk.Msg) error {
+	utils.LogDebug("Submitting tx ....")
 	seq := t.getSequence()
 	if seq == UN_INITIALIZED_SEQ {
 		return fmt.Errorf("Server is not ready")

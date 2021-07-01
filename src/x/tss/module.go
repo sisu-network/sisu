@@ -18,7 +18,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/sisu-network/sisu/common"
-	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/client/cli"
 	"github.com/sisu-network/sisu/x/tss/client/rest"
@@ -106,9 +105,8 @@ type AppModule struct {
 
 	keeper        keeper.Keeper
 	bridge        *Bridge
-	keygen        *KeyGen
+	processor     *Processor
 	blockCaughtUp bool
-	config        config.TssConfig
 	appKeys       *common.AppKeys
 	txSubmit      common.TxSubmit
 }
@@ -116,17 +114,16 @@ type AppModule struct {
 func NewAppModule(cdc codec.Marshaler,
 	keeper keeper.Keeper,
 	bridge *Bridge,
-	config config.TssConfig,
 	appKeys *common.AppKeys,
 	txSubmit common.TxSubmit,
+	processor *Processor,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),
 		txSubmit:       txSubmit,
-		keygen:         NewKeyGen(keeper, config, appKeys, txSubmit),
+		processor:      processor,
 		keeper:         keeper,
 		bridge:         bridge,
-		config:         config,
 		appKeys:        appKeys,
 	}
 }
@@ -181,13 +178,14 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	if !am.blockCaughtUp {
 		utils.LogDebug("BeginBlock: CHecking catching up...")
 		isCatchingUp, err := am.bridge.isCatchingUp()
+		utils.LogDebug("isCatchingUp = ", isCatchingUp)
 		if err == nil && !isCatchingUp {
 			// App has done replaying block!
 			utils.LogInfo("All blocks are caught up")
 			am.blockCaughtUp = true
 
 			// Check to see if we can do a keygen
-			go am.keygen.CheckTssKeygen(ctx, req.Header.Height)
+			go am.processor.CheckTssKeygen(ctx, req.Header.Height)
 		}
 	}
 }
