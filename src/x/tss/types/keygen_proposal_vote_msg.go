@@ -7,11 +7,11 @@ import (
 
 var _ sdk.Msg = &KeygenProposalVote{}
 
-func NewMsgKeygenProposalVote(signer string, proposalId string, vote KeygenProposalVote_Vote) *KeygenProposalVote {
+func NewMsgKeygenProposalVote(signer string, chainSymbol string, vote KeygenProposalVote_Vote) *KeygenProposalVote {
 	return &KeygenProposalVote{
-		Signer:     signer,
-		ProposalId: proposalId,
-		Vote:       vote,
+		Signer:      signer,
+		ChainSymbol: chainSymbol,
+		Vote:        vote,
 	}
 }
 

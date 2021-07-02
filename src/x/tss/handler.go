@@ -6,7 +6,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/sisu-network/sisu/common"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/keeper"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
@@ -36,8 +35,6 @@ func handleKeygenProposal(msg *types.KeygenProposal, processor *Processor) (*sdk
 }
 
 func handleKeygenProposalVote(msg *types.KeygenProposalVote, processor *Processor) (*sdk.Result, error) {
-	utils.LogDebug("Handling keygen proposal vote....")
-
 	data, err := processor.DeliverKeyGenProposalVote(msg)
 	return &sdk.Result{
 		Data: data,

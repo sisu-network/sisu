@@ -174,5 +174,10 @@ func localTssConfig(baseDir string) *TssConfig {
 		panic(err)
 	}
 
+	// 4. Override some default values
+	config.PoolSizeLowerBound = 1
+	config.PoolSizeUpperBound = 4
+	config.BlockProposalLength = 2
+
 	return config
 }

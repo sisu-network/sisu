@@ -11,9 +11,17 @@ import (
 	"github.com/sisu-network/sisu/x/tss/types"
 )
 
+/**
+Process for generating a new key:
+- Wait for the app to catch up
+- If there is no support for a particular chain, creates a proposal to include a chain
+- When other nodes receive the proposal, top N validator nodes vote to see if it should accept that.
+- After M blocks (M is a constant) since a proposal is sent, count the number of yes vote. If there
+are enough validator supporting the new chain, send a message to TSS engine to do keygen.
+*/
+
 const (
 	PROPOSE_BLOCK_INTERVAL = 1000
-	PROPOSAL_BLOCK_LENGTH  = 5
 )
 
 var (
@@ -28,6 +36,11 @@ type Processor struct {
 	appKeys                *common.AppKeys
 	bridge                 *Bridge
 	appInfo                *common.AppInfo
+	currentHeight          int64
+
+	// A map of chainSymbol -> map ()
+	keygenVoteResult map[string]map[string]bool
+	keygenBlockPairs []BlockSymbolPair
 }
 
 func NewProcessor(keeper keeper.Keeper,
@@ -37,11 +50,38 @@ func NewProcessor(keeper keeper.Keeper,
 	appInfo *common.AppInfo,
 ) *Processor {
 	return &Processor{
-		keeper:   keeper,
-		appKeys:  appKeys,
-		config:   config,
-		txSubmit: txSubmit,
-		appInfo:  appInfo,
+		keeper:           keeper,
+		appKeys:          appKeys,
+		config:           config,
+		txSubmit:         txSubmit,
+		appInfo:          appInfo,
+		keygenVoteResult: make(map[string]map[string]bool),
+		// And array that stores block numbers where we should do final vote count.
+		keygenBlockPairs: make([]BlockSymbolPair, 0),
+	}
+}
+
+func (p *Processor) BeginBlock(blockHeight int64) {
+	p.currentHeight = blockHeight
+	// Check Vote result.
+	for len(p.keygenBlockPairs) > 0 && !p.appInfo.IsCatchingUp() {
+		utils.LogDebug("blockHeight = ", blockHeight)
+		utils.LogDebug("p.keygenBlockPairs[0].blockHeight = ", p.keygenBlockPairs[0].blockHeight)
+
+		if blockHeight < p.keygenBlockPairs[0].blockHeight {
+			break
+		}
+
+		for len(p.keygenBlockPairs) > 0 && blockHeight >= p.keygenBlockPairs[0].blockHeight {
+			chaimSymbol := p.keygenBlockPairs[0].chainSymbol
+
+			// Now we count the votes
+			p.countKeygenVote()
+
+			// Remove the chain from processing queue.
+			p.keygenBlockPairs = p.keygenBlockPairs[1:]
+			delete(p.keygenVoteResult, chaimSymbol)
+		}
 	}
 }
 

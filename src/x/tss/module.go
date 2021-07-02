@@ -192,6 +192,8 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 			go am.processor.CheckTssKeygen(ctx, req.Header.Height)
 		}
 	}
+
+	am.processor.BeginBlock(req.Header.Height)
 }
 
 // EndBlock executes all ABCI EndBlock logic respective to the capability module. It

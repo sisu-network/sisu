@@ -56,6 +56,11 @@ type TssConfig struct {
 	Host            string                    `toml:"host"`
 	Port            int                       `toml:"port"`
 	SupportedChains map[string]TssChainConfig `toml:"supported_chains"`
+
+	// Keygen
+	PoolSizeLowerBound  int
+	PoolSizeUpperBound  int
+	BlockProposalLength int
 }
 
 func NewLocalConfig() Config {

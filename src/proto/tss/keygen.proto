@@ -14,7 +14,7 @@ message KeygenProposal {
 
 message KeygenProposalVote {
   string signer = 1;
-  string proposalId = 2;
+  string chainSymbol = 2;
 
   enum Vote {
     APPROVE = 0;
