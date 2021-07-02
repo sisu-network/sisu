@@ -17,6 +17,7 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/client/cli"
@@ -109,6 +110,7 @@ type AppModule struct {
 	blockCaughtUp bool
 	appKeys       *common.AppKeys
 	txSubmit      common.TxSubmit
+	appInfo       *common.AppInfo
 }
 
 func NewAppModule(cdc codec.Marshaler,
@@ -117,6 +119,7 @@ func NewAppModule(cdc codec.Marshaler,
 	appKeys *common.AppKeys,
 	txSubmit common.TxSubmit,
 	processor *Processor,
+	appInfo *common.AppInfo,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),
@@ -125,6 +128,7 @@ func NewAppModule(cdc codec.Marshaler,
 		keeper:         keeper,
 		bridge:         bridge,
 		appKeys:        appKeys,
+		appInfo:        appInfo,
 	}
 }
 
@@ -135,7 +139,7 @@ func (am AppModule) Name() string {
 
 // Route returns the capability module's message routing key.
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.txSubmit))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.txSubmit, am.processor))
 }
 
 // QuerierRoute returns the capability module's query routing key.
@@ -177,9 +181,9 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	if !am.blockCaughtUp {
 		utils.LogDebug("BeginBlock: CHecking catching up...")
-		isCatchingUp, err := am.bridge.isCatchingUp()
+		isCatchingUp := am.appInfo.IsCatchingUp()
 		utils.LogDebug("isCatchingUp = ", isCatchingUp)
-		if err == nil && !isCatchingUp {
+		if !isCatchingUp {
 			// App has done replaying block!
 			utils.LogInfo("All blocks are caught up")
 			am.blockCaughtUp = true

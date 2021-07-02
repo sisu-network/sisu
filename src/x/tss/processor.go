@@ -13,6 +13,7 @@ import (
 
 const (
 	PROPOSE_BLOCK_INTERVAL = 1000
+	PROPOSAL_BLOCK_LENGTH  = 5
 )
 
 var (
@@ -25,32 +26,29 @@ type Processor struct {
 	txSubmit               common.TxSubmit
 	lastProposeBlockHeight int64
 	appKeys                *common.AppKeys
+	bridge                 *Bridge
+	appInfo                *common.AppInfo
 }
 
 func NewProcessor(keeper keeper.Keeper,
 	config config.TssConfig,
 	appKeys *common.AppKeys,
 	txSubmit common.TxSubmit,
+	appInfo *common.AppInfo,
 ) *Processor {
 	return &Processor{
 		keeper:   keeper,
 		appKeys:  appKeys,
 		config:   config,
 		txSubmit: txSubmit,
+		appInfo:  appInfo,
 	}
 }
 
 func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
-	chainsInfo, err := p.keeper.GetRecordedChainsOnSisu(ctx)
+	recordedChains, err := p.keeper.GetRecordedChainsOnSisu(ctx)
 	if err != nil {
 		return
-	}
-
-	recordedChains := make(map[string]*types.ChainInfo, len(chainsInfo.Chains))
-
-	// Compare what we have in chains info and what we have in the config
-	for _, chain := range chainsInfo.Chains {
-		recordedChains[chain.Symbol] = chain
 	}
 
 	utils.LogInfo("recordedChains = ", recordedChains)
@@ -69,7 +67,12 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 
 		for _, chain := range unavailableChains {
 			// TODO: Add checking if a chain proposal has been submitted recently.
-			proposal := types.NewMsgKeygenProposal(signer.String(), chain)
+			proposal := types.NewMsgKeygenProposal(
+				signer.String(),
+				chain,
+				utils.GenerateRandomString(16),
+				blockHeight+PROPOSAL_BLOCK_LENGTH,
+			)
 			utils.LogDebug("Submitting proposal message for chain", chain)
 			err := p.txSubmit.SubmitMessage(proposal)
 			if err != nil {

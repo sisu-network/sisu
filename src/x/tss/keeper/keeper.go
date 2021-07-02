@@ -19,13 +19,21 @@ func NewKeeper(storeKey sdk.StoreKey) *Keeper {
 	}
 }
 
-func (k *Keeper) GetRecordedChainsOnSisu(ctx sdk.Context) (*types.ChainsInfo, error) {
+func (k *Keeper) GetRecordedChainsOnSisu(ctx sdk.Context) (map[string]*types.ChainInfo, error) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get([]byte(KEY_RECORDED_CHAIN))
 
 	chainsInfo := &types.ChainsInfo{}
 	err := chainsInfo.Unmarshal(bz)
-	return chainsInfo, err
+
+	recordedChains := make(map[string]*types.ChainInfo, len(chainsInfo.Chains))
+
+	// Compare what we have in chains info and what we have in the config
+	for _, chain := range chainsInfo.Chains {
+		recordedChains[chain.Symbol] = chain
+	}
+
+	return recordedChains, err
 }
 
 func (k *Keeper) SetChainsInfo(ctx sdk.Context, chainsInfo types.ChainsInfo) error {

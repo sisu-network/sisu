@@ -74,14 +74,15 @@ func localETHConfig(baseDir string) *ETHConfig {
 	home := baseDir + "/eth"
 
 	return &ETHConfig{
-		Home:          home,
-		Eth:           getLocalEthConfig(),
-		Host:          "localhost",
-		Port:          1234,
-		UseInMemDb:    false,
-		DbPath:        home + "leveldb",
-		Node:          getLocalEthNodeConfig(home),
-		ImportAccount: true,
+		Home:       home,
+		Eth:        getLocalEthConfig(),
+		Host:       "localhost",
+		Port:       1234,
+		UseInMemDb: false,
+		DbPath:     home + "leveldb",
+		Node:       getLocalEthNodeConfig(home),
+		// ImportAccount: true,
+		ImportAccount: false,
 	}
 }
 

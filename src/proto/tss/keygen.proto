@@ -1,0 +1,25 @@
+syntax = "proto3";
+package types;
+
+message KeygenProposal {
+  string signer = 1;
+  string chainSymbol = 2;
+
+  // Random id for this proposal.
+  string id = 3;
+
+  // Block number that this proposal expires. All votes should be casted and saved by this time.
+  int64 expirationBlock = 4;
+}
+
+message KeygenProposalVote {
+  string signer = 1;
+  string proposalId = 2;
+
+  enum Vote {
+    APPROVE = 0;
+    REJECT = 1;
+  }
+
+  Vote vote = 3;
+}
