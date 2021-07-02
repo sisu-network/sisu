@@ -168,6 +168,7 @@ var (
 type App struct {
 	txSubmitter *common.TxSubmitter
 	appKeys     *common.AppKeys
+	appInfo     *common.AppInfo
 
 	///////////////////////////////////////////////////////////////
 
@@ -271,6 +272,8 @@ func New(
 	app.appKeys = common.NewAppKeys(*cfg.GetSisuConfig())
 	app.appKeys.Init()
 
+	app.appInfo = common.NewAppInfo()
+
 	app.txSubmitter = common.NewTxSubmitter(cfg, app.appKeys)
 	go app.txSubmitter.Start()
 
@@ -339,9 +342,9 @@ func New(
 		evm.NewAppModule(appCodec, app.evmKeeper),
 	}
 
-	tssProcessor := tss.NewProcessor(app.tssKeeper, *tssConfig, app.appKeys, app.txSubmitter)
+	tssProcessor := tss.NewProcessor(app.tssKeeper, *tssConfig, app.appKeys, app.txSubmitter, app.appInfo)
 	if tssConfig.Enable {
-		modules = append(modules, tss.NewAppModule(appCodec, app.tssKeeper, app.tssBridge, app.appKeys, app.txSubmitter, tssProcessor))
+		modules = append(modules, tss.NewAppModule(appCodec, app.tssKeeper, app.tssBridge, app.appKeys, app.txSubmitter, tssProcessor, app.appInfo))
 	}
 
 	app.mm = module.NewManager(modules...)
@@ -660,6 +663,8 @@ func initParamsKeeper(appCodec codec.BinaryMarshaler, legacyAmino *codec.LegacyA
 
 // BeginBlocker application updates every begin block
 func (app *App) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+	app.appInfo.UpdateCatchingUp()
+
 	return app.mm.BeginBlock(ctx, req)
 }
 

@@ -12,13 +12,15 @@ import (
 )
 
 // NewHandler ...
-func NewHandler(k keeper.Keeper, txSubmit common.TxSubmit) sdk.Handler {
+func NewHandler(k keeper.Keeper, txSubmit common.TxSubmit, processor *Processor) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 
 		switch msg := msg.(type) {
 		case *types.KeygenProposal:
-			return handleKeygenProposal(msg, txSubmit)
+			return handleKeygenProposal(msg, processor)
+		case *types.KeygenProposalVote:
+			return handleKeygenProposalVote(msg, processor)
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
@@ -26,7 +28,18 @@ func NewHandler(k keeper.Keeper, txSubmit common.TxSubmit) sdk.Handler {
 	}
 }
 
-func handleKeygenProposal(msg *types.KeygenProposal, txSubmit common.TxSubmit) (*sdk.Result, error) {
-	utils.LogDebug("Handling keygen proposal....")
-	return &sdk.Result{}, nil
+func handleKeygenProposal(msg *types.KeygenProposal, processor *Processor) (*sdk.Result, error) {
+	data, err := processor.DeliverKeyGenProposal(msg)
+	return &sdk.Result{
+		Data: data,
+	}, err
+}
+
+func handleKeygenProposalVote(msg *types.KeygenProposalVote, processor *Processor) (*sdk.Result, error) {
+	utils.LogDebug("Handling keygen proposal vote....")
+
+	data, err := processor.DeliverKeyGenProposalVote(msg)
+	return &sdk.Result{
+		Data: data,
+	}, err
 }
