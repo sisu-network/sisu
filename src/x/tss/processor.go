@@ -111,7 +111,7 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 				signer.String(),
 				chain,
 				utils.GenerateRandomString(16),
-				blockHeight+PROPOSAL_BLOCK_LENGTH,
+				blockHeight+int64(p.config.BlockProposalLength),
 			)
 			utils.LogDebug("Submitting proposal message for chain", chain)
 			err := p.txSubmit.SubmitMessage(proposal)
