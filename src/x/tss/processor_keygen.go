@@ -118,5 +118,11 @@ func (p *Processor) countKeygenVote() {
 
 		// 2. Send a signal to Tuktuk to start keygen process.
 		utils.LogInfo("Sending keygen request to Tuktuk...")
+		err := p.client.KeyGen(chainSymbol)
+		if err != nil {
+			utils.LogError(err)
+			return
+		}
+		utils.LogInfo("Keygen request is sent successfully.")
 	}
 }

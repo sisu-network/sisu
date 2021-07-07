@@ -38,3 +38,14 @@ func (tc *Client) GetVersion() (string, error) {
 
 	return result, nil
 }
+
+func (tc *Client) KeyGen(chainSymbol string) error {
+	var result string
+	err := tc.client.CallContext(context.Background(), &result, "tss_keyGen", chainSymbol)
+	if err != nil {
+		utils.LogError("Cannot send keygen request, err = ", err)
+		return err
+	}
+
+	return nil
+}

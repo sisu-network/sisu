@@ -11,6 +11,7 @@ import (
 	"github.com/sisu-network/sisu/x/tss/tuktukclient"
 )
 
+// @Deprecated
 // This is the communication bridge between sisu and tss server.
 type Bridge struct {
 	tssConfig  config.TssConfig
@@ -29,8 +30,10 @@ func NewBridge(tssConfig config.TssConfig) *Bridge {
 }
 
 func (b *Bridge) Initialize() {
+	utils.LogInfo("Initializing bridge...")
+
 	go func() {
-		b.connectTutTuk()
+		// b.connectTutTuk()
 		b.waitForAppReady()
 	}()
 }

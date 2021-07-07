@@ -8,6 +8,7 @@ import (
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/keeper"
+	"github.com/sisu-network/sisu/x/tss/tuktukclient"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
 
@@ -41,6 +42,8 @@ type Processor struct {
 	// A map of chainSymbol -> map ()
 	keygenVoteResult map[string]map[string]bool
 	keygenBlockPairs []BlockSymbolPair
+
+	client *tuktukclient.Client
 }
 
 func NewProcessor(keeper keeper.Keeper,
@@ -58,6 +61,22 @@ func NewProcessor(keeper keeper.Keeper,
 		keygenVoteResult: make(map[string]map[string]bool),
 		// And array that stores block numbers where we should do final vote count.
 		keygenBlockPairs: make([]BlockSymbolPair, 0),
+	}
+}
+
+func (p *Processor) Init() {
+	if p.config.Enable {
+		var err error
+		url := fmt.Sprintf("http://%s:%d", p.config.Host, p.config.Port)
+		utils.LogInfo("Connecting to tuktuk server at", url)
+
+		p.client, err = tuktukclient.Dial(url)
+
+		if err != nil {
+			utils.LogError(err)
+			panic(err)
+		}
+		utils.LogInfo("Tuktuk server connected!")
 	}
 }
 

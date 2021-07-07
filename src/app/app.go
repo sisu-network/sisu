@@ -344,6 +344,7 @@ func New(
 
 	tssProcessor := tss.NewProcessor(app.tssKeeper, *tssConfig, app.appKeys, app.txSubmitter, app.appInfo)
 	if tssConfig.Enable {
+		tssProcessor.Init()
 		modules = append(modules, tss.NewAppModule(appCodec, app.tssKeeper, app.tssBridge, app.appKeys, app.txSubmitter, tssProcessor, app.appInfo))
 	}
 
