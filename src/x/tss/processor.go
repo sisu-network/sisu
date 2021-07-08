@@ -35,7 +35,6 @@ type Processor struct {
 	txSubmit               common.TxSubmit
 	lastProposeBlockHeight int64
 	appKeys                *common.AppKeys
-	bridge                 *Bridge
 	appInfo                *common.AppInfo
 	currentHeight          int64
 
