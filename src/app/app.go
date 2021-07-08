@@ -210,7 +210,6 @@ type App struct {
 
 	evmKeeper evmKeeper.Keeper
 	tssKeeper tssKeeper.Keeper
-	tssBridge *tss.Bridge
 
 	// the module manager
 	mm *module.Manager
@@ -294,9 +293,6 @@ func New(
 	}
 	if tssConfig.Enable {
 		app.tssKeeper = *tssKeeper.NewKeeper(keys[tsstypes.StoreKey])
-
-		app.tssBridge = tss.NewBridge(*tssConfig)
-		app.tssBridge.Initialize()
 	}
 
 	//////////////////////////////////////////////////////////////////////
@@ -345,7 +341,7 @@ func New(
 	tssProcessor := tss.NewProcessor(app.tssKeeper, *tssConfig, app.appKeys, app.txSubmitter, app.appInfo)
 	if tssConfig.Enable {
 		tssProcessor.Init()
-		modules = append(modules, tss.NewAppModule(appCodec, app.tssKeeper, app.tssBridge, app.appKeys, app.txSubmitter, tssProcessor, app.appInfo))
+		modules = append(modules, tss.NewAppModule(appCodec, app.tssKeeper, app.appKeys, app.txSubmitter, tssProcessor, app.appInfo))
 	}
 
 	app.mm = module.NewManager(modules...)

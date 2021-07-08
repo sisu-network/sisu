@@ -105,7 +105,6 @@ type AppModule struct {
 	AppModuleBasic
 
 	keeper        keeper.Keeper
-	bridge        *Bridge
 	processor     *Processor
 	blockCaughtUp bool
 	appKeys       *common.AppKeys
@@ -115,7 +114,6 @@ type AppModule struct {
 
 func NewAppModule(cdc codec.Marshaler,
 	keeper keeper.Keeper,
-	bridge *Bridge,
 	appKeys *common.AppKeys,
 	txSubmit common.TxSubmit,
 	processor *Processor,
@@ -126,7 +124,6 @@ func NewAppModule(cdc codec.Marshaler,
 		txSubmit:       txSubmit,
 		processor:      processor,
 		keeper:         keeper,
-		bridge:         bridge,
 		appKeys:        appKeys,
 		appInfo:        appInfo,
 	}
