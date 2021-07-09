@@ -22,6 +22,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/version"
+	ethRpc "github.com/ethereum/go-ethereum/rpc"
 
 	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
@@ -78,6 +79,7 @@ import (
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	appparams "github.com/sisu-network/sisu/app/params"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/server"
 	"github.com/sisu-network/sisu/x/auth"
 	"github.com/sisu-network/sisu/x/auth/ante"
 	"github.com/sisu-network/sisu/x/evm"
@@ -166,9 +168,10 @@ var (
 // They are exported for convenience in creating helper functions, as object
 // capabilities aren't needed for testing.
 type App struct {
-	txSubmitter *common.TxSubmitter
-	appKeys     *common.AppKeys
-	appInfo     *common.AppInfo
+	txSubmitter       *common.TxSubmitter
+	appKeys           *common.AppKeys
+	appInfo           *common.AppInfo
+	internalApiServer server.Server
 
 	///////////////////////////////////////////////////////////////
 
@@ -436,6 +439,8 @@ func New(
 		app.CapabilityKeeper.InitializeAndSeal(ctx)
 	}
 
+	app.setupApiServer(cfg)
+
 	return app
 }
 
@@ -670,4 +675,16 @@ func (app *App) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.Respo
 	app.txSubmitter.SyncBlockSequence(ctx, app.AccountKeeper)
 
 	return app.mm.EndBlock(ctx, req)
+}
+
+// This is internal server for Sisu to communicate with other components (e.g. TSS or watchers).
+// These apis are not exposed to public.
+func (app *App) setupApiServer(c config.Config) {
+	handler := ethRpc.NewServer()
+	handler.RegisterName("tss", tss.NewApi())
+
+	appConfig := c.GetSisuConfig()
+	s := server.NewServer(handler, appConfig.InternalApiHost, appConfig.InternalApiPort)
+
+	go s.Run()
 }
