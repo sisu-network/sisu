@@ -60,11 +60,13 @@ func localSisuConfig() *SisuConfig {
 	}
 
 	sisuConfig := &SisuConfig{
-		SignerName:     "owner",
-		ConfigDir:      appDir,
-		Home:           appDir + "/main",
-		KeyringBackend: keyring.BackendTest,
-		ChainId:        "sisu-dev",
+		SignerName:      "owner",
+		ConfigDir:       appDir,
+		Home:            appDir + "/main",
+		KeyringBackend:  keyring.BackendTest,
+		ChainId:         "sisu-dev",
+		InternalApiHost: "localhost",
+		InternalApiPort: 25456,
 	}
 
 	return sisuConfig
