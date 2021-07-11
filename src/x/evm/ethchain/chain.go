@@ -246,7 +246,6 @@ func (self *ETHChain) BeginBlock(timestamp time.Time) error {
 
 // Validates a transaction. Many part of this function is borrowed from tx_pool.validateTx().
 func (self *ETHChain) valdiateTx(tx *types.Transaction) error {
-	// TODO: Add
 	// Reject transactions over defined size to prevent DOS attacks
 	if uint64(tx.Size()) > TX_MAX_SIZE {
 		return core.ErrOversizedData
