@@ -44,8 +44,6 @@ func NewAnteHandler(
 			return ctx, err
 		}
 
-		utils.LogDebug("Ante: txType = ", txType)
-
 		switch txType {
 		case TYPE_TX_ETH:
 			anteHandler = EvmAnteHandler(ctx, tx, ak, bankKeeper, evmKeeper, sigGasConsumer, signModeHandler, ethValidator)
