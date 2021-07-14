@@ -28,6 +28,6 @@ func (s *Server) Run() {
 	}
 
 	srv := &http.Server{Handler: s.handler}
-	utils.LogInfo("Running server...")
+	utils.LogInfo("Running API server at ", s.listenAddress)
 	srv.Serve(listener)
 }

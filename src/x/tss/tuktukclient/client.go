@@ -21,10 +21,10 @@ func DialContext(ctx context.Context, rawurl string) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewClient(c), nil
+	return newClient(c), nil
 }
 
-func NewClient(c *rpc.Client) *Client {
+func newClient(c *rpc.Client) *Client {
 	return &Client{c}
 }
 
