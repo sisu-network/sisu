@@ -75,7 +75,7 @@ func (m *ChainInfo) GetValidators() []string {
 }
 
 type ChainsInfo struct {
-	Chains []*ChainInfo `protobuf:"bytes,1,rep,name=chains,proto3" json:"chains,omitempty"`
+	Chains map[string]*ChainInfo `protobuf:"bytes,1,rep,name=chains,proto3" json:"chains,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
 func (m *ChainsInfo) Reset()         { *m = ChainsInfo{} }
@@ -111,7 +111,7 @@ func (m *ChainsInfo) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ChainsInfo proto.InternalMessageInfo
 
-func (m *ChainsInfo) GetChains() []*ChainInfo {
+func (m *ChainsInfo) GetChains() map[string]*ChainInfo {
 	if m != nil {
 		return m.Chains
 	}
@@ -121,23 +121,27 @@ func (m *ChainsInfo) GetChains() []*ChainInfo {
 func init() {
 	proto.RegisterType((*ChainInfo)(nil), "types.ChainInfo")
 	proto.RegisterType((*ChainsInfo)(nil), "types.ChainsInfo")
+	proto.RegisterMapType((map[string]*ChainInfo)(nil), "types.ChainsInfo.ChainsEntry")
 }
 
 func init() { proto.RegisterFile("chain_info.proto", fileDescriptor_5ecc058c5fd6c17b) }
 
 var fileDescriptor_5ecc058c5fd6c17b = []byte{
-	// 167 bytes of a gzipped FileDescriptorProto
+	// 220 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x48, 0xce, 0x48, 0xcc,
 	0xcc, 0x8b, 0xcf, 0xcc, 0x4b, 0xcb, 0xd7, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x2d, 0xa9,
 	0x2c, 0x48, 0x2d, 0x56, 0x72, 0xe6, 0xe2, 0x74, 0x06, 0x49, 0x79, 0xe6, 0xa5, 0xe5, 0x0b, 0x89,
 	0x71, 0xb1, 0x15, 0x57, 0xe6, 0x26, 0xe5, 0xe7, 0x48, 0x30, 0x2a, 0x30, 0x6a, 0x70, 0x06, 0x41,
 	0x79, 0x42, 0x72, 0x5c, 0x5c, 0x65, 0x89, 0x39, 0x99, 0x29, 0x89, 0x25, 0xf9, 0x45, 0xc5, 0x12,
-	0x4c, 0x0a, 0xcc, 0x1a, 0x9c, 0x41, 0x48, 0x22, 0x4a, 0x66, 0x5c, 0x5c, 0x60, 0x43, 0x8a, 0xc1,
-	0xa6, 0x68, 0x70, 0xb1, 0x81, 0x6d, 0x2b, 0x96, 0x60, 0x54, 0x60, 0xd6, 0xe0, 0x36, 0x12, 0xd0,
-	0x03, 0x5b, 0xa5, 0x07, 0xb7, 0x27, 0x08, 0x2a, 0xef, 0x24, 0x71, 0xe2, 0x91, 0x1c, 0xe3, 0x85,
-	0x47, 0x72, 0x8c, 0x0f, 0x1e, 0xc9, 0x31, 0x4e, 0x78, 0x2c, 0xc7, 0x70, 0xe1, 0xb1, 0x1c, 0xc3,
-	0x8d, 0xc7, 0x72, 0x0c, 0x49, 0x6c, 0x60, 0x47, 0x1a, 0x03, 0x02, 0x00, 0x00, 0xff, 0xff, 0xbd,
-	0xfe, 0x8c, 0x20, 0xb8, 0x00, 0x00, 0x00,
+	0x4c, 0x0a, 0xcc, 0x1a, 0x9c, 0x41, 0x48, 0x22, 0x4a, 0x13, 0x18, 0xb9, 0xb8, 0xc0, 0xa6, 0x14,
+	0x83, 0x8d, 0x31, 0xe5, 0x62, 0x03, 0x5b, 0x57, 0x2c, 0xc1, 0xa8, 0xc0, 0xac, 0xc1, 0x6d, 0x24,
+	0xab, 0x07, 0xb6, 0x4b, 0x0f, 0xa1, 0x04, 0xca, 0x74, 0xcd, 0x2b, 0x29, 0xaa, 0x0c, 0x82, 0x2a,
+	0x96, 0xf2, 0xe6, 0xe2, 0x46, 0x12, 0x16, 0x12, 0xe0, 0x62, 0xce, 0x4e, 0xad, 0x84, 0xba, 0x04,
+	0xc4, 0x14, 0x52, 0xe3, 0x62, 0x2d, 0x4b, 0xcc, 0x29, 0x4d, 0x95, 0x60, 0x52, 0x60, 0xd4, 0xe0,
+	0x36, 0x12, 0x40, 0x36, 0x16, 0x64, 0x6a, 0x10, 0x44, 0xda, 0x8a, 0xc9, 0x82, 0xd1, 0x49, 0xe2,
+	0xc4, 0x23, 0x39, 0xc6, 0x0b, 0x8f, 0xe4, 0x18, 0x1f, 0x3c, 0x92, 0x63, 0x9c, 0xf0, 0x58, 0x8e,
+	0xe1, 0xc2, 0x63, 0x39, 0x86, 0x1b, 0x8f, 0xe5, 0x18, 0x92, 0xd8, 0xc0, 0xfe, 0x37, 0x06, 0x04,
+	0x00, 0x00, 0xff, 0xff, 0x7f, 0x4a, 0x37, 0xc6, 0x13, 0x01, 0x00, 0x00,
 }
 
 func (m *ChainInfo) Marshal() (dAtA []byte, err error) {
@@ -200,15 +204,27 @@ func (m *ChainsInfo) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	var l int
 	_ = l
 	if len(m.Chains) > 0 {
-		for iNdEx := len(m.Chains) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Chains[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
+		for k := range m.Chains {
+			v := m.Chains[k]
+			baseI := i
+			if v != nil {
+				{
+					size, err := v.MarshalToSizedBuffer(dAtA[:i])
+					if err != nil {
+						return 0, err
+					}
+					i -= size
+					i = encodeVarintChainInfo(dAtA, i, uint64(size))
 				}
-				i -= size
-				i = encodeVarintChainInfo(dAtA, i, uint64(size))
+				i--
+				dAtA[i] = 0x12
 			}
+			i -= len(k)
+			copy(dAtA[i:], k)
+			i = encodeVarintChainInfo(dAtA, i, uint64(len(k)))
+			i--
+			dAtA[i] = 0xa
+			i = encodeVarintChainInfo(dAtA, i, uint64(baseI-i))
 			i--
 			dAtA[i] = 0xa
 		}
@@ -253,9 +269,16 @@ func (m *ChainsInfo) Size() (n int) {
 	var l int
 	_ = l
 	if len(m.Chains) > 0 {
-		for _, e := range m.Chains {
-			l = e.Size()
-			n += 1 + l + sovChainInfo(uint64(l))
+		for k, v := range m.Chains {
+			_ = k
+			_ = v
+			l = 0
+			if v != nil {
+				l = v.Size()
+				l += 1 + sovChainInfo(uint64(l))
+			}
+			mapEntrySize := 1 + len(k) + sovChainInfo(uint64(len(k))) + l
+			n += mapEntrySize + 1 + sovChainInfo(uint64(mapEntrySize))
 		}
 	}
 	return n
@@ -439,10 +462,105 @@ func (m *ChainsInfo) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Chains = append(m.Chains, &ChainInfo{})
-			if err := m.Chains[len(m.Chains)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			if m.Chains == nil {
+				m.Chains = make(map[string]*ChainInfo)
 			}
+			var mapkey string
+			var mapvalue *ChainInfo
+			for iNdEx < postIndex {
+				entryPreIndex := iNdEx
+				var wire uint64
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowChainInfo
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					wire |= uint64(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				fieldNum := int32(wire >> 3)
+				if fieldNum == 1 {
+					var stringLenmapkey uint64
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowChainInfo
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						stringLenmapkey |= uint64(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					intStringLenmapkey := int(stringLenmapkey)
+					if intStringLenmapkey < 0 {
+						return ErrInvalidLengthChainInfo
+					}
+					postStringIndexmapkey := iNdEx + intStringLenmapkey
+					if postStringIndexmapkey < 0 {
+						return ErrInvalidLengthChainInfo
+					}
+					if postStringIndexmapkey > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapkey = string(dAtA[iNdEx:postStringIndexmapkey])
+					iNdEx = postStringIndexmapkey
+				} else if fieldNum == 2 {
+					var mapmsglen int
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowChainInfo
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						mapmsglen |= int(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					if mapmsglen < 0 {
+						return ErrInvalidLengthChainInfo
+					}
+					postmsgIndex := iNdEx + mapmsglen
+					if postmsgIndex < 0 {
+						return ErrInvalidLengthChainInfo
+					}
+					if postmsgIndex > l {
+						return io.ErrUnexpectedEOF
+					}
+					mapvalue = &ChainInfo{}
+					if err := mapvalue.Unmarshal(dAtA[iNdEx:postmsgIndex]); err != nil {
+						return err
+					}
+					iNdEx = postmsgIndex
+				} else {
+					iNdEx = entryPreIndex
+					skippy, err := skipChainInfo(dAtA[iNdEx:])
+					if err != nil {
+						return err
+					}
+					if (skippy < 0) || (iNdEx+skippy) < 0 {
+						return ErrInvalidLengthChainInfo
+					}
+					if (iNdEx + skippy) > postIndex {
+						return io.ErrUnexpectedEOF
+					}
+					iNdEx += skippy
+				}
+			}
+			m.Chains[mapkey] = mapvalue
 			iNdEx = postIndex
 		default:
 			iNdEx = preIndex

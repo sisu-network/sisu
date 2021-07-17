@@ -37,12 +37,11 @@ type Processor struct {
 	appKeys                *common.AppKeys
 	appInfo                *common.AppInfo
 	currentHeight          int64
+	client                 *tuktukclient.Client
 
 	// A map of chainSymbol -> map ()
 	keygenVoteResult map[string]map[string]bool
 	keygenBlockPairs []BlockSymbolPair
-
-	client *tuktukclient.Client
 }
 
 func NewProcessor(keeper keeper.Keeper,
@@ -79,8 +78,12 @@ func (p *Processor) Init() {
 	}
 }
 
-func (p *Processor) BeginBlock(blockHeight int64) {
+func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 	p.currentHeight = blockHeight
+
+	// Check keygen proposal
+	p.CheckTssKeygen(ctx, blockHeight)
+
 	// Check Vote result.
 	for len(p.keygenBlockPairs) > 0 && !p.appInfo.IsCatchingUp() {
 		utils.LogDebug("blockHeight = ", blockHeight)
@@ -104,42 +107,46 @@ func (p *Processor) BeginBlock(blockHeight int64) {
 }
 
 func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
-	recordedChains, err := p.keeper.GetRecordedChainsOnSisu(ctx)
+	if p.appInfo.IsCatchingUp() ||
+		p.lastProposeBlockHeight != 0 && blockHeight-p.lastProposeBlockHeight <= PROPOSE_BLOCK_INTERVAL {
+		return
+	}
+
+	chains, err := p.keeper.GetRecordedChainsOnSisu(ctx)
 	if err != nil {
 		return
 	}
 
-	utils.LogInfo("recordedChains = ", recordedChains)
+	utils.LogInfo("recordedChains = ", chains)
 
 	unavailableChains := make([]string, 0)
 	for _, chainConfig := range p.config.SupportedChains {
-		if recordedChains[chainConfig.Symbol] == nil {
+		if chains.Chains[chainConfig.Symbol] == nil {
 			unavailableChains = append(unavailableChains, chainConfig.Symbol)
 		}
 	}
 
-	if p.lastProposeBlockHeight == 0 || blockHeight-p.lastProposeBlockHeight > PROPOSE_BLOCK_INTERVAL {
-		// Broadcast a message.
-		utils.LogInfo("Broadcasting TSS Keygen Proposal message. len(unavailableChains) = ", len(unavailableChains))
-		signer := p.appKeys.GetSignerAddress()
+	// Broadcast a message.
+	utils.LogInfo("Broadcasting TSS Keygen Proposal message. len(unavailableChains) = ", len(unavailableChains))
+	signer := p.appKeys.GetSignerAddress()
 
-		for _, chain := range unavailableChains {
-			// TODO: Add checking if a chain proposal has been submitted recently.
-			proposal := types.NewMsgKeygenProposal(
-				signer.String(),
-				chain,
-				utils.GenerateRandomString(16),
-				blockHeight+int64(p.config.BlockProposalLength),
-			)
-			utils.LogDebug("Submitting proposal message for chain", chain)
+	for _, chain := range unavailableChains {
+		proposal := types.NewMsgKeygenProposal(
+			signer.String(),
+			chain,
+			utils.GenerateRandomString(16),
+			blockHeight+int64(p.config.BlockProposalLength),
+		)
+		utils.LogDebug("Submitting proposal message for chain", chain)
+		go func() {
 			err := p.txSubmit.SubmitMessage(proposal)
 			if err != nil {
 				utils.LogError(err)
 			}
-		}
-
-		p.lastProposeBlockHeight = blockHeight
+		}()
 	}
+
+	p.lastProposeBlockHeight = blockHeight
 }
 
 func (p *Processor) CheckTx(msgs []sdk.Msg) error {
@@ -150,19 +157,20 @@ func (p *Processor) CheckTx(msgs []sdk.Msg) error {
 			return fmt.Errorf("Some message is not a TSS message")
 		}
 
-		if msg.Type() == types.MSG_TYPE_KEYGEN_PROPOSAL {
+		utils.LogDebug("Msg type = ", msg.Type())
+
+		switch msg.Type() {
+		case types.MSG_TYPE_KEYGEN_PROPOSAL:
 			typedMsg, ok := msg.(*types.KeygenProposal)
 			if !ok {
 				return ERR_INVALID_MESSASGE_TYPE
 			}
 			return p.CheckKeyGenProposal(typedMsg)
+
+		case types.MSG_TYPE_KEYGEN_RESULT:
+			// TODO: check this keygen result.
 		}
 	}
-
-	return nil
-}
-
-func (p *Processor) DeliverTx(msg sdk.Msg) error {
 
 	return nil
 }

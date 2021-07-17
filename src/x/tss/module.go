@@ -19,7 +19,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/sisu-network/sisu/common"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/client/cli"
 	"github.com/sisu-network/sisu/x/tss/client/rest"
 	"github.com/sisu-network/sisu/x/tss/keeper"
@@ -104,12 +103,11 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 
-	keeper        keeper.Keeper
-	processor     *Processor
-	blockCaughtUp bool
-	appKeys       *common.AppKeys
-	txSubmit      common.TxSubmit
-	appInfo       *common.AppInfo
+	keeper    keeper.Keeper
+	processor *Processor
+	appKeys   *common.AppKeys
+	txSubmit  common.TxSubmit
+	appInfo   *common.AppInfo
 }
 
 func NewAppModule(cdc codec.Marshaler,
@@ -176,21 +174,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json
 
 // BeginBlock executes all ABCI BeginBlock logic respective to the capability module.
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-	if !am.blockCaughtUp {
-		utils.LogDebug("BeginBlock: CHecking catching up...")
-		isCatchingUp := am.appInfo.IsCatchingUp()
-		utils.LogDebug("isCatchingUp = ", isCatchingUp)
-		if !isCatchingUp {
-			// App has done replaying block!
-			utils.LogInfo("All blocks are caught up")
-			am.blockCaughtUp = true
-
-			// Check to see if we can do a keygen
-			go am.processor.CheckTssKeygen(ctx, req.Header.Height)
-		}
-	}
-
-	am.processor.BeginBlock(req.Header.Height)
+	am.processor.BeginBlock(ctx, req.Header.Height)
 }
 
 // EndBlock executes all ABCI EndBlock logic respective to the capability module. It

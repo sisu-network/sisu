@@ -47,6 +47,31 @@ func (KeygenProposalVote_Vote) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_dbc836e6b96b1a93, []int{1, 0}
 }
 
+type KeygenResult_Result int32
+
+const (
+	KeygenResult_SUCCESS KeygenResult_Result = 0
+	KeygenResult_FAILURE KeygenResult_Result = 1
+)
+
+var KeygenResult_Result_name = map[int32]string{
+	0: "SUCCESS",
+	1: "FAILURE",
+}
+
+var KeygenResult_Result_value = map[string]int32{
+	"SUCCESS": 0,
+	"FAILURE": 1,
+}
+
+func (x KeygenResult_Result) String() string {
+	return proto.EnumName(KeygenResult_Result_name, int32(x))
+}
+
+func (KeygenResult_Result) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_dbc836e6b96b1a93, []int{2, 0}
+}
+
 type KeygenProposal struct {
 	Signer      string `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
 	ChainSymbol string `protobuf:"bytes,2,opt,name=chainSymbol,proto3" json:"chainSymbol,omitempty"`
@@ -177,16 +202,78 @@ func (m *KeygenProposalVote) GetVote() KeygenProposalVote_Vote {
 	return KeygenProposalVote_APPROVE
 }
 
+type KeygenResult struct {
+	Signer      string              `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
+	ChainSymbol string              `protobuf:"bytes,2,opt,name=chainSymbol,proto3" json:"chainSymbol,omitempty"`
+	Result      KeygenResult_Result `protobuf:"varint,3,opt,name=result,proto3,enum=types.KeygenResult_Result" json:"result,omitempty"`
+}
+
+func (m *KeygenResult) Reset()         { *m = KeygenResult{} }
+func (m *KeygenResult) String() string { return proto.CompactTextString(m) }
+func (*KeygenResult) ProtoMessage()    {}
+func (*KeygenResult) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbc836e6b96b1a93, []int{2}
+}
+func (m *KeygenResult) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *KeygenResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_KeygenResult.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *KeygenResult) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KeygenResult.Merge(m, src)
+}
+func (m *KeygenResult) XXX_Size() int {
+	return m.Size()
+}
+func (m *KeygenResult) XXX_DiscardUnknown() {
+	xxx_messageInfo_KeygenResult.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_KeygenResult proto.InternalMessageInfo
+
+func (m *KeygenResult) GetSigner() string {
+	if m != nil {
+		return m.Signer
+	}
+	return ""
+}
+
+func (m *KeygenResult) GetChainSymbol() string {
+	if m != nil {
+		return m.ChainSymbol
+	}
+	return ""
+}
+
+func (m *KeygenResult) GetResult() KeygenResult_Result {
+	if m != nil {
+		return m.Result
+	}
+	return KeygenResult_SUCCESS
+}
+
 func init() {
 	proto.RegisterEnum("types.KeygenProposalVote_Vote", KeygenProposalVote_Vote_name, KeygenProposalVote_Vote_value)
+	proto.RegisterEnum("types.KeygenResult_Result", KeygenResult_Result_name, KeygenResult_Result_value)
 	proto.RegisterType((*KeygenProposal)(nil), "types.KeygenProposal")
 	proto.RegisterType((*KeygenProposalVote)(nil), "types.KeygenProposalVote")
+	proto.RegisterType((*KeygenResult)(nil), "types.KeygenResult")
 }
 
 func init() { proto.RegisterFile("keygen.proto", fileDescriptor_dbc836e6b96b1a93) }
 
 var fileDescriptor_dbc836e6b96b1a93 = []byte{
-	// 243 bytes of a gzipped FileDescriptorProto
+	// 305 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0xc9, 0x4e, 0xad, 0x4c,
 	0x4f, 0xcd, 0xd3, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x2d, 0xa9, 0x2c, 0x48, 0x2d, 0x56,
 	0x6a, 0x61, 0xe4, 0xe2, 0xf3, 0x06, 0x8b, 0x07, 0x14, 0xe5, 0x17, 0xe4, 0x17, 0x27, 0xe6, 0x08,
@@ -199,10 +286,14 @@ var fileDescriptor_dbc836e6b96b1a93 = []byte{
 	0x96, 0xb2, 0xfc, 0x92, 0x54, 0xb0, 0x63, 0xf8, 0x8c, 0xe4, 0xf4, 0xc0, 0xbe, 0xd5, 0xc3, 0xb4,
 	0x42, 0x0f, 0x44, 0x04, 0x81, 0xd5, 0x2a, 0xc9, 0x73, 0xb1, 0x80, 0x6d, 0xe5, 0xe6, 0x62, 0x77,
 	0x0c, 0x08, 0x08, 0xf2, 0x0f, 0x73, 0x15, 0x60, 0x10, 0xe2, 0xe2, 0x62, 0x0b, 0x72, 0xf5, 0x72,
-	0x75, 0x0e, 0x11, 0x60, 0x74, 0x92, 0x38, 0xf1, 0x48, 0x8e, 0xf1, 0xc2, 0x23, 0x39, 0xc6, 0x07,
-	0x8f, 0xe4, 0x18, 0x27, 0x3c, 0x96, 0x63, 0xb8, 0xf0, 0x58, 0x8e, 0xe1, 0xc6, 0x63, 0x39, 0x86,
-	0x24, 0x36, 0x70, 0xa0, 0x1a, 0x03, 0x02, 0x00, 0x00, 0xff, 0xff, 0xf8, 0x73, 0x8f, 0xf0, 0x64,
-	0x01, 0x00, 0x00,
+	0x75, 0x0e, 0x11, 0x60, 0x54, 0x5a, 0xc0, 0xc8, 0xc5, 0x03, 0x31, 0x22, 0x28, 0xb5, 0xb8, 0x34,
+	0xa7, 0x84, 0x22, 0xf7, 0xb1, 0x15, 0x81, 0xcd, 0x80, 0xba, 0x50, 0x0a, 0xc5, 0x85, 0x10, 0xe3,
+	0xf5, 0x20, 0x54, 0x10, 0x54, 0xa5, 0x92, 0x12, 0x17, 0x1b, 0xd4, 0x5e, 0x6e, 0x2e, 0xf6, 0xe0,
+	0x50, 0x67, 0x67, 0xd7, 0xe0, 0x60, 0x01, 0x06, 0x10, 0xc7, 0xcd, 0xd1, 0xd3, 0x27, 0x34, 0xc8,
+	0x55, 0x80, 0xd1, 0x49, 0xe2, 0xc4, 0x23, 0x39, 0xc6, 0x0b, 0x8f, 0xe4, 0x18, 0x1f, 0x3c, 0x92,
+	0x63, 0x9c, 0xf0, 0x58, 0x8e, 0xe1, 0xc2, 0x63, 0x39, 0x86, 0x1b, 0x8f, 0xe5, 0x18, 0x92, 0xd8,
+	0xc0, 0xf1, 0x6e, 0x0c, 0x08, 0x00, 0x00, 0xff, 0xff, 0x0b, 0x0a, 0x54, 0x4d, 0x07, 0x02, 0x00,
+	0x00,
 }
 
 func (m *KeygenProposal) Marshal() (dAtA []byte, err error) {
@@ -296,6 +387,48 @@ func (m *KeygenProposalVote) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
+func (m *KeygenResult) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *KeygenResult) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *KeygenResult) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Result != 0 {
+		i = encodeVarintKeygen(dAtA, i, uint64(m.Result))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.ChainSymbol) > 0 {
+		i -= len(m.ChainSymbol)
+		copy(dAtA[i:], m.ChainSymbol)
+		i = encodeVarintKeygen(dAtA, i, uint64(len(m.ChainSymbol)))
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Signer) > 0 {
+		i -= len(m.Signer)
+		copy(dAtA[i:], m.Signer)
+		i = encodeVarintKeygen(dAtA, i, uint64(len(m.Signer)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
 func encodeVarintKeygen(dAtA []byte, offset int, v uint64) int {
 	offset -= sovKeygen(v)
 	base := offset
@@ -347,6 +480,26 @@ func (m *KeygenProposalVote) Size() (n int) {
 	}
 	if m.Vote != 0 {
 		n += 1 + sovKeygen(uint64(m.Vote))
+	}
+	return n
+}
+
+func (m *KeygenResult) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Signer)
+	if l > 0 {
+		n += 1 + l + sovKeygen(uint64(l))
+	}
+	l = len(m.ChainSymbol)
+	if l > 0 {
+		n += 1 + l + sovKeygen(uint64(l))
+	}
+	if m.Result != 0 {
+		n += 1 + sovKeygen(uint64(m.Result))
 	}
 	return n
 }
@@ -630,6 +783,139 @@ func (m *KeygenProposalVote) Unmarshal(dAtA []byte) error {
 				b := dAtA[iNdEx]
 				iNdEx++
 				m.Vote |= KeygenProposalVote_Vote(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipKeygen(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthKeygen
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *KeygenResult) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowKeygen
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: KeygenResult: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: KeygenResult: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Signer", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowKeygen
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthKeygen
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthKeygen
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Signer = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field ChainSymbol", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowKeygen
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthKeygen
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthKeygen
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.ChainSymbol = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Result", wireType)
+			}
+			m.Result = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowKeygen
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Result |= KeygenResult_Result(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}

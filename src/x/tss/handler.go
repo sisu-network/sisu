@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/keeper"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
@@ -20,6 +21,8 @@ func NewHandler(k keeper.Keeper, txSubmit common.TxSubmit, processor *Processor)
 			return handleKeygenProposal(msg, processor)
 		case *types.KeygenProposalVote:
 			return handleKeygenProposalVote(msg, processor)
+		case *types.KeygenResult:
+			return handleKeygenResult(ctx, msg, processor)
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
@@ -36,6 +39,14 @@ func handleKeygenProposal(msg *types.KeygenProposal, processor *Processor) (*sdk
 
 func handleKeygenProposalVote(msg *types.KeygenProposalVote, processor *Processor) (*sdk.Result, error) {
 	data, err := processor.DeliverKeyGenProposalVote(msg)
+	return &sdk.Result{
+		Data: data,
+	}, err
+}
+
+func handleKeygenResult(ctx sdk.Context, msg *types.KeygenResult, processor *Processor) (*sdk.Result, error) {
+	utils.LogDebug("Handling TSS Keygen result")
+	data, err := processor.DeliverKeygenResult(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err

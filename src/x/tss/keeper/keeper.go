@@ -2,6 +2,7 @@ package keeper
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
 
@@ -19,24 +20,21 @@ func NewKeeper(storeKey sdk.StoreKey) *Keeper {
 	}
 }
 
-func (k *Keeper) GetRecordedChainsOnSisu(ctx sdk.Context) (map[string]*types.ChainInfo, error) {
+// Get a list of chains that this node supported and have generated private key through TSS.
+func (k *Keeper) GetRecordedChainsOnSisu(ctx sdk.Context) (*types.ChainsInfo, error) {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get([]byte(KEY_RECORDED_CHAIN))
 
 	chainsInfo := &types.ChainsInfo{}
 	err := chainsInfo.Unmarshal(bz)
 
-	recordedChains := make(map[string]*types.ChainInfo, len(chainsInfo.Chains))
-
-	// Compare what we have in chains info and what we have in the config
-	for _, chain := range chainsInfo.Chains {
-		recordedChains[chain.Symbol] = chain
-	}
-
-	return recordedChains, err
+	return chainsInfo, err
 }
 
-func (k *Keeper) SetChainsInfo(ctx sdk.Context, chainsInfo types.ChainsInfo) error {
+// Saves a list of chains that this node supports.
+func (k *Keeper) SetChainsInfo(ctx sdk.Context, chainsInfo *types.ChainsInfo) error {
+	utils.LogInfo("Keeper: Saving chain info into KV store", chainsInfo.Chains)
+
 	store := ctx.KVStore(k.storeKey)
 	bz, err := chainsInfo.Marshal()
 	if err != nil {
