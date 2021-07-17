@@ -1,11 +1,12 @@
 package tss
 
 import (
-	"fmt"
 	"sort"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
+	tTypes "github.com/sisu-network/tuktuk/types"
 )
 
 type BlockSymbolPair struct {
@@ -50,8 +51,6 @@ func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, er
 		}
 	}
 
-	fmt.Println("Found = ", found)
-
 	if !found {
 		// Add this chain to the processing queue. We will count votes in a few block later.
 		p.keygenBlockPairs = append(p.keygenBlockPairs, BlockSymbolPair{
@@ -87,30 +86,22 @@ func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, er
 }
 
 func (p *Processor) DeliverKeyGenProposalVote(msg *types.KeygenProposalVote) ([]byte, error) {
-	fmt.Println("Signer = ", msg.Signer)
-
 	voteResult := p.keygenVoteResult[msg.ChainSymbol]
 	if voteResult == nil {
 		voteResult = make(map[string]bool)
 	}
 
-	fmt.Println("msg.Vote = ", msg.Vote)
-	fmt.Println("msg.Vote == types.KeygenProposalVote_APPROVE = ", msg.Vote == types.KeygenProposalVote_APPROVE)
+	utils.LogDebug("msg = ", msg)
 
 	voteResult[msg.Signer] = msg.Vote == types.KeygenProposalVote_APPROVE
 	p.keygenVoteResult[msg.ChainSymbol] = voteResult
-
-	fmt.Println("len = ", len(p.keygenVoteResult[msg.ChainSymbol]))
 
 	return []byte{}, nil
 }
 
 func (p *Processor) countKeygenVote() {
 	chainSymbol := p.keygenBlockPairs[0].chainSymbol
-	fmt.Println("Counting vote for ", chainSymbol)
 	votesMap := p.keygenVoteResult[chainSymbol]
-
-	fmt.Println("len(votesMap) =  ", len(votesMap))
 
 	if len(votesMap) >= p.config.PoolSizeLowerBound {
 		// n := utils.MinInt(len(votesMap), p.config.PoolSizeUpperBound)
@@ -125,4 +116,49 @@ func (p *Processor) countKeygenVote() {
 		}
 		utils.LogInfo("Keygen request is sent successfully.")
 	}
+}
+
+// Called after having key generation result from Sisu's api server.
+func (p *Processor) OnKeygenResult(result tTypes.KeygenResult) {
+	// Post result to the cosmos chain
+	signer := p.appKeys.GetSignerAddress()
+
+	resultEnum := types.KeygenResult_FAILURE
+	if result.Success {
+		resultEnum = types.KeygenResult_SUCCESS
+	}
+
+	msg := types.NewKeygenResult(signer.String(), result.Chain, resultEnum)
+	p.txSubmit.SubmitMessage(msg)
+}
+
+func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult) ([]byte, error) {
+	// TODO: Accumulates results from others and check for bad actors
+
+	// For now, only process self message sent from this node.
+	if msg.Signer == p.appKeys.GetSignerAddress().String() {
+		utils.LogDebug("Keygen: This is the same signer...")
+
+		// Save this to KVStore
+		chainsInfo, err := p.keeper.GetRecordedChainsOnSisu(ctx)
+		if err != nil {
+			utils.LogError(err)
+			return nil, err
+		}
+
+		if chainsInfo.Chains == nil {
+			chainsInfo.Chains = make(map[string]*types.ChainInfo)
+		}
+
+		// TODO: Add validators here.
+		chainsInfo.Chains[msg.ChainSymbol] = &types.ChainInfo{
+			Symbol: msg.ChainSymbol,
+		}
+
+		p.keeper.SetChainsInfo(ctx, chainsInfo)
+	} else {
+		utils.LogDebug("Keygen: message is from different signers.")
+	}
+
+	return nil, nil
 }

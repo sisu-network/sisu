@@ -172,6 +172,7 @@ type App struct {
 	appKeys           *common.AppKeys
 	appInfo           *common.AppInfo
 	internalApiServer server.Server
+	tssProcessor      *tss.Processor
 
 	///////////////////////////////////////////////////////////////
 
@@ -294,9 +295,8 @@ func New(
 	if !ok {
 		panic("Cannot find TSS configuration")
 	}
-	if tssConfig.Enable {
-		app.tssKeeper = *tssKeeper.NewKeeper(keys[tsstypes.StoreKey])
-	}
+
+	app.tssKeeper = *tssKeeper.NewKeeper(keys[tsstypes.StoreKey])
 
 	//////////////////////////////////////////////////////////////////////
 
@@ -346,6 +346,7 @@ func New(
 		tssProcessor.Init()
 		modules = append(modules, tss.NewAppModule(appCodec, app.tssKeeper, app.appKeys, app.txSubmitter, tssProcessor, app.appInfo))
 	}
+	app.tssProcessor = tssProcessor
 
 	app.mm = module.NewManager(modules...)
 
@@ -681,7 +682,7 @@ func (app *App) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.Respo
 // These apis are not exposed to public.
 func (app *App) setupApiServer(c config.Config) {
 	handler := ethRpc.NewServer()
-	handler.RegisterName("tss", tss.NewApi())
+	handler.RegisterName("tss", tss.NewApi(app.tssProcessor, &app.tssKeeper))
 
 	appConfig := c.GetSisuConfig()
 	s := server.NewServer(handler, appConfig.InternalApiHost, appConfig.InternalApiPort)

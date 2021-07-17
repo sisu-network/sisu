@@ -7,5 +7,5 @@ message ChainInfo {
 }
 
 message ChainsInfo{
-  repeated ChainInfo chains = 1;
+  map<string, ChainInfo> chains = 1;
 }
