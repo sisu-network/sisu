@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
+	tCommon "github.com/sisu-network/tuktuk/common"
 	tTypes "github.com/sisu-network/tuktuk/types"
 )
 
@@ -156,9 +157,20 @@ func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult
 		}
 
 		p.keeper.SetChainsInfo(ctx, chainsInfo)
+
+		// TODO: Check if we need to deploy smart contracts.
+		// Deploy smart contract if needed.
+		p.BroadcastContractDeploymentMessage(msg.ChainSymbol)
 	} else {
 		utils.LogDebug("Keygen: message is from different signers.")
 	}
 
 	return nil, nil
+}
+
+func (p *Processor) BroadcastContractDeploymentMessage(chain string) {
+	if tCommon.IsEthBasedChain(chain) {
+		// Deploy smart contract for eth based chain. Add a few seconds delay for other nodes to update
+		// latest results.
+	}
 }

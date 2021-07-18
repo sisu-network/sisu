@@ -38,6 +38,7 @@ type Processor struct {
 	appInfo                *common.AppInfo
 	currentHeight          int64
 	client                 *tuktukclient.Client
+	logic                  *CrossChainLogic
 
 	// A map of chainSymbol -> map ()
 	keygenVoteResult map[string]map[string]bool
@@ -59,6 +60,7 @@ func NewProcessor(keeper keeper.Keeper,
 		keygenVoteResult: make(map[string]map[string]bool),
 		// And array that stores block numbers where we should do final vote count.
 		keygenBlockPairs: make([]BlockSymbolPair, 0),
+		logic:            NewCrossChainLogic(),
 	}
 }
 
