@@ -17,6 +17,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil), &KeygenProposal{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &KeygenProposalVote{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &KeygenResult{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &ObservedTxs{})
 }
 
 var (
