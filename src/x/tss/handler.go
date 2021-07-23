@@ -23,6 +23,8 @@ func NewHandler(k keeper.Keeper, txSubmit common.TxSubmit, processor *Processor)
 			return handleKeygenProposalVote(msg, processor)
 		case *types.KeygenResult:
 			return handleKeygenResult(ctx, msg, processor)
+		case *types.ObservedTxs:
+			return handleObservedTxs(ctx, msg, processor)
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
@@ -47,6 +49,15 @@ func handleKeygenProposalVote(msg *types.KeygenProposalVote, processor *Processo
 func handleKeygenResult(ctx sdk.Context, msg *types.KeygenResult, processor *Processor) (*sdk.Result, error) {
 	utils.LogDebug("Handling TSS Keygen result")
 	data, err := processor.DeliverKeygenResult(ctx, msg)
+	return &sdk.Result{
+		Data: data,
+	}, err
+}
+
+func handleObservedTxs(ctx sdk.Context, msg *types.ObservedTxs, processor *Processor) (*sdk.Result, error) {
+	// Update the count for all txs.
+	utils.LogVerbose("Handleing ObservedTxs")
+	data, err := processor.DeliverObservedTxs(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err
