@@ -27,7 +27,8 @@ message KeygenProposalVote {
 message KeygenResult {
   string signer = 1;
   string chainSymbol = 2;
-  Result result = 3;
+  bytes pubKeyBytes = 3;
+  Result result = 4;
 
   enum Result {
     SUCCESS = 0;

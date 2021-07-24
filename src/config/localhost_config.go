@@ -169,7 +169,9 @@ func localTssConfig(baseDir string) *TssConfig {
 	}
 
 	// 3. Read the toml config file
-	config := &TssConfig{}
+	config := &TssConfig{
+		Dir: home,
+	}
 	// Read the config fiel from tss folder.
 	_, err := toml.DecodeFile(tomlFile, &config)
 	if err != nil {
