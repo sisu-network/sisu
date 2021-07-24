@@ -3,6 +3,7 @@ package keeper
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/utils"
@@ -10,17 +11,31 @@ import (
 )
 
 const (
-	KEY_RECORDED_CHAIN            = "recored_chain"
+	KEY_RECORDED_CHAIN = "recored_chain"
+
+	// Set of validators that attest this transaction.
 	KEY_OBSERVED_TX_VALIDATOR_SET = "observed_tx_%s_%d_%s" // chain - block height - tx hash
+
+	// List of transactions that have enough observation and pending for output.
+	KEY_PENDING_OBSERVED_TX = "pending_observed_tx_%s_%d_%s" // chain - block height - tx hash
+
+	// List of transactions that have been processed.
+	KEY_PROCESSED_OBSERVED_TX = "processed_observed_tx_%s_%d_%s" // chain - block height - tx hash
 )
 
 type Keeper struct {
 	storeKey sdk.StoreKey
+
+	// TODO: Use on memory cache to speed up read operation for both pending & processed tx list.
+	pendingObservedTxLock   *sync.RWMutex
+	processedObservedTxLock *sync.RWMutex
 }
 
 func NewKeeper(storeKey sdk.StoreKey) *Keeper {
 	return &Keeper{
-		storeKey: storeKey,
+		storeKey:                storeKey,
+		pendingObservedTxLock:   &sync.RWMutex{},
+		processedObservedTxLock: &sync.RWMutex{},
 	}
 }
 
@@ -51,7 +66,7 @@ func (k *Keeper) SetChainsInfo(ctx sdk.Context, chainsInfo *types.ChainsInfo) er
 
 // This updates the set of validators that attest to observe a specific tx (identified by its hash)
 // on a specific chain.
-func (k *Keeper) UpdateObservedTxCount(ctx sdk.Context, msg *types.ObservedTx, signer string) {
+func (k *Keeper) UpdateObservedTxCount(ctx sdk.Context, msg *types.ObservedTx, signer string) (int, error) {
 	store := ctx.KVStore(k.storeKey)
 
 	key := []byte(fmt.Sprintf(KEY_OBSERVED_TX_VALIDATOR_SET, msg.Chain, msg.BlockHeight, msg.TxHash))
@@ -65,7 +80,7 @@ func (k *Keeper) UpdateObservedTxCount(ctx sdk.Context, msg *types.ObservedTx, s
 		err := json.Unmarshal(bz, &validators)
 		if err != nil {
 			utils.LogError("Cannot unmarshall validator sets")
-			return
+			return 0, err
 		}
 	}
 
@@ -74,9 +89,90 @@ func (k *Keeper) UpdateObservedTxCount(ctx sdk.Context, msg *types.ObservedTx, s
 		bz, err := json.Marshal(validators)
 		if err != nil {
 			utils.LogError("Cannot marshal validator set")
-			return
+			return 0, err
 		}
 
 		store.Set(key, bz)
+	}
+
+	return len(validators), nil
+}
+
+// Checks if a tx has been processed or in the pending list. Returns true if either of the condition
+// meets.
+func (k *Keeper) IsObservedTxPendingOrProcessed(ctx sdk.Context, msg *types.ObservedTx) bool {
+	// Check Pending list.
+	if k.IsObservedTxPending(ctx, msg) {
+		return true
+	}
+
+	// Check processed list.
+	if k.IsObservedTxProcessed(ctx, msg) {
+		return true
+	}
+
+	return false
+}
+
+func (k *Keeper) IsObservedTxPending(ctx sdk.Context, msg *types.ObservedTx) bool {
+	k.pendingObservedTxLock.RLock()
+	defer k.pendingObservedTxLock.RUnlock()
+
+	store := ctx.KVStore(k.storeKey)
+	key := []byte(fmt.Sprintf(KEY_PENDING_OBSERVED_TX, msg.Chain, msg.BlockHeight, msg.TxHash))
+	bz := store.Get(key)
+	if bz != nil {
+		return true
+	}
+
+	return false
+}
+
+// Returns true if an observed tx has been processed.
+func (k *Keeper) IsObservedTxProcessed(ctx sdk.Context, msg *types.ObservedTx) bool {
+	k.processedObservedTxLock.RLock()
+	defer k.processedObservedTxLock.RUnlock()
+
+	// Check processed list.
+	store := ctx.KVStore(k.storeKey)
+	key := []byte(fmt.Sprintf(KEY_PROCESSED_OBSERVED_TX, msg.Chain, msg.BlockHeight, msg.TxHash))
+	bz := store.Get(key)
+	if bz != nil {
+		return true
+	}
+
+	return false
+}
+
+func (k *Keeper) AddObservedTxToPending(ctx sdk.Context, msg *types.ObservedTx) {
+	if k.IsObservedTxProcessed(ctx, msg) {
+		// Transaction has been processed, there is no need to add it to pending.
+		utils.LogVerbose("Transaction has been processed, there is no need to add it to pending.")
+		return
+	}
+
+	k.pendingObservedTxLock.Lock()
+	defer k.pendingObservedTxLock.Unlock()
+
+	store := ctx.KVStore(k.storeKey)
+	key := []byte(fmt.Sprintf(KEY_PENDING_OBSERVED_TX, msg.Chain, msg.BlockHeight, msg.TxHash))
+
+	bz, err := msg.Marshal()
+	if err != nil {
+		utils.LogError("Cannot marshal observed tx, err = ", err)
+		return
+	}
+	store.Set(key, bz)
+}
+
+func (k *Keeper) GetObservedTxPendingList(ctx sdk.Context) {
+	k.pendingObservedTxLock.RLock()
+	defer k.pendingObservedTxLock.RUnlock()
+
+	store := ctx.KVStore(k.storeKey)
+	itr := store.Iterator(nil, nil)
+
+	for ; itr.Valid(); itr.Next() {
+		// TODO: Complete this.
 	}
 }

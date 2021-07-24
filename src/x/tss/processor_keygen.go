@@ -10,6 +10,15 @@ import (
 	tTypes "github.com/sisu-network/tuktuk/types"
 )
 
+/**
+Process for generating a new key:
+- Wait for the app to catch up
+- If there is no support for a particular chain, creates a proposal to include a chain
+- When other nodes receive the proposal, top N validator nodes vote to see if it should accept that.
+- After M blocks (M is a constant) since a proposal is sent, count the number of yes vote. If there
+are enough validator supporting the new chain, send a message to TSS engine to do keygen.
+*/
+
 type BlockSymbolPair struct {
 	blockHeight int64
 	chainSymbol string

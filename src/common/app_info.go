@@ -10,9 +10,10 @@ import (
 )
 
 type AppInfo struct {
-	isCatchingUp bool
-	httpClient   *retryablehttp.Client
-	catchUpLock  *sync.RWMutex
+	isCatchingUp  bool
+	httpClient    *retryablehttp.Client
+	catchUpLock   *sync.RWMutex
+	validatorSize int
 }
 
 func NewAppInfo() *AppInfo {
@@ -20,9 +21,10 @@ func NewAppInfo() *AppInfo {
 	httpClient.Logger = nil
 
 	return &AppInfo{
-		httpClient:   httpClient,
-		isCatchingUp: true,
-		catchUpLock:  &sync.RWMutex{},
+		httpClient:    httpClient,
+		isCatchingUp:  true,
+		catchUpLock:   &sync.RWMutex{},
+		validatorSize: 1, // TODO: Get the real validator size instead of hardcoding it.
 	}
 }
 
@@ -58,4 +60,8 @@ func (a *AppInfo) IsCatchingUp() bool {
 	defer a.catchUpLock.RUnlock()
 
 	return a.isCatchingUp
+}
+
+func (a *AppInfo) ValidatorSize() int {
+	return a.validatorSize
 }
