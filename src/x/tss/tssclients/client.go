@@ -1,4 +1,4 @@
-package tuktukclient
+package tssclients
 
 import (
 	"context"

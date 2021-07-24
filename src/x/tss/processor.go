@@ -8,7 +8,7 @@ import (
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/keeper"
-	"github.com/sisu-network/sisu/x/tss/tuktukclient"
+	"github.com/sisu-network/sisu/x/tss/tssclients"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
 
@@ -28,7 +28,7 @@ type Processor struct {
 	appKeys                *common.AppKeys
 	appInfo                *common.AppInfo
 	currentHeight          int64
-	client                 *tuktukclient.Client
+	tuktukClient           *tssclients.Client
 	logic                  *CrossChainLogic
 
 	// This is a local database used for data specific to this node. For application state's data,
@@ -61,17 +61,8 @@ func NewProcessor(keeper keeper.Keeper,
 
 func (p *Processor) Init() {
 	if p.config.Enable {
-		var err error
-		url := fmt.Sprintf("http://%s:%d", p.config.Host, p.config.Port)
-		utils.LogInfo("Connecting to tuktuk server at", url)
-
-		p.client, err = tuktukclient.Dial(url)
-
-		if err != nil {
-			utils.LogError(err)
-			panic(err)
-		}
-		utils.LogInfo("Tuktuk server connected!")
+		p.connectToTuktuk()
+		p.connectToDeyes()
 	}
 
 	var err error
@@ -79,6 +70,25 @@ func (p *Processor) Init() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+// Connect to tuktuk server.
+func (p *Processor) connectToTuktuk() {
+	var err error
+	url := fmt.Sprintf("http://%s:%d", p.config.Host, p.config.Port)
+	utils.LogInfo("Connecting to tuktuk server at", url)
+
+	p.tuktukClient, err = tssclients.Dial(url)
+
+	if err != nil {
+		utils.LogError(err)
+		panic(err)
+	}
+	utils.LogInfo("Tuktuk server connected!")
+}
+
+func (p *Processor) connectToDeyes() {
+
 }
 
 func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
@@ -128,7 +138,9 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 
 	unavailableChains := make([]string, 0)
 	for _, chainConfig := range p.config.SupportedChains {
-		if chains.Chains[chainConfig.Symbol] == nil {
+		// TODO: Remove this after testing.
+		// if chains.Chains[chainConfig.Symbol] == nil {
+		if true {
 			unavailableChains = append(unavailableChains, chainConfig.Symbol)
 		}
 	}
