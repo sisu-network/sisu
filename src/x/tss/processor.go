@@ -12,15 +12,6 @@ import (
 	"github.com/sisu-network/sisu/x/tss/types"
 )
 
-/**
-Process for generating a new key:
-- Wait for the app to catch up
-- If there is no support for a particular chain, creates a proposal to include a chain
-- When other nodes receive the proposal, top N validator nodes vote to see if it should accept that.
-- After M blocks (M is a constant) since a proposal is sent, count the number of yes vote. If there
-are enough validator supporting the new chain, send a message to TSS engine to do keygen.
-*/
-
 const (
 	PROPOSE_BLOCK_INTERVAL = 1000
 )
@@ -39,6 +30,10 @@ type Processor struct {
 	currentHeight          int64
 	client                 *tuktukclient.Client
 	logic                  *CrossChainLogic
+
+	// This is a local database used for data specific to this node. For application state's data,
+	// use KVStore.
+	storage *TssStorage
 
 	// A map of chainSymbol -> map ()
 	keygenVoteResult map[string]map[string]bool
@@ -78,6 +73,12 @@ func (p *Processor) Init() {
 		}
 		utils.LogInfo("Tuktuk server connected!")
 	}
+
+	var err error
+	p.storage, err = NewTssStorage(p.config.Dir + "/processor.db")
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
@@ -106,6 +107,10 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 			delete(p.keygenVoteResult, chaimSymbol)
 		}
 	}
+}
+
+func (p *Processor) EndBlock(ctx sdk.Context) {
+	// Check the list of transaction that have enough observations' attestation.
 }
 
 func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {

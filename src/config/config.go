@@ -59,6 +59,8 @@ type TssConfig struct {
 	Port            int                       `toml:"port"`
 	SupportedChains map[string]TssChainConfig `toml:"supported_chains"`
 
+	Dir string
+
 	// Keygen
 	PoolSizeLowerBound  int
 	PoolSizeUpperBound  int
