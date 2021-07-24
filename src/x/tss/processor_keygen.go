@@ -4,9 +4,9 @@ import (
 	"sort"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
-	tCommon "github.com/sisu-network/tuktuk/common"
 	tTypes "github.com/sisu-network/tuktuk/types"
 )
 
@@ -74,7 +74,6 @@ func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, er
 	}
 
 	// TODO: Save this proposal to KV store.
-	utils.LogDebug("!p.appInfo.IsCatchingUp() = ", !p.appInfo.IsCatchingUp())
 	p.keygenVoteResult[msg.ChainSymbol] = make(map[string]bool)
 
 	if !p.appInfo.IsCatchingUp() {
@@ -138,8 +137,9 @@ func (p *Processor) OnKeygenResult(result tTypes.KeygenResult) {
 		resultEnum = types.KeygenResult_SUCCESS
 	}
 
-	msg := types.NewKeygenResult(signer.String(), result.Chain, resultEnum)
+	msg := types.NewKeygenResult(signer.String(), result.Chain, resultEnum, result.PubKeyBytes)
 	p.txSubmit.SubmitMessage(msg)
+
 }
 
 func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult) ([]byte, error) {
@@ -167,19 +167,22 @@ func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult
 
 		p.keeper.SetChainsInfo(ctx, chainsInfo)
 
-		// TODO: Check if we need to deploy smart contracts.
-		// Deploy smart contract if needed.
-		p.BroadcastContractDeploymentMessage(msg.ChainSymbol)
+		// Save the pubkey to the keeper.
+		p.keeper.SavePubKey(ctx, msg.ChainSymbol, msg.PubKeyBytes)
+
+		// Print out the public key address
+		pubKey, err := crypto.DecompressPubkey(msg.PubKeyBytes)
+		if err == nil {
+			address := crypto.PubkeyToAddress(*pubKey).Hex()
+			utils.LogInfo("Address = ", address)
+		} else {
+			utils.LogError("Critical Error, public key cannot be deserialized. Err = ", err)
+		}
+
+		// Next step: wait until the address has enough to deploy a contract.
 	} else {
 		utils.LogDebug("Keygen: message is from different signers.")
 	}
 
 	return nil, nil
-}
-
-func (p *Processor) BroadcastContractDeploymentMessage(chain string) {
-	if tCommon.IsEthBasedChain(chain) {
-		// Deploy smart contract for eth based chain. Add a few seconds delay for other nodes to update
-		// latest results.
-	}
 }

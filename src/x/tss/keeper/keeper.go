@@ -21,6 +21,8 @@ const (
 
 	// List of transactions that have been processed.
 	KEY_PROCESSED_OBSERVED_TX = "processed_observed_tx_%s_%d_%s" // chain - block height - tx hash
+
+	KEY_PUBLICK_KEY_BYTES = "public_key_bytes_%s"
 )
 
 type Keeper struct {
@@ -57,6 +59,7 @@ func (k *Keeper) SetChainsInfo(ctx sdk.Context, chainsInfo *types.ChainsInfo) er
 	store := ctx.KVStore(k.storeKey)
 	bz, err := chainsInfo.Marshal()
 	if err != nil {
+		utils.LogError("Cannot set chains info. Err = ", err)
 		return err
 	}
 
@@ -175,4 +178,9 @@ func (k *Keeper) GetObservedTxPendingList(ctx sdk.Context) {
 	for ; itr.Valid(); itr.Next() {
 		// TODO: Complete this.
 	}
+}
+
+func (k *Keeper) SavePubKey(ctx sdk.Context, chain string, keyBytes []byte) {
+	store := ctx.KVStore(k.storeKey)
+	store.Set([]byte(fmt.Sprintf(KEY_PUBLICK_KEY_BYTES, chain)), keyBytes)
 }

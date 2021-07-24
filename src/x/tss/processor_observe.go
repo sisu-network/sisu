@@ -12,16 +12,17 @@ func (p *Processor) ProcessObservedTxs(txs *deTypes.Txs) {
 	// TODO: Avoid sending too many messages. Find a way we can batch all txts together since SubmitTx
 	// has 1s delay.
 
-	observedTxs := &tssTypes.ObservedTxs{}
-	observedTxs.Txs = make([]*tssTypes.ObservedTx, len(txs.Arr))
+	arr := make([]*tssTypes.ObservedTx, len(txs.Arr))
 
 	for index, tx := range txs.Arr {
-		observedTxs.Txs[index] = &tssTypes.ObservedTx{
+		arr[index] = &tssTypes.ObservedTx{
 			Chain:       txs.Chain,
 			TxHash:      tx.Hash,
 			BlockHeight: txs.Block,
 		}
 	}
+
+	observedTxs := tssTypes.NewObservedTxs(p.appKeys.GetSignerAddress().String(), arr)
 
 	// Send to TxSubmitter.
 	p.txSubmit.SubmitMessage(observedTxs)

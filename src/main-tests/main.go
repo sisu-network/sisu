@@ -31,8 +31,6 @@ func testPrepareEthContracts() {
 	}
 
 	signedTx, err := types.SignTx(rawTx[0], types.NewEIP155Signer(big.NewInt(1)), privateKey)
-
-	fmt.Println("Deploying to local network")
 	client, err := ethclient.Dial("http://localhost:7545") // Ganache local address
 	err = client.SendTransaction(context.Background(), signedTx)
 	if err != nil {

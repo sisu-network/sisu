@@ -5,6 +5,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/spf13/cast"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -295,6 +296,7 @@ func New(
 	if !ok {
 		panic("Cannot find TSS configuration")
 	}
+	utils.LogInfo("tssConfig = ", tssConfig)
 
 	app.tssKeeper = *tssKeeper.NewKeeper(keys[tsstypes.StoreKey])
 
@@ -666,6 +668,8 @@ func initParamsKeeper(appCodec codec.BinaryMarshaler, legacyAmino *codec.LegacyA
 
 // BeginBlocker application updates every begin block
 func (app *App) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+	app.txSubmitter.SyncBlockSequence(ctx, app.AccountKeeper)
+
 	app.appInfo.UpdateCatchingUp()
 
 	return app.mm.BeginBlock(ctx, req)
@@ -673,8 +677,6 @@ func (app *App) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.R
 
 // EndBlocker application updates every end block
 func (app *App) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
-	app.txSubmitter.SyncBlockSequence(ctx, app.AccountKeeper)
-
 	return app.mm.EndBlock(ctx, req)
 }
 
@@ -687,5 +689,6 @@ func (app *App) setupApiServer(c config.Config) {
 	appConfig := c.GetSisuConfig()
 	s := server.NewServer(handler, appConfig.InternalApiHost, appConfig.InternalApiPort)
 
+	utils.LogInfo("Starting Internal API server")
 	go s.Run()
 }
