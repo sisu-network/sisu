@@ -31,7 +31,7 @@ func (c *DeyesClient) CheckHealth() error {
 	var result interface{}
 	err := c.client.CallContext(context.Background(), &result, "deyes_checkHealth")
 	if err != nil {
-		utils.LogError("Cannot check tuktuk health, err = ", err)
+		utils.LogError("Cannot check deyes health, err = ", err)
 		return err
 	}
 

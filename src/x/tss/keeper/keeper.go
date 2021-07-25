@@ -154,9 +154,6 @@ func (k *Keeper) AddObservedTxToPending(ctx sdk.Context, msg *types.ObservedTx) 
 		return
 	}
 
-	k.pendingObservedTxLock.Lock()
-	defer k.pendingObservedTxLock.Unlock()
-
 	store := ctx.KVStore(k.storeKey)
 	key := []byte(fmt.Sprintf(KEY_PENDING_OBSERVED_TX, msg.Chain, msg.BlockHeight, msg.TxHash))
 
@@ -165,7 +162,10 @@ func (k *Keeper) AddObservedTxToPending(ctx sdk.Context, msg *types.ObservedTx) 
 		utils.LogError("Cannot marshal observed tx, err = ", err)
 		return
 	}
+
+	k.pendingObservedTxLock.Lock()
 	store.Set(key, bz)
+	k.pendingObservedTxLock.Unlock()
 }
 
 func (k *Keeper) GetObservedTxPendingList(ctx sdk.Context) {
@@ -173,10 +173,11 @@ func (k *Keeper) GetObservedTxPendingList(ctx sdk.Context) {
 	defer k.pendingObservedTxLock.RUnlock()
 
 	store := ctx.KVStore(k.storeKey)
-	itr := store.Iterator(nil, nil)
+	itr := store.Iterator([]byte("pending_observed_tx_"), []byte("pending_observed_tx_zzzzzz"))
 
 	for ; itr.Valid(); itr.Next() {
-		// TODO: Complete this.
+		fmt.Println("Key = ", itr.Key())
+		fmt.Println("Value = ", itr.Value())
 	}
 }
 

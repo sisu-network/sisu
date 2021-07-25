@@ -3,6 +3,10 @@ package cmd
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/sisu-network/sisu/utils"
 
 	"github.com/sisu-network/sisu/app"
 	"github.com/spf13/cobra"
@@ -15,22 +19,22 @@ func resetCmd() *cobra.Command {
 		Long: `This command resets Sisu app's database (including the ethereum's data).
 Next time when user runs the app, it will sync with network from scratch. The sync
 requires more than 1 validator nodes in the network and will not work for local testing.
+This command only deletes data files but not config files.
 `,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			var err error
-
-			err = deleteMainAppFolder()
-			if err != nil {
+			if err := deleteMainAppData(); err != nil {
 				return err
 			}
 
-			err = deleteEthFolder()
-			if err != nil {
+			if err := deleteEthData(); err != nil {
 				return err
 			}
 
-			err = resetValidatorState()
-			if err != nil {
+			if err := deleteTssData(); err != nil {
+				return err
+			}
+
+			if err := resetValidatorState(); err != nil {
 				return err
 			}
 
@@ -41,35 +45,57 @@ requires more than 1 validator nodes in the network and will not work for local 
 	return cmd
 }
 
-func deleteMainAppFolder() error {
+func deleteMainAppData() error {
 	dataDir := app.MainAppHome + "/data"
+	configDir := app.MainAppHome + "/config"
+
 	toDelete := []string{
+		// config folders.
+		configDir + "/addrbook.json",
+
+		// Data folder
 		dataDir + "/application.db",
 		dataDir + "/blockstore.db",
 		dataDir + "/cs.wal",
 		dataDir + "/evidence.db",
 		dataDir + "/state.db",
 		dataDir + "/tx_index.db",
+		dataDir + "/snapshots",
 	}
 
-	for _, dir := range toDelete {
-		if err := os.RemoveAll(dir); err != nil {
-			return err
+	filepath.Walk(configDir, func(path string, info os.FileInfo, err error) error {
+		if strings.HasPrefix(info.Name(), "write-file-atomic") {
+			toDelete = append(toDelete, configDir+"/"+info.Name())
 		}
-	}
 
-	return nil
+		return nil
+	})
+
+	return deleteFiles(toDelete)
 }
 
-func deleteEthFolder() error {
-	sisuHome := os.Getenv("SISU_HOME")
+func deleteEthData() error {
 	toDelete := []string{
-		sisuHome + "/eth",
-		sisuHome + "/ethleveldb",
+		app.SisuHome + "/eth",
+		app.SisuHome + "/ethleveldb",
 	}
 
-	for _, dir := range toDelete {
-		if err := os.RemoveAll(dir); err != nil {
+	return deleteFiles(toDelete)
+}
+
+func deleteTssData() error {
+	toDelete := []string{
+		app.SisuHome + "/tss/processor.db",
+	}
+
+	return deleteFiles(toDelete)
+}
+
+func deleteFiles(toDelete []string) error {
+	for _, file := range toDelete {
+		utils.LogInfo("Deleting file/directory", file)
+		if err := os.RemoveAll(file); err != nil {
+			utils.LogError("Cannot delete", file, ". Error =", err)
 			return err
 		}
 	}
