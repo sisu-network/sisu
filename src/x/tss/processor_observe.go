@@ -3,6 +3,7 @@ package tss
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	deTypes "github.com/sisu-network/deyes/types"
+	"github.com/sisu-network/sisu/utils"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 )
 
@@ -36,6 +37,8 @@ func (p *Processor) ProcessObservedTxs(txs *deTypes.Txs) {
 // Delivers observed Txs.
 func (p *Processor) DeliverObservedTxs(ctx sdk.Context, msg *tssTypes.ObservedTxs) ([]byte, error) {
 	// Update the obsevation count for each transaction.
+	utils.LogVerbose("Deliver observed txs. Len = ", msg.Txs)
+
 	for _, tx := range msg.Txs {
 		size, err := p.keeper.UpdateObservedTxCount(ctx, tx, msg.Signer)
 		if err != nil {
@@ -43,7 +46,9 @@ func (p *Processor) DeliverObservedTxs(ctx sdk.Context, msg *tssTypes.ObservedTx
 		}
 
 		if size >= (p.appInfo.ValidatorSize()+2)/3 && !p.keeper.IsObservedTxPendingOrProcessed(ctx, tx) {
+			utils.LogVerbose("Adding observed tx to pending")
 			// Majority has been meet and the tx has not been processed yet. Put it in the pending queue.
+			// They will be processed in the next block.
 			p.keeper.AddObservedTxToPending(ctx, tx)
 		}
 	}

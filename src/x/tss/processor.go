@@ -20,6 +20,8 @@ var (
 	ERR_INVALID_MESSASGE_TYPE = fmt.Errorf("Invalid Message Type")
 )
 
+// A major struct that processes complicated logic of TSS keysign and keygen. Read the documentation
+// of keygen and keysign's flow before working on this.
 type Processor struct {
 	keeper                 keeper.Keeper
 	config                 config.TssConfig
@@ -64,6 +66,8 @@ func NewProcessor(keeper keeper.Keeper,
 }
 
 func (p *Processor) Init() {
+	utils.LogInfo("Initializing TSS Processor...")
+
 	if p.config.Enable {
 		p.connectToTuktuk()
 		p.connectToDeyes()
@@ -144,6 +148,7 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 
 func (p *Processor) EndBlock(ctx sdk.Context) {
 	// Check the list of transaction that have enough observations' attestation.
+	p.keeper.GetObservedTxPendingList(ctx)
 }
 
 func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {

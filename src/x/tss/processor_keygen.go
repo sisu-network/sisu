@@ -44,7 +44,8 @@ func (p *Processor) OnKeygenResult(result tTypes.KeygenResult) {
 	} else {
 		if pubKey, err := crypto.DecompressPubkey(msg.PubKeyBytes); err == nil {
 			address := crypto.PubkeyToAddress(*pubKey).Hex()
-			utils.LogInfo("Adding watch address to deyes.")
+			utils.LogInfo("Adding watch address to deyes:", address)
+			// TODO: Retry if failed
 			deyesClient.AddWatchAddresses(result.Chain, []string{address})
 		}
 	}

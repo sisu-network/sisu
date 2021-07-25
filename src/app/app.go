@@ -120,6 +120,8 @@ func getGovProposalHandlers() []govclient.ProposalHandler {
 }
 
 var (
+	SisuHome string
+
 	// MainAppHome default home directories for the application daemon
 	MainAppHome string
 
@@ -400,7 +402,7 @@ func New(
 	}
 
 	if tssConfig.Enable {
-		initGenesisModules = append(beginBlockers, tsstypes.ModuleName)
+		initGenesisModules = append(initGenesisModules, tsstypes.ModuleName)
 	}
 	app.mm.SetOrderInitGenesis(initGenesisModules...)
 
