@@ -24,6 +24,32 @@ type BlockSymbolPair struct {
 	chainSymbol string
 }
 
+// Called after having key generation result from Sisu's api server.
+func (p *Processor) OnKeygenResult(result tTypes.KeygenResult) {
+	// 1. Post result to the cosmos chain
+	signer := p.appKeys.GetSignerAddress()
+
+	resultEnum := types.KeygenResult_FAILURE
+	if result.Success {
+		resultEnum = types.KeygenResult_SUCCESS
+	}
+
+	msg := types.NewKeygenResult(signer.String(), result.Chain, resultEnum, result.PubKeyBytes)
+	p.txSubmit.SubmitMessage(msg)
+
+	// 2. Add the address to the watch list.
+	deyesClient := p.deyesClients[result.Chain]
+	if deyesClient == nil {
+		utils.LogCritical("Cannot find deyes client for chain", result.Chain)
+	} else {
+		if pubKey, err := crypto.DecompressPubkey(msg.PubKeyBytes); err == nil {
+			address := crypto.PubkeyToAddress(*pubKey).Hex()
+			utils.LogInfo("Adding watch address to deyes.")
+			deyesClient.AddWatchAddresses(result.Chain, []string{address})
+		}
+	}
+}
+
 func (p *Processor) CheckKeyGenProposal(msg *types.KeygenProposal) error {
 	// TODO: Check duplicated proposal here.
 	return nil
@@ -127,21 +153,6 @@ func (p *Processor) countKeygenVote() {
 	}
 }
 
-// Called after having key generation result from Sisu's api server.
-func (p *Processor) OnKeygenResult(result tTypes.KeygenResult) {
-	// Post result to the cosmos chain
-	signer := p.appKeys.GetSignerAddress()
-
-	resultEnum := types.KeygenResult_FAILURE
-	if result.Success {
-		resultEnum = types.KeygenResult_SUCCESS
-	}
-
-	msg := types.NewKeygenResult(signer.String(), result.Chain, resultEnum, result.PubKeyBytes)
-	p.txSubmit.SubmitMessage(msg)
-
-}
-
 func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult) ([]byte, error) {
 	// TODO: Accumulates results from others and check for bad actors
 
@@ -173,6 +184,7 @@ func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult
 		// Print out the public key address
 		pubKey, err := crypto.DecompressPubkey(msg.PubKeyBytes)
 		if err == nil {
+			// TODO: Check if the chain is ETH before getting public key.
 			address := crypto.PubkeyToAddress(*pubKey).Hex()
 			utils.LogInfo("Address = ", address)
 		} else {

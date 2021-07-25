@@ -51,8 +51,8 @@ type TssChainConfig struct {
 // [supported_chains]
 // [supported_chains.eth]
 //   symbol = "eth"
-// 	id = 1
-// 	url = "localhost:7545"
+// 	 id = 1
+// 	 url = "http://localhost:31001"
 type TssConfig struct {
 	Enable          bool                      `toml:"enable"`
 	Host            string                    `toml:"host"`

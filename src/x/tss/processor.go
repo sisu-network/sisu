@@ -28,8 +28,11 @@ type Processor struct {
 	appKeys                *common.AppKeys
 	appInfo                *common.AppInfo
 	currentHeight          int64
-	tuktukClient           *tssclients.Client
 	logic                  *CrossChainLogic
+
+	// Tuktuk & Deyes client
+	tuktukClient *tssclients.TuktukClient
+	deyesClients map[string]*tssclients.DeyesClient
 
 	// This is a local database used for data specific to this node. For application state's data,
 	// use KVStore.
@@ -56,6 +59,7 @@ func NewProcessor(keeper keeper.Keeper,
 		// And array that stores block numbers where we should do final vote count.
 		keygenBlockPairs: make([]BlockSymbolPair, 0),
 		logic:            NewCrossChainLogic(),
+		deyesClients:     make(map[string]*tssclients.DeyesClient),
 	}
 }
 
@@ -78,17 +82,36 @@ func (p *Processor) connectToTuktuk() {
 	url := fmt.Sprintf("http://%s:%d", p.config.Host, p.config.Port)
 	utils.LogInfo("Connecting to tuktuk server at", url)
 
-	p.tuktukClient, err = tssclients.Dial(url)
-
+	p.tuktukClient, err = tssclients.DialTuktuk(url)
 	if err != nil {
-		utils.LogError(err)
+		utils.LogError("Failed to connect to Tuktuk. Err =", err)
 		panic(err)
 	}
+
+	if err := p.tuktukClient.CheckHealth(); err != nil {
+		panic(err)
+	}
+
 	utils.LogInfo("Tuktuk server connected!")
 }
 
+// Connecto to all deyes.
 func (p *Processor) connectToDeyes() {
+	for chain, chainConfig := range p.config.SupportedChains {
+		fmt.Println("chainConfig.Url = ", chainConfig.Url)
 
+		deyeClient, err := tssclients.DialDeyes(chainConfig.Url)
+		if err != nil {
+			utils.LogError("Failed to connect to deyes", chain, ".Err =", err)
+			panic(err)
+		}
+
+		if err := deyeClient.CheckHealth(); err != nil {
+			panic(err)
+		}
+
+		p.deyesClients[chain] = deyeClient
+	}
 }
 
 func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
