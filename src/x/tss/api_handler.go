@@ -22,6 +22,10 @@ func (a *ApiHandler) Version() string {
 	return "1.0"
 }
 
+// Empty function for checking health only.
+func (api *ApiHandler) CheckHealth() {
+}
+
 func (a *ApiHandler) KeygenResult(result tTypes.KeygenResult) bool {
 	utils.LogInfo("There is a TSS Result")
 
