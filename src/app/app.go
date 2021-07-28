@@ -173,7 +173,7 @@ var (
 type App struct {
 	txSubmitter       *common.TxSubmitter
 	appKeys           *common.AppKeys
-	appInfo           *common.AppInfo
+	globalData        *common.GlobalData
 	internalApiServer server.Server
 	tssProcessor      *tss.Processor
 
@@ -278,7 +278,7 @@ func New(
 	app.appKeys = common.NewAppKeys(*cfg.GetSisuConfig())
 	app.appKeys.Init()
 
-	app.appInfo = common.NewAppInfo()
+	app.globalData = common.NewGlobalData()
 
 	app.txSubmitter = common.NewTxSubmitter(cfg, app.appKeys)
 	go app.txSubmitter.Start()
@@ -345,10 +345,10 @@ func New(
 		evm.NewAppModule(appCodec, app.evmKeeper),
 	}
 
-	tssProcessor := tss.NewProcessor(app.tssKeeper, *tssConfig, app.appKeys, app.txSubmitter, app.appInfo)
+	tssProcessor := tss.NewProcessor(app.tssKeeper, *tssConfig, app.appKeys, app.txSubmitter, app.globalData)
 	if tssConfig.Enable {
 		tssProcessor.Init()
-		modules = append(modules, tss.NewAppModule(appCodec, app.tssKeeper, app.appKeys, app.txSubmitter, tssProcessor, app.appInfo))
+		modules = append(modules, tss.NewAppModule(appCodec, app.tssKeeper, app.appKeys, app.txSubmitter, tssProcessor, app.globalData))
 	}
 	app.tssProcessor = tssProcessor
 
@@ -672,7 +672,8 @@ func initParamsKeeper(appCodec codec.BinaryMarshaler, legacyAmino *codec.LegacyA
 func (app *App) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	app.txSubmitter.SyncBlockSequence(ctx, app.AccountKeeper)
 
-	app.appInfo.UpdateCatchingUp()
+	app.globalData.UpdateCatchingUp()
+	app.globalData.UpdateValidatorSets()
 
 	return app.mm.BeginBlock(ctx, req)
 }

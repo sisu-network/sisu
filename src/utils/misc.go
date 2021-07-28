@@ -1,8 +1,14 @@
 package utils
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"math/big"
 	"sort"
+	"strconv"
 	"sync"
+
+	"golang.org/x/crypto/sha3"
 )
 
 func WaitInfinitely() {
@@ -41,4 +47,38 @@ func MinInt(x, y int) int {
 		return y
 	}
 	return x
+}
+
+// Hash a string and return the first 32 bytes of the hash.
+func KeccakHash32(s string) (string, error) {
+	hash := sha3.NewLegacyKeccak256()
+
+	b, err := hex.DecodeString(s)
+	if err != nil {
+		return "", err
+	}
+
+	var buf []byte
+	hash.Write(b)
+	buf = hash.Sum(nil)
+
+	encoded := hex.EncodeToString(buf)
+	if len(encoded) > 32 {
+		encoded = encoded[:32]
+	}
+
+	return encoded, nil
+}
+
+// Returns a random index in the range [0..size-1] from an integer and a hash. This is a
+// determistic "random" value.
+func GetRandomIndex(blockHeight int64, hash string, size int) int {
+	sum := sha256.Sum256([]byte(hash + strconv.FormatInt(blockHeight, 10)))
+	z := new(big.Int)
+	z.SetBytes(sum[:])
+
+	// z = z % size
+	z = z.Rem(z, big.NewInt(int64(size)))
+
+	return int(z.Int64())
 }

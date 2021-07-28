@@ -45,7 +45,7 @@ func (p *Processor) DeliverObservedTxs(ctx sdk.Context, msg *tssTypes.ObservedTx
 			continue
 		}
 
-		if size >= (p.appInfo.ValidatorSize()+2)/3 && !p.keeper.IsObservedTxPendingOrProcessed(ctx, tx) {
+		if size >= (p.globalData.ValidatorSize()+2)/3 && !p.keeper.IsObservedTxPendingOrProcessed(ctx, tx) {
 			utils.LogVerbose("Adding observed tx to pending")
 			// Majority has been meet and the tx has not been processed yet. Put it in the pending queue.
 			// They will be processed in the next block.
