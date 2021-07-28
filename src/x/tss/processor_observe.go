@@ -24,14 +24,13 @@ func (p *Processor) ProcessObservedTxs(txs *deTypes.Txs) {
 	}
 
 	observedTxs := tssTypes.NewObservedTxs(p.appKeys.GetSignerAddress().String(), arr)
-
-	// Send to TxSubmitter.
-	p.txSubmit.SubmitMessage(observedTxs)
-
 	// Save all txs into database. We save this to local database instead of kvstore since this is a
 	// set of txs that observed by this node only (not all the nodes). KVStore is used to store state
 	// that have been agreed by all nodes in the network.
 	p.storage.SaveTxs(txs)
+
+	// Send to TxSubmitter.
+	p.txSubmit.SubmitMessage(observedTxs)
 }
 
 // Delivers observed Txs.

@@ -1,6 +1,8 @@
 package tss
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/sisu-network/sisu/common"
@@ -14,6 +16,8 @@ import (
 func (p *Processor) GetObserveTxResponse(ctx sdk.Context, tx *types.ObservedTx) {
 	var txBytes [][]byte
 	var err error
+
+	fmt.Println("tx.Chain = ", tx.Chain)
 
 	switch tx.Chain {
 	case "eth":
@@ -38,7 +42,7 @@ func (p *Processor) GetObserveTxResponse(ctx sdk.Context, tx *types.ObservedTx) 
 	}
 }
 
-// Get ETH response from an observed tx. Only do this if this is a validator node.
+// Get ETH out from an observed tx. Only do this if this is a validator node.
 func (p *Processor) getEthResponse(ctx sdk.Context, tx *types.ObservedTx) ([][]byte, error) {
 	bz := p.storage.GetObservedTx(tx.Chain, tx.BlockHeight, tx.TxHash)
 	ethTx := &ethTypes.Transaction{}
@@ -51,16 +55,24 @@ func (p *Processor) getEthResponse(ctx sdk.Context, tx *types.ObservedTx) ([][]b
 
 	txBytes := make([][]byte, 0)
 
+	fmt.Println("ethTx.To().String() = ", ethTx.To().String())
+	fmt.Println("p.keyAddress = ", p.keyAddress)
+
 	// Process different kind of eth transaction.
 	// 1. Check if the To address of our public key. This is likely a tx to provide ETH for our
 	// account to deploy contracts. Check if we have some pending contracts and deploy if needed.
 	if ethTx.To().String() == p.keyAddress {
 		// Get all contract in the pending queue.
-		contractHashes := p.keeper.GetContractQueueHashes(ctx, tx.Chain)
-		if len(contractHashes) > 0 {
+		contracts := p.keeper.GetContractQueueHashes(ctx, tx.Chain)
+
+		fmt.Println("contracts = ", contracts)
+
+		if len(contracts) > 0 {
 			// Get the list of deploy transactions. Those txs need to posted and verified (by validators)
 			// to the Sisu chain
-			outEthTxs := p.checkEthDeployContract(ctx, tx.Chain, ethTx, contractHashes)
+			outEthTxs := p.checkEthDeployContract(ctx, tx.Chain, ethTx, contracts)
+
+			fmt.Println("tx out length = ", len(outEthTxs))
 
 			for _, tx := range outEthTxs {
 				bz, err := tx.MarshalBinary()
@@ -68,6 +80,8 @@ func (p *Processor) getEthResponse(ctx sdk.Context, tx *types.ObservedTx) ([][]b
 					utils.LogError("Cannot marshall binary")
 					continue
 				}
+
+				fmt.Println("Adding to txBytes")
 
 				txBytes = append(txBytes, bz)
 			}
@@ -89,6 +103,8 @@ func (p *Processor) checkEthDeployContract(ctx sdk.Context, chain string, ethTx 
 	hashes []string) []*ethTypes.Transaction {
 	txs := make([]*ethTypes.Transaction, 0)
 
+	fmt.Println("Hash =", hashes)
+
 	nonce := int64(0)
 	for _, hash := range hashes {
 		switch hash {
@@ -108,4 +124,8 @@ func (p *Processor) checkEthDeployContract(ctx sdk.Context, chain string, ethTx 
 	}
 
 	return txs
+}
+
+func (p *Processor) broadcastAssignedTxOuts() {
+
 }

@@ -18,6 +18,7 @@ type TssStorage struct {
 }
 
 func NewTssStorage(file string) (*TssStorage, error) {
+	utils.LogInfo("Initializing TSS storage...")
 	db, err := leveldb.New(file, 1024, 500, "metrics_", false)
 	if err != nil {
 		return nil, err
@@ -30,6 +31,7 @@ func NewTssStorage(file string) (*TssStorage, error) {
 func (s *TssStorage) SaveTxs(txs *deTypes.Txs) {
 	for _, tx := range txs.Arr {
 		key := []byte(fmt.Sprintf(KEY_OBSERVE_TX, txs.Chain, txs.Block, tx.Hash))
+		utils.LogVerbose("Saving items with key", string(key))
 		s.db.Put(key, tx.Serialized)
 	}
 }

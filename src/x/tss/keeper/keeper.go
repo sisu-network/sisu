@@ -45,9 +45,12 @@ type Keeper struct {
 	pendingObservedTxLock   *sync.RWMutex
 	processedObservedTxLock *sync.RWMutex
 
-	contractQueue      map[string]bool
+	contractQueue      map[string]string
 	deployingContracts map[string]*deployContractWrapper
 	deployedContracts  map[string]*deployContractWrapper
+
+	// A map that remembers what transaction is assigned to which validators.
+	assignedValidators map[int64]map[string]string // blockHeight -> tx bytes (as string) -> validator address
 }
 
 func NewKeeper(storeKey sdk.StoreKey) *Keeper {
@@ -55,9 +58,10 @@ func NewKeeper(storeKey sdk.StoreKey) *Keeper {
 		storeKey:                storeKey,
 		pendingObservedTxLock:   &sync.RWMutex{},
 		processedObservedTxLock: &sync.RWMutex{},
-		contractQueue:           make(map[string]bool),
+		contractQueue:           make(map[string]string),
 		deployingContracts:      make(map[string]*deployContractWrapper),
 		deployedContracts:       make(map[string]*deployContractWrapper),
+		assignedValidators:      make(map[int64]map[string]string),
 	}
 }
 
@@ -236,15 +240,15 @@ func (k *Keeper) IsContractDeployingOrDeployed(ctx sdk.Context, chain string, ha
 }
 
 // Save a contract with a specific hash into a queue for later deployment.
-func (k *Keeper) EnqueueContract(ctx sdk.Context, chain string, hash string) {
+func (k *Keeper) EnqueueContract(ctx sdk.Context, chain string, hash string, content string) {
 	key := fmt.Sprintf(KEY_CONTRACT_QUEUE, chain, hash)
-	k.contractQueue[key] = true
+	k.contractQueue[key] = content
 }
 
-// Get all contract hashes in a pending queue.
+// Get all contract hashes in a pending queue for a particular chain.
 func (k *Keeper) GetContractQueueHashes(ctx sdk.Context, chain string) []string {
 	hashes := make([]string, 0)
-	for key, _ := range k.contractQueue {
+	for key, value := range k.contractQueue {
 		if len(key) <= len("contract_queue_") {
 			utils.LogError("Invalid key:", key)
 			continue
@@ -257,8 +261,12 @@ func (k *Keeper) GetContractQueueHashes(ctx sdk.Context, chain string) []string 
 			continue
 		}
 
-		hash := key[index+1:]
-		hashes = append(hashes, hash)
+		c := suffix[0:index]
+		if c != chain {
+			continue
+		}
+
+		hashes = append(hashes, value)
 	}
 
 	return hashes
@@ -266,7 +274,7 @@ func (k *Keeper) GetContractQueueHashes(ctx sdk.Context, chain string) []string 
 
 // Delete all the contracts in the queue
 func (k *Keeper) ClearContractQueue(ctx sdk.Context) {
-	k.contractQueue = make(map[string]bool)
+	k.contractQueue = make(map[string]string)
 }
 
 func (k *Keeper) DequeueContract(ctx sdk.Context, chain string, hash string) {
@@ -285,5 +293,11 @@ func (k *Keeper) AddDeployingContract(ctx sdk.Context, chain string, hash string
 
 // Saves an assignment of a validator for a particular out tx.
 func (k *Keeper) AddAssignedValForOutTx(blockHeight int64, txBytes []byte, valAddr string) {
+	m := k.assignedValidators[blockHeight]
+	if m == nil {
+		m = make(map[string]string)
+	}
+	m[string(txBytes)] = valAddr
 
+	k.assignedValidators[blockHeight] = m
 }

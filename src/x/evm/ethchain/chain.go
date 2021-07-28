@@ -151,7 +151,7 @@ func getChainDb(chainConfig *config.ETHConfig) (ethdb.Database, error) {
 func (self *ETHChain) Initialize() error {
 	// Setting log level
 	ethLog.Root().SetHandler(ethLog.LvlFilterHandler(
-		ethLog.LvlDebug, ethLog.StreamHandler(os.Stderr, ethLog.TerminalFormat(false))))
+		ethLog.LvlCrit, ethLog.StreamHandler(os.Stderr, ethLog.TerminalFormat(false))))
 
 	// TODO: handle corrupted DB
 	lastAcceptedBytes, lastAcceptedErr := self.chainDb.Get(lastAcceptedKey)

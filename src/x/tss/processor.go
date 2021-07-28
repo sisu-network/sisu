@@ -151,9 +151,19 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 func (p *Processor) EndBlock(ctx sdk.Context) {
 	// Check the list of transaction that have enough observations' attestation.
 	observedTxList := p.keeper.GetAndClearObservedTxPendingList(ctx)
+
+	fmt.Println("observedTxList size = ", len(observedTxList))
+
+	// 1. Creates all tx out for all observed txs in this blocks.
 	for _, tx := range observedTxList {
 		p.GetObserveTxResponse(ctx, tx)
 	}
+
+	// 2. Broadcast all txs out that have been assigned to this node.
+
+	// 3. Check if there is txs out that is supposed to be included in this block or the previous
+	// block. If there is, broadcast that tx out.
+
 }
 
 func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
