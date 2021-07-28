@@ -5,6 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/sisu-network/sisu/contracts/eth/dummy"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 	tTypes "github.com/sisu-network/tuktuk/types"
@@ -47,6 +48,7 @@ func (p *Processor) OnKeygenResult(result tTypes.KeygenResult) {
 			utils.LogInfo("Adding watch address to deyes:", address)
 			// TODO: Retry if failed
 			deyesClient.AddWatchAddresses(result.Chain, []string{address})
+			p.keyAddress = address
 		}
 	}
 }
@@ -103,7 +105,7 @@ func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, er
 	// TODO: Save this proposal to KV store.
 	p.keygenVoteResult[msg.ChainSymbol] = make(map[string]bool)
 
-	if !p.appInfo.IsCatchingUp() {
+	if !p.globalData.IsCatchingUp() {
 		// Send vote message to everyone else
 		signer := p.appKeys.GetSignerAddress()
 		voteMsg := types.NewMsgKeygenProposalVote(signer.String(), msg.ChainSymbol, types.KeygenProposalVote_APPROVE)
@@ -182,20 +184,49 @@ func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult
 		// Save the pubkey to the keeper.
 		p.keeper.SavePubKey(ctx, msg.ChainSymbol, msg.PubKeyBytes)
 
-		// Print out the public key address
-		pubKey, err := crypto.DecompressPubkey(msg.PubKeyBytes)
-		if err == nil {
-			// TODO: Check if the chain is ETH before getting public key.
-			address := crypto.PubkeyToAddress(*pubKey).Hex()
-			utils.LogInfo("Address = ", address)
-		} else {
-			utils.LogError("Critical Error, public key cannot be deserialized. Err = ", err)
-		}
+		// Check and see if we need to deploy some contracts. If we do, push them into the contract
+		// queue for deployment later (after we receive some funding like ether to execute contract
+		// deployment).
+		p.checkContractDeployment(ctx, msg)
 
-		// Next step: wait until the address has enough to deploy a contract.
+		p.printKeygenPubKey(msg)
 	} else {
 		utils.LogDebug("Keygen: message is from different signers.")
 	}
 
 	return nil, nil
+}
+
+// Print out the public key address. Used for debugging purpose
+func (p *Processor) printKeygenPubKey(msg *types.KeygenResult) {
+	pubKey, err := crypto.DecompressPubkey(msg.PubKeyBytes)
+	if err == nil {
+		// TODO: Check if the chain is ETH before getting public key.
+		address := crypto.PubkeyToAddress(*pubKey).Hex()
+		utils.LogInfo("Address = ", address)
+	} else {
+		utils.LogError("Critical Error, public key cannot be deserialized. Err = ", err)
+	}
+}
+
+// Called after keygen finishes to see if we need to deploy any contracts.
+func (p *Processor) checkContractDeployment(ctx sdk.Context, msg *types.KeygenResult) {
+	contractABIs := []string{
+		dummy.DummyABI,
+	}
+
+	for _, abi := range contractABIs {
+		// Hash of a contract is the hash of the ABI string.
+		hash, err := utils.KeccakHash32(abi)
+		if err != nil {
+			continue
+		}
+
+		// Check if this contract has been deployed or being deployed.
+		if p.keeper.IsContractDeployingOrDeployed(ctx, msg.ChainSymbol, hash) {
+			continue
+		}
+
+		p.keeper.EnqueueContract(ctx, msg.ChainSymbol, hash)
+	}
 }

@@ -17,14 +17,14 @@ func NewCrossChainLogic() *CrossChainLogic {
 	return &CrossChainLogic{}
 }
 
-func (logic *CrossChainLogic) PrepareEthContractDeployment(chain string, nonceIndex int64) []*eTypes.Transaction {
+func (logic *CrossChainLogic) PrepareEthContractDeployment(chain string, nonceIndex int64) *eTypes.Transaction {
 	// Create Tx for dummy contract
 	byteCode := common.FromHex(dummy.DummyBin)
 	var nonce uint64
 	nonce = 0
 
 	rawTx := eTypes.NewContractCreation(nonce, big.NewInt(nonceIndex), logic.getGasLimit(chain), logic.getGasPrice(chain), byteCode)
-	return []*eTypes.Transaction{rawTx}
+	return rawTx
 }
 
 func (logic *CrossChainLogic) getGasLimit(chain string) uint64 {

@@ -3,6 +3,7 @@ package keeper
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -23,7 +24,19 @@ const (
 	KEY_PROCESSED_OBSERVED_TX = "processed_observed_tx_%s_%d_%s" // chain - block height - tx hash
 
 	KEY_PUBLICK_KEY_BYTES = "public_key_bytes_%s"
+
+	// List of on memory keys. These data are not persisted into kvstore.
+	// List of contracts that need to be deployed to a chain.
+	KEY_CONTRACT_QUEUE     = "contract_queue_%s_%s"     // chain
+	KEY_DEPLOYING_CONTRACT = "deploying_contract_%s_%s" // chain - contract hash
 )
+
+type deployContractWrapper struct {
+	data         []byte
+	createdBlock int64 // Sisu block when the contract is created.
+	// id of the designated validator that is supposed to post the tx out to the Sisu chain.
+	designatedValidator string
+}
 
 type Keeper struct {
 	storeKey sdk.StoreKey
@@ -31,6 +44,10 @@ type Keeper struct {
 	// TODO: Use on memory cache to speed up read operation for both pending & processed tx list.
 	pendingObservedTxLock   *sync.RWMutex
 	processedObservedTxLock *sync.RWMutex
+
+	contractQueue      map[string]bool
+	deployingContracts map[string]*deployContractWrapper
+	deployedContracts  map[string]*deployContractWrapper
 }
 
 func NewKeeper(storeKey sdk.StoreKey) *Keeper {
@@ -38,6 +55,9 @@ func NewKeeper(storeKey sdk.StoreKey) *Keeper {
 		storeKey:                storeKey,
 		pendingObservedTxLock:   &sync.RWMutex{},
 		processedObservedTxLock: &sync.RWMutex{},
+		contractQueue:           make(map[string]bool),
+		deployingContracts:      make(map[string]*deployContractWrapper),
+		deployedContracts:       make(map[string]*deployContractWrapper),
 	}
 }
 
@@ -168,20 +188,102 @@ func (k *Keeper) AddObservedTxToPending(ctx sdk.Context, msg *types.ObservedTx) 
 	k.pendingObservedTxLock.Unlock()
 }
 
-func (k *Keeper) GetObservedTxPendingList(ctx sdk.Context) {
-	k.pendingObservedTxLock.RLock()
-	defer k.pendingObservedTxLock.RUnlock()
+func (k *Keeper) GetAndClearObservedTxPendingList(ctx sdk.Context) []*types.ObservedTx {
+	k.pendingObservedTxLock.Lock()
+	defer k.pendingObservedTxLock.Unlock()
 
 	store := ctx.KVStore(k.storeKey)
 	itr := store.Iterator([]byte("pending_observed_tx_"), []byte("pending_observed_tx_zzzzzz"))
+	keys := make([][]byte, 0)
 
+	txs := make([]*types.ObservedTx, 0)
 	for ; itr.Valid(); itr.Next() {
-		fmt.Println("Key = ", itr.Key())
-		fmt.Println("Value = ", itr.Value())
+		bz := itr.Value()
+		msg := &types.ObservedTx{}
+		err := msg.Unmarshal(bz)
+		if err != nil {
+			utils.LogError("Cannot unmarshall message with key ", string(itr.Key()))
+			continue
+		}
+		txs = append(txs, msg)
+		keys = append(keys, itr.Key())
 	}
+	itr.Close()
+
+	// Delete the list.
+	for _, key := range keys {
+		store.Delete(key)
+	}
+
+	return txs
 }
 
 func (k *Keeper) SavePubKey(ctx sdk.Context, chain string, keyBytes []byte) {
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(fmt.Sprintf(KEY_PUBLICK_KEY_BYTES, chain)), keyBytes)
+}
+
+func (k *Keeper) IsContractDeployingOrDeployed(ctx sdk.Context, chain string, hash string) bool {
+	hash = strings.ToLower(hash)
+
+	deployingKey := fmt.Sprintf(KEY_DEPLOYING_CONTRACT, chain, hash)
+
+	if _, ok := k.contractQueue[deployingKey]; ok {
+		return true
+	}
+
+	return false
+}
+
+// Save a contract with a specific hash into a queue for later deployment.
+func (k *Keeper) EnqueueContract(ctx sdk.Context, chain string, hash string) {
+	key := fmt.Sprintf(KEY_CONTRACT_QUEUE, chain, hash)
+	k.contractQueue[key] = true
+}
+
+// Get all contract hashes in a pending queue.
+func (k *Keeper) GetContractQueueHashes(ctx sdk.Context, chain string) []string {
+	hashes := make([]string, 0)
+	for key, _ := range k.contractQueue {
+		if len(key) <= len("contract_queue_") {
+			utils.LogError("Invalid key:", key)
+			continue
+		}
+
+		suffix := key[len("contract_queue_"):]
+		index := strings.Index(suffix, "_")
+		if index <= 0 {
+			utils.LogError("Invalid suffix:", suffix)
+			continue
+		}
+
+		hash := key[index+1:]
+		hashes = append(hashes, hash)
+	}
+
+	return hashes
+}
+
+// Delete all the contracts in the queue
+func (k *Keeper) ClearContractQueue(ctx sdk.Context) {
+	k.contractQueue = make(map[string]bool)
+}
+
+func (k *Keeper) DequeueContract(ctx sdk.Context, chain string, hash string) {
+	key := fmt.Sprintf(KEY_CONTRACT_QUEUE, chain, hash)
+	delete(k.contractQueue, key)
+}
+
+// Adds a list of hashes
+func (k *Keeper) AddDeployingContract(ctx sdk.Context, chain string, hash string, txBytes []byte, createdBlock int64) {
+	key := fmt.Sprintf(KEY_DEPLOYING_CONTRACT, chain, hash)
+	k.deployingContracts[key] = &deployContractWrapper{
+		data:         txBytes,
+		createdBlock: createdBlock,
+	}
+}
+
+// Saves an assignment of a validator for a particular out tx.
+func (k *Keeper) AddAssignedValForOutTx(blockHeight int64, txBytes []byte, valAddr string) {
+
 }
