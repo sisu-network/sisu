@@ -53,13 +53,8 @@ func MinInt(x, y int) int {
 func KeccakHash32(s string) (string, error) {
 	hash := sha3.NewLegacyKeccak256()
 
-	b, err := hex.DecodeString(s)
-	if err != nil {
-		return "", err
-	}
-
 	var buf []byte
-	hash.Write(b)
+	hash.Write([]byte(s))
 	buf = hash.Sum(nil)
 
 	encoded := hex.EncodeToString(buf)

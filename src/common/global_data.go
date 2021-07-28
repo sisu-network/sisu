@@ -78,8 +78,6 @@ func (a *GlobalData) UpdateValidatorSets() {
 		return
 	}
 
-	utils.LogVerbose("ValidatorSet length = ", len(resp.Result.Validators))
-
 	a.validatorSets = resp.Result.Validators
 }
 

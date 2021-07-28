@@ -1,6 +1,9 @@
 package tss
 
 import (
+	"fmt"
+
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	eTypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/keeper"
@@ -36,6 +39,15 @@ func (a *ApiHandler) KeygenResult(result tTypes.KeygenResult) bool {
 // This is a API endpoint to receive transactions with To address we are interested in.
 func (a *ApiHandler) PostObservedTxs(txs *eTypes.Txs) {
 	utils.LogDebug("There is new list of transactions from deyes")
+
+	for _, tx := range txs.Arr {
+		ethTx := &ethTypes.Transaction{}
+
+		err := ethTx.UnmarshalBinary(tx.Serialized)
+		if err != nil {
+			fmt.Println("AAAAA err = ", err)
+		}
+	}
 
 	// There is a new transaction that we are interested in.
 	a.processor.ProcessObservedTxs(txs)
