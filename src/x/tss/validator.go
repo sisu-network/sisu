@@ -5,5 +5,5 @@ import (
 )
 
 type TssValidator interface {
-	CheckTx(msgs []sdk.Msg) error
+	CheckTx(ctx sdk.Context, msgs []sdk.Msg) error
 }

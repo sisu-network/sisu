@@ -4,26 +4,34 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
 
+	tssTypes "github.com/sisu-network/sisu/x/tss/types"
+
+	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
 
 const (
-	KEY_RECORDED_CHAIN = "recored_chain"
+	OBSERVED_TX_CACHE_SIZE = 2500
+)
 
-	// Set of validators that attest this transaction.
-	KEY_OBSERVED_TX_VALIDATOR_SET = "observed_tx_%s_%d_%s" // chain - block height - tx hash
+var (
+	PREFIX_RECORDED_CHAIN            = []byte{0x01}
+	PREFIX_OBSERVED_TX               = []byte{0x02}
+	PREFIX_OBSERVED_TX_VALIDATOR_SET = []byte{0x03}
+	PREFIX_PENDING_OBSERVED_TX       = []byte{0x04}
+	PREFIX_PROCESSED_OBSERVED_TX     = []byte{0x05}
+	PREFIX_PUBLICK_KEY_BYTES         = []byte{0x06}
 
 	// List of transactions that have enough observation and pending for output.
-	KEY_PENDING_OBSERVED_TX = "pending_observed_tx_%s_%d_%s" // chain - block height - tx hash
+	// KEY_PENDING_OBSERVED_TX = "pending_observed_tx_%s_%d_%s" // chain - block height - tx hash
 
 	// List of transactions that have been processed.
-	KEY_PROCESSED_OBSERVED_TX = "processed_observed_tx_%s_%d_%s" // chain - block height - tx hash
+	// KEY_PROCESSED_OBSERVED_TX = "processed_observed_tx_%s_%d_%s" // chain - block height - tx hash
 
-	KEY_PUBLICK_KEY_BYTES = "public_key_bytes_%s"
+	// KEY_PUBLICK_KEY_BYTES = "public_key_bytes_%s"
 
 	// List of on memory keys. These data are not persisted into kvstore.
 	// List of contracts that need to be deployed to a chain.
@@ -38,37 +46,50 @@ type deployContractWrapper struct {
 	designatedValidator string
 }
 
+// Data structure that wraps around pending tx outs.
+type pendingTxOutWrapper struct {
+	valAddr string
+	txInt   []byte
+	txOut   []byte
+}
+
 type Keeper struct {
 	storeKey sdk.StoreKey
 
-	// TODO: Use on memory cache to speed up read operation for both pending & processed tx list.
-	pendingObservedTxLock   *sync.RWMutex
-	processedObservedTxLock *sync.RWMutex
+	// List of contracts that waits to be deployed.
+	contractQueue map[string]string
 
-	contractQueue      map[string]string
+	// List of contracts that are being deployed.
 	deployingContracts map[string]*deployContractWrapper
-	deployedContracts  map[string]*deployContractWrapper
+
+	// List of contracts that have been deployed. (This should be saved in a KV store?)
+	deployedContracts map[string]*deployContractWrapper
 
 	// A map that remembers what transaction is assigned to which validators.
-	assignedValidators map[int64]map[string]string // blockHeight -> tx bytes (as string) -> validator address
+	assignedValidators map[int64]map[string]*pendingTxOutWrapper // blockHeight -> tx bytes (as string) -> validator address
 }
 
 func NewKeeper(storeKey sdk.StoreKey) *Keeper {
 	return &Keeper{
-		storeKey:                storeKey,
-		pendingObservedTxLock:   &sync.RWMutex{},
-		processedObservedTxLock: &sync.RWMutex{},
-		contractQueue:           make(map[string]string),
-		deployingContracts:      make(map[string]*deployContractWrapper),
-		deployedContracts:       make(map[string]*deployContractWrapper),
-		assignedValidators:      make(map[int64]map[string]string),
+		storeKey:           storeKey,
+		contractQueue:      make(map[string]string),
+		deployingContracts: make(map[string]*deployContractWrapper),
+		deployedContracts:  make(map[string]*deployContractWrapper),
+		assignedValidators: make(map[int64]map[string]*pendingTxOutWrapper),
 	}
+}
+
+func (k *Keeper) getKey(chain string, height int64, hash string) []byte {
+	// Replace all the _ in the chain.
+	chain = strings.Replace(chain, "_", "*", -1)
+	return []byte(fmt.Sprintf("%s_%d_%s", chain, height, hash))
 }
 
 // Get a list of chains that this node supported and have generated private key through TSS.
 func (k *Keeper) GetRecordedChainsOnSisu(ctx sdk.Context) (*types.ChainsInfo, error) {
-	store := ctx.KVStore(k.storeKey)
-	bz := store.Get([]byte(KEY_RECORDED_CHAIN))
+	// store := ctx.KVStore(k.storeKey)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_RECORDED_CHAIN)
+	bz := store.Get([]byte(PREFIX_RECORDED_CHAIN))
 
 	chainsInfo := &types.ChainsInfo{}
 	err := chainsInfo.Unmarshal(bz)
@@ -87,20 +108,34 @@ func (k *Keeper) SetChainsInfo(ctx sdk.Context, chainsInfo *types.ChainsInfo) er
 		return err
 	}
 
-	store.Set([]byte(KEY_RECORDED_CHAIN), bz)
+	store.Set([]byte(PREFIX_RECORDED_CHAIN), bz)
 	return nil
 }
 
+func (k *Keeper) SaveObservedTx(ctx sdk.Context, tx *tssTypes.ObservedTx) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_OBSERVED_TX)
+	key := k.getKey(tx.Chain, tx.BlockHeight, tx.TxHash)
+
+	store.Set(key, tx.Serialized)
+}
+
+func (k *Keeper) GetObservedTx(ctx sdk.Context, chain string, blockHeight int64, hash string) []byte {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_OBSERVED_TX)
+	key := k.getKey(chain, blockHeight, hash)
+
+	return store.Get(key)
+}
+
+// @Deprecated. TODO: Remove
 // This updates the set of validators that attest to observe a specific tx (identified by its hash)
 // on a specific chain.
 func (k *Keeper) UpdateObservedTxCount(ctx sdk.Context, msg *types.ObservedTx, signer string) (int, error) {
-	store := ctx.KVStore(k.storeKey)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_OBSERVED_TX_VALIDATOR_SET)
 
-	key := []byte(fmt.Sprintf(KEY_OBSERVED_TX_VALIDATOR_SET, msg.Chain, msg.BlockHeight, msg.TxHash))
+	key := k.getKey(msg.Chain, msg.BlockHeight, msg.TxHash)
 	bz := store.Get(key)
 
 	var validators map[string]bool
-
 	if bz == nil || len(bz) == 0 {
 		validators = make(map[string]bool)
 	} else {
@@ -142,11 +177,8 @@ func (k *Keeper) IsObservedTxPendingOrProcessed(ctx sdk.Context, msg *types.Obse
 }
 
 func (k *Keeper) IsObservedTxPending(ctx sdk.Context, msg *types.ObservedTx) bool {
-	k.pendingObservedTxLock.RLock()
-	defer k.pendingObservedTxLock.RUnlock()
-
-	store := ctx.KVStore(k.storeKey)
-	key := []byte(fmt.Sprintf(KEY_PENDING_OBSERVED_TX, msg.Chain, msg.BlockHeight, msg.TxHash))
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PENDING_OBSERVED_TX)
+	key := k.getKey(msg.Chain, msg.BlockHeight, msg.TxHash)
 	bz := store.Get(key)
 	if bz != nil {
 		return true
@@ -157,12 +189,9 @@ func (k *Keeper) IsObservedTxPending(ctx sdk.Context, msg *types.ObservedTx) boo
 
 // Returns true if an observed tx has been processed.
 func (k *Keeper) IsObservedTxProcessed(ctx sdk.Context, msg *types.ObservedTx) bool {
-	k.processedObservedTxLock.RLock()
-	defer k.processedObservedTxLock.RUnlock()
-
 	// Check processed list.
-	store := ctx.KVStore(k.storeKey)
-	key := []byte(fmt.Sprintf(KEY_PROCESSED_OBSERVED_TX, msg.Chain, msg.BlockHeight, msg.TxHash))
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PROCESSED_OBSERVED_TX)
+	key := k.getKey(msg.Chain, msg.BlockHeight, msg.TxHash)
 	bz := store.Get(key)
 	if bz != nil {
 		return true
@@ -179,7 +208,7 @@ func (k *Keeper) AddObservedTxToPending(ctx sdk.Context, msg *types.ObservedTx) 
 	}
 
 	store := ctx.KVStore(k.storeKey)
-	key := []byte(fmt.Sprintf(KEY_PENDING_OBSERVED_TX, msg.Chain, msg.BlockHeight, msg.TxHash))
+	key := k.getKey(msg.Chain, msg.BlockHeight, msg.TxHash)
 
 	bz, err := msg.Marshal()
 	if err != nil {
@@ -187,17 +216,12 @@ func (k *Keeper) AddObservedTxToPending(ctx sdk.Context, msg *types.ObservedTx) 
 		return
 	}
 
-	k.pendingObservedTxLock.Lock()
 	store.Set(key, bz)
-	k.pendingObservedTxLock.Unlock()
 }
 
 func (k *Keeper) GetAndClearObservedTxPendingList(ctx sdk.Context) []*types.ObservedTx {
-	k.pendingObservedTxLock.Lock()
-	defer k.pendingObservedTxLock.Unlock()
-
-	store := ctx.KVStore(k.storeKey)
-	itr := store.Iterator([]byte("pending_observed_tx_"), []byte("pending_observed_tx_zzzzzz"))
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PENDING_OBSERVED_TX)
+	itr := store.Iterator(nil, nil)
 	keys := make([][]byte, 0)
 
 	txs := make([]*types.ObservedTx, 0)
@@ -223,8 +247,8 @@ func (k *Keeper) GetAndClearObservedTxPendingList(ctx sdk.Context) []*types.Obse
 }
 
 func (k *Keeper) SavePubKey(ctx sdk.Context, chain string, keyBytes []byte) {
-	store := ctx.KVStore(k.storeKey)
-	store.Set([]byte(fmt.Sprintf(KEY_PUBLICK_KEY_BYTES, chain)), keyBytes)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PUBLICK_KEY_BYTES)
+	store.Set([]byte(chain), keyBytes)
 }
 
 func (k *Keeper) IsContractDeployingOrDeployed(ctx sdk.Context, chain string, hash string) bool {
@@ -295,9 +319,12 @@ func (k *Keeper) AddDeployingContract(ctx sdk.Context, chain string, hash string
 func (k *Keeper) AddAssignedValForOutTx(blockHeight int64, txBytes []byte, valAddr string) {
 	m := k.assignedValidators[blockHeight]
 	if m == nil {
-		m = make(map[string]string)
+		m = make(map[string]*pendingTxOutWrapper)
 	}
-	m[string(txBytes)] = valAddr
+	m[string(txBytes)] = &pendingTxOutWrapper{
+		valAddr: valAddr,
+		txOut:   txBytes,
+	}
 
 	k.assignedValidators[blockHeight] = m
 }

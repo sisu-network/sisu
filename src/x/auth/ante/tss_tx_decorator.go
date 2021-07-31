@@ -29,7 +29,7 @@ func (d TssDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next
 		return ctx, fmt.Errorf("Empty mesage list")
 	}
 
-	if err := d.validator.CheckTx(msgs); err != nil {
+	if err := d.validator.CheckTx(ctx, msgs); err != nil {
 		return ctx, err
 	}
 

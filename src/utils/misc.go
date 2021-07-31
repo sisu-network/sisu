@@ -49,6 +49,12 @@ func MinInt(x, y int) int {
 	return x
 }
 
+func GetObservedTxHash(blockHeight int64, chain string, txBytes []byte) (string, error) {
+	bz := []byte(chain + strconv.FormatInt(blockHeight, 10))
+	bz = append(txBytes, bz...)
+	return KeccakHash32(string(bz))
+}
+
 // Hash a string and return the first 32 bytes of the hash.
 func KeccakHash32(s string) (string, error) {
 	hash := sha3.NewLegacyKeccak256()

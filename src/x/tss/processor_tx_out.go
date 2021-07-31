@@ -13,11 +13,9 @@ import (
 
 // Produces response for an observed tx. This has to be deterministic based on all the data that
 // the processor has.
-func (p *Processor) GetObserveTxResponse(ctx sdk.Context, tx *types.ObservedTx) {
+func (p *Processor) CreateTxOuts(ctx sdk.Context, tx *types.ObservedTx) {
 	var txBytes [][]byte
 	var err error
-
-	fmt.Println("tx.Chain = ", tx.Chain)
 
 	switch tx.Chain {
 	case "eth":
@@ -44,24 +42,20 @@ func (p *Processor) GetObserveTxResponse(ctx sdk.Context, tx *types.ObservedTx) 
 
 // Get ETH out from an observed tx. Only do this if this is a validator node.
 func (p *Processor) getEthResponse(ctx sdk.Context, tx *types.ObservedTx) ([][]byte, error) {
-	bz := p.storage.GetObservedTx(tx.Chain, tx.BlockHeight, tx.TxHash)
 	ethTx := &ethTypes.Transaction{}
 
-	err := ethTx.UnmarshalBinary(bz)
+	err := ethTx.UnmarshalBinary(tx.Serialized)
 	if err != nil {
 		utils.LogError("Failed to unmarshall eth tx. err =", err)
 		return nil, err
 	}
 
 	txBytes := make([][]byte, 0)
-
-	fmt.Println("ethTx.To().String() = ", ethTx.To().String())
-	fmt.Println("p.keyAddress = ", p.keyAddress)
-
 	// Process different kind of eth transaction.
 	// 1. Check if the To address of our public key. This is likely a tx to provide ETH for our
 	// account to deploy contracts. Check if we have some pending contracts and deploy if needed.
 	if ethTx.To().String() == p.keyAddress {
+		// TODO: Check balance required to deploy all these contracts.
 		// Get all contract in the pending queue.
 		contracts := p.keeper.GetContractQueueHashes(ctx, tx.Chain)
 
@@ -103,8 +97,6 @@ func (p *Processor) checkEthDeployContract(ctx sdk.Context, chain string, ethTx 
 	hashes []string) []*ethTypes.Transaction {
 	txs := make([]*ethTypes.Transaction, 0)
 
-	fmt.Println("Hash =", hashes)
-
 	nonce := int64(0)
 	for _, hash := range hashes {
 		switch hash {
@@ -126,6 +118,7 @@ func (p *Processor) checkEthDeployContract(ctx sdk.Context, chain string, ethTx 
 	return txs
 }
 
+// Broadcasts all txouts that have been assigned to this validator.
 func (p *Processor) broadcastAssignedTxOuts() {
 
 }

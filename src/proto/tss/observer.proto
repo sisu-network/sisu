@@ -5,9 +5,18 @@ message ObservedTx {
   string chain = 1;
   int64 blockHeight = 2;
   string txHash = 3;
+  bytes serialized = 4;
 }
 
 message ObservedTxs {
   string signer = 1;
   repeated ObservedTx txs = 2;
+}
+
+message TxOut {
+  string signer = 1;
+  string inChain = 2;
+  int64 inBlockHeight = 3;
+  string inHash = 4;
+  bytes output = 5;
 }
