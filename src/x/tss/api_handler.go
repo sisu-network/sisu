@@ -1,8 +1,6 @@
 package tss
 
 import (
-	"fmt"
-
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	eTypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/sisu/utils"
@@ -45,7 +43,7 @@ func (a *ApiHandler) PostObservedTxs(txs *eTypes.Txs) {
 
 		err := ethTx.UnmarshalBinary(tx.Serialized)
 		if err != nil {
-			fmt.Println("AAAAA err = ", err)
+			utils.LogError("Cannot unmarshall transaction ", err)
 		}
 	}
 

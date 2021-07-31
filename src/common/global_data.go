@@ -3,22 +3,29 @@ package common
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"sync"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	pvm "github.com/tendermint/tendermint/privval"
+
+	"github.com/BurntSushi/toml"
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 )
 
 type GlobalData struct {
-	isCatchingUp bool
-	catchUpLock  *sync.RWMutex
-	httpClient   *retryablehttp.Client
+	isCatchingUp  bool
+	catchUpLock   *sync.RWMutex
+	httpClient    *retryablehttp.Client
+	cfg           config.Config
+	myTmtConsAddr sdk.ConsAddress
 
-	validatorSize int
 	validatorSets []*Validator
 }
 
-func NewGlobalData() *GlobalData {
+func NewGlobalData(cfg config.Config) *GlobalData {
 	httpClient := retryablehttp.NewClient()
 	httpClient.Logger = nil
 
@@ -27,8 +34,39 @@ func NewGlobalData() *GlobalData {
 		isCatchingUp:  true,
 		catchUpLock:   &sync.RWMutex{},
 		validatorSets: make([]*Validator, 0),
-		validatorSize: 1, // TODO: Get the real validator size instead of hardcoding it.
+		cfg:           cfg,
 	}
+}
+
+// Initialize common variables that could be used throughout this app.
+func (a *GlobalData) Init() {
+	sisuConfig := a.cfg.GetSisuConfig()
+
+	defaultConfigTomlFile := sisuConfig.Home + "/config/config.toml"
+	fmt.Println("defaultConfigTomlFile = ", defaultConfigTomlFile)
+
+	data, err := ioutil.ReadFile(defaultConfigTomlFile)
+	if err != nil {
+		panic(err)
+	}
+
+	var configToml struct {
+		PrivValidatorKeyFile   string `toml:"priv_validator_key_file"`
+		PrivValidatorStateFile string `toml:"priv_validator_state_file"`
+	}
+
+	if _, err := toml.Decode(string(data), &configToml); err != nil {
+		panic(err)
+	}
+
+	privValidator := pvm.LoadFilePV(
+		sisuConfig.Home+"/"+configToml.PrivValidatorKeyFile,
+		sisuConfig.Home+"/"+configToml.PrivValidatorStateFile,
+	)
+	// Get the tendermint address of this node.
+	a.myTmtConsAddr = (sdk.ConsAddress)(privValidator.GetAddress())
+
+	utils.LogInfo("My tendermint address = ", a.myTmtConsAddr.String())
 }
 
 func (a *GlobalData) UpdateCatchingUp() {
@@ -46,6 +84,13 @@ func (a *GlobalData) UpdateCatchingUp() {
 				CatchingUp bool `json:"catching_up"`
 			} `json:"sync_info"`
 		} `json:"result"`
+		ValidatorInfo struct {
+			Address string `json:"address"`
+			PubKey  struct {
+				Type  string `json:"type"`
+				Value string `json:"value"`
+			} `json:"pub_key"`
+		} `json:"validator_info"`
 	}
 
 	if err := json.Unmarshal(body, &resp); err != nil {
@@ -95,5 +140,5 @@ func (a *GlobalData) IsCatchingUp() bool {
 }
 
 func (a *GlobalData) ValidatorSize() int {
-	return a.validatorSize
+	return len(a.validatorSets)
 }

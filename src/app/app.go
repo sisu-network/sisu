@@ -278,7 +278,8 @@ func New(
 	app.appKeys = common.NewAppKeys(*cfg.GetSisuConfig())
 	app.appKeys.Init()
 
-	app.globalData = common.NewGlobalData()
+	app.globalData = common.NewGlobalData(cfg)
+	app.globalData.Init()
 
 	app.txSubmitter = common.NewTxSubmitter(cfg, app.appKeys)
 	go app.txSubmitter.Start()
