@@ -50,3 +50,7 @@ func (a *ApiHandler) PostObservedTxs(txs *eTypes.Txs) {
 	// There is a new transaction that we are interested in.
 	a.processor.ProcessObservedTxs(txs)
 }
+
+func (a *ApiHandler) KeySignResult(result *tTypes.KeysignResult) {
+
+}

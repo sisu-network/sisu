@@ -25,6 +25,8 @@ func NewHandler(k keeper.Keeper, txSubmit common.TxSubmit, processor *Processor)
 			return handleKeygenResult(ctx, msg, processor)
 		case *types.ObservedTxs:
 			return handleObservedTxs(ctx, msg, processor)
+		case *types.TxOut:
+			return handleTxOut(ctx, msg, processor)
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
@@ -56,8 +58,16 @@ func handleKeygenResult(ctx sdk.Context, msg *types.KeygenResult, processor *Pro
 
 func handleObservedTxs(ctx sdk.Context, msg *types.ObservedTxs, processor *Processor) (*sdk.Result, error) {
 	// Update the count for all txs.
-	utils.LogVerbose("Handleing ObservedTxs")
+	utils.LogVerbose("Handling ObservedTxs")
 	data, err := processor.DeliverObservedTxs(ctx, msg)
+	return &sdk.Result{
+		Data: data,
+	}, err
+}
+
+func handleTxOut(ctx sdk.Context, msg *types.TxOut, processor *Processor) (*sdk.Result, error) {
+	utils.LogVerbose("Handling Txout")
+	data, err := processor.DeliverTxOut(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err

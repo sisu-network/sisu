@@ -13,11 +13,24 @@ const (
 	KEY_OBSERVE_TX = "observed_tx_%s_%d_%s"
 )
 
+// Data structure that wraps around pending tx outs.
+type PendingTxOutWrapper struct {
+	ValAddr       string
+	InBlockHeight int64
+	InChain       string
+	OutChain      string
+	InHash        string
+	OutBytes      []byte
+}
+
 // Local storage for data of this specific node. This is not a db for application state.
 type TssStorage struct {
 	db *leveldb.Database
 
 	pendingTx map[string]*tssTypes.ObservedTx
+
+	// A map that remembers what transaction is assigned to which validators.
+	assignedValidators map[int64]map[string]*PendingTxOutWrapper // blockHeight -> txInHash (as string) -> validator address
 }
 
 func NewTssStorage(file string) (*TssStorage, error) {
@@ -27,8 +40,9 @@ func NewTssStorage(file string) (*TssStorage, error) {
 		return nil, err
 	}
 	return &TssStorage{
-		db:        db,
-		pendingTx: make(map[string]*tssTypes.ObservedTx),
+		db:                 db,
+		pendingTx:          make(map[string]*tssTypes.ObservedTx),
+		assignedValidators: make(map[int64]map[string]*PendingTxOutWrapper),
 	}, nil
 }
 
@@ -72,4 +86,58 @@ func (s *TssStorage) GetAllPendingTxs() []*tssTypes.ObservedTx {
 // Clears all pending txs.
 func (s *TssStorage) ClearPendingTxs() {
 	s.pendingTx = make(map[string]*tssTypes.ObservedTx)
+}
+
+// Saves an assignment of a validator for a particular out tx.
+func (s *TssStorage) AddPendingTxOut(blockHeight int64, inChain string, inHash string, outChain string, outBytes []byte, valAddr string) {
+	m := s.assignedValidators[blockHeight]
+	if m == nil {
+		m = make(map[string]*PendingTxOutWrapper)
+	}
+	m[inHash] = &PendingTxOutWrapper{
+		InBlockHeight: blockHeight,
+		ValAddr:       valAddr,
+		InChain:       inChain,
+		OutChain:      outChain,
+		InHash:        inHash,
+		OutBytes:      outBytes,
+	}
+
+	s.assignedValidators[blockHeight] = m
+}
+
+// Returns a list of txs(both in and out) assigned to a specific validator at a particular block
+// height.
+func (s *TssStorage) GetPendingTxOutForValidator(blockHeight int64, valAddr string) []*PendingTxOutWrapper {
+	txs := make([]*PendingTxOutWrapper, 0)
+	m := s.assignedValidators[blockHeight]
+	if m == nil {
+		return txs
+	}
+
+	for _, txWrapper := range m {
+		if txWrapper.ValAddr == valAddr {
+			txs = append(txs, txWrapper)
+		}
+	}
+
+	return txs
+}
+
+func (s *TssStorage) GetPendingTxOUt(blockHeight int64, inHash string) *PendingTxOutWrapper {
+	m := s.assignedValidators[blockHeight]
+	if m == nil {
+		return nil
+	}
+
+	return m[inHash]
+}
+
+func (s *TssStorage) RemovePendingTxOut(blockHeight int64, inHash string) {
+	m := s.assignedValidators[blockHeight]
+	if m == nil {
+		return
+	}
+
+	delete(m, inHash)
 }
