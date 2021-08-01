@@ -43,8 +43,6 @@ func (a *GlobalData) Init() {
 	sisuConfig := a.cfg.GetSisuConfig()
 
 	defaultConfigTomlFile := sisuConfig.Home + "/config/config.toml"
-	fmt.Println("defaultConfigTomlFile = ", defaultConfigTomlFile)
-
 	data, err := ioutil.ReadFile(defaultConfigTomlFile)
 	if err != nil {
 		panic(err)
@@ -141,4 +139,8 @@ func (a *GlobalData) IsCatchingUp() bool {
 
 func (a *GlobalData) ValidatorSize() int {
 	return len(a.validatorSets)
+}
+
+func (a *GlobalData) GetMyTendermintValidatorAddr() string {
+	return a.myTmtConsAddr.String()
 }

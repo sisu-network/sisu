@@ -82,18 +82,3 @@ func (p *Processor) DeliverObservedTxs(ctx sdk.Context, msg *tssTypes.ObservedTx
 
 	return nil, nil
 }
-
-// Processes all txs at the end of a block that are added in the current block.
-func (p *Processor) processPendingTxs(ctx sdk.Context) {
-	observedTxList := p.storage.GetAllPendingTxs()
-	// 1. Creates all tx out for all observed txs in this blocks.
-	for _, tx := range observedTxList {
-		p.CreateTxOuts(ctx, tx)
-	}
-	p.storage.ClearPendingTxs()
-
-	// 2. Broadcast all txs out that have been assigned to this node.
-
-	// 3. Check if there is txs out that is supposed to be included in this block or the previous
-	// block. If there is, broadcast that tx out.
-}

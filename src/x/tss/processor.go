@@ -153,51 +153,6 @@ func (p *Processor) EndBlock(ctx sdk.Context) {
 	p.processPendingTxs(ctx)
 }
 
-func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
-	if p.globalData.IsCatchingUp() ||
-		p.lastProposeBlockHeight != 0 && blockHeight-p.lastProposeBlockHeight <= PROPOSE_BLOCK_INTERVAL {
-		return
-	}
-
-	chains, err := p.keeper.GetRecordedChainsOnSisu(ctx)
-	if err != nil {
-		return
-	}
-
-	utils.LogInfo("recordedChains = ", chains)
-
-	unavailableChains := make([]string, 0)
-	for _, chainConfig := range p.config.SupportedChains {
-		// TODO: Remove this after testing.
-		// if chains.Chains[chainConfig.Symbol] == nil {
-		if true {
-			unavailableChains = append(unavailableChains, chainConfig.Symbol)
-		}
-	}
-
-	// Broadcast a message.
-	utils.LogInfo("Broadcasting TSS Keygen Proposal message. len(unavailableChains) = ", len(unavailableChains))
-	signer := p.appKeys.GetSignerAddress()
-
-	for _, chain := range unavailableChains {
-		proposal := types.NewMsgKeygenProposal(
-			signer.String(),
-			chain,
-			utils.GenerateRandomString(16),
-			blockHeight+int64(p.config.BlockProposalLength),
-		)
-		utils.LogDebug("Submitting proposal message for chain", chain)
-		go func() {
-			err := p.txSubmit.SubmitMessage(proposal)
-			if err != nil {
-				utils.LogError(err)
-			}
-		}()
-	}
-
-	p.lastProposeBlockHeight = blockHeight
-}
-
 func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
 	utils.LogDebug("TSSProcessor: checking tx. Message length = ", len(msgs))
 
@@ -214,6 +169,8 @@ func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
 		case *types.KeygenResult:
 		case *types.ObservedTxs:
 			return p.CheckObservedTxs(ctx, msg.(*types.ObservedTxs))
+		case *types.TxOut:
+			return p.CheckTxOut(ctx, msg.(*types.TxOut))
 		}
 
 		// switch msg.Type() {

@@ -25,6 +25,51 @@ type BlockSymbolPair struct {
 	chainSymbol string
 }
 
+func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
+	if p.globalData.IsCatchingUp() ||
+		p.lastProposeBlockHeight != 0 && blockHeight-p.lastProposeBlockHeight <= PROPOSE_BLOCK_INTERVAL {
+		return
+	}
+
+	chains, err := p.keeper.GetRecordedChainsOnSisu(ctx)
+	if err != nil {
+		return
+	}
+
+	utils.LogInfo("recordedChains = ", chains)
+
+	unavailableChains := make([]string, 0)
+	for _, chainConfig := range p.config.SupportedChains {
+		// TODO: Remove this after testing.
+		// if chains.Chains[chainConfig.Symbol] == nil {
+		if true {
+			unavailableChains = append(unavailableChains, chainConfig.Symbol)
+		}
+	}
+
+	// Broadcast a message.
+	utils.LogInfo("Broadcasting TSS Keygen Proposal message. len(unavailableChains) = ", len(unavailableChains))
+	signer := p.appKeys.GetSignerAddress()
+
+	for _, chain := range unavailableChains {
+		proposal := types.NewMsgKeygenProposal(
+			signer.String(),
+			chain,
+			utils.GenerateRandomString(16),
+			blockHeight+int64(p.config.BlockProposalLength),
+		)
+		utils.LogDebug("Submitting proposal message for chain", chain)
+		go func() {
+			err := p.txSubmit.SubmitMessage(proposal)
+			if err != nil {
+				utils.LogError(err)
+			}
+		}()
+	}
+
+	p.lastProposeBlockHeight = blockHeight
+}
+
 // Called after having key generation result from Sisu's api server.
 func (p *Processor) OnKeygenResult(result tTypes.KeygenResult) {
 	// 1. Post result to the cosmos chain

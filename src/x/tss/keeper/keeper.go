@@ -23,7 +23,8 @@ var (
 	PREFIX_OBSERVED_TX_VALIDATOR_SET = []byte{0x03}
 	PREFIX_PENDING_OBSERVED_TX       = []byte{0x04}
 	PREFIX_PROCESSED_OBSERVED_TX     = []byte{0x05}
-	PREFIX_PUBLICK_KEY_BYTES         = []byte{0x06}
+	PREFIX_PUBLIC_KEY_BYTES          = []byte{0x06}
+	PREFIX_PENDING_KEYGEN_TX         = []byte{0x07}
 
 	// List of transactions that have enough observation and pending for output.
 	// KEY_PENDING_OBSERVED_TX = "pending_observed_tx_%s_%d_%s" // chain - block height - tx hash
@@ -46,13 +47,6 @@ type deployContractWrapper struct {
 	designatedValidator string
 }
 
-// Data structure that wraps around pending tx outs.
-type pendingTxOutWrapper struct {
-	valAddr string
-	txInt   []byte
-	txOut   []byte
-}
-
 type Keeper struct {
 	storeKey sdk.StoreKey
 
@@ -64,9 +58,6 @@ type Keeper struct {
 
 	// List of contracts that have been deployed. (This should be saved in a KV store?)
 	deployedContracts map[string]*deployContractWrapper
-
-	// A map that remembers what transaction is assigned to which validators.
-	assignedValidators map[int64]map[string]*pendingTxOutWrapper // blockHeight -> tx bytes (as string) -> validator address
 }
 
 func NewKeeper(storeKey sdk.StoreKey) *Keeper {
@@ -75,7 +66,6 @@ func NewKeeper(storeKey sdk.StoreKey) *Keeper {
 		contractQueue:      make(map[string]string),
 		deployingContracts: make(map[string]*deployContractWrapper),
 		deployedContracts:  make(map[string]*deployContractWrapper),
-		assignedValidators: make(map[int64]map[string]*pendingTxOutWrapper),
 	}
 }
 
@@ -247,7 +237,7 @@ func (k *Keeper) GetAndClearObservedTxPendingList(ctx sdk.Context) []*types.Obse
 }
 
 func (k *Keeper) SavePubKey(ctx sdk.Context, chain string, keyBytes []byte) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PUBLICK_KEY_BYTES)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PUBLIC_KEY_BYTES)
 	store.Set([]byte(chain), keyBytes)
 }
 
@@ -315,16 +305,28 @@ func (k *Keeper) AddDeployingContract(ctx sdk.Context, chain string, hash string
 	}
 }
 
-// Saves an assignment of a validator for a particular out tx.
-func (k *Keeper) AddAssignedValForOutTx(blockHeight int64, txBytes []byte, valAddr string) {
-	m := k.assignedValidators[blockHeight]
-	if m == nil {
-		m = make(map[string]*pendingTxOutWrapper)
-	}
-	m[string(txBytes)] = &pendingTxOutWrapper{
-		valAddr: valAddr,
-		txOut:   txBytes,
+func (k *Keeper) AddProcessedTx(ctx sdk.Context, txOut *tssTypes.TxOut) {
+	key := k.getKey(txOut.InChain, txOut.InBlockHeight, txOut.InHash)
+
+	serialized, err := txOut.Marshal()
+	if err != nil {
+		utils.LogCritical("Cannot marshal a txOut. InHash = ", txOut.InHash, ". Err = ", err)
+		return
 	}
 
-	k.assignedValidators[blockHeight] = m
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PROCESSED_OBSERVED_TX)
+	store.Set(key, serialized)
+}
+
+func (k *Keeper) AddPendingKeygenTx(ctx sdk.Context, outChain string, outBlock int64, outHash string) {
+	key := k.getKey(outChain, outBlock, outHash)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PENDING_KEYGEN_TX)
+	store.Set(key, []byte(""))
+}
+
+func (k *Keeper) IsPendingKeygenTxExisted(ctx sdk.Context, outChain string, outBlock int64, outHash string) bool {
+	key := k.getKey(outChain, outBlock, outHash)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PENDING_KEYGEN_TX)
+
+	return store.Get(key) != nil
 }

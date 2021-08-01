@@ -1,5 +1,6 @@
 package common
 
+// Data structure for validator from /validatorSet/latest response.
 type Validator struct {
 	Address string `json:"address"`
 	PubKey  struct {

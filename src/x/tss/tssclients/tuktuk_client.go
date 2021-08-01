@@ -2,9 +2,11 @@ package tssclients
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/sisu-network/sisu/utils"
+	tTypes "github.com/sisu-network/tuktuk/types"
 )
 
 type TuktukClient struct {
@@ -40,10 +42,27 @@ func (c *TuktukClient) CheckHealth() error {
 }
 
 func (c *TuktukClient) KeyGen(chainSymbol string) error {
+	utils.LogInfo("Broadcasting keygen to Tuktuk")
+
 	var result string
 	err := c.client.CallContext(context.Background(), &result, "tss_keyGen", chainSymbol)
 	if err != nil {
 		utils.LogError("Cannot send keygen request, err = ", err)
+		return err
+	}
+
+	return nil
+}
+
+func (c *TuktukClient) KeySign(req *tTypes.KeysignRequest) error {
+	utils.LogVerbose("Broadcasting key signing to Tuktuk")
+
+	fmt.Println("Len(serialized) = ", len(req.OutBytes))
+
+	var r interface{}
+	err := c.client.CallContext(context.Background(), &r, "tss_keySign", req)
+	if err != nil {
+		utils.LogError("Cannot send KeySign request, err = ", err)
 		return err
 	}
 
