@@ -73,14 +73,10 @@ func (p *Processor) getEthResponse(ctx sdk.Context, tx *types.ObservedTx) ([]*ts
 		// Get all contract in the pending queue.
 		contracts := p.keeper.GetContractQueueHashes(ctx, tx.Chain)
 
-		fmt.Println("contracts = ", contracts)
-
 		if len(contracts) > 0 {
 			// Get the list of deploy transactions. Those txs need to posted and verified (by validators)
 			// to the Sisu chain
 			outEthTxs := p.checkEthDeployContract(ctx, tx.Chain, ethTx, contracts)
-
-			fmt.Println("tx out length = ", len(outEthTxs))
 
 			for _, outTx := range outEthTxs {
 				bz, err := outTx.MarshalBinary()
@@ -161,8 +157,6 @@ func (p *Processor) broadcastAssignedTxOuts() {
 
 	txWrappers := p.storage.GetPendingTxOutForValidator(p.currentHeight, myValidatorAddr)
 
-	fmt.Println("Wrapper sizes = ", txWrappers)
-
 	for _, tx := range txWrappers {
 		go func(tx *PendingTxOutWrapper) {
 			p.txSubmit.SubmitMessage(
@@ -199,7 +193,7 @@ func (p *Processor) CheckTxOut(ctx sdk.Context, msg *types.TxOut) error {
 }
 
 func (p *Processor) DeliverTxOut(ctx sdk.Context, msg *types.TxOut) ([]byte, error) {
-	fmt.Println("Delivering TXOUT")
+	utils.LogVerbose("Delivering TXOUT")
 
 	outHash, err := utils.GetTxHash(msg.OutChain, msg.OutBytes)
 	if err != nil {
