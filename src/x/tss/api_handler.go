@@ -52,5 +52,7 @@ func (a *ApiHandler) PostObservedTxs(txs *eTypes.Txs) {
 }
 
 func (a *ApiHandler) KeySignResult(result *tTypes.KeysignResult) {
+	utils.LogInfo("There is keysign result")
 
+	// Post the keysign result to cosmos chain.
 }
