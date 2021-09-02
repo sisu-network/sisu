@@ -5,10 +5,10 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	tTypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/sisu/contracts/eth/dummy"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
-	tTypes "github.com/sisu-network/tuktuk/types"
 )
 
 /**
@@ -190,9 +190,9 @@ func (p *Processor) countKeygenVote() {
 		// n := utils.MinInt(len(votesMap), p.config.PoolSizeUpperBound)
 		// TODO: Get top n validators from the map. For now, get all the validators.
 
-		// 2. Send a signal to Tuktuk to start keygen process.
-		utils.LogInfo("Sending keygen request to Tuktuk...")
-		err := p.tuktukClient.KeyGen(chainSymbol)
+		// 2. Send a signal to Dheart to start keygen process.
+		utils.LogInfo("Sending keygen request to Dheart...")
+		err := p.dheartClient.KeyGen(chainSymbol)
 		if err != nil {
 			utils.LogError(err)
 			return

@@ -5,44 +5,44 @@ import (
 	"fmt"
 
 	"github.com/ethereum/go-ethereum/rpc"
+	tTypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/sisu/utils"
-	tTypes "github.com/sisu-network/tuktuk/types"
 )
 
-type TuktukClient struct {
+type DheartClient struct {
 	client *rpc.Client
 }
 
-// DialTuktuk connects a client to the given URL.
-func DialTuktuk(rawurl string) (*TuktukClient, error) {
-	return dialTuktukContext(context.Background(), rawurl)
+// DialDheart connects a client to the given URL.
+func DialDheart(rawurl string) (*DheartClient, error) {
+	return dialDheartContext(context.Background(), rawurl)
 }
 
-func dialTuktukContext(ctx context.Context, rawurl string) (*TuktukClient, error) {
+func dialDheartContext(ctx context.Context, rawurl string) (*DheartClient, error) {
 	c, err := rpc.DialContext(ctx, rawurl)
 	if err != nil {
 		return nil, err
 	}
-	return newTuktukClient(c), nil
+	return newDheartClient(c), nil
 }
 
-func newTuktukClient(c *rpc.Client) *TuktukClient {
-	return &TuktukClient{c}
+func newDheartClient(c *rpc.Client) *DheartClient {
+	return &DheartClient{c}
 }
 
-func (c *TuktukClient) CheckHealth() error {
+func (c *DheartClient) CheckHealth() error {
 	var result interface{}
 	err := c.client.CallContext(context.Background(), &result, "tss_checkHealth")
 	if err != nil {
-		utils.LogError("Cannot check tuktuk health, err = ", err)
+		utils.LogError("Cannot check Dheart health, err = ", err)
 		return err
 	}
 
 	return nil
 }
 
-func (c *TuktukClient) KeyGen(chainSymbol string) error {
-	utils.LogInfo("Broadcasting keygen to Tuktuk")
+func (c *DheartClient) KeyGen(chainSymbol string) error {
+	utils.LogInfo("Broadcasting keygen to Dheart")
 
 	var result string
 	err := c.client.CallContext(context.Background(), &result, "tss_keyGen", chainSymbol)
@@ -54,8 +54,8 @@ func (c *TuktukClient) KeyGen(chainSymbol string) error {
 	return nil
 }
 
-func (c *TuktukClient) KeySign(req *tTypes.KeysignRequest) error {
-	utils.LogVerbose("Broadcasting key signing to Tuktuk")
+func (c *DheartClient) KeySign(req *tTypes.KeysignRequest) error {
+	utils.LogVerbose("Broadcasting key signing to Dheart")
 
 	fmt.Println("Len(serialized) = ", len(req.OutBytes))
 

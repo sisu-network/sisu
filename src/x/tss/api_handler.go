@@ -3,9 +3,9 @@ package tss
 import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	eTypes "github.com/sisu-network/deyes/types"
+	tTypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/keeper"
-	tTypes "github.com/sisu-network/tuktuk/types"
 )
 
 type ApiHandler struct {

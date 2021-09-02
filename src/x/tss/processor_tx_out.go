@@ -5,8 +5,8 @@ import (
 	"encoding/hex"
 	"fmt"
 
+	tTypes "github.com/sisu-network/dheart/types"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
-	tTypes "github.com/sisu-network/tuktuk/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -217,8 +217,8 @@ func (p *Processor) DeliverTxOut(ctx sdk.Context, msg *types.TxOut) ([]byte, err
 	// 3. Add it to a queue to do keygen.
 	p.keeper.AddPendingKeygenTx(ctx, msg.OutChain, p.currentHeight, outHash)
 
-	// 4. Broadcast it to tuktuk for processing.
-	err = p.tuktukClient.KeySign(&tTypes.KeysignRequest{
+	// 4. Broadcast it to Dheart for processing.
+	err = p.dheartClient.KeySign(&tTypes.KeysignRequest{
 		OutChain:       msg.OutChain,
 		OutBlockHeight: p.currentHeight,
 		OutHash:        outHash,
