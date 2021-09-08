@@ -1,0 +1,11 @@
+syntax = "proto3";
+package types;
+
+message ChainInfo {
+  string symbol = 1;
+  repeated string validators = 2;
+}
+
+message ChainsInfo{
+  map<string, ChainInfo> chains = 1;
+}

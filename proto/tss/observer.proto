@@ -1,0 +1,15 @@
+syntax = "proto3";
+package types;
+
+message ObservedTx {
+  string chain = 1;
+  int64 blockHeight = 2;
+  string txHash = 3;
+  bytes serialized = 4;
+}
+
+message ObservedTxs {
+  string signer = 1;
+  repeated ObservedTx txs = 2;
+}
+

@@ -1,9 +1,0 @@
-syntax = "proto3";
-package types;
-
-message KeySign {
-  string signer = 1;
-  string outChain = 2;
-  bytes outHash = 3;
-  bytes signature = 4;
-}
