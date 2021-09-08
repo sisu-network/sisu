@@ -1,6 +1,7 @@
 package tss
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -95,7 +96,14 @@ func (p *Processor) connectToDheart() {
 		panic(err)
 	}
 
-	if err := p.dheartClient.CheckHealth(); err != nil {
+	encryptedKey, err := p.appKeys.GetEncryptedPrivKey()
+	if err != nil {
+		utils.LogError("Failed to get encrypted private key. Err =", err)
+		panic(err)
+	}
+
+	// Pass encrypted private key to dheart
+	if err := p.dheartClient.SetPrivKey(hex.EncodeToString(encryptedKey), "secp256k1"); err != nil {
 		panic(err)
 	}
 

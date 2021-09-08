@@ -30,6 +30,17 @@ func newDheartClient(c *rpc.Client) *DheartClient {
 	return &DheartClient{c}
 }
 
+func (c *DheartClient) SetPrivKey(encodedKey string, keyType string) error {
+	var result string
+	err := c.client.CallContext(context.Background(), &result, "tss_setPrivKey", encodedKey, keyType)
+	if err != nil {
+		utils.LogError("Cannot do handshare with dheart, err = ", err)
+		return err
+	}
+
+	return nil
+}
+
 func (c *DheartClient) CheckHealth() error {
 	var result interface{}
 	err := c.client.CallContext(context.Background(), &result, "tss_checkHealth")
