@@ -999,6 +999,7 @@ github.com/sisu-network/dheart v0.1.1 h1:Bnh+VGDC0uTIfpLW+x6GR7+HC/3nm0Mu7vxNzbr
 github.com/sisu-network/dheart v0.1.1/go.mod h1:XSE/Pv8Hp+Xt+Jo2LHmQBHSfFCcbIrVVmh+Qf7cbDX8=
 github.com/sisu-network/dheart v0.1.2 h1:rqI/oDi3mmt9f2fXg0cRYa5gwbc4FzXxJsWnxF3Bs+A=
 github.com/sisu-network/dheart v0.1.2/go.mod h1:pxewIsf8WmxT7glRPVLeqdUKToW215Z9gmbeEvt4+as=
+github.com/sisu-network/tss-lib v0.1.1 h1:wGMZyLxpIaQB+2N0ckZkV/eiFBslkl5KLGOhJBNUjVQ=
 github.com/sisu-network/tss-lib v0.1.1/go.mod h1:76hDuB4abzc6/s79xacl0wA7ADAqC/3qak1lTW5z5Cc=
 github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d h1:zE9ykElWQ6/NYmHa3jpm/yHnI4xSofP+UP6SpjHcSeM=
 github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d/go.mod h1:OnSkiWE9lh6wB0YB77sQom3nweQdgAjqCqsofrRNTgc=
