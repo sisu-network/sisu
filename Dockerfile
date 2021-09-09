@@ -11,17 +11,17 @@ RUN mkdir /root/.ssh && echo "StrictHostKeyChecking no " > /root/.ssh/config
 # # Though the id_rsa file is removed at the end of this docker build, it's still dangerous to include
 # # id_rsa in the build file since docker build steps are cached. Only do this while our repos are in
 # # private mode.
-ADD build/id_rsa /root/.ssh/id_rsa
+ADD tmp/id_rsa /root/.ssh/id_rsa
 
 
-WORKDIR /src
-COPY src/go.mod .
-COPY src/go.sum .
+WORKDIR /sisu
+COPY . .
+COPY go.mod .
+COPY go.sum .
 RUN go mod download
 
-COPY src .
-RUN go build -o /dist/sisu ./cmd/sisud/main.go
+RUN go build -o /sisu/sisu ./cmd/sisud/main.go
 
-RUN rm /root/.ssh/id_rsa
+# RUN rm /root/.ssh/id_rsa
 
-CMD [ "ls", "/dist"]
+CMD [ "ls", "/root/.ssh"]
