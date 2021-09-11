@@ -1,4 +1,5 @@
 build/
-src/sisu
-src/output
+sisu
+output
 tmp
+.env

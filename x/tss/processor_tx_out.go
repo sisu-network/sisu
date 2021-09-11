@@ -8,9 +8,9 @@ import (
 	tTypes "github.com/sisu-network/dheart/types"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 
+	"github.com/cosmos/cosmos-sdk/client/rpc"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/contracts/eth/dummy"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
@@ -39,8 +39,6 @@ func (p *Processor) CreateTxOuts(ctx sdk.Context, tx *types.ObservedTx) {
 
 		// TODO: Use online/active validators instead the whole validator sets.
 		valAddr := p.getAssignedValidator(p.currentHeight, string(msg.OutBytes), validators)
-
-		fmt.Println("p.currentHeight = ", p.currentHeight)
 
 		// Save this valAddr for later block check.
 		p.storage.AddPendingTxOut(
@@ -85,8 +83,6 @@ func (p *Processor) getEthResponse(ctx sdk.Context, tx *types.ObservedTx) ([]*ts
 					continue
 				}
 
-				fmt.Println("Adding to txBytes")
-
 				outMsgs = append(outMsgs, tssTypes.NewMsgTxOut(
 					p.appKeys.GetSignerAddress().String(),
 					tx.BlockHeight,
@@ -104,9 +100,9 @@ func (p *Processor) getEthResponse(ctx sdk.Context, tx *types.ObservedTx) ([]*ts
 
 // Get one validator from the validator list based on blockHeight and a hash. This is one way to
 // get "random" validator in the deterministic world of crypto.
-func (p *Processor) getAssignedValidator(blockHeight int64, hash string, validators []*common.Validator) string {
+func (p *Processor) getAssignedValidator(blockHeight int64, hash string, validators []rpc.ValidatorOutput) string {
 	index := utils.GetRandomIndex(blockHeight, hash, len(validators))
-	return validators[index].Address
+	return validators[index].Address.String()
 }
 
 // Check if we can deploy contract after seeing some ETH being sent to our ethereum address.
@@ -153,7 +149,7 @@ func (p *Processor) processPendingTxs(ctx sdk.Context) {
 
 // Broadcasts all txouts that have been assigned to this validator.
 func (p *Processor) broadcastAssignedTxOuts() {
-	myValidatorAddr := p.globalData.GetMyTendermintValidatorAddr()
+	myValidatorAddr := p.globalData.GetMyValidatorAddr()
 
 	txWrappers := p.storage.GetPendingTxOutForValidator(p.currentHeight, myValidatorAddr)
 
@@ -174,8 +170,6 @@ func (p *Processor) broadcastAssignedTxOuts() {
 }
 
 func (p *Processor) CheckTxOut(ctx sdk.Context, msg *types.TxOut) error {
-	fmt.Println("Checking Txout...")
-
 	txWrapper := p.storage.GetPendingTxOUt(msg.InBlockHeight, msg.InHash)
 	if txWrapper == nil {
 		utils.LogError("Cannot find txWrapper", msg.InBlockHeight, msg.InHash)
@@ -186,8 +180,6 @@ func (p *Processor) CheckTxOut(ctx sdk.Context, msg *types.TxOut) error {
 		utils.LogError("Txouts do not match.")
 		return fmt.Errorf("OutBytes do not match")
 	}
-
-	fmt.Println("Txout is good")
 
 	return nil
 }

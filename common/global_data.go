@@ -6,7 +6,11 @@ import (
 	"io/ioutil"
 	"sync"
 
+	"github.com/cosmos/cosmos-sdk/client/rpc"
+	"github.com/cosmos/cosmos-sdk/codec"
+	cryptoCdc "github.com/cosmos/cosmos-sdk/crypto/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/rest"
 	pvm "github.com/tendermint/tendermint/privval"
 
 	"github.com/BurntSushi/toml"
@@ -15,31 +19,44 @@ import (
 	"github.com/sisu-network/sisu/utils"
 )
 
-type GlobalData struct {
+type GlobalData interface {
+	Init()
+	UpdateCatchingUp()
+	UpdateValidatorSets()
+	IsCatchingUp() bool
+	GetValidatorSet() []rpc.ValidatorOutput
+	GetMyValidatorAddr() string
+}
+
+type GlobalDataDefault struct {
 	isCatchingUp  bool
 	catchUpLock   *sync.RWMutex
 	httpClient    *retryablehttp.Client
 	cfg           config.Config
 	myTmtConsAddr sdk.ConsAddress
+	cdc           *codec.LegacyAmino
 
-	validatorSets []*Validator
+	validatorSets *rpc.ResultValidatorsOutput
 }
 
-func NewGlobalData(cfg config.Config) *GlobalData {
+func NewGlobalData(cfg config.Config) GlobalData {
 	httpClient := retryablehttp.NewClient()
 	httpClient.Logger = nil
+	cdc := codec.NewLegacyAmino()
+	cryptoCdc.RegisterCrypto(cdc)
 
-	return &GlobalData{
+	return &GlobalDataDefault{
 		httpClient:    httpClient,
 		isCatchingUp:  true,
 		catchUpLock:   &sync.RWMutex{},
-		validatorSets: make([]*Validator, 0),
+		cdc:           cdc,
+		validatorSets: new(rpc.ResultValidatorsOutput),
 		cfg:           cfg,
 	}
 }
 
 // Initialize common variables that could be used throughout this app.
-func (a *GlobalData) Init() {
+func (a *GlobalDataDefault) Init() {
 	sisuConfig := a.cfg.GetSisuConfig()
 
 	defaultConfigTomlFile := sisuConfig.Home + "/config/config.toml"
@@ -67,7 +84,7 @@ func (a *GlobalData) Init() {
 	utils.LogInfo("My tendermint address = ", a.myTmtConsAddr.String())
 }
 
-func (a *GlobalData) UpdateCatchingUp() {
+func (a *GlobalDataDefault) UpdateCatchingUp() {
 	url := "http://127.0.0.1:26657/status"
 
 	body, _, err := utils.HttpGet(a.httpClient, url)
@@ -101,8 +118,7 @@ func (a *GlobalData) UpdateCatchingUp() {
 	a.catchUpLock.Unlock()
 }
 
-// TODO: Consider do this less often
-func (a *GlobalData) UpdateValidatorSets() {
+func (a *GlobalDataDefault) UpdateValidatorSets() {
 	url := "http://127.0.0.1:1317/validatorsets/latest"
 	body, _, err := utils.HttpGet(a.httpClient, url)
 	if err != nil {
@@ -110,37 +126,40 @@ func (a *GlobalData) UpdateValidatorSets() {
 		return
 	}
 
-	var resp struct {
-		Result struct {
-			Validators []*Validator `json:"validators"`
-		} `json:"result"`
-	}
-
-	if err := json.Unmarshal(body, &resp); err != nil {
-		utils.LogError(fmt.Errorf("Cannot parse validator set body: %w", err))
+	responseWithHeight := new(rest.ResponseWithHeight)
+	err = a.cdc.UnmarshalJSON(body, responseWithHeight)
+	if err != nil {
 		return
 	}
 
-	a.validatorSets = resp.Result.Validators
+	response := new(rpc.ResultValidatorsOutput)
+	err = a.cdc.UnmarshalJSON([]byte(responseWithHeight.Result), response)
+	if err != nil {
+		return
+	}
+
+	// TODO: make this atomic
+	a.validatorSets = response
 }
 
 // Returns the latest validator set.
-func (a *GlobalData) GetValidatorSet() []*Validator {
-	copy := a.validatorSets
+func (a *GlobalDataDefault) GetValidatorSet() []rpc.ValidatorOutput {
+	copy := a.validatorSets.Validators
 	return copy
 }
 
-func (a *GlobalData) IsCatchingUp() bool {
+func (a *GlobalDataDefault) IsCatchingUp() bool {
 	a.catchUpLock.RLock()
 	defer a.catchUpLock.RUnlock()
 
 	return a.isCatchingUp
 }
 
-func (a *GlobalData) ValidatorSize() int {
-	return len(a.validatorSets)
+func (a *GlobalDataDefault) ValidatorSize() int {
+	// TODO: make this atomic
+	return len(a.validatorSets.Validators)
 }
 
-func (a *GlobalData) GetMyTendermintValidatorAddr() string {
+func (a *GlobalDataDefault) GetMyValidatorAddr() string {
 	return a.myTmtConsAddr.String()
 }
