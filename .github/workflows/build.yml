@@ -29,7 +29,6 @@ jobs:
       - name: Compile
         run: |
           git config --global url."https://${{ secrets.ACCESS_TOKEN }}:x-oauth-basic@github.com/sisu-network".insteadOf "https://github.com/sisu-network"
-          cd src
           go mod download
           cd cmd/sisud
           go build .
