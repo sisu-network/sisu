@@ -173,7 +173,7 @@ var (
 type App struct {
 	txSubmitter       *common.TxSubmitter
 	appKeys           *common.AppKeys
-	globalData        *common.GlobalData
+	globalData        common.GlobalData
 	internalApiServer server.Server
 	tssProcessor      *tss.Processor
 

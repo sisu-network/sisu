@@ -192,7 +192,9 @@ func (p *Processor) countKeygenVote() {
 
 		// 2. Send a signal to Dheart to start keygen process.
 		utils.LogInfo("Sending keygen request to Dheart...")
-		err := p.dheartClient.KeyGen(chainSymbol)
+		pubKeys := p.partyManager.GetActivePartyPubkeys()
+		keygenId := GetKeygenId(chainSymbol, p.currentHeight, pubKeys)
+		err := p.dheartClient.KeyGen(keygenId, chainSymbol, pubKeys)
 		if err != nil {
 			utils.LogError(err)
 			return

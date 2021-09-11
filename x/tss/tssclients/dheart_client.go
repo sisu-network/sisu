@@ -2,10 +2,12 @@ package tssclients
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/ethereum/go-ethereum/rpc"
-	tTypes "github.com/sisu-network/dheart/types"
+	dTypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/sisu/utils"
 )
 
@@ -52,11 +54,32 @@ func (c *DheartClient) CheckHealth() error {
 	return nil
 }
 
-func (c *DheartClient) KeyGen(chainSymbol string) error {
+func (c *DheartClient) KeyGen(keygenId string, chain string, pubKeys []ctypes.PubKey) error {
+	// Wrap pubkeys
+	wrappers := make([]dTypes.PubKeyWrapper, len(pubKeys))
+	for i, pubKey := range pubKeys {
+		switch pubKey.Type() {
+		case "ed25519":
+			wrappers[i] = dTypes.PubKeyWrapper{
+				KeyType: pubKey.Type(),
+				Ed25519: &ed25519.PubKey{
+					Key: pubKey.Bytes(),
+				},
+			}
+		case "secp256k1":
+			wrappers[i] = dTypes.PubKeyWrapper{
+				KeyType: pubKey.Type(),
+				Secp256k1: &secp256k1.PubKey{
+					Key: pubKey.Bytes(),
+				},
+			}
+		}
+	}
+
 	utils.LogInfo("Broadcasting keygen to Dheart")
 
 	var result string
-	err := c.client.CallContext(context.Background(), &result, "tss_keyGen", chainSymbol)
+	err := c.client.CallContext(context.Background(), &result, "tss_keyGen", keygenId, chain, wrappers)
 	if err != nil {
 		utils.LogError("Cannot send keygen request, err = ", err)
 		return err
@@ -65,10 +88,8 @@ func (c *DheartClient) KeyGen(chainSymbol string) error {
 	return nil
 }
 
-func (c *DheartClient) KeySign(req *tTypes.KeysignRequest) error {
+func (c *DheartClient) KeySign(req *dTypes.KeysignRequest) error {
 	utils.LogVerbose("Broadcasting key signing to Dheart")
-
-	fmt.Println("Len(serialized) = ", len(req.OutBytes))
 
 	var r interface{}
 	err := c.client.CallContext(context.Background(), &r, "tss_keySign", req)
