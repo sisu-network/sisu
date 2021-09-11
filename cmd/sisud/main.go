@@ -6,7 +6,6 @@ import (
 
 	"github.com/sisu-network/sisu/utils"
 
-	"github.com/cosmos/cosmos-sdk/server"
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 	"github.com/sisu-network/sisu/app"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd"
@@ -36,10 +35,10 @@ func loadConfig() {
 	utils.LogInfo("Main App home = ", app.MainAppHome)
 
 	// Print IP address
-	_, err = server.ExternalIP()
-	if err != nil {
-		panic(err)
-	}
+	// _, err = server.ExternalIP()
+	// if err != nil {
+	// 	panic(err)
+	// }
 }
 
 func main() {

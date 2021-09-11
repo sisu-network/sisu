@@ -107,7 +107,7 @@ type AppModule struct {
 	processor  *Processor
 	appKeys    *common.AppKeys
 	txSubmit   common.TxSubmit
-	globalData *common.GlobalData
+	globalData common.GlobalData
 }
 
 func NewAppModule(cdc codec.Marshaler,
@@ -115,7 +115,7 @@ func NewAppModule(cdc codec.Marshaler,
 	appKeys *common.AppKeys,
 	txSubmit common.TxSubmit,
 	processor *Processor,
-	globalData *common.GlobalData,
+	globalData common.GlobalData,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),
