@@ -32,7 +32,6 @@ jobs:
       - name: Download dependencies
         env:
           GO111MODULE: on
-#          GOPROXY: direct
           GOSUMDB: off
         run: go mod download
 
