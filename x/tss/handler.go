@@ -19,8 +19,6 @@ func NewHandler(k keeper.Keeper, txSubmit common.TxSubmit, processor *Processor)
 		switch msg := msg.(type) {
 		case *types.KeygenProposal:
 			return handleKeygenProposal(msg, processor)
-		case *types.KeygenProposalVote:
-			return handleKeygenProposalVote(msg, processor)
 		case *types.KeygenResult:
 			return handleKeygenResult(ctx, msg, processor)
 		case *types.ObservedTxs:
@@ -36,13 +34,6 @@ func NewHandler(k keeper.Keeper, txSubmit common.TxSubmit, processor *Processor)
 
 func handleKeygenProposal(msg *types.KeygenProposal, processor *Processor) (*sdk.Result, error) {
 	data, err := processor.DeliverKeyGenProposal(msg)
-	return &sdk.Result{
-		Data: data,
-	}, err
-}
-
-func handleKeygenProposalVote(msg *types.KeygenProposalVote, processor *Processor) (*sdk.Result, error) {
-	data, err := processor.DeliverKeyGenProposalVote(msg)
 	return &sdk.Result{
 		Data: data,
 	}, err

@@ -1,8 +1,6 @@
 package tss
 
 import (
-	"sort"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	tTypes "github.com/sisu-network/dheart/types"
@@ -99,85 +97,21 @@ func (p *Processor) OnKeygenResult(result tTypes.KeygenResult) {
 }
 
 func (p *Processor) CheckKeyGenProposal(msg *types.KeygenProposal) error {
-	// TODO: Check duplicated proposal here.
+	// TODO: Check if we see the same need to have keygen proposal here.
 	return nil
 }
 
 func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, error) {
-	// 1. TODO: Check duplicated proposal here.
-
-	// Just approve it for now.
-	// 2. If this node supports the proposed chain and it's one of the top X validators, send an
-	// approval vote to the keygen proposal.
-	//    2a) Check this node is in the top N Validator
-	//    2b) Check if this node supports chain X.
-	supported := false
-	for _, chainConfig := range p.config.SupportedChains {
-		if chainConfig.Symbol == msg.ChainSymbol {
-			supported = true
-			break
-		}
+	// Send a signal to Dheart to start keygen process.
+	utils.LogInfo("Sending keygen request to Dheart...")
+	pubKeys := p.partyManager.GetActivePartyPubkeys()
+	keygenId := GetKeygenId(msg.ChainSymbol, p.currentHeight, pubKeys)
+	err := p.dheartClient.KeyGen(keygenId, msg.ChainSymbol, pubKeys)
+	if err != nil {
+		utils.LogError(err)
+		return nil, err
 	}
-
-	utils.LogDebug("Supported = ", supported)
-
-	if !supported {
-		// This is not supported by this current node
-		return []byte{}, nil
-	}
-
-	// Check if we have already processing this chain.
-	found := false
-	for _, pair := range p.keygenBlockPairs {
-		if pair.chainSymbol == msg.ChainSymbol {
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		// Add this chain to the processing queue. We will count votes in a few block later.
-		p.keygenBlockPairs = append(p.keygenBlockPairs, BlockSymbolPair{
-			blockHeight: p.currentHeight + int64(p.config.BlockProposalLength),
-			chainSymbol: msg.ChainSymbol,
-		})
-		// Sort all pairs by block heights.
-		sort.Slice(p.keygenBlockPairs, func(i, j int) bool {
-			return p.keygenBlockPairs[i].blockHeight < p.keygenBlockPairs[j].blockHeight
-		})
-	}
-
-	// TODO: Save this proposal to KV store.
-	p.keygenVoteResult[msg.ChainSymbol] = make(map[string]bool)
-
-	if !p.globalData.IsCatchingUp() {
-		// Send vote message to everyone else
-		signer := p.appKeys.GetSignerAddress()
-		voteMsg := types.NewMsgKeygenProposalVote(signer.String(), msg.ChainSymbol, types.KeygenProposalVote_APPROVE)
-
-		utils.LogDebug("Sending this message...")
-
-		go func() {
-			err := p.txSubmit.SubmitMessage(voteMsg)
-			if err != nil {
-				utils.LogError(err)
-			}
-		}()
-	}
-
-	return []byte{}, nil
-}
-
-func (p *Processor) DeliverKeyGenProposalVote(msg *types.KeygenProposalVote) ([]byte, error) {
-	voteResult := p.keygenVoteResult[msg.ChainSymbol]
-	if voteResult == nil {
-		voteResult = make(map[string]bool)
-	}
-
-	utils.LogDebug("msg = ", msg)
-
-	voteResult[msg.Signer] = msg.Vote == types.KeygenProposalVote_APPROVE
-	p.keygenVoteResult[msg.ChainSymbol] = voteResult
+	utils.LogInfo("Keygen request is sent successfully.")
 
 	return []byte{}, nil
 }
@@ -190,16 +124,6 @@ func (p *Processor) countKeygenVote() {
 		// n := utils.MinInt(len(votesMap), p.config.PoolSizeUpperBound)
 		// TODO: Get top n validators from the map. For now, get all the validators.
 
-		// 2. Send a signal to Dheart to start keygen process.
-		utils.LogInfo("Sending keygen request to Dheart...")
-		pubKeys := p.partyManager.GetActivePartyPubkeys()
-		keygenId := GetKeygenId(chainSymbol, p.currentHeight, pubKeys)
-		err := p.dheartClient.KeyGen(keygenId, chainSymbol, pubKeys)
-		if err != nil {
-			utils.LogError(err)
-			return
-		}
-		utils.LogInfo("Keygen request is sent successfully.")
 	}
 }
 
