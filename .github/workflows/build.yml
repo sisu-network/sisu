@@ -25,11 +25,12 @@ jobs:
         env:
           GOOS: ${{ matrix.targetos }}
           GOARCH: ${{ matrix.arch }}
+
+      - name: Compile
+        env:
           GO111MODULE: on
           GOPROXY: direct
           GOSUMDB: off
-
-      - name: Compile
         run: |
           git config --global url."https://${{ secrets.ACCESS_TOKEN }}:@github.com".insteadOf "https://github.com"
           go mod download
