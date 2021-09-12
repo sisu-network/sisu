@@ -8,7 +8,6 @@ import (
 	tTypes "github.com/sisu-network/dheart/types"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 
-	"github.com/cosmos/cosmos-sdk/client/rpc"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/sisu-network/sisu/contracts/eth/dummy"
@@ -19,7 +18,7 @@ import (
 // Produces response for an observed tx. This has to be deterministic based on all the data that
 // the processor has.
 func (p *Processor) CreateTxOuts(ctx sdk.Context, tx *types.ObservedTx) {
-	var outMsgs []*tssTypes.TxOut
+	outMsgs := make([]*tssTypes.TxOut, 0)
 	var err error
 
 	switch tx.Chain {
@@ -31,23 +30,13 @@ func (p *Processor) CreateTxOuts(ctx sdk.Context, tx *types.ObservedTx) {
 		}
 	}
 
-	validators := p.globalData.GetValidatorSet()
 	for _, msg := range outMsgs {
-		// Find a validator that the network expects to post out tx in the next 1 or 2 blocks. If
-		// the assigned validator does not post, everyone in the network will broadcast the out tx
-		// and the assigned validator has minor slashing.
-
-		// TODO: Use online/active validators instead the whole validator sets.
-		valAddr := p.getAssignedValidator(p.currentHeight, string(msg.OutBytes), validators)
-
-		// Save this valAddr for later block check.
 		p.storage.AddPendingTxOut(
 			p.currentHeight,
 			tx.Chain,
 			tx.TxHash,
 			msg.OutChain,
 			msg.OutBytes,
-			valAddr,
 		)
 	}
 }
@@ -98,12 +87,12 @@ func (p *Processor) getEthResponse(ctx sdk.Context, tx *types.ObservedTx) ([]*ts
 	return outMsgs, nil
 }
 
-// Get one validator from the validator list based on blockHeight and a hash. This is one way to
-// get "random" validator in the deterministic world of crypto.
-func (p *Processor) getAssignedValidator(blockHeight int64, hash string, validators []rpc.ValidatorOutput) string {
-	index := utils.GetRandomIndex(blockHeight, hash, len(validators))
-	return validators[index].Address.String()
-}
+// // Get one validator from the validator list based on blockHeight and a hash. This is one way to
+// // get "random" validator in the deterministic world of crypto.
+// func (p *Processor) getAssignedValidator(blockHeight int64, hash string, validators []rpc.ValidatorOutput) string {
+// 	index := utils.GetRandomIndex(blockHeight, hash, len(validators))
+// 	return validators[index].Address.String()
+// }
 
 // Check if we can deploy contract after seeing some ETH being sent to our ethereum address.
 func (p *Processor) checkEthDeployContract(ctx sdk.Context, chain string, ethTx *ethTypes.Transaction,
@@ -133,41 +122,39 @@ func (p *Processor) checkEthDeployContract(ctx sdk.Context, chain string, ethTx 
 
 // Processes all txs at the end of a block that are added in the current block.
 func (p *Processor) processPendingTxs(ctx sdk.Context) {
-	observedTxList := p.storage.GetAllPendingTxs()
-	// 1. Creates all tx out for all observed txs in this blocks.
-	for _, tx := range observedTxList {
-		p.CreateTxOuts(ctx, tx)
-	}
-	p.storage.ClearPendingTxs()
+	// observedTxList := p.storage.GetAllPendingTxs()
+	// // 1. Creates all tx out for all observed txs in this blocks.
+	// for _, tx := range observedTxList {
+	// 	p.CreateTxOuts(ctx, tx)
+	// }
+	// p.storage.ClearPendingTxs()
 
-	// 2. Broadcast all txs out that have been assigned to this node.
-	p.broadcastAssignedTxOuts()
+	// // 2. Broadcast all txs out that have been assigned to this node.
+	// p.broadcastAssignedTxOuts()
 
 	// 3. Check if there is txs out that is supposed to be included in this block or the previous
 	// block. If there is, broadcast that tx out.
 }
 
 // Broadcasts all txouts that have been assigned to this validator.
-func (p *Processor) broadcastAssignedTxOuts() {
-	myValidatorAddr := p.globalData.GetMyValidatorAddr()
+// func (p *Processor) broadcastAssignedTxOuts() {
+// 	txWrappers := p.storage.GetPendingTxOutForValidator(p.currentHeight)
 
-	txWrappers := p.storage.GetPendingTxOutForValidator(p.currentHeight, myValidatorAddr)
-
-	for _, tx := range txWrappers {
-		go func(tx *PendingTxOutWrapper) {
-			p.txSubmit.SubmitMessage(
-				tssTypes.NewMsgTxOut(
-					p.appKeys.GetSignerAddress().String(),
-					tx.InBlockHeight,
-					tx.InChain,
-					tx.InHash,
-					tx.OutChain,
-					tx.OutBytes,
-				),
-			)
-		}(tx)
-	}
-}
+// 	for _, tx := range txWrappers {
+// 		go func(tx *PendingTxOutWrapper) {
+// 			p.txSubmit.SubmitMessage(
+// 				tssTypes.NewMsgTxOut(
+// 					p.appKeys.GetSignerAddress().String(),
+// 					tx.InBlockHeight,
+// 					tx.InChain,
+// 					tx.InHash,
+// 					tx.OutChain,
+// 					tx.OutBytes,
+// 				),
+// 			)
+// 		}(tx)
+// 	}
+// }
 
 func (p *Processor) CheckTxOut(ctx sdk.Context, msg *types.TxOut) error {
 	txWrapper := p.storage.GetPendingTxOUt(msg.InBlockHeight, msg.InHash)
@@ -193,21 +180,21 @@ func (p *Processor) DeliverTxOut(ctx sdk.Context, msg *types.TxOut) ([]byte, err
 		return nil, err
 	}
 
-	// TODO: bring this logic back after debugging.
-	// if p.keeper.IsPendingKeygenTxExisted(ctx, msg.OutChain, p.currentHeight, outHash) {
-	if false {
-		// This transaction has been processed and keysigned. No need to do keysign again.
-		return nil, nil
-	}
+	// // TODO: bring this logic back after debugging.
+	// // if p.keeper.IsPendingKeygenTxExisted(ctx, msg.OutChain, p.currentHeight, outHash) {
+	// if false {
+	// 	// This transaction has been processed and keysigned. No need to do keysign again.
+	// 	return nil, nil
+	// }
 
-	// 1. Remove the tx out from the storage.
-	p.storage.RemovePendingTxOut(msg.InBlockHeight, msg.InHash)
+	// // 1. Remove the tx out from the storage.
+	// p.storage.RemovePendingTxOut(msg.InBlockHeight, msg.InHash)
 
-	// 2. Mark the tx as processed and save it to KVStore.
-	p.keeper.AddProcessedTx(ctx, msg)
+	// // 2. Mark the tx as processed and save it to KVStore.
+	// p.keeper.AddProcessedTx(ctx, msg)
 
-	// 3. Add it to a queue to do keygen.
-	p.keeper.AddPendingKeygenTx(ctx, msg.OutChain, p.currentHeight, outHash)
+	// // 3. Add it to a queue to do keygen.
+	// p.keeper.AddPendingKeygenTx(ctx, msg.OutChain, p.currentHeight, outHash)
 
 	// 4. Broadcast it to Dheart for processing.
 	err = p.dheartClient.KeySign(&tTypes.KeysignRequest{

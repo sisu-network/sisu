@@ -22,15 +22,14 @@ func (p *Processor) ProcessObservedTxs(txs *deTypes.Txs) {
 			continue
 		}
 
-		// Check local storage to see if this observed tx has been recorded in local storage. This is
-		// very different from observed tx in kvstore as the kvstore only stores data from Sisu chain.
-		if p.storage.GetObservedTx(txs.Chain, txs.Block, hash) != nil {
-			// This tx has been recorded in the Sisu chain. We don't need to broadcast it anymore.
-			utils.LogVerbose("This tx has been processed before.")
-			continue
-		}
-
-		p.storage.SaveObservedTx(txs.Chain, txs.Block, hash, tx.Serialized)
+		// // Check local storage to see if this observed tx has been recorded in local storage. This is
+		// // very different from observed tx in kvstore as the kvstore only stores data from Sisu chain.
+		// if p.storage.GetObservedTx(txs.Chain, txs.Block, hash) != nil {
+		// 	// This tx has been recorded in the Sisu chain. We don't need to broadcast it anymore.
+		// 	utils.LogVerbose("This tx has been processed before.")
+		// 	continue
+		// }
+		// p.storage.SaveObservedTx(txs.Chain, txs.Block, hash, tx.Serialized)
 
 		arr := make([]*tssTypes.ObservedTx, 1)
 		arr[0] = &tssTypes.ObservedTx{
@@ -49,12 +48,12 @@ func (p *Processor) ProcessObservedTxs(txs *deTypes.Txs) {
 
 func (p *Processor) CheckObservedTxs(ctx sdk.Context, msgs *tssTypes.ObservedTxs) error {
 	// Returns true if we have also observed the same tx.
-	for _, msg := range msgs.Txs {
-		bz := p.storage.GetObservedTx(msg.Chain, msg.BlockHeight, msg.TxHash)
-		if bz == nil {
-			return fmt.Errorf("We have not seen this transaction yet.")
-		}
-	}
+	// for _, msg := range msgs.Txs {
+	// 	bz := p.storage.GetObservedTx(msg.Chain, msg.BlockHeight, msg.TxHash)
+	// 	if bz == nil {
+	// 		return fmt.Errorf("We have not seen this transaction yet.")
+	// 	}
+	// }
 
 	return nil
 }
@@ -74,10 +73,9 @@ func (p *Processor) DeliverObservedTxs(ctx sdk.Context, msg *tssTypes.ObservedTx
 		p.keeper.SaveObservedTx(ctx, tx)
 
 		// Save this to our local storage in case we have not seen it.
-		p.storage.SaveObservedTx(tx.Chain, tx.BlockHeight, tx.TxHash, tx.Serialized)
+		// p.storage.SaveObservedTx(tx.Chain, tx.BlockHeight, tx.TxHash, tx.Serialized)
 
-		// Add this tx to pending list to process at the end of block.
-		p.storage.AddPendingTx(tx)
+		p.CreateTxOuts(ctx, tx)
 	}
 
 	return nil, nil
