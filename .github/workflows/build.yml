@@ -26,14 +26,18 @@ jobs:
           GOOS: ${{ matrix.targetos }}
           GOARCH: ${{ matrix.arch }}
 
-      - name: Compile
+      - name: Setting go
+        run: git config --global url."https://${{ secrets.ACCESS_TOKEN }}:@github.com".insteadOf "https://github.com"
+
+      - name: Download dependencies
         env:
           GO111MODULE: on
           GOPROXY: direct
           GOSUMDB: off
+        run: go mod download
+
+      - name: Compile
         run: |
-          git config --global url."https://${{ secrets.ACCESS_TOKEN }}:@github.com".insteadOf "https://github.com"
-          go mod download
           cd cmd/sisud
           go build .
 
