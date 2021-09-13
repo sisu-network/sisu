@@ -47,14 +47,7 @@ func (p *Processor) ProcessObservedTxs(txs *deTypes.Txs) {
 }
 
 func (p *Processor) CheckObservedTxs(ctx sdk.Context, msgs *tssTypes.ObservedTxs) error {
-	// Returns true if we have also observed the same tx.
-	// for _, msg := range msgs.Txs {
-	// 	bz := p.storage.GetObservedTx(msg.Chain, msg.BlockHeight, msg.TxHash)
-	// 	if bz == nil {
-	// 		return fmt.Errorf("We have not seen this transaction yet.")
-	// 	}
-	// }
-
+	// TODO: implement this. Compare this observed txs with what we have in database.
 	return nil
 }
 

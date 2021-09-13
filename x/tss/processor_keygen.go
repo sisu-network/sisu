@@ -3,7 +3,7 @@ package tss
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	tTypes "github.com/sisu-network/dheart/types"
+	dhTypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/sisu/contracts/eth/dummy"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
@@ -69,7 +69,7 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 }
 
 // Called after having key generation result from Sisu's api server.
-func (p *Processor) OnKeygenResult(result tTypes.KeygenResult) {
+func (p *Processor) OnKeygenResult(result dhTypes.KeygenResult) {
 	// 1. Post result to the cosmos chain
 	signer := p.appKeys.GetSignerAddress()
 
@@ -78,7 +78,7 @@ func (p *Processor) OnKeygenResult(result tTypes.KeygenResult) {
 		resultEnum = types.KeygenResult_SUCCESS
 	}
 
-	msg := types.NewKeygenResult(signer.String(), result.Chain, resultEnum, result.PubKeyBytes)
+	msg := types.NewKeygenResult(signer.String(), result.Chain, resultEnum, result.PubKeyBytes, result.Address)
 	p.txSubmit.SubmitMessage(msg)
 
 	// 2. Add the address to the watch list.
@@ -86,13 +86,7 @@ func (p *Processor) OnKeygenResult(result tTypes.KeygenResult) {
 	if deyesClient == nil {
 		utils.LogCritical("Cannot find deyes client for chain", result.Chain)
 	} else {
-		if pubKey, err := crypto.DecompressPubkey(msg.PubKeyBytes); err == nil {
-			address := crypto.PubkeyToAddress(*pubKey).Hex()
-			utils.LogInfo("Adding watch address to deyes:", address)
-			// TODO: Retry if failed
-			deyesClient.AddWatchAddresses(result.Chain, []string{address})
-			p.keyAddress = address
-		}
+		deyesClient.AddWatchAddresses(result.Chain, []string{result.Address})
 	}
 }
 
@@ -114,17 +108,6 @@ func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, er
 	utils.LogInfo("Keygen request is sent successfully.")
 
 	return []byte{}, nil
-}
-
-func (p *Processor) countKeygenVote() {
-	chainSymbol := p.keygenBlockPairs[0].chainSymbol
-	votesMap := p.keygenVoteResult[chainSymbol]
-
-	if len(votesMap) >= p.config.PoolSizeLowerBound {
-		// n := utils.MinInt(len(votesMap), p.config.PoolSizeUpperBound)
-		// TODO: Get top n validators from the map. For now, get all the validators.
-
-	}
 }
 
 func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult) ([]byte, error) {
@@ -154,6 +137,12 @@ func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult
 
 		// Save the pubkey to the keeper.
 		p.keeper.SavePubKey(ctx, msg.ChainSymbol, msg.PubKeyBytes)
+
+		// If this is a pubkey address of a ETH chain, save it to the store because we want to watch
+		// transaction that funds the address (we will deploy contracts later).
+		if utils.IsETHBasedChain(msg.ChainSymbol) {
+			p.txOutputProducer.AddKeyAddress(ctx, msg.ChainSymbol, msg.Address)
+		}
 
 		// Check and see if we need to deploy some contracts. If we do, push them into the contract
 		// queue for deployment later (after we receive some funding like ether to execute contract

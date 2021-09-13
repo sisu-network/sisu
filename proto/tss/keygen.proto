@@ -16,7 +16,8 @@ message KeygenResult {
   string signer = 1;
   string chainSymbol = 2;
   bytes pubKeyBytes = 3;
-  Result result = 4;
+  string address = 4;
+  Result result = 5;
 
   enum Result {
     SUCCESS = 0;
