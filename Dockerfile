@@ -30,11 +30,12 @@ RUN rm /root/.ssh/id_rsa
 # Start fresh from a smaller image
 FROM alpine:3.9 
 
-RUN apk add ca-certificates 
+WORKDIR /app
+
+#Workaround: We shouldn't make .env mandatory, and the environment variables can be loaded from multiple places.
+RUN apk add ca-certificates \
+    && touch /app/.env && echo "#SAMPLE_KEY:SAMPLE_VALUE" > /app/.env
 
 COPY --from=builder /tmp/go-app/out/sisu /app/sisu
 
-#Workaround: We shouldn't make .env mandatory, and the environment variables can be loaded from multiple places.
-RUN touch /app/.env
-
-CMD ["/app/sisu"]
+CMD ["./sisu","start"]
