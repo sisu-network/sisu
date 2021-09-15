@@ -19,14 +19,15 @@ func NewHandler(k keeper.Keeper, txSubmit common.TxSubmit, processor *Processor)
 		switch msg := msg.(type) {
 		case *types.KeygenProposal:
 			return handleKeygenProposal(msg, processor)
-		case *types.KeygenProposalVote:
-			return handleKeygenProposalVote(msg, processor)
 		case *types.KeygenResult:
 			return handleKeygenResult(ctx, msg, processor)
 		case *types.ObservedTxs:
 			return handleObservedTxs(ctx, msg, processor)
 		case *types.TxOut:
 			return handleTxOut(ctx, msg, processor)
+		case *types.KeysignResult:
+			return handleKeysignResult(ctx, msg, processor)
+
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
@@ -36,13 +37,6 @@ func NewHandler(k keeper.Keeper, txSubmit common.TxSubmit, processor *Processor)
 
 func handleKeygenProposal(msg *types.KeygenProposal, processor *Processor) (*sdk.Result, error) {
 	data, err := processor.DeliverKeyGenProposal(msg)
-	return &sdk.Result{
-		Data: data,
-	}, err
-}
-
-func handleKeygenProposalVote(msg *types.KeygenProposalVote, processor *Processor) (*sdk.Result, error) {
-	data, err := processor.DeliverKeyGenProposalVote(msg)
 	return &sdk.Result{
 		Data: data,
 	}, err
@@ -68,6 +62,14 @@ func handleObservedTxs(ctx sdk.Context, msg *types.ObservedTxs, processor *Proce
 func handleTxOut(ctx sdk.Context, msg *types.TxOut, processor *Processor) (*sdk.Result, error) {
 	utils.LogVerbose("Handling Txout")
 	data, err := processor.DeliverTxOut(ctx, msg)
+	return &sdk.Result{
+		Data: data,
+	}, err
+}
+
+func handleKeysignResult(ctx sdk.Context, msg *types.KeysignResult, processor *Processor) (*sdk.Result, error) {
+	utils.LogVerbose("Handling Keysign Result")
+	data, err := processor.DeliverKeysignResult(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err

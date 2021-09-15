@@ -3,7 +3,7 @@ package tss
 import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	eTypes "github.com/sisu-network/deyes/types"
-	tTypes "github.com/sisu-network/dheart/types"
+	dhTypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/keeper"
 )
@@ -27,8 +27,8 @@ func (a *ApiHandler) Version() string {
 func (api *ApiHandler) CheckHealth() {
 }
 
-func (a *ApiHandler) KeygenResult(result tTypes.KeygenResult) bool {
-	utils.LogInfo("There is a TSS Result")
+func (a *ApiHandler) KeygenResult(result dhTypes.KeygenResult) bool {
+	utils.LogInfo("There is a Keygen Result")
 
 	a.processor.OnKeygenResult(result)
 	return true
@@ -51,8 +51,7 @@ func (a *ApiHandler) PostObservedTxs(txs *eTypes.Txs) {
 	a.processor.ProcessObservedTxs(txs)
 }
 
-func (a *ApiHandler) KeySignResult(result *tTypes.KeysignResult) {
+func (a *ApiHandler) KeySignResult(result *dhTypes.KeysignResult) {
 	utils.LogInfo("There is keysign result")
-
-	// Post the keysign result to cosmos chain.
+	a.processor.OnKeysignResult(result)
 }

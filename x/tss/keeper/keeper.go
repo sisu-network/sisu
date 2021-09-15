@@ -25,19 +25,13 @@ var (
 	PREFIX_PROCESSED_OBSERVED_TX     = []byte{0x05}
 	PREFIX_PUBLIC_KEY_BYTES          = []byte{0x06}
 	PREFIX_PENDING_KEYGEN_TX         = []byte{0x07}
-
-	// List of transactions that have enough observation and pending for output.
-	// KEY_PENDING_OBSERVED_TX = "pending_observed_tx_%s_%d_%s" // chain - block height - tx hash
-
-	// List of transactions that have been processed.
-	// KEY_PROCESSED_OBSERVED_TX = "processed_observed_tx_%s_%d_%s" // chain - block height - tx hash
-
-	// KEY_PUBLICK_KEY_BYTES = "public_key_bytes_%s"
+	PREFIX_ETH_KEY_ADDRESS           = []byte{0x08}
 
 	// List of on memory keys. These data are not persisted into kvstore.
 	// List of contracts that need to be deployed to a chain.
 	KEY_CONTRACT_QUEUE     = "contract_queue_%s_%s"     // chain
 	KEY_DEPLOYING_CONTRACT = "deploying_contract_%s_%s" // chain - contract hash
+	KEY_ETH_KEY_ADDRESS    = "eth_key_address_%s"       // chain
 )
 
 type deployContractWrapper struct {
@@ -116,126 +110,6 @@ func (k *Keeper) GetObservedTx(ctx sdk.Context, chain string, blockHeight int64,
 	return store.Get(key)
 }
 
-// @Deprecated. TODO: Remove
-// This updates the set of validators that attest to observe a specific tx (identified by its hash)
-// on a specific chain.
-func (k *Keeper) UpdateObservedTxCount(ctx sdk.Context, msg *types.ObservedTx, signer string) (int, error) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_OBSERVED_TX_VALIDATOR_SET)
-
-	key := k.getKey(msg.Chain, msg.BlockHeight, msg.TxHash)
-	bz := store.Get(key)
-
-	var validators map[string]bool
-	if bz == nil || len(bz) == 0 {
-		validators = make(map[string]bool)
-	} else {
-		err := json.Unmarshal(bz, &validators)
-		if err != nil {
-			utils.LogError("Cannot unmarshall validator sets")
-			return 0, err
-		}
-	}
-
-	if !validators[signer] {
-		validators[signer] = true
-		bz, err := json.Marshal(validators)
-		if err != nil {
-			utils.LogError("Cannot marshal validator set")
-			return 0, err
-		}
-
-		store.Set(key, bz)
-	}
-
-	return len(validators), nil
-}
-
-// Checks if a tx has been processed or in the pending list. Returns true if either of the condition
-// meets.
-func (k *Keeper) IsObservedTxPendingOrProcessed(ctx sdk.Context, msg *types.ObservedTx) bool {
-	// Check Pending list.
-	if k.IsObservedTxPending(ctx, msg) {
-		return true
-	}
-
-	// Check processed list.
-	if k.IsObservedTxProcessed(ctx, msg) {
-		return true
-	}
-
-	return false
-}
-
-func (k *Keeper) IsObservedTxPending(ctx sdk.Context, msg *types.ObservedTx) bool {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PENDING_OBSERVED_TX)
-	key := k.getKey(msg.Chain, msg.BlockHeight, msg.TxHash)
-	bz := store.Get(key)
-	if bz != nil {
-		return true
-	}
-
-	return false
-}
-
-// Returns true if an observed tx has been processed.
-func (k *Keeper) IsObservedTxProcessed(ctx sdk.Context, msg *types.ObservedTx) bool {
-	// Check processed list.
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PROCESSED_OBSERVED_TX)
-	key := k.getKey(msg.Chain, msg.BlockHeight, msg.TxHash)
-	bz := store.Get(key)
-	if bz != nil {
-		return true
-	}
-
-	return false
-}
-
-func (k *Keeper) AddObservedTxToPending(ctx sdk.Context, msg *types.ObservedTx) {
-	if k.IsObservedTxProcessed(ctx, msg) {
-		// Transaction has been processed, there is no need to add it to pending.
-		utils.LogVerbose("Transaction has been processed, there is no need to add it to pending.")
-		return
-	}
-
-	store := ctx.KVStore(k.storeKey)
-	key := k.getKey(msg.Chain, msg.BlockHeight, msg.TxHash)
-
-	bz, err := msg.Marshal()
-	if err != nil {
-		utils.LogError("Cannot marshal observed tx, err = ", err)
-		return
-	}
-
-	store.Set(key, bz)
-}
-
-func (k *Keeper) GetAndClearObservedTxPendingList(ctx sdk.Context) []*types.ObservedTx {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PENDING_OBSERVED_TX)
-	itr := store.Iterator(nil, nil)
-	keys := make([][]byte, 0)
-
-	txs := make([]*types.ObservedTx, 0)
-	for ; itr.Valid(); itr.Next() {
-		bz := itr.Value()
-		msg := &types.ObservedTx{}
-		err := msg.Unmarshal(bz)
-		if err != nil {
-			utils.LogError("Cannot unmarshall message with key ", string(itr.Key()))
-			continue
-		}
-		txs = append(txs, msg)
-		keys = append(keys, itr.Key())
-	}
-	itr.Close()
-
-	// Delete the list.
-	for _, key := range keys {
-		store.Delete(key)
-	}
-
-	return txs
-}
-
 func (k *Keeper) SavePubKey(ctx sdk.Context, chain string, keyBytes []byte) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PUBLIC_KEY_BYTES)
 	store.Set([]byte(chain), keyBytes)
@@ -305,28 +179,33 @@ func (k *Keeper) AddDeployingContract(ctx sdk.Context, chain string, hash string
 	}
 }
 
-func (k *Keeper) AddProcessedTx(ctx sdk.Context, txOut *tssTypes.TxOut) {
-	key := k.getKey(txOut.InChain, txOut.InBlockHeight, txOut.InHash)
+func (k *Keeper) SaveEthKeyAddrs(ctx sdk.Context, chain string, keyAddrs map[string]bool) {
+	key := fmt.Sprintf(KEY_ETH_KEY_ADDRESS, chain)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_ETH_KEY_ADDRESS)
 
-	serialized, err := txOut.Marshal()
+	bz, err := json.Marshal(keyAddrs)
 	if err != nil {
-		utils.LogCritical("Cannot marshal a txOut. InHash = ", txOut.InHash, ". Err = ", err)
+		utils.LogError("cannot marshal key addrs, err =", err)
 		return
 	}
 
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PROCESSED_OBSERVED_TX)
-	store.Set(key, serialized)
+	store.Set([]byte(key), bz)
 }
 
-func (k *Keeper) AddPendingKeygenTx(ctx sdk.Context, outChain string, outBlock int64, outHash string) {
-	key := k.getKey(outChain, outBlock, outHash)
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PENDING_KEYGEN_TX)
-	store.Set(key, []byte(""))
-}
+func (k *Keeper) GetAllEthKeyAddrs(ctx sdk.Context) map[string]map[string]bool {
+	m := make(map[string]map[string]bool)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_ETH_KEY_ADDRESS)
 
-func (k *Keeper) IsPendingKeygenTxExisted(ctx sdk.Context, outChain string, outBlock int64, outHash string) bool {
-	key := k.getKey(outChain, outBlock, outHash)
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PENDING_KEYGEN_TX)
+	iter := store.Iterator(nil, nil)
+	for ; iter.Valid(); iter.Next() {
+		m2 := make(map[string]bool)
+		err := json.Unmarshal(iter.Value(), &m2)
+		if err != nil {
+			utils.LogError("cannot unmarshal value with key", iter.Key())
+			continue
+		}
+		m[string(iter.Key())] = m2
+	}
 
-	return store.Get(key) != nil
+	return m
 }

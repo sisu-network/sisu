@@ -12,23 +12,12 @@ message KeygenProposal {
   int64 expirationBlock = 4;
 }
 
-message KeygenProposalVote {
-  string signer = 1;
-  string chainSymbol = 2;
-
-  enum Vote {
-    APPROVE = 0;
-    REJECT = 1;
-  }
-
-  Vote vote = 3;
-}
-
 message KeygenResult {
   string signer = 1;
   string chainSymbol = 2;
   bytes pubKeyBytes = 3;
-  Result result = 4;
+  string address = 4;
+  Result result = 5;
 
   enum Result {
     SUCCESS = 0;
