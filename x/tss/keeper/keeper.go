@@ -198,8 +198,6 @@ func (k *Keeper) GetAllEthKeyAddrs(ctx sdk.Context) map[string]map[string]bool {
 
 	iter := store.Iterator(nil, nil)
 	for ; iter.Valid(); iter.Next() {
-		fmt.Println("Iterating key =", string(iter.Key()))
-
 		m2 := make(map[string]bool)
 		err := json.Unmarshal(iter.Value(), &m2)
 		if err != nil {

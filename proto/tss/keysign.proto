@@ -1,9 +1,12 @@
 syntax = "proto3";
 package types;
 
-message KeySign {
+// Cosmos message to broadcast KeysignResult
+message KeysignResult {
   string signer = 1;
-  string outChain = 2;
-  bytes outHash = 3;
-  bytes signature = 4;
+  bool success = 2;
+  string outChain = 3;
+  string outHash = 4;
+  bytes tx = 5;
+  bytes signature = 6;
 }

@@ -3,7 +3,7 @@ module github.com/sisu-network/sisu
 go 1.15
 
 require (
-	github.com/BurntSushi/toml v0.3.1
+	github.com/BurntSushi/toml v0.4.1
 	github.com/btcsuite/btcd v0.22.0-beta
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-sdk v0.42.1
@@ -15,8 +15,8 @@ require (
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
 	github.com/joho/godotenv v1.3.0
 	github.com/sisu-network/dcore v0.1.9-alpha3
-	github.com/sisu-network/deyes v0.1.0-alpha1
-	github.com/sisu-network/dheart v0.1.2-alpha3
+	github.com/sisu-network/deyes v0.1.0-alpha3
+	github.com/sisu-network/dheart v0.1.2-alpha4
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5

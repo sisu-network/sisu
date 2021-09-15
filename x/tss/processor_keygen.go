@@ -86,6 +86,7 @@ func (p *Processor) OnKeygenResult(result dhTypes.KeygenResult) {
 	if deyesClient == nil {
 		utils.LogCritical("Cannot find deyes client for chain", result.Chain)
 	} else {
+		utils.LogVerbose("adding watcher address", result.Address)
 		deyesClient.AddWatchAddresses(result.Chain, []string{result.Address})
 	}
 }
@@ -160,6 +161,7 @@ func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult
 // Print out the public key address. Used for debugging purpose
 func (p *Processor) printKeygenPubKey(msg *types.KeygenResult) {
 	pubKey, err := crypto.DecompressPubkey(msg.PubKeyBytes)
+
 	if err == nil {
 		// TODO: Check if the chain is ETH before getting public key.
 		address := crypto.PubkeyToAddress(*pubKey).Hex()

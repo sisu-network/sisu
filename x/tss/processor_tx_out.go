@@ -17,11 +17,8 @@ import (
 // the processor has.
 func (p *Processor) CreateTxOuts(ctx sdk.Context, tx *types.ObservedTx) {
 	outMsgs := p.txOutputProducer.GetOutputs(ctx, p.currentHeight, tx)
-	fmt.Println("len(outMsgs) = ", len(outMsgs))
 
 	for _, msg := range outMsgs {
-		fmt.Println("p.currentHeight, InHash = ", p.currentHeight, msg.InHash)
-
 		p.storage.AddPendingTxOut(
 			p.currentHeight,
 			msg.InChain,
@@ -70,15 +67,14 @@ func (p *Processor) DeliverTxOut(ctx sdk.Context, msg *types.TxOut) ([]byte, err
 	}
 
 	// 4. Broadcast it to Dheart for processing.
-	fmt.Println("Doing keysigning....")
 	err = p.dheartClient.KeySign(&tTypes.KeysignRequest{
 		OutChain:       msg.OutChain,
 		OutBlockHeight: p.currentHeight,
 		OutHash:        outHash,
 		OutBytes:       msg.OutBytes,
 	})
-	fmt.Println("Keysign: err =", err)
 	if err != nil {
+		utils.LogError("Keysign: err =", err)
 		return nil, err
 	}
 

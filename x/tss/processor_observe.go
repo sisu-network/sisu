@@ -42,7 +42,7 @@ func (p *Processor) ProcessObservedTxs(txs *deTypes.Txs) {
 		observedTxs := tssTypes.NewObservedTxs(p.appKeys.GetSignerAddress().String(), arr)
 
 		// Send to TxSubmitter. For now, we only want to include 1 observed tx per 1 Cosmos tx.
-		p.txSubmit.SubmitMessage(observedTxs)
+		go p.txSubmit.SubmitMessage(observedTxs)
 	}
 }
 

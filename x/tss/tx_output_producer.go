@@ -1,8 +1,6 @@
 package tss
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/sisu-network/sisu/common"
@@ -63,7 +61,6 @@ func (p *DefaultTxOutputProducer) getEthKeyAddrs(ctx sdk.Context) map[string]map
 }
 
 func (p *DefaultTxOutputProducer) AddKeyAddress(ctx sdk.Context, chain, addr string) {
-	fmt.Println("Adding address, addr =", addr, chain)
 	ethKeyAddrs := p.getEthKeyAddrs(ctx)
 	m := ethKeyAddrs[chain]
 	if m == nil {
@@ -92,10 +89,6 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 	// account to deploy contracts. Check if we have some pending contracts and deploy if needed.
 	keyAddresses := p.getEthKeyAddrs(ctx)[tx.Chain]
 	contracts := p.keeper.GetContractQueueHashes(ctx, tx.Chain)
-
-	fmt.Println("len(contracts) = ", len(contracts))
-	fmt.Println("tx.Chain = ", tx.Chain)
-	fmt.Println("keyAddresses = ", keyAddresses)
 
 	if len(contracts) > 0 {
 		for keyAddress := range keyAddresses {

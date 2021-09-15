@@ -181,6 +181,8 @@ func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
 			return p.CheckObservedTxs(ctx, msg.(*types.ObservedTxs))
 		case *types.TxOut:
 			return p.CheckTxOut(ctx, msg.(*types.TxOut))
+		case *types.KeysignResult:
+			return p.CheckKeysignResult(ctx, msg.(*types.KeysignResult))
 		}
 
 		// switch msg.Type() {
