@@ -37,6 +37,8 @@ github.com/Azure/go-autorest/logger v0.1.0/go.mod h1:oExouG+K6PryycPJfVSxi/koC6L
 github.com/Azure/go-autorest/tracing v0.5.0/go.mod h1:r/s2XiOKccPW3HrqB+W0TQzfbtp2fGCgRFtBroKn4Dk=
 github.com/BurntSushi/toml v0.3.1 h1:WXkYYl6Yr3qBf1K79EBnL4mak0OimBfB0XUf9Vl28OQ=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
+github.com/BurntSushi/toml v0.4.1 h1:GaI7EiDXDRfa8VshkTj7Fym7ha+y8/XxIgD2okUIjLw=
+github.com/BurntSushi/toml v0.4.1/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d h1:nalkkPQcITbvhmL4+C4cKA87NW0tfm3Kl9VXRoPywFg=
 github.com/ChainSafe/go-schnorrkel v0.0.0-20200405005733-88cbf1b4c40d/go.mod h1:URdX5+vg25ts3aCh8H5IFZybJYKWhJHYMTnf+ULtoC4=
@@ -994,8 +996,12 @@ github.com/sisu-network/dcore v0.1.9-alpha3 h1:Bi1d/IaL5J2CFfDWZwtlfyQm8YX7Fw2Cq
 github.com/sisu-network/dcore v0.1.9-alpha3/go.mod h1:hPlbhvhjnCDwGUz+O3x4cF8FfcXgm64zkPs6Vhn9WEM=
 github.com/sisu-network/deyes v0.1.0-alpha1 h1:2LL7DnX48+AfDCPvNjdgQK3Y2P1NBlEgTHgzXht23zw=
 github.com/sisu-network/deyes v0.1.0-alpha1/go.mod h1:BXPlueXSzZvFgplEIWkHNNlQrsIaZgZVjZctuENVtPg=
+github.com/sisu-network/deyes v0.1.0-alpha3 h1:B3SOPdhj+b4XRO7qSE7aQT+i8EtWZtpUnwa8pDsxOs0=
+github.com/sisu-network/deyes v0.1.0-alpha3/go.mod h1:605wESDnpSOO3sojm3WJCslCc6HrtIoM6eQW9LtKj24=
 github.com/sisu-network/dheart v0.1.2-alpha3 h1:AWcVLBgguYVy5unyt8BpuCr7zlbXqAs9fIFvLPFyL70=
 github.com/sisu-network/dheart v0.1.2-alpha3/go.mod h1:pxewIsf8WmxT7glRPVLeqdUKToW215Z9gmbeEvt4+as=
+github.com/sisu-network/dheart v0.1.2-alpha4 h1:owYGVEJ5uyXjxUj/rRz0WpqC9FJKq5pnWjO/Liz0iA4=
+github.com/sisu-network/dheart v0.1.2-alpha4/go.mod h1:pxewIsf8WmxT7glRPVLeqdUKToW215Z9gmbeEvt4+as=
 github.com/sisu-network/tss-lib v0.1.1/go.mod h1:76hDuB4abzc6/s79xacl0wA7ADAqC/3qak1lTW5z5Cc=
 github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d h1:zE9ykElWQ6/NYmHa3jpm/yHnI4xSofP+UP6SpjHcSeM=
 github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d/go.mod h1:OnSkiWE9lh6wB0YB77sQom3nweQdgAjqCqsofrRNTgc=

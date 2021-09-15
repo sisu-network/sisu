@@ -5,28 +5,30 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-var _ sdk.Msg = &KeygenProposalVote{}
+var _ sdk.Msg = &KeysignResult{}
 
-func NewMsgKeygenProposalVote(signer string, chainSymbol string, vote KeygenProposalVote_Vote) *KeygenProposalVote {
-	return &KeygenProposalVote{
-		Signer:      signer,
-		ChainSymbol: chainSymbol,
-		Vote:        vote,
+func NewKeysignResult(signer, outChain, outHash string, success bool, signature []byte) *KeysignResult {
+	return &KeysignResult{
+		Signer:    signer,
+		OutChain:  outChain,
+		OutHash:   outHash,
+		Success:   success,
+		Signature: signature,
 	}
 }
 
 // Route ...
-func (msg *KeygenProposalVote) Route() string {
+func (msg *KeysignResult) Route() string {
 	return RouterKey
 }
 
 // Type ...
-func (msg *KeygenProposalVote) Type() string {
-	return MSG_TYPE_KEYGEN_PROPOSAL_VOTE
+func (msg *KeysignResult) Type() string {
+	return MSG_TYPE_TX_OUT
 }
 
 // GetSigners ...
-func (msg *KeygenProposalVote) GetSigners() []sdk.AccAddress {
+func (msg *KeysignResult) GetSigners() []sdk.AccAddress {
 	author, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		panic(err)
@@ -34,21 +36,22 @@ func (msg *KeygenProposalVote) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{author}
 }
 
-func (msg *KeygenProposalVote) GetMsgs() []sdk.Msg {
+func (msg *KeysignResult) GetMsgs() []sdk.Msg {
 	return []sdk.Msg{msg}
 }
 
 // GetSignBytes ...
-func (msg *KeygenProposalVote) GetSignBytes() []byte {
+func (msg *KeysignResult) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
 // ValidateBasic ...
-func (msg *KeygenProposalVote) ValidateBasic() error {
+func (msg *KeysignResult) ValidateBasic() error {
 	_, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid creator address (%s)", err)
 	}
+
 	return nil
 }

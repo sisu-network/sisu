@@ -1,11 +1,9 @@
 package tss
 
 import (
-	"sort"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	tTypes "github.com/sisu-network/dheart/types"
+	dhTypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/sisu/contracts/eth/dummy"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
@@ -71,7 +69,7 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 }
 
 // Called after having key generation result from Sisu's api server.
-func (p *Processor) OnKeygenResult(result tTypes.KeygenResult) {
+func (p *Processor) OnKeygenResult(result dhTypes.KeygenResult) {
 	// 1. Post result to the cosmos chain
 	signer := p.appKeys.GetSignerAddress()
 
@@ -80,7 +78,7 @@ func (p *Processor) OnKeygenResult(result tTypes.KeygenResult) {
 		resultEnum = types.KeygenResult_SUCCESS
 	}
 
-	msg := types.NewKeygenResult(signer.String(), result.Chain, resultEnum, result.PubKeyBytes)
+	msg := types.NewKeygenResult(signer.String(), result.Chain, resultEnum, result.PubKeyBytes, result.Address)
 	p.txSubmit.SubmitMessage(msg)
 
 	// 2. Add the address to the watch list.
@@ -88,119 +86,29 @@ func (p *Processor) OnKeygenResult(result tTypes.KeygenResult) {
 	if deyesClient == nil {
 		utils.LogCritical("Cannot find deyes client for chain", result.Chain)
 	} else {
-		if pubKey, err := crypto.DecompressPubkey(msg.PubKeyBytes); err == nil {
-			address := crypto.PubkeyToAddress(*pubKey).Hex()
-			utils.LogInfo("Adding watch address to deyes:", address)
-			// TODO: Retry if failed
-			deyesClient.AddWatchAddresses(result.Chain, []string{address})
-			p.keyAddress = address
-		}
+		utils.LogVerbose("adding watcher address", result.Address)
+		deyesClient.AddWatchAddresses(result.Chain, []string{result.Address})
 	}
 }
 
 func (p *Processor) CheckKeyGenProposal(msg *types.KeygenProposal) error {
-	// TODO: Check duplicated proposal here.
+	// TODO: Check if we see the same need to have keygen proposal here.
 	return nil
 }
 
 func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, error) {
-	// 1. TODO: Check duplicated proposal here.
-
-	// Just approve it for now.
-	// 2. If this node supports the proposed chain and it's one of the top X validators, send an
-	// approval vote to the keygen proposal.
-	//    2a) Check this node is in the top N Validator
-	//    2b) Check if this node supports chain X.
-	supported := false
-	for _, chainConfig := range p.config.SupportedChains {
-		if chainConfig.Symbol == msg.ChainSymbol {
-			supported = true
-			break
-		}
+	// Send a signal to Dheart to start keygen process.
+	utils.LogInfo("Sending keygen request to Dheart...")
+	pubKeys := p.partyManager.GetActivePartyPubkeys()
+	keygenId := GetKeygenId(msg.ChainSymbol, p.currentHeight, pubKeys)
+	err := p.dheartClient.KeyGen(keygenId, msg.ChainSymbol, pubKeys)
+	if err != nil {
+		utils.LogError(err)
+		return nil, err
 	}
-
-	utils.LogDebug("Supported = ", supported)
-
-	if !supported {
-		// This is not supported by this current node
-		return []byte{}, nil
-	}
-
-	// Check if we have already processing this chain.
-	found := false
-	for _, pair := range p.keygenBlockPairs {
-		if pair.chainSymbol == msg.ChainSymbol {
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		// Add this chain to the processing queue. We will count votes in a few block later.
-		p.keygenBlockPairs = append(p.keygenBlockPairs, BlockSymbolPair{
-			blockHeight: p.currentHeight + int64(p.config.BlockProposalLength),
-			chainSymbol: msg.ChainSymbol,
-		})
-		// Sort all pairs by block heights.
-		sort.Slice(p.keygenBlockPairs, func(i, j int) bool {
-			return p.keygenBlockPairs[i].blockHeight < p.keygenBlockPairs[j].blockHeight
-		})
-	}
-
-	// TODO: Save this proposal to KV store.
-	p.keygenVoteResult[msg.ChainSymbol] = make(map[string]bool)
-
-	if !p.globalData.IsCatchingUp() {
-		// Send vote message to everyone else
-		signer := p.appKeys.GetSignerAddress()
-		voteMsg := types.NewMsgKeygenProposalVote(signer.String(), msg.ChainSymbol, types.KeygenProposalVote_APPROVE)
-
-		utils.LogDebug("Sending this message...")
-
-		go func() {
-			err := p.txSubmit.SubmitMessage(voteMsg)
-			if err != nil {
-				utils.LogError(err)
-			}
-		}()
-	}
+	utils.LogInfo("Keygen request is sent successfully.")
 
 	return []byte{}, nil
-}
-
-func (p *Processor) DeliverKeyGenProposalVote(msg *types.KeygenProposalVote) ([]byte, error) {
-	voteResult := p.keygenVoteResult[msg.ChainSymbol]
-	if voteResult == nil {
-		voteResult = make(map[string]bool)
-	}
-
-	utils.LogDebug("msg = ", msg)
-
-	voteResult[msg.Signer] = msg.Vote == types.KeygenProposalVote_APPROVE
-	p.keygenVoteResult[msg.ChainSymbol] = voteResult
-
-	return []byte{}, nil
-}
-
-func (p *Processor) countKeygenVote() {
-	chainSymbol := p.keygenBlockPairs[0].chainSymbol
-	votesMap := p.keygenVoteResult[chainSymbol]
-
-	if len(votesMap) >= p.config.PoolSizeLowerBound {
-		// n := utils.MinInt(len(votesMap), p.config.PoolSizeUpperBound)
-		// TODO: Get top n validators from the map. For now, get all the validators.
-
-		// 2. Send a signal to Dheart to start keygen process.
-		utils.LogInfo("Sending keygen request to Dheart...")
-		pubKeys := p.partyManager.GetActivePartyPubkeys()
-		keygenId := GetKeygenId(chainSymbol, p.currentHeight, pubKeys)
-		err := p.dheartClient.KeyGen(keygenId, chainSymbol, pubKeys)
-		if err != nil {
-			utils.LogError(err)
-			return
-		}
-		utils.LogInfo("Keygen request is sent successfully.")
-	}
 }
 
 func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult) ([]byte, error) {
@@ -231,6 +139,12 @@ func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult
 		// Save the pubkey to the keeper.
 		p.keeper.SavePubKey(ctx, msg.ChainSymbol, msg.PubKeyBytes)
 
+		// If this is a pubkey address of a ETH chain, save it to the store because we want to watch
+		// transaction that funds the address (we will deploy contracts later).
+		if utils.IsETHBasedChain(msg.ChainSymbol) {
+			p.txOutputProducer.AddKeyAddress(ctx, msg.ChainSymbol, msg.Address)
+		}
+
 		// Check and see if we need to deploy some contracts. If we do, push them into the contract
 		// queue for deployment later (after we receive some funding like ether to execute contract
 		// deployment).
@@ -247,6 +161,7 @@ func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult
 // Print out the public key address. Used for debugging purpose
 func (p *Processor) printKeygenPubKey(msg *types.KeygenResult) {
 	pubKey, err := crypto.DecompressPubkey(msg.PubKeyBytes)
+
 	if err == nil {
 		// TODO: Check if the chain is ETH before getting public key.
 		address := crypto.PubkeyToAddress(*pubKey).Hex()

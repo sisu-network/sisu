@@ -9,13 +9,12 @@ import (
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 )
 
-const (
-	KEY_OBSERVE_TX = "observed_tx_%s_%d_%s"
-)
+// const (
+// 	KEY_OBSERVE_TX = "observed_tx_%s_%d_%s"
+// )
 
 // Data structure that wraps around pending tx outs.
 type PendingTxOutWrapper struct {
-	ValAddr       string
 	InBlockHeight int64
 	InChain       string
 	OutChain      string
@@ -30,7 +29,7 @@ type TssStorage struct {
 	pendingTx map[string]*tssTypes.ObservedTx
 
 	// A map that remembers what transaction is assigned to which validators.
-	assignedValidators map[int64]map[string]*PendingTxOutWrapper // blockHeight -> txInHash (as string) -> validator address
+	pendingTxout map[int64][]*PendingTxOutWrapper // blockHeight -> txInHash (as string) -> validator address
 }
 
 func NewTssStorage(file string) (*TssStorage, error) {
@@ -40,9 +39,9 @@ func NewTssStorage(file string) (*TssStorage, error) {
 		return nil, err
 	}
 	return &TssStorage{
-		db:                 db,
-		pendingTx:          make(map[string]*tssTypes.ObservedTx),
-		assignedValidators: make(map[int64]map[string]*PendingTxOutWrapper),
+		db:           db,
+		pendingTx:    make(map[string]*tssTypes.ObservedTx),
+		pendingTxout: make(map[int64][]*PendingTxOutWrapper),
 	}, nil
 }
 
@@ -52,24 +51,24 @@ func (s *TssStorage) getKey(format string, chain string, height int64, hash stri
 	return []byte(fmt.Sprintf(format, chain, height, hash))
 }
 
-func (s *TssStorage) SaveObservedTx(chain string, blockHeight int64, hash string, txBytes []byte) {
-	key := []byte(fmt.Sprintf(KEY_OBSERVE_TX, chain, blockHeight, hash))
-	s.db.Put(key, txBytes)
-}
+// func (s *TssStorage) SaveObservedTx(chain string, blockHeight int64, hash string, txBytes []byte) {
+// 	key := []byte(fmt.Sprintf(KEY_OBSERVE_TX, chain, blockHeight, hash))
+// 	s.db.Put(key, txBytes)
+// }
 
-func (s *TssStorage) GetObservedTx(chain string, blockHeight int64, hash string) []byte {
-	key := []byte(fmt.Sprintf(KEY_OBSERVE_TX, chain, blockHeight, hash))
-	bz, err := s.db.Get(key)
-	if err != nil {
-		return nil
-	}
+// func (s *TssStorage) GetObservedTx(chain string, blockHeight int64, hash string) []byte {
+// 	key := []byte(fmt.Sprintf(KEY_OBSERVE_TX, chain, blockHeight, hash))
+// 	bz, err := s.db.Get(key)
+// 	if err != nil {
+// 		return nil
+// 	}
 
-	return bz
-}
+// 	return bz
+// }
 
 // Adds pending in txs to be processed at the end of the block.
 func (s *TssStorage) AddPendingTx(msg *tssTypes.ObservedTx) {
-	key := s.getKey("%s_%d_%s", msg.Chain, msg.BlockHeight, msg.TxHash)
+	key := s.getKey("%s__%d__%s", msg.Chain, msg.BlockHeight, msg.TxHash)
 	s.pendingTx[string(key)] = msg
 }
 
@@ -89,55 +88,46 @@ func (s *TssStorage) ClearPendingTxs() {
 }
 
 // Saves an assignment of a validator for a particular out tx.
-func (s *TssStorage) AddPendingTxOut(blockHeight int64, inChain string, inHash string, outChain string, outBytes []byte, valAddr string) {
-	m := s.assignedValidators[blockHeight]
+func (s *TssStorage) AddPendingTxOut(blockHeight int64, inChain string, inHash string, outChain string, outBytes []byte) {
+	m := s.pendingTxout[blockHeight]
 	if m == nil {
-		m = make(map[string]*PendingTxOutWrapper)
+		m = make([]*PendingTxOutWrapper, 0)
 	}
-	m[inHash] = &PendingTxOutWrapper{
+	newTxWrapper := &PendingTxOutWrapper{
 		InBlockHeight: blockHeight,
-		ValAddr:       valAddr,
 		InChain:       inChain,
 		OutChain:      outChain,
 		InHash:        inHash,
 		OutBytes:      outBytes,
 	}
+	m = append(m, newTxWrapper)
 
-	s.assignedValidators[blockHeight] = m
+	s.pendingTxout[blockHeight] = m
 }
 
 // Returns a list of txs(both in and out) assigned to a specific validator at a particular block
 // height.
-func (s *TssStorage) GetPendingTxOutForValidator(blockHeight int64, valAddr string) []*PendingTxOutWrapper {
-	txs := make([]*PendingTxOutWrapper, 0)
-	m := s.assignedValidators[blockHeight]
-	if m == nil {
-		return txs
-	}
-
-	for _, txWrapper := range m {
-		if txWrapper.ValAddr == valAddr {
-			txs = append(txs, txWrapper)
-		}
-	}
-
-	return txs
+func (s *TssStorage) GetPendingTxOutForValidator(blockHeight int64) []*PendingTxOutWrapper {
+	return s.pendingTxout[blockHeight]
 }
 
 func (s *TssStorage) GetPendingTxOUt(blockHeight int64, inHash string) *PendingTxOutWrapper {
-	m := s.assignedValidators[blockHeight]
-	if m == nil {
-		return nil
+	m := s.pendingTxout[blockHeight]
+	for _, tx := range m {
+		if tx.InHash == inHash {
+			return tx
+		}
 	}
 
-	return m[inHash]
+	return nil
 }
 
 func (s *TssStorage) RemovePendingTxOut(blockHeight int64, inHash string) {
-	m := s.assignedValidators[blockHeight]
-	if m == nil {
-		return
+	arr := s.pendingTxout[blockHeight]
+	for i, tx := range arr {
+		if tx.InHash == inHash {
+			s.pendingTxout[blockHeight] = append(arr[:i], arr[i+1:]...)
+			break
+		}
 	}
-
-	delete(m, inHash)
 }

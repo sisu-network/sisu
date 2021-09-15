@@ -61,3 +61,14 @@ func (c *DeyesClient) AddWatchAddresses(chain string, addrs []string) error {
 
 	return nil
 }
+
+func (c *DeyesClient) Dispatch(chain string, tx []byte) error {
+	var result string
+	err := c.client.CallContext(context.Background(), &result, "deyes_dispatchTx", chain, tx)
+	if err != nil {
+		utils.LogError("Cannot Dispatch tx to the chain", chain, "err =", err)
+		return err
+	}
+
+	return nil
+}
