@@ -53,5 +53,5 @@ func (a *ApiHandler) PostObservedTxs(txs *eTypes.Txs) {
 
 func (a *ApiHandler) KeySignResult(result *dhTypes.KeysignResult) {
 	utils.LogInfo("There is keysign result")
-	a.processor.OnKeysignResult(result)
+	go a.processor.OnKeysignResult(result)
 }

@@ -17,6 +17,7 @@ const (
 	OBSERVED_TX_CACHE_SIZE = 2500
 )
 
+// TODO: clean up this list
 var (
 	PREFIX_RECORDED_CHAIN            = []byte{0x01}
 	PREFIX_OBSERVED_TX               = []byte{0x02}
@@ -26,6 +27,7 @@ var (
 	PREFIX_PUBLIC_KEY_BYTES          = []byte{0x06}
 	PREFIX_PENDING_KEYGEN_TX         = []byte{0x07}
 	PREFIX_ETH_KEY_ADDRESS           = []byte{0x08}
+	PREFIX_TX_OUT                    = []byte{0x09}
 
 	// List of on memory keys. These data are not persisted into kvstore.
 	// List of contracts that need to be deployed to a chain.
@@ -208,4 +210,26 @@ func (k *Keeper) GetAllEthKeyAddrs(ctx sdk.Context) map[string]map[string]bool {
 	}
 
 	return m
+}
+
+func (k *Keeper) SaveTxOut(ctx sdk.Context, txOut *types.TxOut) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_TX_OUT)
+	bz, err := txOut.Marshal()
+	if err != nil {
+		utils.LogError("cannot marshal tx out, err =", err)
+		return
+	}
+	store.Set([]byte(txOut.GetHash()), bz)
+}
+
+func (k *Keeper) GetTxOut(ctx sdk.Context, hash string) (*types.TxOut, error) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_TX_OUT)
+	bz := store.Get([]byte(hash))
+	if bz == nil {
+		return nil, fmt.Errorf("cannot find tx with hash %s", hash)
+	}
+
+	tx := &types.TxOut{}
+	err := tx.Unmarshal(bz)
+	return tx, err
 }

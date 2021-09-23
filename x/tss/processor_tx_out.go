@@ -1,11 +1,10 @@
 package tss
 
 import (
-	"bytes"
-	"encoding/hex"
 	"fmt"
+	"strconv"
 
-	tTypes "github.com/sisu-network/dheart/types"
+	hTypes "github.com/sisu-network/dheart/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/utils"
@@ -15,43 +14,24 @@ import (
 
 // Produces response for an observed tx. This has to be deterministic based on all the data that
 // the processor has.
-func (p *Processor) CreateTxOuts(ctx sdk.Context, tx *types.ObservedTx) {
+func (p *Processor) createTxOuts(ctx sdk.Context, tx *types.ObservedTx) []*tssTypes.TxOut {
 	outMsgs := p.txOutputProducer.GetOutputs(ctx, p.currentHeight, tx)
 
 	for _, msg := range outMsgs {
-		p.storage.AddPendingTxOut(
-			p.currentHeight,
-			msg.InChain,
-			msg.InHash,
-			msg.OutChain,
-			msg.OutBytes,
-		)
+		p.storage.AddTxOut(msg)
 
-		go func(inHeight int64, m *tssTypes.TxOut) {
-			p.txSubmit.SubmitMessage(
-				tssTypes.NewMsgTxOut(
-					p.appKeys.GetSignerAddress().String(),
-					inHeight,
-					m.InChain,
-					m.InHash,
-					m.OutChain,
-					m.OutBytes,
-				),
-			)
-		}(p.currentHeight, msg)
+		go func(m *tssTypes.TxOut) {
+			p.txSubmit.SubmitMessage(m)
+		}(msg)
 	}
+
+	return outMsgs
 }
 
 func (p *Processor) CheckTxOut(ctx sdk.Context, msg *types.TxOut) error {
-	txWrapper := p.storage.GetPendingTxOUt(msg.InBlockHeight, msg.InHash)
-	if txWrapper == nil {
-		utils.LogError("Cannot find txWrapper", msg.InBlockHeight, msg.InHash)
-		return fmt.Errorf("Transaction not found")
-	}
-
-	if bytes.Compare(txWrapper.OutBytes, msg.OutBytes) != 0 {
-		utils.LogError("Txouts do not match.")
-		return fmt.Errorf("OutBytes do not match")
+	txOut := p.storage.GetTxOut(msg.GetHash())
+	if txOut == nil {
+		return fmt.Errorf("txout not found, hash = %s", txOut)
 	}
 
 	return nil
@@ -60,23 +40,30 @@ func (p *Processor) CheckTxOut(ctx sdk.Context, msg *types.TxOut) error {
 func (p *Processor) DeliverTxOut(ctx sdk.Context, msg *types.TxOut) ([]byte, error) {
 	utils.LogVerbose("Delivering TXOUT")
 
-	outHash, err := utils.GetTxHash(msg.OutChain, msg.OutBytes)
-	if err != nil {
-		utils.LogCritical("Cannot get tx hash for tx with serialized data: ", hex.EncodeToString(msg.OutBytes), "err = ", err)
-		return nil, err
-	}
+	outHash := msg.GetHash()
 
 	// 4. Broadcast it to Dheart for processing.
-	err = p.dheartClient.KeySign(&tTypes.KeysignRequest{
+	keysignReq := &hTypes.KeysignRequest{
+		Id:             p.getKeysignRequestId(msg.OutChain, ctx.BlockHeight(), outHash),
 		OutChain:       msg.OutChain,
 		OutBlockHeight: p.currentHeight,
 		OutHash:        outHash,
 		OutBytes:       msg.OutBytes,
-	})
+	}
+
+	// TODO: check if this tx has been requested to be signed.
+	err := p.dheartClient.KeySign(keysignReq)
 	if err != nil {
 		utils.LogError("Keysign: err =", err)
 		return nil, err
 	}
 
+	// Save this to KV store.
+	p.keeper.SaveTxOut(ctx, msg)
+
 	return nil, nil
+}
+
+func (p *Processor) getKeysignRequestId(chain string, blockHeight int64, txHash string) string {
+	return chain + "_" + strconv.Itoa(int(blockHeight)) + "_" + txHash
 }

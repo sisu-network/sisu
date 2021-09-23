@@ -9,27 +9,11 @@ import (
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 )
 
-// const (
-// 	KEY_OBSERVE_TX = "observed_tx_%s_%d_%s"
-// )
-
-// Data structure that wraps around pending tx outs.
-type PendingTxOutWrapper struct {
-	InBlockHeight int64
-	InChain       string
-	OutChain      string
-	InHash        string
-	OutBytes      []byte
-}
-
 // Local storage for data of this specific node. This is not a db for application state.
 type TssStorage struct {
 	db *leveldb.Database
 
 	pendingTx map[string]*tssTypes.ObservedTx
-
-	// A map that remembers what transaction is assigned to which validators.
-	pendingTxout map[int64][]*PendingTxOutWrapper // blockHeight -> txInHash (as string) -> validator address
 }
 
 func NewTssStorage(file string) (*TssStorage, error) {
@@ -39,9 +23,8 @@ func NewTssStorage(file string) (*TssStorage, error) {
 		return nil, err
 	}
 	return &TssStorage{
-		db:           db,
-		pendingTx:    make(map[string]*tssTypes.ObservedTx),
-		pendingTxout: make(map[int64][]*PendingTxOutWrapper),
+		db:        db,
+		pendingTx: make(map[string]*tssTypes.ObservedTx),
 	}, nil
 }
 
@@ -50,21 +33,6 @@ func (s *TssStorage) getKey(format string, chain string, height int64, hash stri
 	chain = strings.Replace(chain, "_", "*", -1)
 	return []byte(fmt.Sprintf(format, chain, height, hash))
 }
-
-// func (s *TssStorage) SaveObservedTx(chain string, blockHeight int64, hash string, txBytes []byte) {
-// 	key := []byte(fmt.Sprintf(KEY_OBSERVE_TX, chain, blockHeight, hash))
-// 	s.db.Put(key, txBytes)
-// }
-
-// func (s *TssStorage) GetObservedTx(chain string, blockHeight int64, hash string) []byte {
-// 	key := []byte(fmt.Sprintf(KEY_OBSERVE_TX, chain, blockHeight, hash))
-// 	bz, err := s.db.Get(key)
-// 	if err != nil {
-// 		return nil
-// 	}
-
-// 	return bz
-// }
 
 // Adds pending in txs to be processed at the end of the block.
 func (s *TssStorage) AddPendingTx(msg *tssTypes.ObservedTx) {
@@ -88,46 +56,47 @@ func (s *TssStorage) ClearPendingTxs() {
 }
 
 // Saves an assignment of a validator for a particular out tx.
-func (s *TssStorage) AddPendingTxOut(blockHeight int64, inChain string, inHash string, outChain string, outBytes []byte) {
-	m := s.pendingTxout[blockHeight]
-	if m == nil {
-		m = make([]*PendingTxOutWrapper, 0)
+func (s *TssStorage) AddTxOut(txOut *tssTypes.TxOut) {
+	hash := txOut.GetHash()
+	bz, err := txOut.Marshal()
+	if err != nil {
+		utils.LogError("cannot marshal txout, err =", err)
+		return
 	}
-	newTxWrapper := &PendingTxOutWrapper{
-		InBlockHeight: blockHeight,
-		InChain:       inChain,
-		OutChain:      outChain,
-		InHash:        inHash,
-		OutBytes:      outBytes,
-	}
-	m = append(m, newTxWrapper)
 
-	s.pendingTxout[blockHeight] = m
+	key := fmt.Sprintf("tx_out_%s", hash)
+	s.db.Put([]byte(key), bz)
 }
 
-// Returns a list of txs(both in and out) assigned to a specific validator at a particular block
-// height.
-func (s *TssStorage) GetPendingTxOutForValidator(blockHeight int64) []*PendingTxOutWrapper {
-	return s.pendingTxout[blockHeight]
-}
-
-func (s *TssStorage) GetPendingTxOUt(blockHeight int64, inHash string) *PendingTxOutWrapper {
-	m := s.pendingTxout[blockHeight]
-	for _, tx := range m {
-		if tx.InHash == inHash {
-			return tx
-		}
+func (s *TssStorage) GetTxOut(hash string) *tssTypes.TxOut {
+	key := fmt.Sprintf("tx_out_%s", hash)
+	bz, err := s.db.Get([]byte(key))
+	if err != nil {
+		utils.LogError("txout not found, hash =", hash)
+		return nil
 	}
 
-	return nil
+	txOut := &tssTypes.TxOut{}
+	if err := txOut.Unmarshal(bz); err != nil {
+		utils.LogError("cannot unmashal txout, err =", err)
+		return nil
+	}
+
+	return txOut
 }
 
-func (s *TssStorage) RemovePendingTxOut(blockHeight int64, inHash string) {
-	arr := s.pendingTxout[blockHeight]
-	for i, tx := range arr {
-		if tx.InHash == inHash {
-			s.pendingTxout[blockHeight] = append(arr[:i], arr[i+1:]...)
-			break
-		}
+func (s *TssStorage) SavePubKey(chain string, pubKey []byte) {
+	key := fmt.Sprintf("pubkey_%s", chain)
+	s.db.Put([]byte(key), pubKey)
+}
+
+func (s *TssStorage) GetPubKey(chain string) []byte {
+	key := fmt.Sprintf("pubkey_%s", chain)
+
+	pubKey, err := s.db.Get([]byte(key))
+	if err != nil {
+		return nil
 	}
+
+	return pubKey
 }

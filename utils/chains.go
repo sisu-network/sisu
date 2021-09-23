@@ -34,7 +34,7 @@ func GetTxHash(chain string, serialized []byte) (string, error) {
 			return "", err
 		}
 
-		return KeccakHash32(string(serialized))
+		return KeccakHash32(string(serialized)), nil
 	}
 
 	// TODO: Support more chain other than ETH family.

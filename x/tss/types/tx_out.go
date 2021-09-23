@@ -3,12 +3,14 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/sisu-network/sisu/utils"
 )
 
 var _ sdk.Msg = &TxOut{}
 
-func NewMsgTxOut(signer string, inBlockHeight int64, inChain string, inHash string, outChain string, outBytes []byte) *TxOut {
+func NewMsgTxOut(txType TxOut_Type, signer string, inBlockHeight int64, inChain string, inHash string, outChain string, outBytes []byte) *TxOut {
 	return &TxOut{
+		TxType:        txType,
 		Signer:        signer,
 		InBlockHeight: inBlockHeight,
 		InChain:       inChain,
@@ -55,4 +57,8 @@ func (msg *TxOut) ValidateBasic() error {
 	}
 
 	return nil
+}
+
+func (msg *TxOut) GetHash() string {
+	return utils.KeccakHash32(msg.OutChain + string(msg.OutBytes))
 }

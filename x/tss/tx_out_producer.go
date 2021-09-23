@@ -109,6 +109,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 						}
 
 						outMsgs = append(outMsgs, tssTypes.NewMsgTxOut(
+							tssTypes.TxOut_CONTRACT_DEPLOYMENT,
 							p.appKeys.GetSignerAddress().String(),
 							tx.BlockHeight,
 							tx.Chain,
