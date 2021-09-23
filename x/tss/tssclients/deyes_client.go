@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/ethereum/go-ethereum/rpc"
+	eTypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/sisu/utils"
 )
 
@@ -62,13 +63,15 @@ func (c *DeyesClient) AddWatchAddresses(chain string, addrs []string) error {
 	return nil
 }
 
-func (c *DeyesClient) Dispatch(chain string, tx []byte) error {
-	var result string
-	err := c.client.CallContext(context.Background(), &result, "deyes_dispatchTx", chain, tx)
+func (c *DeyesClient) Dispatch(request *eTypes.DispatchedTxRequest) (*eTypes.DispatchedTxResult, error) {
+	var result = &eTypes.DispatchedTxResult{}
+	err := c.client.CallContext(context.Background(), &result, "deyes_dispatchTx", request)
 	if err != nil {
-		utils.LogError("Cannot Dispatch tx to the chain", chain, "err =", err)
-		return err
+		utils.LogError("Cannot Dispatch tx to the chain", request.Chain, "err =", err)
+		return result, err
 	}
 
-	return nil
+	utils.LogVerbose("Tx has been dispatched")
+
+	return result, nil
 }

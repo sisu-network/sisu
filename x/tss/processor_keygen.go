@@ -89,6 +89,9 @@ func (p *Processor) OnKeygenResult(result dhTypes.KeygenResult) {
 		utils.LogVerbose("adding watcher address", result.Address)
 		deyesClient.AddWatchAddresses(result.Chain, []string{result.Address})
 	}
+
+	// 3. Save pubkey
+	p.storage.SavePubKey(result.Chain, result.PubKeyBytes)
 }
 
 func (p *Processor) CheckKeyGenProposal(msg *types.KeygenProposal) error {
@@ -179,11 +182,7 @@ func (p *Processor) checkContractDeployment(ctx sdk.Context, msg *types.KeygenRe
 
 	for _, abi := range contractABIs {
 		// Hash of a contract is the hash of the ABI string.
-		hash, err := utils.KeccakHash32(abi)
-		if err != nil {
-			utils.LogError("Cannot get keccak hash 32 byte, err = ", err)
-			continue
-		}
+		hash := utils.KeccakHash32(abi)
 
 		// Check if this contract has been deployed or being deployed.
 		if p.keeper.IsContractDeployingOrDeployed(ctx, msg.ChainSymbol, hash) {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/sisu-network/deyes/database"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
@@ -48,6 +49,7 @@ type Processor struct {
 	// A map of chainSymbol -> map ()
 	keygenVoteResult map[string]map[string]bool
 	keygenBlockPairs []BlockSymbolPair
+	db               database.Database
 }
 
 func NewProcessor(keeper keeper.Keeper,
@@ -147,14 +149,8 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 		}
 
 		for len(p.keygenBlockPairs) > 0 && blockHeight >= p.keygenBlockPairs[0].blockHeight {
-			chaimSymbol := p.keygenBlockPairs[0].chainSymbol
-
-			// Now we count the votes
-			// p.countKeygenVote()
-
 			// Remove the chain from processing queue.
 			p.keygenBlockPairs = p.keygenBlockPairs[1:]
-			delete(p.keygenVoteResult, chaimSymbol)
 		}
 	}
 }

@@ -49,14 +49,14 @@ func MinInt(x, y int) int {
 	return x
 }
 
-func GetObservedTxHash(blockHeight int64, chain string, txBytes []byte) (string, error) {
+func GetObservedTxHash(blockHeight int64, chain string, txBytes []byte) string {
 	bz := []byte(chain + strconv.FormatInt(blockHeight, 10))
 	bz = append(txBytes, bz...)
 	return KeccakHash32(string(bz))
 }
 
 // Hash a string and return the first 32 bytes of the hash.
-func KeccakHash32(s string) (string, error) {
+func KeccakHash32(s string) string {
 	hash := sha3.NewLegacyKeccak256()
 
 	var buf []byte
@@ -68,7 +68,7 @@ func KeccakHash32(s string) (string, error) {
 		encoded = encoded[:32]
 	}
 
-	return encoded, nil
+	return encoded
 }
 
 // Returns a random index in the range [0..size-1] from an integer and a hash. This is a

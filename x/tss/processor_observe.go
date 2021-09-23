@@ -1,8 +1,6 @@
 package tss
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	deTypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/sisu/utils"
@@ -16,11 +14,7 @@ func (p *Processor) ProcessObservedTxs(txs *deTypes.Txs) {
 	// has 1s delay.
 
 	for _, tx := range txs.Arr {
-		hash, err := utils.GetObservedTxHash(txs.Block, txs.Chain, tx.Serialized)
-		if err != nil {
-			utils.LogCritical(fmt.Sprintf("Cannot get hash for tx at block %d in chain %s", txs.Block, txs.Chain))
-			continue
-		}
+		hash := utils.GetObservedTxHash(txs.Block, txs.Chain, tx.Serialized)
 
 		// // Check local storage to see if this observed tx has been recorded in local storage. This is
 		// // very different from observed tx in kvstore as the kvstore only stores data from Sisu chain.
@@ -66,9 +60,7 @@ func (p *Processor) DeliverObservedTxs(ctx sdk.Context, msg *tssTypes.ObservedTx
 		p.keeper.SaveObservedTx(ctx, tx)
 
 		// Save this to our local storage in case we have not seen it.
-		// p.storage.SaveObservedTx(tx.Chain, tx.BlockHeight, tx.TxHash, tx.Serialized)
-
-		p.CreateTxOuts(ctx, tx)
+		p.createTxOuts(ctx, tx)
 	}
 
 	return nil, nil

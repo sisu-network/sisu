@@ -2,10 +2,15 @@ syntax = "proto3";
 package types;
 
 message TxOut {
-  string signer = 1;
-  string inChain = 2;
-  string outChain = 3;
-  int64 inBlockHeight = 4;
-  string inHash = 5;
-  bytes outBytes = 6;
+  enum Type {
+    CONTRACT_DEPLOYMENT = 0;
+  }
+
+  Type txType = 1;
+  string signer = 2;
+  string inChain = 3;
+  string outChain = 4;
+  int64 inBlockHeight = 5;
+  string inHash = 6;
+  bytes outBytes = 7;
 }
