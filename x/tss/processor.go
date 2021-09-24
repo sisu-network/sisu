@@ -117,9 +117,9 @@ func (p *Processor) connectToDheart() {
 // Connecto to all deyes.
 func (p *Processor) connectToDeyes() {
 	for chain, chainConfig := range p.config.SupportedChains {
-		utils.LogInfo("chainConfig.Url = ", chainConfig.Url)
+		utils.LogInfo("chainConfig.Url = ", chainConfig.DeyesUrl)
 
-		deyeClient, err := tssclients.DialDeyes(chainConfig.Url)
+		deyeClient, err := tssclients.DialDeyes(chainConfig.DeyesUrl)
 		if err != nil {
 			utils.LogError("Failed to connect to deyes", chain, ".Err =", err)
 			panic(err)
