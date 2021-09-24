@@ -40,8 +40,7 @@ func (p *DefaultTxOutputProducer) GetOutputs(ctx sdk.Context, height int64, tx *
 	outMsgs := make([]*tssTypes.TxOut, 0)
 	var err error
 
-	switch tx.Chain {
-	case "eth":
+	if utils.IsETHBasedChain(tx.Chain) {
 		outMsgs, err = p.getEthResponse(ctx, height, tx)
 
 		if err != nil {
@@ -124,6 +123,8 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 			}
 		}
 	}
+
+	// 2. Check other type of contracts.
 
 	return outMsgs, nil
 }

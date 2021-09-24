@@ -42,9 +42,9 @@ type ETHConfig struct {
 }
 
 type TssChainConfig struct {
-	Symbol string `toml:"symbol"`
-	Id     int    `toml:"id"`
-	Url    string `toml:"url"`
+	Symbol   string `toml:"symbol"`
+	Id       int    `toml:"id"`
+	DeyesUrl string `toml:"deyes_url"`
 }
 
 // Example of supported chains in the toml config file.
@@ -52,7 +52,7 @@ type TssChainConfig struct {
 // [supported_chains.eth]
 //   symbol = "eth"
 // 	 id = 1
-// 	 url = "http://localhost:31001"
+// 	 deyes_url = "http://localhost:31001"
 type TssConfig struct {
 	Enable          bool                      `toml:"enable"`
 	Host            string                    `toml:"host"`
