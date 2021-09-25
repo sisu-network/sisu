@@ -165,7 +165,6 @@ func (self *ETHChain) Initialize() error {
 				utils.LogInfo("lastAccepted block not found in chaindb")
 			} else {
 				lastAccepted = block
-				utils.LogInfo("Last accepted block found, number =", block.Number())
 			}
 		}
 	}
@@ -239,7 +238,6 @@ func (self *ETHChain) GetGenesisBlock() *types.Block {
 }
 
 func (self *ETHChain) BeginBlock(timestamp time.Time) error {
-	utils.LogDebug("Preparing new block....")
 	self.backend.Miner().PrepareNewBlock(timestamp)
 	return nil
 }
@@ -356,8 +354,6 @@ func (self *ETHChain) OnSealFinish(block *types.Block) error {
 		utils.LogError("Cannot get last block state.")
 	}
 
-	utils.LogDebug("Last accepted block = ", self.backend.BlockChain().LastAcceptedBlock().Number())
-
 	self.genBlockDoneCh <- true
 
 	size, err := self.PendingSize()
@@ -380,13 +376,10 @@ func (self *ETHChain) GetBlockByHash(hash common.Hash) *types.Block {
 }
 
 func (self *ETHChain) Accept(block *types.Block) error {
-	utils.LogDebug("Trying to accept the block...")
 	if err := self.BlockChain().Accept(block); err != nil {
 		utils.LogError("Failed to accept block", err)
 		return err
 	}
-
-	utils.LogDebug("Block is accepted.")
 
 	b, err := rlp.EncodeToBytes(block.Hash())
 	if err != nil {

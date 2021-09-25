@@ -8,7 +8,7 @@ import (
 )
 
 // Processed list of transactions sent from deyes to Sisu api server.
-func (p *Processor) ProcessObservedTxs(txs *deTypes.Txs) {
+func (p *Processor) OnObservedTxs(txs *deTypes.Txs) {
 	// Create ObservedTx messages and broadcast to the Sisu chain.
 	// TODO: Avoid sending too many messages. Find a way we can batch all txts together since SubmitTx
 	// has 1s delay.
@@ -48,8 +48,6 @@ func (p *Processor) CheckObservedTxs(ctx sdk.Context, msgs *tssTypes.ObservedTxs
 // Delivers observed Txs.
 func (p *Processor) DeliverObservedTxs(ctx sdk.Context, msg *tssTypes.ObservedTxs) ([]byte, error) {
 	// Update the obsevation count for each transaction.
-	utils.LogVerbose("Deliver observed txs. Len = ", msg.Txs)
-
 	for _, tx := range msg.Txs {
 		if p.keeper.GetObservedTx(ctx, tx.Chain, tx.BlockHeight, tx.TxHash) != nil {
 			utils.LogVerbose("This tx has been included in Sisu block: ", tx.Chain, tx.BlockHeight, tx.TxHash)

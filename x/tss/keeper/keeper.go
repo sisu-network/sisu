@@ -117,6 +117,17 @@ func (k *Keeper) SavePubKey(ctx sdk.Context, chain string, keyBytes []byte) {
 	store.Set([]byte(chain), keyBytes)
 }
 
+func (k *Keeper) GetAllPubKeys(ctx sdk.Context) map[string][]byte {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PUBLIC_KEY_BYTES)
+	iter := store.Iterator(nil, nil)
+	ret := make(map[string][]byte)
+	for ; iter.Valid(); iter.Next() {
+		ret[string(iter.Key())] = iter.Value()
+	}
+
+	return ret
+}
+
 func (k *Keeper) IsContractDeployingOrDeployed(ctx sdk.Context, chain string, hash string) bool {
 	hash = strings.ToLower(hash)
 
