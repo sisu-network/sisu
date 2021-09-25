@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package types;
+
+service Query {
+  rpc AllPubKeys(QueryAllPubKeysRequest) returns (QueryAllPubKeysResponse) {
+  }
+}
+
+message QueryAllPubKeysRequest {
+}
+
+message QueryAllPubKeysResponse {
+  map<string, bytes> pubkeys = 1;
+}
