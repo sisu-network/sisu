@@ -39,8 +39,3 @@ jobs:
         run: |
           cd cmd/sisud
           go build .
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: sisud ${{ matrix.targetos }} ${{ matrix.arch }}
-          path: cmd/sisud/sisud
