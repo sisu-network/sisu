@@ -1,6 +1,6 @@
 #!/bin/sh
 
-cp ~/.ssh/id_rsa ./build
+cp ~/.ssh/id_rsa ./tmp
 docker build . -t sisu
 docker run --name=sisu -v ~/.ssh/id_rsa:/root/.ssh/id_rsa -t sisu
 
