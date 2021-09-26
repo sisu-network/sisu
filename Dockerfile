@@ -36,7 +36,7 @@ WORKDIR /app
 # RUN apk add ca-certificates \
 #     && touch /app/.env && echo "SAMPLE_KEY:SAMPLE_VALUE" > /app/.env
 
-COPY .env /app/.env
+COPY .env.dev /app/.env
 
 COPY --from=builder /tmp/go-app/out/sisu /app/sisu
 
