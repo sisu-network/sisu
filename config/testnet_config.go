@@ -63,7 +63,7 @@ func testnetSisuConfig() *SisuConfig {
 		Home:            appDir + "/main",
 		ChainId:         "talon-1",
 		KeyringBackend:  keyring.BackendFile,
-		InternalApiHost: "localhost",
+		InternalApiHost: "0.0.0.0",
 		InternalApiPort: 25456,
 	}
 

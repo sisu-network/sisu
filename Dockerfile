@@ -23,6 +23,8 @@ RUN go mod download
 
 COPY . .
 
+RUN go mod tidy
+
 RUN go build -o ./out/sisu ./cmd/sisud/main.go
 
 RUN rm /root/.ssh/id_rsa
@@ -37,10 +39,14 @@ WORKDIR /app
 #     && touch /app/.env && echo "SAMPLE_KEY:SAMPLE_VALUE" > /app/.env
 
 COPY .env.dev /app/.env
-
 COPY --from=builder /tmp/go-app/out/sisu /app/sisu
 
 RUN ./sisu localnet
 RUN rm -rf ~/.sisu/main
 RUN mv ./output/node0/main ~/.sisu/main
+
+# Copy config into the container.
+COPY docker-config/local-tss.toml /root/.sisu/tss/tss.toml
+COPY docker-config/app-config.toml /root/.sisu/main/config/config.toml
+
 CMD ["./sisu","start"]

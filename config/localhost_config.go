@@ -65,7 +65,7 @@ func localSisuConfig() *SisuConfig {
 		Home:            appDir + "/main",
 		KeyringBackend:  keyring.BackendTest,
 		ChainId:         "sisu-dev",
-		InternalApiHost: "localhost",
+		InternalApiHost: "0.0.0.0",
 		InternalApiPort: 25456,
 	}
 
@@ -78,7 +78,7 @@ func localETHConfig(baseDir string) *ETHConfig {
 	return &ETHConfig{
 		Home:       home,
 		Eth:        getLocalEthConfig(),
-		Host:       "localhost",
+		Host:       "0.0.0.0",
 		Port:       1234,
 		UseInMemDb: false,
 		DbPath:     home + "leveldb",
