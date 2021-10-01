@@ -348,6 +348,7 @@ func New(
 
 	tssProcessor := tss.NewProcessor(app.tssKeeper, *tssConfig, app.appKeys, app.txSubmitter, app.globalData)
 	if tssConfig.Enable {
+		utils.LogInfo("TSS is enabled")
 		tssProcessor.Init()
 		modules = append(modules, tss.NewAppModule(appCodec, app.tssKeeper, app.appKeys, app.txSubmitter, tssProcessor, app.globalData))
 	}

@@ -55,8 +55,8 @@ type TssChainConfig struct {
 // 	 deyes_url = "http://localhost:31001"
 type TssConfig struct {
 	Enable          bool                      `toml:"enable"`
-	Host            string                    `toml:"host"`
-	Port            int                       `toml:"port"`
+	DheartHost      string                    `toml:"dheart_host"`
+	DheartPort      int                       `toml:"dheart_port"`
 	SupportedChains map[string]TssChainConfig `toml:"supported_chains"`
 
 	Dir string

@@ -91,7 +91,7 @@ func (p *Processor) Init() {
 // Connect to Dheart server.
 func (p *Processor) connectToDheart() {
 	var err error
-	url := fmt.Sprintf("http://%s:%d", p.config.Host, p.config.Port)
+	url := fmt.Sprintf("http://%s:%d", p.config.DheartHost, p.config.DheartPort)
 	utils.LogInfo("Connecting to Dheart server at", url)
 
 	p.dheartClient, err = tssclients.DialDheart(url)

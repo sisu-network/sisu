@@ -60,7 +60,7 @@ fund-account eth 7545 sisu-eth 8545 10
 				if err != nil {
 					return err
 				}
-				url := "http://localhost:" + strconv.Itoa(port)
+				url := "http://0.0.0.0:" + strconv.Itoa(port)
 
 				utils.LogInfo("Sending ETH To address", addr, "of chain", chain)
 
