@@ -8,7 +8,7 @@ else
 fi
 
 
-./sisu localnet
+./sisu localnet --enable-tss true
 rm -rf ~/.sisu
 cp -rf ./output/node0/ ~/.sisu
 rm -rf ./output

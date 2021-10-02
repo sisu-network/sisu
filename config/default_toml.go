@@ -4,8 +4,8 @@ import "io/ioutil"
 
 func writeDefaultTss(filePath string) error {
 	var defaultValue = `enable = false
-host = "localhost"
-port = 5678
+dheart_host = "localhost"
+dheart_port = 5678
 [supported_chains]
 `
 	err := ioutil.WriteFile(filePath, []byte(defaultValue), 0644)
