@@ -47,6 +47,7 @@ type Setting struct {
 	keyringBackend string
 	algoStr        string
 	numValidators  int
+	enableTss      bool
 }
 
 // Initialize the localnet
@@ -207,6 +208,10 @@ func InitNetwork(settings *Setting) error {
 		return err
 	}
 
+	if settings.enableTss {
+		generategTssToml(settings)
+	}
+
 	err := collectGenFiles(
 		clientCtx, nodeConfig, chainID, nodeIDs, valPubKeys, numValidators,
 		outputDir, nodeDirPrefix, nodeDaemonHome, genBalIterator,
@@ -311,6 +316,27 @@ func collectGenFiles(
 	}
 
 	return nil
+}
+
+// Generate TSS Toml file. This should only work in local dev mode. In production mode, we should
+// create the tss.toml file and put in the tss folder of the app.
+func generategTssToml(settings *Setting) {
+	content := `enable = true
+dheart_host = "localhost"
+dheart_port = 5678
+[supported_chains]
+[supported_chains.eth]
+	symbol = "eth"
+	id = 1
+	deyes_url = "http://0.0.0.0:31001"
+[supported_chains.sisu-eth]
+	symbol = "sisu-eth"
+	id = 36767
+	deyes_url = "http://0.0.0.0:31001"
+`
+
+	dir := os.Getenv("HOME") + "/.sisu/tss"
+	writeFile("tss.toml", dir, []byte(content))
 }
 
 func writeFile(name string, dir string, contents []byte) error {

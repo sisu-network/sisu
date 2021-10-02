@@ -43,13 +43,13 @@ func (ak *AppKeys) Init() {
 	if len(infos) == 0 {
 		utils.LogError()
 		panic(errors.New(`Please create at least one account before running this node.
-If this is a localhost network, run the gen file. If this is a testnet or
-mainnet, generate account using "sisu keys" command.`))
+If this is a localhost network, run the gen file.
+If this is a testnet or mainnet, generate account using "sisu keys" command.`))
 	}
 
 	// TODO: Use signer name for
 	ak.signerInfo = infos[0]
-	utils.LogDebug("signerInfo =", ak.signerInfo.GetName())
+	utils.LogDebug("signerInfo =", ak.signerInfo.GetName(), ak.signerInfo.GetAddress())
 
 	// Set the private key from keyring
 	ak.setPrivateKey()
