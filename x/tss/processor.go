@@ -137,7 +137,11 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 	p.currentHeight = blockHeight
 
 	// Check keygen proposal
-	p.CheckTssKeygen(ctx, blockHeight)
+	if blockHeight > 1 {
+		// We need to wait till block 2 for multistore of the app to be updated with latest account info
+		// for signing.
+		p.CheckTssKeygen(ctx, blockHeight)
+	}
 
 	// Check Vote result.
 	for len(p.keygenBlockPairs) > 0 && !p.globalData.IsCatchingUp() {

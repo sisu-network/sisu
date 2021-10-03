@@ -209,8 +209,9 @@ func (self *ETHChain) startApiServer() {
 
 func (self *ETHChain) Stop() {
 	self.stopping = true
-	utils.LogInfo("Stopping backend....")
+	utils.LogInfo("Stopping ETH backend....")
 	self.backend.Stop()
+	utils.LogInfo("ETH backend stopped")
 }
 
 func (self *ETHChain) NewRPCHandler() *rpc.Server {
