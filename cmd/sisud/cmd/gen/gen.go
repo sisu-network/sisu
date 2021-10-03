@@ -93,13 +93,14 @@ func InitNetwork(settings *Setting) error {
 	// generate private keys, node IDs, and initial transactions
 	for i := 0; i < numValidators; i++ {
 		nodeDirName := fmt.Sprintf("%s%d", nodeDirPrefix, i)
-		nodeDir := filepath.Join(outputDir, nodeDirName, nodeDaemonHome)
+		nodeDir := filepath.Join(outputDir, nodeDirName)
+		mainAppDir := filepath.Join(nodeDir, nodeDaemonHome)
 		gentxsDir := filepath.Join(outputDir, "gentxs")
 
-		nodeConfig.SetRoot(nodeDir)
+		nodeConfig.SetRoot(mainAppDir)
 		nodeConfig.RPC.ListenAddress = "tcp://0.0.0.0:26657"
 
-		if err := os.MkdirAll(filepath.Join(nodeDir, "config"), nodeDirPerm); err != nil {
+		if err := os.MkdirAll(filepath.Join(mainAppDir, "config"), nodeDirPerm); err != nil {
 			_ = os.RemoveAll(outputDir)
 			return err
 		}
@@ -122,7 +123,7 @@ func InitNetwork(settings *Setting) error {
 		memo := fmt.Sprintf("%s@%s:26656", nodeIDs[i], ip)
 		genFiles = append(genFiles, nodeConfig.GenesisFile())
 
-		kb, err := keyring.New(sdk.KeyringServiceName(), keyringBackend, nodeDir, inBuf)
+		kb, err := keyring.New(sdk.KeyringServiceName(), keyringBackend, mainAppDir, inBuf)
 		if err != nil {
 			return err
 		}
@@ -147,7 +148,7 @@ func InitNetwork(settings *Setting) error {
 		}
 
 		// save private key seed words
-		if err := writeFile(fmt.Sprintf("%v.json", "key_seed"), nodeDir, cliPrint); err != nil {
+		if err := writeFile(fmt.Sprintf("%v.json", "key_seed"), mainAppDir, cliPrint); err != nil {
 			return err
 		}
 
@@ -201,15 +202,15 @@ func InitNetwork(settings *Setting) error {
 			return err
 		}
 
-		srvconfig.WriteConfigFile(filepath.Join(nodeDir, "config/app.toml"), simappConfig)
+		srvconfig.WriteConfigFile(filepath.Join(mainAppDir, "config/app.toml"), simappConfig)
+
+		if settings.enableTss {
+			generategTssToml(settings, nodeDir)
+		}
 	}
 
 	if err := initGenFiles(clientCtx, mbm, chainID, genAccounts, genBalances, genFiles, numValidators); err != nil {
 		return err
-	}
-
-	if settings.enableTss {
-		generategTssToml(settings)
 	}
 
 	err := collectGenFiles(
@@ -320,7 +321,7 @@ func collectGenFiles(
 
 // Generate TSS Toml file. This should only work in local dev mode. In production mode, we should
 // create the tss.toml file and put in the tss folder of the app.
-func generategTssToml(settings *Setting) {
+func generategTssToml(settings *Setting, nodeDir string) {
 	content := `enable = true
 dheart_host = "localhost"
 dheart_port = 5678
@@ -335,7 +336,12 @@ dheart_port = 5678
 	deyes_url = "http://0.0.0.0:31001"
 `
 
-	dir := os.Getenv("HOME") + "/.sisu/tss"
+	if err := os.MkdirAll(filepath.Join(nodeDir, "tss"), nodeDirPerm); err != nil {
+		_ = os.RemoveAll(settings.outputDir)
+		panic(err)
+	}
+
+	dir := filepath.Join(nodeDir, "tss")
 	writeFile("tss.toml", dir, []byte(content))
 }
 
