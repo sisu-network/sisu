@@ -222,25 +222,3 @@ func (k *Keeper) GetAllEthKeyAddrs(ctx sdk.Context) map[string]map[string]bool {
 
 	return m
 }
-
-func (k *Keeper) SaveTxOut(ctx sdk.Context, txOut *types.TxOut) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_TX_OUT)
-	bz, err := txOut.Marshal()
-	if err != nil {
-		utils.LogError("cannot marshal tx out, err =", err)
-		return
-	}
-	store.Set([]byte(txOut.GetHash()), bz)
-}
-
-func (k *Keeper) GetTxOut(ctx sdk.Context, hash string) (*types.TxOut, error) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_TX_OUT)
-	bz := store.Get([]byte(hash))
-	if bz == nil {
-		return nil, fmt.Errorf("cannot find tx with hash %s", hash)
-	}
-
-	tx := &types.TxOut{}
-	err := tx.Unmarshal(bz)
-	return tx, err
-}

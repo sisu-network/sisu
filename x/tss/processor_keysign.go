@@ -63,7 +63,7 @@ func (p *Processor) deploySignedTx(bz []byte, keysignResult *dhTypes.KeysignResu
 	if deyeClient != nil {
 		txOut := p.storage.GetTxOut(keysignResult.OutHash)
 		return deyeClient.Dispatch(&eTypes.DispatchedTxRequest{
-			IsEthContractDeployment: txOut.TxType == types.TxOut_CONTRACT_DEPLOYMENT && utils.IsETHBasedChain(keysignResult.OutChain),
+			IsEthContractDeployment: txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT && utils.IsETHBasedChain(keysignResult.OutChain),
 			Chain:                   keysignResult.OutChain,
 			Tx:                      bz,
 			PubKey:                  p.storage.GetPubKey(keysignResult.OutChain),
@@ -91,7 +91,7 @@ func (p *Processor) onTxDeployed(chain, outHash string, deployResult *eTypes.Dis
 		return
 	}
 
-	if txOut.TxType == types.TxOut_CONTRACT_DEPLOYMENT {
+	if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
 		// Add this to the watcher address.
 		utils.LogInfo("Adding the deployment address to the watch addresss", deployResult.DeployedAddr)
 		deyeClient := p.deyesClients[chain]

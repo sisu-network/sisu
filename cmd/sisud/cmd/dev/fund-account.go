@@ -53,7 +53,7 @@ fund-account eth 7545 sisu-eth 8545 10
 					return fmt.Errorf("cannot find pubkey for chain %s", chain)
 				}
 
-				pubKey, err := crypto.DecompressPubkey(pubKeyBytes)
+				pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
 				addr := crypto.PubkeyToAddress(*pubKey).Hex()
 
 				port, err := strconv.Atoi(args[i+1])

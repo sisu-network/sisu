@@ -8,7 +8,7 @@ import (
 
 var _ sdk.Msg = &TxOut{}
 
-func NewMsgTxOut(txType TxOut_Type, signer string, inBlockHeight int64, inChain string, inHash string, outChain string, outBytes []byte) *TxOut {
+func NewMsgTxOut(txType TxOutType, signer string, inBlockHeight int64, inChain string, inHash string, outChain string, outBytes []byte) *TxOut {
 	return &TxOut{
 		TxType:        txType,
 		Signer:        signer,

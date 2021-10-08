@@ -2,17 +2,14 @@ package tss
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	deTypes "github.com/sisu-network/deyes/types"
+	eyesTypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/sisu/utils"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 )
 
 // Processed list of transactions sent from deyes to Sisu api server.
-func (p *Processor) OnObservedTxs(txs *deTypes.Txs) {
+func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) {
 	// Create ObservedTx messages and broadcast to the Sisu chain.
-	// TODO: Avoid sending too many messages. Find a way we can batch all txts together since SubmitTx
-	// has 1s delay.
-
 	for _, tx := range txs.Arr {
 		hash := utils.GetObservedTxHash(txs.Block, txs.Chain, tx.Serialized)
 

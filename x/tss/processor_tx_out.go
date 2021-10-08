@@ -15,7 +15,7 @@ import (
 // Produces response for an observed tx. This has to be deterministic based on all the data that
 // the processor has.
 func (p *Processor) createTxOuts(ctx sdk.Context, tx *types.ObservedTx) []*tssTypes.TxOut {
-	outMsgs := p.txOutputProducer.GetOutputs(ctx, p.currentHeight, tx)
+	outMsgs := p.txOutputProducer.GetTxOuts(ctx, p.currentHeight, tx)
 
 	for _, msg := range outMsgs {
 		p.storage.AddTxOut(msg)
@@ -38,9 +38,9 @@ func (p *Processor) CheckTxOut(ctx sdk.Context, msg *types.TxOut) error {
 }
 
 func (p *Processor) DeliverTxOut(ctx sdk.Context, msg *types.TxOut) ([]byte, error) {
-	utils.LogVerbose("Delivering TXOUT")
-
 	outHash := msg.GetHash()
+
+	utils.LogVerbose("Delivering TXOUT")
 
 	// 4. Broadcast it to Dheart for processing.
 	keysignReq := &hTypes.KeysignRequest{
@@ -57,9 +57,6 @@ func (p *Processor) DeliverTxOut(ctx sdk.Context, msg *types.TxOut) ([]byte, err
 		utils.LogError("Keysign: err =", err)
 		return nil, err
 	}
-
-	// Save this to KV store.
-	p.keeper.SaveTxOut(ctx, msg)
 
 	return nil, nil
 }

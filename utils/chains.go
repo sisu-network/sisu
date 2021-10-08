@@ -58,3 +58,13 @@ func PublicKeyBytesToAddress(publicKey []byte) common.Address {
 
 	return common.HexToAddress(hex.EncodeToString(address))
 }
+
+func GetEthChainSigners() map[string]eTypes.Signer {
+	m := make(map[string]eTypes.Signer)
+
+	// TODO: Add correct signer for each chain. For now, use NewEIP2930Signer for all chains.
+	m["eth"] = eTypes.NewEIP2930Signer(GetChainIntFromId("eth"))
+	m["sisu-eth"] = eTypes.NewEIP2930Signer(GetChainIntFromId("sisu-eth"))
+
+	return m
+}
