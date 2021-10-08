@@ -34,14 +34,13 @@ fund-account eth 7545 sisu-eth 8545 10
 
 			localWallet, err := hdwallet.NewFromMnemonic(default_mnemonic)
 
-			var amount int
+			amount, err := strconv.Atoi(args[len(args)-1])
+			if err != nil {
+				panic(err)
+			}
+
 			for i := 0; i < len(args); i += 2 {
 				if i == len(args)-1 {
-					// This is the amount to be sent.
-					amount, err = strconv.Atoi(args[i])
-					if err != nil {
-						return err
-					}
 					break
 				}
 
@@ -86,6 +85,9 @@ func transferEth(url, recipient string, wallet *hdwallet.Wallet, amount int) {
 		panic(err)
 	}
 
+	fmt.Println("Address = ", fromAccount.Address.Hex())
+	fmt.Println("amount = ", amount)
+
 	nonce, err := client.PendingNonceAt(context.Background(), fromAccount.Address)
 	if err != nil {
 		panic(err)
@@ -107,7 +109,7 @@ func transferEth(url, recipient string, wallet *hdwallet.Wallet, amount int) {
 		panic(err)
 	}
 
-	signedTx, err := wallet.SignTxEIP155(fromAccount, tx, chainID)
+	signedTx, err := wallet.SignTx(fromAccount, tx, chainID)
 	if err != nil {
 		panic(err)
 	}
