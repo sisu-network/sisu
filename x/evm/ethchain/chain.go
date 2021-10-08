@@ -314,8 +314,6 @@ func (self *ETHChain) EndBlock() error {
 		return ERR_SHUTTING_DOWN
 	}
 
-	utils.LogDebug("END BLOCK: Start gen ETH block")
-
 	self.backend.Miner().GenBlock()
 
 	// Block until we receive onSealFinish
@@ -343,7 +341,6 @@ func (self *ETHChain) OnSealFinish(block *types.Block) error {
 		return err
 	}
 
-	utils.LogDebug("Inserting the block into the chain...")
 	self.backend.BlockChain().InsertChain([]*types.Block{block})
 
 	lastState, err := self.backend.BlockChain().State()

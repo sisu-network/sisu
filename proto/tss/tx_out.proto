@@ -1,12 +1,12 @@
 syntax = "proto3";
 package types;
 
-message TxOut {
-  enum Type {
-    CONTRACT_DEPLOYMENT = 0;
-  }
+enum TxOutType {
+  CONTRACT_DEPLOYMENT = 0;
+}
 
-  Type txType = 1;
+message TxOut {
+  TxOutType txType = 1;
   string signer = 2;
   string inChain = 3;
   string outChain = 4;
