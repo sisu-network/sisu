@@ -3,7 +3,7 @@ package tss
 import (
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/sisu-network/cosmos-sdk/types"
 	eTypes "github.com/sisu-network/deyes/types"
 	dhTypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/sisu/utils"

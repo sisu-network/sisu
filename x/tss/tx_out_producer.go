@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/dcore/ethclient"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/contracts/eth/dummy"

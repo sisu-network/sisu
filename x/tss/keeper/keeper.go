@@ -7,8 +7,8 @@ import (
 
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 
-	"github.com/cosmos/cosmos-sdk/store/prefix"
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/sisu-network/cosmos-sdk/store/prefix"
+	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 )

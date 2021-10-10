@@ -1,7 +1,7 @@
 package tss
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/sisu-network/cosmos-sdk/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/sisu/utils"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"

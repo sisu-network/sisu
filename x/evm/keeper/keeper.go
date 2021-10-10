@@ -10,12 +10,12 @@ import (
 	"time"
 
 	ethLog "github.com/ethereum/go-ethereum/log"
-	"github.com/tendermint/tendermint/libs/log"
+	"github.com/sisu-network/tendermint/libs/log"
 	"google.golang.org/grpc"
 
-	"github.com/cosmos/cosmos-sdk/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	authKeepr "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	"github.com/sisu-network/cosmos-sdk/codec"
+	sdk "github.com/sisu-network/cosmos-sdk/types"
+	authKeepr "github.com/sisu-network/cosmos-sdk/x/auth/keeper"
 
 	etypes "github.com/sisu-network/dcore/core/types"
 	"github.com/sisu-network/dcore/eth"

@@ -9,18 +9,18 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
 	"github.com/gorilla/mux"
+	abci "github.com/sisu-network/tendermint/abci/types"
 	"github.com/spf13/cobra"
-	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/codec"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/module"
-	simtypes "github.com/cosmos/cosmos-sdk/types/simulation"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/cli"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/rest"
-	"github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	"github.com/sisu-network/cosmos-sdk/client"
+	"github.com/sisu-network/cosmos-sdk/codec"
+	codectypes "github.com/sisu-network/cosmos-sdk/codec/types"
+	sdk "github.com/sisu-network/cosmos-sdk/types"
+	"github.com/sisu-network/cosmos-sdk/types/module"
+	simtypes "github.com/sisu-network/cosmos-sdk/types/simulation"
+	"github.com/sisu-network/cosmos-sdk/x/auth/client/cli"
+	"github.com/sisu-network/cosmos-sdk/x/auth/client/rest"
+	"github.com/sisu-network/cosmos-sdk/x/auth/keeper"
 )
 
 var (

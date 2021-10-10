@@ -10,13 +10,13 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
-	abci "github.com/tendermint/tendermint/abci/types"
+	abci "github.com/sisu-network/tendermint/abci/types"
 
-	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/codec"
-	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/sisu-network/cosmos-sdk/client"
+	"github.com/sisu-network/cosmos-sdk/codec"
+	cdctypes "github.com/sisu-network/cosmos-sdk/codec/types"
+	sdk "github.com/sisu-network/cosmos-sdk/types"
+	"github.com/sisu-network/cosmos-sdk/types/module"
 
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/tss/client/cli"

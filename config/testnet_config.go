@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"github.com/BurntSushi/toml"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/sisu-network/cosmos-sdk/crypto/keyring"
 	"github.com/sisu-network/dcore/core"
 	"github.com/sisu-network/dcore/eth/ethconfig"
 	"github.com/sisu-network/dcore/miner"

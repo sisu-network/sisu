@@ -1,8 +1,8 @@
 package ante
 
 import (
-	ante "github.com/cosmos/cosmos-sdk/x/auth/ante"
-	types "github.com/cosmos/cosmos-sdk/x/auth/types"
+	ante "github.com/sisu-network/cosmos-sdk/x/auth/ante"
+	types "github.com/sisu-network/cosmos-sdk/x/auth/types"
 )
 
 var (

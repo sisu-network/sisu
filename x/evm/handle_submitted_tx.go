@@ -1,7 +1,7 @@
 package evm
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdk "github.com/sisu-network/cosmos-sdk/types"
 	etypes "github.com/sisu-network/dcore/core/types"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/evm/keeper"
