@@ -2,8 +2,8 @@
 package auth
 
 import (
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	types "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/sisu-network/cosmos-sdk/x/auth"
+	types "github.com/sisu-network/cosmos-sdk/x/auth/types"
 )
 
 const (

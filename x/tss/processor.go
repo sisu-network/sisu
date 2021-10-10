@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/deyes/database"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"

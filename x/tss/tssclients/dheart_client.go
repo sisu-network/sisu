@@ -3,10 +3,10 @@ package tssclients
 import (
 	"context"
 
-	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
-	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
-	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/sisu-network/cosmos-sdk/crypto/keys/ed25519"
+	"github.com/sisu-network/cosmos-sdk/crypto/keys/secp256k1"
+	ctypes "github.com/sisu-network/cosmos-sdk/crypto/types"
 	dTypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/sisu/utils"
 )

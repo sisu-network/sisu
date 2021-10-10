@@ -3,10 +3,10 @@ package ante
 import (
 	"fmt"
 
-	cosmosTypes "github.com/cosmos/cosmos-sdk/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	cosmosAnte "github.com/cosmos/cosmos-sdk/x/auth/ante"
-	"github.com/cosmos/cosmos-sdk/x/auth/signing"
+	cosmosTypes "github.com/sisu-network/cosmos-sdk/types"
+	sdk "github.com/sisu-network/cosmos-sdk/types"
+	cosmosAnte "github.com/sisu-network/cosmos-sdk/x/auth/ante"
+	"github.com/sisu-network/cosmos-sdk/x/auth/signing"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/evm/ethchain"

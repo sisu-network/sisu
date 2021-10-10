@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/sisu-network/cosmos-sdk/client"
 	"github.com/sisu-network/sisu/x/tss/types"
 	"github.com/spf13/cobra"
 )

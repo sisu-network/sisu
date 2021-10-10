@@ -14,17 +14,17 @@ import (
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/evm/types"
 
-	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/client/tx"
-	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/tx/signing"
-	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
-	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
+	"github.com/sisu-network/cosmos-sdk/client"
+	"github.com/sisu-network/cosmos-sdk/client/flags"
+	"github.com/sisu-network/cosmos-sdk/client/tx"
+	cryptocodec "github.com/sisu-network/cosmos-sdk/crypto/codec"
+	"github.com/sisu-network/cosmos-sdk/crypto/keyring"
+	sdk "github.com/sisu-network/cosmos-sdk/types"
+	"github.com/sisu-network/cosmos-sdk/types/tx/signing"
+	authkeeper "github.com/sisu-network/cosmos-sdk/x/auth/keeper"
+	authtypes "github.com/sisu-network/cosmos-sdk/x/auth/types"
+	staking "github.com/sisu-network/cosmos-sdk/x/staking/types"
+	rpchttp "github.com/sisu-network/tendermint/rpc/client/http"
 )
 
 const (

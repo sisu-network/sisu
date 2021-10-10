@@ -6,12 +6,12 @@ import (
 	"io/ioutil"
 	"sync"
 
-	"github.com/cosmos/cosmos-sdk/client/rpc"
-	"github.com/cosmos/cosmos-sdk/codec"
-	cryptoCdc "github.com/cosmos/cosmos-sdk/crypto/codec"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/types/rest"
-	pvm "github.com/tendermint/tendermint/privval"
+	"github.com/sisu-network/cosmos-sdk/client/rpc"
+	"github.com/sisu-network/cosmos-sdk/codec"
+	cryptoCdc "github.com/sisu-network/cosmos-sdk/crypto/codec"
+	sdk "github.com/sisu-network/cosmos-sdk/types"
+	"github.com/sisu-network/cosmos-sdk/types/rest"
+	pvm "github.com/sisu-network/tendermint/privval"
 
 	"github.com/BurntSushi/toml"
 	"github.com/hashicorp/go-retryablehttp"

@@ -1,8 +1,8 @@
 package cli
 
 import (
-	"github.com/cosmos/cosmos-sdk/client"
-	cTx "github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/sisu-network/cosmos-sdk/client"
+	cTx "github.com/sisu-network/cosmos-sdk/client/tx"
 	"github.com/sisu-network/sisu/x/evm/types"
 	"github.com/spf13/cobra"
 )

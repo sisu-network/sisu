@@ -3,7 +3,7 @@ package types
 // DONTCOVER
 
 import (
-	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	sdkerrors "github.com/sisu-network/cosmos-sdk/types/errors"
 )
 
 // x/sisu module sentinel errors
