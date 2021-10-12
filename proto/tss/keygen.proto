@@ -3,7 +3,7 @@ package types;
 
 message KeygenProposal {
   string signer = 1;
-  string chainSymbol = 2;
+  string chain = 2;
 
   // Random id for this proposal.
   string id = 3;
@@ -14,7 +14,7 @@ message KeygenProposal {
 
 message KeygenResult {
   string signer = 1;
-  string chainSymbol = 2;
+  string chain = 2;
   bytes pubKeyBytes = 3;
   string address = 4;
   Result result = 5;

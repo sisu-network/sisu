@@ -53,7 +53,7 @@ type Processor struct {
 	// use KVStore.
 	storage *TssStorage
 
-	// A map of chainSymbol -> map ()
+	// A map of chain -> map ()
 	keygenVoteResult map[string]map[string]bool
 	keygenBlockPairs []BlockSymbolPair
 	db               database.Database
