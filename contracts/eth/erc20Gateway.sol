@@ -1,8 +1,8 @@
 //SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.0;
 
-// This is a gateway contract for ERC20 and ERC721 on ethereum.
-contract TokenGateway {
+// This is a gateway contract for ERC20 ethereum.
+contract ERC20Gateway {
     event TransferIn(string assetId, address recipient, uint256 amount);
     event TransferInAssetOfThisChain(
         address assetAddr,
@@ -36,8 +36,6 @@ contract TokenGateway {
     // List of chain that we allow user to send asset to.
     mapping(string => bool) _allowedChain;
 
-    mapping(address => uint256) _assetBalance;
-
     constructor(string memory chain) {
         _owner = msg.sender;
         _thisChain = chain;
@@ -53,42 +51,41 @@ contract TokenGateway {
         address recipient,
         uint256 amount
     ) public {
-        require(msg.sender == _owner);
+        require(msg.sender == _owner, "Must be owner");
 
         _store[assetId][recipient] += amount;
 
         emit TransferIn(assetId, recipient, amount);
     }
 
-    // Transfers a token from another chain to this chain. This token was created within this chain
-    // and hence we do not need a chain id in the function call to identify the token.
+    // Unlocks tokens previously stored in gateway contract.
     function transferInAssetOfThisChain(
         address assetAddr,
         address recipient,
         uint256 amount
     ) public {
-        require(msg.sender == _owner);
-        require(_assetBalance[assetAddr] >= amount);
+        require(msg.sender == _owner, "Must be owner");
+        (bool successB, bytes memory data) = assetAddr.call(
+            abi.encodeWithSignature("balanceOf(address)", address(this))
+        );
+        require(successB, "Failed to get balance");
+        require(abi.decode(data, (uint256)) >= amount, "Not enough tokens");
 
         (bool success, ) = assetAddr.call(
             abi.encodeWithSignature(
-                "transferFrom(address,address,uint256)",
-                address(this),
+                "transfer(address,uint256)",
                 recipient,
                 amount
             )
         );
 
-        if (success) {
-            _assetBalance[assetAddr] -= amount;
-        }
-
+        require(success, "Failed to transfer");
         emit TransferInAssetOfThisChain(assetAddr, recipient, amount, success);
     }
 
     // Adds a new chain that we can support.
     function addAllowedChain(string memory newChain) public {
-        require(msg.sender == _owner);
+        require(msg.sender == _owner, "Must be owner");
 
         _allowedChain[newChain] = true;
     }
@@ -101,8 +98,11 @@ contract TokenGateway {
         address recipient,
         uint256 amount
     ) public {
-        require(amount > 0);
-        require(_store[assetId][msg.sender] >= amount);
+        require(amount > 0, "Amount must be greater than 0");
+        require(
+            _store[assetId][msg.sender] >= amount,
+            "Balance less than amount being transferred"
+        );
 
         _store[assetId][msg.sender] -= amount;
         _store[assetId][recipient] += amount;
@@ -117,16 +117,16 @@ contract TokenGateway {
         string memory recipient,
         uint256 amount
     ) public {
-        require(amount > 0);
-        require(_store[assetId][msg.sender] >= amount);
-        require(_allowedChain[toChain]);
+        require(amount > 0, "Amount must be greater than 0");
+        require(_store[assetId][msg.sender] >= amount, "Not enough tokens");
+        require(_allowedChain[toChain], "Chain not allowed");
 
         _store[assetId][msg.sender] -= amount;
 
         emit TransferOut(assetId, msg.sender, toChain, recipient, amount);
     }
 
-    // Transfers a token from one of the existing ERC20/ERC721 contract address to outside network.
+    // Transfers a real token outside network.
     // The caller has to make sure that it has approve enough tokens for this contract to withdraw
     // from the token contract.
     function transferOutFromContract(
@@ -135,8 +135,8 @@ contract TokenGateway {
         string memory recipient,
         uint256 amount
     ) public {
-        require(amount > 0);
-        require(_allowedChain[toChain]);
+        require(amount > 0, "Amount must be greater than 0");
+        require(_allowedChain[toChain], "Chain not allowed");
 
         (bool success, ) = assetAddr.call(
             abi.encodeWithSignature(
@@ -146,11 +146,7 @@ contract TokenGateway {
                 amount
             )
         );
-
-        if (success) {
-            _assetBalance[assetAddr] += amount;
-        }
-
+        require(success, "Failed to transfer");
         emit TransferOutFromContract(
             assetAddr,
             toChain,
@@ -161,7 +157,7 @@ contract TokenGateway {
     }
 
     function changeOwner(address newOwner) public {
-        require(msg.sender == _owner);
+        require(msg.sender == _owner, "Must be owner");
 
         _owner = newOwner;
     }
