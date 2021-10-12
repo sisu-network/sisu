@@ -19,7 +19,7 @@ are enough validator supporting the new chain, send a message to TSS engine to d
 
 type BlockSymbolPair struct {
 	blockHeight int64
-	chainSymbol string
+	chain       string
 }
 
 func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
@@ -100,10 +100,10 @@ func (p *Processor) CheckKeyGenProposal(msg *types.KeygenProposal) error {
 
 func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, error) {
 	// Send a signal to Dheart to start keygen process.
-	utils.LogInfo("Sending keygen request to Dheart. Chain =", msg.ChainSymbol)
+	utils.LogInfo("Sending keygen request to Dheart. Chain =", msg.Chain)
 	pubKeys := p.partyManager.GetActivePartyPubkeys()
-	keygenId := GetKeygenId(msg.ChainSymbol, p.currentHeight, pubKeys)
-	err := p.dheartClient.KeyGen(keygenId, msg.ChainSymbol, pubKeys)
+	keygenId := GetKeygenId(msg.Chain, p.currentHeight, pubKeys)
+	err := p.dheartClient.KeyGen(keygenId, msg.Chain, pubKeys)
 	if err != nil {
 		utils.LogError(err)
 		return nil, err
@@ -132,19 +132,19 @@ func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult
 		}
 
 		// TODO: Add validators here.
-		chainsInfo.Chains[msg.ChainSymbol] = &types.ChainInfo{
-			Symbol: msg.ChainSymbol,
+		chainsInfo.Chains[msg.Chain] = &types.ChainInfo{
+			Symbol: msg.Chain,
 		}
 
 		p.keeper.SetChainsInfo(ctx, chainsInfo)
 
 		// Save the pubkey to the keeper.
-		p.keeper.SavePubKey(ctx, msg.ChainSymbol, msg.PubKeyBytes)
+		p.keeper.SavePubKey(ctx, msg.Chain, msg.PubKeyBytes)
 
 		// If this is a pubkey address of a ETH chain, save it to the store because we want to watch
 		// transaction that funds the address (we will deploy contracts later).
-		if utils.IsETHBasedChain(msg.ChainSymbol) {
-			p.txOutputProducer.AddKeyAddress(ctx, msg.ChainSymbol, msg.Address)
+		if utils.IsETHBasedChain(msg.Chain) {
+			p.txOutputProducer.AddKeyAddress(ctx, msg.Chain, msg.Address)
 		}
 
 		// Check and see if we need to deploy some contracts. If we do, push them into the contract
@@ -169,11 +169,11 @@ func (p *Processor) checkContractDeployment(ctx sdk.Context, msg *types.KeygenRe
 		hash := utils.KeccakHash32(abi)
 
 		// Check if this contract has been deployed or being deployed.
-		if p.keeper.IsContractDeployingOrDeployed(ctx, msg.ChainSymbol, hash) {
+		if p.keeper.IsContractDeployingOrDeployed(ctx, msg.Chain, hash) {
 			utils.LogDebug("Contract has been deployed or being deployed. Hash = ", hash)
 			continue
 		}
 
-		p.keeper.EnqueueContract(ctx, msg.ChainSymbol, hash, abi)
+		p.keeper.EnqueueContract(ctx, msg.Chain, hash, abi)
 	}
 }
