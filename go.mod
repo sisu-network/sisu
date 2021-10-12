@@ -3,7 +3,6 @@ module github.com/sisu-network/sisu
 go 1.15
 
 require (
-	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/BurntSushi/toml v0.4.1
 	github.com/btcsuite/btcd v0.22.0-beta
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
@@ -15,11 +14,11 @@ require (
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
 	github.com/joho/godotenv v1.3.0
 	github.com/morikuni/aec v1.0.0 // indirect
-	github.com/sisu-network/cosmos-sdk v0.42.1-fork001
+	github.com/sisu-network/cosmos-sdk v0.42.1-fork004
 	github.com/sisu-network/dcore v0.1.9-alpha3
 	github.com/sisu-network/deyes v0.1.0-alpha4
-	github.com/sisu-network/dheart v0.1.3
-	github.com/sisu-network/tendermint v0.34.8-fork01
+	github.com/sisu-network/dheart v0.1.3-alpha1
+	github.com/sisu-network/tendermint v0.34.8-fork005
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
