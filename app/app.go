@@ -11,6 +11,7 @@ import (
 	abci "github.com/sisu-network/tendermint/abci/types"
 	"github.com/sisu-network/tendermint/libs/log"
 	tmos "github.com/sisu-network/tendermint/libs/os"
+	"github.com/sisu-network/tendermint/node"
 	dbm "github.com/tendermint/tm-db"
 
 	ethRpc "github.com/ethereum/go-ethereum/rpc"
@@ -687,6 +688,8 @@ func (app *App) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.Respo
 
 // This is internal server for Sisu to communicate with other components (e.g. TSS or watchers).
 // These apis are not exposed to public.
+// TODO: Make this separate from tssProcessor to avoid other components to invoke restricted functions
+// of the processor.
 func (app *App) setupApiServer(c config.Config) {
 	handler := ethRpc.NewServer()
 	handler.RegisterName("tss", tss.NewApi(app.tssProcessor, &app.tssKeeper))
@@ -696,4 +699,13 @@ func (app *App) setupApiServer(c config.Config) {
 
 	utils.LogInfo("Starting Internal API server")
 	go s.Run()
+}
+
+func (app *App) GetTendermintOptions() []node.Option {
+	options := make([]node.Option, 0)
+	options = append(options, func(n *node.Node) {
+		n.SetPreAddTxFunc(app.tssProcessor.PreAddTxToMempoolFunc)
+	})
+
+	return options
 }
