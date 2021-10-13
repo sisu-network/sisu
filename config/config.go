@@ -19,6 +19,15 @@ type SisuConfig struct {
 	ChainId        string `toml:"chain-id"`
 	ApiHost        string `toml:"api-host"`
 	ApiPort        uint16 `toml:"api-port"`
+	Sql            SqlConfig
+}
+
+type SqlConfig struct {
+	Host     string `toml:"host"`
+	Port     int    `toml:"port"`
+	Username string `toml:"username"`
+	Password string `toml:"password"`
+	Schema   string `toml:"schema"`
 }
 
 type ETHConfig struct {

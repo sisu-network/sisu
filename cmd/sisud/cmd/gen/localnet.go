@@ -77,6 +77,11 @@ Example:
 				algoStr:        algo,
 				numValidators:  numValidators,
 				enableTss:      enableTss,
+				sqlHost:        "0.0.0.0",
+				sqlPort:        3306,
+				sqlUsername:    "root",
+				sqlPassword:    "password",
+				sqlSchema:      "sisu",
 			}
 
 			return InitNetwork(settings)
