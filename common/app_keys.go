@@ -32,9 +32,9 @@ func NewAppKeys(cfg config.SisuConfig) *AppKeys {
 func (ak *AppKeys) Init() {
 	var err error
 	utils.LogInfo("ak.cfg.KeyringBackend =", ak.cfg.KeyringBackend)
-	utils.LogInfo("ak.cfg.Home =", ak.cfg.Home)
+	utils.LogInfo("ak.cfg.Home =", ak.cfg.Dir)
 
-	ak.kr, err = keyring.New(sdk.KeyringServiceName(), ak.cfg.KeyringBackend, ak.cfg.Home, os.Stdin)
+	ak.kr, err = keyring.New(sdk.KeyringServiceName(), ak.cfg.KeyringBackend, ak.cfg.Dir, os.Stdin)
 	if err != nil {
 		panic(err)
 	}

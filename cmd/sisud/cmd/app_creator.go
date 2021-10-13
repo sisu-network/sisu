@@ -14,7 +14,6 @@ import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/app"
 	"github.com/sisu-network/sisu/app/params"
-	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/tendermint/libs/log"
 	"github.com/spf13/cast"
 	dbm "github.com/tendermint/tm-db"
@@ -22,27 +21,10 @@ import (
 
 type appCreator struct {
 	encCfg params.EncodingConfig
-	cfg    config.Config
 }
 
 type AppOptionWrapper struct {
 	appOpts servertypes.AppOptions
-	cfg     config.Config
-}
-
-func (wrapper *AppOptionWrapper) Get(key string) interface{} {
-	switch key {
-	case config.APP_CONFIG:
-		return wrapper.cfg
-	case config.SISU_CONFIG:
-		return wrapper.cfg.GetSisuConfig()
-	case config.ETH_CONFIG:
-		return wrapper.cfg.GetETHConfig()
-	case config.TSS_CONFIG:
-		return wrapper.cfg.GetTssConfig()
-	default:
-		return wrapper.appOpts.Get(key)
-	}
 }
 
 // newApp is an AppCreator
@@ -79,7 +61,7 @@ func (a appCreator) newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, a
 		cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod)),
 		a.encCfg,
 		// this line is used by starport scaffolding # stargate/root/appArgument
-		a.getAppOptionsWrapper(appOpts),
+		appOpts,
 		baseapp.SetPruning(pruningOpts),
 		baseapp.SetMinGasPrices(cast.ToString(appOpts.Get(server.FlagMinGasPrices))),
 		baseapp.SetMinRetainBlocks(cast.ToUint64(appOpts.Get(server.FlagMinRetainBlocks))),
@@ -146,6 +128,5 @@ func (a appCreator) appExport(
 func (a appCreator) getAppOptionsWrapper(appOpts servertypes.AppOptions) *AppOptionWrapper {
 	return &AppOptionWrapper{
 		appOpts: appOpts,
-		cfg:     a.cfg,
 	}
 }

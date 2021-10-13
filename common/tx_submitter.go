@@ -262,7 +262,7 @@ func (t *TxSubmitter) buildClientCtx(accountName string) (client.Context, error)
 		panic(err)
 	}
 
-	chainId := t.cfg.GetSisuConfig().ChainId
+	chainId := t.cfg.Sisu.ChainId
 	clientCtx := NewClientCtx(t.appKeys.GetKeyring(), client, &bytes.Buffer{}, t.sisuHome, chainId)
 
 	return clientCtx.

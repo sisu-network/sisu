@@ -22,37 +22,6 @@ var (
 	localEthChainId = big.NewInt(1)
 )
 
-type LocalConfig struct {
-	sisuConfig *SisuConfig
-	ethConfig  *ETHConfig
-	tssConfig  *TssConfig
-}
-
-func (c *LocalConfig) GetSisuConfig() *SisuConfig {
-	if c.sisuConfig == nil {
-		c.sisuConfig = localSisuConfig()
-	}
-	return c.sisuConfig
-}
-
-func (c *LocalConfig) GetETHConfig() *ETHConfig {
-	sisuConfig := c.GetSisuConfig()
-
-	if c.ethConfig == nil {
-		c.ethConfig = localETHConfig(sisuConfig.ConfigDir)
-	}
-	return c.ethConfig
-}
-
-func (c *LocalConfig) GetTssConfig() *TssConfig {
-	sisuConfig := c.GetSisuConfig()
-
-	if c.tssConfig == nil {
-		c.tssConfig = localTssConfig(sisuConfig.ConfigDir)
-	}
-	return c.tssConfig
-}
-
 func localSisuConfig() *SisuConfig {
 	appDir := os.Getenv("APP_DIR")
 	if appDir == "" {
@@ -60,13 +29,11 @@ func localSisuConfig() *SisuConfig {
 	}
 
 	sisuConfig := &SisuConfig{
-		SignerName:      "owner",
-		ConfigDir:       appDir,
-		Home:            appDir + "/main",
-		KeyringBackend:  keyring.BackendTest,
-		ChainId:         "sisu-dev",
-		InternalApiHost: "0.0.0.0",
-		InternalApiPort: 25456,
+		Dir:            appDir + "/main",
+		KeyringBackend: keyring.BackendTest,
+		ChainId:        "sisu-dev",
+		ApiHost:        "0.0.0.0",
+		ApiPort:        25456,
 	}
 
 	return sisuConfig
@@ -76,13 +43,11 @@ func localETHConfig(baseDir string) *ETHConfig {
 	home := baseDir + "/eth"
 
 	return &ETHConfig{
-		Home:       home,
-		Eth:        getLocalEthConfig(),
-		Host:       "0.0.0.0",
-		Port:       1234,
-		UseInMemDb: false,
-		DbPath:     home + "leveldb",
-		Node:       getLocalEthNodeConfig(home),
+		Eth:    getLocalEthConfig(),
+		Host:   "0.0.0.0",
+		Port:   1234,
+		DbPath: home + "leveldb",
+		Node:   getLocalEthNodeConfig(home),
 		// ImportAccount: true,
 		ImportAccount: false,
 	}
@@ -177,11 +142,6 @@ func localTssConfig(baseDir string) *TssConfig {
 	if err != nil {
 		panic(err)
 	}
-
-	// 4. Override some default values
-	config.PoolSizeLowerBound = 1
-	config.PoolSizeUpperBound = 4
-	config.BlockProposalLength = 2
 
 	return config
 }

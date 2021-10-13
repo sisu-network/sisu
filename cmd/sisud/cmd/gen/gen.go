@@ -20,6 +20,8 @@ import (
 	"github.com/sisu-network/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/sisu-network/cosmos-sdk/x/genutil/types"
 	stakingtypes "github.com/sisu-network/cosmos-sdk/x/staking/types"
+	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/spf13/cobra"
 
 	tmconfig "github.com/sisu-network/tendermint/config"
@@ -204,9 +206,7 @@ func InitNetwork(settings *Setting) error {
 
 		srvconfig.WriteConfigFile(filepath.Join(mainAppDir, "config/app.toml"), simappConfig)
 
-		if settings.enableTss {
-			generategTssToml(settings, nodeDir)
-		}
+		generateSisuToml(settings, nodeDir)
 	}
 
 	if err := initGenFiles(clientCtx, mbm, chainID, genAccounts, genBalances, genFiles, numValidators); err != nil {
@@ -319,30 +319,57 @@ func collectGenFiles(
 	return nil
 }
 
-// Generate TSS Toml file. This should only work in local dev mode. In production mode, we should
-// create the tss.toml file and put in the tss folder of the app.
-func generategTssToml(settings *Setting, nodeDir string) {
-	content := `enable = true
-dheart_host = "localhost"
-dheart_port = 5678
-[supported_chains]
-[supported_chains.eth]
-	symbol = "eth"
-	id = 1
-	deyes_url = "http://0.0.0.0:31001"
-[supported_chains.sisu-eth]
-	symbol = "sisu-eth"
-	id = 36767
-	deyes_url = "http://0.0.0.0:31001"
-`
+func generateSisuToml(settings *Setting, nodeDir string) {
+	utils.LogInfo("Generating sisu.toml")
 
-	if err := os.MkdirAll(filepath.Join(nodeDir, "tss"), nodeDirPerm); err != nil {
+	appDir := filepath.Join(nodeDir, "main")
+	configDir := filepath.Join(appDir, "config")
+
+	utils.LogInfo("sisu configDir = ", configDir)
+
+	if err := os.MkdirAll(configDir, nodeDirPerm); err != nil {
 		_ = os.RemoveAll(settings.outputDir)
 		panic(err)
 	}
 
-	dir := filepath.Join(nodeDir, "tss")
-	writeFile("tss.toml", dir, []byte(content))
+	// Create tss folder
+	if err := os.MkdirAll(filepath.Join(nodeDir, "tss"), nodeDirPerm); err != nil {
+		panic(err)
+	}
+
+	cfg := config.Config{
+		Mode: "dev",
+		Sisu: config.SisuConfig{
+			ChainId:        settings.chainID,
+			KeyringBackend: settings.keyringBackend,
+			ApiHost:        "0.0.0.0",
+			ApiPort:        25456,
+		},
+		Eth: config.ETHConfig{
+			Host:          "0.0.0.0",
+			Port:          1234,
+			ImportAccount: true,
+		},
+		Tss: config.TssConfig{
+			Enable:     settings.enableTss,
+			DheartHost: "0.0.0.0",
+			DheartPort: 5678,
+			SupportedChains: map[string]config.TssChainConfig{
+				"eth": {
+					Symbol:   "eth",
+					Id:       1,
+					DeyesUrl: "http://0.0.0.0:31001",
+				},
+				"sisu-eth": {
+					Symbol:   "sisu-eth",
+					Id:       36767,
+					DeyesUrl: "http://0.0.0.0:31001",
+				},
+			},
+		},
+	}
+
+	config.WriteConfigFile(filepath.Join(configDir, "sisu.toml"), &cfg)
 }
 
 func writeFile(name string, dir string, contents []byte) error {
