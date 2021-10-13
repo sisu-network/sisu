@@ -19,6 +19,13 @@ mode = "{{ .Mode }}"
 keyring-backend = "{{ .Sisu.KeyringBackend }}"
 api-host = "{{ .Sisu.ApiHost }}"
 api-port = {{ .Sisu.ApiPort }}
+	[sisu.sql]
+		host = "{{ .Sisu.Sql.Host }}"
+		port = {{ .Sisu.Sql.Port }}
+		username = "{{ .Sisu.Sql.Username }}"
+		password = "{{ .Sisu.Sql.Password }}"
+		schema = "{{ .Sisu.Sql.Schema }}"
+
 
 ###############################################################################
 ###                       ETH Engine Connfiguration                         ###
@@ -35,8 +42,8 @@ import-account = {{ .Eth.ImportAccount }}
 enable = {{ .Tss.Enable }}
 dheart-host = "{{ .Tss.DheartHost }}"
 dheart-port = {{ .Tss.DheartPort }}
-[supported-chains] {{ range $k, $v := .Tss.SupportedChains }}
-	[supported-chains.{{ $v.Symbol }}]
+[tss.supported-chains] {{ range $k, $v := .Tss.SupportedChains }}
+	[tss.supported-chains.{{ $v.Symbol }}]
 		symbol = "{{ $v.Symbol }}"
 		id = {{ $v.Id }}
 		deyes-url = "{{ $v.DeyesUrl }}"

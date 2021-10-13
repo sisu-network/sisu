@@ -50,6 +50,11 @@ type Setting struct {
 	algoStr        string
 	numValidators  int
 	enableTss      bool
+	sqlHost        string
+	sqlPort        int
+	sqlUsername    string
+	sqlPassword    string
+	sqlSchema      string
 }
 
 // Initialize the localnet
@@ -344,6 +349,13 @@ func generateSisuToml(settings *Setting, nodeDir string) {
 			KeyringBackend: settings.keyringBackend,
 			ApiHost:        "0.0.0.0",
 			ApiPort:        25456,
+			Sql: config.SqlConfig{
+				Host:     settings.sqlHost,
+				Port:     settings.sqlPort,
+				Username: settings.sqlUsername,
+				Password: settings.sqlPassword,
+				Schema:   settings.sqlSchema,
+			},
 		},
 		Eth: config.ETHConfig{
 			Host:          "0.0.0.0",
