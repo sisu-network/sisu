@@ -57,9 +57,9 @@ func NewGlobalData(cfg config.Config) GlobalData {
 
 // Initialize common variables that could be used throughout this app.
 func (a *GlobalDataDefault) Init() {
-	sisuConfig := a.cfg.GetSisuConfig()
+	sisuConfig := a.cfg.Sisu
 
-	defaultConfigTomlFile := sisuConfig.Home + "/config/config.toml"
+	defaultConfigTomlFile := sisuConfig.Dir + "/config/config.toml"
 	data, err := ioutil.ReadFile(defaultConfigTomlFile)
 	if err != nil {
 		panic(err)
@@ -75,8 +75,8 @@ func (a *GlobalDataDefault) Init() {
 	}
 
 	privValidator := pvm.LoadFilePV(
-		sisuConfig.Home+"/"+configToml.PrivValidatorKeyFile,
-		sisuConfig.Home+"/"+configToml.PrivValidatorStateFile,
+		sisuConfig.Dir+"/"+configToml.PrivValidatorKeyFile,
+		sisuConfig.Dir+"/"+configToml.PrivValidatorStateFile,
 	)
 	// Get the tendermint address of this node.
 	a.myTmtConsAddr = (sdk.ConsAddress)(privValidator.GetAddress())

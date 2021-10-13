@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/sisu-network/sisu/app/params"
-	"github.com/sisu-network/sisu/config"
 
 	tmcli "github.com/sisu-network/tendermint/libs/cli"
 	"github.com/spf13/cobra"
@@ -88,7 +87,6 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 
 	a := appCreator{
 		encCfg: encodingConfig,
-		cfg:    GetConfigs(),
 	}
 	server.AddCommands(rootCmd, app.MainAppHome, a.newApp, a.appExport, addModuleInitFlags)
 
@@ -175,19 +173,6 @@ func overwriteFlagDefaults(c *cobra.Command, defaults map[string]string) {
 	for _, c := range c.Commands() {
 		overwriteFlagDefaults(c, defaults)
 	}
-}
-
-func GetConfigs() config.Config {
-	var c config.Config
-
-	mode := os.Getenv("MODE")
-	if mode == "testnet" {
-		c = config.NewTestnetConfig()
-	} else {
-		c = config.NewLocalConfig()
-	}
-
-	return c
 }
 
 // change cosmos prefix to terra

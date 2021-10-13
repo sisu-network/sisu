@@ -25,7 +25,7 @@ const (
 )
 
 func NewAnteHandler(
-	tssConfig *config.TssConfig,
+	tssConfig config.TssConfig,
 	ak AccountKeeper,
 	bankKeeper BankKeeper,
 	evmKeeper evmKeeper.Keeper,

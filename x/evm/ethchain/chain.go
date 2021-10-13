@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -135,15 +136,8 @@ func getChainDb(chainConfig *config.ETHConfig) (ethdb.Database, error) {
 	var db ethdb.Database
 	var err error
 
-	if chainConfig.UseInMemDb {
-		utils.LogInfo("Use In memory for ETH")
-		db = rawdb.NewMemoryDatabase()
-	} else {
-		utils.LogInfo("Use real DB for ETH")
-		// Use level DB.
-		// TODO: Create new configs.
-		db, err = rawdb.NewLevelDBDatabase(chainConfig.DbPath, 1024, 500, "metrics_", false)
-	}
+	dbPath := filepath.Join(chainConfig.Dir, "leveldb")
+	db, err = rawdb.NewLevelDBDatabase(dbPath, 1024, 500, "metrics_", false)
 
 	return db, err
 }

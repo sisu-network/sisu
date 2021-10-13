@@ -53,7 +53,7 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 			signer.String(),
 			chain,
 			utils.GenerateRandomString(16),
-			blockHeight+int64(p.config.BlockProposalLength),
+			blockHeight+int64(2), // TODO: Make this as a config or remove this
 		)
 		utils.LogDebug("Submitting proposal message for chain", chain)
 		go func() {

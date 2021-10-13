@@ -35,21 +35,21 @@ func (c *TestnetConfig) GetSisuConfig() *SisuConfig {
 }
 
 func (c *TestnetConfig) GetETHConfig() *ETHConfig {
-	sisuConfig := c.GetSisuConfig()
+	// sisuConfig := c.GetSisuConfig()
 
-	if c.ethConfig == nil {
-		c.ethConfig = testnetETHConfig(sisuConfig.ConfigDir)
-	}
+	// if c.ethConfig == nil {
+	// 	c.ethConfig = testnetETHConfig(sisuConfig.ConfigDir)
+	// }
 
 	return c.ethConfig
 }
 
 func (c *TestnetConfig) GetTssConfig() *TssConfig {
-	sisuConfig := c.GetSisuConfig()
+	// sisuConfig := c.GetSisuConfig()
 
-	if c.tssConfig == nil {
-		c.tssConfig = testnetTssConfig(sisuConfig.ConfigDir)
-	}
+	// if c.tssConfig == nil {
+	// 	c.tssConfig = testnetTssConfig(sisuConfig.ConfigDir)
+	// }
 
 	return c.tssConfig
 }
@@ -58,13 +58,11 @@ func testnetSisuConfig() *SisuConfig {
 	appDir := os.Getenv("HOME") + "/.sisu"
 
 	sisuConfig := &SisuConfig{
-		SignerName:      "owner",
-		ConfigDir:       appDir,
-		Home:            appDir + "/main",
-		ChainId:         "talon-1",
-		KeyringBackend:  keyring.BackendFile,
-		InternalApiHost: "0.0.0.0",
-		InternalApiPort: 25456,
+		Dir:            appDir + "/main",
+		ChainId:        "talon-1",
+		KeyringBackend: keyring.BackendFile,
+		ApiHost:        "0.0.0.0",
+		ApiPort:        25456,
 	}
 
 	return sisuConfig
@@ -74,11 +72,9 @@ func testnetETHConfig(baseDir string) *ETHConfig {
 	home := baseDir + "/eth"
 
 	return &ETHConfig{
-		Home:          home,
 		Eth:           testTestnetEthConfig(),
 		Host:          "0.0.0.0",
 		Port:          1234,
-		UseInMemDb:    false,
 		DbPath:        home + "leveldb",
 		Node:          getTestnetEthNodeConfig(home),
 		ImportAccount: false,

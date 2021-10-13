@@ -5,46 +5,36 @@ import (
 	"github.com/sisu-network/dcore/node"
 )
 
-const (
-	APP_CONFIG  = "app_config"
-	SISU_CONFIG = "sisu_config"
-	ETH_CONFIG  = "eth_config"
-	TSS_CONFIG  = "tss_config"
-)
+type Config struct {
+	Mode string
 
-type Config interface {
-	GetSisuConfig() *SisuConfig
-	GetETHConfig() *ETHConfig
-	GetTssConfig() *TssConfig
+	Sisu SisuConfig
+	Eth  ETHConfig
+	Tss  TssConfig
 }
 
 type SisuConfig struct {
-	ConfigDir string
-
-	Home            string
-	SignerName      string
-	EnableTss       bool
-	KeyringBackend  string
-	ChainId         string
-	InternalApiHost string
-	InternalApiPort uint16
+	Dir            string
+	KeyringBackend string `toml:"keyring-backend"`
+	ChainId        string `toml:"chain-id"`
+	ApiHost        string `toml:"api-host"`
+	ApiPort        uint16 `toml:"api-port"`
 }
 
 type ETHConfig struct {
-	Home          string
+	Dir           string
 	Eth           *eth.Config
-	Host          string
-	Port          int
-	UseInMemDb    bool
+	Host          string `toml:"host"`
+	Port          int    `toml:"port"`
 	DbPath        string
 	Node          *node.Config
-	ImportAccount bool
+	ImportAccount bool `toml:"import-account"`
 }
 
 type TssChainConfig struct {
 	Symbol   string `toml:"symbol"`
 	Id       int    `toml:"id"`
-	DeyesUrl string `toml:"deyes_url"`
+	DeyesUrl string `toml:"deyes-url"`
 }
 
 // Example of supported chains in the toml config file.
@@ -55,22 +45,22 @@ type TssChainConfig struct {
 // 	 deyes_url = "http://localhost:31001"
 type TssConfig struct {
 	Enable          bool                      `toml:"enable"`
-	DheartHost      string                    `toml:"dheart_host"`
-	DheartPort      int                       `toml:"dheart_port"`
-	SupportedChains map[string]TssChainConfig `toml:"supported_chains"`
+	DheartHost      string                    `toml:"dheart-host"`
+	DheartPort      int                       `toml:"dheart-port"`
+	SupportedChains map[string]TssChainConfig `toml:"supported-chains"`
 
 	Dir string
-
-	// Keygen
-	PoolSizeLowerBound  int
-	PoolSizeUpperBound  int
-	BlockProposalLength int
 }
 
-func NewLocalConfig() Config {
-	return &LocalConfig{}
+// Overrides some config values since we don't want users to changes these values. They should be
+// fixed and consistent throughout all the nodes.
+func OverrideConfigValues(config *Config) {
+	if config.Mode == "dev" {
+		overrideDevConfig(config)
+	}
 }
 
-func NewTestnetConfig() Config {
-	return &TestnetConfig{}
+func overrideDevConfig(config *Config) {
+	config.Eth.Eth = getLocalEthConfig()
+	config.Eth.Node = getLocalEthNodeConfig(config.Eth.Dir)
 }

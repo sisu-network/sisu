@@ -2,7 +2,9 @@ package app
 
 import (
 	"io"
+	"os"
 
+	"github.com/BurntSushi/toml"
 	"github.com/sisu-network/cosmos-sdk/client"
 	"github.com/sisu-network/cosmos-sdk/codec/types"
 	"github.com/sisu-network/sisu/utils"
@@ -269,14 +271,16 @@ func New(
 	app.setupDefaultKeepers(homePath, bApp, skipUpgradeHeights)
 	////////////// Sisu related keeper //////////////
 
-	interf := appOpts.Get(config.APP_CONFIG)
-	cfg, ok := interf.(config.Config)
+	cfg, err := app.ReadConfig()
+	if err != nil {
+		panic(err)
+	}
 
 	app.sisuKeeper = *sisukeeper.NewKeeper(
 		appCodec, keys[sisutypes.StoreKey], keys[sisutypes.MemStoreKey],
 	)
 
-	app.appKeys = common.NewAppKeys(*cfg.GetSisuConfig())
+	app.appKeys = common.NewAppKeys(cfg.Sisu)
 	app.appKeys.Init()
 
 	app.globalData = common.NewGlobalData(cfg)
@@ -286,20 +290,11 @@ func New(
 	go app.txSubmitter.Start()
 
 	// EVM keeper
-	interf = appOpts.Get(config.ETH_CONFIG)
-	ethConfig, ok := interf.(*config.ETHConfig)
-	if !ok {
-		panic("Cannot find ETH configuration")
-	}
-	app.evmKeeper = *evmKeeper.NewKeeper(appCodec, app.txSubmitter, ethConfig)
+	app.evmKeeper = *evmKeeper.NewKeeper(appCodec, app.txSubmitter, &cfg.Eth)
 	app.evmKeeper.Initialize()
 
 	// TSS keeper
-	interf = appOpts.Get(config.TSS_CONFIG)
-	tssConfig, ok := interf.(*config.TssConfig)
-	if !ok {
-		panic("Cannot find TSS configuration")
-	}
+	tssConfig := cfg.Tss
 	utils.LogInfo("tssConfig = ", tssConfig)
 
 	app.tssKeeper = *tssKeeper.NewKeeper(keys[tsstypes.StoreKey])
@@ -347,7 +342,7 @@ func New(
 		evm.NewAppModule(appCodec, app.evmKeeper),
 	}
 
-	tssProcessor := tss.NewProcessor(app.tssKeeper, *tssConfig, app.appKeys, app.txSubmitter, app.globalData)
+	tssProcessor := tss.NewProcessor(app.tssKeeper, tssConfig, app.appKeys, app.txSubmitter, app.globalData)
 	if tssConfig.Enable {
 		utils.LogInfo("TSS is enabled")
 		tssProcessor.Init()
@@ -539,6 +534,29 @@ func (app *App) setupDefaultKeepers(homePath string, bApp *baseapp.BaseApp, skip
 	app.EvidenceKeeper = *evidenceKeeper
 }
 
+func (app *App) ReadConfig() (config.Config, error) {
+	cfg := config.Config{}
+
+	appDir := os.Getenv("APP_DIR")
+	if appDir == "" {
+		appDir = os.Getenv("HOME") + "/.sisu"
+	}
+
+	cfg.Sisu.Dir = appDir + "/main"
+	cfg.Eth.Dir = appDir + "/eth"
+	cfg.Tss.Dir = appDir + "/tss"
+
+	configFile := cfg.Sisu.Dir + "/config/sisu.toml"
+	_, err := toml.DecodeFile(configFile, &cfg)
+	if err != nil {
+		return cfg, err
+	}
+
+	config.OverrideConfigValues(&cfg)
+
+	return cfg, nil
+}
+
 // Name returns the name of the App
 func (app *App) Name() string { return app.BaseApp.Name() }
 
@@ -694,8 +712,8 @@ func (app *App) setupApiServer(c config.Config) {
 	handler := ethRpc.NewServer()
 	handler.RegisterName("tss", tss.NewApi(app.tssProcessor, &app.tssKeeper))
 
-	appConfig := c.GetSisuConfig()
-	s := server.NewServer(handler, appConfig.InternalApiHost, appConfig.InternalApiPort)
+	appConfig := c.Sisu
+	s := server.NewServer(handler, appConfig.ApiHost, appConfig.ApiPort)
 
 	utils.LogInfo("Starting Internal API server")
 	go s.Run()
