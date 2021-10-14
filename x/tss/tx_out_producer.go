@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	ecommon "github.com/ethereum/go-ethereum/common"
+
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
@@ -19,12 +21,12 @@ import (
 )
 
 var (
-	SupportedContracts = map[string]string{
-		"erc20": erc20gateway.Erc20GatewayBin,
-	}
-
-	HashedContracts = map[string]string{
-		"erc20": utils.KeccakHash32(erc20gateway.Erc20GatewayBin),
+	SupportedContracts = map[string]struct{ Abi, Bin, AbiHash string }{
+		"erc20": {
+			Abi:     erc20gateway.Erc20GatewayBin,
+			Bin:     erc20gateway.Erc20GatewayBin,
+			AbiHash: utils.KeccakHash32(erc20gateway.Erc20GatewayBin),
+		},
 	}
 )
 
@@ -109,57 +111,52 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 	outMsgs := make([]*tssTypes.TxOut, 0)
 	outEntities := make([]*tssTypes.TxOutEntity, 0)
-	keyAddresses := p.getEthKeyAddrs(ctx)[tx.Chain]
-	contracts := p.db.GetPendingDeployContracts(tx.Chain)
 
-	utils.LogVerbose("len(contracts) = ", len(contracts))
+	// 1. Check if this is a transaction sent to our key address. If this is true, it's likely a tx
+	// that funds our account.
+	if ethTx.To() != nil && p.db.ChainKeyExisted(tx.Chain, ethTx.To().String()) {
+		contracts := p.db.GetPendingDeployContracts(tx.Chain)
+		utils.LogVerbose("len(contracts) = ", len(contracts))
 
-	// Process different kind of eth transaction.
-	// 1. Check if the To address of our public key. This is likely a tx to provide ETH for our
-	// account to deploy contracts. Check if we have some pending contracts and deploy if needed.
-	if len(contracts) > 0 {
-		for keyAddress := range keyAddresses {
-			if ethTx.To() != nil && ethTx.To().String() == keyAddress {
-				// TODO: Check balance required to deploy all these contracts.
-				// Get all contract in the pending queue.
+		if len(contracts) > 0 {
+			// TODO: Check balance required to deploy all these contracts.
 
-				if len(contracts) > 0 {
-					// Get the list of deploy transactions. Those txs need to posted and verified (by validators)
-					// to the Sisu chain
-					outEthTxs := p.checkEthDeployContract(ctx, height, tx.Chain, contracts)
+			// Get the list of deploy transactions. Those txs need to posted and verified (by validators)
+			// to the Sisu chain.
+			outEthTxs := p.checkEthDeployContract(ctx, height, tx.Chain, contracts)
 
-					for i, outTx := range outEthTxs {
-						bz, err := outTx.MarshalBinary()
-						if err != nil {
-							utils.LogError("Cannot marshall binary")
-							continue
-						}
-
-						outMsg := tsstypes.NewMsgTxOut(
-							p.appKeys.GetSignerAddress().String(),
-							tx.BlockHeight,
-							tx.Chain,
-							tx.TxHash,
-							tx.Chain,
-							bz,
-						)
-
-						outMsgs = append(outMsgs, outMsg)
-
-						outEntity := tssTypes.TxOutToEntity(outMsg)
-						outEntity.ContractHash = contracts[i].Hash
-						outEntities = append(outEntities, outEntity)
-					}
+			for i, outTx := range outEthTxs {
+				bz, err := outTx.MarshalBinary()
+				if err != nil {
+					utils.LogError("Cannot marshall binary")
+					continue
 				}
-			}
-		}
 
-		if len(outMsgs) > 0 {
-			return outMsgs, outEntities, nil
+				outMsg := tsstypes.NewMsgTxOut(
+					p.appKeys.GetSignerAddress().String(),
+					tx.BlockHeight,
+					tx.Chain,
+					tx.TxHash,
+					tx.Chain,
+					bz,
+				)
+
+				outMsgs = append(outMsgs, outMsg)
+
+				outEntity := tssTypes.TxOutToEntity(outMsg)
+				outEntity.ContractHash = contracts[i].Hash
+				outEntities = append(outEntities, outEntity)
+			}
+
+			if len(outMsgs) > 0 {
+				return outMsgs, outEntities, nil
+			}
 		}
 	}
 
-	// 2. TODO: Check other types of transaction
+	// 2. Check if this is a tx sent to one of our contracts.
+
+	// 3. Check other types of transaction.
 
 	return outMsgs, outEntities, nil
 }
@@ -177,14 +174,14 @@ func (p *DefaultTxOutputProducer) checkEthDeployContract(ctx sdk.Context, height
 	}
 	utils.LogVerbose("Nonce = ", nonce)
 
-	for i, _ := range contracts {
-		rawTx := p.ethDeployment.PrepareEthContractDeployment(chain, int64(nonce)+int64(i))
+	for i, contract := range contracts {
+		rawTx := p.ethDeployment.PrepareEthContractDeployment(chain, contract.ByteCode, int64(nonce)+int64(i))
 		txs = append(txs, rawTx)
 		nonce++
 	}
 
 	// Update all contract to "deploying" state.
-	p.db.UpdateContractsState(contracts, tsstypes.ContractStateDeploying)
+	p.db.UpdateContractsStatus(contracts, tsstypes.ContractStateDeploying)
 
 	return txs
 }
@@ -219,16 +216,18 @@ func (p *DefaultTxOutputProducer) getNonce(chain string) (uint64, error) {
 func (p *DefaultTxOutputProducer) SaveContractsToDeploy(chain string) {
 	if utils.IsETHBasedChain(chain) {
 		contracts := make([]*types.ContractEntity, 0, len(SupportedContracts))
-		for name, abi := range SupportedContracts {
+
+		for name, c := range SupportedContracts {
 			contract := &types.ContractEntity{
-				Chain: chain,
-				Hash:  utils.KeccakHash32(abi),
-				Name:  name,
+				Chain:    chain,
+				Hash:     c.AbiHash,
+				ByteCode: ecommon.FromHex(c.Bin),
+				Name:     name,
 			}
 
 			contracts = append(contracts, contract)
 		}
 
-		p.db.InsertConctracts(contracts)
+		p.db.InsertContracts(contracts)
 	}
 }

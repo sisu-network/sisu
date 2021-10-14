@@ -7,6 +7,8 @@ type TxOutEntity struct {
 	InChain        string
 	InHash         string
 	Outbytes       []byte
+	Status         string
+	Signature      string
 
 	ContractHash string // optional field for Eth contracts
 }

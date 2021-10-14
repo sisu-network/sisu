@@ -6,6 +6,10 @@ import (
 	"github.com/sisu-network/sisu/utils"
 )
 
+const (
+	TxOutStatusConfirmed = "confirmed"
+)
+
 var _ sdk.Msg = &TxOut{}
 
 func NewMsgTxOut(signer string, inBlockHeight int64, inChain string, inHash string, outChain string, outBytes []byte) *TxOut {

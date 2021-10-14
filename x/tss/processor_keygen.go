@@ -86,6 +86,9 @@ func (p *Processor) OnKeygenResult(result dhTypes.KeygenResult) {
 	} else {
 		utils.LogVerbose("adding watcher address", result.Address)
 		deyesClient.AddWatchAddresses(result.Chain, []string{result.Address})
+
+		// Save into database.
+		p.db.InsertChainKey(result.Chain, result.Address, result.PubKeyBytes)
 	}
 
 	// 3. Save pubkey
