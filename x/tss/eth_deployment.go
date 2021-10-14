@@ -3,9 +3,7 @@ package tss
 import (
 	"math/big"
 
-	"github.com/ethereum/go-ethereum/common"
 	eTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/sisu-network/sisu/contracts/eth/dummy"
 )
 
 type EthDeployment struct {
@@ -15,9 +13,7 @@ func NewEthDeployment() *EthDeployment {
 	return &EthDeployment{}
 }
 
-func (ed *EthDeployment) PrepareEthContractDeployment(chain string, nonceIndex int64) *eTypes.Transaction {
-	// Create Tx for dummy contract
-	byteCode := common.FromHex(dummy.DummyBin)
+func (ed *EthDeployment) PrepareEthContractDeployment(chain string, byteCode []byte, nonceIndex int64) *eTypes.Transaction {
 	var nonce uint64
 	nonce = 0
 

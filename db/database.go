@@ -17,16 +17,23 @@ type Database interface {
 	Init() error
 	Close() error
 
+	// Chain key
+	InsertChainKey(chain, address string, pubKey []byte)
+	ChainKeyExisted(chain, address string) bool
+
 	// Contracts
-	InsertConctracts(contracts []*tsstypes.ContractEntity)
+	InsertContracts(contracts []*tsstypes.ContractEntity)
 	GetPendingDeployContracts(chain string) []*tsstypes.ContractEntity
-	UpdateContractsState(contracts []*tsstypes.ContractEntity, state string)
+	UpdateContractsStatus(contracts []*tsstypes.ContractEntity, status string)
 	UpdateContractDeployTx(chain, id string, txHash string)
+	UpdateContractAddress(chain, hash, address string)
 
 	// Txout
 	InsertTxOuts(txs []*tsstypes.TxOutEntity)
-	UpdateTxOut(chain, hashWithoutSign, hashWithSig string, sig []byte)
+	GetTxOutWithHashedSig(chain string, hashWithSig string) *tsstypes.TxOutEntity
 	IsContractDeployTx(chain string, hashWithoutSig string) bool
+	UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string, sig []byte)
+	UpdateTxOutStatus(chain, hashWithoutSig, status string)
 }
 
 type SqlDatabase struct {
@@ -122,14 +129,44 @@ func (d *SqlDatabase) DoMigration() error {
 	return nil
 }
 
-func (d *SqlDatabase) InsertConctracts(contracts []*tsstypes.ContractEntity) {
-	query := "INSERT INTO contract (chain, hash, name) VALUES "
-	query = query + getQueryQuestionMark(len(contracts), 3)
+func (d *SqlDatabase) Close() error {
+	return d.db.Close()
+}
 
-	params := make([]interface{}, 0, 3*len(contracts))
+func (d *SqlDatabase) InsertChainKey(chain, address string, pubKey []byte) {
+	query := "INSERT INTO chain_key (chain, address, pubkey) VALUES (?, ?, ?)"
+	params := []interface{}{chain, address, pubKey}
+
+	_, err := d.db.Exec(query, params...)
+	if err != nil {
+		utils.LogError("failed to insert chain key into db, err = ", err)
+	}
+}
+
+func (d *SqlDatabase) ChainKeyExisted(chain, address string) bool {
+	query := "SELECT chain FROM chain_key WHERE chain = ? AND address = ?"
+	params := []interface{}{chain, address}
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		utils.LogError("cannot query chain key ", chain, address)
+		return false
+	}
+
+	defer rows.Close()
+
+	return rows.Next()
+}
+
+func (d *SqlDatabase) InsertContracts(contracts []*tsstypes.ContractEntity) {
+	query := "INSERT INTO contract (chain, hash, byteCode, name) VALUES "
+	query = query + getQueryQuestionMark(len(contracts), 4)
+
+	params := make([]interface{}, 0, 4*len(contracts))
 	for _, contract := range contracts {
 		params = append(params, contract.Chain)
 		params = append(params, contract.Hash)
+		params = append(params, contract.ByteCode)
 		params = append(params, contract.Name)
 	}
 
@@ -140,7 +177,7 @@ func (d *SqlDatabase) InsertConctracts(contracts []*tsstypes.ContractEntity) {
 }
 
 func (d *SqlDatabase) GetPendingDeployContracts(chain string) []*tsstypes.ContractEntity {
-	query := "SELECT chain, hash, name, state FROM contract WHERE chain=?"
+	query := "SELECT chain, hash, name, status FROM contract WHERE chain=?"
 	params := []interface{}{chain}
 	result := make([]*tsstypes.ContractEntity, 0)
 
@@ -149,19 +186,21 @@ func (d *SqlDatabase) GetPendingDeployContracts(chain string) []*tsstypes.Contra
 		return result
 	}
 
+	defer rows.Close()
+
 	for rows.Next() {
-		var chain, hash, name, state sql.NullString
-		if err := rows.Scan(&chain, &hash, &name, &state); err != nil {
+		var chain, hash, name, status sql.NullString
+		if err := rows.Scan(&chain, &hash, &name, &status); err != nil {
 			utils.LogError("cannot scan row, err =", err)
 			continue
 		}
 
-		if state.String == "" {
+		if status.String == "" {
 			result = append(result, &tsstypes.ContractEntity{
-				Chain: chain.String,
-				Hash:  hash.String,
-				Name:  name.String,
-				State: state.String,
+				Chain:  chain.String,
+				Hash:   hash.String,
+				Name:   name.String,
+				Status: status.String,
 			})
 		}
 	}
@@ -169,25 +208,61 @@ func (d *SqlDatabase) GetPendingDeployContracts(chain string) []*tsstypes.Contra
 	return result
 }
 
-func (d *SqlDatabase) UpdateContractsState(contracts []*tsstypes.ContractEntity, state string) {
+func (d *SqlDatabase) UpdateContractsStatus(contracts []*tsstypes.ContractEntity, status string) {
 	for _, contract := range contracts {
-		query := "UPDATE contract SET state = ? WHERE chain = ? AND hash = ?"
-		params := []interface{}{state, contract.Chain, contract.Hash}
+		query := "UPDATE contract SET status = ? WHERE chain = ? AND hash = ?"
+		params := []interface{}{status, contract.Chain, contract.Hash}
 
 		_, err := d.db.Exec(query, params...)
 		if err != nil {
-			utils.LogError("failed to update contract state, err =", err, ". len(contracts) =", len(contracts))
+			utils.LogError("failed to update contract status, err =", err, ". len(contracts) =", len(contracts))
 		}
 	}
 }
 
-func (d *SqlDatabase) UpdateContractDeployTx(chain, id string, txHash string) {
-	query := "UPDATE contract SET tx_hash = ? WHERE chain = ? AND id = ?"
-	params := []interface{}{txHash, chain, id}
+func (d *SqlDatabase) UpdateContractDeployTx(chain, hash string, txHash string) {
+	query := "UPDATE contract SET tx_hash = ? WHERE chain = ? AND hash = ?"
+	params := []interface{}{txHash, chain, hash}
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
 		utils.LogError("failed to update contract deploy tx, err =", err)
+	}
+}
+
+func (d *SqlDatabase) IsContractDeployTx(chain string, hashWithoutSig string) bool {
+	query := "SELECT contract_hash FROM tx_out WHERE chain=? AND hash_without_sig = ?"
+	params := []interface{}{
+		chain,
+		hashWithoutSig,
+	}
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		return false
+	}
+
+	defer rows.Close()
+
+	if rows.Next() {
+		var hash sql.NullString
+		if err := rows.Scan(&hash); err != nil {
+			return false
+		}
+
+		return hash.String != ""
+	}
+
+	return false
+}
+
+func (d *SqlDatabase) UpdateContractAddress(chain, outHash, address string) {
+	query := "UPDATE contract SET address = ? WHERE chain = ? AND hash = (SELECT contract_hash FROM tx_out WHERE chain = ? AND hash_without_sig = ?)"
+	params := []interface{}{address, chain, chain, outHash}
+
+	_, err := d.db.Exec(query, params...)
+	if err != nil {
+		utils.LogError("failed to update contract address, err =", err)
 	}
 }
 
@@ -212,7 +287,42 @@ func (d *SqlDatabase) InsertTxOuts(txs []*tsstypes.TxOutEntity) {
 	}
 }
 
-func (d *SqlDatabase) UpdateTxOut(chain, hashWithoutSign, hashWithSig string, sig []byte) {
+func (d *SqlDatabase) GetTxOutWithHashedSig(chain string, hashWithSig string) *tsstypes.TxOutEntity {
+	query := "SELECT chain, status, hash_without_sig, hash_with_sig, in_chain, in_hash, bytes_without_sig, signature, contract_hash FROM tx_out WHERE chain = ? AND hash_with_sig = ?"
+	params := []interface{}{chain, hashWithSig}
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		return nil
+	}
+
+	defer rows.Close()
+
+	if rows.Next() {
+		var chain, status, hashWithoutSig, hashWithSig, inChain, inHash, contractHash sql.NullString
+		var bytesWithoutSig, signature []byte
+
+		if err := rows.Scan(&chain, &status, &hashWithoutSig, &hashWithSig, &inChain, &inHash, &bytesWithoutSig, &signature, &contractHash); err != nil {
+			return nil
+		}
+
+		return &tsstypes.TxOutEntity{
+			OutChain:       chain.String,
+			HashWithoutSig: hashWithoutSig.String,
+			HashWithSig:    hashWithSig.String,
+			InChain:        inChain.String,
+			InHash:         inHash.String,
+			Outbytes:       bytesWithoutSig,
+			Status:         status.String,
+			Signature:      string(signature),
+			ContractHash:   contractHash.String,
+		}
+	}
+
+	return nil
+}
+
+func (d *SqlDatabase) UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string, sig []byte) {
 	query := "UPDATE tx_out SET signature = ?, hash_with_sig = ? WHERE chain = ? AND hash_without_sig = ?"
 	params := []interface{}{
 		sig,
@@ -223,34 +333,16 @@ func (d *SqlDatabase) UpdateTxOut(chain, hashWithoutSign, hashWithSig string, si
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
-		utils.LogError("failed to insert txout with chain and hashWoSig", chain, hashWithSig, ", err =", err)
+		utils.LogError("failed to update txout with chain and hashWoSig", chain, hashWithSig, ", err =", err)
 	}
 }
 
-func (d *SqlDatabase) IsContractDeployTx(chain string, hashWithoutSig string) bool {
-	query := "SELECT contract_hash FROM tx_out WHERE chain=? AND hash_without_sig = ?"
-	params := []interface{}{
-		chain,
-		hashWithoutSig,
-	}
+func (d *SqlDatabase) UpdateTxOutStatus(chain, hashWithSig, status string) {
+	query := "UPDATE tx_out SET status = ? WHERE chain = ? AND hash_with_sig = ?"
+	params := []interface{}{status, chain, hashWithSig}
 
-	rows, err := d.db.Query(query, params...)
+	_, err := d.db.Exec(query, params...)
 	if err != nil {
-		return false
+		utils.LogError("failed to update chain status", chain, hashWithSig, ", err =", err)
 	}
-
-	if rows.Next() {
-		var hash sql.NullString
-		if err := rows.Scan(&hash); err != nil {
-			return false
-		}
-
-		return hash.String != ""
-	}
-
-	return false
-}
-
-func (d *SqlDatabase) Close() error {
-	return d.db.Close()
 }

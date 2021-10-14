@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	eTypes "github.com/sisu-network/deyes/types"
-	dhTypes "github.com/sisu-network/dheart/types"
+	htypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 
@@ -13,7 +13,7 @@ import (
 )
 
 // This function is called after dheart sends Sisu keysign result.
-func (p *Processor) OnKeysignResult(result *dhTypes.KeysignResult) {
+func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 	// Post the keysign result to cosmos chain.
 	msg := types.NewKeysignResult(p.appKeys.GetSignerAddress().String(), result.OutChain, result.OutHash, result.Success, result.Signature)
 	go p.txSubmit.SubmitMessage(msg)
@@ -40,7 +40,7 @@ func (p *Processor) OnKeysignResult(result *dhTypes.KeysignResult) {
 		}
 
 		// Add the signature to txOuts
-		p.db.UpdateTxOut(
+		p.db.UpdateTxOutSig(
 			result.OutChain,
 			result.OutHash,
 			utils.KeccakHash32(string(bz)),
@@ -67,7 +67,7 @@ func (p *Processor) OnKeysignResult(result *dhTypes.KeysignResult) {
 	}
 }
 
-func (p *Processor) deploySignedTx(bz []byte, keysignResult *dhTypes.KeysignResult, isContractDeployment bool) (*eTypes.DispatchedTxResult, error) {
+func (p *Processor) deploySignedTx(bz []byte, keysignResult *htypes.KeysignResult, isContractDeployment bool) (*eTypes.DispatchedTxResult, error) {
 	utils.LogDebug("Sending final tx to the deyes for deployment")
 	deyeClient := p.deyesClients[keysignResult.OutChain]
 
@@ -103,5 +103,6 @@ func (p *Processor) onTxDeployed(chain, outHash string, deployResult *eTypes.Dis
 		deyeClient.AddWatchAddresses(chain, []string{deployResult.DeployedAddr})
 
 		// Update database with the deployed address
+		p.db.UpdateContractAddress(chain, outHash, deployResult.DeployedAddr)
 	}
 }

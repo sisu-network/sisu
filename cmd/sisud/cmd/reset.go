@@ -150,6 +150,8 @@ func deleteSql() error {
 	database.Exec("DROP TABLE contract")
 	database.Exec("DROP TABLE tx_out")
 	database.Exec("DROP TABLE schema_migrations")
+	database.Exec("DROP TABLE chain_key")
+	database.Exec("DROP TABLE watch_address")
 
 	return nil
 }
