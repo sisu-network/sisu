@@ -16,6 +16,7 @@ mode = "{{ .Mode }}"
 ###                     Siu Main App Connfiguration                         ###
 ###############################################################################
 [sisu]
+chain-id = "{{ .Sisu.ChainId}}"
 keyring-backend = "{{ .Sisu.KeyringBackend }}"
 api-host = "{{ .Sisu.ApiHost }}"
 api-port = {{ .Sisu.ApiPort }}

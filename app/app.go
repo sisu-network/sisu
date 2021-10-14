@@ -350,7 +350,7 @@ func New(
 		evm.NewAppModule(appCodec, app.evmKeeper),
 	}
 
-	tssProcessor := tss.NewProcessor(app.tssKeeper, tssConfig, app.appKeys, app.txSubmitter, app.globalData)
+	tssProcessor := tss.NewProcessor(app.tssKeeper, tssConfig, app.appKeys, app.db, app.txSubmitter, app.globalData)
 	if tssConfig.Enable {
 		utils.LogInfo("TSS is enabled")
 		tssProcessor.Init()

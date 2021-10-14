@@ -26,7 +26,7 @@ type SqlConfig struct {
 	Host     string `toml:"host"`
 	Port     int    `toml:"port"`
 	Username string `toml:"username"`
-	Password string `toml:"password"`
+	Password string `toml:"password"` // TODO: Move this sensitive data into separate place.
 	Schema   string `toml:"schema"`
 }
 

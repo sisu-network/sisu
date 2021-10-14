@@ -55,7 +55,7 @@ func (p *Processor) DeliverObservedTxs(ctx sdk.Context, msg *tssTypes.ObservedTx
 		p.keeper.SaveObservedTx(ctx, tx)
 
 		// Save this to our local storage in case we have not seen it.
-		p.createTxOuts(ctx, tx)
+		p.createAndBroadcastTxOuts(ctx, tx)
 	}
 
 	return nil, nil
