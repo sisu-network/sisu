@@ -145,8 +145,10 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 						)
 
 						outMsgs = append(outMsgs, outMsg)
-						outEntities = append(outEntities, tssTypes.TxOutToEntity(outMsg))
-						outEntities[i].ContractHash = contracts[i].Hash
+
+						outEntity := tssTypes.TxOutToEntity(outMsg)
+						outEntity.ContractHash = contracts[i].Hash
+						outEntities = append(outEntities, outEntity)
 					}
 				}
 			}

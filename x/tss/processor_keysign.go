@@ -40,7 +40,12 @@ func (p *Processor) OnKeysignResult(result *dhTypes.KeysignResult) {
 		}
 
 		// Add the signature to txOuts
-		p.db.UpdateTxOut(result.OutChain, result.OutHash, bz, result.Signature)
+		p.db.UpdateTxOut(
+			result.OutChain,
+			result.OutHash,
+			utils.KeccakHash32(string(bz)),
+			result.Signature,
+		)
 
 		// If this is a contract deployment transaction, update the contract table with the hash of the
 		// deployment tx bytes.

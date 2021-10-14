@@ -25,7 +25,7 @@ type Database interface {
 
 	// Txout
 	InsertTxOuts(txs []*tsstypes.TxOutEntity)
-	UpdateTxOut(chain string, hashWithoutSig string, bz []byte, sig []byte)
+	UpdateTxOut(chain, hashWithoutSign, hashWithSig string, sig []byte)
 	IsContractDeployTx(chain string, hashWithoutSig string) bool
 }
 
@@ -192,7 +192,7 @@ func (d *SqlDatabase) UpdateContractDeployTx(chain, id string, txHash string) {
 }
 
 func (d *SqlDatabase) InsertTxOuts(txs []*tsstypes.TxOutEntity) {
-	query := "INSERT INTO tx_out (chain, hash_without_sig, in_chain, in_hash, bytes, contract_hash) VALUES "
+	query := "INSERT INTO tx_out (chain, hash_without_sig, in_chain, in_hash, bytes_without_sig, contract_hash) VALUES "
 	query = query + getQueryQuestionMark(len(txs), 6)
 
 	params := make([]interface{}, 0, len(txs)*6)
@@ -212,18 +212,18 @@ func (d *SqlDatabase) InsertTxOuts(txs []*tsstypes.TxOutEntity) {
 	}
 }
 
-func (d *SqlDatabase) UpdateTxOut(chain string, hashWithoutSig string, bz []byte, sig []byte) {
-	query := "UPDATE tx_out SET bytes = ?, signature = ? WHERE chain = ? AND hash_without_sig = ?"
+func (d *SqlDatabase) UpdateTxOut(chain, hashWithoutSign, hashWithSig string, sig []byte) {
+	query := "UPDATE tx_out SET signature = ?, hash_with_sig = ? WHERE chain = ? AND hash_without_sig = ?"
 	params := []interface{}{
-		bz,
 		sig,
+		hashWithSig,
 		chain,
-		hashWithoutSig,
+		hashWithoutSign,
 	}
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
-		utils.LogError("failed to insert txout with chain and hashWoSig", chain, hashWithoutSig, ", err =", err)
+		utils.LogError("failed to insert txout with chain and hashWoSig", chain, hashWithSig, ", err =", err)
 	}
 }
 

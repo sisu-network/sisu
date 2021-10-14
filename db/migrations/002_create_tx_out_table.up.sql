@@ -5,7 +5,7 @@ CREATE TABLE tx_out(
   hash_with_sig VARCHAR(64),
   in_hash VARCHAR(64),
   in_chain VARCHAR(256),
-  bytes BLOB,
+  bytes_without_sig BLOB,
   signature BLOB,
   contract_hash VARCHAR(64),
 
