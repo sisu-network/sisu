@@ -10,9 +10,9 @@ import (
 	ttypes "github.com/sisu-network/tendermint/types"
 
 	sdk "github.com/sisu-network/cosmos-sdk/types"
-	"github.com/sisu-network/deyes/database"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/db"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/keeper"
 	"github.com/sisu-network/sisu/x/tss/tssclients"
@@ -56,7 +56,7 @@ type Processor struct {
 	// A map of chain -> map ()
 	keygenVoteResult map[string]map[string]bool
 	keygenBlockPairs []BlockSymbolPair
-	db               database.Database
+	db               db.Database
 
 	signers map[string]ethTypes.Signer
 }
@@ -64,11 +64,13 @@ type Processor struct {
 func NewProcessor(keeper keeper.Keeper,
 	config config.TssConfig,
 	appKeys *common.AppKeys,
+	db db.Database,
 	txSubmit common.TxSubmit,
 	globalData common.GlobalData,
 ) *Processor {
 	p := &Processor{
 		keeper:           keeper,
+		db:               db,
 		appKeys:          appKeys,
 		config:           config,
 		txSubmit:         txSubmit,
@@ -98,7 +100,7 @@ func (p *Processor) Init() {
 		panic(err)
 	}
 
-	p.txOutputProducer = NewTxOutputProducer(p.keeper, p.appKeys, p.storage)
+	p.txOutputProducer = NewTxOutputProducer(p.keeper, p.appKeys, p.storage, p.db)
 }
 
 // Connect to Dheart server.

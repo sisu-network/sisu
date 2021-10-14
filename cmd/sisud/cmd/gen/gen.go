@@ -65,7 +65,6 @@ func InitNetwork(settings *Setting) error {
 	mbm := settings.mbm
 	genBalIterator := settings.genBalIterator
 	outputDir := settings.outputDir
-	chainID := settings.chainID
 	minGasPrices := settings.minGasPrices
 	nodeDirPrefix := settings.nodeDirPrefix
 	nodeDaemonHome := settings.nodeDaemonHome
@@ -75,9 +74,10 @@ func InitNetwork(settings *Setting) error {
 	numValidators := settings.numValidators
 	monikers := settings.monikers
 
-	if chainID == "" {
-		chainID = "chain-" + tmrand.NewRand().Str(6)
+	if settings.chainID == "" {
+		settings.chainID = "chain-" + tmrand.NewRand().Str(6)
 	}
+	chainID := settings.chainID
 
 	nodeIDs := make([]string, numValidators)
 	valPubKeys := make([]cryptotypes.PubKey, numValidators)

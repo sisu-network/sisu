@@ -3,7 +3,6 @@ package tss
 import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	dhTypes "github.com/sisu-network/dheart/types"
-	"github.com/sisu-network/sisu/contracts/eth/dummy"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
@@ -150,30 +149,10 @@ func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult
 		// Check and see if we need to deploy some contracts. If we do, push them into the contract
 		// queue for deployment later (after we receive some funding like ether to execute contract
 		// deployment).
-		p.checkContractDeployment(ctx, msg)
+		p.txOutputProducer.SaveContractsToDeploy(msg.Chain)
 	} else {
 		utils.LogDebug("Keygen: message is from different signers.")
 	}
 
 	return nil, nil
-}
-
-// Called after keygen finishes to see if we need to deploy any contracts.
-func (p *Processor) checkContractDeployment(ctx sdk.Context, msg *types.KeygenResult) {
-	contractABIs := []string{
-		dummy.DummyABI,
-	}
-
-	for _, abi := range contractABIs {
-		// Hash of a contract is the hash of the ABI string.
-		hash := utils.KeccakHash32(abi)
-
-		// Check if this contract has been deployed or being deployed.
-		if p.keeper.IsContractDeployingOrDeployed(ctx, msg.Chain, hash) {
-			utils.LogDebug("Contract has been deployed or being deployed. Hash = ", hash)
-			continue
-		}
-
-		p.keeper.EnqueueContract(ctx, msg.Chain, hash, abi)
-	}
 }

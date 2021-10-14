@@ -1,7 +1,6 @@
 package tss
 
 import (
-	"fmt"
 	"strconv"
 
 	hTypes "github.com/sisu-network/dheart/types"
@@ -14,12 +13,16 @@ import (
 
 // Produces response for an observed tx. This has to be deterministic based on all the data that
 // the processor has.
-func (p *Processor) createTxOuts(ctx sdk.Context, tx *types.ObservedTx) []*tssTypes.TxOut {
-	outMsgs := p.txOutputProducer.GetTxOuts(ctx, p.currentHeight, tx)
+func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.ObservedTx) []*tssTypes.TxOut {
+	outMsgs, outEntities := p.txOutputProducer.GetTxOuts(ctx, p.currentHeight, tx)
+
+	// Save this to database
+	utils.LogVerbose("len(outEntities) = ", len(outEntities))
+	if len(outEntities) > 0 {
+		p.db.InsertTxOuts(outEntities)
+	}
 
 	for _, msg := range outMsgs {
-		p.storage.AddTxOut(msg)
-
 		go func(m *tssTypes.TxOut) {
 			p.txSubmit.SubmitMessage(m)
 		}(msg)
@@ -29,26 +32,22 @@ func (p *Processor) createTxOuts(ctx sdk.Context, tx *types.ObservedTx) []*tssTy
 }
 
 func (p *Processor) CheckTxOut(ctx sdk.Context, msg *types.TxOut) error {
-	txOut := p.storage.GetTxOut(msg.GetHash())
-	if txOut == nil {
-		return fmt.Errorf("txout not found, hash = %s", txOut)
-	}
 
 	return nil
 }
 
-func (p *Processor) DeliverTxOut(ctx sdk.Context, msg *types.TxOut) ([]byte, error) {
-	outHash := msg.GetHash()
+func (p *Processor) DeliverTxOut(ctx sdk.Context, tx *types.TxOut) ([]byte, error) {
+	outHash := tx.GetHash()
 
 	utils.LogVerbose("Delivering TXOUT")
 
 	// 4. Broadcast it to Dheart for processing.
 	keysignReq := &hTypes.KeysignRequest{
-		Id:             p.getKeysignRequestId(msg.OutChain, ctx.BlockHeight(), outHash),
-		OutChain:       msg.OutChain,
+		Id:             p.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), outHash),
+		OutChain:       tx.OutChain,
 		OutBlockHeight: p.currentHeight,
 		OutHash:        outHash,
-		OutBytes:       msg.OutBytes,
+		OutBytes:       tx.OutBytes,
 	}
 
 	// TODO: check if this tx has been requested to be signed.
