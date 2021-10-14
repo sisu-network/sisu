@@ -15,6 +15,7 @@ import (
 
 type Database interface {
 	Init() error
+	Close() error
 
 	// Contracts
 	InsertConctracts(contracts []*tsstypes.ContractEntity)
@@ -248,4 +249,8 @@ func (d *SqlDatabase) IsContractDeployTx(chain string, hashWithoutSig string) bo
 	}
 
 	return false
+}
+
+func (d *SqlDatabase) Close() error {
+	return d.db.Close()
 }
