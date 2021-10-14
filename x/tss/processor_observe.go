@@ -13,15 +13,6 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) {
 	for _, tx := range txs.Arr {
 		hash := utils.GetObservedTxHash(txs.Block, txs.Chain, tx.Serialized)
 
-		// // Check local storage to see if this observed tx has been recorded in local storage. This is
-		// // very different from observed tx in kvstore as the kvstore only stores data from Sisu chain.
-		// if p.storage.GetObservedTx(txs.Chain, txs.Block, hash) != nil {
-		// 	// This tx has been recorded in the Sisu chain. We don't need to broadcast it anymore.
-		// 	utils.LogVerbose("This tx has been processed before.")
-		// 	continue
-		// }
-		// p.storage.SaveObservedTx(txs.Chain, txs.Block, hash, tx.Serialized)
-
 		arr := make([]*tssTypes.ObservedTx, 1)
 		arr[0] = &tssTypes.ObservedTx{
 			Chain:       txs.Chain,
