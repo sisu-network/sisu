@@ -33,9 +33,6 @@ contract ERC20Gateway {
     // Each tokens owner set is a map between owner id (identified by addr and chain) and owned amount.
     mapping(string => mapping(address => uint256)) _store;
 
-    // List of chain that we allow user to send asset to.
-    mapping(string => bool) _allowedChain;
-
     constructor(string memory chain) {
         _owner = msg.sender;
         _thisChain = chain;
@@ -86,8 +83,6 @@ contract ERC20Gateway {
     // Adds a new chain that we can support.
     function addAllowedChain(string memory newChain) public {
         require(msg.sender == _owner, "Must be owner");
-
-        _allowedChain[newChain] = true;
     }
 
     // ---- /
@@ -119,7 +114,6 @@ contract ERC20Gateway {
     ) public {
         require(amount > 0, "Amount must be greater than 0");
         require(_store[assetId][msg.sender] >= amount, "Not enough tokens");
-        require(_allowedChain[toChain], "Chain not allowed");
 
         _store[assetId][msg.sender] -= amount;
 
@@ -136,7 +130,6 @@ contract ERC20Gateway {
         uint256 amount
     ) public {
         require(amount > 0, "Amount must be greater than 0");
-        require(_allowedChain[toChain], "Chain not allowed");
 
         (bool success, ) = assetAddr.call(
             abi.encodeWithSignature(
@@ -172,9 +165,5 @@ contract ERC20Gateway {
         returns (uint256)
     {
         return _store[assetId][account];
-    }
-
-    function isChainAllowed(string memory chain) public view returns (bool) {
-        return _allowedChain[chain];
     }
 }

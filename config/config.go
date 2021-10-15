@@ -1,6 +1,9 @@
 package config
 
 import (
+	"os"
+
+	"github.com/BurntSushi/toml"
 	"github.com/sisu-network/dcore/eth"
 	"github.com/sisu-network/dcore/node"
 )
@@ -72,4 +75,27 @@ func OverrideConfigValues(config *Config) {
 func overrideDevConfig(config *Config) {
 	config.Eth.Eth = getLocalEthConfig()
 	config.Eth.Node = getLocalEthNodeConfig(config.Eth.Dir)
+}
+
+func ReadConfig() (Config, error) {
+	cfg := Config{}
+
+	appDir := os.Getenv("APP_DIR")
+	if appDir == "" {
+		appDir = os.Getenv("HOME") + "/.sisu"
+	}
+
+	cfg.Sisu.Dir = appDir + "/main"
+	cfg.Eth.Dir = appDir + "/eth"
+	cfg.Tss.Dir = appDir + "/tss"
+
+	configFile := cfg.Sisu.Dir + "/config/sisu.toml"
+	_, err := toml.DecodeFile(configFile, &cfg)
+	if err != nil {
+		return cfg, err
+	}
+
+	OverrideConfigValues(&cfg)
+
+	return cfg, nil
 }

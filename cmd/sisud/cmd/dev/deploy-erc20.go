@@ -1,0 +1,58 @@
+package dev
+
+import (
+	"context"
+
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/sisu-network/sisu/contracts/eth/erc20"
+	"github.com/sisu-network/sisu/utils"
+	"github.com/spf13/cobra"
+)
+
+func DeployErc20() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "deploy-erc20",
+		Long: `Deploy an ERC20 contract.
+Usage:
+deploy-erc20 [Chain]
+
+Example:
+deploy-erc20 eth
+`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			chain := args[0]
+
+			client, err := getEthClient(chain)
+			if err != nil {
+				return err
+			}
+
+			auth, err := getAuthTransactor(client)
+			if err != nil {
+				return err
+			}
+
+			address, tx, instance, err := erc20.DeployErc20(auth, client, "name", "sisu-token")
+			_ = instance
+			if err != nil {
+				return err
+			}
+
+			bind.WaitDeployed(context.Background(), client, tx)
+
+			utils.LogInfo("Contract address: ", address.String())
+
+			// Check sender's balance
+			balance, err := instance.BalanceOf(&bind.CallOpts{Pending: true}, account0.Address)
+			if err != nil {
+				return err
+			}
+
+			utils.LogInfo("balance of account0 = ", balance)
+
+			return nil
+		},
+	}
+
+	return cmd
+}

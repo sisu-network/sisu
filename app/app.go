@@ -2,9 +2,7 @@ package app
 
 import (
 	"io"
-	"os"
 
-	"github.com/BurntSushi/toml"
 	"github.com/sisu-network/cosmos-sdk/client"
 	"github.com/sisu-network/cosmos-sdk/codec/types"
 	"github.com/sisu-network/sisu/db"
@@ -273,7 +271,7 @@ func New(
 	app.setupDefaultKeepers(homePath, bApp, skipUpgradeHeights)
 	////////////// Sisu related keeper //////////////
 
-	cfg, err := app.ReadConfig()
+	cfg, err := config.ReadConfig()
 	if err != nil {
 		panic(err)
 	}
@@ -540,29 +538,6 @@ func (app *App) setupDefaultKeepers(homePath string, bApp *baseapp.BaseApp, skip
 	)
 	// If evidence needs to be handled for the app, set routes in router here and seal
 	app.EvidenceKeeper = *evidenceKeeper
-}
-
-func (app *App) ReadConfig() (config.Config, error) {
-	cfg := config.Config{}
-
-	appDir := os.Getenv("APP_DIR")
-	if appDir == "" {
-		appDir = os.Getenv("HOME") + "/.sisu"
-	}
-
-	cfg.Sisu.Dir = appDir + "/main"
-	cfg.Eth.Dir = appDir + "/eth"
-	cfg.Tss.Dir = appDir + "/tss"
-
-	configFile := cfg.Sisu.Dir + "/config/sisu.toml"
-	_, err := toml.DecodeFile(configFile, &cfg)
-	if err != nil {
-		return cfg, err
-	}
-
-	config.OverrideConfigValues(&cfg)
-
-	return cfg, nil
 }
 
 // Name returns the name of the App
