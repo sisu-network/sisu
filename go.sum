@@ -1037,8 +1037,8 @@ github.com/sirupsen/logrus v1.8.1 h1:dJKuHgqk1NNQlqoA6BTlM1Wf9DOH3NBjQyu0h9+AZZE
 github.com/sirupsen/logrus v1.8.1/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
 github.com/sisu-network/cosmos-sdk v0.42.1-fork004 h1:4vIvJfjtB1Iot+eC0tguh1+4K1paWA0se5WQyXx/pW8=
 github.com/sisu-network/cosmos-sdk v0.42.1-fork004/go.mod h1:V7tLgqu3o53fQoINKdDjdwVCWzRaJNNHfJktlElkyc8=
-github.com/sisu-network/dcore v0.1.9-alpha3 h1:Bi1d/IaL5J2CFfDWZwtlfyQm8YX7Fw2CqhAvrFMCtlA=
-github.com/sisu-network/dcore v0.1.9-alpha3/go.mod h1:hPlbhvhjnCDwGUz+O3x4cF8FfcXgm64zkPs6Vhn9WEM=
+github.com/sisu-network/dcore v0.1.10 h1:+ZTuep2tFdbcRNxOatksXncDeHMAvA2JKbjHy1Oat/o=
+github.com/sisu-network/dcore v0.1.10/go.mod h1:hPlbhvhjnCDwGUz+O3x4cF8FfcXgm64zkPs6Vhn9WEM=
 github.com/sisu-network/deyes v0.1.1 h1:PVeYrF8GiJJ+AcC9WYdVIo/wpOR5VZx+M3LvZKxsyss=
 github.com/sisu-network/deyes v0.1.1/go.mod h1:qBYZjGx1vMWKLn7CsasWR2+0dzW/VXORtro5WHloRhI=
 github.com/sisu-network/dheart v0.1.3-alpha1 h1:oH/KrLBsKXfEVnwc0oSCvy7M+TJYAP04fq6G688/qSM=
