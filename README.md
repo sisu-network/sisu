@@ -15,13 +15,12 @@ To confirm, do `more ~/.gitconfig` and make sure you see the following:
 	insteadOf = https://github.com/
 ```
 
-## Running locally
+## Running locally without TSS
 
 From the sisu root folder
 
 ```
-cd src
-echo "MODE=dev" > .env
+cp .env.dev .env
 ```
 
 Generate config file and genesis for local sisu app:
@@ -35,3 +34,5 @@ To run the app on localhost:
 ```
 ./scripts/run_local.sh
 ```
+
+You can now deploy ETH transaction on Sisu at port 1234.
