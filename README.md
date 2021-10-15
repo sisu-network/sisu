@@ -29,6 +29,13 @@ Generate config file and genesis for local sisu app:
 ./scripts/gen_testnet.sh
 ```
 
+Disable the TSS component in the file `~/.sisu/main/config/sisu.toml` by changing the default tss settings to false.
+
+```
+[tss]
+enable = false
+```
+
 To run the app on localhost:
 
 ```
