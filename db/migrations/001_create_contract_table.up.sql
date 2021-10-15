@@ -5,5 +5,6 @@ CREATE TABLE contract(
   name VARCHAR(256),
   address VARCHAR(256),
   status VARCHAR(256),
+
   PRIMARY KEY (chain, hash)
 );

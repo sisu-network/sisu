@@ -24,6 +24,7 @@ type Database interface {
 	// Contracts
 	InsertContracts(contracts []*tsstypes.ContractEntity)
 	GetPendingDeployContracts(chain string) []*tsstypes.ContractEntity
+	GetContractFromAddress(chain, address string) *tsstypes.ContractEntity
 	UpdateContractsStatus(contracts []*tsstypes.ContractEntity, status string)
 	UpdateContractDeployTx(chain, id string, txHash string)
 	UpdateContractAddress(chain, hash, address string)
@@ -206,6 +207,38 @@ func (d *SqlDatabase) GetPendingDeployContracts(chain string) []*tsstypes.Contra
 	}
 
 	return result
+}
+
+func (d *SqlDatabase) GetContractFromAddress(chain, address string) *tsstypes.ContractEntity {
+	query := "SELECT chain, hash, byteCode, name, address, status FROM contract WHERE chain=? AND address = ?"
+	params := []interface{}{chain, address}
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		return nil
+	}
+
+	defer rows.Close()
+
+	if rows.Next() {
+		var chain, hash, name, address, status sql.NullString
+		var byteCode []byte
+
+		if err := rows.Scan(&chain, &hash, &byteCode, &name, &address, &status); err != nil {
+			return nil
+		}
+
+		return &tsstypes.ContractEntity{
+			Chain:    chain.String,
+			Hash:     hash.String,
+			ByteCode: byteCode,
+			Name:     name.String,
+			Address:  address.String,
+			Status:   status.String,
+		}
+	}
+
+	return nil
 }
 
 func (d *SqlDatabase) UpdateContractsStatus(contracts []*tsstypes.ContractEntity, status string) {
