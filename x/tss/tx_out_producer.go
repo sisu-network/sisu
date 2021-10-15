@@ -155,6 +155,15 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 	}
 
 	// 2. Check if this is a tx sent to one of our contracts.
+	if ethTx.To() != nil {
+		utils.LogVerbose("ethTx.To() = ", ethTx.To())
+
+		contract := p.db.GetContractFromAddress(tx.Chain, ethTx.To().String())
+
+		if contract != nil {
+			fmt.Println("contract name = ", contract.Name)
+		}
+	}
 
 	// 3. Check other types of transaction.
 

@@ -17,10 +17,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	default_mnemonic = "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum"
-)
-
 func FundAccount() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "fund-account",

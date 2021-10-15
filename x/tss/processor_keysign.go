@@ -26,6 +26,7 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 			return
 		}
 
+		// Create full tx with signature.
 		chainId := utils.GetChainIntFromId(result.OutChain)
 		signedTx, err := tx.WithSignature(coreTypes.NewEIP2930Signer(chainId), result.Signature)
 		if err != nil {
