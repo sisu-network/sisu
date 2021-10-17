@@ -66,8 +66,8 @@ transfer-out eth erc20 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 sisu-eth
 					return err
 				}
 
-				gatewayAddress, tx, instance, err := erc20Gateway.DeployErc20Gateway(auth, client, "eth")
-				_ = instance
+				gatewayAddress, tx, gateway, err := erc20Gateway.DeployErc20Gateway(auth, client, "eth")
+				_ = gateway
 				_ = gatewayAddress
 				if err != nil {
 					return err
@@ -81,11 +81,33 @@ transfer-out eth erc20 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 sisu-eth
 					return err
 				}
 
-				firstBalance, err := erc20Contract.BalanceOf(&bind.CallOpts{Pending: true}, account0.Address)
+				tokenBalance, err := erc20Contract.BalanceOf(&bind.CallOpts{Pending: true}, account0.Address)
 				if err != nil {
 					return err
 				}
-				fmt.Println("firstBalance = ", firstBalance)
+				fmt.Println("firstBalance = ", tokenBalance)
+
+				/// Debug //////
+				erc20, err := erc20.NewErc20(tokenAddress, client)
+				if err != nil {
+					panic(err)
+				}
+				auth, err = getAuthTransactor(client)
+				if err != nil {
+					return err
+				}
+
+				tx, err = erc20.Transfer(auth, gatewayAddress, big.NewInt(1))
+				if err != nil {
+					return err
+				}
+				tokenBalance, err = erc20Contract.BalanceOf(&bind.CallOpts{Pending: true}, account0.Address)
+				if err != nil {
+					return err
+				}
+				fmt.Println("secondBalance = ", tokenBalance)
+
+				/////////////////////////
 
 				utils.LogInfo("Transfering token out....")
 				auth, err = getAuthTransactor(client)
@@ -93,7 +115,10 @@ transfer-out eth erc20 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 sisu-eth
 					return err
 				}
 
-				tx, err = instance.TransferOutFromContract(auth, tokenAddress, toChain, account0.Address.String(), big.NewInt(1))
+				tx, err = gateway.TransferOutFromContract(auth, tokenAddress, toChain, account0.Address.String(), big.NewInt(1))
+				if err != nil {
+					panic(err)
+				}
 				bind.WaitDeployed(context.Background(), client, tx)
 
 				secondBalance, err := erc20Contract.BalanceOf(&bind.CallOpts{Pending: true}, account0.Address)

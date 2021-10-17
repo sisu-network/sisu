@@ -23,9 +23,9 @@ import (
 var (
 	SupportedContracts = map[string]struct{ Abi, Bin, AbiHash string }{
 		"erc20": {
-			Abi:     erc20gateway.Erc20GatewayBin,
-			Bin:     erc20gateway.Erc20GatewayBin,
-			AbiHash: utils.KeccakHash32(erc20gateway.Erc20GatewayBin),
+			Abi:     erc20gateway.Erc20gatewayABI,
+			Bin:     erc20gateway.Erc20gatewayBin,
+			AbiHash: utils.KeccakHash32(erc20gateway.Erc20gatewayBin),
 		},
 	}
 )
