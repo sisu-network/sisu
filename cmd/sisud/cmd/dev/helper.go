@@ -51,7 +51,7 @@ func getEthClient(fromChain string) (*ethclient.Client, error) {
 }
 
 func getAuthTransactor(client *ethclient.Client) (*bind.TransactOpts, error) {
-	nonce, err := client.PendingNonceAt(context.Background(), account0.Address)
+	nonce, err := client.NonceAt(context.Background(), account0.Address, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -62,10 +62,15 @@ func getAuthTransactor(client *ethclient.Client) (*bind.TransactOpts, error) {
 	}
 
 	auth := bind.NewKeyedTransactor(privateKey0)
+	fmt.Println("nonce = ", nonce)
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0)
 	auth.GasPrice = gasPrice
-	auth.GasLimit = uint64(1000000)
+
+	fmt.Println("auth.GasPrice = ", auth.GasPrice)
+
+	// auth.GasLimit = uint64(30 * 1000000) // 30M gas
+	auth.GasLimit = uint64(3000000)
 
 	return auth, nil
 }
