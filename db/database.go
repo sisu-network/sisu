@@ -25,7 +25,7 @@ type Database interface {
 	InsertContracts(contracts []*tsstypes.ContractEntity)
 	GetPendingDeployContracts(chain string) []*tsstypes.ContractEntity
 	GetContractFromAddress(chain, address string) *tsstypes.ContractEntity
-	GetContractFromHash(chain, address string) *tsstypes.ContractEntity
+	GetContractFromHash(chain, hash string) *tsstypes.ContractEntity
 	UpdateContractsStatus(contracts []*tsstypes.ContractEntity, status string)
 	UpdateContractDeployTx(chain, id string, txHash string)
 	UpdateContractAddress(chain, hash, address string)

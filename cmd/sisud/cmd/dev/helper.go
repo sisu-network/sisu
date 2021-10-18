@@ -7,6 +7,7 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sisu-network/dcore/accounts"
 	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
@@ -20,6 +21,7 @@ var (
 	localWallet *hdwallet.Wallet
 	account0    accounts.Account
 	privateKey0 *ecdsa.PrivateKey
+	nonceMap    map[string]*big.Int
 )
 
 func init() {
@@ -39,6 +41,8 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
+	nonceMap = make(map[string]*big.Int)
 }
 
 func getEthClient(fromChain string) (*ethclient.Client, error) {
@@ -50,10 +54,17 @@ func getEthClient(fromChain string) (*ethclient.Client, error) {
 	return nil, fmt.Errorf("cannot find client for chain", fromChain)
 }
 
-func getAuthTransactor(client *ethclient.Client) (*bind.TransactOpts, error) {
-	nonce, err := client.NonceAt(context.Background(), account0.Address, nil)
-	if err != nil {
-		return nil, err
+func getAuthTransactor(client *ethclient.Client, address common.Address) (*bind.TransactOpts, error) {
+	addrString := address.Hex()
+	if nonceMap[addrString] == nil {
+		nonce, err := client.PendingNonceAt(context.Background(), address)
+		if err != nil {
+			return nil, err
+		}
+
+		nonceMap[addrString] = big.NewInt(int64(nonce))
+	} else {
+		nonceMap[addrString] = new(big.Int).Add(nonceMap[addrString], big.NewInt(1))
 	}
 
 	gasPrice, err := client.SuggestGasPrice(context.Background())
@@ -62,12 +73,9 @@ func getAuthTransactor(client *ethclient.Client) (*bind.TransactOpts, error) {
 	}
 
 	auth := bind.NewKeyedTransactor(privateKey0)
-	fmt.Println("nonce = ", nonce)
-	auth.Nonce = big.NewInt(int64(nonce))
+	auth.Nonce = nonceMap[addrString]
 	auth.Value = big.NewInt(0)
 	auth.GasPrice = gasPrice
-
-	fmt.Println("auth.GasPrice = ", auth.GasPrice)
 
 	// auth.GasLimit = uint64(30 * 1000000) // 30M gas
 	auth.GasLimit = uint64(3000000)

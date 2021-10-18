@@ -51,9 +51,11 @@ type Processor struct {
 
 	// This is a local database used for data specific to this node. For application state's data,
 	// use KVStore.
+	// @Deprecated in favor of sql db.
 	storage *TssStorage
 
 	// A map of chain -> map ()
+	worldState       WorldState
 	keygenVoteResult map[string]map[string]bool
 	keygenBlockPairs []BlockSymbolPair
 	db               db.Database
@@ -89,18 +91,18 @@ func NewProcessor(keeper keeper.Keeper,
 func (p *Processor) Init() {
 	utils.LogInfo("Initializing TSS Processor...")
 
-	if p.config.Enable {
-		p.connectToDheart()
-		p.connectToDeyes()
-	}
-
 	var err error
 	p.storage, err = NewTssStorage(p.config.Dir + "/processor.db")
 	if err != nil {
 		panic(err)
 	}
 
-	p.txOutputProducer = NewTxOutputProducer(p.keeper, p.appKeys, p.storage, p.db)
+	if p.config.Enable {
+		p.connectToDheart()
+		p.connectToDeyes()
+	}
+
+	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.keeper, p.appKeys, p.storage, p.db, p.config)
 }
 
 // Connect to Dheart server.
@@ -146,6 +148,8 @@ func (p *Processor) connectToDeyes() {
 
 		p.deyesClients[chain] = deyeClient
 	}
+
+	p.worldState = NewWorldState(p.config, p.db, p.storage, p.deyesClients)
 }
 
 func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
