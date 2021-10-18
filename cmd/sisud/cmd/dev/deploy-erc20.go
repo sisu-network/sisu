@@ -28,7 +28,7 @@ deploy-erc20 eth
 				panic(err)
 			}
 
-			auth, err := getAuthTransactor(client)
+			auth, err := getAuthTransactor(client, account0.Address)
 			if err != nil {
 				panic(err)
 			}

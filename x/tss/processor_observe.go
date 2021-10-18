@@ -12,36 +12,16 @@ import (
 
 // Processed list of transactions sent from deyes to Sisu api server.
 func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) {
+	fmt.Println("There is a new list of txs from deyes, len =", len(txs.Arr))
+
 	// Create ObservedTx messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
 		// 1. Check if this tx is from one of our key. If it is, update the status of TxOut to confirmed.
 		if p.db.ChainKeyExisted(txs.Chain, tx.From) {
-			utils.LogVerbose("This is a transaction from us. We need to confirm it.")
-
-			txHash := utils.KeccakHash32(string(tx.Serialized))
-			p.db.UpdateTxOutStatus(txs.Chain, txHash, types.TxOutStatusConfirmed)
-
-			// If this is a contract deployment, mark the contract as deployed.
-			fmt.Println("tx.To  = ", tx.To)
-
-			if utils.IsETHBasedChain(txs.Chain) && tx.To == "" {
-				txOut := p.db.GetTxOutWithHashedSig(txs.Chain, txHash)
-
-				if txOut != nil {
-					utils.LogInfo("Updating contract status. Contract hash = ", txOut.ContractHash)
-					p.db.UpdateContractsStatus([]*tssTypes.ContractEntity{
-						{
-							Chain: txs.Chain,
-							Hash:  txOut.ContractHash,
-						},
-					}, tssTypes.ContractStateDeployed)
-				}
-			}
-		}
-
-		// 2. This is a transaction to our key account or one of our contracts. Create a message to
-		// indicate that we have observed this transction and broadcast it to cosmos chain.
-		if tx.To != "" {
+			p.confirmTx(tx, txs.Chain)
+		} else if tx.To != "" {
+			// 2. This is a transaction to our key account or one of our contracts. Create a message to
+			// indicate that we have observed this transction and broadcast it to cosmos chain.
 			hash := utils.GetObservedTxHash(txs.Block, txs.Chain, tx.Serialized)
 
 			arr := make([]*tssTypes.ObservedTx, 1)
@@ -83,4 +63,27 @@ func (p *Processor) DeliverObservedTxs(ctx sdk.Context, msg *tssTypes.ObservedTx
 	}
 
 	return nil, nil
+}
+
+func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string) {
+	utils.LogVerbose("This is a transaction from us. We need to confirm it. Chain =", chain)
+
+	txHash := utils.KeccakHash32(string(tx.Serialized))
+	p.db.UpdateTxOutStatus(chain, txHash, types.TxOutStatusConfirmed)
+
+	// If this is a contract deployment, mark the contract as deployed.
+	if utils.IsETHBasedChain(chain) && tx.To == "" {
+		utils.LogInfo("This is a tx deployment")
+		txOut := p.db.GetTxOutWithHashedSig(chain, txHash)
+
+		if txOut != nil {
+			utils.LogInfo("Updating contract status. Contract hash = ", txOut.ContractHash)
+			p.db.UpdateContractsStatus([]*tssTypes.ContractEntity{
+				{
+					Chain: chain,
+					Hash:  txOut.ContractHash,
+				},
+			}, tssTypes.ContractStateDeployed)
+		}
+	}
 }
