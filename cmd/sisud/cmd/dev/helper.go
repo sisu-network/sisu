@@ -5,16 +5,20 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sisu-network/dcore/accounts"
+	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/db"
 	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
 )
 
 const (
-	default_mnemonic = "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum"
+	defaultMnemonic = "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum"
+	Blocktime       = time.Second * 3
 )
 
 var (
@@ -26,7 +30,7 @@ var (
 
 func init() {
 	var err error
-	localWallet, err = hdwallet.NewFromMnemonic(default_mnemonic)
+	localWallet, err = hdwallet.NewFromMnemonic(defaultMnemonic)
 	if err != nil {
 		panic(err)
 	}
@@ -49,9 +53,11 @@ func getEthClient(fromChain string) (*ethclient.Client, error) {
 	switch fromChain {
 	case "eth":
 		return ethclient.Dial("http://0.0.0.0:7545")
+	case "sisu-eth":
+		return ethclient.Dial("http://0.0.0.0:8545")
 	}
 
-	return nil, fmt.Errorf("cannot find client for chain", fromChain)
+	return nil, fmt.Errorf("cannot find client for chain %s", fromChain)
 }
 
 func getAuthTransactor(client *ethclient.Client, address common.Address) (*bind.TransactOpts, error) {
@@ -81,4 +87,20 @@ func getAuthTransactor(client *ethclient.Client, address common.Address) (*bind.
 	auth.GasLimit = uint64(3000000)
 
 	return auth, nil
+}
+
+func getDatabase() db.Database {
+	// Get db config
+	cfg, err := config.ReadConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	database := db.NewDatabase(cfg.Sisu.Sql)
+	err = database.Init()
+	if err != nil {
+		panic(err)
+	}
+
+	return database
 }

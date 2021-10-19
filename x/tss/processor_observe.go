@@ -1,8 +1,6 @@
 package tss
 
 import (
-	"fmt"
-
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/sisu/utils"
@@ -12,7 +10,7 @@ import (
 
 // Processed list of transactions sent from deyes to Sisu api server.
 func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) {
-	fmt.Println("There is a new list of txs from deyes, len =", len(txs.Arr))
+	utils.LogVerbose("There is a new list of txs from deyes, len =", len(txs.Arr))
 
 	// Create ObservedTx messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
