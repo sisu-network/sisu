@@ -22,9 +22,9 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Tr
 		return nil, fmt.Errorf("cannot find contract for tx sent to %s", ethTx.To())
 	}
 
-	fmt.Println("contract name = ", contract.Name)
+	utils.LogInfo("Creating response erc20 transaction, contract name =", contract.Name)
+
 	payload := ethTx.Data()
-	fmt.Println("Hex payload = ", hex.EncodeToString(payload))
 
 	abiMethods := erc20Contract.Abi.Methods
 	var methodName string
@@ -41,12 +41,14 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Tr
 		return nil, fmt.Errorf("cannot find funcName")
 	}
 
+	utils.LogInfo("Found method name = ", methodName)
+
 	params, err := abiMethods[methodName].Inputs.Unpack(payload[4:])
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println("AAAAAA 000000")
+	utils.LogInfo("params = ", params)
 
 	switch methodName {
 	case MethodTransferOutFromContract:
@@ -54,12 +56,9 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Tr
 			return nil, fmt.Errorf("transferOutFromContract expects 4 params")
 		}
 
-		fmt.Println("AAAAAA 1111111")
-
-		fmt.Println("params =  ", params)
-
 		// Creates a transferIn function in the other chain.
 		toChain := params[1].(string)
+		utils.LogInfo("toChain = ", toChain)
 
 		// TODO: Creates tx out for other chains.
 		if utils.IsETHBasedChain(toChain) {
@@ -68,32 +67,23 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Tr
 				return nil, fmt.Errorf("cannot find erc20 contract for toChain %s", toChain)
 			}
 
-			fmt.Println("toChain = ", toChain)
-
-			assetId := toChain + "__" + (params[0].(ethcommon.Address)).Hex()
-			fmt.Println("assetId = ", assetId)
-
+			assetId := fromChain + "__" + (params[0].(ethcommon.Address)).Hex()
 			recipient := params[2].(string)
-			fmt.Printf("recipient type = %T\n", recipient)
-
 			amount := params[3]
 
-			fmt.Println("recipient = ", recipient)
-			fmt.Println("amount = ", amount)
+			utils.LogInfo("assetId = ", assetId)
+			utils.LogInfo("recipient = ", recipient)
+			utils.LogInfo("amount = ", amount)
 
 			input, err := erc20Contract.Abi.Pack(MethodTransferIn, assetId, ethcommon.HexToAddress(recipient), amount)
 			if err != nil {
 				return nil, err
 			}
 
-			fmt.Println("AAAAAA 22222222")
-
 			nonce := p.worldState.UseAndIncreaseNonce(toChain)
 			if nonce < 0 {
 				return nil, fmt.Errorf("cannont find nonce for chain %s", toChain)
 			}
-
-			fmt.Println("nonce in tx producer = ", nonce)
 
 			rawTx := ethTypes.NewTransaction(
 				uint64(nonce),

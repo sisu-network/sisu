@@ -9,10 +9,8 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
 	erc20Gateway "github.com/sisu-network/sisu/contracts/eth/erc20gateway"
-	"github.com/sisu-network/sisu/db"
 	"github.com/sisu-network/sisu/utils"
 	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
 	"github.com/sisu-network/sisu/x/tss"
@@ -25,31 +23,22 @@ func TransferOut() *cobra.Command {
 		Use: "transfer-out",
 		Long: `Transfer an ERC20 or ERC721 asset.
 Usage:
-transfer-out [FromChain] [ContractType] [TokenAddress] [ToChain]
+transfer-out [ContractType] [FromChain] [TokenAddress] [ToChain] [RecipientAddress]
 
 Example:
-transfer-out eth erc20 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 sisu-eth
+transfer-out erc20 eth 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 sisu-eth 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Get db config
-			cfg, err := config.ReadConfig()
-			if err != nil {
-				return err
-			}
-
-			database := db.NewDatabase(cfg.Sisu.Sql)
-			err = database.Init()
-			if err != nil {
-				return err
-			}
+			database := getDatabase()
 			defer database.Close()
 
 			// Get the contract address of token
 			utils.LogInfo("args = ", args)
-			fromChain := args[0]
-			contractType := args[1]
+			contractType := args[0]
+			fromChain := args[1]
 			tokenAddressString := args[2]
 			toChain := args[3]
+			recipient := args[4]
 
 			switch contractType {
 			case "erc20":
@@ -61,8 +50,9 @@ transfer-out eth erc20 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 sisu-eth
 				hash := tss.SupportedContracts[contractType].AbiHash
 				contract := database.GetContractFromHash(fromChain, hash)
 				if contract == nil {
-					return fmt.Errorf("cannot find contract")
+					panic(fmt.Errorf("cannot find contract"))
 				}
+
 				gatewayAddress := common.HexToAddress(contract.Address)
 				gateway, err := erc20Gateway.NewErc20gateway(gatewayAddress, client)
 				if err != nil {
@@ -75,17 +65,28 @@ transfer-out eth erc20 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 sisu-eth
 					return err
 				}
 
-				utils.LogInfo("Transfering token out....")
-				approveAddress(erc20Contract, gatewayAddress, big.NewInt(1), client)
+				utils.LogInfo("Approvng gateway address...")
+				amount := big.NewInt(1)
+				approveAddress(erc20Contract, gatewayAddress, amount, client)
 
+				// Check the allowance
+				allowance, err := erc20Contract.Allowance(&bind.CallOpts{Pending: true}, account0.Address, gatewayAddress)
+				if err != nil {
+					panic(err)
+				}
+				if allowance.Cmp(amount) != 0 {
+					panic(fmt.Errorf("Invalid balance: %s, %s", amount, allowance))
+				}
+
+				utils.LogInfo("Transfering token out....")
 				auth, err := getAuthTransactor(client, account0.Address)
-				tx, err := gateway.TransferOutFromContract(auth, tokenAddress, toChain, account0.Address.String(), big.NewInt(1))
+				tx, err := gateway.TransferOutFromContract(auth, tokenAddress, toChain, recipient, amount)
 				if err != nil {
 					panic(err)
 				}
 				bind.WaitDeployed(context.Background(), client, tx)
 
-				time.Sleep(time.Second * 3)
+				time.Sleep(Blocktime)
 
 				gatewayBalance := getBalance(erc20Contract, gatewayAddress)
 				utils.LogInfo("gatewayBalance = ", gatewayBalance)
@@ -133,6 +134,8 @@ func approveAddress(erc20Contract *erc20.Erc20, recipient common.Address, amount
 	if err != nil {
 		panic(err)
 	}
+
+	time.Sleep(Blocktime)
 }
 
 func getBalance(erc20Contract *erc20.Erc20, address common.Address) *big.Int {

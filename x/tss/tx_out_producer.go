@@ -50,6 +50,7 @@ func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys *c
 		appKeys:       appKeys,
 		storage:       storage,
 		signers:       utils.GetEthChainSigners(),
+		tssConfig:     tssConfig,
 		ethDeployment: NewEthDeployment(),
 		db:            db,
 	}
@@ -239,6 +240,8 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *tsstypes.ContractEntit
 				allowedChains = append(allowedChains, chain)
 			}
 		}
+
+		utils.LogInfo("Allowed chains for chain", contract.Chain, "are: ", allowedChains)
 
 		input, err := parsedAbi.Pack("", contract.Chain, allowedChains)
 		if err != nil {

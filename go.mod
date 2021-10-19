@@ -27,7 +27,7 @@ require (
 	github.com/tendermint/tm-db v0.6.4
 	github.com/tyler-smith/go-bip39 v1.0.2
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
-	google.golang.org/genproto v0.0.0-20210207032614-bba0dbe2a9ea
+	google.golang.org/genproto v0.0.0-20210303154014-9728d6b83eeb
 	google.golang.org/grpc v1.37.0
 )
 
