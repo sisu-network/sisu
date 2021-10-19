@@ -1,33 +1,23 @@
 package tss
 
 import (
-	"context"
 	"fmt"
+	"math/big"
+	"strings"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	ecommon "github.com/ethereum/go-ethereum/common"
 
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
-	"github.com/sisu-network/dcore/ethclient"
 	"github.com/sisu-network/sisu/common"
-	erc20gateway "github.com/sisu-network/sisu/contracts/eth/erc20gateway"
+	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/db"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/keeper"
 	"github.com/sisu-network/sisu/x/tss/types"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 	tsstypes "github.com/sisu-network/sisu/x/tss/types"
-)
-
-var (
-	SupportedContracts = map[string]struct{ Abi, Bin, AbiHash string }{
-		"erc20": {
-			Abi:     erc20gateway.Erc20GatewayBin,
-			Bin:     erc20gateway.Erc20GatewayBin,
-			AbiHash: utils.KeccakHash32(erc20gateway.Erc20GatewayBin),
-		},
-	}
 )
 
 // This structs produces transaction output based on input. For a given tx input, this struct
@@ -43,20 +33,24 @@ type DefaultTxOutputProducer struct {
 	// Map from: chain -> address -> bool.
 	ethKeyAddrs map[string]map[string]bool
 
+	worldState    WorldState
 	keeper        keeper.Keeper
 	appKeys       *common.AppKeys
 	db            db.Database
 	ethDeployment *EthDeployment
 	storage       *TssStorage
 	signers       map[string]ethTypes.Signer
+	tssConfig     config.TssConfig
 }
 
-func NewTxOutputProducer(keeper keeper.Keeper, appKeys *common.AppKeys, storage *TssStorage, db db.Database) TxOutputProducer {
+func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys *common.AppKeys, storage *TssStorage, db db.Database, tssConfig config.TssConfig) TxOutputProducer {
 	return &DefaultTxOutputProducer{
+		worldState:    worldState,
 		keeper:        keeper,
 		appKeys:       appKeys,
 		storage:       storage,
 		signers:       utils.GetEthChainSigners(),
+		tssConfig:     tssConfig,
 		ethDeployment: NewEthDeployment(),
 		db:            db,
 	}
@@ -155,13 +149,28 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 	}
 
 	// 2. Check if this is a tx sent to one of our contracts.
-	if ethTx.To() != nil {
+	if ethTx.To() != nil && len(ethTx.Data()) >= 4 {
 		utils.LogVerbose("ethTx.To() = ", ethTx.To())
 
-		contract := p.db.GetContractFromAddress(tx.Chain, ethTx.To().String())
+		responseTx, err := p.createErc20ContractResponse(ethTx, tx.Chain)
+		if err == nil {
+			fmt.Println("tx = ", responseTx)
 
-		if contract != nil {
-			fmt.Println("contract name = ", contract.Name)
+			outMsg := tsstypes.NewMsgTxOut(
+				p.appKeys.GetSignerAddress().String(),
+				tx.BlockHeight,
+				tx.Chain,
+				tx.TxHash,
+				responseTx.OutChain, // Could be different chain
+				responseTx.RawBytes,
+			)
+
+			outMsgs = append(outMsgs, outMsg)
+
+			outEntity := tssTypes.TxOutToEntity(outMsg)
+			outEntities = append(outEntities, outEntity)
+		} else {
+			utils.LogError("cannot get response for erc20 tx, err =", err)
 		}
 	}
 
@@ -174,49 +183,21 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 func (p *DefaultTxOutputProducer) checkEthDeployContract(ctx sdk.Context, height int64, chain string, contracts []*tsstypes.ContractEntity) []*ethTypes.Transaction {
 	txs := make([]*ethTypes.Transaction, 0)
 
-	// TODO: nonce should be 0 here.
-	// nonce := int64(0)
-	nonce, err := p.getNonce(chain)
-	if err != nil {
-		utils.LogError("cannot get nonce, err =", err)
-		return txs
-	}
-	utils.LogVerbose("Nonce = ", nonce)
-
-	for i, contract := range contracts {
-		rawTx := p.ethDeployment.PrepareEthContractDeployment(chain, contract.ByteCode, int64(nonce)+int64(i))
+	for _, contract := range contracts {
+		nonce := p.worldState.UseAndIncreaseNonce(contract.Chain)
+		utils.LogVerbose("nonce for deploying contract:", nonce)
+		if nonce < 0 {
+			utils.LogError("cannot get nonce for contract")
+			continue
+		}
+		rawTx := p.getContractTx(contract, nonce)
 		txs = append(txs, rawTx)
-		nonce++
 	}
 
 	// Update all contract to "deploying" state.
 	p.db.UpdateContractsStatus(contracts, tsstypes.ContractStateDeploying)
 
 	return txs
-}
-
-func (p *DefaultTxOutputProducer) getNonce(chain string) (uint64, error) {
-	client, err := ethclient.Dial("http://0.0.0.0:7545")
-	if err != nil {
-		utils.LogError("cannot connect to client, err =", err)
-		return 0, err
-	}
-
-	pubKeyBytes := p.storage.GetPubKey(chain)
-	if pubKeyBytes == nil {
-		return 0, fmt.Errorf("cannot find pub key for chain %s", chain)
-	}
-	pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
-	if err != nil {
-		return 0, err
-	}
-
-	nonce, err := client.PendingNonceAt(context.Background(), crypto.PubkeyToAddress(*pubKey))
-	if err != nil {
-		return 0, err
-	}
-
-	return nonce, nil
 }
 
 // Save a list of contracts that are pending to be deployed. This is often call after a key is
@@ -239,4 +220,56 @@ func (p *DefaultTxOutputProducer) SaveContractsToDeploy(chain string) {
 
 		p.db.InsertContracts(contracts)
 	}
+}
+
+func (p *DefaultTxOutputProducer) getContractTx(contract *tsstypes.ContractEntity, nonce int64) *ethTypes.Transaction {
+	erc20 := SupportedContracts[ContractErc20]
+	switch contract.Hash {
+	case erc20.AbiHash:
+		// This is erc20 contract.
+		parsedAbi, err := abi.JSON(strings.NewReader(erc20.AbiString))
+		if err != nil {
+			utils.LogError("cannot parse erc20 abi. abi = ", erc20.AbiString, "err =", err)
+			return nil
+		}
+
+		// Get all allowed chains
+		allowedChains := make([]string, 0)
+		for chain, _ := range p.tssConfig.SupportedChains {
+			if chain != contract.Chain {
+				allowedChains = append(allowedChains, chain)
+			}
+		}
+
+		utils.LogInfo("Allowed chains for chain", contract.Chain, "are: ", allowedChains)
+
+		input, err := parsedAbi.Pack("", contract.Chain, allowedChains)
+		if err != nil {
+			utils.LogError("cannot pack allowedChains, err =", err)
+			return nil
+		}
+
+		byteCode := ecommon.FromHex(erc20.Bin)
+		input = append(byteCode, input...)
+
+		rawTx := ethTypes.NewContractCreation(
+			uint64(nonce),
+			big.NewInt(0),
+			p.getGasLimit(contract.Chain),
+			p.getGasPrice(contract.Chain),
+			input)
+		return rawTx
+	}
+
+	return nil
+}
+
+func (p *DefaultTxOutputProducer) getGasLimit(chain string) uint64 {
+	// TODO: Make this dependent on different chains.
+	return uint64(5000000)
+}
+
+func (p *DefaultTxOutputProducer) getGasPrice(chain string) *big.Int {
+	// TODO: Make this dependent on different chains.
+	return big.NewInt(50)
 }

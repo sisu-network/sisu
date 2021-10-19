@@ -16,7 +16,7 @@ func compileContract(name string) {
 		fmt.Sprintf("%s.sol", name),
 		"--overwrite",
 		"-o",
-		fmt.Sprintf("%s", strings.ToLower(name)),
+		fmt.Sprintf("%s", name),
 	).Output()
 	if err != nil {
 		panic(err)

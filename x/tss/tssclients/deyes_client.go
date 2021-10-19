@@ -75,3 +75,13 @@ func (c *DeyesClient) Dispatch(request *eTypes.DispatchedTxRequest) (*eTypes.Dis
 
 	return result, nil
 }
+
+func (c *DeyesClient) GetNonce(chain string, address string) int64 {
+	var result int64
+	err := c.client.CallContext(context.Background(), &result, "deyes_getNonce", chain, address)
+	if err != nil {
+		utils.LogError("Cannot get nonce for chain and address", chain, address, "err =", err)
+	}
+
+	return result
+}
