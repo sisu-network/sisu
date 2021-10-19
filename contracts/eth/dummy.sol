@@ -4,8 +4,8 @@ pragma solidity >=0.6.0;
 contract Dummy {
     string name;
 
-    constructor() public {
-        name = "Hello";
+    constructor(string memory initName) {
+        name = initName;
     }
 
     function setName(string memory newName) public {

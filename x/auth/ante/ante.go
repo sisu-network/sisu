@@ -8,7 +8,6 @@ import (
 	cosmosAnte "github.com/sisu-network/cosmos-sdk/x/auth/ante"
 	"github.com/sisu-network/cosmos-sdk/x/auth/signing"
 	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/evm/ethchain"
 	evmKeeper "github.com/sisu-network/sisu/x/evm/keeper"
 	evmTypes "github.com/sisu-network/sisu/x/evm/types"
@@ -36,8 +35,6 @@ func NewAnteHandler(
 ) sdk.AnteHandler {
 	return func(ctx sdk.Context, tx sdk.Tx, sim bool) (sdk.Context, error) {
 		var anteHandler sdk.AnteHandler
-		utils.LogDebug("Running ante. checkTx & recheck = ", ctx.IsCheckTx(), ctx.IsReCheckTx())
-
 		txType, err := getTxType(tx)
 		if err != nil {
 			// TODO: Handle when there are errors here.

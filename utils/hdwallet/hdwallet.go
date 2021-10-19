@@ -1,7 +1,7 @@
 // This file is adopted from
 // https://github.com/mighty-chain/go-ethereum-hdwallet/blob/7900505fafd0b747ce7835593373546f516df2e2/hdwallet.go
 
-package utils
+package hdwallet
 
 import (
 	"crypto/ecdsa"

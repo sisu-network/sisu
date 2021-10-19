@@ -28,7 +28,7 @@ fund-account eth 7545 sisu-eth 8545 10
 			// Get all the pubkey
 			allPubKeys := queryPubKeys(cmd)
 
-			localWallet, err := hdwallet.NewFromMnemonic(default_mnemonic)
+			localWallet, err := hdwallet.NewFromMnemonic(defaultMnemonic)
 
 			amount, err := strconv.Atoi(args[len(args)-1])
 			if err != nil {

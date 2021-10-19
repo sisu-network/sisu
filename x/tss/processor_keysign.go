@@ -69,7 +69,7 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 }
 
 func (p *Processor) deploySignedTx(bz []byte, keysignResult *htypes.KeysignResult, isContractDeployment bool) (*eTypes.DispatchedTxResult, error) {
-	utils.LogDebug("Sending final tx to the deyes for deployment")
+	utils.LogDebug("Sending final tx to the deyes for deployment for chain", keysignResult.OutChain)
 	deyeClient := p.deyesClients[keysignResult.OutChain]
 
 	if deyeClient != nil {
