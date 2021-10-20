@@ -15,7 +15,7 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) {
 	// Create ObservedTx messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
 		// 1. Check if this tx is from one of our key. If it is, update the status of TxOut to confirmed.
-		if p.db.ChainKeyExisted(txs.Chain, tx.From) {
+		if p.db.IsChainKeyAddress(txs.Chain, tx.From) {
 			p.confirmTx(tx, txs.Chain)
 		} else if tx.To != "" {
 			// 2. This is a transaction to our key account or one of our contracts. Create a message to

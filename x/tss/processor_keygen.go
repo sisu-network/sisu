@@ -36,9 +36,7 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 
 	unavailableChains := make([]string, 0)
 	for _, chainConfig := range p.config.SupportedChains {
-		// TODO: Remove this after testing.
-		// if chains.Chains[chainConfig.Symbol] == nil {
-		if true {
+		if !p.db.IsKeyExisted(chainConfig.Symbol) {
 			unavailableChains = append(unavailableChains, chainConfig.Symbol)
 		}
 	}

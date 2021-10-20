@@ -1,7 +1,6 @@
 package tss
 
 import (
-	"fmt"
 	"math/big"
 	"strings"
 
@@ -108,7 +107,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 	// 1. Check if this is a transaction sent to our key address. If this is true, it's likely a tx
 	// that funds our account.
-	if ethTx.To() != nil && p.db.ChainKeyExisted(tx.Chain, ethTx.To().String()) {
+	if ethTx.To() != nil && p.db.IsChainKeyAddress(tx.Chain, ethTx.To().String()) {
 		contracts := p.db.GetPendingDeployContracts(tx.Chain)
 		utils.LogVerbose("len(contracts) = ", len(contracts))
 
@@ -154,8 +153,6 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 		responseTx, err := p.createErc20ContractResponse(ethTx, tx.Chain)
 		if err == nil {
-			fmt.Println("tx = ", responseTx)
-
 			outMsg := tsstypes.NewMsgTxOut(
 				p.appKeys.GetSignerAddress().String(),
 				tx.BlockHeight,
