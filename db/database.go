@@ -19,7 +19,8 @@ type Database interface {
 
 	// Chain key
 	InsertChainKey(chain, address string, pubKey []byte)
-	ChainKeyExisted(chain, address string) bool
+	IsKeyExisted(chain string) bool
+	IsChainKeyAddress(chain, address string) bool
 
 	// Contracts
 	InsertContracts(contracts []*tsstypes.ContractEntity)
@@ -145,7 +146,21 @@ func (d *SqlDatabase) InsertChainKey(chain, address string, pubKey []byte) {
 	}
 }
 
-func (d *SqlDatabase) ChainKeyExisted(chain, address string) bool {
+func (d *SqlDatabase) IsKeyExisted(chain string) bool {
+	query := "SELECT chain FROM chain_key WHERE chain = ?"
+	params := []interface{}{chain}
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		utils.LogError("cannot query chain key ", chain)
+		return false
+	}
+	defer rows.Close()
+
+	return rows.Next()
+}
+
+func (d *SqlDatabase) IsChainKeyAddress(chain, address string) bool {
 	query := "SELECT chain FROM chain_key WHERE chain = ? AND address = ?"
 	params := []interface{}{chain, address}
 
