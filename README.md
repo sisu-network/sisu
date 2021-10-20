@@ -43,3 +43,35 @@ To run the app on localhost:
 ```
 
 You can now deploy ETH transaction on Sisu at port 1234.
+
+## Running locally wihth TSS
+
+You need to enable tss in `~/.sisu/main/config/sisu.toml` in order to run full Sisu node.
+
+### Running without docker
+
+You will need at least 5 different terminal tabs to run a full Sisu nodes: 2 tabs for ganache-cli, 1 for dheart, 1 for deyes, 1 for sisu.
+
+#### Run ganache-cli
+
+Download ganache-cli (make sure you have version 6.x) and runs the following commands on 2 different terminals:
+
+```
+ganache-cli --accounts 10 --blockTime 3 --port 7545 --defaultBalanceEther 100000 --chainId 1 --mnemonic "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum"
+```
+
+```
+ganache-cli --accounts 10 --blockTime 3 --port 8545 --defaultBalanceEther 100000 --chainId 36767 --mnemonic "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum"
+```
+
+These commands create 2 simulated blockchains on port 7545 and 8545.
+
+#### Run dheart and deyes
+
+Runs dheart and deyes using their instruction in the repos.
+
+#### Run Sisu
+
+```
+./scripts/run_local.sh
+```
