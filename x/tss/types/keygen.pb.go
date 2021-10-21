@@ -47,6 +47,7 @@ func (KeygenResult_Result) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_dbc836e6b96b1a93, []int{1, 0}
 }
 
+// Note: all new fields in this proto MUST be included in SerializeWithoutSigner in the go file.
 type KeygenProposal struct {
 	Signer string `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
 	Chain  string `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`

@@ -23,10 +23,11 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type ObservedTx struct {
-	Chain       string `protobuf:"bytes,1,opt,name=chain,proto3" json:"chain,omitempty"`
-	BlockHeight int64  `protobuf:"varint,2,opt,name=blockHeight,proto3" json:"blockHeight,omitempty"`
-	TxHash      string `protobuf:"bytes,3,opt,name=txHash,proto3" json:"txHash,omitempty"`
-	Serialized  []byte `protobuf:"bytes,4,opt,name=serialized,proto3" json:"serialized,omitempty"`
+	Signer      string `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
+	Chain       string `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`
+	BlockHeight int64  `protobuf:"varint,3,opt,name=blockHeight,proto3" json:"blockHeight,omitempty"`
+	TxHash      string `protobuf:"bytes,4,opt,name=txHash,proto3" json:"txHash,omitempty"`
+	Serialized  []byte `protobuf:"bytes,5,opt,name=serialized,proto3" json:"serialized,omitempty"`
 }
 
 func (m *ObservedTx) Reset()         { *m = ObservedTx{} }
@@ -62,6 +63,13 @@ func (m *ObservedTx) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_ObservedTx proto.InternalMessageInfo
 
+func (m *ObservedTx) GetSigner() string {
+	if m != nil {
+		return m.Signer
+	}
+	return ""
+}
+
 func (m *ObservedTx) GetChain() string {
 	if m != nil {
 		return m.Chain
@@ -90,81 +98,26 @@ func (m *ObservedTx) GetSerialized() []byte {
 	return nil
 }
 
-type ObservedTxs struct {
-	Signer string        `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
-	Txs    []*ObservedTx `protobuf:"bytes,2,rep,name=txs,proto3" json:"txs,omitempty"`
-}
-
-func (m *ObservedTxs) Reset()         { *m = ObservedTxs{} }
-func (m *ObservedTxs) String() string { return proto.CompactTextString(m) }
-func (*ObservedTxs) ProtoMessage()    {}
-func (*ObservedTxs) Descriptor() ([]byte, []int) {
-	return fileDescriptor_2b040b825bdb87c3, []int{1}
-}
-func (m *ObservedTxs) XXX_Unmarshal(b []byte) error {
-	return m.Unmarshal(b)
-}
-func (m *ObservedTxs) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	if deterministic {
-		return xxx_messageInfo_ObservedTxs.Marshal(b, m, deterministic)
-	} else {
-		b = b[:cap(b)]
-		n, err := m.MarshalToSizedBuffer(b)
-		if err != nil {
-			return nil, err
-		}
-		return b[:n], nil
-	}
-}
-func (m *ObservedTxs) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ObservedTxs.Merge(m, src)
-}
-func (m *ObservedTxs) XXX_Size() int {
-	return m.Size()
-}
-func (m *ObservedTxs) XXX_DiscardUnknown() {
-	xxx_messageInfo_ObservedTxs.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_ObservedTxs proto.InternalMessageInfo
-
-func (m *ObservedTxs) GetSigner() string {
-	if m != nil {
-		return m.Signer
-	}
-	return ""
-}
-
-func (m *ObservedTxs) GetTxs() []*ObservedTx {
-	if m != nil {
-		return m.Txs
-	}
-	return nil
-}
-
 func init() {
 	proto.RegisterType((*ObservedTx)(nil), "types.ObservedTx")
-	proto.RegisterType((*ObservedTxs)(nil), "types.ObservedTxs")
 }
 
 func init() { proto.RegisterFile("observed_tx.proto", fileDescriptor_2b040b825bdb87c3) }
 
 var fileDescriptor_2b040b825bdb87c3 = []byte{
-	// 215 bytes of a gzipped FileDescriptorProto
+	// 187 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0xcc, 0x4f, 0x2a, 0x4e,
 	0x2d, 0x2a, 0x4b, 0x4d, 0x89, 0x2f, 0xa9, 0xd0, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x2d,
-	0xa9, 0x2c, 0x48, 0x2d, 0x56, 0xaa, 0xe1, 0xe2, 0xf2, 0x87, 0xca, 0x85, 0x54, 0x08, 0x89, 0x70,
-	0xb1, 0x26, 0x67, 0x24, 0x66, 0xe6, 0x49, 0x30, 0x2a, 0x30, 0x6a, 0x70, 0x06, 0x41, 0x38, 0x42,
-	0x0a, 0x5c, 0xdc, 0x49, 0x39, 0xf9, 0xc9, 0xd9, 0x1e, 0xa9, 0x99, 0xe9, 0x19, 0x25, 0x12, 0x4c,
-	0x0a, 0x8c, 0x1a, 0xcc, 0x41, 0xc8, 0x42, 0x42, 0x62, 0x5c, 0x6c, 0x25, 0x15, 0x1e, 0x89, 0xc5,
-	0x19, 0x12, 0xcc, 0x60, 0x8d, 0x50, 0x9e, 0x90, 0x1c, 0x17, 0x57, 0x71, 0x6a, 0x51, 0x66, 0x62,
-	0x4e, 0x66, 0x55, 0x6a, 0x8a, 0x04, 0x8b, 0x02, 0xa3, 0x06, 0x4f, 0x10, 0x92, 0x88, 0x92, 0x17,
-	0x17, 0x37, 0xc2, 0xf6, 0x62, 0x90, 0x31, 0xc5, 0x99, 0xe9, 0x79, 0xa9, 0x45, 0x50, 0xfb, 0xa1,
-	0x3c, 0x21, 0x65, 0x2e, 0xe6, 0x92, 0x8a, 0x62, 0x09, 0x26, 0x05, 0x66, 0x0d, 0x6e, 0x23, 0x41,
-	0x3d, 0xb0, 0xcb, 0xf5, 0x10, 0x1a, 0x83, 0x40, 0xb2, 0x4e, 0x12, 0x27, 0x1e, 0xc9, 0x31, 0x5e,
-	0x78, 0x24, 0xc7, 0xf8, 0xe0, 0x91, 0x1c, 0xe3, 0x84, 0xc7, 0x72, 0x0c, 0x17, 0x1e, 0xcb, 0x31,
-	0xdc, 0x78, 0x2c, 0xc7, 0x90, 0xc4, 0x06, 0xf6, 0xb1, 0x31, 0x20, 0x00, 0x00, 0xff, 0xff, 0x14,
-	0x0d, 0x82, 0xe0, 0x06, 0x01, 0x00, 0x00,
+	0xa9, 0x2c, 0x48, 0x2d, 0x56, 0x9a, 0xc2, 0xc8, 0xc5, 0xe5, 0x0f, 0x95, 0x0c, 0xa9, 0x10, 0x12,
+	0xe3, 0x62, 0x2b, 0xce, 0x4c, 0xcf, 0x4b, 0x2d, 0x92, 0x60, 0x54, 0x60, 0xd4, 0xe0, 0x0c, 0x82,
+	0xf2, 0x84, 0x44, 0xb8, 0x58, 0x93, 0x33, 0x12, 0x33, 0xf3, 0x24, 0x98, 0xc0, 0xc2, 0x10, 0x8e,
+	0x90, 0x02, 0x17, 0x77, 0x52, 0x4e, 0x7e, 0x72, 0xb6, 0x47, 0x6a, 0x66, 0x7a, 0x46, 0x89, 0x04,
+	0xb3, 0x02, 0xa3, 0x06, 0x73, 0x10, 0xb2, 0x10, 0xc8, 0xbc, 0x92, 0x0a, 0x8f, 0xc4, 0xe2, 0x0c,
+	0x09, 0x16, 0x88, 0x79, 0x10, 0x9e, 0x90, 0x1c, 0x17, 0x57, 0x71, 0x6a, 0x51, 0x66, 0x62, 0x4e,
+	0x66, 0x55, 0x6a, 0x8a, 0x04, 0xab, 0x02, 0xa3, 0x06, 0x4f, 0x10, 0x92, 0x88, 0x93, 0xc4, 0x89,
+	0x47, 0x72, 0x8c, 0x17, 0x1e, 0xc9, 0x31, 0x3e, 0x78, 0x24, 0xc7, 0x38, 0xe1, 0xb1, 0x1c, 0xc3,
+	0x85, 0xc7, 0x72, 0x0c, 0x37, 0x1e, 0xcb, 0x31, 0x24, 0xb1, 0x81, 0x9d, 0x6f, 0x0c, 0x08, 0x00,
+	0x00, 0xff, 0xff, 0x77, 0x9f, 0x8f, 0xd2, 0xd3, 0x00, 0x00, 0x00,
 }
 
 func (m *ObservedTx) Marshal() (dAtA []byte, err error) {
@@ -192,63 +145,26 @@ func (m *ObservedTx) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.Serialized)
 		i = encodeVarintObservedTx(dAtA, i, uint64(len(m.Serialized)))
 		i--
-		dAtA[i] = 0x22
+		dAtA[i] = 0x2a
 	}
 	if len(m.TxHash) > 0 {
 		i -= len(m.TxHash)
 		copy(dAtA[i:], m.TxHash)
 		i = encodeVarintObservedTx(dAtA, i, uint64(len(m.TxHash)))
 		i--
-		dAtA[i] = 0x1a
+		dAtA[i] = 0x22
 	}
 	if m.BlockHeight != 0 {
 		i = encodeVarintObservedTx(dAtA, i, uint64(m.BlockHeight))
 		i--
-		dAtA[i] = 0x10
+		dAtA[i] = 0x18
 	}
 	if len(m.Chain) > 0 {
 		i -= len(m.Chain)
 		copy(dAtA[i:], m.Chain)
 		i = encodeVarintObservedTx(dAtA, i, uint64(len(m.Chain)))
 		i--
-		dAtA[i] = 0xa
-	}
-	return len(dAtA) - i, nil
-}
-
-func (m *ObservedTxs) Marshal() (dAtA []byte, err error) {
-	size := m.Size()
-	dAtA = make([]byte, size)
-	n, err := m.MarshalToSizedBuffer(dAtA[:size])
-	if err != nil {
-		return nil, err
-	}
-	return dAtA[:n], nil
-}
-
-func (m *ObservedTxs) MarshalTo(dAtA []byte) (int, error) {
-	size := m.Size()
-	return m.MarshalToSizedBuffer(dAtA[:size])
-}
-
-func (m *ObservedTxs) MarshalToSizedBuffer(dAtA []byte) (int, error) {
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if len(m.Txs) > 0 {
-		for iNdEx := len(m.Txs) - 1; iNdEx >= 0; iNdEx-- {
-			{
-				size, err := m.Txs[iNdEx].MarshalToSizedBuffer(dAtA[:i])
-				if err != nil {
-					return 0, err
-				}
-				i -= size
-				i = encodeVarintObservedTx(dAtA, i, uint64(size))
-			}
-			i--
-			dAtA[i] = 0x12
-		}
+		dAtA[i] = 0x12
 	}
 	if len(m.Signer) > 0 {
 		i -= len(m.Signer)
@@ -277,6 +193,10 @@ func (m *ObservedTx) Size() (n int) {
 	}
 	var l int
 	_ = l
+	l = len(m.Signer)
+	if l > 0 {
+		n += 1 + l + sovObservedTx(uint64(l))
+	}
 	l = len(m.Chain)
 	if l > 0 {
 		n += 1 + l + sovObservedTx(uint64(l))
@@ -291,25 +211,6 @@ func (m *ObservedTx) Size() (n int) {
 	l = len(m.Serialized)
 	if l > 0 {
 		n += 1 + l + sovObservedTx(uint64(l))
-	}
-	return n
-}
-
-func (m *ObservedTxs) Size() (n int) {
-	if m == nil {
-		return 0
-	}
-	var l int
-	_ = l
-	l = len(m.Signer)
-	if l > 0 {
-		n += 1 + l + sovObservedTx(uint64(l))
-	}
-	if len(m.Txs) > 0 {
-		for _, e := range m.Txs {
-			l = e.Size()
-			n += 1 + l + sovObservedTx(uint64(l))
-		}
 	}
 	return n
 }
@@ -351,173 +252,6 @@ func (m *ObservedTx) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowObservedTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthObservedTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthObservedTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Chain = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 2:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field BlockHeight", wireType)
-			}
-			m.BlockHeight = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowObservedTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.BlockHeight |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field TxHash", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowObservedTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthObservedTx
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthObservedTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.TxHash = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 4:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Serialized", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowObservedTx
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				byteLen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			if byteLen < 0 {
-				return ErrInvalidLengthObservedTx
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex < 0 {
-				return ErrInvalidLengthObservedTx
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Serialized = append(m.Serialized[:0], dAtA[iNdEx:postIndex]...)
-			if m.Serialized == nil {
-				m.Serialized = []byte{}
-			}
-			iNdEx = postIndex
-		default:
-			iNdEx = preIndex
-			skippy, err := skipObservedTx(dAtA[iNdEx:])
-			if err != nil {
-				return err
-			}
-			if (skippy < 0) || (iNdEx+skippy) < 0 {
-				return ErrInvalidLengthObservedTx
-			}
-			if (iNdEx + skippy) > l {
-				return io.ErrUnexpectedEOF
-			}
-			iNdEx += skippy
-		}
-	}
-
-	if iNdEx > l {
-		return io.ErrUnexpectedEOF
-	}
-	return nil
-}
-func (m *ObservedTxs) Unmarshal(dAtA []byte) error {
-	l := len(dAtA)
-	iNdEx := 0
-	for iNdEx < l {
-		preIndex := iNdEx
-		var wire uint64
-		for shift := uint(0); ; shift += 7 {
-			if shift >= 64 {
-				return ErrIntOverflowObservedTx
-			}
-			if iNdEx >= l {
-				return io.ErrUnexpectedEOF
-			}
-			b := dAtA[iNdEx]
-			iNdEx++
-			wire |= uint64(b&0x7F) << shift
-			if b < 0x80 {
-				break
-			}
-		}
-		fieldNum := int32(wire >> 3)
-		wireType := int(wire & 0x7)
-		if wireType == 4 {
-			return fmt.Errorf("proto: ObservedTxs: wiretype end group for non-group")
-		}
-		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ObservedTxs: illegal tag %d (wire type %d)", fieldNum, wire)
-		}
-		switch fieldNum {
-		case 1:
-			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Signer", wireType)
 			}
 			var stringLen uint64
@@ -550,9 +284,9 @@ func (m *ObservedTxs) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Txs", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
 			}
-			var msglen int
+			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowObservedTx
@@ -562,24 +296,107 @@ func (m *ObservedTxs) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				msglen |= int(b&0x7F) << shift
+				stringLen |= uint64(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if msglen < 0 {
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
 				return ErrInvalidLengthObservedTx
 			}
-			postIndex := iNdEx + msglen
+			postIndex := iNdEx + intStringLen
 			if postIndex < 0 {
 				return ErrInvalidLengthObservedTx
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Txs = append(m.Txs, &ObservedTx{})
-			if err := m.Txs[len(m.Txs)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
-				return err
+			m.Chain = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field BlockHeight", wireType)
+			}
+			m.BlockHeight = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowObservedTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.BlockHeight |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		case 4:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TxHash", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowObservedTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthObservedTx
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthObservedTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.TxHash = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 5:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Serialized", wireType)
+			}
+			var byteLen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowObservedTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				byteLen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if byteLen < 0 {
+				return ErrInvalidLengthObservedTx
+			}
+			postIndex := iNdEx + byteLen
+			if postIndex < 0 {
+				return ErrInvalidLengthObservedTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Serialized = append(m.Serialized[:0], dAtA[iNdEx:postIndex]...)
+			if m.Serialized == nil {
+				m.Serialized = []byte{}
 			}
 			iNdEx = postIndex
 		default:
