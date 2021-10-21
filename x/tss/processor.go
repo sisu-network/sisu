@@ -257,6 +257,15 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 				return err
 			}
 		}
+
+		if msg.Type() == types.MSG_TYPE_TX_OUT {
+			txOut := msg.(*types.TxOut)
+			hash := utils.KeccakHash32(string(txOut.SerializeWithoutSigner()))
+
+			if err := p.checkAndInsertMempoolTx(hash, "tx out"); err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil

@@ -65,3 +65,58 @@ func (msg *TxOut) ValidateBasic() error {
 func (msg *TxOut) GetHash() string {
 	return utils.KeccakHash32(msg.OutChain + string(msg.OutBytes))
 }
+
+// Serialize this message without the signer. This is similar to MarshalToSizedBuffer with the
+// signer encoding removed. Any change in the proto file should also change this function.
+func (m *TxOut) SerializeWithoutSigner() []byte {
+	size := m.Size()
+	dAtA := make([]byte, size)
+
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.OutBytes) > 0 {
+		i -= len(m.OutBytes)
+		copy(dAtA[i:], m.OutBytes)
+		i = encodeVarintTxOut(dAtA, i, uint64(len(m.OutBytes)))
+		i--
+		dAtA[i] = 0x3a
+	}
+	if len(m.InHash) > 0 {
+		i -= len(m.InHash)
+		copy(dAtA[i:], m.InHash)
+		i = encodeVarintTxOut(dAtA, i, uint64(len(m.InHash)))
+		i--
+		dAtA[i] = 0x32
+	}
+	if m.InBlockHeight != 0 {
+		i = encodeVarintTxOut(dAtA, i, uint64(m.InBlockHeight))
+		i--
+		dAtA[i] = 0x28
+	}
+	if len(m.OutChain) > 0 {
+		i -= len(m.OutChain)
+		copy(dAtA[i:], m.OutChain)
+		i = encodeVarintTxOut(dAtA, i, uint64(len(m.OutChain)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if len(m.InChain) > 0 {
+		i -= len(m.InChain)
+		copy(dAtA[i:], m.InChain)
+		i = encodeVarintTxOut(dAtA, i, uint64(len(m.InChain)))
+		i--
+		dAtA[i] = 0x1a
+	}
+
+	// No signer.
+
+	if m.TxType != 0 {
+		i = encodeVarintTxOut(dAtA, i, uint64(m.TxType))
+		i--
+		dAtA[i] = 0x8
+	}
+
+	return dAtA[:len(dAtA)-i]
+}

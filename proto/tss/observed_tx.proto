@@ -1,6 +1,7 @@
 syntax = "proto3";
 package types;
 
+// Note: all new fields in this proto MUST be included in SerializeWithoutSigner in the go file.
 message ObservedTx {
   string signer = 1;
   string chain = 2;
