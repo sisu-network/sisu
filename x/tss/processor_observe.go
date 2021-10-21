@@ -1,6 +1,8 @@
 package tss
 
 import (
+	"fmt"
+
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/sisu/utils"
@@ -22,43 +24,37 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) {
 			// indicate that we have observed this transction and broadcast it to cosmos chain.
 			hash := utils.GetObservedTxHash(txs.Block, txs.Chain, tx.Serialized)
 
-			arr := make([]*tssTypes.ObservedTx, 1)
-			arr[0] = &tssTypes.ObservedTx{
+			msgTx := &tssTypes.ObservedTx{
 				Chain:       txs.Chain,
 				TxHash:      hash,
 				BlockHeight: txs.Block,
 				Serialized:  tx.Serialized,
 			}
 
-			observedTxs := tssTypes.NewObservedTxs(p.appKeys.GetSignerAddress().String(), arr)
-			if len(observedTxs.Txs) > 0 {
-				// Send to TxSubmitter. For now, we only want to include 1 observed tx per 1 Cosmos tx.
-				go p.txSubmit.SubmitMessage(observedTxs)
-			}
+			observedTxs := tssTypes.NewObservedTxs(p.appKeys.GetSignerAddress().String(), msgTx)
+			go p.txSubmit.SubmitMessage(observedTxs)
 		}
 	}
 }
 
-func (p *Processor) CheckObservedTxs(ctx sdk.Context, msgs *tssTypes.ObservedTxs) error {
+func (p *Processor) CheckObservedTxs(ctx sdk.Context, msgs *tssTypes.ObservedTx) error {
 	// TODO: implement this. Compare this observed txs with what we have in database.
 	return nil
 }
 
 // Delivers observed Txs.
-func (p *Processor) DeliverObservedTxs(ctx sdk.Context, msg *tssTypes.ObservedTxs) ([]byte, error) {
+func (p *Processor) DeliverObservedTxs(ctx sdk.Context, tx *tssTypes.ObservedTx) ([]byte, error) {
 	// Update the obsevation count for each transaction.
-	for _, tx := range msg.Txs {
-		if p.keeper.GetObservedTx(ctx, tx.Chain, tx.BlockHeight, tx.TxHash) != nil {
-			utils.LogVerbose("This tx has been included in Sisu block: ", tx.Chain, tx.BlockHeight, tx.TxHash)
-			continue
-		}
-
-		// Save this to KV store.
-		p.keeper.SaveObservedTx(ctx, tx)
-
-		// Save this to our local storage in case we have not seen it.
-		p.createAndBroadcastTxOuts(ctx, tx)
+	if p.keeper.GetObservedTx(ctx, tx.Chain, tx.BlockHeight, tx.TxHash) != nil {
+		utils.LogVerbose("This tx has been included in Sisu block: ", tx.Chain, tx.BlockHeight, tx.TxHash)
+		return nil, fmt.Errorf("this observed tx has been added into our block")
 	}
+
+	// Save this to KV store.
+	p.keeper.SaveObservedTx(ctx, tx)
+
+	// Save this to our local storage in case we have not seen it.
+	p.createAndBroadcastTxOuts(ctx, tx)
 
 	return nil, nil
 }

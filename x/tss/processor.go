@@ -200,8 +200,8 @@ func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
 		case *types.KeygenProposal:
 			return p.CheckKeyGenProposal(msg.(*types.KeygenProposal))
 		case *types.KeygenResult:
-		case *types.ObservedTxs:
-			return p.CheckObservedTxs(ctx, msg.(*types.ObservedTxs))
+		case *types.ObservedTx:
+			return p.CheckObservedTxs(ctx, msg.(*types.ObservedTx))
 		case *types.TxOut:
 			return p.CheckTxOut(ctx, msg.(*types.TxOut))
 		case *types.KeysignResult:
