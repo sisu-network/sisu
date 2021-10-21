@@ -37,6 +37,10 @@ type Database interface {
 	IsContractDeployTx(chain string, hashWithoutSig string) bool
 	UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string, sig []byte)
 	UpdateTxOutStatus(chain, hashWithoutSig, status string)
+
+	// Mempool tx
+	InsertMempoolTxHash(hash string)
+	MempoolTxExisted(hash string) bool
 }
 
 type SqlDatabase struct {
@@ -426,4 +430,27 @@ func (d *SqlDatabase) UpdateTxOutStatus(chain, hashWithSig, status string) {
 	if err != nil {
 		utils.LogError("failed to update chain status", chain, hashWithSig, ", err =", err)
 	}
+}
+
+func (d *SqlDatabase) InsertMempoolTxHash(hash string) {
+	query := "INSERT INTO mempool_tx (hash) VALUES (?)"
+	params := []interface{}{hash}
+
+	_, err := d.db.Exec(query, params...)
+	if err != nil {
+		utils.LogError("failed to insert tx hash into mempool_tx table, err =", err)
+	}
+}
+
+func (d *SqlDatabase) MempoolTxExisted(hash string) bool {
+	query := "SELECT hash FROM mempool_tx WHERE hash=?"
+	params := []interface{}{hash}
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		utils.LogError("failed to query mempool_tx, err =", err)
+	}
+	defer rows.Close()
+
+	return rows.Next()
 }
