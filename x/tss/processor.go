@@ -244,17 +244,34 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 			proposalMsg := msg.(*types.KeygenProposal)
 			hash := utils.KeccakHash32(string(proposalMsg.SerializeWithoutSigner()))
 
-			if p.db.MempoolTxExisted(hash) {
-				err := fmt.Errorf("keygen proposal has been added into the mempool! hash = %s", hash)
-				utils.LogError(err)
-
+			if err := p.checkAndInsertMempoolTx(hash, "keygen proposal"); err != nil {
 				return err
 			}
+		}
 
-			utils.LogVerbose("Inserting into the mempool table, hash =", hash)
-			p.db.InsertMempoolTxHash(hash)
+		if msg.Type() == types.MSG_TYPE_OBSERVED_TX {
+			observedTx := msg.(*types.ObservedTx)
+			hash := utils.KeccakHash32(string(observedTx.SerializeWithoutSigner()))
+
+			if err := p.checkAndInsertMempoolTx(hash, "observed tx"); err != nil {
+				return err
+			}
 		}
 	}
+
+	return nil
+}
+
+func (p *Processor) checkAndInsertMempoolTx(hash, msgType string) error {
+	if p.db.MempoolTxExisted(hash) {
+		err := fmt.Errorf("%s has been added into the mempool! hash = %s", msgType, hash)
+		utils.LogError(err)
+
+		return err
+	}
+
+	utils.LogVerbose("Inserting", msgType, "into the mempool table, hash =", hash)
+	p.db.InsertMempoolTxHash(hash)
 
 	return nil
 }

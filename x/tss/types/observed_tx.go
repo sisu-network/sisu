@@ -7,9 +7,13 @@ import (
 
 var _ sdk.Msg = &ObservedTx{}
 
-func NewObservedTxs(signer string, tx *ObservedTx) *ObservedTx {
+func NewObservedTxs(signer string, chain string, txHash string, blockHeight int64, serialized []byte) *ObservedTx {
 	return &ObservedTx{
-		Signer: signer,
+		Signer:      signer,
+		Chain:       chain,
+		TxHash:      txHash,
+		BlockHeight: blockHeight,
+		Serialized:  serialized,
 	}
 }
 
@@ -20,7 +24,7 @@ func (msg *ObservedTx) Route() string {
 
 // Type ...
 func (msg *ObservedTx) Type() string {
-	return MSG_TYPE_OBSERVED_TXS
+	return MSG_TYPE_OBSERVED_TX
 }
 
 // GetSigners ...
@@ -49,4 +53,46 @@ func (msg *ObservedTx) ValidateBasic() error {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid creator address (%s)", err)
 	}
 	return nil
+}
+
+// Serialize this message without the signer. This is similar to MarshalToSizedBuffer with the
+// signer encoding removed. Any change in the proto file should also change this function.
+func (m *ObservedTx) SerializeWithoutSigner() []byte {
+	size := m.Size()
+	dAtA := make([]byte, size)
+
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if len(m.Serialized) > 0 {
+		i -= len(m.Serialized)
+		copy(dAtA[i:], m.Serialized)
+		i = encodeVarintObservedTx(dAtA, i, uint64(len(m.Serialized)))
+		i--
+		dAtA[i] = 0x2a
+	}
+	if len(m.TxHash) > 0 {
+		i -= len(m.TxHash)
+		copy(dAtA[i:], m.TxHash)
+		i = encodeVarintObservedTx(dAtA, i, uint64(len(m.TxHash)))
+		i--
+		dAtA[i] = 0x22
+	}
+	if m.BlockHeight != 0 {
+		i = encodeVarintObservedTx(dAtA, i, uint64(m.BlockHeight))
+		i--
+		dAtA[i] = 0x18
+	}
+	if len(m.Chain) > 0 {
+		i -= len(m.Chain)
+		copy(dAtA[i:], m.Chain)
+		i = encodeVarintObservedTx(dAtA, i, uint64(len(m.Chain)))
+		i--
+		dAtA[i] = 0x12
+	}
+
+	// No signer.
+
+	return dAtA[:len(dAtA)-i]
 }

@@ -24,14 +24,13 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) {
 			// indicate that we have observed this transction and broadcast it to cosmos chain.
 			hash := utils.GetObservedTxHash(txs.Block, txs.Chain, tx.Serialized)
 
-			msgTx := &tssTypes.ObservedTx{
-				Chain:       txs.Chain,
-				TxHash:      hash,
-				BlockHeight: txs.Block,
-				Serialized:  tx.Serialized,
-			}
-
-			observedTxs := tssTypes.NewObservedTxs(p.appKeys.GetSignerAddress().String(), msgTx)
+			observedTxs := tssTypes.NewObservedTxs(
+				p.appKeys.GetSignerAddress().String(),
+				txs.Chain,
+				hash,
+				txs.Block,
+				tx.Serialized,
+			)
 			go p.txSubmit.SubmitMessage(observedTxs)
 		}
 	}
