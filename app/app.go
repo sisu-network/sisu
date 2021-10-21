@@ -178,6 +178,7 @@ type App struct {
 	globalData        common.GlobalData
 	internalApiServer server.Server
 	tssProcessor      *tss.Processor
+	txDecoder         sdk.TxDecoder
 
 	///////////////////////////////////////////////////////////////
 
@@ -239,7 +240,8 @@ func New(
 	cdc := encodingConfig.Amino
 	interfaceRegistry := encodingConfig.InterfaceRegistry
 
-	bApp := baseapp.NewBaseApp(Name, logger, tdb, encodingConfig.TxConfig.TxDecoder(), baseAppOptions...)
+	txDecoder := encodingConfig.TxConfig.TxDecoder()
+	bApp := baseapp.NewBaseApp(Name, logger, tdb, txDecoder, baseAppOptions...)
 	bApp.SetCommitMultiStoreTracer(traceStore)
 	bApp.SetAppVersion(version.Version)
 	bApp.SetInterfaceRegistry(interfaceRegistry)
@@ -266,6 +268,7 @@ func New(
 		keys:              keys,
 		tkeys:             tkeys,
 		memKeys:           memKeys,
+		txDecoder:         txDecoder,
 	}
 
 	app.setupDefaultKeepers(homePath, bApp, skipUpgradeHeights)
@@ -348,7 +351,7 @@ func New(
 		evm.NewAppModule(appCodec, app.evmKeeper),
 	}
 
-	tssProcessor := tss.NewProcessor(app.tssKeeper, tssConfig, app.appKeys, app.db, app.txSubmitter, app.globalData)
+	tssProcessor := tss.NewProcessor(app.tssKeeper, tssConfig, app.appKeys, app.db, app.txDecoder, app.txSubmitter, app.globalData)
 	if tssConfig.Enable {
 		utils.LogInfo("TSS is enabled")
 		tssProcessor.Init()
