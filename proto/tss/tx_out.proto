@@ -5,6 +5,7 @@ enum TxOutType {
   CONTRACT_DEPLOYMENT = 0;
 }
 
+// Note: all new fields in this proto MUST be included in SerializeWithoutSigner in the go file.
 message TxOut {
   TxOutType txType = 1;
   string signer = 2;
