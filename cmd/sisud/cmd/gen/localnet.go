@@ -14,6 +14,7 @@ import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/cosmos-sdk/types/module"
 	banktypes "github.com/sisu-network/cosmos-sdk/x/bank/types"
+	"github.com/sisu-network/sisu/config"
 )
 
 var (
@@ -46,7 +47,7 @@ Example:
 			}
 
 			serverCtx := server.GetServerContextFromCmd(cmd)
-			config := serverCtx.Config
+			tmConfig := serverCtx.Config
 
 			outputDir, _ := cmd.Flags().GetString(flagOutputDir)
 			minGasPrices, _ := cmd.Flags().GetString(server.FlagMinGasPrices)
@@ -61,10 +62,49 @@ Example:
 			chainID := "sisu-dev"
 			keyringBackend := keyring.BackendTest
 
+			nodeConfig := config.Config{
+				Mode: "dev",
+				Sisu: config.SisuConfig{
+					ChainId:        chainID,
+					KeyringBackend: keyringBackend,
+					ApiHost:        "0.0.0.0",
+					ApiPort:        25456,
+					Sql: config.SqlConfig{
+						Host:     "0.0.0.0",
+						Port:     3306,
+						Username: "root",
+						Password: "password",
+						Schema:   "sisu",
+					},
+				},
+				Eth: config.ETHConfig{
+					Host:          "0.0.0.0",
+					Port:          1234,
+					ImportAccount: true,
+				},
+				Tss: config.TssConfig{
+					Enable:     enableTss,
+					DheartHost: "0.0.0.0",
+					DheartPort: 5678,
+					SupportedChains: map[string]config.TssChainConfig{
+						"eth": {
+							Symbol:   "eth",
+							Id:       1,
+							DeyesUrl: "http://0.0.0.0:31001",
+						},
+						"sisu-eth": {
+							Symbol:   "sisu-eth",
+							Id:       36767,
+							DeyesUrl: "http://0.0.0.0:31001",
+						},
+					},
+				},
+			}
+
 			settings := &Setting{
 				clientCtx:      clientCtx,
 				cmd:            cmd,
-				nodeConfig:     config,
+				tmConfig:       tmConfig,
 				mbm:            mbm,
 				genBalIterator: genBalIterator,
 				outputDir:      outputDir,
@@ -76,12 +116,7 @@ Example:
 				keyringBackend: keyringBackend,
 				algoStr:        algo,
 				numValidators:  numValidators,
-				enableTss:      enableTss,
-				sqlHost:        "0.0.0.0",
-				sqlPort:        3306,
-				sqlUsername:    "root",
-				sqlPassword:    "password",
-				sqlSchema:      "sisu",
+				nodeConfigs:    []config.Config{nodeConfig},
 			}
 
 			return InitNetwork(settings)

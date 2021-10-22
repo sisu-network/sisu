@@ -97,6 +97,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		txCommand(),
 		keys.Commands(app.MainAppHome),
 		gen.LocalnetCmd(app.ModuleBasics, banktypes.GenesisBalancesIterator{}),
+		gen.LocalDockerCmd(app.ModuleBasics, banktypes.GenesisBalancesIterator{}),
 		gen.TestnetCmd(app.ModuleBasics, banktypes.GenesisBalancesIterator{}),
 		resetCmd(),
 	)

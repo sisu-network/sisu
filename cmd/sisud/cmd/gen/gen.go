@@ -21,7 +21,6 @@ import (
 	genutiltypes "github.com/sisu-network/cosmos-sdk/x/genutil/types"
 	stakingtypes "github.com/sisu-network/cosmos-sdk/x/staking/types"
 	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/spf13/cobra"
 
 	tmconfig "github.com/sisu-network/tendermint/config"
@@ -36,7 +35,7 @@ const nodeDirPerm = 0755
 type Setting struct {
 	clientCtx      client.Context
 	cmd            *cobra.Command
-	nodeConfig     *tmconfig.Config
+	tmConfig       *tmconfig.Config
 	mbm            module.BasicManager
 	genBalIterator banktypes.GenesisBalancesIterator
 	outputDir      string
@@ -49,19 +48,15 @@ type Setting struct {
 	keyringBackend string
 	algoStr        string
 	numValidators  int
-	enableTss      bool
-	sqlHost        string
-	sqlPort        int
-	sqlUsername    string
-	sqlPassword    string
-	sqlSchema      string
+
+	nodeConfigs []config.Config
 }
 
 // Initialize the localnet
 func InitNetwork(settings *Setting) error {
 	clientCtx := settings.clientCtx
 	cmd := settings.cmd
-	nodeConfig := settings.nodeConfig
+	tmConfig := settings.tmConfig
 	mbm := settings.mbm
 	genBalIterator := settings.genBalIterator
 	outputDir := settings.outputDir
@@ -104,8 +99,8 @@ func InitNetwork(settings *Setting) error {
 		mainAppDir := filepath.Join(nodeDir, nodeDaemonHome)
 		gentxsDir := filepath.Join(outputDir, "gentxs")
 
-		nodeConfig.SetRoot(mainAppDir)
-		nodeConfig.RPC.ListenAddress = "tcp://0.0.0.0:26657"
+		tmConfig.SetRoot(mainAppDir)
+		tmConfig.RPC.ListenAddress = "tcp://0.0.0.0:26657"
 
 		if err := os.MkdirAll(filepath.Join(mainAppDir, "config"), nodeDirPerm); err != nil {
 			_ = os.RemoveAll(outputDir)
@@ -113,22 +108,22 @@ func InitNetwork(settings *Setting) error {
 		}
 
 		if monikers == nil || len(monikers) == 0 {
-			nodeConfig.Moniker = nodeDirName
+			tmConfig.Moniker = nodeDirName
 		} else {
-			nodeConfig.Moniker = monikers[i]
+			tmConfig.Moniker = monikers[i]
 		}
 
 		ip := ips[i]
 
 		var err error
-		nodeIDs[i], valPubKeys[i], err = genutil.InitializeNodeValidatorFiles(nodeConfig)
+		nodeIDs[i], valPubKeys[i], err = genutil.InitializeNodeValidatorFiles(tmConfig)
 		if err != nil {
 			_ = os.RemoveAll(outputDir)
 			return err
 		}
 
 		memo := fmt.Sprintf("%s@%s:26656", nodeIDs[i], ip)
-		genFiles = append(genFiles, nodeConfig.GenesisFile())
+		genFiles = append(genFiles, tmConfig.GenesisFile())
 
 		kb, err := keyring.New(sdk.KeyringServiceName(), keyringBackend, mainAppDir, inBuf)
 		if err != nil {
@@ -211,7 +206,7 @@ func InitNetwork(settings *Setting) error {
 
 		srvconfig.WriteConfigFile(filepath.Join(mainAppDir, "config/app.toml"), simappConfig)
 
-		generateSisuToml(settings, nodeDir)
+		generateSisuToml(settings, i, nodeDir)
 	}
 
 	if err := initGenFiles(clientCtx, mbm, chainID, genAccounts, genBalances, genFiles, numValidators); err != nil {
@@ -219,7 +214,7 @@ func InitNetwork(settings *Setting) error {
 	}
 
 	err := collectGenFiles(
-		clientCtx, nodeConfig, chainID, nodeIDs, valPubKeys, numValidators,
+		clientCtx, tmConfig, chainID, nodeIDs, valPubKeys, numValidators,
 		outputDir, nodeDirPrefix, nodeDaemonHome, genBalIterator,
 	)
 	if err != nil {
@@ -324,13 +319,9 @@ func collectGenFiles(
 	return nil
 }
 
-func generateSisuToml(settings *Setting, nodeDir string) {
-	utils.LogInfo("Generating sisu.toml")
-
+func generateSisuToml(settings *Setting, index int, nodeDir string) {
 	appDir := filepath.Join(nodeDir, "main")
 	configDir := filepath.Join(appDir, "config")
-
-	utils.LogInfo("sisu configDir = ", configDir)
 
 	if err := os.MkdirAll(configDir, nodeDirPerm); err != nil {
 		_ = os.RemoveAll(settings.outputDir)
@@ -342,44 +333,7 @@ func generateSisuToml(settings *Setting, nodeDir string) {
 		panic(err)
 	}
 
-	cfg := config.Config{
-		Mode: "dev",
-		Sisu: config.SisuConfig{
-			ChainId:        settings.chainID,
-			KeyringBackend: settings.keyringBackend,
-			ApiHost:        "0.0.0.0",
-			ApiPort:        25456,
-			Sql: config.SqlConfig{
-				Host:     settings.sqlHost,
-				Port:     settings.sqlPort,
-				Username: settings.sqlUsername,
-				Password: settings.sqlPassword,
-				Schema:   settings.sqlSchema,
-			},
-		},
-		Eth: config.ETHConfig{
-			Host:          "0.0.0.0",
-			Port:          1234,
-			ImportAccount: true,
-		},
-		Tss: config.TssConfig{
-			Enable:     settings.enableTss,
-			DheartHost: "0.0.0.0",
-			DheartPort: 5678,
-			SupportedChains: map[string]config.TssChainConfig{
-				"eth": {
-					Symbol:   "eth",
-					Id:       1,
-					DeyesUrl: "http://0.0.0.0:31001",
-				},
-				"sisu-eth": {
-					Symbol:   "sisu-eth",
-					Id:       36767,
-					DeyesUrl: "http://0.0.0.0:31001",
-				},
-			},
-		},
-	}
+	cfg := settings.nodeConfigs[index]
 
 	config.WriteConfigFile(filepath.Join(configDir, "sisu.toml"), &cfg)
 }

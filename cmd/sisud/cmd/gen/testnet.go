@@ -65,7 +65,7 @@ Example:
 			settings := &Setting{
 				clientCtx:      clientCtx,
 				cmd:            cmd,
-				nodeConfig:     config,
+				tmConfig:       config,
 				mbm:            mbm,
 				genBalIterator: genBalIterator,
 				outputDir:      outputDir,
