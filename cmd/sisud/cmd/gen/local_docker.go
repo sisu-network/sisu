@@ -3,6 +3,7 @@ package gen
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"path/filepath"
 	"text/template"
 
@@ -41,7 +42,7 @@ necessary files (private validator, genesis, config, etc.).
 Note, strict routability for addresses is turned off in the config file.
 Example:
 	For multiple nodes (running with docker):
-	  sisu local-docker --v 4 --output-dir ./output --starting-ip-address 192.168.10.2
+	  ./sisu local-docker --v 4 --output-dir ./output --starting-ip-address 192.168.10.2
 	`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -65,13 +66,19 @@ Example:
 			keyringBackend := keyring.BackendTest
 
 			ips := getLocalIps(startingIPAddress, numValidators)
-
 			nodeConfigs := make([]config.Config, numValidators)
 			for i, _ := range ips {
+				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
+
+				if err := os.MkdirAll(dir, nodeDirPerm); err != nil {
+					panic(err)
+				}
+
 				nodeConfig := getNodeSettings(chainID, keyringBackend, i)
 				nodeConfigs[i] = nodeConfig
 
-				generateDeyesToml(i, nodeConfig, filepath.Join(outputDir, fmt.Sprintf("node%d", i)))
+				generateEyesToml(i, nodeConfig, dir)
+				generateHeartToml(i, dir)
 			}
 
 			generateDockerCompose(filepath.Join(outputDir, "docker-compose.yml"), ips, nodeConfigs)
@@ -120,11 +127,11 @@ func getNodeSettings(chainID, keyringBackend string, index int) config.Config {
 			ApiHost:        "0.0.0.0",
 			ApiPort:        25456,
 			Sql: config.SqlConfig{
-				Host:     fmt.Sprintf("sisu%d", index),
+				Host:     "mysql",
 				Port:     3306,
 				Username: "root",
 				Password: "password",
-				Schema:   "sisu",
+				Schema:   fmt.Sprintf("sisu%d", index),
 			},
 		},
 		Eth: config.ETHConfig{
@@ -167,27 +174,29 @@ func generateDockerCompose(outputPath string, ips []string, nodeConfigs []config
 
 	const dockerComposeTemplate = `version: "3"{{ $ganaches := .Ganaches }}
 services:{{ range $k, $ganache := $ganaches }}
-	ganache{{ $k }}:
-		build: ganache-cli
-		environment:
-			- port=7545
-			- networkId=1
+  ganache{{ $k }}:
+    image: ganache-cli
+    environment:
+      - port=7545
+      - networkId=1
 {{ end }}
+  mysql:
+    image: mysql:8.0.19
+    command: "--default-authentication-plugin=mysql_native_password"
+    restart: always
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+      interval: 3s
+      retries: 5
+      start_period: 30s
+    volumes:
+      - .db:/var/lib/mysql
 {{ range $k, $nodeData := .NodeData }}
-	mysql{{ $k }}:
-		image: mysql:8.0.19
-		command: "--default-authentication-plugin=mysql_native_password"
-		restart: always
-		healthcheck:
-			test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
-			interval: 3s
-			retries: 5
-			start_period: 30s
-		volumes:
-			- db-data:/var/lib/mysql
-	sisu{{ $k }}:
-		container_name: node{{ $k }}
-		image: "sisu"
+  sisu{{ $k }}:
+    container_name: node{{ $k }}
+    image: "sisu"
     ports:
       - "26656-26657:26656-26657"
       - "1317:1317"
@@ -201,18 +210,28 @@ services:{{ range $k, $ganache := $ganaches }}
     depends_on:
       - deyes{{ $k }}
       - dheart{{ $k }}
-		volumes:
+    volumes:
       - ./node{{ $k }}:/root/.sisu
-	deyes{{ $k }}:
-		build: deyes
-		ports:
-			- 31001:31001
-		restart: on-failure
-		depends_on:
-			- mysql{{ range $j, $p := $ganaches }}
-			- ganache{{ $j }}{{ end }}
-		volumes:
-			- ./node{{ $k }}/deyes.toml:/app/deyes.toml
+  dheart{{ $k }}:
+    image: dheart
+    expose:
+      - 28300
+      - 5678
+    restart: on-failure
+    depends_on:
+      - mysql
+    volumes:
+      - ./node{{ $k }}/dheart.toml:/root/dheart.toml
+  deyes{{ $k }}:
+    image: deyes
+    ports:
+      - 31001:31001
+    restart: on-failure
+    depends_on:
+      - mysql{{ range $j, $p := $ganaches }}
+      - ganache{{ $j }}{{ end }}
+    volumes:
+      - ./node{{ $k }}/deyes.toml:/app/deyes.toml
 {{ end }}
 `
 
@@ -229,20 +248,22 @@ services:{{ range $k, $ganache := $ganaches }}
 	tmos.MustWriteFile(outputPath, buffer.Bytes(), 0644)
 }
 
-func generateDeyesToml(index int, nodeConfig config.Config, dir string) {
+func generateEyesToml(index int, nodeConfig config.Config, dir string) {
 	data := struct {
 		Index      int
 		NodeConfig config.Config
+		SqlSchema  string
 	}{
 		Index:      index,
 		NodeConfig: nodeConfig,
+		SqlSchema:  fmt.Sprintf("deyes%d", index),
 	}
 
-	eyesToml := `db_host = "mysql{{ .Index  }}"
+	eyesToml := `db_host = "mysql"
 db_port = 3306
 db_username = "root"
 db_password = "password"
-db_schema = "deyes"
+db_schema = "{{ .SqlSchema }}"
 
 server_port = 31001
 sisu_server_url = "http://sisu{{ .Index }}:25456"
@@ -258,10 +279,10 @@ sisu_server_url = "http://sisu{{ .Index }}:25456"
   chain = "sisu-eth"
   block_time = 1000
   starting_block = 0
-  rpc_url = "http://ganache1:8545"
+  rpc_url = "http://ganache1:7545"
 `
 
-	tmpl := template.New("localDockerCompose")
+	tmpl := template.New("eyesToml")
 
 	configTemplate, err := tmpl.Parse(eyesToml)
 	if err != nil {
@@ -272,4 +293,45 @@ sisu_server_url = "http://sisu{{ .Index }}:25456"
 	err = configTemplate.Execute(&buffer, data)
 
 	tmos.MustWriteFile(filepath.Join(dir, "deyes.toml"), buffer.Bytes(), 0644)
+}
+
+func generateHeartToml(index int, dir string) {
+	haertConfig := struct {
+		SisuServerUrl string
+		SqlHost       string
+	}{
+		SisuServerUrl: fmt.Sprintf("http://sisu%d:25456", index),
+		SqlHost:       fmt.Sprintf("sql%d", index),
+	}
+
+	heartToml := `# This is a TOML config file.
+# For more information, see https://github.com/toml-lang/toml
+
+home-dir = "/root/"
+use-on-memory = true
+sisu-server-url = " {{ .SisuServerUrl }}"
+port = 28300
+
+###############################################################################
+###                        Database Configuration                           ###
+###############################################################################
+[db]
+  host = "{{ .SqlHost }}"
+  port = 3306
+  username = "root"
+  password = "password"
+  schema = "dheart"
+`
+
+	tmpl := template.New("heartToml")
+
+	configTemplate, err := tmpl.Parse(heartToml)
+	if err != nil {
+		panic(err)
+	}
+
+	var buffer bytes.Buffer
+	err = configTemplate.Execute(&buffer, haertConfig)
+
+	tmos.MustWriteFile(filepath.Join(dir, "dheart.toml"), buffer.Bytes(), 0644)
 }
