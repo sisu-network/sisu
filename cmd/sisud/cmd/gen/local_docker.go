@@ -2,11 +2,15 @@ package gen
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"text/template"
 
+	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p-core/peer"
 	tmos "github.com/sisu-network/tendermint/libs/os"
 	"github.com/spf13/cobra"
 
@@ -78,7 +82,6 @@ Example:
 				nodeConfigs[i] = nodeConfig
 
 				generateEyesToml(i, nodeConfig, dir)
-				generateHeartToml(i, dir)
 			}
 
 			generateDockerCompose(filepath.Join(outputDir, "docker-compose.yml"), ips, nodeConfigs)
@@ -102,7 +105,22 @@ Example:
 				nodeConfigs: nodeConfigs,
 			}
 
-			return InitNetwork(settings)
+			err = InitNetwork(settings)
+			if err != nil {
+				return err
+			}
+
+			peerIds, err := getPeerIds(len(ips), outputDir, keyringBackend)
+			if err != nil {
+				panic(err)
+			}
+
+			for i, _ := range ips {
+				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
+				generateHeartToml(i, dir, peerIds)
+			}
+
+			return err
 		},
 	}
 
@@ -295,32 +313,101 @@ sisu_server_url = "http://sisu{{ .Index }}:25456"
 	tmos.MustWriteFile(filepath.Join(dir, "deyes.toml"), buffer.Bytes(), 0644)
 }
 
-func generateHeartToml(index int, dir string) {
+func getPeerIds(n int, outputDir, keyringBackend string) ([]string, error) {
+	ids := make([]string, n)
+
+	for i := 0; i < n; i++ {
+		dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
+
+		kr, err := keyring.New(sdk.KeyringServiceName(), keyringBackend, filepath.Join(dir, "main"), os.Stdin)
+		if err != nil {
+			return nil, err
+		}
+		infos, err := kr.List()
+		if err != nil {
+			return nil, err
+		}
+
+		signerInfo := infos[0]
+
+		keyType := signerInfo.GetPubKey().Type()
+		unsafe := keyring.NewUnsafe(kr)
+		hexKey, err := unsafe.UnsafeExportPrivKeyHex(signerInfo.GetName())
+		if err != nil {
+			return nil, err
+		}
+
+		bz, err := hex.DecodeString(hexKey)
+		if err != nil {
+			panic(err)
+		}
+
+		if keyType != "secp256k1" {
+			panic(fmt.Sprintf("unsupported key type: %s", keyType))
+		}
+
+		p2pPriKey, err := crypto.UnmarshalSecp256k1PrivateKey(bz)
+		if err != nil {
+			panic(err)
+		}
+
+		id, err := peer.IDFromPrivateKey(p2pPriKey)
+		if err != nil {
+			panic(err)
+		}
+
+		ids[i] = id.String()
+	}
+
+	return ids, nil
+}
+
+func generateHeartToml(index int, dir string, peerIds []string) {
+	peers := make([]string, 0, len(peerIds)-1)
+	for i := range peerIds {
+		if i == index {
+			continue
+		}
+
+		peers = append(peers, fmt.Sprintf(`"/dns/dheart%d/tcp/28300/p2p/%s"`, i, peerIds[i]))
+	}
+
+	peerString := strings.Join(peers, ", ")
 	haertConfig := struct {
+		PeerString    string
 		SisuServerUrl string
 		SqlHost       string
+		Schema        string
 	}{
+		PeerString:    peerString,
 		SisuServerUrl: fmt.Sprintf("http://sisu%d:25456", index),
 		SqlHost:       fmt.Sprintf("sql%d", index),
+		Schema:        fmt.Sprintf("dheart%d", index),
 	}
 
 	heartToml := `# This is a TOML config file.
 # For more information, see https://github.com/toml-lang/toml
 
 home-dir = "/root/"
-use-on-memory = true
+use-on-memory = false
 sisu-server-url = " {{ .SisuServerUrl }}"
-port = 28300
+port = 5678
 
 ###############################################################################
 ###                        Database Configuration                           ###
 ###############################################################################
 [db]
-  host = "{{ .SqlHost }}"
+  host = "host.docker.internal"
   port = 3306
   username = "root"
   password = "password"
-  schema = "dheart"
+  schema = "{{ .Schema }}"
+	migration-path = "file://db/migrations/"
+[connection]
+  host = "0.0.0.0"
+  port = 28300
+  rendezvous = "rendezvous"
+  peers = [{{ .PeerString }}]
 `
 
 	tmpl := template.New("heartToml")
