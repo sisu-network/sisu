@@ -104,6 +104,7 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Tr
 				RawBytes: bz,
 			}, nil
 		}
+	case MethodTransferOut:
 
 	}
 
