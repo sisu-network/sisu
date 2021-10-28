@@ -37,6 +37,7 @@ func (p *Processor) CheckTxOut(ctx sdk.Context, msg *types.TxOut) error {
 }
 
 func (p *Processor) DeliverTxOut(ctx sdk.Context, tx *types.TxOut) ([]byte, error) {
+	// TODO: check if this tx has been requested to be signed.
 	outHash := tx.GetHash()
 
 	utils.LogVerbose("Delivering TXOUT")
@@ -50,8 +51,8 @@ func (p *Processor) DeliverTxOut(ctx sdk.Context, tx *types.TxOut) ([]byte, erro
 		OutBytes:       tx.OutBytes,
 	}
 
-	// TODO: check if this tx has been requested to be signed.
-	err := p.dheartClient.KeySign(keysignReq)
+	pubKeys := p.partyManager.GetActivePartyPubkeys()
+	err := p.dheartClient.KeySign(keysignReq, pubKeys)
 	if err != nil {
 		utils.LogError("Keysign: err =", err)
 		return nil, err
