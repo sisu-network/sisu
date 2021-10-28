@@ -15,6 +15,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.0
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
 	github.com/joho/godotenv v1.3.0
+	github.com/libp2p/go-libp2p-core v0.8.0
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/sisu-network/cosmos-sdk v0.42.1-fork004
 	github.com/sisu-network/dcore v0.1.10
