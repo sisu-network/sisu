@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -36,8 +35,6 @@ type DockerNodeConfig struct {
 
 	NodeData []struct {
 		Ip          string
-		HeartIp     string
-		EyesIp      string
 		EthPortMap  int
 		GrpcPortMap int
 	}
@@ -81,10 +78,14 @@ Example:
 			chainID := "sisu-dev"
 			keyringBackend := keyring.BackendTest
 
-			startingIPAddress := "192.168.10.6"
-			ips := getLocalIps(startingIPAddress, numValidators)
-			mysqlIp := "192.168.10.4"
+			// startingIPAddress := "192.168.10.6"
+			// ips := getLocalIps(startingIPAddress, numValidators)
+			ips := make([]string, numValidators)
+			for i := range ips {
+				ips[i] = fmt.Sprintf("sisu%d", i)
+			}
 
+			mysqlIp := "192.168.10.4"
 			dockerConfig := getDockerConfig([]string{"192.168.10.2", "192.168.10.3"}, []int{1, 36767}, "192.168.10.4", ips)
 
 			nodeConfigs := make([]config.Config, numValidators)
@@ -180,8 +181,6 @@ func getDockerConfig(ganacheIps []string, chainIds []int, mysqlIp string, ips []
 	}, len(ganacheIps))
 	docker.NodeData = make([]struct {
 		Ip          string
-		HeartIp     string
-		EyesIp      string
 		EthPortMap  int
 		GrpcPortMap int
 	}, len(ips))
@@ -195,13 +194,6 @@ func getDockerConfig(ganacheIps []string, chainIds []int, mysqlIp string, ips []
 	// Node data
 	for i, ip := range ips {
 		docker.NodeData[i].Ip = ip
-
-		ipv4 := net.ParseIP(ip).To4()
-		heartIp := fmt.Sprintf("%d.%d.%d.%d", ipv4[0], ipv4[1], ipv4[2], int(ipv4[3])+len(ips))
-		eyesIp := fmt.Sprintf("%d.%d.%d.%d", ipv4[0], ipv4[1], ipv4[2], int(ipv4[3])+2*len(ips))
-
-		docker.NodeData[i].HeartIp = heartIp
-		docker.NodeData[i].EyesIp = eyesIp
 		docker.NodeData[i].EthPortMap = 1234 + i
 		docker.NodeData[i].GrpcPortMap = 9090 + i
 	}
@@ -210,11 +202,6 @@ func getDockerConfig(ganacheIps []string, chainIds []int, mysqlIp string, ips []
 }
 
 func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, ips []string) config.Config {
-	nodeIp := ips[index]
-	ipv4 := net.ParseIP(nodeIp).To4()
-	heartIp := fmt.Sprintf("%d.%d.%d.%d", ipv4[0], ipv4[1], ipv4[2], int(ipv4[3])+len(ips))
-	eyesIp := fmt.Sprintf("%d.%d.%d.%d", ipv4[0], ipv4[1], ipv4[2], int(ipv4[3])+2*len(ips))
-
 	return config.Config{
 		Mode: "dev",
 		Sisu: config.SisuConfig{
@@ -223,7 +210,7 @@ func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, 
 			ApiHost:        "0.0.0.0",
 			ApiPort:        25456,
 			Sql: config.SqlConfig{
-				Host:     mysqlIp,
+				Host:     "mysql",
 				Port:     3306,
 				Username: "root",
 				Password: "password",
@@ -238,18 +225,18 @@ func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, 
 		Tss: config.TssConfig{
 			Enable: true,
 			// Enable:     false,
-			DheartHost: heartIp,
+			DheartHost: fmt.Sprintf("dheart%d", index),
 			DheartPort: 5678,
 			SupportedChains: map[string]config.TssChainConfig{
 				"eth": {
 					Symbol:   "eth",
 					Id:       1,
-					DeyesUrl: fmt.Sprintf("http://%s:31001", eyesIp),
+					DeyesUrl: fmt.Sprintf("http://deyes%d:31001", index),
 				},
 				"sisu-eth": {
 					Symbol:   "sisu-eth",
 					Id:       36767,
-					DeyesUrl: fmt.Sprintf("http://%s:31001", eyesIp),
+					DeyesUrl: fmt.Sprintf("http://deyes%d:31001", index),
 				},
 			},
 		},
@@ -261,7 +248,6 @@ func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, 
 // - 192.168.10.4: mysql
 // - 192.168.10.5 onward: for Sisu and others
 func generateDockerCompose(outputPath string, ips []string, dockerConfig DockerNodeConfig) {
-
 	const dockerComposeTemplate = `version: "3"{{ $ganaches := .Ganaches }}
 services:{{ range $k, $ganache := $ganaches }}
   ganache{{ $k }}:
@@ -269,9 +255,6 @@ services:{{ range $k, $ganache := $ganaches }}
     environment:
       - port=7545
       - networkId={{ $ganache.ChainId }}
-    networks:
-      sisu_net:
-        ipv4_address: {{ $ganache.Ip }}
 {{ end }}
   mysql:
     image: mysql:8.0.19
@@ -288,9 +271,6 @@ services:{{ range $k, $ganache := $ganaches }}
       - .db:/var/lib/mysql
     ports:
       - 4000:3306
-    networks:
-      sisu_net:
-        ipv4_address: {{ .MysqlIp }}
 {{ range $k, $nodeData := .NodeData }}
   sisu{{ $k }}:
     container_name: sisu{{ $k }}
@@ -310,9 +290,6 @@ services:{{ range $k, $ganache := $ganaches }}
       - dheart{{ $k }}
     volumes:
       - ./node{{ $k }}:/root/.sisu
-    networks:
-      sisu_net:
-        ipv4_address: {{ $nodeData.Ip }}
   dheart{{ $k }}:
     image: dheart
     expose:
@@ -323,9 +300,6 @@ services:{{ range $k, $ganache := $ganaches }}
       - mysql
     volumes:
       - ./node{{ $k }}/dheart.toml:/root/dheart.toml
-    networks:
-      sisu_net:
-        ipv4_address: {{ $nodeData.HeartIp }}
   deyes{{ $k }}:
     image: deyes
     restart: on-failure
@@ -334,17 +308,7 @@ services:{{ range $k, $ganache := $ganaches }}
       - ganache{{ $j }}{{ end }}
     volumes:
       - ./node{{ $k }}/deyes.toml:/app/deyes.toml
-    networks:
-      sisu_net:
-        ipv4_address: {{ $nodeData.EyesIp }}
 {{ end }}
-networks:
-  sisu_net:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 192.168.10.0/32
 `
 
 	tmpl := template.New("localDockerCompose")
@@ -370,13 +334,13 @@ func generateEyesToml(index int, dockerConfig DockerNodeConfig, dir string) {
 		SqlHost       string
 	}{
 		Index:    index,
-		Ganache0: dockerConfig.Ganaches[0].Ip,
-		Ganache1: dockerConfig.Ganaches[1].Ip,
+		Ganache0: "ganache0",
+		Ganache1: "ganache1",
 
-		SqlHost:   dockerConfig.MysqlIp,
+		SqlHost:   "mysql",
 		SqlSchema: fmt.Sprintf("deyes%d", index),
 
-		SisuServerUrl: fmt.Sprintf("http://%s:25456", dockerConfig.NodeData[index].Ip),
+		SisuServerUrl: fmt.Sprintf("http://sisu%d:25456", index),
 	}
 
 	eyesToml := `db_host = "{{ .SqlHost }}"
@@ -482,8 +446,8 @@ func generateHeartToml(index int, dir string, dockerConfig DockerNodeConfig, pee
 		Schema        string
 	}{
 		PeerString:    peerString,
-		SisuServerUrl: fmt.Sprintf("http://%s:25456", dockerConfig.NodeData[index].Ip),
-		SqlHost:       dockerConfig.MysqlIp,
+		SisuServerUrl: fmt.Sprintf("http://sisu%d:25456", index),
+		SqlHost:       "mysql",
 		Schema:        fmt.Sprintf("dheart%d", index),
 	}
 
