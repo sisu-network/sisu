@@ -118,7 +118,7 @@ func transferEth(url, recipient string, wallet *hdwallet.Wallet, amount int) {
 
 func queryPubKeys(cmd *cobra.Command) map[string][]byte {
 	grpcConn, err := grpc.Dial(
-		"127.0.0.1:9090",
+		"0.0.0.0:9090",
 		grpc.WithInsecure(),
 	)
 	defer grpcConn.Close()
