@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -28,14 +29,17 @@ import (
 
 type DockerNodeConfig struct {
 	Ganaches []struct {
-		Ip string
+		Ip      string
+		ChainId int
 	}
 	MysqlIp string
 
 	NodeData []struct {
-		Ip      string
-		HeartIp string
-		EyesIp  string
+		Ip          string
+		HeartIp     string
+		EyesIp      string
+		EthPortMap  int
+		GrpcPortMap int
 	}
 }
 
@@ -70,6 +74,9 @@ Example:
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
 
+			// Clean up
+			removeOldDirs(outputDir)
+
 			// Get Chain id and keyring backend from .env file.
 			chainID := "sisu-dev"
 			keyringBackend := keyring.BackendTest
@@ -78,7 +85,7 @@ Example:
 			ips := getLocalIps(startingIPAddress, numValidators)
 			mysqlIp := "192.168.10.4"
 
-			dockerConfig := getDockerConfig([]string{"192.168.10.2", "192.168.10.3"}, "192.168.10.4", ips)
+			dockerConfig := getDockerConfig([]string{"192.168.10.2", "192.168.10.3"}, []int{1, 36767}, "192.168.10.4", ips)
 
 			nodeConfigs := make([]config.Config, numValidators)
 			for i, _ := range ips {
@@ -146,20 +153,43 @@ Example:
 	return cmd
 }
 
-func getDockerConfig(ganacheIps []string, mysqlIp string, ips []string) DockerNodeConfig {
+func removeOldDirs(root string) {
+	files, err := ioutil.ReadDir(root)
+	if err != nil {
+		panic(err)
+	}
+
+	for _, f := range files {
+		if f.IsDir() {
+			path := filepath.Join(root, f.Name())
+			err := os.RemoveAll(path)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+}
+
+func getDockerConfig(ganacheIps []string, chainIds []int, mysqlIp string, ips []string) DockerNodeConfig {
 	docker := DockerNodeConfig{
 		MysqlIp: mysqlIp,
 	}
-	docker.Ganaches = make([]struct{ Ip string }, len(ganacheIps))
-	docker.NodeData = make([]struct {
+	docker.Ganaches = make([]struct {
 		Ip      string
-		HeartIp string
-		EyesIp  string
+		ChainId int
+	}, len(ganacheIps))
+	docker.NodeData = make([]struct {
+		Ip          string
+		HeartIp     string
+		EyesIp      string
+		EthPortMap  int
+		GrpcPortMap int
 	}, len(ips))
 
 	// Ganache
 	for i := range ganacheIps {
 		docker.Ganaches[i].Ip = ganacheIps[i]
+		docker.Ganaches[i].ChainId = chainIds[i]
 	}
 
 	// Node data
@@ -172,6 +202,8 @@ func getDockerConfig(ganacheIps []string, mysqlIp string, ips []string) DockerNo
 
 		docker.NodeData[i].HeartIp = heartIp
 		docker.NodeData[i].EyesIp = eyesIp
+		docker.NodeData[i].EthPortMap = 1234 + i
+		docker.NodeData[i].GrpcPortMap = 9090 + i
 	}
 
 	return docker
@@ -204,8 +236,8 @@ func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, 
 			ImportAccount: false,
 		},
 		Tss: config.TssConfig{
-			// Enable: true,
-			Enable:     false,
+			Enable: true,
+			// Enable:     false,
 			DheartHost: heartIp,
 			DheartPort: 5678,
 			SupportedChains: map[string]config.TssChainConfig{
@@ -236,7 +268,7 @@ services:{{ range $k, $ganache := $ganaches }}
     image: ganache-cli
     environment:
       - port=7545
-      - networkId=1
+      - networkId={{ $ganache.ChainId }}
     networks:
       sisu_net:
         ipv4_address: {{ $ganache.Ip }}
@@ -254,6 +286,8 @@ services:{{ range $k, $ganache := $ganaches }}
       start_period: 30s
     volumes:
       - .db:/var/lib/mysql
+    ports:
+      - 4000:3306
     networks:
       sisu_net:
         ipv4_address: {{ .MysqlIp }}
@@ -263,10 +297,12 @@ services:{{ range $k, $ganache := $ganaches }}
     image: "sisu"
     expose:
       - 1317
-      - 9090
       - 25456
       - 26656
       - 26657
+    ports:
+      - {{ $nodeData.EthPortMap }}:1234
+      - {{ $nodeData.GrpcPortMap }}:9090
     restart: on-failure
     depends_on:
       - mysql
