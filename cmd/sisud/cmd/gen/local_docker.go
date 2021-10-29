@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,12 +28,14 @@ import (
 
 type DockerNodeConfig struct {
 	Ganaches []struct {
-		chainName string
+		Ip string
 	}
+	MysqlIp string
 
 	NodeData []struct {
-		Ip     string
-		Config config.Config
+		Ip      string
+		HeartIp string
+		EyesIp  string
 	}
 }
 
@@ -56,12 +59,14 @@ Example:
 
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			tmConfig := serverCtx.Config
+			tmConfig.P2P.AddrBookStrict = false
+			tmConfig.LogLevel = ""
 
 			outputDir, _ := cmd.Flags().GetString(flagOutputDir)
 			minGasPrices, _ := cmd.Flags().GetString(server.FlagMinGasPrices)
 			nodeDirPrefix, _ := cmd.Flags().GetString(flagNodeDirPrefix)
 			nodeDaemonHome, _ := cmd.Flags().GetString(flagNodeDaemonHome)
-			startingIPAddress, _ := cmd.Flags().GetString(flagStartingIPAddress)
+			// startingIPAddress, _ := cmd.Flags().GetString(flagStartingIPAddress)
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
 
@@ -69,7 +74,12 @@ Example:
 			chainID := "sisu-dev"
 			keyringBackend := keyring.BackendTest
 
+			startingIPAddress := "192.168.10.6"
 			ips := getLocalIps(startingIPAddress, numValidators)
+			mysqlIp := "192.168.10.4"
+
+			dockerConfig := getDockerConfig([]string{"192.168.10.2", "192.168.10.3"}, "192.168.10.4", ips)
+
 			nodeConfigs := make([]config.Config, numValidators)
 			for i, _ := range ips {
 				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
@@ -78,13 +88,13 @@ Example:
 					panic(err)
 				}
 
-				nodeConfig := getNodeSettings(chainID, keyringBackend, i)
+				nodeConfig := getNodeSettings(chainID, keyringBackend, i, mysqlIp, ips)
 				nodeConfigs[i] = nodeConfig
 
-				generateEyesToml(i, nodeConfig, dir)
+				generateEyesToml(i, dockerConfig, dir)
 			}
 
-			generateDockerCompose(filepath.Join(outputDir, "docker-compose.yml"), ips, nodeConfigs)
+			generateDockerCompose(filepath.Join(outputDir, "docker-compose.yml"), ips, dockerConfig)
 
 			settings := &Setting{
 				clientCtx:      clientCtx,
@@ -117,7 +127,7 @@ Example:
 
 			for i, _ := range ips {
 				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
-				generateHeartToml(i, dir, peerIds)
+				generateHeartToml(i, dir, dockerConfig, peerIds)
 			}
 
 			return err
@@ -136,7 +146,43 @@ Example:
 	return cmd
 }
 
-func getNodeSettings(chainID, keyringBackend string, index int) config.Config {
+func getDockerConfig(ganacheIps []string, mysqlIp string, ips []string) DockerNodeConfig {
+	docker := DockerNodeConfig{
+		MysqlIp: mysqlIp,
+	}
+	docker.Ganaches = make([]struct{ Ip string }, len(ganacheIps))
+	docker.NodeData = make([]struct {
+		Ip      string
+		HeartIp string
+		EyesIp  string
+	}, len(ips))
+
+	// Ganache
+	for i := range ganacheIps {
+		docker.Ganaches[i].Ip = ganacheIps[i]
+	}
+
+	// Node data
+	for i, ip := range ips {
+		docker.NodeData[i].Ip = ip
+
+		ipv4 := net.ParseIP(ip).To4()
+		heartIp := fmt.Sprintf("%d.%d.%d.%d", ipv4[0], ipv4[1], ipv4[2], int(ipv4[3])+len(ips))
+		eyesIp := fmt.Sprintf("%d.%d.%d.%d", ipv4[0], ipv4[1], ipv4[2], int(ipv4[3])+2*len(ips))
+
+		docker.NodeData[i].HeartIp = heartIp
+		docker.NodeData[i].EyesIp = eyesIp
+	}
+
+	return docker
+}
+
+func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, ips []string) config.Config {
+	nodeIp := ips[index]
+	ipv4 := net.ParseIP(nodeIp).To4()
+	heartIp := fmt.Sprintf("%d.%d.%d.%d", ipv4[0], ipv4[1], ipv4[2], int(ipv4[3])+len(ips))
+	eyesIp := fmt.Sprintf("%d.%d.%d.%d", ipv4[0], ipv4[1], ipv4[2], int(ipv4[3])+2*len(ips))
+
 	return config.Config{
 		Mode: "dev",
 		Sisu: config.SisuConfig{
@@ -145,7 +191,7 @@ func getNodeSettings(chainID, keyringBackend string, index int) config.Config {
 			ApiHost:        "0.0.0.0",
 			ApiPort:        25456,
 			Sql: config.SqlConfig{
-				Host:     "mysql",
+				Host:     mysqlIp,
 				Port:     3306,
 				Username: "root",
 				Password: "password",
@@ -155,40 +201,34 @@ func getNodeSettings(chainID, keyringBackend string, index int) config.Config {
 		Eth: config.ETHConfig{
 			Host:          "0.0.0.0",
 			Port:          1234,
-			ImportAccount: true,
+			ImportAccount: false,
 		},
 		Tss: config.TssConfig{
-			Enable:     true,
-			DheartHost: fmt.Sprintf("dheart%d", index),
+			// Enable: true,
+			Enable:     false,
+			DheartHost: heartIp,
 			DheartPort: 5678,
 			SupportedChains: map[string]config.TssChainConfig{
 				"eth": {
 					Symbol:   "eth",
 					Id:       1,
-					DeyesUrl: fmt.Sprintf("http://%s:31001", fmt.Sprintf("deyes%d", index)),
+					DeyesUrl: fmt.Sprintf("http://%s:31001", eyesIp),
 				},
 				"sisu-eth": {
 					Symbol:   "sisu-eth",
 					Id:       36767,
-					DeyesUrl: fmt.Sprintf("http://%s:31001", fmt.Sprintf("deyes%d", index)),
+					DeyesUrl: fmt.Sprintf("http://%s:31001", eyesIp),
 				},
 			},
 		},
 	}
 }
 
-func generateDockerCompose(outputPath string, ips []string, nodeConfigs []config.Config) {
-	docker := DockerNodeConfig{}
-	docker.Ganaches = make([]struct{ chainName string }, 2)
-	docker.NodeData = make([]struct {
-		Ip     string
-		Config config.Config
-	}, len(ips))
-
-	for i, ip := range ips {
-		docker.NodeData[i].Ip = ip
-		docker.NodeData[i].Config = nodeConfigs[i]
-	}
+// Ip assignments:
+// - 192.168.10.2, .3: ganache
+// - 192.168.10.4: mysql
+// - 192.168.10.5 onward: for Sisu and others
+func generateDockerCompose(outputPath string, ips []string, dockerConfig DockerNodeConfig) {
 
 	const dockerComposeTemplate = `version: "3"{{ $ganaches := .Ganaches }}
 services:{{ range $k, $ganache := $ganaches }}
@@ -197,6 +237,9 @@ services:{{ range $k, $ganache := $ganaches }}
     environment:
       - port=7545
       - networkId=1
+    networks:
+      sisu_net:
+        ipv4_address: {{ $ganache.Ip }}
 {{ end }}
   mysql:
     image: mysql:8.0.19
@@ -211,25 +254,29 @@ services:{{ range $k, $ganache := $ganaches }}
       start_period: 30s
     volumes:
       - .db:/var/lib/mysql
+    networks:
+      sisu_net:
+        ipv4_address: {{ .MysqlIp }}
 {{ range $k, $nodeData := .NodeData }}
   sisu{{ $k }}:
-    container_name: node{{ $k }}
+    container_name: sisu{{ $k }}
     image: "sisu"
-    ports:
-      - "26656-26657:26656-26657"
-      - "1317:1317"
-      - "9090:9090"
-    ports:
-      - 26657:26657
-      - 26656:26656
-      - 9090:9090
-      - 25456:25456
+    expose:
+      - 1317
+      - 9090
+      - 25456
+      - 26656
+      - 26657
     restart: on-failure
     depends_on:
+      - mysql
       - deyes{{ $k }}
       - dheart{{ $k }}
     volumes:
       - ./node{{ $k }}:/root/.sisu
+    networks:
+      sisu_net:
+        ipv4_address: {{ $nodeData.Ip }}
   dheart{{ $k }}:
     image: dheart
     expose:
@@ -240,17 +287,28 @@ services:{{ range $k, $ganache := $ganaches }}
       - mysql
     volumes:
       - ./node{{ $k }}/dheart.toml:/root/dheart.toml
+    networks:
+      sisu_net:
+        ipv4_address: {{ $nodeData.HeartIp }}
   deyes{{ $k }}:
     image: deyes
-    ports:
-      - 31001:31001
     restart: on-failure
     depends_on:
       - mysql{{ range $j, $p := $ganaches }}
       - ganache{{ $j }}{{ end }}
     volumes:
       - ./node{{ $k }}/deyes.toml:/app/deyes.toml
+    networks:
+      sisu_net:
+        ipv4_address: {{ $nodeData.EyesIp }}
 {{ end }}
+networks:
+  sisu_net:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.10.0/32
 `
 
 	tmpl := template.New("localDockerCompose")
@@ -261,43 +319,51 @@ services:{{ range $k, $ganache := $ganaches }}
 	}
 
 	var buffer bytes.Buffer
-	err = configTemplate.Execute(&buffer, docker)
+	err = configTemplate.Execute(&buffer, dockerConfig)
 
 	tmos.MustWriteFile(outputPath, buffer.Bytes(), 0644)
 }
 
-func generateEyesToml(index int, nodeConfig config.Config, dir string) {
+func generateEyesToml(index int, dockerConfig DockerNodeConfig, dir string) {
 	data := struct {
-		Index      int
-		NodeConfig config.Config
-		SqlSchema  string
+		Index         int
+		Ganache0      string
+		Ganache1      string
+		SisuServerUrl string
+		SqlSchema     string
+		SqlHost       string
 	}{
-		Index:      index,
-		NodeConfig: nodeConfig,
-		SqlSchema:  fmt.Sprintf("deyes%d", index),
+		Index:    index,
+		Ganache0: dockerConfig.Ganaches[0].Ip,
+		Ganache1: dockerConfig.Ganaches[1].Ip,
+
+		SqlHost:   dockerConfig.MysqlIp,
+		SqlSchema: fmt.Sprintf("deyes%d", index),
+
+		SisuServerUrl: fmt.Sprintf("http://%s:25456", dockerConfig.NodeData[index].Ip),
 	}
 
-	eyesToml := `db_host = "mysql"
+	eyesToml := `db_host = "{{ .SqlHost }}"
 db_port = 3306
 db_username = "root"
 db_password = "password"
 db_schema = "{{ .SqlSchema }}"
 
 server_port = 31001
-sisu_server_url = "http://sisu{{ .Index }}:25456"
+sisu_server_url = "{{ .SisuServerUrl }}"
 
 [chains]
 [chains.eth]
   chain = "eth"
   block_time = 1000
   starting_block = 0
-  rpc_url = "http://ganache0:7545"
+  rpc_url = "http://{{ .Ganache0 }}:7545"
 
 [chains.sisu-eth]
   chain = "sisu-eth"
   block_time = 1000
   starting_block = 0
-  rpc_url = "http://ganache1:7545"
+  rpc_url = "http://{{ .Ganache1 }}:7545"
 `
 
 	tmpl := template.New("eyesToml")
@@ -362,7 +428,7 @@ func getPeerIds(n int, outputDir, keyringBackend string) ([]string, error) {
 	return ids, nil
 }
 
-func generateHeartToml(index int, dir string, peerIds []string) {
+func generateHeartToml(index int, dir string, dockerConfig DockerNodeConfig, peerIds []string) {
 	peers := make([]string, 0, len(peerIds)-1)
 	for i := range peerIds {
 		if i == index {
@@ -380,8 +446,8 @@ func generateHeartToml(index int, dir string, peerIds []string) {
 		Schema        string
 	}{
 		PeerString:    peerString,
-		SisuServerUrl: fmt.Sprintf("http://sisu%d:25456", index),
-		SqlHost:       fmt.Sprintf("sql%d", index),
+		SisuServerUrl: fmt.Sprintf("http://%s:25456", dockerConfig.NodeData[index].Ip),
+		SqlHost:       dockerConfig.MysqlIp,
 		Schema:        fmt.Sprintf("dheart%d", index),
 	}
 
@@ -390,14 +456,14 @@ func generateHeartToml(index int, dir string, peerIds []string) {
 
 home-dir = "/root/"
 use-on-memory = false
-sisu-server-url = " {{ .SisuServerUrl }}"
+sisu-server-url = "{{ .SisuServerUrl }}"
 port = 5678
 
 ###############################################################################
 ###                        Database Configuration                           ###
 ###############################################################################
 [db]
-  host = "host.docker.internal"
+  host = "{{ .SqlHost }}"
   port = 3306
   username = "root"
   password = "password"

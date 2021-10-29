@@ -3,3 +3,8 @@ build
 Dockerfile
 sisu
 scripts
+output
+docs
+tests
+config.yml
+README.md

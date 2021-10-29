@@ -212,7 +212,18 @@ func (t *TxSubmitter) SyncBlockSequence(ctx sdk.Context, ak authkeeper.AccountKe
 	t.sequenceLock.Lock()
 	defer t.sequenceLock.Unlock()
 
-	t.blockSequence = ak.GetAccount(ctx, t.fromAccount).GetSequence()
+	if t.fromAccount == nil {
+		utils.LogError("fromAccount is not set yet")
+		return
+	}
+
+	account := ak.GetAccount(ctx, t.fromAccount)
+	if account == nil {
+		utils.LogError("cannot find account in the keeper, account =", t.fromAccount)
+		return
+	}
+
+	t.blockSequence = account.GetSequence()
 	if t.curSequence == UN_INITIALIZED_SEQ {
 		t.curSequence = t.blockSequence
 	}
