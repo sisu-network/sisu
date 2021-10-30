@@ -79,7 +79,8 @@ Example:
 				numValidators:  numValidators,
 			}
 
-			return InitNetwork(settings)
+			_, err = InitNetwork(settings)
+			return err
 		},
 	}
 

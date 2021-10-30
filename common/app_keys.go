@@ -97,3 +97,7 @@ func (ak *AppKeys) GetEncryptedPrivKey() ([]byte, error) {
 	bz := ak.privateKey.Bytes()
 	return utils.AESDEncrypt(bz, ak.aesKey)
 }
+
+func (ak *AppKeys) GetAesEncrypted(msg []byte) ([]byte, error) {
+	return utils.AESDEncrypt(msg, ak.aesKey)
+}

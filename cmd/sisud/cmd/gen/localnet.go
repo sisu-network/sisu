@@ -119,7 +119,8 @@ Example:
 				nodeConfigs:    []config.Config{nodeConfig},
 			}
 
-			return InitNetwork(settings)
+			_, err = InitNetwork(settings)
+			return err
 		},
 	}
 

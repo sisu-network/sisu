@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/sisu-network/cosmos-sdk/crypto/keys/ed25519"
-	"github.com/sisu-network/cosmos-sdk/crypto/keys/secp256k1"
 	ctypes "github.com/sisu-network/cosmos-sdk/crypto/types"
 	htypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/sisu/utils"
@@ -77,16 +75,12 @@ func (c *DheartClient) getPubkeyWrapper(pubKeys []ctypes.PubKey) []htypes.PubKey
 		case "ed25519":
 			wrappers[i] = htypes.PubKeyWrapper{
 				KeyType: pubKey.Type(),
-				Ed25519: &ed25519.PubKey{
-					Key: pubKey.Bytes(),
-				},
+				Key:     pubKey.Bytes(),
 			}
 		case "secp256k1":
 			wrappers[i] = htypes.PubKeyWrapper{
 				KeyType: pubKey.Type(),
-				Secp256k1: &secp256k1.PubKey{
-					Key: pubKey.Bytes(),
-				},
+				Key:     pubKey.Bytes(),
 			}
 		}
 	}

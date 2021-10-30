@@ -53,7 +53,7 @@ type Setting struct {
 }
 
 // Initialize the localnet
-func InitNetwork(settings *Setting) error {
+func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 	clientCtx := settings.clientCtx
 	cmd := settings.cmd
 	tmConfig := settings.tmConfig
@@ -104,7 +104,7 @@ func InitNetwork(settings *Setting) error {
 
 		if err := os.MkdirAll(filepath.Join(mainAppDir, "config"), nodeDirPerm); err != nil {
 			_ = os.RemoveAll(outputDir)
-			return err
+			return nil, err
 		}
 
 		if monikers == nil || len(monikers) == 0 {
@@ -119,7 +119,7 @@ func InitNetwork(settings *Setting) error {
 		nodeIDs[i], valPubKeys[i], err = genutil.InitializeNodeValidatorFiles(tmConfig)
 		if err != nil {
 			_ = os.RemoveAll(outputDir)
-			return err
+			return nil, err
 		}
 
 		memo := fmt.Sprintf("%s@%s:26656", nodeIDs[i], ip)
@@ -127,31 +127,31 @@ func InitNetwork(settings *Setting) error {
 
 		kb, err := keyring.New(sdk.KeyringServiceName(), keyringBackend, mainAppDir, inBuf)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		keyringAlgos, _ := kb.SupportedAlgorithms()
 		algo, err := keyring.NewSigningAlgoFromString(algoStr, keyringAlgos)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		addr, secret, err := server.GenerateSaveCoinKey(kb, nodeDirName, true, algo)
 		if err != nil {
 			_ = os.RemoveAll(outputDir)
-			return err
+			return nil, err
 		}
 
 		info := map[string]string{"secret": secret}
 
 		cliPrint, err := json.Marshal(info)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		// save private key seed words
 		if err := writeFile(fmt.Sprintf("%v.json", "key_seed"), mainAppDir, cliPrint); err != nil {
-			return err
+			return nil, err
 		}
 
 		accTokens := sdk.TokensFromConsensusPower(1000)
@@ -174,12 +174,12 @@ func InitNetwork(settings *Setting) error {
 			sdk.OneInt(),
 		)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		txBuilder := clientCtx.TxConfig.NewTxBuilder()
 		if err := txBuilder.SetMsgs(createValMsg); err != nil {
-			return err
+			return nil, err
 		}
 
 		txBuilder.SetMemo(memo)
@@ -192,16 +192,16 @@ func InitNetwork(settings *Setting) error {
 			WithTxConfig(clientCtx.TxConfig)
 
 		if err := tx.Sign(txFactory, nodeDirName, txBuilder, true); err != nil {
-			return err
+			return nil, err
 		}
 
 		txBz, err := clientCtx.TxConfig.TxJSONEncoder()(txBuilder.GetTx())
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		if err := writeFile(fmt.Sprintf("%v.json", nodeDirName), gentxsDir, txBz); err != nil {
-			return err
+			return nil, err
 		}
 
 		srvconfig.WriteConfigFile(filepath.Join(mainAppDir, "config/app.toml"), simappConfig)
@@ -210,7 +210,7 @@ func InitNetwork(settings *Setting) error {
 	}
 
 	if err := initGenFiles(clientCtx, mbm, chainID, genAccounts, genBalances, genFiles, numValidators); err != nil {
-		return err
+		return nil, err
 	}
 
 	err := collectGenFiles(
@@ -218,11 +218,11 @@ func InitNetwork(settings *Setting) error {
 		outputDir, nodeDirPrefix, nodeDaemonHome, genBalIterator,
 	)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	cmd.PrintErrf("Successfully initialized %d node directories\n", numValidators)
-	return nil
+	return valPubKeys, nil
 }
 
 func initGenFiles(
