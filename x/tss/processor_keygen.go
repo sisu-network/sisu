@@ -114,46 +114,36 @@ func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, er
 }
 
 func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult) ([]byte, error) {
-	// TODO: Accumulates results from others and check for bad actors
-
-	// For now, only process self message sent from this node.
-	if msg.Signer == p.appKeys.GetSignerAddress().String() {
-		utils.LogDebug("Keygen: This is the same signer...")
-
-		// Save this to KVStore
-		chainsInfo, err := p.keeper.GetRecordedChainsOnSisu(ctx)
-		if err != nil {
-			utils.LogError(err)
-			return nil, err
-		}
-
-		if chainsInfo.Chains == nil {
-			chainsInfo.Chains = make(map[string]*types.ChainInfo)
-		}
-
-		// TODO: Add validators here.
-		chainsInfo.Chains[msg.Chain] = &types.ChainInfo{
-			Symbol: msg.Chain,
-		}
-
-		p.keeper.SetChainsInfo(ctx, chainsInfo)
-
-		// Save the pubkey to the keeper.
-		p.keeper.SavePubKey(ctx, msg.Chain, msg.PubKeyBytes)
-
-		// If this is a pubkey address of a ETH chain, save it to the store because we want to watch
-		// transaction that funds the address (we will deploy contracts later).
-		if utils.IsETHBasedChain(msg.Chain) {
-			p.txOutputProducer.AddKeyAddress(ctx, msg.Chain, msg.Address)
-		}
-
-		// Check and see if we need to deploy some contracts. If we do, push them into the contract
-		// queue for deployment later (after we receive some funding like ether to execute contract
-		// deployment).
-		p.txOutputProducer.SaveContractsToDeploy(msg.Chain)
-	} else {
-		utils.LogDebug("Keygen: message is from different signers.")
+	// Save this to KVStore
+	chainsInfo, err := p.keeper.GetRecordedChainsOnSisu(ctx)
+	if err != nil {
+		utils.LogError(err)
+		return nil, err
 	}
+
+	if chainsInfo.Chains == nil {
+		chainsInfo.Chains = make(map[string]*types.ChainInfo)
+	}
+
+	chainsInfo.Chains[msg.Chain] = &types.ChainInfo{
+		Symbol: msg.Chain,
+	}
+
+	p.keeper.SetChainsInfo(ctx, chainsInfo)
+
+	// Save the pubkey to the keeper.
+	p.keeper.SavePubKey(ctx, msg.Chain, msg.PubKeyBytes)
+
+	// If this is a pubkey address of a ETH chain, save it to the store because we want to watch
+	// transaction that funds the address (we will deploy contracts later).
+	if utils.IsETHBasedChain(msg.Chain) {
+		p.txOutputProducer.AddKeyAddress(ctx, msg.Chain, msg.Address)
+	}
+
+	// Check and see if we need to deploy some contracts. If we do, push them into the contract
+	// queue for deployment later (after we receive some funding like ether to execute contract
+	// deployment).
+	p.txOutputProducer.SaveContractsToDeploy(msg.Chain)
 
 	return nil, nil
 }

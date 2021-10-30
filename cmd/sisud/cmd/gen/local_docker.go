@@ -28,8 +28,9 @@ import (
 
 type DockerNodeConfig struct {
 	Ganaches []struct {
-		Ip      string
-		ChainId int
+		Ip       string
+		ChainId  int
+		HostPort int
 	}
 	MysqlIp string
 
@@ -182,8 +183,9 @@ func getDockerConfig(ganacheIps []string, chainIds []int, mysqlIp string, ips []
 		MysqlIp: mysqlIp,
 	}
 	docker.Ganaches = make([]struct {
-		Ip      string
-		ChainId int
+		Ip       string
+		ChainId  int
+		HostPort int
 	}, len(ganacheIps))
 	docker.NodeData = make([]struct {
 		Ip          string
@@ -195,6 +197,7 @@ func getDockerConfig(ganacheIps []string, chainIds []int, mysqlIp string, ips []
 	for i := range ganacheIps {
 		docker.Ganaches[i].Ip = ganacheIps[i]
 		docker.Ganaches[i].ChainId = chainIds[i]
+		docker.Ganaches[i].HostPort = 7545 + i
 	}
 
 	// Node data
@@ -261,6 +264,8 @@ services:{{ range $k, $ganache := $ganaches }}
     environment:
       - port=7545
       - networkId={{ $ganache.ChainId }}
+    ports:
+      - {{ $ganache.HostPort }}:7545
 {{ end }}
   mysql:
     image: mysql:8.0.19
