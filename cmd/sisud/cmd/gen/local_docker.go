@@ -2,7 +2,6 @@ package gen
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -19,6 +18,7 @@ import (
 	"github.com/sisu-network/cosmos-sdk/client/flags"
 	"github.com/sisu-network/cosmos-sdk/crypto/hd"
 	"github.com/sisu-network/cosmos-sdk/crypto/keyring"
+	cryptotypes "github.com/sisu-network/cosmos-sdk/crypto/types"
 	"github.com/sisu-network/cosmos-sdk/server"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/cosmos-sdk/types/module"
@@ -74,6 +74,12 @@ Example:
 			// Clean up
 			removeOldDirs(outputDir)
 
+			// Make dir folder for mysql docker
+			err = os.MkdirAll(filepath.Join(outputDir, "db"), 0755)
+			if err != nil {
+				panic(err)
+			}
+
 			// Get Chain id and keyring backend from .env file.
 			chainID := "sisu-dev"
 			keyringBackend := keyring.BackendTest
@@ -123,12 +129,12 @@ Example:
 				nodeConfigs: nodeConfigs,
 			}
 
-			err = InitNetwork(settings)
+			valPubKeys, err := InitNetwork(settings)
 			if err != nil {
 				return err
 			}
 
-			peerIds, err := getPeerIds(len(ips), outputDir, keyringBackend)
+			peerIds, err := getPeerIds(len(ips), valPubKeys)
 			if err != nil {
 				panic(err)
 			}
@@ -268,7 +274,9 @@ services:{{ range $k, $ganache := $ganaches }}
       retries: 5
       start_period: 30s
     volumes:
-      - .db:/var/lib/mysql
+      - ./db:/var/lib/mysql
+    expose:
+      - 3306
     ports:
       - 4000:3306
 {{ range $k, $nodeData := .NodeData }}
@@ -379,45 +387,16 @@ sisu_server_url = "{{ .SisuServerUrl }}"
 	tmos.MustWriteFile(filepath.Join(dir, "deyes.toml"), buffer.Bytes(), 0644)
 }
 
-func getPeerIds(n int, outputDir, keyringBackend string) ([]string, error) {
+func getPeerIds(n int, pubKeys []cryptotypes.PubKey) ([]string, error) {
 	ids := make([]string, n)
 
 	for i := 0; i < n; i++ {
-		dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
-
-		kr, err := keyring.New(sdk.KeyringServiceName(), keyringBackend, filepath.Join(dir, "main"), os.Stdin)
-		if err != nil {
-			return nil, err
-		}
-		infos, err := kr.List()
-		if err != nil {
-			return nil, err
-		}
-
-		signerInfo := infos[0]
-
-		keyType := signerInfo.GetPubKey().Type()
-		unsafe := keyring.NewUnsafe(kr)
-		hexKey, err := unsafe.UnsafeExportPrivKeyHex(signerInfo.GetName())
-		if err != nil {
-			return nil, err
-		}
-
-		bz, err := hex.DecodeString(hexKey)
+		p2pPubKey, err := crypto.UnmarshalEd25519PublicKey(pubKeys[i].Bytes())
 		if err != nil {
 			panic(err)
 		}
 
-		if keyType != "secp256k1" {
-			panic(fmt.Sprintf("unsupported key type: %s", keyType))
-		}
-
-		p2pPriKey, err := crypto.UnmarshalSecp256k1PrivateKey(bz)
-		if err != nil {
-			panic(err)
-		}
-
-		id, err := peer.IDFromPrivateKey(p2pPriKey)
+		id, err := peer.IDFromPublicKey(p2pPubKey)
 		if err != nil {
 			panic(err)
 		}

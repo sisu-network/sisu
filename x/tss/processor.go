@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/sisu-network/tendermint/crypto"
 	"github.com/sisu-network/tendermint/mempool"
 	ttypes "github.com/sisu-network/tendermint/types"
 
@@ -32,6 +33,7 @@ var (
 type Processor struct {
 	keeper                 keeper.Keeper
 	config                 config.TssConfig
+	tendermintPrivKey      crypto.PrivKey
 	txSubmit               common.TxSubmit
 	lastProposeBlockHeight int64
 	appKeys                *common.AppKeys
@@ -66,6 +68,7 @@ type Processor struct {
 
 func NewProcessor(keeper keeper.Keeper,
 	config config.TssConfig,
+	tendermintPrivKey crypto.PrivKey,
 	appKeys *common.AppKeys,
 	db db.Database,
 	txDecoder sdk.TxDecoder,
@@ -73,15 +76,16 @@ func NewProcessor(keeper keeper.Keeper,
 	globalData common.GlobalData,
 ) *Processor {
 	p := &Processor{
-		keeper:           keeper,
-		db:               db,
-		txDecoder:        txDecoder,
-		appKeys:          appKeys,
-		config:           config,
-		txSubmit:         txSubmit,
-		globalData:       globalData,
-		partyManager:     NewPartyManager(globalData),
-		keygenVoteResult: make(map[string]map[string]bool),
+		keeper:            keeper,
+		db:                db,
+		txDecoder:         txDecoder,
+		appKeys:           appKeys,
+		config:            config,
+		tendermintPrivKey: tendermintPrivKey,
+		txSubmit:          txSubmit,
+		globalData:        globalData,
+		partyManager:      NewPartyManager(globalData),
+		keygenVoteResult:  make(map[string]map[string]bool),
 		// And array that stores block numbers where we should do final vote count.
 		keygenBlockPairs: make([]BlockSymbolPair, 0),
 		deyesClients:     make(map[string]*tssclients.DeyesClient),
@@ -108,7 +112,8 @@ func (p *Processor) Init() {
 	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.keeper, p.appKeys, p.storage, p.db, p.config)
 }
 
-// Connect to Dheart server.
+// Connect to Dheart server and set private key for dheart. Note that this is the tendermint private
+// key, not signer key in the keyring.
 func (p *Processor) connectToDheart() {
 	var err error
 	url := fmt.Sprintf("http://%s:%d", p.config.DheartHost, p.config.DheartPort)
@@ -120,14 +125,16 @@ func (p *Processor) connectToDheart() {
 		panic(err)
 	}
 
-	encryptedKey, err := p.appKeys.GetEncryptedPrivKey()
+	encryptedKey, err := p.appKeys.GetAesEncrypted(p.tendermintPrivKey.Bytes())
 	if err != nil {
 		utils.LogError("Failed to get encrypted private key. Err =", err)
 		panic(err)
 	}
 
+	utils.LogInfo("p.tendermintPrivKey.Type() = ", p.tendermintPrivKey.Type())
+
 	// Pass encrypted private key to dheart
-	if err := p.dheartClient.SetPrivKey(hex.EncodeToString(encryptedKey), "secp256k1"); err != nil {
+	if err := p.dheartClient.SetPrivKey(hex.EncodeToString(encryptedKey), p.tendermintPrivKey.Type()); err != nil {
 		panic(err)
 	}
 

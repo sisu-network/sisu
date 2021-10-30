@@ -2,6 +2,7 @@ package app
 
 import (
 	"io"
+	"path/filepath"
 
 	"github.com/sisu-network/cosmos-sdk/client"
 	"github.com/sisu-network/cosmos-sdk/codec/types"
@@ -13,6 +14,7 @@ import (
 	"github.com/sisu-network/tendermint/libs/log"
 	tmos "github.com/sisu-network/tendermint/libs/os"
 	"github.com/sisu-network/tendermint/node"
+	"github.com/sisu-network/tendermint/p2p"
 	dbm "github.com/tendermint/tm-db"
 
 	ethRpc "github.com/ethereum/go-ethereum/rpc"
@@ -351,7 +353,12 @@ func New(
 		evm.NewAppModule(appCodec, app.evmKeeper),
 	}
 
-	tssProcessor := tss.NewProcessor(app.tssKeeper, tssConfig, app.appKeys, app.db, app.txDecoder, app.txSubmitter, app.globalData)
+	tendermintPrivKeyFile := filepath.Join(cfg.Sisu.Dir, "config/priv_validator_key.json")
+	nodeKey, err := p2p.LoadNodeKey(tendermintPrivKeyFile)
+	if err != nil {
+		panic(err)
+	}
+	tssProcessor := tss.NewProcessor(app.tssKeeper, tssConfig, nodeKey.PrivKey, app.appKeys, app.db, app.txDecoder, app.txSubmitter, app.globalData)
 	if tssConfig.Enable {
 		utils.LogInfo("TSS is enabled")
 		tssProcessor.Init()
