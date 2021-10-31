@@ -22,6 +22,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+// Note: all new fields in this proto MUST be included in SerializeWithoutSigner in the go file.
 type ObservedTx struct {
 	Signer      string `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
 	Chain       string `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`

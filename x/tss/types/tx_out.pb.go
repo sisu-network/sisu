@@ -44,6 +44,7 @@ func (TxOutType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_f8b99e4d8e912782, []int{0}
 }
 
+// Note: all new fields in this proto MUST be included in SerializeWithoutSigner in the go file.
 type TxOut struct {
 	TxType        TxOutType `protobuf:"varint,1,opt,name=txType,proto3,enum=types.TxOutType" json:"txType,omitempty"`
 	Signer        string    `protobuf:"bytes,2,opt,name=signer,proto3" json:"signer,omitempty"`
