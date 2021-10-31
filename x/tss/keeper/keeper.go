@@ -10,7 +10,6 @@ import (
 	"github.com/sisu-network/cosmos-sdk/store/prefix"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/utils"
-	"github.com/sisu-network/sisu/x/tss/types"
 )
 
 const (
@@ -69,33 +68,6 @@ func (k *Keeper) getKey(chain string, height int64, hash string) []byte {
 	// Replace all the _ in the chain.
 	chain = strings.Replace(chain, "_", "*", -1)
 	return []byte(fmt.Sprintf("%s_%d_%s", chain, height, hash))
-}
-
-// Get a list of chains that this node supported and have generated private key through TSS.
-func (k *Keeper) GetRecordedChainsOnSisu(ctx sdk.Context) (*types.ChainsInfo, error) {
-	// store := ctx.KVStore(k.storeKey)
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_RECORDED_CHAIN)
-	bz := store.Get([]byte(PREFIX_RECORDED_CHAIN))
-
-	chainsInfo := &types.ChainsInfo{}
-	err := chainsInfo.Unmarshal(bz)
-
-	return chainsInfo, err
-}
-
-// Saves a list of chains that this node supports.
-func (k *Keeper) SetChainsInfo(ctx sdk.Context, chainsInfo *types.ChainsInfo) error {
-	utils.LogInfo("Keeper: Saving chain info into KV store", chainsInfo.Chains)
-
-	store := ctx.KVStore(k.storeKey)
-	bz, err := chainsInfo.Marshal()
-	if err != nil {
-		utils.LogError("Cannot set chains info. Err = ", err)
-		return err
-	}
-
-	store.Set([]byte(PREFIX_RECORDED_CHAIN), bz)
-	return nil
 }
 
 func (k *Keeper) SaveObservedTx(ctx sdk.Context, tx *tssTypes.ObservedTx) {

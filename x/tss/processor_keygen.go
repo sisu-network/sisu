@@ -3,6 +3,7 @@ package tss
 import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	dhTypes "github.com/sisu-network/dheart/types"
+	"github.com/sisu-network/sisu/db"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
@@ -27,13 +28,6 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 		return
 	}
 
-	chains, err := p.keeper.GetRecordedChainsOnSisu(ctx)
-	if err != nil {
-		return
-	}
-
-	utils.LogInfo("recordedChains = ", chains)
-
 	unavailableChains := make([]string, 0)
 	for _, chainConfig := range p.config.SupportedChains {
 		if !p.db.IsKeyExisted(chainConfig.Symbol) {
@@ -55,6 +49,10 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 		utils.LogDebug("Submitting proposal message for chain", chain)
 		go func() {
 			err := p.txSubmit.SubmitMessage(proposal)
+
+			// TODO: remove after test.
+			p.txSubmit.SubmitMessage(proposal)
+
 			if err != nil {
 				utils.LogError(err)
 			}
@@ -89,8 +87,8 @@ func (p *Processor) OnKeygenResult(result dhTypes.KeygenResult) {
 		p.db.InsertChainKey(result.Chain, result.Address, result.PubKeyBytes)
 	}
 
+	// TODO: remove this
 	// 3. Save pubkey
-	p.storage.SavePubKey(result.Chain, result.PubKeyBytes)
 }
 
 func (p *Processor) CheckKeyGenProposal(msg *types.KeygenProposal) error {
@@ -114,36 +112,31 @@ func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, er
 }
 
 func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult) ([]byte, error) {
-	// Save this to KVStore
-	chainsInfo, err := p.keeper.GetRecordedChainsOnSisu(ctx)
-	if err != nil {
-		utils.LogError(err)
-		return nil, err
+	// TODO: Save data to KV store.
+	if msg.Result == types.KeygenResult_SUCCESS {
+		if p.db.IsKeygenDelivered(msg.Chain) {
+			utils.LogInfo("Keygen result has been processed for chain", msg.Chain)
+			return nil, nil
+		}
+
+		// Update key address
+		p.db.UpdateKeygenStatus(msg.Chain, db.STATUS_DELIVERED)
+
+		// If this keygen is successful, prepare for contract deployment.
+		// Save the pubkey to the keeper.
+		p.keeper.SavePubKey(ctx, msg.Chain, msg.PubKeyBytes)
+
+		// If this is a pubkey address of a ETH chain, save it to the store because we want to watch
+		// transaction that funds the address (we will deploy contracts later).
+		if utils.IsETHBasedChain(msg.Chain) {
+			p.txOutputProducer.AddKeyAddress(ctx, msg.Chain, msg.Address)
+		}
+
+		// Check and see if we need to deploy some contracts. If we do, push them into the contract
+		// queue for deployment later (after we receive some funding like ether to execute contract
+		// deployment).
+		p.txOutputProducer.SaveContractsToDeploy(msg.Chain)
 	}
-
-	if chainsInfo.Chains == nil {
-		chainsInfo.Chains = make(map[string]*types.ChainInfo)
-	}
-
-	chainsInfo.Chains[msg.Chain] = &types.ChainInfo{
-		Symbol: msg.Chain,
-	}
-
-	p.keeper.SetChainsInfo(ctx, chainsInfo)
-
-	// Save the pubkey to the keeper.
-	p.keeper.SavePubKey(ctx, msg.Chain, msg.PubKeyBytes)
-
-	// If this is a pubkey address of a ETH chain, save it to the store because we want to watch
-	// transaction that funds the address (we will deploy contracts later).
-	if utils.IsETHBasedChain(msg.Chain) {
-		p.txOutputProducer.AddKeyAddress(ctx, msg.Chain, msg.Address)
-	}
-
-	// Check and see if we need to deploy some contracts. If we do, push them into the contract
-	// queue for deployment later (after we receive some funding like ether to execute contract
-	// deployment).
-	p.txOutputProducer.SaveContractsToDeploy(msg.Chain)
 
 	return nil, nil
 }
