@@ -25,6 +25,7 @@ type Database interface {
 	InsertChainKey(chain, address string, pubKey []byte)
 	IsKeyExisted(chain string) bool
 	IsChainKeyAddress(chain, address string) bool
+	GetPubKey(chain string) []byte
 	UpdateKeygenStatus(chain, status string)
 	IsKeygenDelivered(chain string) bool
 
@@ -186,9 +187,32 @@ func (d *SqlDatabase) IsChainKeyAddress(chain, address string) bool {
 	return rows.Next()
 }
 
+func (d *SqlDatabase) GetPubKey(chain string) []byte {
+	query := "SELECT pubkey FROM keygen WHERE chain = ?"
+	params := []interface{}{chain}
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		utils.LogError("cannot query pub key", chain)
+		return nil
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return nil
+	}
+
+	var result []byte
+	if err := rows.Scan(&result); err != nil {
+		return nil
+	}
+
+	return result
+}
+
 func (d *SqlDatabase) UpdateKeygenStatus(chain, status string) {
 	query := "UPDATE keygen SET status = ? WHERE chain = ?"
-	params := []interface{}{chain}
+	params := []interface{}{status, chain}
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {

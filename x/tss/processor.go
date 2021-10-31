@@ -52,11 +52,6 @@ type Processor struct {
 	dheartClient *tssclients.DheartClient
 	deyesClients map[string]*tssclients.DeyesClient
 
-	// This is a local database used for data specific to this node. For application state's data,
-	// use KVStore.
-	// @Deprecated in favor of sql db.
-	storage *TssStorage
-
 	// A map of chain -> map ()
 	worldState       WorldState
 	keygenVoteResult map[string]map[string]bool
@@ -98,18 +93,12 @@ func NewProcessor(keeper keeper.Keeper,
 func (p *Processor) Init() {
 	utils.LogInfo("Initializing TSS Processor...")
 
-	var err error
-	p.storage, err = NewTssStorage(p.config.Dir + "/processor.db")
-	if err != nil {
-		panic(err)
-	}
-
 	if p.config.Enable {
 		p.connectToDheart()
 		p.connectToDeyes()
 	}
 
-	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.keeper, p.appKeys, p.storage, p.db, p.config)
+	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.keeper, p.appKeys, p.db, p.config)
 }
 
 // Connect to Dheart server and set private key for dheart. Note that this is the tendermint private
@@ -159,7 +148,7 @@ func (p *Processor) connectToDeyes() {
 		p.deyesClients[chain] = deyeClient
 	}
 
-	p.worldState = NewWorldState(p.config, p.db, p.storage, p.deyesClients)
+	p.worldState = NewWorldState(p.config, p.db, p.deyesClients)
 }
 
 func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {

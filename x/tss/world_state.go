@@ -17,24 +17,22 @@ type WorldState interface {
 
 type DefaultWorldState struct {
 	db           db.Database
-	storage      *TssStorage
 	tssConfig    config.TssConfig
 	nonces       map[string]int64
 	deyesClients map[string]*tssclients.DeyesClient
 }
 
-func NewWorldState(tssConfig config.TssConfig, db db.Database, storage *TssStorage, deyesClients map[string]*tssclients.DeyesClient) WorldState {
+func NewWorldState(tssConfig config.TssConfig, db db.Database, deyesClients map[string]*tssclients.DeyesClient) WorldState {
 	return &DefaultWorldState{
 		tssConfig:    tssConfig,
 		db:           db,
-		storage:      storage,
 		nonces:       make(map[string]int64, 0),
 		deyesClients: deyesClients,
 	}
 }
 
 func (ws *DefaultWorldState) UseAndIncreaseNonce(chain string) int64 {
-	pubKeyBytes := ws.storage.GetPubKey(chain)
+	pubKeyBytes := ws.db.GetPubKey(chain)
 	if pubKeyBytes == nil {
 		utils.LogError("cannot find pub key for chain", chain)
 		return -1
