@@ -238,6 +238,7 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 
 	tx, err := p.txDecoder(txBytes)
 	if err != nil {
+		utils.LogError("Failed to decode tx")
 		return err
 	}
 
@@ -247,25 +248,31 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 			continue
 		}
 
-		if msg.Type() == types.MSG_TYPE_KEYGEN_PROPOSAL {
+		switch msg.Type() {
+		case types.MSG_TYPE_KEYGEN_PROPOSAL:
 			proposalMsg := msg.(*types.KeygenProposal)
-			hash := utils.KeccakHash32(string(proposalMsg.SerializeWithoutSigner()))
-
-			if err := p.checkAndInsertMempoolTx(hash, "keygen proposal"); err != nil {
+			// We dont get serialized data of the proposal msg because the serialized data contains
+			// blockheight. Instead, we only check the chain of the proposal.
+			key := fmt.Sprintf("KeygenProposal__%s", proposalMsg.Chain)
+			if !p.db.MempoolTxExistedRange(key, p.currentHeight-PROPOSE_BLOCK_INTERVAL/2, p.currentHeight+PROPOSE_BLOCK_INTERVAL/2) {
+				// Insert into the db
+				p.db.InsertMempoolTxHash(key, p.currentHeight)
+				return nil
+			} else {
+				err := fmt.Errorf("The keygen proposal has been inclued in a block for chain %s", proposalMsg.Chain)
+				utils.LogVerbose(err)
 				return err
 			}
-		}
 
-		if msg.Type() == types.MSG_TYPE_OBSERVED_TX {
+		case types.MSG_TYPE_OBSERVED_TX:
 			observedTx := msg.(*types.ObservedTx)
 			hash := utils.KeccakHash32(string(observedTx.SerializeWithoutSigner()))
 
 			if err := p.checkAndInsertMempoolTx(hash, "observed tx"); err != nil {
 				return err
 			}
-		}
 
-		if msg.Type() == types.MSG_TYPE_TX_OUT {
+		case types.MSG_TYPE_TX_OUT:
 			txOut := msg.(*types.TxOut)
 			hash := utils.KeccakHash32(string(txOut.SerializeWithoutSigner()))
 
@@ -281,13 +288,13 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 func (p *Processor) checkAndInsertMempoolTx(hash, msgType string) error {
 	if p.db.MempoolTxExisted(hash) {
 		err := fmt.Errorf("%s has been added into the mempool! hash = %s", msgType, hash)
-		utils.LogError(err)
+		utils.LogVerbose(err)
 
 		return err
 	}
 
 	utils.LogVerbose("Inserting", msgType, "into the mempool table, hash =", hash)
-	p.db.InsertMempoolTxHash(hash)
+	p.db.InsertMempoolTxHash(hash, p.currentHeight)
 
 	return nil
 }

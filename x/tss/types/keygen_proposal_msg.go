@@ -7,12 +7,12 @@ import (
 
 var _ sdk.Msg = &KeygenProposal{}
 
-func NewMsgKeygenProposal(signer string, chain string, id string, expireBlock int64) *KeygenProposal {
+func NewMsgKeygenProposal(signer string, chain string, id string, craetedBlock int64) *KeygenProposal {
 	return &KeygenProposal{
-		Signer:          signer,
-		Chain:           chain,
-		Id:              id,
-		ExpirationBlock: expireBlock,
+		Signer:       signer,
+		Chain:        chain,
+		Id:           id,
+		CreatedBlock: craetedBlock,
 	}
 }
 
@@ -52,37 +52,4 @@ func (msg *KeygenProposal) ValidateBasic() error {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid creator address (%s)", err)
 	}
 	return nil
-}
-
-// Serialize this message without the signer. This is similar to MarshalToSizedBuffer with the
-// signer encoding removed. Any change in the proto file should also change this function.
-func (m *KeygenProposal) SerializeWithoutSigner() []byte {
-	size := m.Size()
-	dAtA := make([]byte, size)
-
-	i := len(dAtA)
-	_ = i
-	var l int
-	_ = l
-	if m.ExpirationBlock != 0 {
-		i = encodeVarintKeygen(dAtA, i, uint64(m.ExpirationBlock))
-		i--
-		dAtA[i] = 0x20
-	}
-	if len(m.Id) > 0 {
-		i -= len(m.Id)
-		copy(dAtA[i:], m.Id)
-		i = encodeVarintKeygen(dAtA, i, uint64(len(m.Id)))
-		i--
-		dAtA[i] = 0x1a
-	}
-	if len(m.Chain) > 0 {
-		i -= len(m.Chain)
-		copy(dAtA[i:], m.Chain)
-		i = encodeVarintKeygen(dAtA, i, uint64(len(m.Chain)))
-		i--
-		dAtA[i] = 0x12
-	}
-
-	return dAtA[:len(dAtA)-i]
 }

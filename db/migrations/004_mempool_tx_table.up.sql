@@ -1,5 +1,4 @@
 CREATE TABLE mempool_tx(
   hash VARCHAR(256),
-
-  PRIMARY KEY (hash)
+  block_height BIGINT
 );

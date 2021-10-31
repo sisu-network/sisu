@@ -39,8 +39,9 @@ type Database interface {
 	UpdateTxOutStatus(chain, hashWithoutSig, status string)
 
 	// Mempool tx
-	InsertMempoolTxHash(hash string)
+	InsertMempoolTxHash(hash string, blockHeight int64)
 	MempoolTxExisted(hash string) bool
+	MempoolTxExistedRange(hash string, minBlock int64, maxBlock int64) bool
 }
 
 type SqlDatabase struct {
@@ -432,9 +433,9 @@ func (d *SqlDatabase) UpdateTxOutStatus(chain, hashWithSig, status string) {
 	}
 }
 
-func (d *SqlDatabase) InsertMempoolTxHash(hash string) {
-	query := "INSERT INTO mempool_tx (hash) VALUES (?)"
-	params := []interface{}{hash}
+func (d *SqlDatabase) InsertMempoolTxHash(hash string, blockHeight int64) {
+	query := "INSERT INTO mempool_tx (hash, block_height) VALUES (?, ?)"
+	params := []interface{}{hash, blockHeight}
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
@@ -445,6 +446,19 @@ func (d *SqlDatabase) InsertMempoolTxHash(hash string) {
 func (d *SqlDatabase) MempoolTxExisted(hash string) bool {
 	query := "SELECT hash FROM mempool_tx WHERE hash=?"
 	params := []interface{}{hash}
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		utils.LogError("failed to query mempool_tx, err =", err)
+	}
+	defer rows.Close()
+
+	return rows.Next()
+}
+
+func (d *SqlDatabase) MempoolTxExistedRange(hash string, minBlock int64, maxBlock int64) bool {
+	query := "SELECT hash FROM mempool_tx WHERE hash=? AND block_height >= ? AND block_height <= ?"
+	params := []interface{}{hash, minBlock, maxBlock}
 
 	rows, err := d.db.Query(query, params...)
 	if err != nil {

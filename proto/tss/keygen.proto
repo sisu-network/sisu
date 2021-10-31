@@ -9,8 +9,7 @@ message KeygenProposal {
   // Random id for this proposal.
   string id = 3;
 
-  // Block number that this proposal expires. All votes should be casted and saved by this time.
-  int64 expirationBlock = 4;
+  int64 createdBlock = 4;
 }
 
 message KeygenResult {
