@@ -13,14 +13,20 @@ import (
 	tsstypes "github.com/sisu-network/sisu/x/tss/types"
 )
 
+const (
+	STATUS_DELIVERED = "delivered"
+)
+
 type Database interface {
 	Init() error
 	Close() error
 
-	// Chain key
+	// Keygen
 	InsertChainKey(chain, address string, pubKey []byte)
 	IsKeyExisted(chain string) bool
 	IsChainKeyAddress(chain, address string) bool
+	UpdateKeygenStatus(chain, status string)
+	IsKeygenDelivered(chain string) bool
 
 	// Contracts
 	InsertContracts(contracts []*tsstypes.ContractEntity)
@@ -142,7 +148,7 @@ func (d *SqlDatabase) Close() error {
 }
 
 func (d *SqlDatabase) InsertChainKey(chain, address string, pubKey []byte) {
-	query := "INSERT INTO chain_key (chain, address, pubkey) VALUES (?, ?, ?)"
+	query := "INSERT INTO keygen (chain, address, pubkey) VALUES (?, ?, ?)"
 	params := []interface{}{chain, address, pubKey}
 
 	_, err := d.db.Exec(query, params...)
@@ -152,7 +158,7 @@ func (d *SqlDatabase) InsertChainKey(chain, address string, pubKey []byte) {
 }
 
 func (d *SqlDatabase) IsKeyExisted(chain string) bool {
-	query := "SELECT chain FROM chain_key WHERE chain = ?"
+	query := "SELECT chain FROM keygen WHERE chain = ?"
 	params := []interface{}{chain}
 
 	rows, err := d.db.Query(query, params...)
@@ -166,7 +172,7 @@ func (d *SqlDatabase) IsKeyExisted(chain string) bool {
 }
 
 func (d *SqlDatabase) IsChainKeyAddress(chain, address string) bool {
-	query := "SELECT chain FROM chain_key WHERE chain = ? AND address = ?"
+	query := "SELECT chain FROM keygen WHERE chain = ? AND address = ?"
 	params := []interface{}{chain, address}
 
 	rows, err := d.db.Query(query, params...)
@@ -178,6 +184,39 @@ func (d *SqlDatabase) IsChainKeyAddress(chain, address string) bool {
 	defer rows.Close()
 
 	return rows.Next()
+}
+
+func (d *SqlDatabase) UpdateKeygenStatus(chain, status string) {
+	query := "UPDATE keygen SET status = ? WHERE chain = ?"
+	params := []interface{}{chain}
+
+	_, err := d.db.Exec(query, params...)
+	if err != nil {
+		utils.LogError("failed to udpate keygen status for chain", chain, ", err = ", err)
+	}
+}
+
+func (d *SqlDatabase) IsKeygenDelivered(chain string) bool {
+	query := "SELECT status FROM keygen WHERE chain = ?"
+	params := []interface{}{chain}
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		utils.LogError("cannot query keygen status ", chain)
+		return false
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return false
+	}
+
+	var status string
+	if err := rows.Scan(&status); err != nil {
+		return false
+	}
+
+	return status == STATUS_DELIVERED
 }
 
 func (d *SqlDatabase) InsertContracts(contracts []*tsstypes.ContractEntity) {
