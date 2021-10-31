@@ -72,12 +72,17 @@ func (p *Processor) deploySignedTx(bz []byte, keysignResult *htypes.KeysignResul
 	utils.LogDebug("Sending final tx to the deyes for deployment for chain", keysignResult.OutChain)
 	deyeClient := p.deyesClients[keysignResult.OutChain]
 
+	pubkey := p.db.GetPubKey(keysignResult.OutChain)
+	if pubkey == nil {
+		return nil, fmt.Errorf("Cannot get pubkey for chain %s", keysignResult.OutChain)
+	}
+
 	if deyeClient != nil {
 		return deyeClient.Dispatch(&eTypes.DispatchedTxRequest{
 			IsEthContractDeployment: isContractDeployment,
 			Chain:                   keysignResult.OutChain,
 			Tx:                      bz,
-			PubKey:                  p.storage.GetPubKey(keysignResult.OutChain),
+			PubKey:                  pubkey,
 		})
 	} else {
 		err := fmt.Errorf("Cannot find deyes client for chain %s", keysignResult.OutChain)
@@ -91,6 +96,7 @@ func (p *Processor) CheckKeysignResult(ctx sdk.Context, msg *types.KeysignResult
 
 func (p *Processor) DeliverKeysignResult(ctx sdk.Context, msg *types.KeysignResult) ([]byte, error) {
 	// TODO: implements this to handle blame.
+
 	return nil, nil
 }
 

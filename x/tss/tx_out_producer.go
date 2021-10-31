@@ -37,17 +37,15 @@ type DefaultTxOutputProducer struct {
 	appKeys       *common.AppKeys
 	db            db.Database
 	ethDeployment *EthDeployment
-	storage       *TssStorage
 	signers       map[string]ethTypes.Signer
 	tssConfig     config.TssConfig
 }
 
-func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys *common.AppKeys, storage *TssStorage, db db.Database, tssConfig config.TssConfig) TxOutputProducer {
+func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys *common.AppKeys, db db.Database, tssConfig config.TssConfig) TxOutputProducer {
 	return &DefaultTxOutputProducer{
 		worldState:    worldState,
 		keeper:        keeper,
 		appKeys:       appKeys,
-		storage:       storage,
 		signers:       utils.GetEthChainSigners(),
 		tssConfig:     tssConfig,
 		ethDeployment: NewEthDeployment(),

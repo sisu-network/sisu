@@ -50,9 +50,6 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 		go func() {
 			err := p.txSubmit.SubmitMessage(proposal)
 
-			// TODO: remove after test.
-			p.txSubmit.SubmitMessage(proposal)
-
 			if err != nil {
 				utils.LogError(err)
 			}
@@ -86,9 +83,6 @@ func (p *Processor) OnKeygenResult(result dhTypes.KeygenResult) {
 		// Save into database.
 		p.db.InsertChainKey(result.Chain, result.Address, result.PubKeyBytes)
 	}
-
-	// TODO: remove this
-	// 3. Save pubkey
 }
 
 func (p *Processor) CheckKeyGenProposal(msg *types.KeygenProposal) error {
