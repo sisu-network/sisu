@@ -65,7 +65,7 @@ transfer-out erc20 eth 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 sisu-eth 0xE83
 					return err
 				}
 
-				utils.LogInfo("Approvng gateway address...")
+				utils.LogInfo("Approving gateway address...")
 				amount := big.NewInt(1)
 				approveAddress(erc20Contract, gatewayAddress, amount, client)
 
