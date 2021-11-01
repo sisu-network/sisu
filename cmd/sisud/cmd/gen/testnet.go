@@ -16,6 +16,7 @@ import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/cosmos-sdk/types/module"
 	banktypes "github.com/sisu-network/cosmos-sdk/x/bank/types"
+	"github.com/sisu-network/sisu/config"
 )
 
 const (
@@ -40,7 +41,7 @@ Example:
 			}
 
 			serverCtx := server.GetServerContextFromCmd(cmd)
-			config := serverCtx.Config
+			cfg := serverCtx.Config
 
 			outputDir, _ := cmd.Flags().GetString(flagOutputDir)
 			minGasPrices, _ := cmd.Flags().GetString(server.FlagMinGasPrices)
@@ -62,10 +63,15 @@ Example:
 			ips := strings.Split(strings.TrimSpace(nodeIps), ",")
 			utils.LogInfo("ips = ", ips)
 
+			nodeConfigs := make([]config.Config, len(ips))
+			for i := range ips {
+				nodeConfigs[i] = getNodeSettings(chainId, keyringBackend, i, "", []string{})
+			}
+
 			settings := &Setting{
 				clientCtx:      clientCtx,
 				cmd:            cmd,
-				tmConfig:       config,
+				tmConfig:       cfg,
 				mbm:            mbm,
 				genBalIterator: genBalIterator,
 				outputDir:      outputDir,
@@ -77,6 +83,7 @@ Example:
 				keyringBackend: keyringBackend,
 				algoStr:        algo,
 				numValidators:  numValidators,
+				nodeConfigs:    nodeConfigs,
 			}
 
 			_, err = InitNetwork(settings)
