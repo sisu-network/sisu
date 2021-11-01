@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
+	"strings"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -105,8 +106,128 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Tr
 			}, nil
 		}
 	case MethodTransferOut:
+		// Right no this only works for when you're transfering back to the asset's home chain
+		fmt.Println("METHOD TRANSFER OUT")
+		if len(params) != 4 {
+			return nil, fmt.Errorf("transferOut expects 4 params")
+		}
 
+		fmt.Println(params)
+		// Creates a transferIn function in the other chain.
+		toChain := params[1].(string)
+		utils.LogInfo("toChain = ", toChain)
+
+		// TODO: Creates tx out for other chains.
+		if utils.IsETHBasedChain(toChain) {
+
+			// Is this the gateway contract?
+			toChainContract := p.db.GetContractFromHash(toChain, erc20Contract.AbiHash)
+			if toChainContract == nil {
+				return nil, fmt.Errorf("cannot find erc20 contract for toChain %s", toChain)
+			}
+
+			assetId := params[0]
+			recipient := params[2].(string)
+			amount := params[3]
+
+			utils.LogInfo("assetId = ", assetId)
+			utils.LogInfo("recipient = ", recipient)
+			utils.LogInfo("amount = ", amount)
+
+			// get address from assetId
+			assetAddr := strings.Split(assetId, "__")[1]
+
+			input, err := erc20Contract.Abi.Pack(
+				MethodTransferInAssetOfThisChain,
+				ethcommon.HexToAddress(assetAddr),
+				ethcommon.HexToAddress(recipient),
+				amount,
+			)
+			if err != nil {
+				return nil, err
+			}
+
+			nonce := p.worldState.UseAndIncreaseNonce(toChain)
+			if nonce < 0 {
+				return nil, fmt.Errorf("cannont find nonce for chain %s", toChain)
+			}
+
+			// Maybe we should use ethTypes.newTx()
+			rawTx := ethTypes.NewTransaction(
+				uint64(nonce),
+				ethcommon.HexToAddress(toChainContract.Address),
+				big.NewInt(0),
+				p.getGasLimit(toChain),
+				p.getGasPrice(toChain),
+				input,
+			)
+			bz, err := rawTx.MarshalBinary()
+			if err != nil {
+				return nil, err
+			}
+
+			return &types.TxResponse{
+				OutChain: toChain,
+				EthTx:    rawTx,
+				RawBytes: bz,
+			}, nil
+
+		}
+
+		// Check if tokens are originally from toChain
+		// if /* toknens are from toChain */ {
+		// 	// TODO: Creates tx out for other chains.
+		// 	if utils.IsEthBasedChain(toChain) {
+		// 		toChain
+		// 	}
+
+		// } else {
+		// 	// Creates a transferIn function in the other chain.
+		// 	// TODO: Creates tx out for other chains.
+		// 	if utils.IsETHBasedChain(toChain) {
+		// 		toChainContract := p.db.GetContractFromHash(toChain, erc20Contract.AbiHash)
+		// 		if toChainContract == nil {
+		// 			return nil, fmt.Errorf("cannot find erc20 contract for toChain %s", toChain)
+		// 		}
+
+		// 		assetId := fromChain + "__" + (params[0].(ethcommon.Address)).Hex()
+		// 		recipient := params[2].(string)
+		// 		amount := params[3]
+
+		// 		utils.LogInfo("assetId = ", assetId)
+		// 		utils.LogInfo("recipient = ", recipient)
+		// 		utils.LogInfo("amount = ", amount)
+
+		// 		input, err := erc20Contract.Abi.Pack(MethodTransferIn, assetId, ethcommon.HexToAddress(recipient), amount)
+		// 		if err != nil {
+		// 			return nil, err
+		// 		}
+
+		// 		nonce := p.worldState.UseAndIncreaseNonce(toChain)
+		// 		if nonce < 0 {
+		// 			return nil, fmt.Errorf("cannont find nonce for chain %s", toChain)
+		// 		}
+
+		// 		rawTx := ethTypes.NewTransaction(
+		// 			uint64(nonce),
+		// 			ethcommon.HexToAddress(toChainContract.Address),
+		// 			big.NewInt(0),
+		// 			p.getGasLimit(toChain),
+		// 			p.getGasPrice(toChain),
+		// 			input,
+		// 		)
+		// 		bz, err := rawTx.MarshalBinary()
+		// 		if err != nil {
+		// 			return nil, err
+		// 		}
+
+		// 		return &types.TxResponse{
+		// 			OutChain: toChain,
+		// 			EthTx:    rawTx,
+		// 			RawBytes: bz,
+		// 		}, nil
+		// 	}
+		// }
 	}
-
 	return nil, fmt.Errorf("unhandle case")
 }

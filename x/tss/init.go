@@ -12,8 +12,10 @@ import (
 const (
 	ContractErc20 = "erc20"
 
-	MethodTransferOutFromContract = "transferOutFromContract"
-	MethodTransferIn              = "transferIn"
+	MethodTransferOutFromContract    = "transferOutFromContract"
+	MethodTransferIn                 = "transferIn"
+	MethodTransferOut                = "transferOut"
+	MethodTransferInAssetOfThisChain = "transferInAssetOfThisChain"
 )
 
 var (
@@ -29,6 +31,8 @@ var (
 			MethodNames: []string{
 				MethodTransferOutFromContract,
 				MethodTransferIn,
+				MethodTransferOut,
+				MethodTransferInAssetOfThisChain,
 			},
 		},
 	}
