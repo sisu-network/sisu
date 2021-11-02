@@ -126,7 +126,7 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Tr
 				return nil, fmt.Errorf("cannot find erc20 contract for toChain %s", toChain)
 			}
 
-			assetId := params[0]
+			assetId := params[0].(string)
 			recipient := params[2].(string)
 			amount := params[3]
 
