@@ -91,11 +91,24 @@ func (p *Processor) CheckKeyGenProposal(msg *types.KeygenProposal) error {
 }
 
 func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, error) {
+	// TODO: Save data to KV store.
+	status, err := p.db.GetKeygenStatus(msg.Chain)
+	if err != nil {
+		return nil, err
+	}
+
+	if status == db.STATUS_PROPOSAL_FINALIZED {
+		utils.LogInfo("The keygen proposal has been processed")
+		return nil, nil
+	}
+
+	p.db.UpdateKeygenStatus(msg.Chain, db.STATUS_PROPOSAL_FINALIZED)
+
 	// Send a signal to Dheart to start keygen process.
 	utils.LogInfo("Sending keygen request to Dheart. Chain =", msg.Chain)
 	pubKeys := p.partyManager.GetActivePartyPubkeys()
 	keygenId := GetKeygenId(msg.Chain, p.currentHeight, pubKeys)
-	err := p.dheartClient.KeyGen(keygenId, msg.Chain, pubKeys)
+	err = p.dheartClient.KeyGen(keygenId, msg.Chain, pubKeys)
 	if err != nil {
 		utils.LogError(err)
 		return nil, err
@@ -108,13 +121,13 @@ func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, er
 func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult) ([]byte, error) {
 	// TODO: Save data to KV store.
 	if msg.Result == types.KeygenResult_SUCCESS {
-		if p.db.IsKeygenDelivered(msg.Chain) {
+		if status, _ := p.db.GetKeygenStatus(msg.Chain); status == db.STATUS_DELIVERED_TO_CHAIN {
 			utils.LogInfo("Keygen result has been processed for chain", msg.Chain)
 			return nil, nil
 		}
 
 		// Update key address
-		p.db.UpdateKeygenStatus(msg.Chain, db.STATUS_DELIVERED)
+		p.db.UpdateKeygenStatus(msg.Chain, db.STATUS_DELIVERED_TO_CHAIN)
 
 		// If this keygen is successful, prepare for contract deployment.
 		// Save the pubkey to the keeper.

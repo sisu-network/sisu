@@ -14,7 +14,10 @@ import (
 )
 
 const (
-	STATUS_DELIVERED = "delivered"
+	// The keygen proposal has passed the consensus and included in a Sisu block
+	STATUS_PROPOSAL_FINALIZED = "proposal_finalized"
+	// The keygen has finished and delivered to destination chain.
+	STATUS_DELIVERED_TO_CHAIN = "delivered_to_chain"
 )
 
 type Database interface {
@@ -27,7 +30,7 @@ type Database interface {
 	IsChainKeyAddress(chain, address string) bool
 	GetPubKey(chain string) []byte
 	UpdateKeygenStatus(chain, status string)
-	IsKeygenDelivered(chain string) bool
+	GetKeygenStatus(chain string) (string, error)
 
 	// Contracts
 	InsertContracts(contracts []*tsstypes.ContractEntity)
@@ -220,13 +223,36 @@ func (d *SqlDatabase) UpdateKeygenStatus(chain, status string) {
 	}
 }
 
-func (d *SqlDatabase) IsKeygenDelivered(chain string) bool {
+func (d *SqlDatabase) GetKeygenStatus(chain string) (string, error) {
 	query := "SELECT status FROM keygen WHERE chain = ?"
 	params := []interface{}{chain}
 
 	rows, err := d.db.Query(query, params...)
 	if err != nil {
 		utils.LogError("cannot query keygen status ", chain)
+		return "", err
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return "", nil
+	}
+
+	var status string
+	if err := rows.Scan(&status); err != nil {
+		return "", err
+	}
+
+	return status, nil
+}
+
+func (d *SqlDatabase) IsKeygenDelivered(chain string) bool {
+	query := "SELECT status FROM keygen WHERE chain = ?"
+	params := []interface{}{chain}
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		utils.LogError("cannot check if keygen is delivered for chain ", chain, ", err =", err)
 		return false
 	}
 	defer rows.Close()
@@ -240,7 +266,7 @@ func (d *SqlDatabase) IsKeygenDelivered(chain string) bool {
 		return false
 	}
 
-	return status == STATUS_DELIVERED
+	return status == STATUS_DELIVERED_TO_CHAIN
 }
 
 func (d *SqlDatabase) InsertContracts(contracts []*tsstypes.ContractEntity) {

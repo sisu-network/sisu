@@ -190,7 +190,7 @@ func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
 			return fmt.Errorf("Some message is not a TSS message")
 		}
 
-		utils.LogDebug("Msg type = ", msg.Type())
+		utils.LogDebug("Checking tx: Msg type = ", msg.Type())
 
 		switch msg.(type) {
 		case *types.KeygenProposal:
