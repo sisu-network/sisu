@@ -1,6 +1,7 @@
 package tss
 
 import (
+	"fmt"
 	"strconv"
 
 	hTypes "github.com/sisu-network/dheart/types"
@@ -9,6 +10,8 @@ import (
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
+
+	etypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 // Produces response for an observed tx. This has to be deterministic based on all the data that
@@ -32,23 +35,48 @@ func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.Observed
 }
 
 func (p *Processor) CheckTxOut(ctx sdk.Context, msg *types.TxOut) error {
-
+	// TODO: implement this.
 	return nil
 }
 
 func (p *Processor) DeliverTxOut(ctx sdk.Context, tx *types.TxOut) ([]byte, error) {
-	// TODO: check if this tx has been requested to be signed.
+	// TODO: check if this tx has been requested to be signed
+	// TODO: Save this to KV store
+
+	if utils.IsETHBasedChain(tx.OutChain) {
+		return p.deliverTxOutEth(ctx, tx)
+	}
+
+	return nil, nil
+}
+
+func (p *Processor) deliverTxOutEth(ctx sdk.Context, tx *types.TxOut) ([]byte, error) {
 	outHash := tx.GetHash()
 
 	utils.LogVerbose("Delivering TXOUT")
 
-	// 4. Broadcast it to Dheart for processing.
+	ethTx := &etypes.Transaction{}
+	if err := ethTx.UnmarshalBinary(tx.OutBytes); err != nil {
+		utils.LogError("cannot unmarshal tx, err =", err)
+		return nil, err
+	}
+
+	signer := utils.GetEthChainSigners()[tx.OutChain]
+	if signer == nil {
+		err := fmt.Errorf("cannot find signer for chain %s", tx.OutChain)
+		utils.LogError(err)
+		return nil, err
+	}
+
+	hash := signer.Hash(ethTx)
+
+	// 4. Send it to Dheart for signing.
 	keysignReq := &hTypes.KeysignRequest{
 		Id:             p.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), outHash),
 		OutChain:       tx.OutChain,
 		OutBlockHeight: p.currentHeight,
 		OutHash:        outHash,
-		OutBytes:       tx.OutBytes,
+		BytesToSign:    hash[:],
 	}
 
 	pubKeys := p.partyManager.GetActivePartyPubkeys()

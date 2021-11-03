@@ -4,13 +4,16 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"strconv"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
 	erc20Gateway "github.com/sisu-network/sisu/contracts/eth/erc20gateway"
+	"github.com/sisu-network/sisu/db"
 	"github.com/sisu-network/sisu/utils"
 	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
 	"github.com/sisu-network/sisu/x/tss"
@@ -23,26 +26,45 @@ func TransferOut() *cobra.Command {
 		Use: "transfer-out",
 		Long: `Transfer an ERC20 or ERC721 asset.
 Usage:
-transfer-out [ContractType] [FromChain] [TokenAddress] [ToChain] [RecipientAddress]
+transfer-out [ContractType] [FromChain] [Port] [TokenAddress] [ToChain] [RecipientAddress]
 
 Example:
-transfer-out erc20 eth 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 sisu-eth 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
+transfer-out erc20 eth 7545 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 sisu-eth 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			database := getDatabase()
+			// Use this when running with docker.
+			sqlConfig := getDockerSqlConfig()
+
+			// Use this when running with single node on command line.
+			// cfg, cfgErr := config.ReadConfig()
+			// if cfgErr != nil {
+			// 	panic(cfgErr)
+			// }
+			// sqlConfig := cfg.Sisu.Sql
+
+			database := db.NewDatabase(sqlConfig)
+			err := database.Init()
+			if err != nil {
+				panic(err)
+			}
 			defer database.Close()
 
 			// Get the contract address of token
 			utils.LogInfo("args = ", args)
 			contractType := args[0]
 			fromChain := args[1]
-			tokenAddressString := args[2]
-			toChain := args[3]
-			recipient := args[4]
+			port, err := strconv.Atoi(args[2])
+			if err != nil {
+				panic(err)
+			}
+
+			tokenAddressString := args[3]
+			toChain := args[4]
+			recipient := args[5]
 
 			switch contractType {
 			case "erc20":
-				client, err := getEthClient(fromChain)
+				client, err := getEthClient(port)
 				if err != nil {
 					panic(err)
 				}
@@ -58,6 +80,8 @@ transfer-out erc20 eth 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 sisu-eth 0xE83
 				if err != nil {
 					panic(err)
 				}
+
+				utils.LogInfo("gatewayAddress = ", gatewayAddress.String())
 
 				tokenAddress := common.HexToAddress(tokenAddressString)
 				erc20Contract, err := erc20.NewErc20(tokenAddress, client)
@@ -96,6 +120,16 @@ transfer-out erc20 eth 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 sisu-eth 0xE83
 		},
 	}
 	return cmd
+}
+
+func getDockerSqlConfig() config.SqlConfig {
+	return config.SqlConfig{
+		Host:     "0.0.0.0",
+		Port:     4000,
+		Username: "root",
+		Password: "password",
+		Schema:   "sisu0", // TODO: make this schema configurable
+	}
 }
 
 func deployGatewayContract(toChain string, client *ethclient.Client) (common.Address, *erc20Gateway.Erc20gateway) {

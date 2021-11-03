@@ -2,6 +2,7 @@ package dev
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -16,10 +17,10 @@ func Query() *cobra.Command {
 		Use: "query",
 		Long: `Transfer an ERC20 or ERC721 asset.
 Usage:
-query [ContractType] [chain] [AssetId] [AccountAddress]
+query [ContractType] [chain] [Port] [AssetId] [AccountAddress]
 
 Example:
-query erc20 sisu-eth eth__0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
+query erc20 sisu-eth 8545 eth__0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			database := getDatabase()
@@ -28,12 +29,16 @@ query erc20 sisu-eth eth__0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 0xE8382821B
 			utils.LogInfo("args = ", args)
 			contractType := args[0]
 			chain := args[1]
-			assetId := args[2]
-			accountAddr := args[3]
+			port, err := strconv.Atoi(args[2])
+			if err != nil {
+				panic(err)
+			}
+			assetId := args[3]
+			accountAddr := args[4]
 
 			switch contractType {
 			case "erc20":
-				client, err := getEthClient(chain)
+				client, err := getEthClient(port)
 				if err != nil {
 					panic(err)
 				}
