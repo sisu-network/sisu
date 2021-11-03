@@ -62,5 +62,7 @@ func (ws *DefaultWorldState) UseAndIncreaseNonce(chain string) int64 {
 	nonce := ws.nonces[chain]
 	ws.nonces[chain] = ws.nonces[chain] + 1
 
+	utils.LogVerbose("World state, nonce for chain", chain, "is", nonce)
+
 	return nonce
 }

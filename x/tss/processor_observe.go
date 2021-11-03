@@ -1,8 +1,6 @@
 package tss
 
 import (
-	"fmt"
-
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/sisu/utils"
@@ -43,14 +41,7 @@ func (p *Processor) CheckObservedTxs(ctx sdk.Context, msgs *tssTypes.ObservedTx)
 
 // Delivers observed Txs.
 func (p *Processor) DeliverObservedTxs(ctx sdk.Context, tx *tssTypes.ObservedTx) ([]byte, error) {
-	// Update the obsevation count for each transaction.
-	if p.keeper.GetObservedTx(ctx, tx.Chain, tx.BlockHeight, tx.TxHash) != nil {
-		utils.LogVerbose("This tx has been included in Sisu block: ", tx.Chain, tx.BlockHeight, tx.TxHash)
-		return nil, fmt.Errorf("this observed tx has been added into our block")
-	}
-
-	// Save this to KV store.
-	p.keeper.SaveObservedTx(ctx, tx)
+	// TODO: Update the KVstore
 
 	// Save this to our local storage in case we have not seen it.
 	p.createAndBroadcastTxOuts(ctx, tx)
@@ -67,7 +58,7 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string) {
 	// If this is a contract deployment, mark the contract as deployed.
 	if utils.IsETHBasedChain(chain) && tx.To == "" {
 		utils.LogInfo("This is a tx deployment")
-		txOut := p.db.GetTxOutWithHashedSig(chain, txHash)
+		txOut := p.db.GetTxOutWithHash(chain, txHash, true)
 
 		if txOut != nil {
 			utils.LogInfo("Updating contract status. Contract hash = ", txOut.ContractHash)

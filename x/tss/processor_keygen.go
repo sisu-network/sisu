@@ -80,8 +80,8 @@ func (p *Processor) OnKeygenResult(result dhTypes.KeygenResult) {
 		utils.LogVerbose("adding watcher address", result.Address)
 		deyesClient.AddWatchAddresses(result.Chain, []string{result.Address})
 
-		// Save into database.
-		p.db.InsertChainKey(result.Chain, result.Address, result.PubKeyBytes)
+		// Update the address and pubkey of the keygen database.
+		p.db.UpdateKeygenAddress(result.Chain, result.Address, result.PubKeyBytes)
 	}
 }
 
@@ -91,18 +91,22 @@ func (p *Processor) CheckKeyGenProposal(msg *types.KeygenProposal) error {
 }
 
 func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, error) {
+	utils.LogInfo("Delivering keygen proposal")
+
 	// TODO: Save data to KV store.
-	status, err := p.db.GetKeygenStatus(msg.Chain)
-	if err != nil {
-		return nil, err
+	if p.globalData.IsCatchingUp() {
+		return nil, nil
 	}
 
-	if status == db.STATUS_PROPOSAL_FINALIZED {
+	if p.db.IsKeyExisted(msg.Chain) {
 		utils.LogInfo("The keygen proposal has been processed")
 		return nil, nil
 	}
 
-	p.db.UpdateKeygenStatus(msg.Chain, db.STATUS_PROPOSAL_FINALIZED)
+	err := p.db.CreateKeygen(msg.Chain)
+	if err != nil {
+		utils.LogError(err)
+	}
 
 	// Send a signal to Dheart to start keygen process.
 	utils.LogInfo("Sending keygen request to Dheart. Chain =", msg.Chain)
@@ -143,6 +147,8 @@ func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult
 		// queue for deployment later (after we receive some funding like ether to execute contract
 		// deployment).
 		p.txOutputProducer.SaveContractsToDeploy(msg.Chain)
+	} else {
+		// TODO: handle failure case
 	}
 
 	return nil, nil

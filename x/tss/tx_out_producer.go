@@ -59,10 +59,11 @@ func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *t
 	var err error
 
 	if utils.IsETHBasedChain(tx.Chain) {
+		utils.LogInfo("Getting tx out for chain", tx.Chain)
 		outMsgs, outEntities, err = p.getEthResponse(ctx, height, tx)
 
 		if err != nil {
-			utils.LogError("Cannot get response for an eth tx")
+			utils.LogError("Cannot get response for an eth tx, err = ", err)
 		}
 	}
 

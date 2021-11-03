@@ -52,7 +52,7 @@ func handleKeygenResult(ctx sdk.Context, msg *types.KeygenResult, processor *Pro
 
 func handleObservedTx(ctx sdk.Context, msg *types.ObservedTx, processor *Processor) (*sdk.Result, error) {
 	// Update the count for all txs.
-	utils.LogVerbose("Handling ObservedTxs")
+	utils.LogVerbose("Handling ObservedTxs for chain", msg.Chain)
 	data, err := processor.DeliverObservedTxs(ctx, msg)
 	return &sdk.Result{
 		Data: data,

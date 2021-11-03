@@ -2,6 +2,7 @@ package dev
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -15,15 +16,18 @@ func DeployErc20() *cobra.Command {
 		Use: "deploy-erc20",
 		Long: `Deploy an ERC20 contract.
 Usage:
-deploy-erc20 [Chain]
+deploy-erc20 [Port]
 
 Example:
-deploy-erc20 eth
+deploy-erc20 7545
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			chain := args[0]
+			port, err := strconv.Atoi(args[0])
+			if err != nil {
+				panic(err)
+			}
 
-			client, err := getEthClient(chain)
+			client, err := getEthClient(port)
 			if err != nil {
 				panic(err)
 			}

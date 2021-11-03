@@ -49,15 +49,8 @@ func init() {
 	nonceMap = make(map[string]*big.Int)
 }
 
-func getEthClient(fromChain string) (*ethclient.Client, error) {
-	switch fromChain {
-	case "eth":
-		return ethclient.Dial("http://0.0.0.0:7545")
-	case "sisu-eth":
-		return ethclient.Dial("http://0.0.0.0:8545")
-	}
-
-	return nil, fmt.Errorf("cannot find client for chain %s", fromChain)
+func getEthClient(port int) (*ethclient.Client, error) {
+	return ethclient.Dial(fmt.Sprintf("http://0.0.0.0:%d", port))
 }
 
 func getAuthTransactor(client *ethclient.Client, address common.Address) (*bind.TransactOpts, error) {

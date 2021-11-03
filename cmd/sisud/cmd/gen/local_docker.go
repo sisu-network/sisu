@@ -73,7 +73,7 @@ Example:
 			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
 
 			// Clean up
-			removeOldDirs(outputDir)
+			cleanData(outputDir)
 
 			// Make dir folder for mysql docker
 			err = os.MkdirAll(filepath.Join(outputDir, "db"), 0755)
@@ -161,7 +161,7 @@ Example:
 	return cmd
 }
 
-func removeOldDirs(root string) {
+func cleanData(root string) {
 	files, err := ioutil.ReadDir(root)
 	if err != nil {
 		panic(err)
@@ -440,6 +440,7 @@ func generateHeartToml(index int, dir string, dockerConfig DockerNodeConfig, pee
 
 home-dir = "/root/"
 use-on-memory = false
+shortcut-preparams = true
 sisu-server-url = "{{ .SisuServerUrl }}"
 port = 5678
 
