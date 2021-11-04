@@ -1,4 +1,4 @@
-CREATE TABLE tx_out(
+CREATE TABLE IF NOT EXISTS tx_out(
   chain VARCHAR(256),
   hash_without_sig VARCHAR(64),
 

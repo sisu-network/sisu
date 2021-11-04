@@ -37,17 +37,15 @@ type DefaultTxOutputProducer struct {
 	appKeys       *common.AppKeys
 	db            db.Database
 	ethDeployment *EthDeployment
-	storage       *TssStorage
 	signers       map[string]ethTypes.Signer
 	tssConfig     config.TssConfig
 }
 
-func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys *common.AppKeys, storage *TssStorage, db db.Database, tssConfig config.TssConfig) TxOutputProducer {
+func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys *common.AppKeys, db db.Database, tssConfig config.TssConfig) TxOutputProducer {
 	return &DefaultTxOutputProducer{
 		worldState:    worldState,
 		keeper:        keeper,
 		appKeys:       appKeys,
-		storage:       storage,
 		signers:       utils.GetEthChainSigners(),
 		tssConfig:     tssConfig,
 		ethDeployment: NewEthDeployment(),
@@ -61,10 +59,11 @@ func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *t
 	var err error
 
 	if utils.IsETHBasedChain(tx.Chain) {
+		utils.LogInfo("Getting tx out for chain", tx.Chain)
 		outMsgs, outEntities, err = p.getEthResponse(ctx, height, tx)
 
 		if err != nil {
-			utils.LogError("Cannot get response for an eth tx")
+			utils.LogError("Cannot get response for an eth tx, err = ", err)
 		}
 	}
 

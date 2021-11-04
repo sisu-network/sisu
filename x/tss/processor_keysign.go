@@ -9,7 +9,7 @@ import (
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 
-	coreTypes "github.com/sisu-network/dcore/core/types"
+	etypes "github.com/ethereum/go-ethereum/core/types"
 )
 
 // This function is called after dheart sends Sisu keysign result.
@@ -20,15 +20,22 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 
 	// Sends it to deyes for deployment.
 	if result.Success {
-		tx := &coreTypes.Transaction{}
-		if err := tx.UnmarshalBinary(result.OutBytes); err != nil {
+		// Find the tx in txout table
+
+		txEntity := p.db.GetTxOutWithHash(result.OutChain, result.OutHash, false)
+		if txEntity == nil {
+			utils.LogError("Cannot find tx out with hash", result.OutHash)
+		}
+
+		tx := &etypes.Transaction{}
+		if err := tx.UnmarshalBinary(txEntity.BytesWithoutSig); err != nil {
 			utils.LogError("cannot unmarshal tx, err =", err)
 			return
 		}
 
 		// Create full tx with signature.
 		chainId := utils.GetChainIntFromId(result.OutChain)
-		signedTx, err := tx.WithSignature(coreTypes.NewEIP2930Signer(chainId), result.Signature)
+		signedTx, err := tx.WithSignature(etypes.NewEIP2930Signer(chainId), result.Signature)
 		if err != nil {
 			utils.LogError("cannot set signatuer for tx, err =", err)
 			return
@@ -65,6 +72,8 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 		if deployedResult.Success {
 			p.onTxDeployed(result.OutChain, result.OutHash, deployedResult, isContractDeployment)
 		}
+	} else {
+		// TODO: handle failure case here.
 	}
 }
 
@@ -72,12 +81,17 @@ func (p *Processor) deploySignedTx(bz []byte, keysignResult *htypes.KeysignResul
 	utils.LogDebug("Sending final tx to the deyes for deployment for chain", keysignResult.OutChain)
 	deyeClient := p.deyesClients[keysignResult.OutChain]
 
+	pubkey := p.db.GetPubKey(keysignResult.OutChain)
+	if pubkey == nil {
+		return nil, fmt.Errorf("Cannot get pubkey for chain %s", keysignResult.OutChain)
+	}
+
 	if deyeClient != nil {
 		return deyeClient.Dispatch(&eTypes.DispatchedTxRequest{
 			IsEthContractDeployment: isContractDeployment,
 			Chain:                   keysignResult.OutChain,
 			Tx:                      bz,
-			PubKey:                  p.storage.GetPubKey(keysignResult.OutChain),
+			PubKey:                  pubkey,
 		})
 	} else {
 		err := fmt.Errorf("Cannot find deyes client for chain %s", keysignResult.OutChain)
@@ -91,6 +105,7 @@ func (p *Processor) CheckKeysignResult(ctx sdk.Context, msg *types.KeysignResult
 
 func (p *Processor) DeliverKeysignResult(ctx sdk.Context, msg *types.KeysignResult) ([]byte, error) {
 	// TODO: implements this to handle blame.
+
 	return nil, nil
 }
 

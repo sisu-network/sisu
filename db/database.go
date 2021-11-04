@@ -13,14 +13,26 @@ import (
 	tsstypes "github.com/sisu-network/sisu/x/tss/types"
 )
 
+const (
+	// The keygen proposal has passed the consensus and included in a Sisu block
+	STATUS_PROPOSAL_FINALIZED = "proposal_finalized"
+	// The keygen has finished and delivered to destination chain.
+	STATUS_DELIVERED_TO_CHAIN = "delivered_to_chain"
+)
+
 type Database interface {
 	Init() error
 	Close() error
 
-	// Chain key
-	InsertChainKey(chain, address string, pubKey []byte)
+	// Keygen
+	CreateKeygen(chain string) error
+	UpdateKeygenAddress(chain, address string, pubKey []byte)
+
 	IsKeyExisted(chain string) bool
 	IsChainKeyAddress(chain, address string) bool
+	GetPubKey(chain string) []byte
+	UpdateKeygenStatus(chain, status string)
+	GetKeygenStatus(chain string) (string, error)
 
 	// Contracts
 	InsertContracts(contracts []*tsstypes.ContractEntity)
@@ -33,7 +45,7 @@ type Database interface {
 
 	// Txout
 	InsertTxOuts(txs []*tsstypes.TxOutEntity)
-	GetTxOutWithHashedSig(chain string, hashWithSig string) *tsstypes.TxOutEntity
+	GetTxOutWithHash(chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity
 	IsContractDeployTx(chain string, hashWithoutSig string) bool
 	UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string, sig []byte)
 	UpdateTxOutStatus(chain, hashWithoutSig, status string)
@@ -141,18 +153,31 @@ func (d *SqlDatabase) Close() error {
 	return d.db.Close()
 }
 
-func (d *SqlDatabase) InsertChainKey(chain, address string, pubKey []byte) {
-	query := "INSERT INTO chain_key (chain, address, pubkey) VALUES (?, ?, ?)"
-	params := []interface{}{chain, address, pubKey}
+func (d *SqlDatabase) CreateKeygen(chain string) error {
+	query := "INSERT INTO keygen (chain) VALUES (?)"
+	params := []interface{}{chain}
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
-		utils.LogError("failed to insert chain key into db, err = ", err)
+		utils.LogError("failed to create new keygen for chain", chain, ", err = ", err)
+		return err
+	}
+
+	return nil
+}
+
+func (d *SqlDatabase) UpdateKeygenAddress(chain, address string, pubKey []byte) {
+	query := "UPDATE keygen SET address = ?, pubkey = ? WHERE chain = ?"
+	params := []interface{}{address, pubKey, chain}
+
+	_, err := d.db.Exec(query, params...)
+	if err != nil {
+		utils.LogError("failed to update keygen address and pubkey, err = ", err)
 	}
 }
 
 func (d *SqlDatabase) IsKeyExisted(chain string) bool {
-	query := "SELECT chain FROM chain_key WHERE chain = ?"
+	query := "SELECT chain FROM keygen WHERE chain = ?"
 	params := []interface{}{chain}
 
 	rows, err := d.db.Query(query, params...)
@@ -166,7 +191,7 @@ func (d *SqlDatabase) IsKeyExisted(chain string) bool {
 }
 
 func (d *SqlDatabase) IsChainKeyAddress(chain, address string) bool {
-	query := "SELECT chain FROM chain_key WHERE chain = ? AND address = ?"
+	query := "SELECT chain FROM keygen WHERE chain = ? AND address = ?"
 	params := []interface{}{chain, address}
 
 	rows, err := d.db.Query(query, params...)
@@ -178,6 +203,85 @@ func (d *SqlDatabase) IsChainKeyAddress(chain, address string) bool {
 	defer rows.Close()
 
 	return rows.Next()
+}
+
+func (d *SqlDatabase) GetPubKey(chain string) []byte {
+	query := "SELECT pubkey FROM keygen WHERE chain = ?"
+	params := []interface{}{chain}
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		utils.LogError("cannot query pub key", chain)
+		return nil
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return nil
+	}
+
+	var result []byte
+	if err := rows.Scan(&result); err != nil {
+		return nil
+	}
+
+	return result
+}
+
+func (d *SqlDatabase) UpdateKeygenStatus(chain, status string) {
+	query := "UPDATE keygen SET status = ? WHERE chain = ?"
+	params := []interface{}{status, chain}
+
+	_, err := d.db.Exec(query, params...)
+	if err != nil {
+		utils.LogError("failed to udpate keygen status for chain", chain, ", err = ", err)
+	}
+}
+
+func (d *SqlDatabase) GetKeygenStatus(chain string) (string, error) {
+	query := "SELECT status FROM keygen WHERE chain = ?"
+	params := []interface{}{chain}
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		utils.LogError("cannot query keygen status ", chain)
+		return "", err
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return "", nil
+	}
+
+	var status string
+	if err := rows.Scan(&status); err != nil {
+		return "", err
+	}
+
+	return status, nil
+}
+
+func (d *SqlDatabase) IsKeygenDelivered(chain string) bool {
+	query := "SELECT status FROM keygen WHERE chain = ?"
+	params := []interface{}{chain}
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		utils.LogError("cannot check if keygen is delivered for chain ", chain, ", err =", err)
+		return false
+	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return false
+	}
+
+	var status string
+	if err := rows.Scan(&status); err != nil {
+		return false
+	}
+
+	return status == STATUS_DELIVERED_TO_CHAIN
 }
 
 func (d *SqlDatabase) InsertContracts(contracts []*tsstypes.ContractEntity) {
@@ -363,7 +467,7 @@ func (d *SqlDatabase) InsertTxOuts(txs []*tsstypes.TxOutEntity) {
 		params = append(params, tx.HashWithoutSig)
 		params = append(params, tx.InChain)
 		params = append(params, tx.InHash)
-		params = append(params, tx.Outbytes)
+		params = append(params, tx.BytesWithoutSig)
 		params = append(params, tx.ContractHash)
 	}
 
@@ -373,9 +477,14 @@ func (d *SqlDatabase) InsertTxOuts(txs []*tsstypes.TxOutEntity) {
 	}
 }
 
-func (d *SqlDatabase) GetTxOutWithHashedSig(chain string, hashWithSig string) *tsstypes.TxOutEntity {
-	query := "SELECT chain, status, hash_without_sig, hash_with_sig, in_chain, in_hash, bytes_without_sig, signature, contract_hash FROM tx_out WHERE chain = ? AND hash_with_sig = ?"
-	params := []interface{}{chain, hashWithSig}
+func (d *SqlDatabase) GetTxOutWithHash(chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity {
+	var query string
+	if isHashWithSig {
+		query = "SELECT chain, status, hash_without_sig, hash_with_sig, in_chain, in_hash, bytes_without_sig, signature, contract_hash FROM tx_out WHERE chain = ? AND hash_with_sig = ?"
+	} else {
+		query = "SELECT chain, status, hash_without_sig, hash_with_sig, in_chain, in_hash, bytes_without_sig, signature, contract_hash FROM tx_out WHERE chain = ? AND hash_without_sig = ?"
+	}
+	params := []interface{}{chain, hash}
 
 	rows, err := d.db.Query(query, params...)
 	if err != nil {
@@ -393,15 +502,15 @@ func (d *SqlDatabase) GetTxOutWithHashedSig(chain string, hashWithSig string) *t
 		}
 
 		return &tsstypes.TxOutEntity{
-			OutChain:       chain.String,
-			HashWithoutSig: hashWithoutSig.String,
-			HashWithSig:    hashWithSig.String,
-			InChain:        inChain.String,
-			InHash:         inHash.String,
-			Outbytes:       bytesWithoutSig,
-			Status:         status.String,
-			Signature:      string(signature),
-			ContractHash:   contractHash.String,
+			OutChain:        chain.String,
+			HashWithoutSig:  hashWithoutSig.String,
+			HashWithSig:     hashWithSig.String,
+			InChain:         inChain.String,
+			InHash:          inHash.String,
+			BytesWithoutSig: bytesWithoutSig,
+			Status:          status.String,
+			Signature:       string(signature),
+			ContractHash:    contractHash.String,
 		}
 	}
 

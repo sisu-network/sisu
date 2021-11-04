@@ -1,4 +1,4 @@
-CREATE TABLE contract(
+CREATE TABLE IF NOT EXISTS contract(
   chain VARCHAR(256),
   hash VARCHAR(256),
   byteCode BLOB,

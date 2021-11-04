@@ -2,7 +2,10 @@ package utils
 
 import (
 	"fmt"
+	"sync"
 	"time"
+
+	"github.com/fatih/color"
 )
 
 type Logger interface {
@@ -25,19 +28,33 @@ const (
 
 var globalLogger Logger
 var logLevel int
+var loggerLock = &sync.RWMutex{}
 
 func SetLogger(logger Logger) {
+	loggerLock.Lock()
+	defer loggerLock.Unlock()
+
 	globalLogger = logger
 }
 
 func SetLogLevel(level int) {
+	loggerLock.Lock()
+	defer loggerLock.Unlock()
+
 	logLevel = level
 }
 
 func getLogger() Logger {
+	loggerLock.RLock()
+
 	if globalLogger == nil {
-		SetLogger(&DefaultLogger{})
+		// Release the lock so that it could be locked again in the set functions
+		loggerLock.RUnlock()
+
+		SetLogger(newDefaultLogger())
 		SetLogLevel(LOG_LEVEL_INFO)
+	} else {
+		loggerLock.RUnlock()
 	}
 
 	return globalLogger
@@ -77,38 +94,55 @@ func LogCritical(a ...interface{}) {
 // of Logger interface.
 
 type DefaultLogger struct {
+	errorColor   *color.Color
+	verboseColor *color.Color
+	warningColor *color.Color
+	debugColor   *color.Color
 }
 
-func (logger DefaultLogger) LogInfo(a ...interface{}) {
-	logger.printWithTime(a...)
+func newDefaultLogger() *DefaultLogger {
+	return &DefaultLogger{
+		errorColor:   color.New(color.FgRed),
+		verboseColor: color.New(color.FgCyan),
+		warningColor: color.New(color.FgYellow),
+		debugColor:   color.New(color.FgMagenta),
+	}
 }
 
-func (logger DefaultLogger) LogDebug(a ...interface{}) {
-	logger.printWithTime(a...)
+func (logger *DefaultLogger) LogInfo(a ...interface{}) {
+	logger.printWithTime(nil, a...)
 }
 
-func (logger DefaultLogger) LogWarn(a ...interface{}) {
-	logger.printWithTime(a...)
+func (logger *DefaultLogger) LogDebug(a ...interface{}) {
+	logger.printWithTime(logger.debugColor, a...)
 }
 
-func (logger DefaultLogger) LogError(a ...interface{}) {
-	logger.printWithTime(a...)
+func (logger *DefaultLogger) LogWarn(a ...interface{}) {
+	logger.printWithTime(logger.warningColor, a...)
 }
 
-func (logger DefaultLogger) LogVerbose(a ...interface{}) {
-	logger.printWithTime(a...)
+func (logger *DefaultLogger) LogError(a ...interface{}) {
+	logger.printWithTime(logger.errorColor, a...)
 }
 
-func (logger DefaultLogger) LogCritical(a ...interface{}) {
-	logger.printWithTime(a...)
+func (logger *DefaultLogger) LogVerbose(a ...interface{}) {
+	logger.printWithTime(logger.verboseColor, a...)
 }
 
-func (logger DefaultLogger) printWithTime(a ...interface{}) {
+func (logger *DefaultLogger) LogCritical(a ...interface{}) {
+	logger.printWithTime(nil, a...)
+}
+
+func (logger *DefaultLogger) printWithTime(c *color.Color, a ...interface{}) {
 	now := time.Now().Format("15:04:05.00")
 
 	var m []interface{}
 	m = append(m, now)
 	m = append(m, a...)
 
-	fmt.Println(m...)
+	if c == nil {
+		fmt.Println(m...)
+	} else {
+		c.Println(m...)
+	}
 }
