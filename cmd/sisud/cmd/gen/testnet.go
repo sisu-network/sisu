@@ -1,10 +1,13 @@
 package gen
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
-	"strings"
 
+	"github.com/BurntSushi/toml"
+	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/spf13/cobra"
 
@@ -18,20 +21,31 @@ import (
 	banktypes "github.com/sisu-network/cosmos-sdk/x/bank/types"
 )
 
+type TestnetNode struct {
+	SisuIp  string `json:"sisu_ip"`
+	HeartIp string `json:"heart_ip"`
+	EyesIp  string `json:"eyes_ip"`
+}
+
+// type TestnetNodes struct {
+// 	Nodes []TestnetNode `json:"nodes"`
+// }
+
 const (
-	flagNodeIps = "node-ips"
-	flagChainId = "chain-id"
+	flagNodeFile = "node-file"
+	flagChainId  = "chain-id"
 )
 
 // get cmd to initialize all files for tendermint localnet and application
 func TestnetCmd(mbm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "testnet",
+		Use: "testnet",
+
 		Short: "Initialize files for a simapp localnet",
 		Long: `privatenet creates configuration for a network with N validators.
 Example:
 	For multiple nodes (running with docker):
-	  sisu testnet --v 2 --output-dir ./output --chain-id testnet --node-ips 192.168.10.2,192.168.10.3
+	  ./sisu testnet --v 2 --output-dir ./output --chain-id testnet --node-file tmp/ips.json
 	`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -40,32 +54,42 @@ Example:
 			}
 
 			serverCtx := server.GetServerContextFromCmd(cmd)
-			config := serverCtx.Config
+			tmConfig := serverCtx.Config
 
 			outputDir, _ := cmd.Flags().GetString(flagOutputDir)
 			minGasPrices, _ := cmd.Flags().GetString(server.FlagMinGasPrices)
 			nodeDirPrefix, _ := cmd.Flags().GetString(flagNodeDirPrefix)
 			nodeDaemonHome, _ := cmd.Flags().GetString(flagNodeDaemonHome)
-			nodeIps, _ := cmd.Flags().GetString(flagNodeIps)
+			nodeFile, _ := cmd.Flags().GetString(flagNodeFile)
 			chainId, _ := cmd.Flags().GetString(flagChainId)
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
 
-			// Get Chain id and keyring backend from .env file.
-			keyringBackend := keyring.BackendFile
+			cleanData(outputDir)
+
+			// TODO: Use backend file for keyring
+			// keyringBackend := keyring.BackendFile
+			keyringBackend := keyring.BackendTest
 
 			monikers := make([]string, numValidators)
 			for i := 0; i < numValidators; i++ {
 				monikers[i] = "node-talon-" + strconv.Itoa(i)
 			}
 
-			ips := strings.Split(strings.TrimSpace(nodeIps), ",")
+			node := readNodeFile(nodeFile)
+			ips := make([]string, numValidators)
+
+			for i := 0; i < numValidators; i++ {
+				ips[i] = node.SisuIp
+			}
 			utils.LogInfo("ips = ", ips)
+
+			nodeConfigs := getTestnetNodeSettings(numValidators)
 
 			settings := &Setting{
 				clientCtx:      clientCtx,
 				cmd:            cmd,
-				tmConfig:       config,
+				tmConfig:       tmConfig,
 				mbm:            mbm,
 				genBalIterator: genBalIterator,
 				outputDir:      outputDir,
@@ -73,10 +97,12 @@ Example:
 				minGasPrices:   minGasPrices,
 				nodeDirPrefix:  nodeDirPrefix,
 				nodeDaemonHome: nodeDaemonHome,
-				ips:            ips,
 				keyringBackend: keyringBackend,
 				algoStr:        algo,
 				numValidators:  numValidators,
+
+				ips:         ips,
+				nodeConfigs: nodeConfigs,
 			}
 
 			_, err = InitNetwork(settings)
@@ -88,10 +114,41 @@ Example:
 	cmd.Flags().StringP(flagOutputDir, "o", "./output", "Directory to store initialization data for the localnet")
 	cmd.Flags().String(flagNodeDirPrefix, "node", "Prefix the directory name for each node with (node results in node0, node1, ...)")
 	cmd.Flags().String(flagNodeDaemonHome, "main", "Home directory of the node's daemon configuration")
-	cmd.Flags().String(flagNodeIps, "192.168.10.2,192.168.10.3", "List of ip addresses of validators")
+	cmd.Flags().String(flagNodeFile, "tmp/nodes.json", "List of ip addresses of validators")
 	cmd.Flags().String(flagChainId, "talon-01", "Name of the chain")
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
 
 	return cmd
+}
+
+func readNodeFile(path string) *TestnetNode {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+
+	nodeConfigs := new(TestnetNode)
+	err = json.Unmarshal([]byte(content), nodeConfigs)
+	if err != nil {
+		panic(err)
+	}
+
+	return nodeConfigs
+}
+
+func getTestnetNodeSettings(numValidators int) []config.Config {
+	nodeConfigs := make([]config.Config, numValidators)
+
+	for i := 0; i < numValidators; i++ {
+		cfg := config.Config{}
+		_, err := toml.DecodeFile("tmp/sisu.toml", &cfg)
+		if err != nil {
+			panic(err)
+		}
+
+		nodeConfigs[i] = cfg
+	}
+
+	return nodeConfigs
 }
