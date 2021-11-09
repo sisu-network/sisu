@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/BurntSushi/toml"
@@ -67,14 +68,14 @@ type TssConfig struct {
 // Overrides some config values since we don't want users to changes these values. They should be
 // fixed and consistent throughout all the nodes.
 func OverrideConfigValues(config *Config) {
-	if config.Mode == "dev" {
+	switch config.Mode {
+	case "dev":
 		overrideDevConfig(config)
+	case "testnet":
+		overrideTestnetConfig(config)
+	default:
+		panic(fmt.Errorf("unknown config mode %s", config.Mode))
 	}
-}
-
-func overrideDevConfig(config *Config) {
-	config.Eth.Eth = getLocalEthConfig()
-	config.Eth.Node = getLocalEthNodeConfig(config.Eth.Dir)
 }
 
 func ReadConfig() (Config, error) {

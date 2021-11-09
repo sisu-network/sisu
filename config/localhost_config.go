@@ -145,3 +145,8 @@ func localTssConfig(baseDir string) *TssConfig {
 
 	return config
 }
+
+func overrideDevConfig(config *Config) {
+	config.Eth.Eth = getLocalEthConfig()
+	config.Eth.Node = getLocalEthNodeConfig(config.Eth.Dir)
+}
