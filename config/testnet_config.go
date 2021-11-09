@@ -3,6 +3,7 @@ package config
 import (
 	"math/big"
 	"os"
+	"path/filepath"
 
 	"github.com/BurntSushi/toml"
 	"github.com/ethereum/go-ethereum/common"
@@ -169,4 +170,12 @@ func testnetTssConfig(baseDir string) *TssConfig {
 	}
 
 	return config
+}
+
+func overrideTestnetConfig(config *Config) {
+	config.Eth.Eth = testTestnetEthConfig()
+	config.Eth.Node = &node.Config{
+		KeyStoreDir:         filepath.Join(config.Eth.Dir, "keystore"),
+		AllowUnprotectedTxs: false,
+	}
 }
