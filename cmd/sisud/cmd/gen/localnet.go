@@ -24,6 +24,8 @@ var (
 	flagNodeDaemonHome    = "node-daemon-home"
 	flagStartingIPAddress = "starting-ip-address"
 	flagEnableTss         = "enable-tss"
+	flagTmpDir            = "tmp-dir"
+	flagChainId           = "chain-id"
 )
 
 // get cmd to initialize all files for tendermint localnet and application
