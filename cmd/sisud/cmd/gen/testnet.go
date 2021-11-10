@@ -3,11 +3,13 @@ package gen
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 
 	"github.com/BurntSushi/toml"
+	heartcfg "github.com/sisu-network/dheart/core/config"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/spf13/cobra"
@@ -16,22 +18,21 @@ import (
 	"github.com/sisu-network/cosmos-sdk/client/flags"
 	"github.com/sisu-network/cosmos-sdk/crypto/hd"
 	"github.com/sisu-network/cosmos-sdk/crypto/keyring"
+	cryptotypes "github.com/sisu-network/cosmos-sdk/crypto/types"
 	"github.com/sisu-network/cosmos-sdk/server"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/cosmos-sdk/types/module"
 	banktypes "github.com/sisu-network/cosmos-sdk/x/bank/types"
 )
 
-type TestnetNode struct {
-	SisuIp  string `json:"sisu_ip"`
-	HeartIp string `json:"heart_ip"`
-	EyesIp  string `json:"eyes_ip"`
+type TestnetGenerator struct {
 }
 
-const (
-	flagTmpDir  = "tmp-dir"
-	flagChainId = "chain-id"
-)
+type TestnetNodeConfig struct {
+	SisuIp  string `json:"sisu_ip"`
+	HeartIp string `json:"dheart_ip"`
+	EyesIp  string `json:"eyes_ip"`
+}
 
 // get cmd to initialize all files for tendermint localnet and application
 func TestnetCmd(mbm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *cobra.Command {
@@ -49,6 +50,8 @@ Example:
 			if err != nil {
 				return err
 			}
+
+			generator := &TestnetGenerator{}
 
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			tmConfig := serverCtx.Config
@@ -79,15 +82,17 @@ Example:
 				monikers[i] = "node-talon-" + strconv.Itoa(i)
 			}
 
-			ips := make([]string, numValidators)
-			nodes := readTestnetNodes(tempDir, numValidators)
+			sisuIps := make([]string, numValidators)
+			heartIps := make([]string, numValidators)
+			nodes := generator.readTestnetNodes(tempDir, numValidators)
 
 			for i := 0; i < numValidators; i++ {
-				ips[i] = nodes[i].SisuIp
+				sisuIps[i] = nodes[i].SisuIp
+				heartIps[i] = nodes[i].HeartIp
 			}
-			utils.LogInfo("ips = ", ips)
+			utils.LogInfo("ips = ", sisuIps)
 
-			nodeConfigs := getTestnetNodeSettings(tempDir, numValidators)
+			nodeConfigs := generator.getTestnetNodeSettings(tempDir, numValidators)
 
 			settings := &Setting{
 				clientCtx:      clientCtx,
@@ -104,11 +109,28 @@ Example:
 				algoStr:        algo,
 				numValidators:  numValidators,
 
-				ips:         ips,
+				ips:         sisuIps,
 				nodeConfigs: nodeConfigs,
 			}
 
-			_, err = InitNetwork(settings)
+			valPubKeys, err := InitNetwork(settings)
+
+			for i := 0; i < numValidators; i++ {
+				inputDir := filepath.Join(tempDir, fmt.Sprintf("node%d", i))
+				outputDir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
+
+				generator.generateHeartToml(
+					i,
+					inputDir,
+					outputDir,
+					*nodes[i],
+					heartIps,
+					valPubKeys,
+				)
+
+				generator.generateEyesToml(i, inputDir, outputDir)
+			}
+
 			return err
 		},
 	}
@@ -125,8 +147,8 @@ Example:
 	return cmd
 }
 
-func readTestnetNodes(root string, numValidators int) []*TestnetNode {
-	nodeConfigs := make([]*TestnetNode, numValidators)
+func (g *TestnetGenerator) readTestnetNodes(root string, numValidators int) []*TestnetNodeConfig {
+	nodeConfigs := make([]*TestnetNodeConfig, numValidators)
 
 	for i := 0; i < numValidators; i++ {
 		path := filepath.Join(root, fmt.Sprintf("node%d", i), "ips.json")
@@ -135,7 +157,7 @@ func readTestnetNodes(root string, numValidators int) []*TestnetNode {
 			panic(err)
 		}
 
-		nodeConfig := new(TestnetNode)
+		nodeConfig := new(TestnetNodeConfig)
 		err = json.Unmarshal([]byte(content), nodeConfig)
 		if err != nil {
 			panic(err)
@@ -147,7 +169,7 @@ func readTestnetNodes(root string, numValidators int) []*TestnetNode {
 	return nodeConfigs
 }
 
-func getTestnetNodeSettings(root string, numValidators int) []config.Config {
+func (g *TestnetGenerator) getTestnetNodeSettings(root string, numValidators int) []config.Config {
 	nodeConfigs := make([]config.Config, numValidators)
 
 	for i := 0; i < numValidators; i++ {
@@ -162,4 +184,41 @@ func getTestnetNodeSettings(root string, numValidators int) []config.Config {
 	}
 
 	return nodeConfigs
+}
+
+func (g *TestnetGenerator) generateHeartToml(index int, inputDir string, outputDir string, testNodeConfig TestnetNodeConfig, heartIps []string, valPubKeys []cryptotypes.PubKey) {
+	peerIds, err := getPeerIds(len(heartIps), valPubKeys)
+	if err != nil {
+		panic(err)
+	}
+
+	peers := make([]string, 0, len(peerIds)-1)
+	for i := range peerIds {
+		if i == index {
+			continue
+		}
+
+		peers = append(peers, fmt.Sprintf(`"/ip4/%s/tcp/28300/p2p/%s"`, heartIps[i], peerIds[i]))
+	}
+
+	heartConfig, err := heartcfg.ReadConfig(filepath.Join(inputDir, "dheart.toml"))
+	if err != nil {
+		panic(err)
+	}
+
+	heartConfig.Connection.BootstrapPeers = peers
+	heartcfg.WriteConfigFile(filepath.Join(outputDir, "dheart.toml"), heartConfig)
+}
+
+func (g *TestnetGenerator) generateEyesToml(index int, inputDir string, outputDir string) {
+	// Simply copy the input file to the output file
+	data, err := ioutil.ReadFile(filepath.Join(inputDir, "deyes.toml"))
+	if err != nil {
+		panic(err)
+	}
+
+	err = ioutil.WriteFile(filepath.Join(outputDir, "deyes.toml"), data, 0644)
+	if err != nil {
+		panic(err)
+	}
 }

@@ -21,7 +21,7 @@ require (
 	github.com/sisu-network/cosmos-sdk v0.42.1-fork004
 	github.com/sisu-network/dcore v0.1.10
 	github.com/sisu-network/deyes v0.1.1
-	github.com/sisu-network/dheart v0.1.4-alpha1
+	github.com/sisu-network/dheart v0.1.4-alpha4
 	github.com/sisu-network/tendermint v0.34.8-fork005
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.1
