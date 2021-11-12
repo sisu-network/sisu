@@ -33,14 +33,14 @@ transfer-out erc20 ganache1 7545 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 gana
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Use this when running with docker.
-			// sqlConfig := getDockerSqlConfig()
+			sqlConfig := getDockerSqlConfig()
 
-			// Use this when running with single node on command line.
-			cfg, cfgErr := config.ReadConfig()
-			if cfgErr != nil {
-				panic(cfgErr)
-			}
-			sqlConfig := cfg.Sisu.Sql
+			// // Use this when running with single node on command line.
+			// cfg, cfgErr := config.ReadConfig()
+			// if cfgErr != nil {
+			// 	panic(cfgErr)
+			// }
+			// sqlConfig := cfg.Sisu.Sql
 
 			database := db.NewDatabase(sqlConfig)
 			err := database.Init()

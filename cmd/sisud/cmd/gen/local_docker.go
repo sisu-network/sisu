@@ -26,6 +26,7 @@ import (
 	banktypes "github.com/sisu-network/cosmos-sdk/x/bank/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/utils"
 )
 
 type DockerNodeConfig struct {
@@ -53,7 +54,7 @@ necessary files (private validator, genesis, config, etc.).
 Note, strict routability for addresses is turned off in the config file.
 Example:
 	For multiple nodes (running with docker):
-	  ./sisu local-docker --v 4 --output-dir ./output --starting-ip-address 192.168.10.2
+	  ./sisu local-docker --v 2 --output-dir ./output --starting-ip-address 192.168.10.2
 	`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -164,15 +165,21 @@ Example:
 	return cmd
 }
 
-func cleanData(root string) {
-	files, err := ioutil.ReadDir(root)
+func cleanData(outputDir string) {
+	if !utils.IsFileExisted(outputDir) {
+		// Create the folder
+		os.MkdirAll(outputDir, 0755)
+		return
+	}
+
+	files, err := ioutil.ReadDir(outputDir)
 	if err != nil {
 		panic(err)
 	}
 
 	for _, f := range files {
 		if f.IsDir() {
-			path := filepath.Join(root, f.Name())
+			path := filepath.Join(outputDir, f.Name())
 			err := os.RemoveAll(path)
 			if err != nil {
 				panic(err)
