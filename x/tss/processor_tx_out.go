@@ -12,6 +12,7 @@ import (
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 
 	etypes "github.com/ethereum/go-ethereum/core/types"
+	libchain "github.com/sisu-network/lib/chain"
 )
 
 // Produces response for an observed tx. This has to be deterministic based on all the data that
@@ -43,7 +44,7 @@ func (p *Processor) DeliverTxOut(ctx sdk.Context, tx *types.TxOut) ([]byte, erro
 	// TODO: check if this tx has been requested to be signed
 	// TODO: Save this to KV store
 
-	if utils.IsETHBasedChain(tx.OutChain) {
+	if libchain.IsETHBasedChain(tx.OutChain) {
 		return p.deliverTxOutEth(ctx, tx)
 	}
 

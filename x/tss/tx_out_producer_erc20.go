@@ -9,6 +9,7 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
@@ -61,7 +62,7 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Tr
 		utils.LogInfo("toChain = ", toChain)
 
 		// TODO: Creates tx out for other chains.
-		if utils.IsETHBasedChain(toChain) {
+		if libchain.IsETHBasedChain(toChain) {
 			toChainContract := p.db.GetContractFromHash(toChain, erc20Contract.AbiHash)
 			if toChainContract == nil {
 				return nil, fmt.Errorf("cannot find erc20 contract for toChain %s", toChain)

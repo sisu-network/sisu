@@ -10,6 +10,8 @@ import (
 	"github.com/sisu-network/sisu/x/tss/types"
 
 	etypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/sisu-network/lib/chain"
+	libchain "github.com/sisu-network/lib/chain"
 )
 
 // This function is called after dheart sends Sisu keysign result.
@@ -34,7 +36,7 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 		}
 
 		// Create full tx with signature.
-		chainId := utils.GetChainIntFromId(result.OutChain)
+		chainId := libchain.GetChainIntFromId(result.OutChain)
 		signedTx, err := tx.WithSignature(etypes.NewEIP2930Signer(chainId), result.Signature)
 		if err != nil {
 			utils.LogError("cannot set signatuer for tx, err =", err)
@@ -57,7 +59,7 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 
 		// If this is a contract deployment transaction, update the contract table with the hash of the
 		// deployment tx bytes.
-		isContractDeployment := utils.IsETHBasedChain(result.OutChain) && p.db.IsContractDeployTx(result.OutChain, result.OutHash)
+		isContractDeployment := chain.IsETHBasedChain(result.OutChain) && p.db.IsContractDeployTx(result.OutChain, result.OutHash)
 		deployedResult, err := p.deploySignedTx(bz, result, isContractDeployment)
 		if err != nil {
 			utils.LogError("deployment error: ", err)

@@ -3,6 +3,7 @@ package tss
 import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
+	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
@@ -56,7 +57,7 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string) {
 	p.db.UpdateTxOutStatus(chain, txHash, types.TxOutStatusConfirmed)
 
 	// If this is a contract deployment, mark the contract as deployed.
-	if utils.IsETHBasedChain(chain) && tx.To == "" {
+	if libchain.IsETHBasedChain(chain) && tx.To == "" {
 		utils.LogInfo("This is a tx deployment")
 		txOut := p.db.GetTxOutWithHash(chain, txHash, true)
 
