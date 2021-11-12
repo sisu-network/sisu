@@ -10,6 +10,7 @@ import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/db"
@@ -60,11 +61,11 @@ func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *t
 	var err error
 
 	if libchain.IsETHBasedChain(tx.Chain) {
-		utils.LogInfo("Getting tx out for chain", tx.Chain)
+		log.Info("Getting tx out for chain", tx.Chain)
 		outMsgs, outEntities, err = p.getEthResponse(ctx, height, tx)
 
 		if err != nil {
-			utils.LogError("Cannot get response for an eth tx, err = ", err)
+			log.Error("Cannot get response for an eth tx, err = ", err)
 		}
 	}
 
@@ -98,7 +99,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 	err := ethTx.UnmarshalBinary(tx.Serialized)
 	if err != nil {
-		utils.LogError("Failed to unmarshall eth tx. err =", err)
+		log.Error("Failed to unmarshall eth tx. err =", err)
 		return nil, nil, err
 	}
 
@@ -109,7 +110,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 	// that funds our account.
 	if ethTx.To() != nil && p.db.IsChainKeyAddress(tx.Chain, ethTx.To().String()) {
 		contracts := p.db.GetPendingDeployContracts(tx.Chain)
-		utils.LogVerbose("len(contracts) = ", len(contracts))
+		log.Verbose("len(contracts) = ", len(contracts))
 
 		if len(contracts) > 0 {
 			// TODO: Check balance required to deploy all these contracts.
@@ -121,7 +122,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 			for i, outTx := range outEthTxs {
 				bz, err := outTx.MarshalBinary()
 				if err != nil {
-					utils.LogError("Cannot marshall binary")
+					log.Error("Cannot marshall binary")
 					continue
 				}
 
@@ -149,7 +150,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 	// 2. Check if this is a tx sent to one of our contracts.
 	if ethTx.To() != nil && len(ethTx.Data()) >= 4 {
-		utils.LogVerbose("ethTx.To() = ", ethTx.To())
+		log.Verbose("ethTx.To() = ", ethTx.To())
 
 		responseTx, err := p.createErc20ContractResponse(ethTx, tx.Chain)
 		if err == nil {
@@ -167,7 +168,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 			outEntity := tssTypes.TxOutToEntity(outMsg)
 			outEntities = append(outEntities, outEntity)
 		} else {
-			utils.LogError("cannot get response for erc20 tx, err =", err)
+			log.Error("cannot get response for erc20 tx, err =", err)
 		}
 	}
 
@@ -182,9 +183,9 @@ func (p *DefaultTxOutputProducer) checkEthDeployContract(ctx sdk.Context, height
 
 	for _, contract := range contracts {
 		nonce := p.worldState.UseAndIncreaseNonce(contract.Chain)
-		utils.LogVerbose("nonce for deploying contract:", nonce)
+		log.Verbose("nonce for deploying contract:", nonce)
 		if nonce < 0 {
-			utils.LogError("cannot get nonce for contract")
+			log.Error("cannot get nonce for contract")
 			continue
 		}
 		rawTx := p.getContractTx(contract, nonce)
@@ -226,7 +227,7 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *tsstypes.ContractEntit
 		// This is erc20 contract.
 		parsedAbi, err := abi.JSON(strings.NewReader(erc20.AbiString))
 		if err != nil {
-			utils.LogError("cannot parse erc20 abi. abi = ", erc20.AbiString, "err =", err)
+			log.Error("cannot parse erc20 abi. abi = ", erc20.AbiString, "err =", err)
 			return nil
 		}
 
@@ -238,11 +239,11 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *tsstypes.ContractEntit
 			}
 		}
 
-		utils.LogInfo("Allowed chains for chain", contract.Chain, "are: ", allowedChains)
+		log.Info("Allowed chains for chain", contract.Chain, "are: ", allowedChains)
 
 		input, err := parsedAbi.Pack("", contract.Chain, allowedChains)
 		if err != nil {
-			utils.LogError("cannot pack allowedChains, err =", err)
+			log.Error("cannot pack allowedChains, err =", err)
 			return nil
 		}
 

@@ -11,6 +11,7 @@ import (
 	cryptoCdc "github.com/sisu-network/cosmos-sdk/crypto/codec"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/cosmos-sdk/types/rest"
+	"github.com/sisu-network/lib/log"
 	pvm "github.com/sisu-network/tendermint/privval"
 
 	"github.com/BurntSushi/toml"
@@ -81,7 +82,7 @@ func (a *GlobalDataDefault) Init() {
 	// Get the tendermint address of this node.
 	a.myTmtConsAddr = (sdk.ConsAddress)(privValidator.GetAddress())
 
-	utils.LogInfo("My tendermint address = ", a.myTmtConsAddr.String())
+	log.Info("My tendermint address = ", a.myTmtConsAddr.String())
 }
 
 func (a *GlobalDataDefault) UpdateCatchingUp() {
@@ -89,7 +90,7 @@ func (a *GlobalDataDefault) UpdateCatchingUp() {
 
 	body, _, err := utils.HttpGet(a.httpClient, url)
 	if err != nil {
-		utils.LogError(fmt.Errorf("Cannot get status data: %w", err))
+		log.Error(fmt.Errorf("Cannot get status data: %w", err))
 		return
 	}
 
@@ -109,7 +110,7 @@ func (a *GlobalDataDefault) UpdateCatchingUp() {
 	}
 
 	if err := json.Unmarshal(body, &resp); err != nil {
-		utils.LogError(fmt.Errorf("Cannot parse tendermint status: %w", err))
+		log.Error(fmt.Errorf("Cannot parse tendermint status: %w", err))
 		return
 	}
 
@@ -122,7 +123,7 @@ func (a *GlobalDataDefault) UpdateValidatorSets() {
 	url := "http://127.0.0.1:1317/validatorsets/latest"
 	body, _, err := utils.HttpGet(a.httpClient, url)
 	if err != nil {
-		utils.LogError(fmt.Errorf("Cannot get status data: %w", err))
+		log.Error(fmt.Errorf("Cannot get status data: %w", err))
 		return
 	}
 

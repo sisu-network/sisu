@@ -4,6 +4,7 @@ import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	dhTypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/lib/chain"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/db"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
@@ -37,7 +38,7 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 	}
 
 	// Broadcast a message.
-	utils.LogInfo("Broadcasting TSS Keygen Proposal message. len(unavailableChains) = ", len(unavailableChains))
+	log.Info("Broadcasting TSS Keygen Proposal message. len(unavailableChains) = ", len(unavailableChains))
 	signer := p.appKeys.GetSignerAddress()
 
 	for _, chain := range unavailableChains {
@@ -47,12 +48,12 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 			utils.GenerateRandomString(16),
 			blockHeight,
 		)
-		utils.LogDebug("Submitting proposal message for chain", chain)
+		log.Debug("Submitting proposal message for chain", chain)
 		go func() {
 			err := p.txSubmit.SubmitMessage(proposal)
 
 			if err != nil {
-				utils.LogError(err)
+				log.Error(err)
 			}
 		}()
 	}
@@ -76,9 +77,9 @@ func (p *Processor) OnKeygenResult(result dhTypes.KeygenResult) {
 	// 2. Add the address to the watch list.
 	deyesClient := p.deyesClients[result.Chain]
 	if deyesClient == nil {
-		utils.LogCritical("Cannot find deyes client for chain", result.Chain)
+		log.Critical("Cannot find deyes client for chain", result.Chain)
 	} else {
-		utils.LogVerbose("adding watcher address", result.Address)
+		log.Verbose("adding watcher address", result.Address)
 		deyesClient.AddWatchAddresses(result.Chain, []string{result.Address})
 
 		// Update the address and pubkey of the keygen database.
@@ -92,7 +93,7 @@ func (p *Processor) CheckKeyGenProposal(msg *types.KeygenProposal) error {
 }
 
 func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, error) {
-	utils.LogInfo("Delivering keygen proposal")
+	log.Info("Delivering keygen proposal")
 
 	// TODO: Save data to KV store.
 	if p.globalData.IsCatchingUp() {
@@ -100,25 +101,25 @@ func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, er
 	}
 
 	if p.db.IsKeyExisted(msg.Chain) {
-		utils.LogInfo("The keygen proposal has been processed")
+		log.Info("The keygen proposal has been processed")
 		return nil, nil
 	}
 
 	err := p.db.CreateKeygen(msg.Chain)
 	if err != nil {
-		utils.LogError(err)
+		log.Error(err)
 	}
 
 	// Send a signal to Dheart to start keygen process.
-	utils.LogInfo("Sending keygen request to Dheart. Chain =", msg.Chain)
+	log.Info("Sending keygen request to Dheart. Chain =", msg.Chain)
 	pubKeys := p.partyManager.GetActivePartyPubkeys()
 	keygenId := GetKeygenId(msg.Chain, p.currentHeight, pubKeys)
 	err = p.dheartClient.KeyGen(keygenId, msg.Chain, pubKeys)
 	if err != nil {
-		utils.LogError(err)
+		log.Error(err)
 		return nil, err
 	}
-	utils.LogInfo("Keygen request is sent successfully.")
+	log.Info("Keygen request is sent successfully.")
 
 	return []byte{}, nil
 }
@@ -127,7 +128,7 @@ func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult
 	// TODO: Save data to KV store.
 	if msg.Result == types.KeygenResult_SUCCESS {
 		if status, _ := p.db.GetKeygenStatus(msg.Chain); status == db.STATUS_DELIVERED_TO_CHAIN {
-			utils.LogInfo("Keygen result has been processed for chain", msg.Chain)
+			log.Info("Keygen result has been processed for chain", msg.Chain)
 			return nil, nil
 		}
 

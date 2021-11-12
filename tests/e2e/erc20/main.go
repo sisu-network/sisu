@@ -14,8 +14,8 @@ import (
 	etypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/contracts/eth/erc20gateway"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss"
 )
 
@@ -166,7 +166,7 @@ func main() {
 
 	// 1. Create contract
 	contractAddress := deployErc20Gateway(client, "sisu-eth")
-	utils.LogInfo("contractAddress = ", contractAddress.Hex())
+	log.Info("contractAddress = ", contractAddress.Hex())
 
 	// // 2. Transfer In
 	assetId := "eth__0x0d73608E5D226eAf90EDF51dF82d4afC24d8B9AA"

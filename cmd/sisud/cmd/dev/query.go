@@ -6,8 +6,8 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/contracts/eth/erc20gateway"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss"
 	"github.com/spf13/cobra"
 )
@@ -26,7 +26,7 @@ query erc20 sisu-eth 8545 eth__0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 0xE838
 			database := getDatabase()
 			defer database.Close()
 
-			utils.LogInfo("args = ", args)
+			log.Info("args = ", args)
 			contractType := args[0]
 			chain := args[1]
 			port, err := strconv.Atoi(args[2])
@@ -59,7 +59,7 @@ query erc20 sisu-eth 8545 eth__0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 0xE838
 					panic(err)
 				}
 
-				utils.LogInfo("balance = ", balance)
+				log.Info("balance = ", balance)
 			}
 
 			return nil

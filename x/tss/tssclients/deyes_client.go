@@ -5,7 +5,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/rpc"
 	eTypes "github.com/sisu-network/deyes/types"
-	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/lib/log"
 )
 
 type DeyesClient struct {
@@ -32,7 +32,7 @@ func (c *DeyesClient) CheckHealth() error {
 	var result interface{}
 	err := c.client.CallContext(context.Background(), &result, "deyes_checkHealth")
 	if err != nil {
-		utils.LogError("Cannot check deyes health, err = ", err)
+		log.Error("Cannot check deyes health, err = ", err)
 		return err
 	}
 
@@ -44,7 +44,7 @@ func (c *DeyesClient) SetSisuReady(chain string) error {
 	var result string
 	err := c.client.CallContext(context.Background(), &result, "deyes_setSisuReady", chain)
 	if err != nil {
-		utils.LogError("Cannot Set readiness for deyes, chain = ", chain, "err = ", err)
+		log.Error("Cannot Set readiness for deyes, chain = ", chain, "err = ", err)
 		return err
 	}
 
@@ -56,7 +56,7 @@ func (c *DeyesClient) AddWatchAddresses(chain string, addrs []string) error {
 	var result string
 	err := c.client.CallContext(context.Background(), &result, "deyes_addWatchAddresses", chain, addrs)
 	if err != nil {
-		utils.LogError("Cannot Set readiness for deyes, chain = ", chain, "err = ", err)
+		log.Error("Cannot Set readiness for deyes, chain = ", chain, "err = ", err)
 		return err
 	}
 
@@ -67,11 +67,11 @@ func (c *DeyesClient) Dispatch(request *eTypes.DispatchedTxRequest) (*eTypes.Dis
 	var result = &eTypes.DispatchedTxResult{}
 	err := c.client.CallContext(context.Background(), &result, "deyes_dispatchTx", request)
 	if err != nil {
-		utils.LogError("Cannot Dispatch tx to the chain", request.Chain, "err =", err)
+		log.Error("Cannot Dispatch tx to the chain", request.Chain, "err =", err)
 		return result, err
 	}
 
-	utils.LogVerbose("Tx has been dispatched")
+	log.Verbose("Tx has been dispatched")
 
 	return result, nil
 }
@@ -80,7 +80,7 @@ func (c *DeyesClient) GetNonce(chain string, address string) int64 {
 	var result int64
 	err := c.client.CallContext(context.Background(), &result, "deyes_getNonce", chain, address)
 	if err != nil {
-		utils.LogError("Cannot get nonce for chain and address", chain, address, "err =", err)
+		log.Error("Cannot get nonce for chain and address", chain, address, "err =", err)
 	}
 
 	return result

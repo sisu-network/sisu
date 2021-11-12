@@ -4,14 +4,15 @@ import (
 	"io"
 	"path/filepath"
 
+	tlog "github.com/sisu-network/tendermint/libs/log"
+
 	"github.com/sisu-network/cosmos-sdk/client"
 	"github.com/sisu-network/cosmos-sdk/codec/types"
 	"github.com/sisu-network/sisu/db"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/spf13/cast"
 
+	"github.com/sisu-network/lib/log"
 	abci "github.com/sisu-network/tendermint/abci/types"
-	"github.com/sisu-network/tendermint/libs/log"
 	tmos "github.com/sisu-network/tendermint/libs/os"
 	"github.com/sisu-network/tendermint/node"
 	"github.com/sisu-network/tendermint/p2p"
@@ -231,7 +232,7 @@ type App struct {
 // New returns a reference to an initialized Gaia.
 // NewSimApp returns a reference to an initialized SimApp.
 func New(
-	logger log.Logger, tdb dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
+	logger tlog.Logger, tdb dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
 	homePath string, invCheckPeriod uint, encodingConfig appparams.EncodingConfig,
 	// this line is used by starport scaffolding # stargate/app/newArgument
 	appOpts servertypes.AppOptions, baseAppOptions ...func(*baseapp.BaseApp),
@@ -306,7 +307,7 @@ func New(
 
 	// TSS keeper
 	tssConfig := cfg.Tss
-	utils.LogInfo("tssConfig = ", tssConfig)
+	log.Info("tssConfig = ", tssConfig)
 
 	app.tssKeeper = *tssKeeper.NewKeeper(keys[tsstypes.StoreKey])
 
@@ -360,7 +361,7 @@ func New(
 	}
 	tssProcessor := tss.NewProcessor(app.tssKeeper, tssConfig, nodeKey.PrivKey, app.appKeys, app.db, app.txDecoder, app.txSubmitter, app.globalData)
 	if tssConfig.Enable {
-		utils.LogInfo("TSS is enabled")
+		log.Info("TSS is enabled")
 		tssProcessor.Init()
 		modules = append(modules, tss.NewAppModule(appCodec, app.tssKeeper, app.appKeys, app.txSubmitter, tssProcessor, app.globalData))
 	}
@@ -708,7 +709,7 @@ func (app *App) setupApiServer(c config.Config) {
 	appConfig := c.Sisu
 	s := server.NewServer(handler, appConfig.ApiHost, appConfig.ApiPort)
 
-	utils.LogInfo("Starting Internal API server")
+	log.Info("Starting Internal API server")
 	go s.Run()
 }
 

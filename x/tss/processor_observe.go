@@ -4,6 +4,7 @@ import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	libchain "github.com/sisu-network/lib/chain"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
@@ -11,7 +12,7 @@ import (
 
 // Processed list of transactions sent from deyes to Sisu api server.
 func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) {
-	utils.LogVerbose("There is a new list of txs from deyes, len =", len(txs.Arr))
+	log.Verbose("There is a new list of txs from deyes, len =", len(txs.Arr))
 
 	// Create ObservedTx messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
@@ -51,18 +52,18 @@ func (p *Processor) DeliverObservedTxs(ctx sdk.Context, tx *tssTypes.ObservedTx)
 }
 
 func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string) {
-	utils.LogVerbose("This is a transaction from us. We need to confirm it. Chain =", chain)
+	log.Verbose("This is a transaction from us. We need to confirm it. Chain =", chain)
 
 	txHash := utils.KeccakHash32(string(tx.Serialized))
 	p.db.UpdateTxOutStatus(chain, txHash, types.TxOutStatusConfirmed)
 
 	// If this is a contract deployment, mark the contract as deployed.
 	if libchain.IsETHBasedChain(chain) && tx.To == "" {
-		utils.LogInfo("This is a tx deployment")
+		log.Info("This is a tx deployment")
 		txOut := p.db.GetTxOutWithHash(chain, txHash, true)
 
 		if txOut != nil {
-			utils.LogInfo("Updating contract status. Contract hash = ", txOut.ContractHash)
+			log.Info("Updating contract status. Contract hash = ", txOut.ContractHash)
 			p.db.UpdateContractsStatus([]*tssTypes.ContractEntity{
 				{
 					Chain: chain,

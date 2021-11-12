@@ -10,7 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	ethTypes "github.com/sisu-network/dcore/core/types"
 	"github.com/sisu-network/dcore/ethclient"
-	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/lib/log"
 	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 	"github.com/spf13/cobra"
@@ -57,7 +57,7 @@ fund-account eth 7545 sisu-eth 8545 10
 				}
 				url := "http://0.0.0.0:" + strconv.Itoa(port)
 
-				utils.LogInfo("Sending ETH To address", addr, "of chain", chain)
+				log.Info("Sending ETH To address", addr, "of chain", chain)
 
 				transferEth(url, addr, localWallet, amount)
 			}
@@ -81,8 +81,8 @@ func transferEth(url, recipient string, wallet *hdwallet.Wallet, amount int) {
 		panic(err)
 	}
 
-	utils.LogInfo("Address = ", fromAccount.Address.Hex())
-	utils.LogInfo("amount = ", amount)
+	log.Info("Address = ", fromAccount.Address.Hex())
+	log.Info("amount = ", amount)
 
 	nonce, err := client.PendingNonceAt(context.Background(), fromAccount.Address)
 	if err != nil {

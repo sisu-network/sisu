@@ -10,8 +10,8 @@ import (
 
 	"github.com/BurntSushi/toml"
 	heartcfg "github.com/sisu-network/dheart/core/config"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/spf13/cobra"
 
 	"github.com/sisu-network/cosmos-sdk/client"
@@ -90,7 +90,7 @@ Example:
 				sisuIps[i] = nodes[i].SisuIp
 				heartIps[i] = nodes[i].HeartIp
 			}
-			utils.LogInfo("ips = ", sisuIps)
+			log.Info("ips = ", sisuIps)
 
 			nodeConfigs := generator.getTestnetNodeSettings(tempDir, numValidators)
 

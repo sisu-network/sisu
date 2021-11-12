@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	dtypes "github.com/sisu-network/dcore/core/types"
-	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/evm/ethchain"
 	evmTypes "github.com/sisu-network/sisu/x/evm/types"
 )
@@ -29,7 +29,7 @@ func (decorator EvmTxDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 		return next(ctx, tx, simulate)
 	}
 
-	utils.LogDebug("Checking ETH transaction")
+	log.Debug("Checking ETH transaction")
 	ethTxs := decorator.getEthTxs(tx.GetMsgs())
 	if len(ethTxs) == 0 {
 		return ctx, ERR_NO_ETH_TX

@@ -10,7 +10,7 @@ import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	libchain "github.com/sisu-network/lib/chain"
-	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
 
@@ -19,11 +19,11 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Tr
 
 	contract := p.db.GetContractFromAddress(fromChain, ethTx.To().String())
 	if contract == nil {
-		utils.LogError("Cannot find contract at address", ethTx.To())
+		log.Error("Cannot find contract at address", ethTx.To())
 		return nil, fmt.Errorf("cannot find contract for tx sent to %s", ethTx.To())
 	}
 
-	utils.LogInfo("Creating response erc20 transaction, contract name =", contract.Name)
+	log.Info("Creating response erc20 transaction, contract name =", contract.Name)
 
 	payload := ethTx.Data()
 
@@ -32,7 +32,7 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Tr
 	for name, method := range abiMethods {
 		hash := crypto.Keccak256([]byte(method.Sig))
 		if bytes.Compare(hash[:4], payload[:4]) == 0 {
-			utils.LogVerbose("Found method: ", name, hex.EncodeToString(hash[:4]))
+			log.Verbose("Found method: ", name, hex.EncodeToString(hash[:4]))
 			methodName = name
 			break
 		}
@@ -42,14 +42,14 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Tr
 		return nil, fmt.Errorf("cannot find funcName")
 	}
 
-	utils.LogInfo("Found method name = ", methodName)
+	log.Info("Found method name = ", methodName)
 
 	params, err := abiMethods[methodName].Inputs.Unpack(payload[4:])
 	if err != nil {
 		return nil, err
 	}
 
-	utils.LogInfo("params = ", params)
+	log.Info("params = ", params)
 
 	switch methodName {
 	case MethodTransferOutFromContract:
@@ -59,7 +59,7 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Tr
 
 		// Creates a transferIn function in the other chain.
 		toChain := params[1].(string)
-		utils.LogInfo("toChain = ", toChain)
+		log.Info("toChain = ", toChain)
 
 		// TODO: Creates tx out for other chains.
 		if libchain.IsETHBasedChain(toChain) {
@@ -72,9 +72,9 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Tr
 			recipient := params[2].(string)
 			amount := params[3]
 
-			utils.LogInfo("assetId = ", assetId)
-			utils.LogInfo("recipient = ", recipient)
-			utils.LogInfo("amount = ", amount)
+			log.Info("assetId = ", assetId)
+			log.Info("recipient = ", recipient)
+			log.Info("amount = ", amount)
 
 			input, err := erc20Contract.Abi.Pack(MethodTransferIn, assetId, ethcommon.HexToAddress(recipient), amount)
 			if err != nil {

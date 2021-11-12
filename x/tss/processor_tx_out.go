@@ -13,6 +13,7 @@ import (
 
 	etypes "github.com/ethereum/go-ethereum/core/types"
 	libchain "github.com/sisu-network/lib/chain"
+	"github.com/sisu-network/lib/log"
 )
 
 // Produces response for an observed tx. This has to be deterministic based on all the data that
@@ -21,7 +22,7 @@ func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.Observed
 	outMsgs, outEntities := p.txOutputProducer.GetTxOuts(ctx, p.currentHeight, tx)
 
 	// Save this to database
-	utils.LogVerbose("len(outEntities) = ", len(outEntities))
+	log.Verbose("len(outEntities) = ", len(outEntities))
 	if len(outEntities) > 0 {
 		p.db.InsertTxOuts(outEntities)
 	}
@@ -54,18 +55,18 @@ func (p *Processor) DeliverTxOut(ctx sdk.Context, tx *types.TxOut) ([]byte, erro
 func (p *Processor) deliverTxOutEth(ctx sdk.Context, tx *types.TxOut) ([]byte, error) {
 	outHash := tx.GetHash()
 
-	utils.LogVerbose("Delivering TXOUT")
+	log.Verbose("Delivering TXOUT")
 
 	ethTx := &etypes.Transaction{}
 	if err := ethTx.UnmarshalBinary(tx.OutBytes); err != nil {
-		utils.LogError("cannot unmarshal tx, err =", err)
+		log.Error("cannot unmarshal tx, err =", err)
 		return nil, err
 	}
 
 	signer := utils.GetEthChainSigners()[tx.OutChain]
 	if signer == nil {
 		err := fmt.Errorf("cannot find signer for chain %s", tx.OutChain)
-		utils.LogError(err)
+		log.Error(err)
 		return nil, err
 	}
 
@@ -83,7 +84,7 @@ func (p *Processor) deliverTxOutEth(ctx sdk.Context, tx *types.TxOut) ([]byte, e
 	pubKeys := p.partyManager.GetActivePartyPubkeys()
 	err := p.dheartClient.KeySign(keysignReq, pubKeys)
 	if err != nil {
-		utils.LogError("Keysign: err =", err)
+		log.Error("Keysign: err =", err)
 		return nil, err
 	}
 

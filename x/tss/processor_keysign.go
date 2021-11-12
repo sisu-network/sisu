@@ -6,6 +6,7 @@ import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	eTypes "github.com/sisu-network/deyes/types"
 	htypes "github.com/sisu-network/dheart/types"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 
@@ -26,12 +27,12 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 
 		txEntity := p.db.GetTxOutWithHash(result.OutChain, result.OutHash, false)
 		if txEntity == nil {
-			utils.LogError("Cannot find tx out with hash", result.OutHash)
+			log.Error("Cannot find tx out with hash", result.OutHash)
 		}
 
 		tx := &etypes.Transaction{}
 		if err := tx.UnmarshalBinary(txEntity.BytesWithoutSig); err != nil {
-			utils.LogError("cannot unmarshal tx, err =", err)
+			log.Error("cannot unmarshal tx, err =", err)
 			return
 		}
 
@@ -39,13 +40,13 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 		chainId := libchain.GetChainIntFromId(result.OutChain)
 		signedTx, err := tx.WithSignature(etypes.NewEIP2930Signer(chainId), result.Signature)
 		if err != nil {
-			utils.LogError("cannot set signatuer for tx, err =", err)
+			log.Error("cannot set signatuer for tx, err =", err)
 			return
 		}
 
 		bz, err := signedTx.MarshalBinary()
 		if err != nil {
-			utils.LogError("cannot marshal tx")
+			log.Error("cannot marshal tx")
 			return
 		}
 
@@ -62,12 +63,12 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 		isContractDeployment := chain.IsETHBasedChain(result.OutChain) && p.db.IsContractDeployTx(result.OutChain, result.OutHash)
 		deployedResult, err := p.deploySignedTx(bz, result, isContractDeployment)
 		if err != nil {
-			utils.LogError("deployment error: ", err)
+			log.Error("deployment error: ", err)
 			return
 		}
 
 		if deployedResult == nil {
-			utils.LogError("deployment result is nil")
+			log.Error("deployment result is nil")
 			return
 		}
 
@@ -80,7 +81,7 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 }
 
 func (p *Processor) deploySignedTx(bz []byte, keysignResult *htypes.KeysignResult, isContractDeployment bool) (*eTypes.DispatchedTxResult, error) {
-	utils.LogDebug("Sending final tx to the deyes for deployment for chain", keysignResult.OutChain)
+	log.Debug("Sending final tx to the deyes for deployment for chain", keysignResult.OutChain)
 	deyeClient := p.deyesClients[keysignResult.OutChain]
 
 	pubkey := p.db.GetPubKey(keysignResult.OutChain)
@@ -116,7 +117,7 @@ func (p *Processor) onTxDeployed(chain, outHash string, deployResult *eTypes.Dis
 
 	if isContractDeployment {
 		// Add this to the watcher address.
-		utils.LogInfo("Adding the deployment address to the watch addresss", deployResult.DeployedAddr)
+		log.Info("Adding the deployment address to the watch addresss", deployResult.DeployedAddr)
 		deyeClient := p.deyesClients[chain]
 		deyeClient.AddWatchAddresses(chain, []string{deployResult.DeployedAddr})
 

@@ -5,8 +5,8 @@ import (
 
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	sdkerrors "github.com/sisu-network/cosmos-sdk/types/errors"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/keeper"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
@@ -43,7 +43,7 @@ func handleKeygenProposal(msg *types.KeygenProposal, processor *Processor) (*sdk
 }
 
 func handleKeygenResult(ctx sdk.Context, msg *types.KeygenResult, processor *Processor) (*sdk.Result, error) {
-	utils.LogDebug("Handling TSS Keygen result")
+	log.Debug("Handling TSS Keygen result")
 	data, err := processor.DeliverKeygenResult(ctx, msg)
 	return &sdk.Result{
 		Data: data,
@@ -52,7 +52,7 @@ func handleKeygenResult(ctx sdk.Context, msg *types.KeygenResult, processor *Pro
 
 func handleObservedTx(ctx sdk.Context, msg *types.ObservedTx, processor *Processor) (*sdk.Result, error) {
 	// Update the count for all txs.
-	utils.LogVerbose("Handling ObservedTxs for chain", msg.Chain)
+	log.Verbose("Handling ObservedTxs for chain", msg.Chain)
 	data, err := processor.DeliverObservedTxs(ctx, msg)
 	return &sdk.Result{
 		Data: data,
@@ -60,7 +60,7 @@ func handleObservedTx(ctx sdk.Context, msg *types.ObservedTx, processor *Process
 }
 
 func handleTxOut(ctx sdk.Context, msg *types.TxOut, processor *Processor) (*sdk.Result, error) {
-	utils.LogVerbose("Handling Txout")
+	log.Verbose("Handling Txout")
 	data, err := processor.DeliverTxOut(ctx, msg)
 	return &sdk.Result{
 		Data: data,
@@ -68,7 +68,7 @@ func handleTxOut(ctx sdk.Context, msg *types.TxOut, processor *Processor) (*sdk.
 }
 
 func handleKeysignResult(ctx sdk.Context, msg *types.KeysignResult, processor *Processor) (*sdk.Result, error) {
-	utils.LogVerbose("Handling Keysign Result")
+	log.Verbose("Handling Keysign Result")
 	data, err := processor.DeliverKeysignResult(ctx, msg)
 	return &sdk.Result{
 		Data: data,

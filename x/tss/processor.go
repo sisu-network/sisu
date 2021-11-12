@@ -11,6 +11,7 @@ import (
 	ttypes "github.com/sisu-network/tendermint/types"
 
 	sdk "github.com/sisu-network/cosmos-sdk/types"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/db"
@@ -91,7 +92,7 @@ func NewProcessor(keeper keeper.Keeper,
 }
 
 func (p *Processor) Init() {
-	utils.LogInfo("Initializing TSS Processor...")
+	log.Info("Initializing TSS Processor...")
 
 	if p.config.Enable {
 		p.connectToDheart()
@@ -106,38 +107,38 @@ func (p *Processor) Init() {
 func (p *Processor) connectToDheart() {
 	var err error
 	url := fmt.Sprintf("http://%s:%d", p.config.DheartHost, p.config.DheartPort)
-	utils.LogInfo("Connecting to Dheart server at", url)
+	log.Info("Connecting to Dheart server at", url)
 
 	p.dheartClient, err = tssclients.DialDheart(url)
 	if err != nil {
-		utils.LogError("Failed to connect to Dheart. Err =", err)
+		log.Error("Failed to connect to Dheart. Err =", err)
 		panic(err)
 	}
 
 	encryptedKey, err := p.appKeys.GetAesEncrypted(p.tendermintPrivKey.Bytes())
 	if err != nil {
-		utils.LogError("Failed to get encrypted private key. Err =", err)
+		log.Error("Failed to get encrypted private key. Err =", err)
 		panic(err)
 	}
 
-	utils.LogInfo("p.tendermintPrivKey.Type() = ", p.tendermintPrivKey.Type())
+	log.Info("p.tendermintPrivKey.Type() = ", p.tendermintPrivKey.Type())
 
 	// Pass encrypted private key to dheart
 	if err := p.dheartClient.SetPrivKey(hex.EncodeToString(encryptedKey), p.tendermintPrivKey.Type()); err != nil {
 		panic(err)
 	}
 
-	utils.LogInfo("Dheart server connected!")
+	log.Info("Dheart server connected!")
 }
 
 // Connecto to all deyes.
 func (p *Processor) connectToDeyes() {
 	for chain, chainConfig := range p.config.SupportedChains {
-		utils.LogInfo("chainConfig.Url = ", chainConfig.DeyesUrl)
+		log.Info("chainConfig.Url = ", chainConfig.DeyesUrl)
 
 		deyeClient, err := tssclients.DialDeyes(chainConfig.DeyesUrl)
 		if err != nil {
-			utils.LogError("Failed to connect to deyes", chain, ".Err =", err)
+			log.Error("Failed to connect to deyes", chain, ".Err =", err)
 			panic(err)
 		}
 
@@ -164,8 +165,8 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 
 	// Check Vote result.
 	for len(p.keygenBlockPairs) > 0 && !p.globalData.IsCatchingUp() {
-		utils.LogDebug("blockHeight = ", blockHeight)
-		utils.LogDebug("p.keygenBlockPairs[0].blockHeight = ", p.keygenBlockPairs[0].blockHeight)
+		log.Debug("blockHeight = ", blockHeight)
+		log.Debug("p.keygenBlockPairs[0].blockHeight = ", p.keygenBlockPairs[0].blockHeight)
 
 		if blockHeight < p.keygenBlockPairs[0].blockHeight {
 			break
@@ -183,14 +184,14 @@ func (p *Processor) EndBlock(ctx sdk.Context) {
 }
 
 func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
-	utils.LogDebug("TSSProcessor: checking tx. Message length = ", len(msgs))
+	log.Debug("TSSProcessor: checking tx. Message length = ", len(msgs))
 
 	for _, msg := range msgs {
 		if msg.Route() != types.ModuleName {
 			return fmt.Errorf("Some message is not a TSS message")
 		}
 
-		utils.LogDebug("Checking tx: Msg type = ", msg.Type())
+		log.Debug("Checking tx: Msg type = ", msg.Type())
 
 		switch msg.(type) {
 		case *types.KeygenProposal:
@@ -223,11 +224,11 @@ func (p *Processor) setContext(ctx sdk.Context) {
 }
 
 func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
-	utils.LogVerbose("checking new tx before adding into mempool....")
+	log.Verbose("checking new tx before adding into mempool....")
 
 	tx, err := p.txDecoder(txBytes)
 	if err != nil {
-		utils.LogError("Failed to decode tx")
+		log.Error("Failed to decode tx")
 		return err
 	}
 
@@ -249,7 +250,7 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 				return nil
 			} else {
 				err := fmt.Errorf("The keygen proposal has been inclued in a block for chain %s", proposalMsg.Chain)
-				utils.LogVerbose(err)
+				log.Verbose(err)
 				return err
 			}
 
@@ -277,12 +278,12 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 func (p *Processor) checkAndInsertMempoolTx(hash, msgType string) error {
 	if p.db.MempoolTxExisted(hash) {
 		err := fmt.Errorf("%s has been added into the mempool! hash = %s", msgType, hash)
-		utils.LogVerbose(err)
+		log.Verbose(err)
 
 		return err
 	}
 
-	utils.LogVerbose("Inserting", msgType, "into the mempool table, hash =", hash)
+	log.Verbose("Inserting", msgType, "into the mempool table, hash =", hash)
 	p.db.InsertMempoolTxHash(hash, p.currentHeight)
 
 	return nil

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/sisu-network/cosmos-sdk/types"
-	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss"
 )
 
@@ -23,7 +23,7 @@ func (d TssDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next
 		return next(ctx, tx, simulate)
 	}
 
-	utils.LogDebug("Checking TSS transaction")
+	log.Debug("Checking TSS transaction")
 	msgs := tx.GetMsgs()
 	if len(msgs) == 0 {
 		return ctx, fmt.Errorf("Empty mesage list")

@@ -6,6 +6,7 @@ import (
 	"os"
 
 	ctypes "github.com/sisu-network/cosmos-sdk/crypto/types"
+	"github.com/sisu-network/lib/log"
 
 	keyring "github.com/sisu-network/cosmos-sdk/crypto/keyring"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
@@ -31,8 +32,8 @@ func NewAppKeys(cfg config.SisuConfig) *AppKeys {
 
 func (ak *AppKeys) Init() {
 	var err error
-	utils.LogInfo("ak.cfg.KeyringBackend =", ak.cfg.KeyringBackend)
-	utils.LogInfo("ak.cfg.Home =", ak.cfg.Dir)
+	log.Info("ak.cfg.KeyringBackend =", ak.cfg.KeyringBackend)
+	log.Info("ak.cfg.Home =", ak.cfg.Dir)
 
 	ak.kr, err = keyring.New(sdk.KeyringServiceName(), ak.cfg.KeyringBackend, ak.cfg.Dir, os.Stdin)
 	if err != nil {
@@ -41,7 +42,7 @@ func (ak *AppKeys) Init() {
 
 	infos, err := ak.kr.List()
 	if len(infos) == 0 {
-		utils.LogError()
+		log.Error()
 		panic(errors.New(`Please create at least one account before running this node.
 If this is a localhost network, run the gen file.
 If this is a testnet or mainnet, generate account using "sisu keys" command.`))
@@ -49,7 +50,7 @@ If this is a testnet or mainnet, generate account using "sisu keys" command.`))
 
 	// TODO: Use signer name for
 	ak.signerInfo = infos[0]
-	utils.LogDebug("signerInfo =", ak.signerInfo.GetName(), ak.signerInfo.GetAddress())
+	log.Debug("signerInfo =", ak.signerInfo.GetName(), ak.signerInfo.GetAddress())
 
 	// Set the private key from keyring
 	ak.setPrivateKey()

@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/ethereum/go-ethereum/rpc"
-	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/lib/log"
 )
 
 type Server struct {
@@ -28,6 +28,6 @@ func (s *Server) Run() {
 	}
 
 	srv := &http.Server{Handler: s.handler}
-	utils.LogInfo("Running API server at ", s.listenAddress)
+	log.Info("Running API server at ", s.listenAddress)
 	srv.Serve(listener)
 }

@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/app/params"
 	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/evm/types"
 
 	"github.com/sisu-network/cosmos-sdk/client"
@@ -105,7 +105,7 @@ func NewTxSubmitter(cfg config.Config, appKeys *AppKeys) *TxSubmitter {
 }
 
 func (t *TxSubmitter) SubmitMessage(msg sdk.Msg) error {
-	utils.LogDebug("Submitting tx ....")
+	log.Debug("Submitting tx ....")
 	seq := t.getSequence()
 	if seq == UN_INITIALIZED_SEQ {
 		return fmt.Errorf("Server is not ready")
@@ -182,17 +182,17 @@ func (t *TxSubmitter) Start() {
 				continue
 			}
 
-			utils.LogInfo("Queue size = ", len(copy))
+			log.Info("Queue size = ", len(copy))
 
 			// 2. Get account sequence
 			seq := t.getSequence()
-			utils.LogInfo("Sequence = ", seq)
+			log.Info("Sequence = ", seq)
 			t.factory = t.factory.WithSequence(seq)
 
 			// 3. Send all messages
 			msgs := convert(copy)
 			if err := tx.BroadcastTx(t.clientCtx, t.factory, msgs...); err != nil {
-				utils.LogError("Cannot broadcast transaction", err)
+				log.Error("Cannot broadcast transaction", err)
 				t.updateStatus(copy, err)
 
 				// Use block sequence for the sequence.
@@ -200,7 +200,7 @@ func (t *TxSubmitter) Start() {
 				t.curSequence = t.blockSequence
 				t.sequenceLock.Unlock()
 			} else {
-				utils.LogDebug("Tx submitted successfully")
+				log.Debug("Tx submitted successfully")
 				t.updateStatus(copy, ERR_NONE)
 				t.incSequence()
 			}
@@ -213,13 +213,13 @@ func (t *TxSubmitter) SyncBlockSequence(ctx sdk.Context, ak authkeeper.AccountKe
 	defer t.sequenceLock.Unlock()
 
 	if t.fromAccount == nil {
-		utils.LogError("fromAccount is not set yet")
+		log.Error("fromAccount is not set yet")
 		return
 	}
 
 	account := ak.GetAccount(ctx, t.fromAccount)
 	if account == nil {
-		utils.LogError("cannot find account in the keeper, account =", t.fromAccount)
+		log.Error("cannot find account in the keeper, account =", t.fromAccount)
 		return
 	}
 

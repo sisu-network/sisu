@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/hashicorp/go-retryablehttp"
+	"github.com/sisu-network/lib/log"
 )
 
 func HttpGet(httpClient *retryablehttp.Client, url string) ([]byte, int, error) {
@@ -16,7 +17,7 @@ func HttpGet(httpClient *retryablehttp.Client, url string) ([]byte, int, error) 
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			LogError("Failed to close repsonse body")
+			log.Error("Failed to close repsonse body")
 		}
 	}()
 
