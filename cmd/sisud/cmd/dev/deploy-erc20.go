@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -47,7 +47,7 @@ deploy-erc20 7545
 
 			time.Sleep(time.Second * 2)
 
-			utils.LogInfo("Contract address: ", address.String())
+			log.Info("Contract address: ", address.String())
 
 			// Check sender's balance
 			balance, err := instance.BalanceOf(&bind.CallOpts{Pending: true}, account0.Address)
@@ -55,7 +55,7 @@ deploy-erc20 7545
 				panic(err)
 			}
 
-			utils.LogInfo("balance of account0 = ", balance)
+			log.Info("balance of account0 = ", balance)
 
 			return nil
 		},

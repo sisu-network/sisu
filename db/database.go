@@ -8,8 +8,8 @@ import (
 	"github.com/golang-migrate/migrate"
 	"github.com/golang-migrate/migrate/database/mysql"
 	_ "github.com/golang-migrate/migrate/source/file"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/utils"
 	tsstypes "github.com/sisu-network/sisu/x/tss/types"
 )
 
@@ -81,13 +81,13 @@ func NewDatabase(config config.SqlConfig) Database {
 func (d *SqlDatabase) Init() error {
 	err := d.Connect()
 	if err != nil {
-		utils.LogError("Failed to connect to DB. Err =", err)
+		log.Error("Failed to connect to DB. Err =", err)
 		return err
 	}
 
 	err = d.DoMigration()
 	if err != nil {
-		utils.LogError("Cannot do migration. Err =", err)
+		log.Error("Cannot do migration. Err =", err)
 		return err
 	}
 
@@ -121,7 +121,7 @@ func (d *SqlDatabase) Connect() error {
 	}
 
 	d.db = database
-	utils.LogInfo("Db is connected successfully")
+	log.Info("Db is connected successfully")
 	return nil
 }
 
@@ -141,7 +141,7 @@ func (d *SqlDatabase) DoMigration() error {
 		return err
 	}
 
-	utils.LogInfo("Doing sql migration...")
+	log.Info("Doing sql migration...")
 
 	m.Log = &dbLogger{}
 	m.Up()
@@ -159,7 +159,7 @@ func (d *SqlDatabase) CreateKeygen(chain string) error {
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
-		utils.LogError("failed to create new keygen for chain", chain, ", err = ", err)
+		log.Error("failed to create new keygen for chain", chain, ", err = ", err)
 		return err
 	}
 
@@ -172,7 +172,7 @@ func (d *SqlDatabase) UpdateKeygenAddress(chain, address string, pubKey []byte) 
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
-		utils.LogError("failed to update keygen address and pubkey, err = ", err)
+		log.Error("failed to update keygen address and pubkey, err = ", err)
 	}
 }
 
@@ -182,7 +182,7 @@ func (d *SqlDatabase) IsKeyExisted(chain string) bool {
 
 	rows, err := d.db.Query(query, params...)
 	if err != nil {
-		utils.LogError("cannot query chain key ", chain)
+		log.Error("cannot query chain key ", chain)
 		return false
 	}
 	defer rows.Close()
@@ -196,7 +196,7 @@ func (d *SqlDatabase) IsChainKeyAddress(chain, address string) bool {
 
 	rows, err := d.db.Query(query, params...)
 	if err != nil {
-		utils.LogError("cannot query chain key ", chain, address)
+		log.Error("cannot query chain key ", chain, address)
 		return false
 	}
 
@@ -211,7 +211,7 @@ func (d *SqlDatabase) GetPubKey(chain string) []byte {
 
 	rows, err := d.db.Query(query, params...)
 	if err != nil {
-		utils.LogError("cannot query pub key", chain)
+		log.Error("cannot query pub key", chain)
 		return nil
 	}
 	defer rows.Close()
@@ -234,7 +234,7 @@ func (d *SqlDatabase) UpdateKeygenStatus(chain, status string) {
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
-		utils.LogError("failed to udpate keygen status for chain", chain, ", err = ", err)
+		log.Error("failed to udpate keygen status for chain", chain, ", err = ", err)
 	}
 }
 
@@ -244,7 +244,7 @@ func (d *SqlDatabase) GetKeygenStatus(chain string) (string, error) {
 
 	rows, err := d.db.Query(query, params...)
 	if err != nil {
-		utils.LogError("cannot query keygen status ", chain)
+		log.Error("cannot query keygen status ", chain)
 		return "", err
 	}
 	defer rows.Close()
@@ -267,7 +267,7 @@ func (d *SqlDatabase) IsKeygenDelivered(chain string) bool {
 
 	rows, err := d.db.Query(query, params...)
 	if err != nil {
-		utils.LogError("cannot check if keygen is delivered for chain ", chain, ", err =", err)
+		log.Error("cannot check if keygen is delivered for chain ", chain, ", err =", err)
 		return false
 	}
 	defer rows.Close()
@@ -298,7 +298,7 @@ func (d *SqlDatabase) InsertContracts(contracts []*tsstypes.ContractEntity) {
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
-		utils.LogError("failed to insert contract into db, err = ", err)
+		log.Error("failed to insert contract into db, err = ", err)
 	}
 }
 
@@ -317,7 +317,7 @@ func (d *SqlDatabase) GetPendingDeployContracts(chain string) []*tsstypes.Contra
 	for rows.Next() {
 		var chain, hash, name, status sql.NullString
 		if err := rows.Scan(&chain, &hash, &name, &status); err != nil {
-			utils.LogError("cannot scan row, err =", err)
+			log.Error("cannot scan row, err =", err)
 			continue
 		}
 
@@ -405,7 +405,7 @@ func (d *SqlDatabase) UpdateContractsStatus(contracts []*tsstypes.ContractEntity
 
 		_, err := d.db.Exec(query, params...)
 		if err != nil {
-			utils.LogError("failed to update contract status, err =", err, ". len(contracts) =", len(contracts))
+			log.Error("failed to update contract status, err =", err, ". len(contracts) =", len(contracts))
 		}
 	}
 }
@@ -416,7 +416,7 @@ func (d *SqlDatabase) UpdateContractDeployTx(chain, hash string, txHash string) 
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
-		utils.LogError("failed to update contract deploy tx, err =", err)
+		log.Error("failed to update contract deploy tx, err =", err)
 	}
 }
 
@@ -452,7 +452,7 @@ func (d *SqlDatabase) UpdateContractAddress(chain, outHash, address string) {
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
-		utils.LogError("failed to update contract address, err =", err)
+		log.Error("failed to update contract address, err =", err)
 	}
 }
 
@@ -473,7 +473,7 @@ func (d *SqlDatabase) InsertTxOuts(txs []*tsstypes.TxOutEntity) {
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
-		utils.LogError("failed to insert txout into table, err = ", err)
+		log.Error("failed to insert txout into table, err = ", err)
 	}
 }
 
@@ -528,7 +528,7 @@ func (d *SqlDatabase) UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string,
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
-		utils.LogError("failed to update txout with chain and hashWoSig", chain, hashWithSig, ", err =", err)
+		log.Error("failed to update txout with chain and hashWoSig", chain, hashWithSig, ", err =", err)
 	}
 }
 
@@ -538,7 +538,7 @@ func (d *SqlDatabase) UpdateTxOutStatus(chain, hashWithSig, status string) {
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
-		utils.LogError("failed to update chain status", chain, hashWithSig, ", err =", err)
+		log.Error("failed to update chain status", chain, hashWithSig, ", err =", err)
 	}
 }
 
@@ -548,7 +548,7 @@ func (d *SqlDatabase) InsertMempoolTxHash(hash string, blockHeight int64) {
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
-		utils.LogError("failed to insert tx hash into mempool_tx table, err =", err)
+		log.Error("failed to insert tx hash into mempool_tx table, err =", err)
 	}
 }
 
@@ -558,7 +558,7 @@ func (d *SqlDatabase) MempoolTxExisted(hash string) bool {
 
 	rows, err := d.db.Query(query, params...)
 	if err != nil {
-		utils.LogError("failed to query mempool_tx, err =", err)
+		log.Error("failed to query mempool_tx, err =", err)
 	}
 	defer rows.Close()
 
@@ -571,7 +571,7 @@ func (d *SqlDatabase) MempoolTxExistedRange(hash string, minBlock int64, maxBloc
 
 	rows, err := d.db.Query(query, params...)
 	if err != nil {
-		utils.LogError("failed to query mempool_tx, err =", err)
+		log.Error("failed to query mempool_tx, err =", err)
 	}
 	defer rows.Close()
 

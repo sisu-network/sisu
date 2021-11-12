@@ -6,7 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/lib/log"
 )
 
 func main() {
@@ -28,7 +28,7 @@ func main() {
 	for name, method := range myAbi.Methods {
 		hash := hex.EncodeToString(crypto.Keccak256([]byte(method.Sig)))
 		if hash[:8] == payload[:8] {
-			utils.LogInfo("Found function name: ", name)
+			log.Info("Found function name: ", name)
 			funcName = name
 			break
 		}
@@ -43,5 +43,5 @@ func main() {
 		panic(err)
 	}
 
-	utils.LogInfo("params = ", params)
+	log.Info("params = ", params)
 }

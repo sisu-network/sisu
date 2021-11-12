@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/utils"
 
 	"github.com/sisu-network/sisu/app"
 	"github.com/spf13/cobra"
@@ -101,9 +101,9 @@ func deleteTssData() error {
 
 func deleteFiles(toDelete []string) error {
 	for _, file := range toDelete {
-		utils.LogInfo("Deleting file/directory", file)
+		log.Info("Deleting file/directory", file)
 		if err := os.RemoveAll(file); err != nil {
-			utils.LogError("Cannot delete", file, ". Error =", err)
+			log.Error("Cannot delete", file, ". Error =", err)
 			return err
 		}
 	}
@@ -145,7 +145,7 @@ func deleteSql() error {
 
 	defer database.Close()
 
-	utils.LogInfo("Deleting sql tables...")
+	log.Info("Deleting sql tables...")
 
 	database.Exec("DROP TABLE contract")
 	database.Exec("DROP TABLE tx_out")

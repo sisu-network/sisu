@@ -3,7 +3,7 @@ package evm
 import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	etypes "github.com/sisu-network/dcore/core/types"
-	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/evm/keeper"
 	"github.com/sisu-network/sisu/x/evm/types"
 )
@@ -12,7 +12,7 @@ func handleSubmittedTx(ctx sdk.Context, k keeper.Keeper, etxMsg *types.EthTx) (*
 	etx := new(etypes.Transaction)
 	err := etx.UnmarshalJSON(etxMsg.Data)
 	if err != nil {
-		utils.LogError("Cannot unmarshall etx", err)
+		log.Error("Cannot unmarshall etx", err)
 		return &sdk.Result{}, err
 	}
 

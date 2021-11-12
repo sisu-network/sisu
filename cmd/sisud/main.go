@@ -4,9 +4,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sisu-network/sisu/utils"
-
 	svrcmd "github.com/sisu-network/cosmos-sdk/server/cmd"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/app"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd"
 
@@ -31,8 +30,8 @@ func loadConfig() {
 		app.MainAppHome = filepath.Join(app.SisuHome, "/main")
 	}
 
-	utils.LogInfo("Sisu home = ", app.SisuHome)
-	utils.LogInfo("Main App home = ", app.MainAppHome)
+	log.Info("Sisu home = ", app.SisuHome)
+	log.Info("Main App home = ", app.MainAppHome)
 
 	// Print IP address
 	// _, err = server.ExternalIP()

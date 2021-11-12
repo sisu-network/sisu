@@ -10,6 +10,7 @@ import (
 	"time"
 
 	ethLog "github.com/ethereum/go-ethereum/log"
+	"github.com/sisu-network/lib/log"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethdb"
@@ -96,7 +97,7 @@ func NewETHChain(
 	// TODO: Handle corrupted database here.
 	_, lastAcceptedErr := chainDb.Get(lastAcceptedKey)
 	initGenesis := lastAcceptedErr == ERR_NOT_FOUND
-	utils.LogInfo("initGenesis = ", initGenesis)
+	log.Info("initGenesis = ", initGenesis)
 
 	cb := new(dummy.ConsensusCallbacks)
 	mcb := new(miner.MinerCallbacks)
@@ -150,13 +151,13 @@ func (self *ETHChain) Initialize() error {
 	// TODO: handle corrupted DB
 	lastAcceptedBytes, lastAcceptedErr := self.chainDb.Get(lastAcceptedKey)
 	var lastAccepted *types.Block
-	utils.LogInfo("lastAcceptedErr = ", lastAcceptedErr)
+	log.Info("lastAcceptedErr = ", lastAcceptedErr)
 
 	if lastAcceptedErr == nil {
 		var hash common.Hash
 		if err := rlp.DecodeBytes(lastAcceptedBytes, &hash); err == nil {
 			if block := self.GetBlockByHash(hash); block == nil {
-				utils.LogInfo("lastAccepted block not found in chaindb")
+				log.Info("lastAccepted block not found in chaindb")
 			} else {
 				lastAccepted = block
 			}
@@ -173,7 +174,7 @@ func (self *ETHChain) Initialize() error {
 	}
 
 	self.lastBlockState, _ = self.backend.BlockChain().State()
-	utils.LogInfo("lastBlock = ", lastAccepted.Number())
+	log.Info("lastBlock = ", lastAccepted.Number())
 
 	return nil
 }
@@ -203,9 +204,9 @@ func (self *ETHChain) startApiServer() {
 
 func (self *ETHChain) Stop() {
 	self.stopping = true
-	utils.LogInfo("Stopping ETH backend....")
+	log.Info("Stopping ETH backend....")
 	self.backend.Stop()
-	utils.LogInfo("ETH backend stopped")
+	log.Info("ETH backend stopped")
 }
 
 func (self *ETHChain) NewRPCHandler() *rpc.Server {
@@ -258,7 +259,7 @@ func (self *ETHChain) valdiateTx(tx *types.Transaction) error {
 	// Make sure the transaction is signed properly
 	from, err := types.Sender(self.signer, tx)
 	if err != nil {
-		utils.LogError("Validation failed: ", err)
+		log.Error("Validation failed: ", err)
 		return core.ErrInvalidSender
 	}
 
@@ -289,7 +290,7 @@ func (self *ETHChain) checkNonceAndBalance(tx *types.Transaction, from common.Ad
 
 	// Ensure the transaction adheres to nonce ordering
 	if self.lastBlockState.GetNonce(from) > tx.Nonce() {
-		utils.LogDebug("self.lastBlockState.GetNonce(from) = ", self.lastBlockState.GetNonce(from))
+		log.Debug("self.lastBlockState.GetNonce(from) = ", self.lastBlockState.GetNonce(from))
 		return core.ErrNonceTooLow
 	}
 
@@ -328,10 +329,10 @@ func (self *ETHChain) transition(newState ChainState) {
 }
 
 func (self *ETHChain) OnSealFinish(block *types.Block) error {
-	utils.LogDebug("Block is sealed, number =", block.Number())
+	log.Debug("Block is sealed, number =", block.Number())
 
 	if err := self.Accept(block); err != nil {
-		utils.LogError(err)
+		log.Error(err)
 		return err
 	}
 
@@ -343,13 +344,13 @@ func (self *ETHChain) OnSealFinish(block *types.Block) error {
 		self.lastBlockState = lastState
 		self.lastBlockLock.Unlock()
 	} else {
-		utils.LogError("Cannot get last block state.")
+		log.Error("Cannot get last block state.")
 	}
 
 	self.genBlockDoneCh <- true
 
 	size, err := self.PendingSize()
-	utils.LogDebug("Pending size = ", size)
+	log.Debug("Pending size = ", size)
 
 	return nil
 }
@@ -369,7 +370,7 @@ func (self *ETHChain) GetBlockByHash(hash common.Hash) *types.Block {
 
 func (self *ETHChain) Accept(block *types.Block) error {
 	if err := self.BlockChain().Accept(block); err != nil {
-		utils.LogError("Failed to accept block", err)
+		log.Error("Failed to accept block", err)
 		return err
 	}
 
@@ -405,7 +406,7 @@ func (self *ETHChain) ImportAccounts() {
 	accounts := utils.GetLocalAccounts()
 
 	if len(ks.Accounts()) <= 10 {
-		utils.LogDebug("Importing accounts...")
+		log.Debug("Importing accounts...")
 
 		for _, account := range accounts {
 			privateKey, err := wallet.PrivateKey(account)
@@ -421,21 +422,21 @@ func (self *ETHChain) ImportAccounts() {
 	for _, account := range accounts {
 		ks.Unlock(account, utils.LOCAL_KEYSTORE_PASS)
 	}
-	utils.LogDebug("Done importing. Accounts length = ", len(ks.Accounts()))
+	log.Debug("Done importing. Accounts length = ", len(ks.Accounts()))
 }
 
 func (self *ETHChain) CheckTx(txs []*types.Transaction) error {
 	err := fmt.Errorf("No ETH transaction is accepted")
-	utils.LogDebug("Checking tx ....")
+	log.Debug("Checking tx ....")
 
 	errs := self.backend.TxPool().AddRemotesSync(txs)
 	for i, tx := range txs {
 		if errs[i] == nil {
 			self.acceptedTxCache.Add(tx.Hash().String(), tx)
-			utils.LogDebug("Tx is accepted", tx.Hash().String())
+			log.Debug("Tx is accepted", tx.Hash().String())
 			err = nil
 		} else {
-			utils.LogError("Accept tx error: ", i, errs[i])
+			log.Error("Accept tx error: ", i, errs[i])
 		}
 	}
 
@@ -448,11 +449,11 @@ func (self *ETHChain) DeliverTx(tx *types.Transaction) (*types.Receipt, common.H
 	if self.stopping {
 		return nil, emptyRootHash, ERR_SHUTTING_DOWN
 	}
-	utils.LogDebug("Delivering tx.....")
+	log.Debug("Delivering tx.....")
 
 	receipt, rootHash, err := self.backend.Miner().ExecuteTxSync(tx)
 	if err != nil {
-		utils.LogError("Failed to execute the transaction", err)
+		log.Error("Failed to execute the transaction", err)
 		return nil, emptyRootHash, err
 	}
 
@@ -466,7 +467,7 @@ func (self *ETHChain) onEthTxSubmitted(tx *types.Transaction) error {
 	}
 
 	if err := self.valdiateTx(tx); err != nil {
-		utils.LogError("Failed to validate tx", err)
+		log.Error("Failed to validate tx", err)
 		return err
 	}
 
@@ -496,7 +497,7 @@ func (self *ETHChain) onEthTxSubmitted(tx *types.Transaction) error {
 	// Check if the tx pool has the tx or not.
 	_, ok = self.acceptedTxCache.Get(tx.Hash().String())
 	if !ok {
-		utils.LogError("Cannot find transaction in the pool.", tx.Hash().String())
+		log.Error("Cannot find transaction in the pool.", tx.Hash().String())
 		return fmt.Errorf("Failed to add transaction to the pool")
 	}
 

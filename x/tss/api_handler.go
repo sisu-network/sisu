@@ -4,7 +4,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	etypes "github.com/sisu-network/deyes/types"
 	htypes "github.com/sisu-network/dheart/types"
-	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/keeper"
 )
 
@@ -28,7 +28,7 @@ func (api *ApiHandler) CheckHealth() {
 }
 
 func (a *ApiHandler) KeygenResult(result htypes.KeygenResult) bool {
-	utils.LogInfo("There is a Keygen Result")
+	log.Info("There is a Keygen Result")
 
 	a.processor.OnKeygenResult(result)
 	return true
@@ -36,14 +36,14 @@ func (a *ApiHandler) KeygenResult(result htypes.KeygenResult) bool {
 
 // This is a API endpoint to receive transactions with To address we are interested in.
 func (a *ApiHandler) PostObservedTxs(txs *etypes.Txs) {
-	utils.LogDebug("There is new list of transactions from deyes")
+	log.Debug("There is new list of transactions from deyes")
 
 	for _, tx := range txs.Arr {
 		ethTx := &ethtypes.Transaction{}
 
 		err := ethTx.UnmarshalBinary(tx.Serialized)
 		if err != nil {
-			utils.LogError("Cannot unmarshall transaction ", err)
+			log.Error("Cannot unmarshall transaction ", err)
 		}
 	}
 
@@ -52,6 +52,6 @@ func (a *ApiHandler) PostObservedTxs(txs *etypes.Txs) {
 }
 
 func (a *ApiHandler) KeysignResult(result *htypes.KeysignResult) {
-	utils.LogInfo("There is keysign result")
+	log.Info("There is keysign result")
 	go a.processor.OnKeysignResult(result)
 }

@@ -10,11 +10,11 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
 	erc20Gateway "github.com/sisu-network/sisu/contracts/eth/erc20gateway"
 	"github.com/sisu-network/sisu/db"
-	"github.com/sisu-network/sisu/utils"
 	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
 	"github.com/sisu-network/sisu/x/tss"
 	"github.com/spf13/cobra"
@@ -50,7 +50,7 @@ transfer-out erc20 eth 7545 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 sisu-eth 
 			defer database.Close()
 
 			// Get the contract address of token
-			utils.LogInfo("args = ", args)
+			log.Info("args = ", args)
 			contractType := args[0]
 			fromChain := args[1]
 			port, err := strconv.Atoi(args[2])
@@ -81,7 +81,7 @@ transfer-out erc20 eth 7545 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 sisu-eth 
 					panic(err)
 				}
 
-				utils.LogInfo("gatewayAddress = ", gatewayAddress.String())
+				log.Info("gatewayAddress = ", gatewayAddress.String())
 
 				tokenAddress := common.HexToAddress(tokenAddressString)
 				erc20Contract, err := erc20.NewErc20(tokenAddress, client)
@@ -89,7 +89,7 @@ transfer-out erc20 eth 7545 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 sisu-eth 
 					return err
 				}
 
-				utils.LogInfo("Approvng gateway address...")
+				log.Info("Approvng gateway address...")
 				amount := big.NewInt(1)
 				approveAddress(erc20Contract, gatewayAddress, amount, client)
 
@@ -102,7 +102,7 @@ transfer-out erc20 eth 7545 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 sisu-eth 
 					panic(fmt.Errorf("Invalid balance: %s, %s", amount, allowance))
 				}
 
-				utils.LogInfo("Transfering token out....")
+				log.Info("Transfering token out....")
 				auth, err := getAuthTransactor(client, account0.Address)
 				tx, err := gateway.TransferOutFromContract(auth, tokenAddress, toChain, recipient, amount)
 				if err != nil {
@@ -113,7 +113,7 @@ transfer-out erc20 eth 7545 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 sisu-eth 
 				time.Sleep(Blocktime)
 
 				gatewayBalance := getBalance(erc20Contract, gatewayAddress)
-				utils.LogInfo("gatewayBalance = ", gatewayBalance)
+				log.Info("gatewayBalance = ", gatewayBalance)
 			}
 
 			return nil
@@ -153,7 +153,7 @@ func deployGatewayContract(toChain string, client *ethclient.Client) (common.Add
 		panic(err)
 	}
 
-	utils.LogInfo("Gateway was deployed!")
+	log.Info("Gateway was deployed!")
 
 	return gatewayAddress, gateway
 }

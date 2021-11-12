@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/sisu-network/lib/log"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 
 	"github.com/sisu-network/cosmos-sdk/store/prefix"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
-	"github.com/sisu-network/sisu/utils"
 )
 
 const (
@@ -106,7 +106,7 @@ func (k *Keeper) SaveEthKeyAddrs(ctx sdk.Context, chain string, keyAddrs map[str
 
 	bz, err := json.Marshal(keyAddrs)
 	if err != nil {
-		utils.LogError("cannot marshal key addrs, err =", err)
+		log.Error("cannot marshal key addrs, err =", err)
 		return
 	}
 
@@ -122,7 +122,7 @@ func (k *Keeper) GetAllEthKeyAddrs(ctx sdk.Context) map[string]map[string]bool {
 		m2 := make(map[string]bool)
 		err := json.Unmarshal(iter.Value(), &m2)
 		if err != nil {
-			utils.LogError("cannot unmarshal value with key", iter.Key())
+			log.Error("cannot unmarshal value with key", iter.Key())
 			continue
 		}
 		m[string(iter.Key())] = m2
