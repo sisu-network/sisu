@@ -1116,6 +1116,8 @@ github.com/sisu-network/deyes v0.1.1 h1:PVeYrF8GiJJ+AcC9WYdVIo/wpOR5VZx+M3LvZKxs
 github.com/sisu-network/deyes v0.1.1/go.mod h1:qBYZjGx1vMWKLn7CsasWR2+0dzW/VXORtro5WHloRhI=
 github.com/sisu-network/dheart v0.1.4-alpha4 h1:3lSYK2Idj8kn25dS38Lyms0yIrmJdZ/2E9/GZ0ZpBXI=
 github.com/sisu-network/dheart v0.1.4-alpha4/go.mod h1:GXV41d/OcPEA2IYy8XhOHMEm/EaS3ivGNfU1vQLd2PE=
+github.com/sisu-network/lib v0.0.1-alpha1 h1:K7FoPQxbfcf/4+K6fQ7Av88Cv3vfci6nGKc2EQceXJc=
+github.com/sisu-network/lib v0.0.1-alpha1/go.mod h1:c2FVqTuz7ZHALdW+gyq8qG1crabzi3sYf+8TTujv07E=
 github.com/sisu-network/tendermint v0.34.8-fork005 h1:tUOrEC2n19+uLxH3wtuMr86MGti4/Pt+ALGBe4TTw3o=
 github.com/sisu-network/tendermint v0.34.8-fork005/go.mod h1:SMrIOwxrc88H8ats26WQ6jk+kZLsLeVhMAHivOkmXIs=
 github.com/sisu-network/tss-lib v0.1.1 h1:wGMZyLxpIaQB+2N0ckZkV/eiFBslkl5KLGOhJBNUjVQ=

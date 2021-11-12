@@ -9,6 +9,7 @@ import (
 
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
+	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/db"
@@ -58,7 +59,7 @@ func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *t
 	outEntities := make([]*tssTypes.TxOutEntity, 0)
 	var err error
 
-	if utils.IsETHBasedChain(tx.Chain) {
+	if libchain.IsETHBasedChain(tx.Chain) {
 		utils.LogInfo("Getting tx out for chain", tx.Chain)
 		outMsgs, outEntities, err = p.getEthResponse(ctx, height, tx)
 
@@ -200,7 +201,7 @@ func (p *DefaultTxOutputProducer) checkEthDeployContract(ctx sdk.Context, height
 // generated for a chain. We cannot deploy immediately after key generation because we don't have
 // enough balance in the account.
 func (p *DefaultTxOutputProducer) SaveContractsToDeploy(chain string) {
-	if utils.IsETHBasedChain(chain) {
+	if libchain.IsETHBasedChain(chain) {
 		contracts := make([]*types.ContractEntity, 0, len(SupportedContracts))
 
 		for name, c := range SupportedContracts {

@@ -3,6 +3,7 @@ package tss
 import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	dhTypes "github.com/sisu-network/dheart/types"
+	"github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/db"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
@@ -139,7 +140,7 @@ func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult
 
 		// If this is a pubkey address of a ETH chain, save it to the store because we want to watch
 		// transaction that funds the address (we will deploy contracts later).
-		if utils.IsETHBasedChain(msg.Chain) {
+		if chain.IsETHBasedChain(msg.Chain) {
 			p.txOutputProducer.AddKeyAddress(ctx, msg.Chain, msg.Address)
 		}
 
