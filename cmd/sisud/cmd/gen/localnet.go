@@ -14,6 +14,7 @@ import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/cosmos-sdk/types/module"
 	banktypes "github.com/sisu-network/cosmos-sdk/x/bank/types"
+	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/config"
 )
 
@@ -89,14 +90,14 @@ Example:
 					DheartHost: "0.0.0.0",
 					DheartPort: 5678,
 					SupportedChains: map[string]config.TssChainConfig{
-						"eth": {
-							Symbol:   "eth",
-							Id:       1,
+						"ganache1": {
+							Symbol:   "ganache1",
+							Id:       int(libchain.GetChainIntFromId("ganache1").Int64()),
 							DeyesUrl: "http://0.0.0.0:31001",
 						},
-						"sisu-eth": {
-							Symbol:   "sisu-eth",
-							Id:       36767,
+						"ganache2": {
+							Symbol:   "ganache2",
+							Id:       int(libchain.GetChainIntFromId("ganache2").Int64()),
 							DeyesUrl: "http://0.0.0.0:31001",
 						},
 					},

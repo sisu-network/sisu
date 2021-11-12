@@ -14,7 +14,6 @@ import (
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/db"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/keeper"
 	"github.com/sisu-network/sisu/x/tss/types"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
@@ -39,7 +38,6 @@ type DefaultTxOutputProducer struct {
 	appKeys       *common.AppKeys
 	db            db.Database
 	ethDeployment *EthDeployment
-	signers       map[string]ethTypes.Signer
 	tssConfig     config.TssConfig
 }
 
@@ -48,7 +46,6 @@ func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys *c
 		worldState:    worldState,
 		keeper:        keeper,
 		appKeys:       appKeys,
-		signers:       utils.GetEthChainSigners(),
 		tssConfig:     tssConfig,
 		ethDeployment: NewEthDeployment(),
 		db:            db,

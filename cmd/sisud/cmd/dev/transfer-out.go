@@ -29,18 +29,18 @@ Usage:
 transfer-out [ContractType] [FromChain] [Port] [TokenAddress] [ToChain] [RecipientAddress]
 
 Example:
-transfer-out erc20 eth 7545 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 sisu-eth 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
+transfer-out erc20 ganache1 7545 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 ganache2 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Use this when running with docker.
-			sqlConfig := getDockerSqlConfig()
+			// sqlConfig := getDockerSqlConfig()
 
 			// Use this when running with single node on command line.
-			// cfg, cfgErr := config.ReadConfig()
-			// if cfgErr != nil {
-			// 	panic(cfgErr)
-			// }
-			// sqlConfig := cfg.Sisu.Sql
+			cfg, cfgErr := config.ReadConfig()
+			if cfgErr != nil {
+				panic(cfgErr)
+			}
+			sqlConfig := cfg.Sisu.Sql
 
 			database := db.NewDatabase(sqlConfig)
 			err := database.Init()

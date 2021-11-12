@@ -7,7 +7,6 @@ import (
 	hTypes "github.com/sisu-network/dheart/types"
 
 	sdk "github.com/sisu-network/cosmos-sdk/types"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 
@@ -63,7 +62,7 @@ func (p *Processor) deliverTxOutEth(ctx sdk.Context, tx *types.TxOut) ([]byte, e
 		return nil, err
 	}
 
-	signer := utils.GetEthChainSigners()[tx.OutChain]
+	signer := libchain.GetEthChainSigner(tx.OutChain)
 	if signer == nil {
 		err := fmt.Errorf("cannot find signer for chain %s", tx.OutChain)
 		log.Error(err)

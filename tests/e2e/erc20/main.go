@@ -165,7 +165,7 @@ func main() {
 	}
 
 	// 1. Create contract
-	contractAddress := deployErc20Gateway(client, "sisu-eth")
+	contractAddress := deployErc20Gateway(client, "ganache1")
 	log.Info("contractAddress = ", contractAddress.Hex())
 
 	// // 2. Transfer In
