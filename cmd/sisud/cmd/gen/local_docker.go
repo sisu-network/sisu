@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,13 +24,14 @@ import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/cosmos-sdk/types/module"
 	banktypes "github.com/sisu-network/cosmos-sdk/x/bank/types"
+	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/config"
 )
 
 type DockerNodeConfig struct {
 	Ganaches []struct {
 		Ip       string
-		ChainId  int
+		ChainId  *big.Int
 		HostPort int
 	}
 	MysqlIp string
@@ -93,7 +95,8 @@ Example:
 			}
 
 			mysqlIp := "192.168.10.4"
-			dockerConfig := getDockerConfig([]string{"192.168.10.2", "192.168.10.3"}, []int{1, 36767}, "192.168.10.4", ips)
+			chainIds := []*big.Int{libchain.GetChainIntFromId("ganache1"), libchain.GetChainIntFromId("ganache2")}
+			dockerConfig := getDockerConfig([]string{"192.168.10.2", "192.168.10.3"}, chainIds, "192.168.10.4", ips)
 
 			nodeConfigs := make([]config.Config, numValidators)
 			for i, _ := range ips {
@@ -178,13 +181,13 @@ func cleanData(root string) {
 	}
 }
 
-func getDockerConfig(ganacheIps []string, chainIds []int, mysqlIp string, ips []string) DockerNodeConfig {
+func getDockerConfig(ganacheIps []string, chainIds []*big.Int, mysqlIp string, ips []string) DockerNodeConfig {
 	docker := DockerNodeConfig{
 		MysqlIp: mysqlIp,
 	}
 	docker.Ganaches = make([]struct {
 		Ip       string
-		ChainId  int
+		ChainId  *big.Int
 		HostPort int
 	}, len(ganacheIps))
 	docker.NodeData = make([]struct {
@@ -237,14 +240,14 @@ func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, 
 			DheartHost: fmt.Sprintf("dheart%d", index),
 			DheartPort: 5678,
 			SupportedChains: map[string]config.TssChainConfig{
-				"eth": {
-					Symbol:   "eth",
-					Id:       1,
+				"ganache1": {
+					Symbol:   "ganache1",
+					Id:       int(libchain.GetChainIntFromId("ganache1").Int64()),
 					DeyesUrl: fmt.Sprintf("http://deyes%d:31001", index),
 				},
-				"sisu-eth": {
-					Symbol:   "sisu-eth",
-					Id:       36767,
+				"ganache2": {
+					Symbol:   "ganache2",
+					Id:       int(libchain.GetChainIntFromId("ganache2").Int64()),
 					DeyesUrl: fmt.Sprintf("http://deyes%d:31001", index),
 				},
 			},
@@ -366,14 +369,14 @@ server_port = 31001
 sisu_server_url = "{{ .SisuServerUrl }}"
 
 [chains]
-[chains.eth]
-  chain = "eth"
+[chains.ganache1]
+  chain = "ganache1"
   block_time = 1000
   starting_block = 0
   rpc_url = "http://{{ .Ganache0 }}:7545"
 
-[chains.sisu-eth]
-  chain = "sisu-eth"
+[chains.ganache2]
+  chain = "ganache2"
   block_time = 1000
   starting_block = 0
   rpc_url = "http://{{ .Ganache1 }}:7545"

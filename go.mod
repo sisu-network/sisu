@@ -7,7 +7,6 @@ require (
 	github.com/btcsuite/btcd v0.22.0-beta
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/ethereum/go-ethereum v1.10.3
-	github.com/fatih/color v1.13.0
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gogo/protobuf v1.3.3
 	github.com/golang-migrate/migrate v3.5.4+incompatible
@@ -22,7 +21,7 @@ require (
 	github.com/sisu-network/dcore v0.1.10
 	github.com/sisu-network/deyes v0.1.1
 	github.com/sisu-network/dheart v0.1.4-alpha4
-	github.com/sisu-network/lib v0.0.1-alpha2
+	github.com/sisu-network/lib v0.0.1-alpha4
 	github.com/sisu-network/tendermint v0.34.8-fork005
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.1

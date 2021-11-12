@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/sisu-network/tendermint/crypto"
 	"github.com/sisu-network/tendermint/mempool"
 	ttypes "github.com/sisu-network/tendermint/types"
@@ -58,8 +57,6 @@ type Processor struct {
 	keygenVoteResult map[string]map[string]bool
 	keygenBlockPairs []BlockSymbolPair
 	db               db.Database
-
-	signers map[string]ethTypes.Signer
 }
 
 func NewProcessor(keeper keeper.Keeper,
@@ -85,7 +82,6 @@ func NewProcessor(keeper keeper.Keeper,
 		// And array that stores block numbers where we should do final vote count.
 		keygenBlockPairs: make([]BlockSymbolPair, 0),
 		deyesClients:     make(map[string]*tssclients.DeyesClient),
-		signers:          utils.GetEthChainSigners(),
 	}
 
 	return p

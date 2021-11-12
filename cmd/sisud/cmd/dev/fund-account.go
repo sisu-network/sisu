@@ -21,7 +21,7 @@ func FundAccount() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "fund-account",
 		Short: `Fund localhost accounts. Example:
-fund-account eth 7545 sisu-eth 8545 10
+fund-account ganache1 7545 ganache2 8545 10
 `,
 
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -81,8 +81,7 @@ func transferEth(url, recipient string, wallet *hdwallet.Wallet, amount int) {
 		panic(err)
 	}
 
-	log.Info("Address = ", fromAccount.Address.Hex())
-	log.Info("amount = ", amount)
+	log.Info("recipient = ", recipient)
 
 	nonce, err := client.PendingNonceAt(context.Background(), fromAccount.Address)
 	if err != nil {
