@@ -15,12 +15,12 @@ import (
 func Query() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "query",
-		Long: `Transfer an ERC20 or ERC721 asset.
+		Long: `Query ERC20 or ERC721 balance of an address on a particular chain. Please note that the asset id is a global id cross chain.
 Usage:
 query [ContractType] [chain] [Port] [AssetId] [AccountAddress]
 
 Example:
-query erc20 sisu-eth 8545 eth__0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
+query erc20 ganache2 8545 ganache1__0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			database := getDatabase()
@@ -48,6 +48,9 @@ query erc20 sisu-eth 8545 eth__0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd58 0xE838
 				if contract == nil {
 					return fmt.Errorf("cannot find contract")
 				}
+
+				log.Info("contract.Address = ", contract.Address)
+
 				gatewayAddress := common.HexToAddress(contract.Address)
 				gateway, err := erc20gateway.NewErc20gateway(gatewayAddress, client)
 				if err != nil {

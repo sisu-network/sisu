@@ -1,4 +1,5 @@
 #!/bin/sh
+# This script is DEPRECATED
 
 # Generate binary file
 rm -rf build
