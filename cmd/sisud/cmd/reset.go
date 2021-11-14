@@ -154,6 +154,7 @@ func deleteSql() error {
 	database.Exec("DROP TABLE mempool_tx")
 
 	database.Exec("TRUNCATE TABLE deyes.watch_address")
+	database.Exec("TRUNCATE TABLE deyes.latest_block_height")
 
 	return nil
 }

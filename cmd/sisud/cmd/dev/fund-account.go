@@ -21,7 +21,7 @@ func FundAccount() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "fund-account",
 		Short: `Fund localhost accounts. Example:
-fund-account ganache1 7545 ganache2 8545 10
+fund-account eth-sisu-local 1234 ganache1 7545 10
 `,
 
 		RunE: func(cmd *cobra.Command, args []string) error {

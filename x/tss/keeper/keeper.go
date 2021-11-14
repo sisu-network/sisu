@@ -18,15 +18,9 @@ const (
 
 // TODO: clean up this list
 var (
-	PREFIX_RECORDED_CHAIN            = []byte{0x01}
-	PREFIX_OBSERVED_TX               = []byte{0x02}
-	PREFIX_OBSERVED_TX_VALIDATOR_SET = []byte{0x03}
-	PREFIX_PENDING_OBSERVED_TX       = []byte{0x04}
-	PREFIX_PROCESSED_OBSERVED_TX     = []byte{0x05}
-	PREFIX_PUBLIC_KEY_BYTES          = []byte{0x06}
-	PREFIX_PENDING_KEYGEN_TX         = []byte{0x07}
-	PREFIX_ETH_KEY_ADDRESS           = []byte{0x08}
-	PREFIX_TX_OUT                    = []byte{0x09}
+	PREFIX_OBSERVED_TX      = []byte{0x01}
+	PREFIX_PUBLIC_KEY_BYTES = []byte{0x02}
+	PREFIX_ETH_KEY_ADDRESS  = []byte{0x03}
 
 	// List of on memory keys. These data are not persisted into kvstore.
 	// List of contracts that need to be deployed to a chain.

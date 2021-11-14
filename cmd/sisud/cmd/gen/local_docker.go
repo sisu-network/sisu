@@ -85,7 +85,7 @@ Example:
 			}
 
 			// Get Chain id and keyring backend from .env file.
-			chainID := "sisu-dev"
+			chainID := "eth-sisu-local"
 			keyringBackend := keyring.BackendTest
 
 			// startingIPAddress := "192.168.10.6"
