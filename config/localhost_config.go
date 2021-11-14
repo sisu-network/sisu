@@ -13,13 +13,14 @@ import (
 	"github.com/sisu-network/dcore/miner"
 	"github.com/sisu-network/dcore/node"
 	"github.com/sisu-network/dcore/params"
+	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/utils"
 )
 
 var (
 	basicTxGasLimit = 21000
 	initialBalance  = new(big.Int).Mul(big.NewInt(10000), utils.ONE_ETHER_IN_WEI) // 10,000 ETHER
-	localEthChainId = big.NewInt(1)
+	localEthChainId = libchain.GetChainIntFromId("eth-sisu-local")
 )
 
 func localSisuConfig() *SisuConfig {
@@ -31,7 +32,7 @@ func localSisuConfig() *SisuConfig {
 	sisuConfig := &SisuConfig{
 		Dir:            appDir + "/main",
 		KeyringBackend: keyring.BackendTest,
-		ChainId:        "sisu-dev",
+		ChainId:        "eth-sisu-local",
 		ApiHost:        "0.0.0.0",
 		ApiPort:        25456,
 	}

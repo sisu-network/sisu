@@ -3,6 +3,7 @@ package gen
 import (
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -51,6 +52,8 @@ Example:
 
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			tmConfig := serverCtx.Config
+			tmConfig.LogLevel = ""
+			tmConfig.Consensus.TimeoutCommit = time.Second * 3
 
 			outputDir, _ := cmd.Flags().GetString(flagOutputDir)
 			minGasPrices, _ := cmd.Flags().GetString(server.FlagMinGasPrices)
@@ -62,7 +65,7 @@ Example:
 			enableTss, _ := cmd.Flags().GetBool(flagEnableTss)
 
 			// Get Chain id and keyring backend from .env file.
-			chainID := "sisu-dev"
+			chainID := "eth-sisu-local"
 			keyringBackend := keyring.BackendTest
 
 			nodeConfig := config.Config{
@@ -90,14 +93,14 @@ Example:
 					DheartHost: "0.0.0.0",
 					DheartPort: 5678,
 					SupportedChains: map[string]config.TssChainConfig{
+						"eth-sisu-local": {
+							Symbol:   "eth-sisu-local",
+							Id:       int(libchain.GetChainIntFromId("eth-sisu-local").Int64()),
+							DeyesUrl: "http://0.0.0.0:31001",
+						},
 						"ganache1": {
 							Symbol:   "ganache1",
 							Id:       int(libchain.GetChainIntFromId("ganache1").Int64()),
-							DeyesUrl: "http://0.0.0.0:31001",
-						},
-						"ganache2": {
-							Symbol:   "ganache2",
-							Id:       int(libchain.GetChainIntFromId("ganache2").Int64()),
 							DeyesUrl: "http://0.0.0.0:31001",
 						},
 					},

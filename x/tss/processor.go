@@ -130,7 +130,7 @@ func (p *Processor) connectToDheart() {
 // Connecto to all deyes.
 func (p *Processor) connectToDeyes() {
 	for chain, chainConfig := range p.config.SupportedChains {
-		log.Info("chainConfig.Url = ", chainConfig.DeyesUrl)
+		log.Info("Deyes url = ", chainConfig.DeyesUrl)
 
 		deyeClient, err := tssclients.DialDeyes(chainConfig.DeyesUrl)
 		if err != nil {
