@@ -129,17 +129,13 @@ password: password
 
 #### Run ganache-cli
 
-Download ganache-cli (make sure you have version 6.x) and runs the following commands on 2 different terminals:
+Download ganache-cli (make sure you have version 6.x) and runs the following commands on 1 different terminals:
 
 ```
 ganache-cli --accounts 10 --blockTime 3 --port 7545 --defaultBalanceEther 100000 --networkId 189985 --chainId 189985 --mnemonic "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum"
 ```
 
-```
-ganache-cli --accounts 10 --blockTime 3 --port 8545 --defaultBalanceEther 100000 --networkId 189986 --chainId 189986 --mnemonic "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum"
-```
-
-These commands create 2 simulated blockchains on port 7545 and 8545.
+These commands create a simulated blockchain on port 7545.
 
 #### Run dheart and deyes
 
@@ -166,7 +162,7 @@ Please note that `0x1D156a3e1356b58733305e670D61018001997f6E` could be replaced 
 Alternatively, you can connect to mysql and see the address of the generate key in the `keygen` table. Mysql Workbench is good GUI tool to view and edit myqsl data.
 
 ```
-./sisu dev fund-account ganache1 7545 ganache2 8545 10
+./sisu dev fund-account eth-sisu-local 1234 ganache1 7545 10
 ```
 
 This commands will fund Sisu's signing key account with 10 ethereum. The last number in the command is the amount you want to fund.
@@ -176,7 +172,7 @@ Waits for 10 seconds for the transaction to finalized and for Sisu to deploy its
 Now you can start transferring ERC20 tokens out of a blockchain. You need a deployed ERC20 contract on one of the ganache chain. You can deploy using separate service or use Sisu command line:
 
 ```
-./sisu dev deploy-erc20 ganache1
+./sisu dev deploy-erc20 eth-sisu-local
 ```
 
 Waits for a few seconds and you will see the address the newly deploy ERC20 contract. You can transfer token to second dev chain using this command format:
@@ -188,7 +184,7 @@ Waits for a few seconds and you will see the address the newly deploy ERC20 cont
 For example
 
 ```
-./sisu dev transfer-out erc20 ganache1 7545 0x18eD078Bf666049f02FF8193e0d6B4D45B50329f ganache2 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
+./sisu dev transfer-out erc20 eth-sisu-local 1234 0x3DeaCe7E9C8b6ee632bb71663315d6330914f915 ganache1 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
 ```
 
 Waits a few seconds for the transaction to complete. Afterward, you can query the asset balance on the destination chain:
@@ -196,5 +192,5 @@ Waits a few seconds for the transaction to complete. Afterward, you can query th
 ```
 ./sisu dev query [ContractType] [chain] [AssetId] [AccountAddress]
 
-./sisu dev query erc20 ganache2 ganache1__0x18eD078Bf666049f02FF8193e0d6B4D45B50329f 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
+./sisu dev query erc20 ganache1 eth-sisu-local__0x3DeaCe7E9C8b6ee632bb71663315d6330914f915 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
 ```

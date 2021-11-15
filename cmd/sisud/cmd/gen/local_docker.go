@@ -25,6 +25,7 @@ import (
 	"github.com/sisu-network/cosmos-sdk/types/module"
 	banktypes "github.com/sisu-network/cosmos-sdk/x/bank/types"
 	libchain "github.com/sisu-network/lib/chain"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 )
@@ -54,7 +55,7 @@ necessary files (private validator, genesis, config, etc.).
 Note, strict routability for addresses is turned off in the config file.
 Example:
 	For multiple nodes (running with docker):
-	  ./sisu local-docker --v 2 --output-dir ./output --starting-ip-address 192.168.10.2
+	  ./sisu local-docker --v 2 --output-dir ./output
 	`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -96,7 +97,7 @@ Example:
 			}
 
 			mysqlIp := "192.168.10.4"
-			chainIds := []*big.Int{libchain.GetChainIntFromId("ganache1"), libchain.GetChainIntFromId("ganache2")}
+			chainIds := []*big.Int{libchain.GetChainIntFromId("eth-sisu-local"), libchain.GetChainIntFromId("ganache1")}
 			dockerConfig := getDockerConfig([]string{"192.168.10.2", "192.168.10.3"}, chainIds, "192.168.10.4", ips)
 
 			nodeConfigs := make([]config.Config, numValidators)
@@ -167,6 +168,7 @@ Example:
 
 func cleanData(outputDir string) {
 	if !utils.IsFileExisted(outputDir) {
+		log.Info("Creating output dir...")
 		// Create the folder
 		os.MkdirAll(outputDir, 0755)
 		return
@@ -247,14 +249,14 @@ func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, 
 			DheartHost: fmt.Sprintf("dheart%d", index),
 			DheartPort: 5678,
 			SupportedChains: map[string]config.TssChainConfig{
+				"eth-sisu-local": {
+					Symbol:   "eth-sisu-local",
+					Id:       int(libchain.GetChainIntFromId("eth-sisu-local").Int64()),
+					DeyesUrl: fmt.Sprintf("http://deyes%d:31001", index),
+				},
 				"ganache1": {
 					Symbol:   "ganache1",
 					Id:       int(libchain.GetChainIntFromId("ganache1").Int64()),
-					DeyesUrl: fmt.Sprintf("http://deyes%d:31001", index),
-				},
-				"ganache2": {
-					Symbol:   "ganache2",
-					Id:       int(libchain.GetChainIntFromId("ganache2").Int64()),
 					DeyesUrl: fmt.Sprintf("http://deyes%d:31001", index),
 				},
 			},
@@ -263,20 +265,19 @@ func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, 
 }
 
 // Ip assignments:
-// - 192.168.10.2, .3: ganache
+// - 192.168.10.2, .3: ganache(s)
 // - 192.168.10.4: mysql
 // - 192.168.10.5 onward: for Sisu and others
 func generateDockerCompose(outputPath string, ips []string, dockerConfig DockerNodeConfig) {
-	const dockerComposeTemplate = `version: "3"{{ $ganaches := .Ganaches }}
-services:{{ range $k, $ganache := $ganaches }}
-  ganache{{ $k }}:
+	const dockerComposeTemplate = `version: "3"
+services:
+  ganache1:
     image: ganache-cli
     environment:
       - port=7545
-      - networkId={{ $ganache.ChainId }}
+      - networkId=189985
     ports:
-      - {{ $ganache.HostPort }}:7545
-{{ end }}
+      - 7545:7545
   mysql:
     image: mysql:8.0.19
     command: "--default-authentication-plugin=mysql_native_password"
@@ -327,8 +328,8 @@ services:{{ range $k, $ganache := $ganaches }}
     image: deyes
     restart: on-failure
     depends_on:
-      - mysql{{ range $j, $p := $ganaches }}
-      - ganache{{ $j }}{{ end }}
+      - mysql
+      - ganache1
     volumes:
       - ./node{{ $k }}/deyes.toml:/app/deyes.toml
 {{ end }}
@@ -350,14 +351,12 @@ services:{{ range $k, $ganache := $ganaches }}
 func generateEyesToml(index int, dockerConfig DockerNodeConfig, dir string) {
 	data := struct {
 		Index         int
-		Ganache0      string
 		Ganache1      string
 		SisuServerUrl string
 		SqlSchema     string
 		SqlHost       string
 	}{
 		Index:    index,
-		Ganache0: "ganache0",
 		Ganache1: "ganache1",
 
 		SqlHost:   "mysql",
@@ -376,17 +375,17 @@ server_port = 31001
 sisu_server_url = "{{ .SisuServerUrl }}"
 
 [chains]
+[chains.eth-sisu-local]
+  chain = "eth-sisu-local"
+  block_time = 3000
+  starting_block = 0
+  rpc_url = "http://sisu0:1234"
+
 [chains.ganache1]
   chain = "ganache1"
   block_time = 1000
   starting_block = 0
-  rpc_url = "http://{{ .Ganache0 }}:7545"
-
-[chains.ganache2]
-  chain = "ganache2"
-  block_time = 1000
-  starting_block = 0
-  rpc_url = "http://{{ .Ganache1 }}:7545"
+  rpc_url = "http://ganache1:7545"
 `
 
 	tmpl := template.New("eyesToml")
