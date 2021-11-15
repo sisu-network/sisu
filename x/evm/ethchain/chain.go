@@ -449,7 +449,7 @@ func (self *ETHChain) DeliverTx(tx *types.Transaction) (*types.Receipt, common.H
 	if self.stopping {
 		return nil, emptyRootHash, ERR_SHUTTING_DOWN
 	}
-	log.Debug("Delivering tx.....")
+	log.Debug("EVM: Delivering tx.....")
 
 	receipt, rootHash, err := self.backend.Miner().ExecuteTxSync(tx)
 	if err != nil {
@@ -480,26 +480,28 @@ func (self *ETHChain) onEthTxSubmitted(tx *types.Transaction) error {
 		return err
 	}
 
-	deadline := time.Now().Add(SUBMIT_TX_TIMEOUT)
-	for {
-		_, ok = self.acceptedTxCache.Get(tx.Hash().String())
-		if ok {
-			break
-		}
-
-		if time.Now().After(deadline) {
-			break
-		}
-
-		time.Sleep(1000)
-	}
-
-	// Check if the tx pool has the tx or not.
-	_, ok = self.acceptedTxCache.Get(tx.Hash().String())
-	if !ok {
-		log.Error("Cannot find transaction in the pool.", tx.Hash().String())
-		return fmt.Errorf("Failed to add transaction to the pool")
-	}
-
 	return nil
+
+	// deadline := time.Now().Add(SUBMIT_TX_TIMEOUT)
+	// for {
+	// 	_, ok = self.acceptedTxCache.Get(tx.Hash().String())
+	// 	if ok {
+	// 		break
+	// 	}
+
+	// 	if time.Now().After(deadline) {
+	// 		break
+	// 	}
+
+	// 	time.Sleep(1000)
+	// }
+
+	// // Check if the tx pool has the tx or not.
+	// _, ok = self.acceptedTxCache.Get(tx.Hash().String())
+	// if !ok {
+	// 	log.Error("Cannot find transaction in the pool.", tx.Hash().String())
+	// 	return fmt.Errorf("Failed to add transaction to the pool")
+	// }
+
+	// return nil
 }

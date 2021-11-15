@@ -43,11 +43,13 @@ deploy-erc20 1234
 				panic(err)
 			}
 
+			log.Info("Deploying erc20....")
+
 			bind.WaitDeployed(context.Background(), client, tx)
 
 			time.Sleep(time.Second * 2)
 
-			log.Info("Contract address: ", address.String())
+			log.Info("Deployment done! Contract address: ", address.String())
 
 			// Check sender's balance
 			balance, err := instance.BalanceOf(&bind.CallOpts{Pending: true}, account0.Address)
