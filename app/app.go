@@ -292,7 +292,7 @@ func New(
 		appCodec, keys[sisutypes.StoreKey], keys[sisutypes.MemStoreKey],
 	)
 
-	app.appKeys = common.NewDefaultAppKeys(cfg.Sisu)
+	app.appKeys = common.NewAppKeys(cfg.Sisu)
 	app.appKeys.Init()
 
 	app.globalData = common.NewGlobalData(cfg)
@@ -309,7 +309,7 @@ func New(
 	tssConfig := cfg.Tss
 	log.Info("tssConfig = ", tssConfig)
 
-	app.tssKeeper = *tssKeeper.NewDefaultKeeper(keys[tsstypes.StoreKey])
+	app.tssKeeper = *tssKeeper.NewKeeper(keys[tsstypes.StoreKey])
 
 	//////////////////////////////////////////////////////////////////////
 
