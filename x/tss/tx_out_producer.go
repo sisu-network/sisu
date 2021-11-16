@@ -69,20 +69,22 @@ func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *t
 	return outMsgs, outEntities
 }
 
-func (p *DefaultTxOutputProducer) getKeyAddrs(ctx sdk.Context, chain string) (map[string]map[string]bool, error) {
-	if p.ethKeyAddrs == nil {
-		var err error
-		p.ethKeyAddrs, err = p.keeper.GetAllEthKeyAddrs(ctx)
-		if err != nil {
-			return nil, err
-		}
+func (p *DefaultTxOutputProducer) getEthKeyAddrs(ctx sdk.Context) (map[string]map[string]bool, error) {
+	if p.ethKeyAddrs != nil {
+		return p.ethKeyAddrs, nil
+	}
+
+	var err error
+	p.ethKeyAddrs, err = p.keeper.GetAllEthKeyAddrs(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	return p.ethKeyAddrs, nil
 }
 
 func (p *DefaultTxOutputProducer) AddKeyAddress(ctx sdk.Context, chain, addr string) error {
-	keyAddrs, err := p.getKeyAddrs(ctx, chain)
+	keyAddrs, err := p.getEthKeyAddrs(ctx)
 	if err != nil {
 		return err
 	}
