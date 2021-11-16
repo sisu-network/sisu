@@ -33,7 +33,7 @@ type DefaultAppKeys struct {
 	aesKey     []byte
 }
 
-func NewDefaultAppKeys(cfg config.SisuConfig) *DefaultAppKeys {
+func NewAppKeys(cfg config.SisuConfig) *DefaultAppKeys {
 	return &DefaultAppKeys{
 		cfg: cfg,
 	}
