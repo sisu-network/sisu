@@ -8,7 +8,7 @@ import (
 	"github.com/sisu-network/sisu/x/tss/types"
 )
 
-func (k *Keeper) AllPubKeys(ctx context.Context, req *types.QueryAllPubKeysRequest) (*types.QueryAllPubKeysResponse, error) {
+func (k *DefaultKeeper) AllPubKeys(ctx context.Context, req *types.QueryAllPubKeysRequest) (*types.QueryAllPubKeysResponse, error) {
 	log.Verbose("Fetching all pub keys.")
 
 	sdkCtx := sdk.UnwrapSDKContext(ctx)

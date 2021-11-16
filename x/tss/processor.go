@@ -59,7 +59,7 @@ type Processor struct {
 	db               db.Database
 }
 
-func NewProcessor(keeper keeper.Keeper,
+func NewProcessor(keeper keeper.DefaultKeeper,
 	config config.TssConfig,
 	tendermintPrivKey crypto.PrivKey,
 	appKeys *common.AppKeys,
@@ -69,7 +69,7 @@ func NewProcessor(keeper keeper.Keeper,
 	globalData common.GlobalData,
 ) *Processor {
 	p := &Processor{
-		keeper:            keeper,
+		keeper:            &keeper,
 		db:                db,
 		txDecoder:         txDecoder,
 		appKeys:           appKeys,

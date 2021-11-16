@@ -15,6 +15,7 @@ import (
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/db"
 	"github.com/sisu-network/sisu/x/tss/keeper"
+	chainstore "github.com/sisu-network/sisu/x/tss/store"
 	"github.com/sisu-network/sisu/x/tss/types"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 	tsstypes "github.com/sisu-network/sisu/x/tss/types"
@@ -23,7 +24,7 @@ import (
 // This structs produces transaction output based on input. For a given tx input, this struct
 // produces a list (could contain only one element) of transaction output.
 type TxOutputProducer interface {
-	AddKeyAddress(ctx sdk.Context, chain, addr string)
+	AddKeyAddress(ctx sdk.Context, chain, addr string) error
 	GetTxOuts(ctx sdk.Context, height int64, tx *types.ObservedTx) ([]*tssTypes.TxOut, []*tssTypes.TxOutEntity)
 	SaveContractsToDeploy(chain string)
 }
@@ -69,17 +70,29 @@ func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *t
 	return outMsgs, outEntities
 }
 
-func (p *DefaultTxOutputProducer) getEthKeyAddrs(ctx sdk.Context) map[string]map[string]bool {
-	if p.ethKeyAddrs == nil {
-		p.ethKeyAddrs = p.keeper.GetAllEthKeyAddrs(ctx)
+func (p *DefaultTxOutputProducer) getKeyAddrs(ctx sdk.Context, chain string) (map[string]map[string]bool, error) {
+	chainStore, err := p.keeper.GetChainStore(chainstore.ChainId(chain))
+	if err != nil {
+		return nil, err
 	}
 
-	return p.ethKeyAddrs
+	if p.ethKeyAddrs == nil {
+		p.ethKeyAddrs, err = chainStore.GetAllKeyAddrs(ctx)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return p.ethKeyAddrs, nil
 }
 
-func (p *DefaultTxOutputProducer) AddKeyAddress(ctx sdk.Context, chain, addr string) {
-	ethKeyAddrs := p.getEthKeyAddrs(ctx)
-	m := ethKeyAddrs[chain]
+func (p *DefaultTxOutputProducer) AddKeyAddress(ctx sdk.Context, chain, addr string) error {
+	keyAddrs, err := p.getKeyAddrs(ctx, chain)
+	if err != nil {
+		return err
+	}
+
+	m := keyAddrs[chain]
 	if m == nil {
 		m = make(map[string]bool)
 	}
@@ -87,7 +100,12 @@ func (p *DefaultTxOutputProducer) AddKeyAddress(ctx sdk.Context, chain, addr str
 	p.ethKeyAddrs[chain] = m
 
 	// Save this to KVStore. This data needs to be persisted
-	p.keeper.SaveEthKeyAddrs(ctx, chain, m)
+	chainStore, err := p.keeper.GetChainStore(chainstore.ChainId(chain))
+	if err != nil {
+		return err
+	}
+
+	return chainStore.SaveKeyAddrs(ctx, m)
 }
 
 // Get ETH out from an observed tx. Only do this if this is a validator node.
