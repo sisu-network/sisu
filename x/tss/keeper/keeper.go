@@ -91,9 +91,9 @@ func (k *DefaultKeeper) GetAllPubKeys(ctx sdk.Context) map[string][]byte {
 	return ret
 }
 
-func (s *DefaultKeeper) SaveEthKeyAddrs(ctx sdk.Context, chain string, keyAddrs map[string]bool) error {
+func (k *DefaultKeeper) SaveEthKeyAddrs(ctx sdk.Context, chain string, keyAddrs map[string]bool) error {
 	key := fmt.Sprintf(KEY_ETH_KEY_ADDRESS, chain)
-	store := prefix.NewStore(ctx.KVStore(s.storeKey), PREFIX_ETH_KEY_ADDRESS)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_ETH_KEY_ADDRESS)
 
 	bz, err := json.Marshal(keyAddrs)
 	if err != nil {
@@ -105,9 +105,9 @@ func (s *DefaultKeeper) SaveEthKeyAddrs(ctx sdk.Context, chain string, keyAddrs 
 	return nil
 }
 
-func (s *DefaultKeeper) GetAllEthKeyAddrs(ctx sdk.Context) (map[string]map[string]bool, error) {
+func (k *DefaultKeeper) GetAllEthKeyAddrs(ctx sdk.Context) (map[string]map[string]bool, error) {
 	m := make(map[string]map[string]bool)
-	store := prefix.NewStore(ctx.KVStore(s.storeKey), PREFIX_ETH_KEY_ADDRESS)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_ETH_KEY_ADDRESS)
 
 	iter := store.Iterator(nil, nil)
 	for ; iter.Valid(); iter.Next() {
