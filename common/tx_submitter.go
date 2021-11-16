@@ -191,14 +191,17 @@ func (t *TxSubmitter) Start() {
 
 			// 3. Send all messages
 			msgs := convert(copy)
-			if err := tx.BroadcastTx(t.clientCtx, t.factory, msgs...); err != nil {
+			var buf bytes.Buffer
+			ctxCopy := t.clientCtx.WithOutput(&buf)
+
+			if err := tx.BroadcastTx(ctxCopy, t.factory, msgs...); err != nil {
 				log.Error("Cannot broadcast transaction", err)
 				t.updateStatus(copy, err)
 
-				// Use block sequence for the sequence.
-				t.sequenceLock.Lock()
-				t.curSequence = t.blockSequence
-				t.sequenceLock.Unlock()
+				// // Use block sequence for the sequence.
+				// t.sequenceLock.Lock()
+				// t.curSequence = t.blockSequence
+				// t.sequenceLock.Unlock()
 			} else {
 				log.Debug("Tx submitted successfully")
 				t.updateStatus(copy, ERR_NONE)
@@ -253,6 +256,7 @@ func (t *TxSubmitter) updateStatus(list []*QElementPair, err error) {
 }
 
 func (t *TxSubmitter) SubmitEThTx(data []byte) error {
+	fmt.Println("Cosmos from address", t.clientCtx.GetFromAddress().String())
 	msg := types.NewMsgEthTx(t.clientCtx.GetFromAddress().String(), data)
 	return t.SubmitMessage(msg)
 }

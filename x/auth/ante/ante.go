@@ -7,6 +7,7 @@ import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	cosmosAnte "github.com/sisu-network/cosmos-sdk/x/auth/ante"
 	"github.com/sisu-network/cosmos-sdk/x/auth/signing"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/evm/ethchain"
 	evmKeeper "github.com/sisu-network/sisu/x/evm/keeper"
@@ -38,11 +39,15 @@ func NewAnteHandler(
 		txType, err := getTxType(tx)
 		if err != nil {
 			// TODO: Handle when there are errors here.
+			log.Warn("cannot get tx type, err = ", err)
 			return ctx, err
 		}
 
+		fmt.Println("txType = ", txType)
+
 		switch txType {
 		case TYPE_TX_ETH:
+			fmt.Println("Context check, recheck: ", ctx.IsCheckTx(), ctx.IsReCheckTx())
 			anteHandler = EvmAnteHandler(ctx, tx, ak, bankKeeper, evmKeeper, sigGasConsumer, signModeHandler, ethValidator)
 		case TYPE_TX_TSS:
 			if tssConfig.Enable {
@@ -95,23 +100,24 @@ func EvmAnteHandler(
 	validator ethchain.EthValidator,
 ) sdk.AnteHandler {
 	decors := []cosmosTypes.AnteDecorator{
-		NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
-		NewRejectExtensionOptionsDecorator(),
-		// TODO: Check signature of the sender. Only valdiator can submit evm tx.
-		// NewMempoolFeeDecorator(), // No cosmos mempool
-		NewValidateBasicDecorator(),
-		TxTimeoutHeightDecorator{},
-		NewValidateMemoDecorator(ak),
-		NewConsumeGasForTxSizeDecorator(ak),
-		NewRejectFeeGranterDecorator(),
-		NewSetPubKeyDecorator(ak), // SetPubKeyDecorator must be called before all signature verification decorators
-		NewValidateSigCountDecorator(ak),
-		NewSigVerificationDecorator(ak, signModeHandler),
+		// NewSetUpContextDecorator(), // outermost AnteDecorator. SetUpContext must be called first
+		// NewRejectExtensionOptionsDecorator(),
+		// // TODO: Check signature of the sender. Only valdiator can submit evm tx.
+		// // NewMempoolFeeDecorator(), // No cosmos mempool
+		// NewValidateBasicDecorator(),
+		// TxTimeoutHeightDecorator{},
+		// NewValidateMemoDecorator(ak),
+		// NewConsumeGasForTxSizeDecorator(ak),
+		// NewRejectFeeGranterDecorator(),
+		// NewSetPubKeyDecorator(ak), // SetPubKeyDecorator must be called before all signature verification decorators
+		// NewValidateSigCountDecorator(ak),
+		// NewSigVerificationDecorator(ak, signModeHandler),
 		NewIncrementSequenceDecorator(ak),
 	}
 
 	// If this is a checkTx or recheckTx, check to see if we can add the tx to the ETH mempool.
 	if ctx.IsCheckTx() || ctx.IsReCheckTx() {
+		fmt.Println("Adding evm tx decorator")
 		decors = append(decors, NewEvmTxDecorator(validator))
 	}
 

@@ -431,6 +431,8 @@ func (self *ETHChain) CheckTx(txs []*types.Transaction) error {
 
 	errs := self.backend.TxPool().AddRemotesSync(txs)
 	for i, tx := range txs {
+		log.Debug("Checking tx, hash = ", tx.Hash())
+
 		if errs[i] == nil {
 			self.acceptedTxCache.Add(tx.Hash().String(), tx)
 			log.Debug("Tx is accepted", tx.Hash().String())
@@ -457,10 +459,14 @@ func (self *ETHChain) DeliverTx(tx *types.Transaction) (*types.Receipt, common.H
 		return nil, emptyRootHash, err
 	}
 
+	fmt.Println("Gas used and status =", receipt.GasUsed, receipt.Status)
+
 	return receipt, rootHash, nil
 }
 
 func (self *ETHChain) onEthTxSubmitted(tx *types.Transaction) error {
+	fmt.Println("onEthTxSubmitted tx hash and recipient = ", tx.Hash(), tx.To().Hex())
+
 	_, ok := self.acceptedTxCache.Get(tx.Hash().String())
 	if ok {
 		return fmt.Errorf("The transaction is already accepted for execution.")
@@ -471,12 +477,12 @@ func (self *ETHChain) onEthTxSubmitted(tx *types.Transaction) error {
 		return err
 	}
 
-	js, err := tx.MarshalJSON()
+	bz, err := tx.MarshalBinary()
 	if err != nil {
 		return err
 	}
 
-	if err := self.txSubmit.SubmitEThTx(js); err != nil {
+	if err := self.txSubmit.SubmitEThTx(bz); err != nil {
 		return err
 	}
 

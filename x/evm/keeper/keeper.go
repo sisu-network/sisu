@@ -10,7 +10,8 @@ import (
 	"time"
 
 	ethLog "github.com/ethereum/go-ethereum/log"
-	"github.com/sisu-network/tendermint/libs/log"
+	"github.com/sisu-network/lib/log"
+	tlog "github.com/sisu-network/tendermint/libs/log"
 	"google.golang.org/grpc"
 
 	"github.com/sisu-network/cosmos-sdk/codec"
@@ -21,6 +22,7 @@ import (
 	"github.com/sisu-network/dcore/eth"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/utils"
 	evmCodec "github.com/sisu-network/sisu/x/evm/codec"
 	"github.com/sisu-network/sisu/x/evm/ethchain"
 	"github.com/sisu-network/sisu/x/evm/types"
@@ -88,7 +90,7 @@ func (k *Keeper) createChain() error {
 	return nil
 }
 
-func (k *Keeper) Logger(ctx sdk.Context) log.Logger {
+func (k *Keeper) Logger(ctx sdk.Context) tlog.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
@@ -109,8 +111,11 @@ func (k *Keeper) DeliverTx(etx *etypes.Transaction) ([]byte, error) {
 	// Prefixed length encoded
 	prefixedData, err := evmCodec.EncodePrefixedLength(buff.Bytes())
 	if err != nil {
+		log.Error("cannot encode prefixed length, err = ", err)
 		return []byte{}, nil
 	}
+
+	fmt.Println("Prefix data hash = ", utils.KeccakHash32(string(prefixedData)))
 
 	return prefixedData, err
 }

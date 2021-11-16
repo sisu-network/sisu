@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/sisu-network/cosmos-sdk/types"
-	dtypes "github.com/sisu-network/dcore/core/types"
+	dcoretypes "github.com/sisu-network/dcore/core/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/evm/ethchain"
 	evmTypes "github.com/sisu-network/sisu/x/evm/types"
@@ -42,16 +42,16 @@ func (decorator EvmTxDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate 
 	return next(ctx, tx, simulate)
 }
 
-func (decorator EvmTxDecorator) getEthTxs(msgs []sdk.Msg) []*dtypes.Transaction {
-	txs := make([]*dtypes.Transaction, 0)
+func (decorator EvmTxDecorator) getEthTxs(msgs []sdk.Msg) []*dcoretypes.Transaction {
+	txs := make([]*dcoretypes.Transaction, 0)
 	for _, msg := range msgs {
 		etxMsg, ok := msg.(*evmTypes.EthTx)
 		if !ok {
 			continue
 		}
 
-		etx := new(dtypes.Transaction)
-		err := etx.UnmarshalJSON(etxMsg.Data)
+		etx := new(dcoretypes.Transaction)
+		err := etx.UnmarshalBinary(etxMsg.Data)
 		if err != nil {
 			continue
 		}
