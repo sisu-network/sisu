@@ -35,13 +35,13 @@ type DefaultTxOutputProducer struct {
 
 	worldState    WorldState
 	keeper        keeper.Keeper
-	appKeys       *common.AppKeys
+	appKeys       common.AppKeys
 	db            db.Database
 	ethDeployment *EthDeployment
 	tssConfig     config.TssConfig
 }
 
-func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys *common.AppKeys, db db.Database, tssConfig config.TssConfig) TxOutputProducer {
+func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys common.AppKeys, db db.Database, tssConfig config.TssConfig) TxOutputProducer {
 	return &DefaultTxOutputProducer{
 		worldState:    worldState,
 		keeper:        keeper,

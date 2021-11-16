@@ -16,7 +16,16 @@ import (
 	"github.com/sisu-network/sisu/utils"
 )
 
-type AppKeys struct {
+type AppKeys interface {
+	Init()
+	GetSignerInfo() keyring.Info
+	GetSignerAddress() sdk.AccAddress
+	GetKeyring() keyring.Keyring
+	GetEncryptedPrivKey() ([]byte, error)
+	GetAesEncrypted(msg []byte) ([]byte, error)
+}
+
+type DefaultAppKeys struct {
 	signerInfo keyring.Info
 	kr         keyring.Keyring
 	cfg        config.SisuConfig
@@ -24,13 +33,13 @@ type AppKeys struct {
 	aesKey     []byte
 }
 
-func NewAppKeys(cfg config.SisuConfig) *AppKeys {
-	return &AppKeys{
+func NewDefaultAppKeys(cfg config.SisuConfig) *DefaultAppKeys {
+	return &DefaultAppKeys{
 		cfg: cfg,
 	}
 }
 
-func (ak *AppKeys) Init() {
+func (ak *DefaultAppKeys) Init() {
 	var err error
 	log.Info("ak.cfg.KeyringBackend =", ak.cfg.KeyringBackend)
 	log.Info("ak.cfg.Home =", ak.cfg.Dir)
@@ -62,7 +71,7 @@ If this is a testnet or mainnet, generate account using "sisu keys" command.`))
 	}
 }
 
-func (ak *AppKeys) setPrivateKey() {
+func (ak *DefaultAppKeys) setPrivateKey() {
 	keyType := ak.signerInfo.GetPubKey().Type()
 	unsafe := keyring.NewUnsafe(ak.kr)
 	hexKey, err := unsafe.UnsafeExportPrivKeyHex(ak.signerInfo.GetName())
@@ -82,23 +91,23 @@ func (ak *AppKeys) setPrivateKey() {
 	}
 }
 
-func (ak *AppKeys) GetSignerInfo() keyring.Info {
+func (ak *DefaultAppKeys) GetSignerInfo() keyring.Info {
 	return ak.signerInfo
 }
 
-func (ak *AppKeys) GetSignerAddress() sdk.AccAddress {
+func (ak *DefaultAppKeys) GetSignerAddress() sdk.AccAddress {
 	return ak.signerInfo.GetAddress()
 }
 
-func (ak *AppKeys) GetKeyring() keyring.Keyring {
+func (ak *DefaultAppKeys) GetKeyring() keyring.Keyring {
 	return ak.kr
 }
 
-func (ak *AppKeys) GetEncryptedPrivKey() ([]byte, error) {
+func (ak *DefaultAppKeys) GetEncryptedPrivKey() ([]byte, error) {
 	bz := ak.privateKey.Bytes()
 	return utils.AESDEncrypt(bz, ak.aesKey)
 }
 
-func (ak *AppKeys) GetAesEncrypted(msg []byte) ([]byte, error) {
+func (ak *DefaultAppKeys) GetAesEncrypted(msg []byte) ([]byte, error) {
 	return utils.AESDEncrypt(msg, ak.aesKey)
 }

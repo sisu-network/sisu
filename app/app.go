@@ -177,7 +177,7 @@ var (
 // capabilities aren't needed for testing.
 type App struct {
 	txSubmitter       *common.TxSubmitter
-	appKeys           *common.AppKeys
+	appKeys           *common.DefaultAppKeys
 	globalData        common.GlobalData
 	internalApiServer server.Server
 	tssProcessor      *tss.Processor
@@ -292,7 +292,7 @@ func New(
 		appCodec, keys[sisutypes.StoreKey], keys[sisutypes.MemStoreKey],
 	)
 
-	app.appKeys = common.NewAppKeys(cfg.Sisu)
+	app.appKeys = common.NewDefaultAppKeys(cfg.Sisu)
 	app.appKeys.Init()
 
 	app.globalData = common.NewGlobalData(cfg)

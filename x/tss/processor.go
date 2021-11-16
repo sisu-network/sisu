@@ -36,7 +36,7 @@ type Processor struct {
 	tendermintPrivKey      crypto.PrivKey
 	txSubmit               common.TxSubmit
 	lastProposeBlockHeight int64
-	appKeys                *common.AppKeys
+	appKeys                *common.DefaultAppKeys
 	globalData             common.GlobalData
 	currentHeight          int64
 	partyManager           PartyManager
@@ -62,7 +62,7 @@ type Processor struct {
 func NewProcessor(keeper keeper.DefaultKeeper,
 	config config.TssConfig,
 	tendermintPrivKey crypto.PrivKey,
-	appKeys *common.AppKeys,
+	appKeys *common.DefaultAppKeys,
 	db db.Database,
 	txDecoder sdk.TxDecoder,
 	txSubmit common.TxSubmit,
