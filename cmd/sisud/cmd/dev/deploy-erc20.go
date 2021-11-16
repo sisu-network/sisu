@@ -44,11 +44,8 @@ deploy-erc20 1234
 			}
 
 			log.Info("Deploying erc20....")
-
 			bind.WaitDeployed(context.Background(), client, tx)
-
 			time.Sleep(time.Second * 2)
-
 			log.Info("Deployment done! Contract address: ", address.String())
 
 			// Check sender's balance

@@ -81,12 +81,14 @@ func transferEth(url, recipient string, wallet *hdwallet.Wallet, amount int) {
 		panic(err)
 	}
 
-	log.Info("recipient = ", recipient)
+	log.Info("fromAccount.Address = ", fromAccount.Address, "recipient = ", recipient)
 
 	nonce, err := client.PendingNonceAt(context.Background(), fromAccount.Address)
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Println("Fund account nonce = ", nonce)
 
 	value := new(big.Int).Mul(big.NewInt(1000000000000000000), big.NewInt(int64(amount))) // in wei (10 eth)
 	gasLimit := uint64(21000)                                                             // in units

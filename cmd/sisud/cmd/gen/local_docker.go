@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -66,7 +67,8 @@ Example:
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			tmConfig := serverCtx.Config
 			tmConfig.P2P.AddrBookStrict = false
-			tmConfig.LogLevel = ""
+			tmConfig.LogLevel = "info"
+			tmConfig.Consensus.TimeoutCommit = time.Second * 4
 
 			outputDir, _ := cmd.Flags().GetString(flagOutputDir)
 			minGasPrices, _ := cmd.Flags().GetString(server.FlagMinGasPrices)
@@ -241,7 +243,7 @@ func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, 
 		Eth: config.ETHConfig{
 			Host:          "0.0.0.0",
 			Port:          1234,
-			ImportAccount: false,
+			ImportAccount: true,
 		},
 		Tss: config.TssConfig{
 			Enable: true,

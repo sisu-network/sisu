@@ -10,7 +10,7 @@ import (
 
 func handleSubmittedTx(ctx sdk.Context, k keeper.Keeper, etxMsg *types.EthTx) (*sdk.Result, error) {
 	etx := new(etypes.Transaction)
-	err := etx.UnmarshalJSON(etxMsg.Data)
+	err := etx.UnmarshalBinary(etxMsg.Data)
 	if err != nil {
 		log.Error("Cannot unmarshall etx", err)
 		return &sdk.Result{}, err
