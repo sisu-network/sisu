@@ -15,7 +15,6 @@ import (
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/db"
 	"github.com/sisu-network/sisu/x/tss/keeper"
-	chainstore "github.com/sisu-network/sisu/x/tss/store"
 	"github.com/sisu-network/sisu/x/tss/types"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 	tsstypes "github.com/sisu-network/sisu/x/tss/types"
@@ -71,13 +70,9 @@ func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *t
 }
 
 func (p *DefaultTxOutputProducer) getKeyAddrs(ctx sdk.Context, chain string) (map[string]map[string]bool, error) {
-	chainStore, err := p.keeper.GetChainStore(chainstore.ChainId(chain))
-	if err != nil {
-		return nil, err
-	}
-
 	if p.ethKeyAddrs == nil {
-		p.ethKeyAddrs, err = chainStore.GetAllKeyAddrs(ctx)
+		var err error
+		p.ethKeyAddrs, err = p.keeper.GetAllEthKeyAddrs(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -99,13 +94,7 @@ func (p *DefaultTxOutputProducer) AddKeyAddress(ctx sdk.Context, chain, addr str
 	m[addr] = true
 	p.ethKeyAddrs[chain] = m
 
-	// Save this to KVStore. This data needs to be persisted
-	chainStore, err := p.keeper.GetChainStore(chainstore.ChainId(chain))
-	if err != nil {
-		return err
-	}
-
-	return chainStore.SaveKeyAddrs(ctx, m)
+	return p.keeper.SaveEthKeyAddrs(ctx, chain, m)
 }
 
 // Get ETH out from an observed tx. Only do this if this is a validator node.
