@@ -19,7 +19,7 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/sisu-network/cosmos-sdk v0.42.1-fork004
 	github.com/sisu-network/dcore v0.1.10
-	github.com/sisu-network/deyes v0.1.1
+	github.com/sisu-network/deyes v0.1.2
 	github.com/sisu-network/dheart v0.1.4-alpha4
 	github.com/sisu-network/lib v0.0.1-alpha6
 	github.com/sisu-network/tendermint v0.34.8-fork006
