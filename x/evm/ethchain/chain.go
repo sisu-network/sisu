@@ -146,7 +146,7 @@ func getChainDb(chainConfig *config.ETHConfig) (ethdb.Database, error) {
 func (self *ETHChain) Initialize() error {
 	// Setting log level
 	ethLog.Root().SetHandler(ethLog.LvlFilterHandler(
-		ethLog.LvlCrit, ethLog.StreamHandler(os.Stderr, ethLog.TerminalFormat(false))))
+		ethLog.LvlDebug, ethLog.StreamHandler(os.Stderr, ethLog.TerminalFormat(false))))
 
 	// TODO: handle corrupted DB
 	lastAcceptedBytes, lastAcceptedErr := self.chainDb.Get(lastAcceptedKey)
@@ -459,14 +459,10 @@ func (self *ETHChain) DeliverTx(tx *types.Transaction) (*types.Receipt, common.H
 		return nil, emptyRootHash, err
 	}
 
-	fmt.Println("Gas used and status =", receipt.GasUsed, receipt.Status)
-
 	return receipt, rootHash, nil
 }
 
 func (self *ETHChain) onEthTxSubmitted(tx *types.Transaction) error {
-	fmt.Println("onEthTxSubmitted tx hash and recipient = ", tx.Hash(), tx.To().Hex())
-
 	_, ok := self.acceptedTxCache.Get(tx.Hash().String())
 	if ok {
 		return fmt.Errorf("The transaction is already accepted for execution.")

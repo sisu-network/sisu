@@ -76,8 +76,6 @@ func getAuthTransactor(client *ethclient.Client, address common.Address) (*bind.
 	auth.Value = big.NewInt(0)
 	auth.GasPrice = gasPrice
 
-	fmt.Println("auth.Nonce = ", auth.Nonce)
-
 	// auth.GasLimit = uint64(30 * 1000000) // 30M gas
 	auth.GasLimit = uint64(3000000)
 
