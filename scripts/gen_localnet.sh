@@ -7,8 +7,11 @@ else
     exit 1
 fi
 
-
 ./sisu localnet --enable-tss true
 rm -rf ~/.sisu
 cp -rf ./output/node0/ ~/.sisu
 rm -rf ./output
+
+# Copy dheart.toml to its folder
+mkdir -p ~/.sisu/dheart
+cp ../dheart/dheart.toml ~/.sisu/dheart

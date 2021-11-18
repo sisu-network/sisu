@@ -55,3 +55,7 @@ func (a *ApiHandler) KeysignResult(result *htypes.KeysignResult) {
 	log.Info("There is keysign result")
 	go a.processor.OnKeysignResult(result)
 }
+
+func (a *ApiHandler) PostDeploymentResult(result *etypes.DispatchedTxResult) {
+	go a.processor.OnTxDeploymentResult(result)
+}

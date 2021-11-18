@@ -61,44 +61,13 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 		// If this is a contract deployment transaction, update the contract table with the hash of the
 		// deployment tx bytes.
 		isContractDeployment := chain.IsETHBasedChain(result.OutChain) && p.db.IsContractDeployTx(result.OutChain, result.OutHash)
-		deployedResult, err := p.deploySignedTx(bz, result, isContractDeployment)
+		err = p.deploySignedTx(bz, result, isContractDeployment)
 		if err != nil {
 			log.Error("deployment error: ", err)
 			return
 		}
-
-		if deployedResult == nil {
-			log.Error("deployment result is nil")
-			return
-		}
-
-		if deployedResult.Success {
-			p.onTxDeployed(result.OutChain, result.OutHash, deployedResult, isContractDeployment)
-		}
 	} else {
 		// TODO: handle failure case here.
-	}
-}
-
-func (p *Processor) deploySignedTx(bz []byte, keysignResult *htypes.KeysignResult, isContractDeployment bool) (*eTypes.DispatchedTxResult, error) {
-	log.Debug("Sending final tx to the deyes for deployment for chain", keysignResult.OutChain)
-	deyeClient := p.deyesClients[keysignResult.OutChain]
-
-	pubkey := p.db.GetPubKey(keysignResult.OutChain)
-	if pubkey == nil {
-		return nil, fmt.Errorf("Cannot get pubkey for chain %s", keysignResult.OutChain)
-	}
-
-	if deyeClient != nil {
-		return deyeClient.Dispatch(&eTypes.DispatchedTxRequest{
-			IsEthContractDeployment: isContractDeployment,
-			Chain:                   keysignResult.OutChain,
-			Tx:                      bz,
-			PubKey:                  pubkey,
-		})
-	} else {
-		err := fmt.Errorf("Cannot find deyes client for chain %s", keysignResult.OutChain)
-		return nil, err
 	}
 }
 
@@ -110,18 +79,4 @@ func (p *Processor) DeliverKeysignResult(ctx sdk.Context, msg *types.KeysignResu
 	// TODO: implements this to handle blame.
 
 	return nil, nil
-}
-
-func (p *Processor) onTxDeployed(chain, outHash string, deployResult *eTypes.DispatchedTxResult, isContractDeployment bool) {
-	// If this is a ETH contract deployment, add the deployed address to the watch list.
-
-	if isContractDeployment {
-		// Add this to the watcher address.
-		log.Info("Adding the deployment address to the watch addresss", deployResult.DeployedAddr)
-		deyeClient := p.deyesClients[chain]
-		deyeClient.AddWatchAddresses(chain, []string{deployResult.DeployedAddr})
-
-		// Update database with the deployed address
-		p.db.UpdateContractAddress(chain, outHash, deployResult.DeployedAddr)
-	}
 }
