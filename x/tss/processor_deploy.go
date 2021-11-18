@@ -1,7 +1,10 @@
 package tss
 
 import (
+	"fmt"
+
 	etypes "github.com/sisu-network/deyes/types"
+	htypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/lib/log"
 )
 
@@ -16,7 +19,7 @@ func (p *Processor) deploySignedTx(bz []byte, keysignResult *htypes.KeysignResul
 	}
 
 	if deyeClient != nil {
-		request := &eTypes.DispatchedTxRequest{
+		request := &etypes.DispatchedTxRequest{
 			Chain:                   keysignResult.OutChain,
 			TxHash:                  keysignResult.OutHash,
 			Tx:                      bz,
