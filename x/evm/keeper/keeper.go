@@ -16,7 +16,6 @@ import (
 
 	"github.com/sisu-network/cosmos-sdk/codec"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
-	authKeepr "github.com/sisu-network/cosmos-sdk/x/auth/keeper"
 
 	etypes "github.com/sisu-network/dcore/core/types"
 	"github.com/sisu-network/dcore/eth"
@@ -35,7 +34,6 @@ type Keeper struct {
 	cdc       codec.Marshaler
 	ethConfig *config.ETHConfig
 	chain     *ethchain.ETHChain
-	ak        *authKeepr.AccountKeeper
 }
 
 func NewKeeper(cdc codec.Marshaler, txSubmitter common.TxSubmit, ethConfig *config.ETHConfig) *Keeper {
@@ -115,7 +113,7 @@ func (k *Keeper) DeliverTx(etx *etypes.Transaction) ([]byte, error) {
 		return []byte{}, nil
 	}
 
-	fmt.Println("Prefix data hash = ", utils.KeccakHash32(string(prefixedData)))
+	log.Debug("Prefix data hash = ", utils.KeccakHash32(string(prefixedData)))
 
 	return prefixedData, err
 }

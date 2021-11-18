@@ -191,17 +191,14 @@ func (t *TxSubmitter) Start() {
 
 			// 3. Send all messages
 			msgs := convert(copy)
-			var buf bytes.Buffer
-			ctxCopy := t.clientCtx.WithOutput(&buf)
-
-			if err := tx.BroadcastTx(ctxCopy, t.factory, msgs...); err != nil {
+			if err := tx.BroadcastTx(t.clientCtx, t.factory, msgs...); err != nil {
 				log.Error("Cannot broadcast transaction", err)
 				t.updateStatus(copy, err)
 
-				// // Use block sequence for the sequence.
-				// t.sequenceLock.Lock()
-				// t.curSequence = t.blockSequence
-				// t.sequenceLock.Unlock()
+				// Use block sequence for the sequence.
+				t.sequenceLock.Lock()
+				t.curSequence = t.blockSequence
+				t.sequenceLock.Unlock()
 			} else {
 				log.Debug("Tx submitted successfully")
 				t.updateStatus(copy, ERR_NONE)
@@ -220,7 +217,11 @@ func (t *TxSubmitter) SyncBlockSequence(ctx sdk.Context, ak authkeeper.AccountKe
 		return
 	}
 
-	account := ak.GetAccount(ctx, t.fromAccount)
+	// We create a new context with a new gas meter since ak.GetAccount consumes different gas amount
+	// for different length of the t.fromAccount.
+	copyCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	account := ak.GetAccount(copyCtx, t.fromAccount)
+
 	if account == nil {
 		log.Error("cannot find account in the keeper, account =", t.fromAccount)
 		return
@@ -256,7 +257,6 @@ func (t *TxSubmitter) updateStatus(list []*QElementPair, err error) {
 }
 
 func (t *TxSubmitter) SubmitEThTx(data []byte) error {
-	fmt.Println("Cosmos from address", t.clientCtx.GetFromAddress().String())
 	msg := types.NewMsgEthTx(t.clientCtx.GetFromAddress().String(), data)
 	return t.SubmitMessage(msg)
 }

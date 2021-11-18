@@ -67,7 +67,7 @@ Example:
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			tmConfig := serverCtx.Config
 			tmConfig.P2P.AddrBookStrict = false
-			tmConfig.LogLevel = "info"
+			tmConfig.LogLevel = ""
 			tmConfig.Consensus.TimeoutCommit = time.Second * 4
 
 			outputDir, _ := cmd.Flags().GetString(flagOutputDir)

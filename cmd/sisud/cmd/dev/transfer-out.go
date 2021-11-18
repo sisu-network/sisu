@@ -89,7 +89,7 @@ transfer-out erc20 eth-sisu-local 1234 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd5
 					return err
 				}
 
-				log.Info("Approvng gateway address...")
+				log.Info("Approving gateway address...")
 				amount := big.NewInt(1)
 				approveAddress(erc20Contract, gatewayAddress, amount, client)
 
