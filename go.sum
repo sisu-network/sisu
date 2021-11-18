@@ -1111,6 +1111,8 @@ github.com/sisu-network/cosmos-sdk v0.42.1-fork004 h1:4vIvJfjtB1Iot+eC0tguh1+4K1
 github.com/sisu-network/cosmos-sdk v0.42.1-fork004/go.mod h1:V7tLgqu3o53fQoINKdDjdwVCWzRaJNNHfJktlElkyc8=
 github.com/sisu-network/dcore v0.1.10 h1:+ZTuep2tFdbcRNxOatksXncDeHMAvA2JKbjHy1Oat/o=
 github.com/sisu-network/dcore v0.1.10/go.mod h1:hPlbhvhjnCDwGUz+O3x4cF8FfcXgm64zkPs6Vhn9WEM=
+github.com/sisu-network/deyes v0.1.2 h1:ZAjFdJgKEkk8/bptCd55Fm4DIwGyIT2k1CJTVTUGeM4=
+github.com/sisu-network/deyes v0.1.2/go.mod h1:ISeHUdielLoufABK01i+HjFzhy0NudsfxcokNJ2Go1o=
 github.com/sisu-network/dheart v0.1.4-alpha4 h1:3lSYK2Idj8kn25dS38Lyms0yIrmJdZ/2E9/GZ0ZpBXI=
 github.com/sisu-network/dheart v0.1.4-alpha4/go.mod h1:GXV41d/OcPEA2IYy8XhOHMEm/EaS3ivGNfU1vQLd2PE=
 github.com/sisu-network/lib v0.0.1-alpha6 h1:/FADw8cbMxEhaSoaPm2/t60/LdwVbQVc8KoM5pJqFoc=
