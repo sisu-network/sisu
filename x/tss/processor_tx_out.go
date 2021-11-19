@@ -54,7 +54,7 @@ func (p *Processor) DeliverTxOut(ctx sdk.Context, tx *types.TxOut) ([]byte, erro
 func (p *Processor) deliverTxOutEth(ctx sdk.Context, tx *types.TxOut) ([]byte, error) {
 	outHash := tx.GetHash()
 
-	log.Verbose("Delivering TXOUT")
+	log.Verbose("Delivering TXOUT for chain", tx.OutChain, " tx hash = ", tx.GetHash())
 
 	ethTx := &etypes.Transaction{}
 	if err := ethTx.UnmarshalBinary(tx.OutBytes); err != nil {
