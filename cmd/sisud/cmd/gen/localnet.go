@@ -28,6 +28,7 @@ var (
 	flagEnableTss         = "enable-tss"
 	flagTmpDir            = "tmp-dir"
 	flagChainId           = "chain-id"
+	flagRopstenUrl        = "ropsten-url"
 )
 
 // get cmd to initialize all files for tendermint localnet and application
