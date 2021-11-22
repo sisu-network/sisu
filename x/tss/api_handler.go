@@ -10,10 +10,10 @@ import (
 
 type ApiHandler struct {
 	processor *Processor
-	keeper    *keeper.Keeper
+	keeper    *keeper.DefaultKeeper
 }
 
-func NewApi(processor *Processor, keeper *keeper.Keeper) *ApiHandler {
+func NewApi(processor *Processor, keeper *keeper.DefaultKeeper) *ApiHandler {
 	return &ApiHandler{
 		processor: processor,
 	}
