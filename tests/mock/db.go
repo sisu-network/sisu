@@ -44,98 +44,193 @@ type Database struct {
 }
 
 func (d *Database) Init() error {
-	panic("implement me")
+	if d.InitFunc == nil {
+		return nil
+	}
+
+	return d.InitFunc()
 }
 
 func (d *Database) Close() error {
-	panic("implement me")
+	if d.CloseFunc == nil {
+		return nil
+	}
+
+	return d.CloseFunc()
 }
 
 func (d *Database) CreateKeygen(chain string) error {
-	panic("implement me")
+	if d.CreateKeygenFunc == nil {
+		return nil
+	}
+
+	return d.CreateKeygenFunc(chain)
 }
 
 func (d *Database) UpdateKeygenAddress(chain, address string, pubKey []byte) {
-	panic("implement me")
+	if d.UpdateKeygenAddressFunc == nil {
+		return
+	}
+
+	d.UpdateKeygenAddressFunc(chain, address, pubKey)
 }
 
 func (d *Database) IsKeyExisted(chain string) bool {
-	panic("implement me")
+	if d.IsKeyExistedFunc == nil {
+		return false
+	}
+
+	return d.IsKeyExistedFunc(chain)
 }
 
 func (d *Database) IsChainKeyAddress(chain, address string) bool {
-	panic("implement me")
+	if d.IsChainKeyAddressFunc == nil {
+		return false
+	}
+
+	return d.IsChainKeyAddressFunc(chain, address)
 }
 
 func (d *Database) GetPubKey(chain string) []byte {
-	panic("implement me")
+	if d.GetPubKeyFunc == nil {
+		return nil
+	}
+
+	return d.GetPubKeyFunc(chain)
 }
 
 func (d *Database) UpdateKeygenStatus(chain, status string) {
-	panic("implement me")
+	if d.UpdateKeygenStatusFunc == nil {
+		return
+	}
+
+	d.UpdateKeygenStatusFunc(chain, status)
 }
 
 func (d *Database) GetKeygenStatus(chain string) (string, error) {
-	panic("implement me")
+	if d.GetKeygenStatusFunc == nil {
+		return "", nil
+	}
+
+	return d.GetKeygenStatusFunc(chain)
 }
 
 func (d *Database) InsertContracts(contracts []*tsstypes.ContractEntity) {
-	panic("implement me")
+	if d.InsertContractsFunc == nil {
+		return
+	}
+
+	d.InsertContractsFunc(contracts)
 }
 
 func (d *Database) GetPendingDeployContracts(chain string) []*tsstypes.ContractEntity {
-	panic("implement me")
+	if d.GetPendingDeployContractsFunc == nil {
+		return nil
+	}
+
+	return d.GetPendingDeployContractsFunc(chain)
 }
 
 func (d *Database) GetContractFromAddress(chain, address string) *tsstypes.ContractEntity {
-	panic("implement me")
+	if d.GetContractFromAddressFunc == nil {
+		return nil
+	}
+
+	return d.GetContractFromAddressFunc(chain, address)
 }
 
 func (d *Database) GetContractFromHash(chain, hash string) *tsstypes.ContractEntity {
-	panic("implement me")
+	if d.GetContractFromHashFunc == nil {
+		return nil
+	}
+
+	return d.GetContractFromHashFunc(chain, hash)
 }
 
 func (d *Database) UpdateContractsStatus(contracts []*tsstypes.ContractEntity, status string) {
-	panic("implement me")
+	if d.UpdateContractsStatusFunc == nil {
+		return
+	}
+
+	d.UpdateContractsStatusFunc(contracts, status)
 }
 
 func (d *Database) UpdateContractDeployTx(chain, id string, txHash string) {
-	panic("implement me")
+	if d.UpdateContractDeployTxFunc == nil {
+		return
+	}
+
+	d.UpdateContractDeployTxFunc(chain, id, txHash)
 }
 
 func (d *Database) UpdateContractAddress(chain, hash, address string) {
-	panic("implement me")
+	if d.UpdateContractAddressFunc == nil {
+		return
+	}
+
+	d.UpdateContractAddressFunc(chain, hash, address)
 }
 
 func (d *Database) InsertTxOuts(txs []*tsstypes.TxOutEntity) {
-	panic("implement me")
+	if d.InsertTxOutsFunc == nil {
+		return
+	}
+
+	d.InsertTxOutsFunc(txs)
 }
 
 func (d *Database) GetTxOutWithHash(chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity {
-	panic("implement me")
+	if d.GetTxOutWithHashFunc == nil {
+		return nil
+	}
+
+	return d.GetTxOutWithHashFunc(chain, hash, isHashWithSig)
 }
 
 func (d *Database) IsContractDeployTx(chain string, hashWithoutSig string) bool {
-	panic("implement me")
+	if d.IsContractDeployTxFunc == nil {
+		return false
+	}
+
+	return d.IsContractDeployTxFunc(chain, hashWithoutSig)
 }
 
 func (d *Database) UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string, sig []byte) {
-	panic("implement me")
+	if d.UpdateTxOutSigFunc == nil {
+		return
+	}
+
+	d.UpdateTxOutSigFunc(chain, hashWithoutSign, hashWithSig, sig)
 }
 
 func (d *Database) UpdateTxOutStatus(chain, hashWithoutSig, status string) {
-	panic("implement me")
+	if d.UpdateTxOutStatusFunc == nil {
+		return
+	}
+
+	d.UpdateTxOutStatusFunc(chain, hashWithoutSig, status)
 }
 
 func (d *Database) InsertMempoolTxHash(hash string, blockHeight int64) {
-	panic("implement me")
+	if d.InsertContractsFunc == nil {
+		return
+	}
+
+	d.InsertMempoolTxHashFunc(hash, blockHeight)
 }
 
 func (d *Database) MempoolTxExisted(hash string) bool {
-	panic("implement me")
+	if d.MempoolTxExistedFunc == nil {
+		return false
+	}
+
+	return d.MempoolTxExistedFunc(hash)
 }
 
 func (d *Database) MempoolTxExistedRange(hash string, minBlock int64, maxBlock int64) bool {
-	panic("implement me")
-}
+	if d.MempoolTxExistedRangeFunc == nil {
+		return false
+	}
 
+	return d.MempoolTxExistedRangeFunc(hash, minBlock, maxBlock)
+}
