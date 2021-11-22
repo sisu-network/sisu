@@ -1,71 +1,128 @@
 package tss
 
 import (
-	"sync/atomic"
+	"strings"
 	"testing"
 
+	"github.com/sisu-network/cosmos-sdk/crypto/keys/ed25519"
+	sdk "github.com/sisu-network/cosmos-sdk/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
-	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/tests/mock"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/tss/types"
+	"github.com/stretchr/testify/require"
 )
 
 func TestProcessor_OnObservedTxs(t *testing.T) {
 	t.Parallel()
 
-	t.Run("empty_txs", func(t *testing.T) {
+	t.Run("empty_tx", func(t *testing.T) {
 		t.Parallel()
 
-		processor := initProcessor()
-		processor.OnObservedTxs(&eyesTypes.Txs{})
+		processor := &Processor{}
+		require.NoError(t, processor.OnObservedTxs(&eyesTypes.Txs{}))
 	})
 
-	t.Run("success_new_observe_txs", func(t *testing.T) {
+	t.Run("success_from_our_key", func(t *testing.T) {
 		t.Parallel()
 
+		var (
+			calledUpdateTxOutStatusFunc, calledGetTxOutWithHashFunc, calledUpdateContractsStatusFunc bool
+		)
+
+		observedChain := "eth"
+		keygenAddress := utils.RandomHeximalString(64)
+
+		// Define mock db
 		mockDb := &mock.Database{}
 		mockDb.IsChainKeyAddressFunc = func(chain, address string) bool {
-			return true
+			return strings.EqualFold(chain, observedChain) && strings.EqualFold(address, keygenAddress)
+		}
+		mockDb.UpdateTxOutStatusFunc = func(chain, hashWithoutSig, status string) error {
+			calledUpdateTxOutStatusFunc = true
+			return nil
+		}
+		mockDb.GetTxOutWithHashFunc = func(chain string, hash string, isHashWithSig bool) *types.TxOutEntity {
+			calledGetTxOutWithHashFunc = true
+			return &types.TxOutEntity{
+				ContractHash: utils.RandomHeximalString(64),
+			}
+		}
+		mockDb.UpdateContractsStatusFunc = func(contracts []*types.ContractEntity, status string) error {
+			calledUpdateContractsStatusFunc = true
+			return nil
 		}
 
 		txs := &eyesTypes.Txs{
-			Chain: utils.RandomString(10, utils.AlphaNumericCharacters),
+			Chain: observedChain,
 			Block: int64(utils.RandomNaturalNumber(1000)),
 			Arr: []*eyesTypes.Tx{{
 				Hash:       utils.RandomHeximalString(64),
-				Serialized: nil,
-				To:         utils.RandomHeximalString(64),
+				Serialized: []byte{},
+				From:       keygenAddress,
+			}},
+		}
+		processor := &Processor{}
+		processor.db = mockDb
+
+		require.NoError(t, processor.OnObservedTxs(txs))
+		require.True(t, calledUpdateTxOutStatusFunc)
+		require.True(t, calledGetTxOutWithHashFunc)
+		require.True(t, calledUpdateContractsStatusFunc)
+	})
+
+	t.Run("success_to_our_key", func(t *testing.T) {
+		t.Parallel()
+
+		var (
+			calledIsChainKeyAddressFunc, calledGetSignerAddressFunc bool
+		)
+
+		observedChain := "eth"
+		keygenAddress := utils.RandomHeximalString(64)
+
+		// Define mock db
+		mockDb := &mock.Database{}
+		mockDb.IsChainKeyAddressFunc = func(chain, address string) bool {
+			calledIsChainKeyAddressFunc = true
+			return false
+		}
+
+		// Define mock app keys manager
+		priv := ed25519.GenPrivKey()
+		addr := sdk.AccAddress(priv.PubKey().Address())
+		appKeys := &mock.AppKeys{}
+		appKeys.GetSignerAddressFunc = func() sdk.AccAddress {
+			calledGetSignerAddressFunc = true
+			return addr
+		}
+
+		// Define mock tx submitter
+		txSubmitter := &mock.TxSubmitter{}
+		txSubmitter.SubmitMessageFunc = func(msg sdk.Msg) error {
+			return nil
+		}
+
+		txs := &eyesTypes.Txs{
+			Chain: observedChain,
+			Block: int64(utils.RandomNaturalNumber(1000)),
+			Arr: []*eyesTypes.Tx{{
+				Hash:       utils.RandomHeximalString(64),
+				Serialized: []byte{},
+				To:         keygenAddress,
 				From:       utils.RandomHeximalString(64),
 			}},
 		}
-		processor := initProcessor()
-		processor.db = mockDb
 
-		processor.OnObservedTxs(txs)
+		// Init processor with mocks
+		processor := &Processor{
+			db:       mockDb,
+			appKeys:  appKeys,
+			txSubmit: txSubmitter,
+		}
+
+		require.NoError(t, processor.OnObservedTxs(txs))
+		require.True(t, calledIsChainKeyAddressFunc)
+		require.True(t, calledGetSignerAddressFunc)
 	})
-}
-
-func initProcessor() *Processor {
-	return &Processor{
-		keeper:                 nil,
-		config:                 config.TssConfig{},
-		tendermintPrivKey:      nil,
-		txSubmit:               &mock.TxSubmitter{},
-		lastProposeBlockHeight: 0,
-		appKeys:                nil,
-		globalData:             nil,
-		currentHeight:          0,
-		partyManager:           nil,
-		txOutputProducer:       nil,
-		lastContext:            atomic.Value{},
-		checkDuplicatedTxFunc:  nil,
-		txDecoder:              nil,
-		keyAddress:             "",
-		dheartClient:           nil,
-		deyesClients:           nil,
-		worldState:             nil,
-		keygenVoteResult:       nil,
-		keygenBlockPairs:       nil,
-		db:                     &mock.Database{},
-	}
 }

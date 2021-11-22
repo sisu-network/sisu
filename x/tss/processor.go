@@ -36,7 +36,7 @@ type Processor struct {
 	tendermintPrivKey      crypto.PrivKey
 	txSubmit               common.TxSubmit
 	lastProposeBlockHeight int64
-	appKeys                *common.DefaultAppKeys
+	appKeys                common.AppKeys
 	globalData             common.GlobalData
 	currentHeight          int64
 	partyManager           PartyManager

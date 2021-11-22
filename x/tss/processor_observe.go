@@ -11,14 +11,15 @@ import (
 )
 
 // Processed list of transactions sent from deyes to Sisu api server.
-func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) {
+// TODO: handle error correctly
+func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) error {
 	log.Verbose("There is a new list of txs from deyes, len =", len(txs.Arr))
 
 	// Create ObservedTx messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
 		// 1. Check if this tx is from one of our key. If it is, update the status of TxOut to confirmed.
 		if p.db.IsChainKeyAddress(txs.Chain, tx.From) {
-			p.confirmTx(tx, txs.Chain)
+			return p.confirmTx(tx, txs.Chain)
 		} else if len(tx.To) > 0 {
 			// 2. This is a transaction to our key account or one of our contracts. Create a message to
 			// indicate that we have observed this transaction and broadcast it to cosmos chain.
@@ -34,6 +35,8 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) {
 			go p.txSubmit.SubmitMessage(observedTxs)
 		}
 	}
+
+	return nil
 }
 
 func (p *Processor) CheckObservedTxs(ctx sdk.Context, msgs *tssTypes.ObservedTx) error {
@@ -51,14 +54,16 @@ func (p *Processor) DeliverObservedTxs(ctx sdk.Context, tx *tssTypes.ObservedTx)
 	return nil, nil
 }
 
-func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string) {
+func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string) error {
 	log.Verbose("This is a transaction from us. We need to confirm it. Chain =", chain)
 
 	txHash := utils.KeccakHash32(string(tx.Serialized))
-	p.db.UpdateTxOutStatus(chain, txHash, types.TxOutStatusConfirmed)
+	if err := p.db.UpdateTxOutStatus(chain, txHash, types.TxOutStatusConfirmed); err != nil {
+		return err
+	}
 
 	// If this is a contract deployment, mark the contract as deployed.
-	if libchain.IsETHBasedChain(chain) && tx.To == "" {
+	if libchain.IsETHBasedChain(chain) && len(tx.To) == 0 {
 		log.Info("This is a tx deployment")
 		txOut := p.db.GetTxOutWithHash(chain, txHash, true)
 
@@ -72,4 +77,6 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string) {
 			}, tssTypes.ContractStateDeployed)
 		}
 	}
+
+	return nil
 }
