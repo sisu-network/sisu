@@ -51,7 +51,7 @@ type TxSubmit interface {
 
 type TxSubmitter struct {
 	sisuHome string
-	appKeys  *AppKeys
+	appKeys  *DefaultAppKeys
 	cfg      config.Config
 
 	// internal
@@ -80,7 +80,7 @@ var (
 	nodeAddress = "http://0.0.0.0:26657"
 )
 
-func NewTxSubmitter(cfg config.Config, appKeys *AppKeys) *TxSubmitter {
+func NewTxSubmitter(cfg config.Config, appKeys *DefaultAppKeys) *TxSubmitter {
 	t := &TxSubmitter{
 		appKeys:         appKeys,
 		cfg:             cfg,
