@@ -19,9 +19,9 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) {
 		// 1. Check if this tx is from one of our key. If it is, update the status of TxOut to confirmed.
 		if p.db.IsChainKeyAddress(txs.Chain, tx.From) {
 			p.confirmTx(tx, txs.Chain)
-		} else if tx.To != "" {
+		} else if len(tx.To) > 0 {
 			// 2. This is a transaction to our key account or one of our contracts. Create a message to
-			// indicate that we have observed this transction and broadcast it to cosmos chain.
+			// indicate that we have observed this transaction and broadcast it to cosmos chain.
 			hash := utils.GetObservedTxHash(txs.Block, txs.Chain, tx.Serialized)
 
 			observedTxs := tssTypes.NewObservedTxs(
