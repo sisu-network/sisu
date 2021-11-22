@@ -34,8 +34,8 @@ type Database struct {
 	InsertTxOutsFunc       func(txs []*tsstypes.TxOutEntity)
 	GetTxOutWithHashFunc   func(chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity
 	IsContractDeployTxFunc func(chain string, hashWithoutSig string) bool
-	UpdateTxOutSigFunc     func(chain, hashWithoutSign, hashWithSig string, sig []byte)
-	UpdateTxOutStatusFunc  func(chain, hashWithoutSig, status string)
+	UpdateTxOutSigFunc     func(chain, hashWithoutSign, hashWithSig string, sig []byte) error
+	UpdateTxOutStatusFunc  func(chain, hashWithoutSig, status string) error
 
 	// Mempool tx
 	InsertMempoolTxHashFunc   func(hash string, blockHeight int64)
@@ -45,7 +45,7 @@ type Database struct {
 
 func (d *Database) Init() error {
 	if d.InitFunc == nil {
-		return nil
+		panic("function is not defined")
 	}
 
 	return d.InitFunc()
@@ -53,7 +53,7 @@ func (d *Database) Init() error {
 
 func (d *Database) Close() error {
 	if d.CloseFunc == nil {
-		return nil
+		panic("function is not defined")
 	}
 
 	return d.CloseFunc()
@@ -61,7 +61,7 @@ func (d *Database) Close() error {
 
 func (d *Database) CreateKeygen(chain string) error {
 	if d.CreateKeygenFunc == nil {
-		return nil
+		panic("function is not defined")
 	}
 
 	return d.CreateKeygenFunc(chain)
@@ -69,7 +69,7 @@ func (d *Database) CreateKeygen(chain string) error {
 
 func (d *Database) UpdateKeygenAddress(chain, address string, pubKey []byte) {
 	if d.UpdateKeygenAddressFunc == nil {
-		return
+		panic("function is not defined")
 	}
 
 	d.UpdateKeygenAddressFunc(chain, address, pubKey)
@@ -77,7 +77,7 @@ func (d *Database) UpdateKeygenAddress(chain, address string, pubKey []byte) {
 
 func (d *Database) IsKeyExisted(chain string) bool {
 	if d.IsKeyExistedFunc == nil {
-		return false
+		panic("function is not defined")
 	}
 
 	return d.IsKeyExistedFunc(chain)
@@ -85,7 +85,7 @@ func (d *Database) IsKeyExisted(chain string) bool {
 
 func (d *Database) IsChainKeyAddress(chain, address string) bool {
 	if d.IsChainKeyAddressFunc == nil {
-		return false
+		panic("function is not defined")
 	}
 
 	return d.IsChainKeyAddressFunc(chain, address)
@@ -93,7 +93,7 @@ func (d *Database) IsChainKeyAddress(chain, address string) bool {
 
 func (d *Database) GetPubKey(chain string) []byte {
 	if d.GetPubKeyFunc == nil {
-		return nil
+		panic("function is not defined")
 	}
 
 	return d.GetPubKeyFunc(chain)
@@ -101,7 +101,7 @@ func (d *Database) GetPubKey(chain string) []byte {
 
 func (d *Database) UpdateKeygenStatus(chain, status string) {
 	if d.UpdateKeygenStatusFunc == nil {
-		return
+		panic("function is not defined")
 	}
 
 	d.UpdateKeygenStatusFunc(chain, status)
@@ -109,7 +109,7 @@ func (d *Database) UpdateKeygenStatus(chain, status string) {
 
 func (d *Database) GetKeygenStatus(chain string) (string, error) {
 	if d.GetKeygenStatusFunc == nil {
-		return "", nil
+		panic("function is not defined")
 	}
 
 	return d.GetKeygenStatusFunc(chain)
@@ -117,7 +117,7 @@ func (d *Database) GetKeygenStatus(chain string) (string, error) {
 
 func (d *Database) InsertContracts(contracts []*tsstypes.ContractEntity) {
 	if d.InsertContractsFunc == nil {
-		return
+		panic("function is not defined")
 	}
 
 	d.InsertContractsFunc(contracts)
@@ -125,7 +125,7 @@ func (d *Database) InsertContracts(contracts []*tsstypes.ContractEntity) {
 
 func (d *Database) GetPendingDeployContracts(chain string) []*tsstypes.ContractEntity {
 	if d.GetPendingDeployContractsFunc == nil {
-		return nil
+		panic("function is not defined")
 	}
 
 	return d.GetPendingDeployContractsFunc(chain)
@@ -133,7 +133,7 @@ func (d *Database) GetPendingDeployContracts(chain string) []*tsstypes.ContractE
 
 func (d *Database) GetContractFromAddress(chain, address string) *tsstypes.ContractEntity {
 	if d.GetContractFromAddressFunc == nil {
-		return nil
+		panic("function is not defined")
 	}
 
 	return d.GetContractFromAddressFunc(chain, address)
@@ -141,7 +141,7 @@ func (d *Database) GetContractFromAddress(chain, address string) *tsstypes.Contr
 
 func (d *Database) GetContractFromHash(chain, hash string) *tsstypes.ContractEntity {
 	if d.GetContractFromHashFunc == nil {
-		return nil
+		panic("function is not defined")
 	}
 
 	return d.GetContractFromHashFunc(chain, hash)
@@ -149,7 +149,7 @@ func (d *Database) GetContractFromHash(chain, hash string) *tsstypes.ContractEnt
 
 func (d *Database) UpdateContractsStatus(contracts []*tsstypes.ContractEntity, status string) {
 	if d.UpdateContractsStatusFunc == nil {
-		return
+		panic("function is not defined")
 	}
 
 	d.UpdateContractsStatusFunc(contracts, status)
@@ -157,7 +157,7 @@ func (d *Database) UpdateContractsStatus(contracts []*tsstypes.ContractEntity, s
 
 func (d *Database) UpdateContractDeployTx(chain, id string, txHash string) {
 	if d.UpdateContractDeployTxFunc == nil {
-		return
+		panic("function is not defined")
 	}
 
 	d.UpdateContractDeployTxFunc(chain, id, txHash)
@@ -165,7 +165,7 @@ func (d *Database) UpdateContractDeployTx(chain, id string, txHash string) {
 
 func (d *Database) UpdateContractAddress(chain, hash, address string) {
 	if d.UpdateContractAddressFunc == nil {
-		return
+		panic("function is not defined")
 	}
 
 	d.UpdateContractAddressFunc(chain, hash, address)
@@ -173,7 +173,7 @@ func (d *Database) UpdateContractAddress(chain, hash, address string) {
 
 func (d *Database) InsertTxOuts(txs []*tsstypes.TxOutEntity) {
 	if d.InsertTxOutsFunc == nil {
-		return
+		panic("function is not defined")
 	}
 
 	d.InsertTxOutsFunc(txs)
@@ -181,7 +181,7 @@ func (d *Database) InsertTxOuts(txs []*tsstypes.TxOutEntity) {
 
 func (d *Database) GetTxOutWithHash(chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity {
 	if d.GetTxOutWithHashFunc == nil {
-		return nil
+		panic("function is not defined")
 	}
 
 	return d.GetTxOutWithHashFunc(chain, hash, isHashWithSig)
@@ -189,31 +189,31 @@ func (d *Database) GetTxOutWithHash(chain string, hash string, isHashWithSig boo
 
 func (d *Database) IsContractDeployTx(chain string, hashWithoutSig string) bool {
 	if d.IsContractDeployTxFunc == nil {
-		return false
+		panic("function is not defined")
 	}
 
 	return d.IsContractDeployTxFunc(chain, hashWithoutSig)
 }
 
-func (d *Database) UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string, sig []byte) {
+func (d *Database) UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string, sig []byte) error {
 	if d.UpdateTxOutSigFunc == nil {
-		return
+		panic("function is not defined")
 	}
 
-	d.UpdateTxOutSigFunc(chain, hashWithoutSign, hashWithSig, sig)
+	return d.UpdateTxOutSigFunc(chain, hashWithoutSign, hashWithSig, sig)
 }
 
-func (d *Database) UpdateTxOutStatus(chain, hashWithoutSig, status string) {
+func (d *Database) UpdateTxOutStatus(chain, hashWithoutSig, status string) error {
 	if d.UpdateTxOutStatusFunc == nil {
-		return
+		panic("function is not defined")
 	}
 
-	d.UpdateTxOutStatusFunc(chain, hashWithoutSig, status)
+	return d.UpdateTxOutStatusFunc(chain, hashWithoutSig, status)
 }
 
 func (d *Database) InsertMempoolTxHash(hash string, blockHeight int64) {
 	if d.InsertContractsFunc == nil {
-		return
+		panic("function is not defined")
 	}
 
 	d.InsertMempoolTxHashFunc(hash, blockHeight)
@@ -221,7 +221,7 @@ func (d *Database) InsertMempoolTxHash(hash string, blockHeight int64) {
 
 func (d *Database) MempoolTxExisted(hash string) bool {
 	if d.MempoolTxExistedFunc == nil {
-		return false
+		panic("function is not defined")
 	}
 
 	return d.MempoolTxExistedFunc(hash)
@@ -229,7 +229,7 @@ func (d *Database) MempoolTxExisted(hash string) bool {
 
 func (d *Database) MempoolTxExistedRange(hash string, minBlock int64, maxBlock int64) bool {
 	if d.MempoolTxExistedRangeFunc == nil {
-		return false
+		panic("function is not defined")
 	}
 
 	return d.MempoolTxExistedRangeFunc(hash, minBlock, maxBlock)
