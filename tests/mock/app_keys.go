@@ -18,7 +18,7 @@ type AppKeys struct {
 	GetAesEncryptedFunc     func(msg []byte) ([]byte, error)
 }
 
-func (a AppKeys) Init() {
+func (a *AppKeys) Init() {
 	if a.InitFunc == nil {
 		panic("function is not defined")
 	}
@@ -26,7 +26,7 @@ func (a AppKeys) Init() {
 	a.InitFunc()
 }
 
-func (a AppKeys) GetSignerInfo() keyring.Info {
+func (a *AppKeys) GetSignerInfo() keyring.Info {
 	if a.GetSignerInfoFunc == nil {
 		panic("function is not defined")
 	}
@@ -34,7 +34,7 @@ func (a AppKeys) GetSignerInfo() keyring.Info {
 	return a.GetSignerInfoFunc()
 }
 
-func (a AppKeys) GetSignerAddress() sdk.AccAddress {
+func (a *AppKeys) GetSignerAddress() sdk.AccAddress {
 	if a.GetSignerAddressFunc == nil {
 		panic("function is not defined")
 	}
@@ -42,7 +42,7 @@ func (a AppKeys) GetSignerAddress() sdk.AccAddress {
 	return a.GetSignerAddressFunc()
 }
 
-func (a AppKeys) GetKeyring() keyring.Keyring {
+func (a *AppKeys) GetKeyring() keyring.Keyring {
 	if a.GetKeyringFunc == nil {
 		panic("function is not defined")
 	}
@@ -50,7 +50,7 @@ func (a AppKeys) GetKeyring() keyring.Keyring {
 	return a.GetKeyringFunc()
 }
 
-func (a AppKeys) GetEncryptedPrivKey() ([]byte, error) {
+func (a *AppKeys) GetEncryptedPrivKey() ([]byte, error) {
 	if a.GetAesEncryptedFunc == nil {
 		panic("function is not defined")
 	}
@@ -58,7 +58,7 @@ func (a AppKeys) GetEncryptedPrivKey() ([]byte, error) {
 	return a.GetEncryptedPrivKeyFunc()
 }
 
-func (a AppKeys) GetAesEncrypted(msg []byte) ([]byte, error) {
+func (a *AppKeys) GetAesEncrypted(msg []byte) ([]byte, error) {
 	if a.GetAesEncryptedFunc == nil {
 		panic("function is not defined")
 	}
