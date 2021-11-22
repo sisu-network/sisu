@@ -20,6 +20,9 @@ const (
 	STATUS_DELIVERED_TO_CHAIN = "delivered_to_chain"
 )
 
+// Make sure struct implement interface at compile-time
+var _ Database = (*SqlDatabase)(nil)
+
 type Database interface {
 	Init() error
 	Close() error
