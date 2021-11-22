@@ -26,7 +26,7 @@ type Database struct {
 	GetPendingDeployContractsFunc func(chain string) []*tsstypes.ContractEntity
 	GetContractFromAddressFunc    func(chain, address string) *tsstypes.ContractEntity
 	GetContractFromHashFunc       func(chain, hash string) *tsstypes.ContractEntity
-	UpdateContractsStatusFunc     func(contracts []*tsstypes.ContractEntity, status string)
+	UpdateContractsStatusFunc     func(contracts []*tsstypes.ContractEntity, status string) error
 	UpdateContractDeployTxFunc    func(chain, id string, txHash string)
 	UpdateContractAddressFunc     func(chain, hash, address string)
 
@@ -147,12 +147,12 @@ func (d *Database) GetContractFromHash(chain, hash string) *tsstypes.ContractEnt
 	return d.GetContractFromHashFunc(chain, hash)
 }
 
-func (d *Database) UpdateContractsStatus(contracts []*tsstypes.ContractEntity, status string) {
+func (d *Database) UpdateContractsStatus(contracts []*tsstypes.ContractEntity, status string) error {
 	if d.UpdateContractsStatusFunc == nil {
 		panic("function is not defined")
 	}
 
-	d.UpdateContractsStatusFunc(contracts, status)
+	return d.UpdateContractsStatusFunc(contracts, status)
 }
 
 func (d *Database) UpdateContractDeployTx(chain, id string, txHash string) {
