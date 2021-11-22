@@ -13,3 +13,4 @@ func GenerateRandomString(n int) string {
 	}
 	return string(b)
 }
+
