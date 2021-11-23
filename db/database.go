@@ -20,6 +20,9 @@ const (
 	STATUS_DELIVERED_TO_CHAIN = "delivered_to_chain"
 )
 
+// Make sure struct implement interface at compile-time
+var _ Database = (*SqlDatabase)(nil)
+
 type Database interface {
 	Init() error
 	Close() error
@@ -39,7 +42,7 @@ type Database interface {
 	GetPendingDeployContracts(chain string) []*tsstypes.ContractEntity
 	GetContractFromAddress(chain, address string) *tsstypes.ContractEntity
 	GetContractFromHash(chain, hash string) *tsstypes.ContractEntity
-	UpdateContractsStatus(contracts []*tsstypes.ContractEntity, status string)
+	UpdateContractsStatus(contracts []*tsstypes.ContractEntity, status string) error
 	UpdateContractDeployTx(chain, id string, txHash string)
 	UpdateContractAddress(chain, hash, address string)
 
@@ -47,8 +50,8 @@ type Database interface {
 	InsertTxOuts(txs []*tsstypes.TxOutEntity)
 	GetTxOutWithHash(chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity
 	IsContractDeployTx(chain string, hashWithoutSig string) bool
-	UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string, sig []byte)
-	UpdateTxOutStatus(chain, hashWithoutSig, status string)
+	UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string, sig []byte) error
+	UpdateTxOutStatus(chain, hashWithoutSig, status string) error
 
 	// Mempool tx
 	InsertMempoolTxHash(hash string, blockHeight int64)
@@ -398,16 +401,18 @@ func (d *SqlDatabase) GetContractFromHash(chain, hash string) *tsstypes.Contract
 	return nil
 }
 
-func (d *SqlDatabase) UpdateContractsStatus(contracts []*tsstypes.ContractEntity, status string) {
+func (d *SqlDatabase) UpdateContractsStatus(contracts []*tsstypes.ContractEntity, status string) error {
 	for _, contract := range contracts {
 		query := "UPDATE contract SET status = ? WHERE chain = ? AND hash = ?"
 		params := []interface{}{status, contract.Chain, contract.Hash}
 
-		_, err := d.db.Exec(query, params...)
-		if err != nil {
+		if _, err := d.db.Exec(query, params...); err != nil {
 			log.Error("failed to update contract status, err =", err, ". len(contracts) =", len(contracts))
+			return err
 		}
 	}
+
+	return nil
 }
 
 func (d *SqlDatabase) UpdateContractDeployTx(chain, hash string, txHash string) {
@@ -517,7 +522,7 @@ func (d *SqlDatabase) GetTxOutWithHash(chain string, hash string, isHashWithSig 
 	return nil
 }
 
-func (d *SqlDatabase) UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string, sig []byte) {
+func (d *SqlDatabase) UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string, sig []byte) error {
 	query := "UPDATE tx_out SET signature = ?, hash_with_sig = ? WHERE chain = ? AND hash_without_sig = ?"
 	params := []interface{}{
 		sig,
@@ -526,20 +531,24 @@ func (d *SqlDatabase) UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string,
 		hashWithoutSign,
 	}
 
-	_, err := d.db.Exec(query, params...)
-	if err != nil {
+	if _, err := d.db.Exec(query, params...); err != nil {
 		log.Error("failed to update txout with chain and hashWoSig", chain, hashWithSig, ", err =", err)
+		return err
 	}
+
+	return nil
 }
 
-func (d *SqlDatabase) UpdateTxOutStatus(chain, hashWithSig, status string) {
+func (d *SqlDatabase) UpdateTxOutStatus(chain, hashWithSig, status string) error {
 	query := "UPDATE tx_out SET status = ? WHERE chain = ? AND hash_with_sig = ?"
 	params := []interface{}{status, chain, hashWithSig}
 
-	_, err := d.db.Exec(query, params...)
-	if err != nil {
+	if _, err := d.db.Exec(query, params...); err != nil {
 		log.Error("failed to update chain status", chain, hashWithSig, ", err =", err)
+		return err
 	}
+
+	return nil
 }
 
 func (d *SqlDatabase) InsertMempoolTxHash(hash string, blockHeight int64) {
