@@ -1,9 +1,9 @@
 package tss
 
 import (
-	"strings"
 	"testing"
 
+	"github.com/golang/mock/gomock"
 	"github.com/sisu-network/cosmos-sdk/crypto/keys/ed25519"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
@@ -26,32 +26,23 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 	t.Run("success_from_our_key", func(t *testing.T) {
 		t.Parallel()
 
-		var (
-			calledUpdateTxOutStatusFunc, calledGetTxOutWithHashFunc, calledUpdateContractsStatusFunc bool
-		)
+		ctrl := gomock.NewController(t)
+		defer func() {
+			ctrl.Finish()
+		}()
 
 		observedChain := "eth"
 		keygenAddress := utils.RandomHeximalString(64)
 
 		// Define mock db
-		mockDb := &mock.Database{}
-		mockDb.IsChainKeyAddressFunc = func(chain, address string) bool {
-			return strings.EqualFold(chain, observedChain) && strings.EqualFold(address, keygenAddress)
-		}
-		mockDb.UpdateTxOutStatusFunc = func(chain, hashWithoutSig, status string) error {
-			calledUpdateTxOutStatusFunc = true
-			return nil
-		}
-		mockDb.GetTxOutWithHashFunc = func(chain string, hash string, isHashWithSig bool) *types.TxOutEntity {
-			calledGetTxOutWithHashFunc = true
-			return &types.TxOutEntity{
+		mockDb := mock.NewMockDatabase(ctrl)
+		mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(true).MinTimes(1)
+		mockDb.EXPECT().UpdateTxOutStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).MinTimes(1)
+		mockDb.EXPECT().GetTxOutWithHash(gomock.Any(), gomock.Any(), gomock.Any()).Return(
+			&types.TxOutEntity{
 				ContractHash: utils.RandomHeximalString(64),
-			}
-		}
-		mockDb.UpdateContractsStatusFunc = func(contracts []*types.ContractEntity, status string) error {
-			calledUpdateContractsStatusFunc = true
-			return nil
-		}
+			}).MinTimes(1)
+		mockDb.EXPECT().UpdateContractsStatus(gomock.Any(), gomock.Any()).Return(nil).MinTimes(1)
 
 		txs := &eyesTypes.Txs{
 			Chain: observedChain,
@@ -66,42 +57,29 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 		processor.db = mockDb
 
 		require.NoError(t, processor.OnObservedTxs(txs))
-		require.True(t, calledUpdateTxOutStatusFunc)
-		require.True(t, calledGetTxOutWithHashFunc)
-		require.True(t, calledUpdateContractsStatusFunc)
 	})
 
 	t.Run("success_to_our_key", func(t *testing.T) {
 		t.Parallel()
 
-		var (
-			calledIsChainKeyAddressFunc, calledGetSignerAddressFunc bool
-		)
+		ctrl := gomock.NewController(t)
+		defer func() {
+			ctrl.Finish()
+		}()
+
+		txSubmitterMock := mock.NewMockTxSubmit(ctrl)
+		txSubmitterMock.EXPECT().SubmitMessage(gomock.Any()).Return(nil).AnyTimes()
+
+		priv := ed25519.GenPrivKey()
+		addr := sdk.AccAddress(priv.PubKey().Address())
+		appKeysMock := mock.NewMockAppKeys(ctrl)
+		appKeysMock.EXPECT().GetSignerAddress().Return(addr).MinTimes(1)
+
+		mockDb := mock.NewMockDatabase(ctrl)
+		mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(false).MinTimes(1)
 
 		observedChain := "eth"
 		keygenAddress := utils.RandomHeximalString(64)
-
-		// Define mock db
-		mockDb := &mock.Database{}
-		mockDb.IsChainKeyAddressFunc = func(chain, address string) bool {
-			calledIsChainKeyAddressFunc = true
-			return false
-		}
-
-		// Define mock app keys manager
-		priv := ed25519.GenPrivKey()
-		addr := sdk.AccAddress(priv.PubKey().Address())
-		appKeys := &mock.AppKeys{}
-		appKeys.GetSignerAddressFunc = func() sdk.AccAddress {
-			calledGetSignerAddressFunc = true
-			return addr
-		}
-
-		// Define mock tx submitter
-		txSubmitter := &mock.TxSubmitter{}
-		txSubmitter.SubmitMessageFunc = func(msg sdk.Msg) error {
-			return nil
-		}
 
 		txs := &eyesTypes.Txs{
 			Chain: observedChain,
@@ -117,12 +95,10 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 		// Init processor with mocks
 		processor := &Processor{
 			db:       mockDb,
-			appKeys:  appKeys,
-			txSubmit: txSubmitter,
+			appKeys:  appKeysMock,
+			txSubmit: txSubmitterMock,
 		}
 
 		require.NoError(t, processor.OnObservedTxs(txs))
-		require.True(t, calledIsChainKeyAddressFunc)
-		require.True(t, calledGetSignerAddressFunc)
 	})
 }
