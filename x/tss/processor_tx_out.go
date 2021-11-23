@@ -23,6 +23,9 @@ func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.Observed
 	// Save this to database
 	log.Verbose("len(outEntities) = ", len(outEntities))
 	if len(outEntities) > 0 {
+		for _, outEntity := range outEntities {
+			log.Verbose("Inserting into db, tx hash = ", outEntity.HashWithoutSig)
+		}
 		p.db.InsertTxOuts(outEntities)
 	}
 
@@ -54,7 +57,7 @@ func (p *Processor) DeliverTxOut(ctx sdk.Context, tx *types.TxOut) ([]byte, erro
 func (p *Processor) deliverTxOutEth(ctx sdk.Context, tx *types.TxOut) ([]byte, error) {
 	outHash := tx.GetHash()
 
-	log.Verbose("Delivering TXOUT")
+	log.Verbose("Delivering TXOUT for chain", tx.OutChain, " tx hash = ", tx.GetHash())
 
 	ethTx := &etypes.Transaction{}
 	if err := ethTx.UnmarshalBinary(tx.OutBytes); err != nil {
