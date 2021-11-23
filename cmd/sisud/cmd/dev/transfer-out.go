@@ -99,7 +99,7 @@ transfer-out erc20 eth-sisu-local 1234 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd5
 					panic(err)
 				}
 				if allowance.Cmp(amount) != 0 {
-					panic(fmt.Errorf("Invalid balance: %s, %s", amount, allowance))
+					panic(fmt.Errorf("Invalid balance: expected %s, actual %s", amount, allowance))
 				}
 
 				log.Info("Transfering token out....")
