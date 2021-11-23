@@ -23,6 +23,9 @@ func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.Observed
 	// Save this to database
 	log.Verbose("len(outEntities) = ", len(outEntities))
 	if len(outEntities) > 0 {
+		for _, outEntity := range outEntities {
+			log.Verbose("Inserting into db, tx hash = ", outEntity.HashWithoutSig)
+		}
 		p.db.InsertTxOuts(outEntities)
 	}
 
