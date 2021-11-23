@@ -266,5 +266,10 @@ func (p *DefaultTxOutputProducer) getGasLimit(chain string) uint64 {
 
 func (p *DefaultTxOutputProducer) getGasPrice(chain string) *big.Int {
 	// TODO: Make this dependent on different chains.
-	return big.NewInt(50)
+	switch chain {
+	case "eth-ropsten":
+		return big.NewInt(1700000000)
+
+	}
+	return big.NewInt(1700000000)
 }

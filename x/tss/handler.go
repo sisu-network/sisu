@@ -60,7 +60,7 @@ func handleObservedTx(ctx sdk.Context, msg *types.ObservedTx, processor *Process
 }
 
 func handleTxOut(ctx sdk.Context, msg *types.TxOut, processor *Processor) (*sdk.Result, error) {
-	log.Verbose("Handling Txout")
+	log.Verbose("Handling Txout, hash = ", msg.GetHash())
 	data, err := processor.DeliverTxOut(ctx, msg)
 	return &sdk.Result{
 		Data: data,
