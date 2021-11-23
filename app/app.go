@@ -177,7 +177,7 @@ var (
 // capabilities aren't needed for testing.
 type App struct {
 	txSubmitter       *common.TxSubmitter
-	appKeys           *common.AppKeys
+	appKeys           *common.DefaultAppKeys
 	globalData        common.GlobalData
 	internalApiServer server.Server
 	tssProcessor      *tss.Processor
@@ -223,7 +223,7 @@ type App struct {
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
 	evmKeeper evmKeeper.Keeper
-	tssKeeper tssKeeper.Keeper
+	tssKeeper tssKeeper.DefaultKeeper
 
 	// the module manager
 	mm *module.Manager

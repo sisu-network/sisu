@@ -12,7 +12,7 @@ import (
 )
 
 // NewHandler ...
-func NewHandler(k keeper.Keeper, txSubmit common.TxSubmit, processor *Processor) sdk.Handler {
+func NewHandler(k keeper.DefaultKeeper, txSubmit common.TxSubmit, processor *Processor) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 

@@ -103,16 +103,16 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 
-	keeper     keeper.Keeper
+	keeper     keeper.DefaultKeeper
 	processor  *Processor
-	appKeys    *common.AppKeys
+	appKeys    *common.DefaultAppKeys
 	txSubmit   common.TxSubmit
 	globalData common.GlobalData
 }
 
 func NewAppModule(cdc codec.Marshaler,
-	keeper keeper.Keeper,
-	appKeys *common.AppKeys,
+	keeper keeper.DefaultKeeper,
+	appKeys *common.DefaultAppKeys,
 	txSubmit common.TxSubmit,
 	processor *Processor,
 	globalData common.GlobalData,

@@ -23,7 +23,7 @@ import (
 // This structs produces transaction output based on input. For a given tx input, this struct
 // produces a list (could contain only one element) of transaction output.
 type TxOutputProducer interface {
-	AddKeyAddress(ctx sdk.Context, chain, addr string)
+	AddKeyAddress(ctx sdk.Context, chain, addr string) error
 	GetTxOuts(ctx sdk.Context, height int64, tx *types.ObservedTx) ([]*tssTypes.TxOut, []*tssTypes.TxOutEntity)
 	SaveContractsToDeploy(chain string)
 }
@@ -35,13 +35,13 @@ type DefaultTxOutputProducer struct {
 
 	worldState    WorldState
 	keeper        keeper.Keeper
-	appKeys       *common.AppKeys
+	appKeys       common.AppKeys
 	db            db.Database
 	ethDeployment *EthDeployment
 	tssConfig     config.TssConfig
 }
 
-func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys *common.AppKeys, db db.Database, tssConfig config.TssConfig) TxOutputProducer {
+func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys common.AppKeys, db db.Database, tssConfig config.TssConfig) TxOutputProducer {
 	return &DefaultTxOutputProducer{
 		worldState:    worldState,
 		keeper:        keeper,
@@ -69,25 +69,34 @@ func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *t
 	return outMsgs, outEntities
 }
 
-func (p *DefaultTxOutputProducer) getEthKeyAddrs(ctx sdk.Context) map[string]map[string]bool {
-	if p.ethKeyAddrs == nil {
-		p.ethKeyAddrs = p.keeper.GetAllEthKeyAddrs(ctx)
+func (p *DefaultTxOutputProducer) getEthKeyAddrs(ctx sdk.Context) (map[string]map[string]bool, error) {
+	if p.ethKeyAddrs != nil {
+		return p.ethKeyAddrs, nil
 	}
 
-	return p.ethKeyAddrs
+	var err error
+	p.ethKeyAddrs, err = p.keeper.GetAllEthKeyAddrs(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return p.ethKeyAddrs, nil
 }
 
-func (p *DefaultTxOutputProducer) AddKeyAddress(ctx sdk.Context, chain, addr string) {
-	ethKeyAddrs := p.getEthKeyAddrs(ctx)
-	m := ethKeyAddrs[chain]
+func (p *DefaultTxOutputProducer) AddKeyAddress(ctx sdk.Context, chain, addr string) error {
+	keyAddrs, err := p.getEthKeyAddrs(ctx)
+	if err != nil {
+		return err
+	}
+
+	m := keyAddrs[chain]
 	if m == nil {
 		m = make(map[string]bool)
 	}
 	m[addr] = true
 	p.ethKeyAddrs[chain] = m
 
-	// Save this to KVStore. This data needs to be persisted
-	p.keeper.SaveEthKeyAddrs(ctx, chain, m)
+	return p.keeper.SaveEthKeyAddrs(ctx, chain, m)
 }
 
 // Get ETH out from an observed tx. Only do this if this is a validator node.
