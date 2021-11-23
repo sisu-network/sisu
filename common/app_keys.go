@@ -16,6 +16,9 @@ import (
 	"github.com/sisu-network/sisu/utils"
 )
 
+// Make sure struct implement interface at compile-time
+var _ AppKeys = (*DefaultAppKeys)(nil)
+
 type AppKeys interface {
 	Init()
 	GetSignerInfo() keyring.Info
