@@ -13,6 +13,8 @@ import (
 	tsstypes "github.com/sisu-network/sisu/x/tss/types"
 )
 
+//go:generate mockgen -source=database.go -destination=../tests/mock/db.go -package=mock
+
 const (
 	// The keygen proposal has passed the consensus and included in a Sisu block
 	STATUS_PROPOSAL_FINALIZED = "proposal_finalized"
@@ -51,7 +53,7 @@ type Database interface {
 	GetTxOutWithHash(chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity
 	IsContractDeployTx(chain string, hashWithoutSig string) bool
 	UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string, sig []byte) error
-	UpdateTxOutStatus(chain, hashWithoutSig, status string) error
+	UpdateTxOutStatus(chain, hashWithoutSig string, status tsstypes.TxOutStatus) error
 
 	// Mempool tx
 	InsertMempoolTxHash(hash string, blockHeight int64)
@@ -539,7 +541,7 @@ func (d *SqlDatabase) UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string,
 	return nil
 }
 
-func (d *SqlDatabase) UpdateTxOutStatus(chain, hashWithSig, status string) error {
+func (d *SqlDatabase) UpdateTxOutStatus(chain, hashWithSig string, status tsstypes.TxOutStatus) error {
 	query := "UPDATE tx_out SET status = ? WHERE chain = ? AND hash_with_sig = ?"
 	params := []interface{}{status, chain, hashWithSig}
 

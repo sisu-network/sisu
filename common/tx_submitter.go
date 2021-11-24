@@ -27,6 +27,8 @@ import (
 	rpchttp "github.com/sisu-network/tendermint/rpc/client/http"
 )
 
+//go:generate mockgen -source=tx_submitter.go -destination=../tests/mock/tx_submitter.go -package=mock
+
 const (
 	// TODO: put these values into config file.
 	defaultGasAdjustment = 1.0
