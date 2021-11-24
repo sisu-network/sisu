@@ -6,8 +6,11 @@ import (
 	"github.com/sisu-network/sisu/utils"
 )
 
+// TxOutStatus alias for tx out status
+type TxOutStatus string
+
 const (
-	TxOutStatusConfirmed = "confirmed"
+	TxOutStatusConfirmed TxOutStatus = "confirmed"
 )
 
 var _ sdk.Msg = &TxOut{}
