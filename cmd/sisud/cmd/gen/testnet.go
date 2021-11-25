@@ -26,6 +26,7 @@ import (
 )
 
 type TestnetGenerator struct {
+	ropstenUrl string
 }
 
 type TestnetNodeConfig struct {
@@ -43,7 +44,7 @@ func TestnetCmd(mbm module.BasicManager, genBalIterator banktypes.GenesisBalance
 		Long: `privatenet creates configuration for a network with N validators.
 Example:
 	For multiple nodes (running with docker):
-	  ./sisu testnet --v 2 --output-dir ./output --chain-id testnet --tmp-dir tmp
+	  ./sisu testnet --v 2 --output-dir ./output --chain-id testnet --tmp-dir ../dev-ops/aws/tmp --ropsten-url https://ropsten.infura.io/v3/[YOUR_TOKEN]
 	`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -55,7 +56,7 @@ Example:
 
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			tmConfig := serverCtx.Config
-			tmConfig.LogLevel = "info"
+			tmConfig.LogLevel = ""
 
 			outputDir, _ := cmd.Flags().GetString(flagOutputDir)
 			minGasPrices, _ := cmd.Flags().GetString(server.FlagMinGasPrices)
@@ -65,12 +66,14 @@ Example:
 			chainId, _ := cmd.Flags().GetString(flagChainId)
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
+			generator.ropstenUrl, _ = cmd.Flags().GetString(flagRopstenUrl)
 
 			err = os.MkdirAll(outputDir, os.ModePerm)
 			if err != nil {
 				panic(err)
 			}
 
+			// Clean data
 			cleanData(outputDir)
 
 			// TODO: Use backend file for keyring
@@ -143,6 +146,7 @@ Example:
 	cmd.Flags().String(flagChainId, "talon-01", "Name of the chain")
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
+	cmd.Flags().String(flagRopstenUrl, "", "RPC url for ropsten network")
 
 	return cmd
 }

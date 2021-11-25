@@ -234,6 +234,8 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 			continue
 		}
 
+		log.Verbose("Msg type = ", msg.Type())
+
 		switch msg.Type() {
 		case types.MSG_TYPE_KEYGEN_PROPOSAL:
 			proposalMsg := msg.(*types.KeygenProposal)
