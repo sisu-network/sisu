@@ -229,12 +229,14 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 	}
 
 	msgs := tx.GetMsgs()
+	log.Verbose("PreAddTxToMempoolFunc: msgs length = ", len(msgs))
+
 	for _, msg := range msgs {
 		if msg.Route() != types.RouterKey {
 			continue
 		}
 
-		log.Verbose("Msg type = ", msg.Type())
+		log.Verbose("PreAddTxToMempoolFunc: Msg type = ", msg.Type())
 
 		switch msg.Type() {
 		case types.MSG_TYPE_KEYGEN_PROPOSAL:

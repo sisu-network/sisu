@@ -45,7 +45,6 @@ dheart-port = {{ .Tss.DheartPort }}
 [tss.supported-chains] {{ range $k, $v := .Tss.SupportedChains }}
 	[tss.supported-chains.{{ $v.Symbol }}]
 		symbol = "{{ $v.Symbol }}"
-		id = {{ $v.Id }}
 		deyes-url = "{{ $v.DeyesUrl }}"
 {{ end }}
 `
