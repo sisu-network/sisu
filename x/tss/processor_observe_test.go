@@ -27,9 +27,9 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 		t.Parallel()
 
 		ctrl := gomock.NewController(t)
-		defer func() {
+		t.Cleanup(func() {
 			ctrl.Finish()
-		}()
+		})
 
 		observedChain := "eth"
 		keygenAddress := utils.RandomHeximalString(64)
@@ -63,9 +63,9 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 		t.Parallel()
 
 		ctrl := gomock.NewController(t)
-		defer func() {
+		t.Cleanup( func() {
 			ctrl.Finish()
-		}()
+		})
 
 		txSubmitterMock := mock.NewMockTxSubmit(ctrl)
 		txSubmitterMock.EXPECT().SubmitMessage(gomock.Any()).Return(nil).AnyTimes()
@@ -78,7 +78,7 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 		observedChain := "eth"
 		mockDb := mock.NewMockDatabase(ctrl)
 		mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(false).MinTimes(1)
-		mockDb.EXPECT().UpdateTxOutStatus(observedChain, gomock.Any(), types.TxOutStatusPreBroadcast).Return(nil).MinTimes(	1)
+		mockDb.EXPECT().UpdateTxOutStatus(observedChain, gomock.Any(), types.TxOutStatusPreBroadcast).Return(nil).MinTimes(1)
 		keygenAddress := utils.RandomHeximalString(64)
 
 		txs := &eyesTypes.Txs{
