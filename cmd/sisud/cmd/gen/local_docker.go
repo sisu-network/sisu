@@ -253,12 +253,10 @@ func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, 
 			SupportedChains: map[string]config.TssChainConfig{
 				"eth-sisu-local": {
 					Symbol:   "eth-sisu-local",
-					Id:       int(libchain.GetChainIntFromId("eth-sisu-local").Int64()),
 					DeyesUrl: fmt.Sprintf("http://deyes%d:31001", index),
 				},
 				"ganache1": {
 					Symbol:   "ganache1",
-					Id:       int(libchain.GetChainIntFromId("ganache1").Int64()),
 					DeyesUrl: fmt.Sprintf("http://deyes%d:31001", index),
 				},
 			},
