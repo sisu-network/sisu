@@ -24,6 +24,10 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) error {
 			// 2. This is a transaction to our key account or one of our contracts. Create a message to
 			// indicate that we have observed this transaction and broadcast it to cosmos chain.
 			hash := utils.GetObservedTxHash(txs.Block, txs.Chain, tx.Serialized)
+			if err := p.db.UpdateTxOutStatus(txs.Chain, hash, tssTypes.TxOutStatusPreBroadcast); err != nil {
+				log.Error(err)
+				return err
+			}
 
 			observedTxs := tssTypes.NewObservedTxs(
 				p.appKeys.GetSignerAddress().String(),
@@ -32,7 +36,17 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) error {
 				txs.Block,
 				tx.Serialized,
 			)
-			go p.txSubmit.SubmitMessage(observedTxs)
+
+			// TODO: handle error correctly
+			go func() {
+				if err := p.txSubmit.SubmitMessage(observedTxs); err != nil {
+					return
+				}
+
+				if err := p.db.UpdateTxOutStatus(txs.Chain, hash, tssTypes.TxOutStatusBroadcasted); err != nil {
+					return
+				}
+			}()
 		}
 	}
 

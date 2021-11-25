@@ -48,6 +48,10 @@ func (p *Processor) DeliverTxOut(ctx sdk.Context, tx *types.TxOut) ([]byte, erro
 	// TODO: Save this to KV store
 
 	if libchain.IsETHBasedChain(tx.OutChain) {
+		if err := p.db.UpdateTxOutStatus(tx.InChain, tx.InHash, tssTypes.TxOutStatusPreSigning); err != nil {
+			return nil, err
+		}
+
 		return p.deliverTxOutEth(ctx, tx)
 	}
 
@@ -84,9 +88,18 @@ func (p *Processor) deliverTxOutEth(ctx sdk.Context, tx *types.TxOut) ([]byte, e
 	}
 
 	pubKeys := p.partyManager.GetActivePartyPubkeys()
+	if err := p.db.UpdateTxOutStatus(tx.InChain, tx.InHash, tssTypes.TxOutStatusSigning); err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
 	err := p.dheartClient.KeySign(keysignReq, pubKeys)
 	if err != nil {
 		log.Error("Keysign: err =", err)
+		if dbErr := p.db.UpdateTxOutStatus(tx.InChain, tx.InHash, tssTypes.TxOutStatusSignFailed); dbErr != nil {
+			return nil, err
+		}
+
 		return nil, err
 	}
 

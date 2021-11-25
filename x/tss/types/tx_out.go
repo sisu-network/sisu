@@ -10,7 +10,24 @@ import (
 type TxOutStatus string
 
 const (
+	// TxOutStatusPreBroadcast after produce from observedTx, the txOut is ready to broadcast to Cosmos chain
+	TxOutStatusPreBroadcast TxOutStatus = "pre_broadcast"
+	// TxOutStatusBroadcasted TxOut has broadcasted to Cosmos chain successfully
+	TxOutStatusBroadcasted TxOutStatus = "broadcasted"
+
 	TxOutStatusConfirmed TxOutStatus = "confirmed"
+
+	// TxOutStatusAck ack that txOut is received from Cosmos chain
+	TxOutStatusAck TxOutStatus = "ack"
+
+	// TxOutStatusPreSigning txOut is ready to be signed
+	TxOutStatusPreSigning TxOutStatus = "pre_signing"
+	// TxOutStatusSigning txOut is in singing progress
+	TxOutStatusSigning TxOutStatus = "signing"
+	// TxOutStatusSigned txOut is signed successfully
+	TxOutStatusSigned     TxOutStatus = "signed"
+	// TxOutStatusSignFailed Sigining progress is failed
+	TxOutStatusSignFailed TxOutStatus = "sign_failed"
 )
 
 var _ sdk.Msg = &TxOut{}
