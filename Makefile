@@ -13,3 +13,13 @@ test:
 .PHONY: fmt
 fmt:
 	find . -name "*.go" | grep -v -E "(.*/proto/.*|./*/mock/.*)" | xargs -I '{}' gofmt -s -w '{}'
+
+dev-mysql-up:
+	@docker compose \
+		-f docker/docker-compose-mysql.dev.yml \
+		up -d
+
+dev-mysql-down:
+	@docker compose \
+		-f docker/docker-compose-mysql.dev.yml \
+		down -v --rmi local
