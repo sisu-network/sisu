@@ -75,10 +75,10 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 		appKeysMock := mock.NewMockAppKeys(ctrl)
 		appKeysMock.EXPECT().GetSignerAddress().Return(addr).MinTimes(1)
 
+		observedChain := "eth"
 		mockDb := mock.NewMockDatabase(ctrl)
 		mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(false).MinTimes(1)
-
-		observedChain := "eth"
+		mockDb.EXPECT().UpdateTxOutStatus(observedChain, gomock.Any(), types.TxOutStatusPreBroadcast).Return(nil).MinTimes(	1)
 		keygenAddress := utils.RandomHeximalString(64)
 
 		txs := &eyesTypes.Txs{
