@@ -344,15 +344,15 @@ func (mr *MockDatabaseMockRecorder) UpdateTxOutSig(chain, hashWithoutSign, hashW
 }
 
 // UpdateTxOutStatus mocks base method.
-func (m *MockDatabase) UpdateTxOutStatus(chain, hashWithoutSig string, status types.TxOutStatus) error {
+func (m *MockDatabase) UpdateTxOutStatus(chain, hash string, status types.TxOutStatus, isHashWithSig bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateTxOutStatus", chain, hashWithoutSig, status)
+	ret := m.ctrl.Call(m, "UpdateTxOutStatus", chain, hash, status, isHashWithSig)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateTxOutStatus indicates an expected call of UpdateTxOutStatus.
-func (mr *MockDatabaseMockRecorder) UpdateTxOutStatus(chain, hashWithoutSig, status interface{}) *gomock.Call {
+func (mr *MockDatabaseMockRecorder) UpdateTxOutStatus(chain, hash, status, isHashWithSig interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTxOutStatus", reflect.TypeOf((*MockDatabase)(nil).UpdateTxOutStatus), chain, hashWithoutSig, status)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTxOutStatus", reflect.TypeOf((*MockDatabase)(nil).UpdateTxOutStatus), chain, hash, status, isHashWithSig)
 }

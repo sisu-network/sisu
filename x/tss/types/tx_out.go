@@ -15,7 +15,8 @@ const (
 	// TxOutStatusBroadcasted TxOut has broadcasted to Cosmos chain successfully
 	TxOutStatusBroadcasted TxOutStatus = "broadcasted"
 
-	TxOutStatusConfirmed TxOutStatus = "confirmed"
+	TxOutStatusDeployingToBlockchain TxOutStatus = "deploying_to_chain"
+	TxOutStatusDeployedToBlockchain  TxOutStatus = "deployed_to_chain"
 
 	// TxOutStatusAck ack that txOut is received from Cosmos chain
 	TxOutStatusAck TxOutStatus = "ack"
@@ -25,7 +26,7 @@ const (
 	// TxOutStatusSigning txOut is in singing progress
 	TxOutStatusSigning TxOutStatus = "signing"
 	// TxOutStatusSigned txOut is signed successfully
-	TxOutStatusSigned     TxOutStatus = "signed"
+	TxOutStatusSigned TxOutStatus = "signed"
 	// TxOutStatusSignFailed Sigining progress is failed
 	TxOutStatusSignFailed TxOutStatus = "sign_failed"
 )

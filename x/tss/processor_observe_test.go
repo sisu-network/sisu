@@ -37,7 +37,7 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 		// Define mock db
 		mockDb := mock.NewMockDatabase(ctrl)
 		mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(true).MinTimes(1)
-		mockDb.EXPECT().UpdateTxOutStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).MinTimes(1)
+		mockDb.EXPECT().UpdateTxOutStatus(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).MinTimes(1)
 		mockDb.EXPECT().GetTxOutWithHash(gomock.Any(), gomock.Any(), gomock.Any()).Return(
 			&types.TxOutEntity{
 				ContractHash: utils.RandomHeximalString(64),
@@ -78,7 +78,7 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 		observedChain := "eth"
 		mockDb := mock.NewMockDatabase(ctrl)
 		mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(false).MinTimes(1)
-		mockDb.EXPECT().UpdateTxOutStatus(observedChain, gomock.Any(), types.TxOutStatusPreBroadcast).Return(nil).MinTimes(1)
+		mockDb.EXPECT().UpdateTxOutStatus(observedChain, gomock.Any(), types.TxOutStatusPreBroadcast, gomock.Any()).Return(nil).MinTimes(1)
 		keygenAddress := utils.RandomHeximalString(64)
 
 		txs := &eyesTypes.Txs{

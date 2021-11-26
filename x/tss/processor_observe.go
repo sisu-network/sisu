@@ -6,7 +6,6 @@ import (
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/utils"
-	"github.com/sisu-network/sisu/x/tss/types"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 )
 
@@ -24,11 +23,6 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) error {
 			// 2. This is a transaction to our key account or one of our contracts. Create a message to
 			// indicate that we have observed this transaction and broadcast it to cosmos chain.
 			hash := utils.GetObservedTxHash(txs.Block, txs.Chain, tx.Serialized)
-			if err := p.db.UpdateTxOutStatus(txs.Chain, hash, tssTypes.TxOutStatusPreBroadcast); err != nil {
-				log.Error(err)
-				return err
-			}
-
 			observedTxs := tssTypes.NewObservedTxs(
 				p.appKeys.GetSignerAddress().String(),
 				txs.Chain,
@@ -36,6 +30,10 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) error {
 				txs.Block,
 				tx.Serialized,
 			)
+			if err := p.db.UpdateTxOutStatus(txs.Chain, observedTxs.GetTxHash(), tssTypes.TxOutStatusPreBroadcast, false); err != nil {
+				log.Error(err)
+				return err
+			}
 
 			// TODO: handle error correctly
 			go func() {
@@ -43,7 +41,7 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) error {
 					return
 				}
 
-				if err := p.db.UpdateTxOutStatus(txs.Chain, hash, tssTypes.TxOutStatusBroadcasted); err != nil {
+				if err := p.db.UpdateTxOutStatus(txs.Chain, observedTxs.GetTxHash(), tssTypes.TxOutStatusBroadcasted, false); err != nil {
 					return
 				}
 			}()
@@ -72,7 +70,7 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string) error {
 	log.Verbose("This is a transaction from us. We need to confirm it. Chain =", chain)
 
 	txHash := utils.KeccakHash32(string(tx.Serialized))
-	if err := p.db.UpdateTxOutStatus(chain, txHash, types.TxOutStatusConfirmed); err != nil {
+	if err := p.db.UpdateTxOutStatus(chain, txHash, tssTypes.TxOutStatusSigned, true); err != nil {
 		return err
 	}
 
