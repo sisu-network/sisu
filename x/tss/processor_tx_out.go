@@ -48,9 +48,6 @@ func (p *Processor) DeliverTxOut(ctx sdk.Context, tx *types.TxOut) ([]byte, erro
 	// TODO: Save this to KV store
 
 	if libchain.IsETHBasedChain(tx.OutChain) {
-		log.Debug("deliver tx out ....")
-		log.Debug("tx out chain: ", tx.OutChain)
-		log.Debug("tx get hash: ", tx.GetHash())
 		if err := p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusPreSigning, false); err != nil {
 			return nil, err
 		}
