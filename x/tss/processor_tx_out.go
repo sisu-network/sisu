@@ -91,7 +91,7 @@ func (p *Processor) deliverTxOutEth(ctx sdk.Context, tx *types.TxOut) ([]byte, e
 	}
 
 	pubKeys := p.partyManager.GetActivePartyPubkeys()
-	if err := p.db.UpdateTxOutStatus(tx.InChain, tx.GetHash(), tssTypes.TxOutStatusSigning, false); err != nil {
+	if err := p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusSigning, false); err != nil {
 		log.Error(err)
 		return nil, err
 	}
@@ -99,7 +99,7 @@ func (p *Processor) deliverTxOutEth(ctx sdk.Context, tx *types.TxOut) ([]byte, e
 	err := p.dheartClient.KeySign(keysignReq, pubKeys)
 	if err != nil {
 		log.Error("Keysign: err =", err)
-		if dbErr := p.db.UpdateTxOutStatus(tx.InChain, tx.GetHash(), tssTypes.TxOutStatusSignFailed, false); dbErr != nil {
+		if dbErr := p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusSignFailed, false); dbErr != nil {
 			return nil, err
 		}
 

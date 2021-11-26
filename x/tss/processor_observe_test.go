@@ -78,7 +78,7 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 		observedChain := "eth"
 		mockDb := mock.NewMockDatabase(ctrl)
 		mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(false).MinTimes(1)
-		mockDb.EXPECT().UpdateTxOutStatus(observedChain, gomock.Any(), types.TxOutStatusPreBroadcast, gomock.Any()).Return(nil).MinTimes(1)
+		mockDb.EXPECT().UpdateTxOutStatus(observedChain, gomock.Any(), types.TxOutStatusPreBroadcast, gomock.Any()).Return(nil).AnyTimes()
 		keygenAddress := utils.RandomHeximalString(64)
 
 		txs := &eyesTypes.Txs{

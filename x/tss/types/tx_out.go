@@ -27,7 +27,7 @@ const (
 	TxOutStatusSigning TxOutStatus = "signing"
 	// TxOutStatusSigned txOut is signed successfully
 	TxOutStatusSigned TxOutStatus = "signed"
-	// TxOutStatusSignFailed Sigining progress is failed
+	// TxOutStatusSignFailed signing progress is failed
 	TxOutStatusSignFailed TxOutStatus = "sign_failed"
 )
 

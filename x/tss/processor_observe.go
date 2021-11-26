@@ -30,18 +30,10 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) error {
 				txs.Block,
 				tx.Serialized,
 			)
-			if err := p.db.UpdateTxOutStatus(txs.Chain, observedTxs.GetTxHash(), tssTypes.TxOutStatusPreBroadcast, false); err != nil {
-				log.Error(err)
-				return err
-			}
 
 			// TODO: handle error correctly
 			go func() {
 				if err := p.txSubmit.SubmitMessage(observedTxs); err != nil {
-					return
-				}
-
-				if err := p.db.UpdateTxOutStatus(txs.Chain, observedTxs.GetTxHash(), tssTypes.TxOutStatusBroadcasted, false); err != nil {
 					return
 				}
 			}()
@@ -79,14 +71,27 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string) error {
 		log.Info("This is a tx deployment")
 		txOut := p.db.GetTxOutWithHash(chain, txHash, true)
 
-		if txOut != nil {
-			log.Info("Updating contract status. Contract hash = ", txOut.ContractHash)
-			p.db.UpdateContractsStatus([]*tssTypes.ContractEntity{
-				{
-					Chain: chain,
-					Hash:  txOut.ContractHash,
-				},
-			}, tssTypes.ContractStateDeployed)
+		if txOut == nil {
+			log.Warn("txOut by txHash", txHash, "is not found")
+			return nil
+		}
+
+		log.Info("Updating contract status. Contract hash = ", txOut.ContractHash)
+		if err := p.db.UpdateContractsStatus([]*tssTypes.ContractEntity{
+			{
+				Chain: chain,
+				Hash:  txOut.ContractHash,
+			},
+		}, tssTypes.ContractStateDeployed); err != nil {
+			return err
+		}
+
+		if err := p.db.UpdateTxOutStatus(
+			txOut.OutChain,
+			txOut.HashWithoutSig,
+			tssTypes.TxOutStatusDeployedToBlockchain,
+			false); err != nil {
+			return err
 		}
 	}
 

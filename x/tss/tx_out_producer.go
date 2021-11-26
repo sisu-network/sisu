@@ -198,7 +198,7 @@ func (p *DefaultTxOutputProducer) checkEthDeployContract(ctx sdk.Context, height
 		txs = append(txs, rawTx)
 	}
 
-	// Update all contract to "deploying" state.
+	// Update all contracts to "deploying" state.
 	p.db.UpdateContractsStatus(contracts, tsstypes.ContractStateDeploying)
 
 	return txs

@@ -542,7 +542,7 @@ func (d *SqlDatabase) UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string,
 }
 
 func (d *SqlDatabase) UpdateTxOutStatus(chain, hash string, status tsstypes.TxOutStatus, isHashWithSig bool) error {
-	log.Debug("Updating txout hash:", hash, " to status:", string(status))
+	log.Debug("Updating txout hash:", hash, " to status:", string(status), "chain", chain)
 	query := "UPDATE tx_out SET status = ? WHERE chain = ? AND hash_with_sig = ?"
 	if !isHashWithSig {
 		query = "UPDATE tx_out SET status = ? WHERE chain = ? AND hash_without_sig = ?"
