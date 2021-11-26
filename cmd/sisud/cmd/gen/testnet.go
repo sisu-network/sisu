@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	heartcfg "github.com/sisu-network/dheart/core/config"
@@ -56,7 +57,8 @@ Example:
 
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			tmConfig := serverCtx.Config
-			tmConfig.LogLevel = ""
+			tmConfig.LogLevel = "info"
+			tmConfig.Consensus.TimeoutCommit = 5 * time.Second
 
 			outputDir, _ := cmd.Flags().GetString(flagOutputDir)
 			minGasPrices, _ := cmd.Flags().GetString(server.FlagMinGasPrices)
@@ -67,6 +69,8 @@ Example:
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
 			generator.ropstenUrl, _ = cmd.Flags().GetString(flagRopstenUrl)
+
+			log.Info("testnet gen: chainId = ", chainId)
 
 			err = os.MkdirAll(outputDir, os.ModePerm)
 			if err != nil {
@@ -143,7 +147,7 @@ Example:
 	cmd.Flags().String(flagNodeDirPrefix, "node", "Prefix the directory name for each node with (node results in node0, node1, ...)")
 	cmd.Flags().String(flagNodeDaemonHome, "main", "Home directory of the node's daemon configuration")
 	cmd.Flags().String(flagTmpDir, "tmp-dir", "Location of temporary directory that contains list of peers ips and other configs.")
-	cmd.Flags().String(flagChainId, "talon-01", "Name of the chain")
+	cmd.Flags().String(flagChainId, "sisu-talon-01", "Name of the chain")
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
 	cmd.Flags().String(flagRopstenUrl, "", "RPC url for ropsten network")

@@ -192,7 +192,7 @@ func (self *ETHChain) startApiServer() {
 
 	handler := self.NewRPCHandler()
 	handler.RegisterName("web3", &extra.Web3API{})
-	handler.RegisterName("net", &extra.NetAPI{NetworkId: "1"})
+	handler.RegisterName("net", &extra.NetAPI{NetworkId: self.chainConfig.Eth.Genesis.Config.ChainID.String()})
 	handler.RegisterName("evm", &extra.EvmApi{})
 
 	self.AttachEthService(handler, []string{"eth", "personal", "txpool", "debug"})

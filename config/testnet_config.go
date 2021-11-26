@@ -8,65 +8,36 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/sisu-network/cosmos-sdk/crypto/keyring"
 	"github.com/sisu-network/dcore/core"
 	"github.com/sisu-network/dcore/eth/ethconfig"
 	"github.com/sisu-network/dcore/miner"
 	"github.com/sisu-network/dcore/node"
 	"github.com/sisu-network/dcore/params"
+	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/utils"
 )
 
 var (
-	testnetEthChainId = big.NewInt(34567)
+	// testnetEthChainId = big.NewInt(34567)
+	testnetEthChainId = libchain.GetChainIntFromId("eth-sisu-testnet")
 )
+
+// 10 accounts from the mnemmonic
+// '0xF0cB0b1eAe36dBFE049ef4eDBeB5FDa9f1e05E50',
+// '0x53FE06ffc5E89588d7CBE7415aB678ac683e6E98',
+// '0xC1BB7762b9c1095A84528DD13A5771b34C5F06B1',
+// '0xfeFdEa69eCCbA627ed014fB6C9eaE0ed50eAfDd3',
+// '0xe59e1792966Bfe6AF001760DE15Ace60DD31848D',
+// '0x2A98Ac0C5Dde849940a9790f7a52817e0CF5F924',
+// '0xe3B1ba8De7f74De201Dad5978e3F207aA6B70aB4',
+// '0xE11Dd1de3f74031EF82013C7C1F435CED2ae56a3',
+// '0x4193cfF48b41076228621E25fb61868ec8563534',
+// '0xd6c11d904b0F4eebf6102d3161ecD2c60170576E'
 
 type TestnetConfig struct {
 	sisuConfig *SisuConfig
 	ethConfig  *ETHConfig
 	tssConfig  *TssConfig
-}
-
-func (c *TestnetConfig) GetSisuConfig() *SisuConfig {
-	if c.sisuConfig == nil {
-		c.sisuConfig = testnetSisuConfig()
-	}
-
-	return c.sisuConfig
-}
-
-func (c *TestnetConfig) GetETHConfig() *ETHConfig {
-	// sisuConfig := c.GetSisuConfig()
-
-	// if c.ethConfig == nil {
-	// 	c.ethConfig = testnetETHConfig(sisuConfig.ConfigDir)
-	// }
-
-	return c.ethConfig
-}
-
-func (c *TestnetConfig) GetTssConfig() *TssConfig {
-	// sisuConfig := c.GetSisuConfig()
-
-	// if c.tssConfig == nil {
-	// 	c.tssConfig = testnetTssConfig(sisuConfig.ConfigDir)
-	// }
-
-	return c.tssConfig
-}
-
-func testnetSisuConfig() *SisuConfig {
-	appDir := os.Getenv("HOME") + "/.sisu"
-
-	sisuConfig := &SisuConfig{
-		Dir:            appDir + "/main",
-		ChainId:        "talon-1",
-		KeyringBackend: keyring.BackendFile,
-		ApiHost:        "0.0.0.0",
-		ApiPort:        25456,
-	}
-
-	return sisuConfig
 }
 
 func testnetETHConfig(baseDir string) *ETHConfig {
@@ -103,7 +74,10 @@ func testTestnetEthConfig() *ethconfig.Config {
 	blockGasLimit := uint64(15000000)
 	alloc := make(map[common.Address]core.GenesisAccount)
 
-	addrs := []common.Address{common.HexToAddress("0x018309Ce82ED587F568B3ae04549897d88066eE1")}
+	addrs := []common.Address{
+		common.HexToAddress("0xF0cB0b1eAe36dBFE049ef4eDBeB5FDa9f1e05E50"),
+		common.HexToAddress("0x53FE06ffc5E89588d7CBE7415aB678ac683e6E98"),
+	}
 	for _, addr := range addrs {
 		alloc[addr] = core.GenesisAccount{
 			Balance: initialBalance,
