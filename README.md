@@ -190,7 +190,8 @@ For example
 Waits a few seconds for the transaction to complete. Afterward, you can query the asset balance on the destination chain:
 
 ```
-./sisu dev query [ContractType] [chain] [AssetId] [AccountAddress]
+./sisu dev query [ContractType] [chain] [port] [AssetId] [AccountAddress]
+```
 
-./sisu dev query erc20 ganache1 eth-sisu-local__0x3DeaCe7E9C8b6ee632bb71663315d6330914f915 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
+./sisu dev query erc20 ganache1 7545 eth-sisu-local__0x3DeaCe7E9C8b6ee632bb71663315d6330914f915 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
 ```
