@@ -8,65 +8,23 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/sisu-network/cosmos-sdk/crypto/keyring"
 	"github.com/sisu-network/dcore/core"
 	"github.com/sisu-network/dcore/eth/ethconfig"
 	"github.com/sisu-network/dcore/miner"
 	"github.com/sisu-network/dcore/node"
 	"github.com/sisu-network/dcore/params"
+	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/utils"
 )
 
 var (
-	testnetEthChainId = big.NewInt(34567)
+	testnetEthChainId = libchain.GetChainIntFromId("eth-sisu-testnet")
 )
 
 type TestnetConfig struct {
 	sisuConfig *SisuConfig
 	ethConfig  *ETHConfig
 	tssConfig  *TssConfig
-}
-
-func (c *TestnetConfig) GetSisuConfig() *SisuConfig {
-	if c.sisuConfig == nil {
-		c.sisuConfig = testnetSisuConfig()
-	}
-
-	return c.sisuConfig
-}
-
-func (c *TestnetConfig) GetETHConfig() *ETHConfig {
-	// sisuConfig := c.GetSisuConfig()
-
-	// if c.ethConfig == nil {
-	// 	c.ethConfig = testnetETHConfig(sisuConfig.ConfigDir)
-	// }
-
-	return c.ethConfig
-}
-
-func (c *TestnetConfig) GetTssConfig() *TssConfig {
-	// sisuConfig := c.GetSisuConfig()
-
-	// if c.tssConfig == nil {
-	// 	c.tssConfig = testnetTssConfig(sisuConfig.ConfigDir)
-	// }
-
-	return c.tssConfig
-}
-
-func testnetSisuConfig() *SisuConfig {
-	appDir := os.Getenv("HOME") + "/.sisu"
-
-	sisuConfig := &SisuConfig{
-		Dir:            appDir + "/main",
-		ChainId:        "talon-1",
-		KeyringBackend: keyring.BackendFile,
-		ApiHost:        "0.0.0.0",
-		ApiPort:        25456,
-	}
-
-	return sisuConfig
 }
 
 func testnetETHConfig(baseDir string) *ETHConfig {
@@ -103,7 +61,10 @@ func testTestnetEthConfig() *ethconfig.Config {
 	blockGasLimit := uint64(15000000)
 	alloc := make(map[common.Address]core.GenesisAccount)
 
-	addrs := []common.Address{common.HexToAddress("0x018309Ce82ED587F568B3ae04549897d88066eE1")}
+	addrs := []common.Address{
+		common.HexToAddress("0x018309Ce82ED587F568B3ae04549897d88066eE1"),
+		common.HexToAddress("0xF3DD08440Dbc82F9728f10044b4fF25B8DffE3C2"),
+	}
 	for _, addr := range addrs {
 		alloc[addr] = core.GenesisAccount{
 			Balance: initialBalance,
