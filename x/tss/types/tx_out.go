@@ -18,6 +18,9 @@ const (
 	TxOutStatusDeployingToBlockchain TxOutStatus = "deploying_to_chain"
 	TxOutStatusDeployedToBlockchain  TxOutStatus = "deployed_to_chain"
 
+	TxOutStatusDeployingToBlock TxOutStatus = "deploying_to_block"
+	TxOutStatusDeployedToBlock  TxOutStatus = "deployed_to_block"
+
 	// TxOutStatusAck ack that txOut is received from Cosmos chain
 	TxOutStatusAck TxOutStatus = "ack"
 
