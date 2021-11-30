@@ -17,9 +17,9 @@ import (
 
 const (
 	// The keygen proposal has passed the consensus and included in a Sisu block
-	STATUS_PROPOSAL_FINALIZED = "proposal_finalized"
+	StatusProposalFinalized = "proposal_finalized"
 	// The keygen has finished and delivered to destination chain.
-	STATUS_DELIVERED_TO_CHAIN = "delivered_to_chain"
+	StatusDeliveredToChain = "delivered_to_chain"
 )
 
 // Make sure struct implement interface at compile-time
@@ -286,7 +286,7 @@ func (d *SqlDatabase) IsKeygenDelivered(chain string) bool {
 		return false
 	}
 
-	return status == STATUS_DELIVERED_TO_CHAIN
+	return status == StatusDeliveredToChain
 }
 
 func (d *SqlDatabase) InsertContracts(contracts []*tsstypes.ContractEntity) {

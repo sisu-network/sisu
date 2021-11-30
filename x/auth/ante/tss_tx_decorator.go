@@ -26,7 +26,7 @@ func (d TssDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bool, next
 	log.Debug("Checking TSS transaction")
 	msgs := tx.GetMsgs()
 	if len(msgs) == 0 {
-		return ctx, fmt.Errorf("Empty mesage list")
+		return ctx, fmt.Errorf("empty mesage list")
 	}
 
 	if err := d.validator.CheckTx(ctx, msgs); err != nil {
