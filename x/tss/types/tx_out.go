@@ -10,6 +10,7 @@ import (
 type TxOutStatus string
 
 const (
+	TxOutStatusConfirmed TxOutStatus = "confirmed"
 	// TxOutStatusPreBroadcast after produce from observedTx, the txOut is ready to broadcast to Cosmos chain
 	TxOutStatusPreBroadcast TxOutStatus = "pre_broadcast"
 	// TxOutStatusBroadcasted TxOut has broadcasted to Cosmos chain successfully
@@ -20,9 +21,6 @@ const (
 
 	TxOutStatusDeployingToBlock TxOutStatus = "deploying_to_block"
 	TxOutStatusDeployedToBlock  TxOutStatus = "deployed_to_block"
-
-	// TxOutStatusAck ack that txOut is received from Cosmos chain
-	TxOutStatusAck TxOutStatus = "ack"
 
 	// TxOutStatusPreSigning txOut is ready to be signed
 	TxOutStatusPreSigning TxOutStatus = "pre_signing"

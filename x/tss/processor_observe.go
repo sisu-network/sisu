@@ -62,7 +62,7 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string) error {
 	log.Verbose("This is a transaction from us. We need to confirm it. Chain =", chain)
 
 	txHash := utils.KeccakHash32(string(tx.Serialized))
-	if err := p.db.UpdateTxOutStatus(chain, txHash, tssTypes.TxOutStatusSigned, true); err != nil {
+	if err := p.db.UpdateTxOutStatus(chain, txHash, tssTypes.TxOutStatusConfirmed, true); err != nil {
 		return err
 	}
 

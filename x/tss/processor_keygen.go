@@ -77,9 +77,9 @@ func (p *Processor) OnKeygenResult(result dhTypes.KeygenResult) {
 	// 2. Add the address to the watch list.
 	deyesClient := p.deyesClients[result.Chain]
 	if deyesClient == nil {
-		log.Critical("Cannot find deyes client for chain", result.Chain)
+		log.Critical("Cannot find deyes client for chain ", result.Chain)
 	} else {
-		log.Verbose("adding watcher address", result.Address, "for chain", result.Chain)
+		log.Verbosef("adding watcher address (%s) for chain(%s)", result.Address, result.Chain)
 		deyesClient.AddWatchAddresses(result.Chain, []string{result.Address})
 
 		// Update the address and pubkey of the keygen database.

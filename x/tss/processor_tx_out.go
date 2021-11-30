@@ -24,6 +24,7 @@ func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.Observed
 	log.Verbose("len(outEntities) = ", len(outEntities))
 	if len(outEntities) > 0 {
 		for _, outEntity := range outEntities {
+			outEntity.Status = string(tssTypes.TxOutStatusPreBroadcast)
 			log.Verbose("Inserting into db, tx hash = ", outEntity.HashWithoutSig)
 		}
 		p.db.InsertTxOuts(outEntities)
@@ -31,7 +32,11 @@ func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.Observed
 
 	for _, msg := range outMsgs {
 		go func(m *tssTypes.TxOut) {
-			p.txSubmit.SubmitMessage(m)
+			if err := p.txSubmit.SubmitMessage(m); err != nil {
+				return
+			}
+
+			p.db.UpdateTxOutStatus(msg.OutChain, msg.GetHash(), tssTypes.TxOutStatusBroadcasted, false)
 		}(msg)
 	}
 
@@ -99,6 +104,8 @@ func (p *Processor) deliverTxOutEth(ctx sdk.Context, tx *types.TxOut) ([]byte, e
 		_ = p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusSignFailed, false)
 		return nil, err
 	}
+
+	_ = p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusSigned, false)
 
 	return nil, nil
 }
