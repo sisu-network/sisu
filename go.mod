@@ -22,7 +22,7 @@ require (
 	github.com/sisu-network/dcore v0.1.11
 	github.com/sisu-network/deyes v0.1.2
 	github.com/sisu-network/dheart v0.1.4-alpha5
-	github.com/sisu-network/lib v0.0.1-alpha7
+	github.com/sisu-network/lib v0.0.1-alpha8
 	github.com/sisu-network/tendermint v0.34.8-fork006
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.1

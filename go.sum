@@ -1146,8 +1146,8 @@ github.com/sisu-network/deyes v0.1.2/go.mod h1:ISeHUdielLoufABK01i+HjFzhy0Nudsfx
 github.com/sisu-network/dheart v0.1.4-alpha5 h1:xSUb8D41mlEqth/icJSKLJJhYIgEbjNY838MjcCjFaU=
 github.com/sisu-network/dheart v0.1.4-alpha5/go.mod h1:nSO3CbQIEPlKQTKoVuJAfwe9T6fTGdJ7rbB36aeyL3Q=
 github.com/sisu-network/lib v0.0.1-alpha6/go.mod h1:IVs0irBgW1BkGlJ83XTOwWbNxuYHon+xv7m2sdNDss4=
-github.com/sisu-network/lib v0.0.1-alpha7 h1:MdXXF8fW2vBSmDUz7Q2k8Xz0G0+/qJ5kIJiazaG98Hk=
-github.com/sisu-network/lib v0.0.1-alpha7/go.mod h1:IVs0irBgW1BkGlJ83XTOwWbNxuYHon+xv7m2sdNDss4=
+github.com/sisu-network/lib v0.0.1-alpha8 h1:jRwnC2sMPUwmQbpTdzj3eJn3UHWuX8r+92JyLPX7UpU=
+github.com/sisu-network/lib v0.0.1-alpha8/go.mod h1:IVs0irBgW1BkGlJ83XTOwWbNxuYHon+xv7m2sdNDss4=
 github.com/sisu-network/tendermint v0.34.8-fork005/go.mod h1:SMrIOwxrc88H8ats26WQ6jk+kZLsLeVhMAHivOkmXIs=
 github.com/sisu-network/tendermint v0.34.8-fork006 h1:awqt7Y03OdIhbujGznUWnBjPx6zeEm9If5/DOkY0crs=
 github.com/sisu-network/tendermint v0.34.8-fork006/go.mod h1:SMrIOwxrc88H8ats26WQ6jk+kZLsLeVhMAHivOkmXIs=
