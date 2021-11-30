@@ -15,7 +15,6 @@ import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/cosmos-sdk/types/module"
 	banktypes "github.com/sisu-network/cosmos-sdk/x/bank/types"
-	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/config"
 )
 
@@ -96,12 +95,10 @@ Example:
 					SupportedChains: map[string]config.TssChainConfig{
 						"eth-sisu-local": {
 							Symbol:   "eth-sisu-local",
-							Id:       int(libchain.GetChainIntFromId("eth-sisu-local").Int64()),
 							DeyesUrl: "http://0.0.0.0:31001",
 						},
 						"ganache1": {
 							Symbol:   "ganache1",
-							Id:       int(libchain.GetChainIntFromId("ganache1").Int64()),
 							DeyesUrl: "http://0.0.0.0:31001",
 						},
 					},

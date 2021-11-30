@@ -266,12 +266,10 @@ func (exe *TestnetDockerExecutor) getNodeSettings(chainID, keyringBackend string
 			SupportedChains: map[string]config.TssChainConfig{
 				"eth-sisu-local": {
 					Symbol:   "eth-sisu-local",
-					Id:       int(libchain.GetChainIntFromId("eth-sisu-local").Int64()),
 					DeyesUrl: fmt.Sprintf("http://deyes%d:31001", index),
 				},
 				"eth-ropsten": {
 					Symbol:   "eth-ropsten",
-					Id:       int(libchain.GetChainIntFromId("eth-ropsten").Int64()),
 					DeyesUrl: fmt.Sprintf("http://deyes%d:31001", index),
 				},
 			},

@@ -46,7 +46,6 @@ type ETHConfig struct {
 
 type TssChainConfig struct {
 	Symbol   string `toml:"symbol"`
-	Id       int    `toml:"id"`
 	DeyesUrl string `toml:"deyes-url"`
 }
 
