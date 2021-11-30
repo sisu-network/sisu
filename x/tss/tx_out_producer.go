@@ -128,7 +128,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 			for i, outTx := range outEthTxs {
 				bz, err := outTx.MarshalBinary()
 				if err != nil {
-					log.Error("Cannot marshall binary")
+					log.Error("Cannot marshall binary", err)
 					continue
 				}
 

@@ -24,7 +24,7 @@ func (a *ApiHandler) Version() string {
 }
 
 // Empty function for checking health only.
-func (api *ApiHandler) CheckHealth() {
+func (a *ApiHandler) CheckHealth() {
 }
 
 func (a *ApiHandler) KeygenResult(result htypes.KeygenResult) bool {

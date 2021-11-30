@@ -26,7 +26,7 @@ type BlockSymbolPair struct {
 
 func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 	if p.globalData.IsCatchingUp() ||
-		p.lastProposeBlockHeight != 0 && blockHeight-p.lastProposeBlockHeight <= PROPOSE_BLOCK_INTERVAL {
+		p.lastProposeBlockHeight != 0 && blockHeight-p.lastProposeBlockHeight <= ProposeBlockInterval {
 		return
 	}
 
@@ -127,13 +127,13 @@ func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, er
 func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult) ([]byte, error) {
 	// TODO: Save data to KV store.
 	if msg.Result == types.KeygenResult_SUCCESS {
-		if status, _ := p.db.GetKeygenStatus(msg.Chain); status == db.STATUS_DELIVERED_TO_CHAIN {
+		if status, _ := p.db.GetKeygenStatus(msg.Chain); status == db.StatusDeliveredToChain {
 			log.Info("Keygen result has been processed for chain", msg.Chain)
 			return nil, nil
 		}
 
 		// Update key address
-		p.db.UpdateKeygenStatus(msg.Chain, db.STATUS_DELIVERED_TO_CHAIN)
+		p.db.UpdateKeygenStatus(msg.Chain, db.StatusDeliveredToChain)
 
 		// If this keygen is successful, prepare for contract deployment.
 		// Save the pubkey to the keeper.
