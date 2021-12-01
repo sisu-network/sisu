@@ -114,7 +114,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 	// 1. Check if this is a transaction sent to our key address. If this is true, it's likely a tx
 	// that funds our account.
-	if ethTx.To() != nil && p.db.IsChainKeyAddress(tx.Chain, ethTx.To().String()) {
+	if ethTx.To() != nil && p.db.IsChainKeyAddress(libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
 		contracts := p.db.GetPendingDeployContracts(tx.Chain)
 		log.Verbose("len(contracts) = ", len(contracts))
 

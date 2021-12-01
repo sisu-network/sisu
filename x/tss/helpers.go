@@ -8,7 +8,7 @@ import (
 	ctypes "github.com/sisu-network/cosmos-sdk/crypto/types"
 )
 
-func GetKeygenId(chain string, block int64, pubKeys []ctypes.PubKey) string {
+func GetKeygenId(keyType string, block int64, pubKeys []ctypes.PubKey) string {
 	// Get hashes of all pubkeys
 	digester := crypto.MD5.New()
 	for _, pubKey := range pubKeys {
@@ -16,5 +16,5 @@ func GetKeygenId(chain string, block int64, pubKeys []ctypes.PubKey) string {
 	}
 	hash := hex.EncodeToString(digester.Sum(nil))
 
-	return fmt.Sprintf("%s;%d;%s", chain, block, hash)
+	return fmt.Sprintf("%s;%d;%s", keyType, block, hash)
 }
