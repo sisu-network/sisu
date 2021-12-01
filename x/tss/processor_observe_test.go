@@ -27,9 +27,9 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 		t.Parallel()
 
 		ctrl := gomock.NewController(t)
-		defer func() {
+		t.Cleanup(func() {
 			ctrl.Finish()
-		}()
+		})
 
 		observedChain := "eth"
 		keygenAddress := utils.RandomHeximalString(64)
@@ -37,7 +37,7 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 		// Define mock db
 		mockDb := mock.NewMockDatabase(ctrl)
 		mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(true).MinTimes(1)
-		mockDb.EXPECT().UpdateTxOutStatus(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).MinTimes(1)
+		mockDb.EXPECT().UpdateTxOutStatus(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).MinTimes(1)
 		mockDb.EXPECT().GetTxOutWithHash(gomock.Any(), gomock.Any(), gomock.Any()).Return(
 			&types.TxOutEntity{
 				ContractHash: utils.RandomHeximalString(64),
@@ -63,9 +63,9 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 		t.Parallel()
 
 		ctrl := gomock.NewController(t)
-		defer func() {
+		t.Cleanup( func() {
 			ctrl.Finish()
-		}()
+		})
 
 		txSubmitterMock := mock.NewMockTxSubmit(ctrl)
 		txSubmitterMock.EXPECT().SubmitMessage(gomock.Any()).Return(nil).AnyTimes()
@@ -75,10 +75,10 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 		appKeysMock := mock.NewMockAppKeys(ctrl)
 		appKeysMock.EXPECT().GetSignerAddress().Return(addr).MinTimes(1)
 
+		observedChain := "eth"
 		mockDb := mock.NewMockDatabase(ctrl)
 		mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(false).MinTimes(1)
-
-		observedChain := "eth"
+		mockDb.EXPECT().UpdateTxOutStatus(observedChain, gomock.Any(), types.TxOutStatusPreBroadcast, gomock.Any()).Return(nil).AnyTimes()
 		keygenAddress := utils.RandomHeximalString(64)
 
 		txs := &eyesTypes.Txs{

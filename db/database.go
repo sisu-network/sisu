@@ -17,9 +17,9 @@ import (
 
 const (
 	// The keygen proposal has passed the consensus and included in a Sisu block
-	STATUS_PROPOSAL_FINALIZED = "proposal_finalized"
+	StatusProposalFinalized = "proposal_finalized"
 	// The keygen has finished and delivered to destination chain.
-	STATUS_DELIVERED_TO_CHAIN = "delivered_to_chain"
+	StatusDeliveredToChain = "delivered_to_chain"
 )
 
 // Make sure struct implement interface at compile-time
@@ -53,7 +53,7 @@ type Database interface {
 	GetTxOutWithHash(chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity
 	IsContractDeployTx(chain string, hashWithoutSig string) bool
 	UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string, sig []byte) error
-	UpdateTxOutStatus(chain, hashWithoutSig string, status tsstypes.TxOutStatus) error
+	UpdateTxOutStatus(chain, hash string, status tsstypes.TxOutStatus, isHashWithSig bool) error
 
 	// Mempool tx
 	InsertMempoolTxHash(hash string, blockHeight int64)
@@ -286,7 +286,7 @@ func (d *SqlDatabase) IsKeygenDelivered(chain string) bool {
 		return false
 	}
 
-	return status == STATUS_DELIVERED_TO_CHAIN
+	return status == StatusDeliveredToChain
 }
 
 func (d *SqlDatabase) InsertContracts(contracts []*tsstypes.ContractEntity) {
@@ -541,12 +541,17 @@ func (d *SqlDatabase) UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string,
 	return nil
 }
 
-func (d *SqlDatabase) UpdateTxOutStatus(chain, hashWithSig string, status tsstypes.TxOutStatus) error {
+func (d *SqlDatabase) UpdateTxOutStatus(chain, hash string, status tsstypes.TxOutStatus, isHashWithSig bool) error {
+	log.Debugf("Updating txout hash(%s) to status(%s), chain(%s)", hash, string(status), chain)
 	query := "UPDATE tx_out SET status = ? WHERE chain = ? AND hash_with_sig = ?"
-	params := []interface{}{status, chain, hashWithSig}
+	if !isHashWithSig {
+		query = "UPDATE tx_out SET status = ? WHERE chain = ? AND hash_without_sig = ?"
+	}
+
+	params := []interface{}{status, chain, hash}
 
 	if _, err := d.db.Exec(query, params...); err != nil {
-		log.Error("failed to update chain status", chain, hashWithSig, ", err =", err)
+		log.Error("failed to update chain status", chain, hash, ", err =", err)
 		return err
 	}
 

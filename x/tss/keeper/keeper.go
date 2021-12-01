@@ -12,20 +12,20 @@ import (
 )
 
 const (
-	OBSERVED_TX_CACHE_SIZE = 2500
+	ObservedTxCacheSize = 2500
 )
 
 // TODO: clean up this list
 var (
-	PREFIX_OBSERVED_TX      = []byte{0x01}
-	PREFIX_PUBLIC_KEY_BYTES = []byte{0x02}
-	PREFIX_ETH_KEY_ADDRESS  = []byte{0x03}
+	PrefixObservedTx     = []byte{0x01}
+	PrefixPublicKeyBytes = []byte{0x02}
+	PrefixEthKeyAddress  = []byte{0x03}
 
 	// List of on memory keys. These data are not persisted into kvstore.
 	// List of contracts that need to be deployed to a chain.
-	KEY_ETH_KEY_ADDRESS    = "eth_key_address_%s"       // chain
-	KEY_CONTRACT_QUEUE     = "contract_queue_%s_%s"     // chain
-	KEY_DEPLOYING_CONTRACT = "deploying_contract_%s_%s" // chain - contract hash
+	KeyEthKeyAddress     = "eth_key_address_%s"       // chain
+	KeyContractQueue     = "contract_queue_%s_%s"     // chain
+	KeyDeployingContract = "deploying_contract_%s_%s" // chain - contract hash
 )
 
 type Keeper interface {
@@ -56,26 +56,26 @@ func (k *DefaultKeeper) getKey(chain string, height int64, hash string) []byte {
 }
 
 func (k *DefaultKeeper) SaveObservedTx(ctx sdk.Context, tx *tssTypes.ObservedTx) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_OBSERVED_TX)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PrefixObservedTx)
 	key := k.getKey(tx.Chain, tx.BlockHeight, tx.TxHash)
 
 	store.Set(key, tx.Serialized)
 }
 
 func (k *DefaultKeeper) GetObservedTx(ctx sdk.Context, chain string, blockHeight int64, hash string) []byte {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_OBSERVED_TX)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PrefixObservedTx)
 	key := k.getKey(chain, blockHeight, hash)
 
 	return store.Get(key)
 }
 
 func (k *DefaultKeeper) SavePubKey(ctx sdk.Context, chain string, keyBytes []byte) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PUBLIC_KEY_BYTES)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PrefixPublicKeyBytes)
 	store.Set([]byte(chain), keyBytes)
 }
 
 func (k *DefaultKeeper) GetAllPubKeys(ctx sdk.Context) map[string][]byte {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PUBLIC_KEY_BYTES)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PrefixPublicKeyBytes)
 	iter := store.Iterator(nil, nil)
 	ret := make(map[string][]byte)
 	for ; iter.Valid(); iter.Next() {
@@ -86,8 +86,8 @@ func (k *DefaultKeeper) GetAllPubKeys(ctx sdk.Context) map[string][]byte {
 }
 
 func (k *DefaultKeeper) SaveEthKeyAddrs(ctx sdk.Context, chain string, keyAddrs map[string]bool) error {
-	key := fmt.Sprintf(KEY_ETH_KEY_ADDRESS, chain)
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_ETH_KEY_ADDRESS)
+	key := fmt.Sprintf(KeyEthKeyAddress, chain)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PrefixEthKeyAddress)
 
 	bz, err := json.Marshal(keyAddrs)
 	if err != nil {
@@ -101,7 +101,7 @@ func (k *DefaultKeeper) SaveEthKeyAddrs(ctx sdk.Context, chain string, keyAddrs 
 
 func (k *DefaultKeeper) GetAllEthKeyAddrs(ctx sdk.Context) (map[string]map[string]bool, error) {
 	m := make(map[string]map[string]bool)
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_ETH_KEY_ADDRESS)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), PrefixEthKeyAddress)
 
 	iter := store.Iterator(nil, nil)
 	for ; iter.Valid(); iter.Next() {

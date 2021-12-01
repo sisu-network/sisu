@@ -21,11 +21,11 @@ import (
 )
 
 const (
-	PROPOSE_BLOCK_INTERVAL = 1000
+	ProposeBlockInterval = 1000
 )
 
 var (
-	ERR_INVALID_MESSASGE_TYPE = fmt.Errorf("Invalid Message Type")
+	ErrInvalidMessasgeType = fmt.Errorf("Invalid Message Type")
 )
 
 // A major struct that processes complicated logic of TSS keysign and keygen. Read the documentation
@@ -101,10 +101,10 @@ func (p *Processor) Init() {
 // Connect to Dheart server and set private key for dheart. Note that this is the tendermint private
 // key, not signer key in the keyring.
 func (p *Processor) connectToDheart() {
-	var err error
 	url := fmt.Sprintf("http://%s:%d", p.config.DheartHost, p.config.DheartPort)
 	log.Info("Connecting to Dheart server at", url)
 
+	var err error
 	p.dheartClient, err = tssclients.DialDheart(url)
 	if err != nil {
 		log.Error("Failed to connect to Dheart. Err =", err)
@@ -184,7 +184,9 @@ func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
 
 	for _, msg := range msgs {
 		if msg.Route() != types.ModuleName {
-			return fmt.Errorf("Some message is not a TSS message")
+			err := fmt.Errorf("some message is not a TSS message")
+			log.Error(err)
+			return err
 		}
 
 		log.Debug("Checking tx: Msg type = ", msg.Type())
@@ -244,7 +246,7 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 			// We dont get serialized data of the proposal msg because the serialized data contains
 			// blockheight. Instead, we only check the chain of the proposal.
 			key := fmt.Sprintf("KeygenProposal__%s", proposalMsg.Chain)
-			if !p.db.MempoolTxExistedRange(key, p.currentHeight-PROPOSE_BLOCK_INTERVAL/2, p.currentHeight+PROPOSE_BLOCK_INTERVAL/2) {
+			if !p.db.MempoolTxExistedRange(key, p.currentHeight-ProposeBlockInterval/2, p.currentHeight+ProposeBlockInterval/2) {
 				// Insert into the db
 				p.db.InsertMempoolTxHash(key, p.currentHeight)
 				return nil
@@ -283,7 +285,7 @@ func (p *Processor) checkAndInsertMempoolTx(hash, msgType string) error {
 		return err
 	}
 
-	log.Verbose("Inserting", msgType, "into the mempool table, hash =", hash)
+	log.Verbose("Inserting ", msgType, " into the mempool table, hash = ", hash)
 	p.db.InsertMempoolTxHash(hash, p.currentHeight)
 
 	return nil

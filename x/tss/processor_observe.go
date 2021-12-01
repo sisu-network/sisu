@@ -6,7 +6,6 @@ import (
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/utils"
-	"github.com/sisu-network/sisu/x/tss/types"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 )
 
@@ -24,7 +23,6 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) error {
 			// 2. This is a transaction to our key account or one of our contracts. Create a message to
 			// indicate that we have observed this transaction and broadcast it to cosmos chain.
 			hash := utils.GetObservedTxHash(txs.Block, txs.Chain, tx.Serialized)
-
 			observedTxs := tssTypes.NewObservedTxs(
 				p.appKeys.GetSignerAddress().String(),
 				txs.Chain,
@@ -32,7 +30,13 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) error {
 				txs.Block,
 				tx.Serialized,
 			)
-			go p.txSubmit.SubmitMessage(observedTxs)
+
+			// TODO: handle error correctly
+			go func() {
+				if err := p.txSubmit.SubmitMessage(observedTxs); err != nil {
+					return
+				}
+			}()
 		}
 	}
 
@@ -58,7 +62,7 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string) error {
 	log.Verbose("This is a transaction from us. We need to confirm it. Chain =", chain)
 
 	txHash := utils.KeccakHash32(string(tx.Serialized))
-	if err := p.db.UpdateTxOutStatus(chain, txHash, types.TxOutStatusConfirmed); err != nil {
+	if err := p.db.UpdateTxOutStatus(chain, txHash, tssTypes.TxOutStatusConfirmed, true); err != nil {
 		return err
 	}
 
@@ -67,14 +71,27 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string) error {
 		log.Info("This is a tx deployment")
 		txOut := p.db.GetTxOutWithHash(chain, txHash, true)
 
-		if txOut != nil {
-			log.Info("Updating contract status. Contract hash = ", txOut.ContractHash)
-			p.db.UpdateContractsStatus([]*tssTypes.ContractEntity{
-				{
-					Chain: chain,
-					Hash:  txOut.ContractHash,
-				},
-			}, tssTypes.ContractStateDeployed)
+		if txOut == nil {
+			log.Warn("txOut by txHash", txHash, "is not found")
+			return nil
+		}
+
+		log.Info("Updating contract status. Contract hash = ", txOut.ContractHash)
+		if err := p.db.UpdateContractsStatus([]*tssTypes.ContractEntity{
+			{
+				Chain: chain,
+				Hash:  txOut.ContractHash,
+			},
+		}, tssTypes.ContractStateDeployed); err != nil {
+			return err
+		}
+
+		if err := p.db.UpdateTxOutStatus(
+			txOut.OutChain,
+			txOut.HashWithoutSig,
+			tssTypes.TxOutStatusDeployedToBlockchain,
+			false); err != nil {
+			return err
 		}
 	}
 
