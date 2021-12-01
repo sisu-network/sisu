@@ -10,17 +10,11 @@ import (
 	_ "github.com/golang-migrate/migrate/source/file"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/x/tss/types"
 	tsstypes "github.com/sisu-network/sisu/x/tss/types"
 )
 
 //go:generate mockgen -source=database.go -destination=../tests/mock/db.go -package=mock
-
-const (
-	// The keygen proposal has passed the consensus and included in a Sisu block
-	STATUS_PROPOSAL_FINALIZED = "proposal_finalized"
-	// The keygen has finished and delivered to destination chain.
-	STATUS_DELIVERED_TO_CHAIN = "delivered_to_chain"
-)
 
 // Make sure struct implement interface at compile-time
 var _ Database = (*SqlDatabase)(nil)
@@ -30,14 +24,13 @@ type Database interface {
 	Close() error
 
 	// Keygen
-	CreateKeygen(chain string) error
-	UpdateKeygenAddress(chain, address string, pubKey []byte)
+	CreateKeygen(keyType string, startBlock int64) error
+	GetKeyGen(keyType string) (*tsstypes.KeygenEntity, error)
 
-	IsKeyExisted(chain string) bool
-	IsChainKeyAddress(chain, address string) bool
-	GetPubKey(chain string) []byte
-	UpdateKeygenStatus(chain, status string)
-	GetKeygenStatus(chain string) (string, error)
+	UpdateKeygenAddress(keyType, address string, pubKey []byte)
+	IsChainKeyAddress(keyType string, address string) bool
+	GetPubKey(keyType string) []byte
+	UpdateKeygenStatus(keyType, status string)
 
 	// Contracts
 	InsertContracts(contracts []*tsstypes.ContractEntity)
@@ -158,22 +151,43 @@ func (d *SqlDatabase) Close() error {
 	return d.db.Close()
 }
 
-func (d *SqlDatabase) CreateKeygen(chain string) error {
-	query := "INSERT INTO keygen (chain) VALUES (?)"
-	params := []interface{}{chain}
+func (d *SqlDatabase) CreateKeygen(keyType string, startBlock int64) error {
+	query := "INSERT INTO keygen (key_type, start_block, status) VALUES (?, ?, ?)"
+	params := []interface{}{keyType, startBlock, types.KEYGEN_STATUS_GENERATING}
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
-		log.Error("failed to create new keygen for chain", chain, ", err = ", err)
+		log.Error("failed to create new keygen with type", keyType, ", err = ", err)
 		return err
 	}
 
 	return nil
 }
 
-func (d *SqlDatabase) UpdateKeygenAddress(chain, address string, pubKey []byte) {
-	query := "UPDATE keygen SET address = ?, pubkey = ? WHERE chain = ?"
-	params := []interface{}{address, pubKey, chain}
+func (d *SqlDatabase) GetKeyGen(keyType string) (*tsstypes.KeygenEntity, error) {
+	query := "SELECT key_type, address, pubkey, status, start_block FROM keygen WHERE key_type = ?"
+	params := []interface{}{keyType}
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		return nil, err
+	}
+
+	if rows.Next() {
+		result := new(tsstypes.KeygenEntity)
+		if err := rows.Scan(&result.Type, result.Address, result.Pubkey, result.Status, result.StartBlock); err != nil {
+			return nil, err
+		}
+
+		return result, nil
+	}
+
+	return nil, nil
+}
+
+func (d *SqlDatabase) UpdateKeygenAddress(keyType, address string, pubKey []byte) {
+	query := "UPDATE keygen SET address = ?, pubkey = ? WHERE key_type = ?"
+	params := []interface{}{address, pubKey, keyType}
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
@@ -181,13 +195,13 @@ func (d *SqlDatabase) UpdateKeygenAddress(chain, address string, pubKey []byte) 
 	}
 }
 
-func (d *SqlDatabase) IsKeyExisted(chain string) bool {
-	query := "SELECT chain FROM keygen WHERE chain = ?"
-	params := []interface{}{chain}
+func (d *SqlDatabase) IsKeyExisted(keyType string) bool {
+	query := "SELECT key_type FROM keygen WHERE key_type = ?"
+	params := []interface{}{keyType}
 
 	rows, err := d.db.Query(query, params...)
 	if err != nil {
-		log.Error("cannot query chain key ", chain)
+		log.Error("cannot query chain key ", keyType)
 		return false
 	}
 	defer rows.Close()
@@ -195,13 +209,13 @@ func (d *SqlDatabase) IsKeyExisted(chain string) bool {
 	return rows.Next()
 }
 
-func (d *SqlDatabase) IsChainKeyAddress(chain, address string) bool {
-	query := "SELECT chain FROM keygen WHERE chain = ? AND address = ?"
-	params := []interface{}{chain, address}
+func (d *SqlDatabase) IsChainKeyAddress(keyType, address string) bool {
+	query := "SELECT address FROM keygen WHERE key_type = ? AND address = ?"
+	params := []interface{}{keyType, address}
 
 	rows, err := d.db.Query(query, params...)
 	if err != nil {
-		log.Error("cannot query chain key ", chain, address)
+		log.Error("cannot query chain key ", address)
 		return false
 	}
 
@@ -210,13 +224,13 @@ func (d *SqlDatabase) IsChainKeyAddress(chain, address string) bool {
 	return rows.Next()
 }
 
-func (d *SqlDatabase) GetPubKey(chain string) []byte {
+func (d *SqlDatabase) GetPubKey(keyType string) []byte {
 	query := "SELECT pubkey FROM keygen WHERE chain = ?"
-	params := []interface{}{chain}
+	params := []interface{}{keyType}
 
 	rows, err := d.db.Query(query, params...)
 	if err != nil {
-		log.Error("cannot query pub key", chain)
+		log.Error("cannot query pub key", keyType)
 		return nil
 	}
 	defer rows.Close()
@@ -233,60 +247,14 @@ func (d *SqlDatabase) GetPubKey(chain string) []byte {
 	return result
 }
 
-func (d *SqlDatabase) UpdateKeygenStatus(chain, status string) {
-	query := "UPDATE keygen SET status = ? WHERE chain = ?"
-	params := []interface{}{status, chain}
+func (d *SqlDatabase) UpdateKeygenStatus(keyType, status string) {
+	query := "UPDATE keygen SET status = ? WHERE key_type = ?"
+	params := []interface{}{status, keyType}
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
-		log.Error("failed to udpate keygen status for chain", chain, ", err = ", err)
+		log.Error("failed to udpate keygen status for key type", keyType, ", err = ", err)
 	}
-}
-
-func (d *SqlDatabase) GetKeygenStatus(chain string) (string, error) {
-	query := "SELECT status FROM keygen WHERE chain = ?"
-	params := []interface{}{chain}
-
-	rows, err := d.db.Query(query, params...)
-	if err != nil {
-		log.Error("cannot query keygen status ", chain)
-		return "", err
-	}
-	defer rows.Close()
-
-	if !rows.Next() {
-		return "", nil
-	}
-
-	var status string
-	if err := rows.Scan(&status); err != nil {
-		return "", err
-	}
-
-	return status, nil
-}
-
-func (d *SqlDatabase) IsKeygenDelivered(chain string) bool {
-	query := "SELECT status FROM keygen WHERE chain = ?"
-	params := []interface{}{chain}
-
-	rows, err := d.db.Query(query, params...)
-	if err != nil {
-		log.Error("cannot check if keygen is delivered for chain ", chain, ", err =", err)
-		return false
-	}
-	defer rows.Close()
-
-	if !rows.Next() {
-		return false
-	}
-
-	var status string
-	if err := rows.Scan(&status); err != nil {
-		return false
-	}
-
-	return status == STATUS_DELIVERED_TO_CHAIN
 }
 
 func (d *SqlDatabase) InsertContracts(contracts []*tsstypes.ContractEntity) {

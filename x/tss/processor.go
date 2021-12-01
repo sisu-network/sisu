@@ -243,13 +243,13 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 			proposalMsg := msg.(*types.KeygenProposal)
 			// We dont get serialized data of the proposal msg because the serialized data contains
 			// blockheight. Instead, we only check the chain of the proposal.
-			key := fmt.Sprintf("KeygenProposal__%s", proposalMsg.Chain)
+			key := fmt.Sprintf("KeygenProposal__%s", proposalMsg.KeyType)
 			if !p.db.MempoolTxExistedRange(key, p.currentHeight-PROPOSE_BLOCK_INTERVAL/2, p.currentHeight+PROPOSE_BLOCK_INTERVAL/2) {
 				// Insert into the db
 				p.db.InsertMempoolTxHash(key, p.currentHeight)
 				return nil
 			} else {
-				err := fmt.Errorf("The keygen proposal has been inclued in a block for chain %s", proposalMsg.Chain)
+				err := fmt.Errorf("The keygen proposal has been inclued in a block for keyType %s", proposalMsg.KeyType)
 				log.Verbose(err)
 				return err
 			}
