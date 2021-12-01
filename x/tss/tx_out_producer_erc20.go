@@ -39,6 +39,7 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Tr
 	}
 
 	if methodName == "" {
+		log.Error("cannot find funcName")
 		return nil, fmt.Errorf("cannot find funcName")
 	}
 
@@ -46,6 +47,7 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Tr
 
 	params, err := abiMethods[methodName].Inputs.Unpack(payload[4:])
 	if err != nil {
+		log.Error("cannot unpack data", err)
 		return nil, err
 	}
 
@@ -54,6 +56,7 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Tr
 	switch methodName {
 	case MethodTransferOutFromContract:
 		if len(params) != 4 {
+			log.Error("transferOutFromContract expects 4 params")
 			return nil, fmt.Errorf("transferOutFromContract expects 4 params")
 		}
 
@@ -65,6 +68,7 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Tr
 		if libchain.IsETHBasedChain(toChain) {
 			toChainContract := p.db.GetContractFromHash(toChain, erc20Contract.AbiHash)
 			if toChainContract == nil {
+				log.Error("cannot find erc20 contract for toChain %s", toChain)
 				return nil, fmt.Errorf("cannot find erc20 contract for toChain %s", toChain)
 			}
 
@@ -78,12 +82,14 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Tr
 
 			input, err := erc20Contract.Abi.Pack(MethodTransferIn, assetId, ethcommon.HexToAddress(recipient), amount)
 			if err != nil {
+				log.Error("cannot pack abi", err)
 				return nil, err
 			}
 
 			nonce := p.worldState.UseAndIncreaseNonce(toChain)
 			if nonce < 0 {
-				return nil, fmt.Errorf("cannont find nonce for chain %s", toChain)
+				log.Error("cannot find nonce for chain %s", toChain)
+				return nil, fmt.Errorf("cannot find nonce for chain %s", toChain)
 			}
 
 			rawTx := ethTypes.NewTransaction(

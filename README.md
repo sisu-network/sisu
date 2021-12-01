@@ -1,7 +1,7 @@
 # Installation
 
-Install Go 1.6. Make sure GOPATH, GOROOT are set and go module is turned on.
-A few depdencies of this project are private repo. You need to config git to use `git` instead of `https` when downloading repo.
+- Install Go 1.6. Make sure GOPATH, GOROOT are set and go module is turned on.
+- A few depdencies of this project are private repo. You need to config git to use `git` instead of `https` when downloading repo.
 Run the following command to replace `https` by `git`.
 
 ```
@@ -13,6 +13,12 @@ To confirm, do `more ~/.gitconfig` and make sure you see the following:
 ```
 [url "git@github.com:"]
 	insteadOf = https://github.com/
+```
+
+- Install mockgen to generate mock structs from interfaces: 
+
+```bash
+go install github.com/golang/mock/mockgen@v1.6.0
 ```
 
 # Running locally without TSS
@@ -127,6 +133,8 @@ username: root
 password: password
 ```
 
+You can run `make dev-mysql-up` (make sure you installed Docker) to initialize databases with default settings
+
 #### Run ganache-cli
 
 Download ganache-cli (make sure you have version 6.x) and runs the following commands on 1 different terminals:
@@ -190,7 +198,8 @@ For example
 Waits a few seconds for the transaction to complete. Afterward, you can query the asset balance on the destination chain:
 
 ```
-./sisu dev query [ContractType] [chain] [AssetId] [AccountAddress]
+./sisu dev query [ContractType] [chain] [port] [AssetId] [AccountAddress]
+```
 
-./sisu dev query erc20 ganache1 eth-sisu-local__0x3DeaCe7E9C8b6ee632bb71663315d6330914f915 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
+./sisu dev query erc20 ganache1 7545 eth-sisu-local__0x3DeaCe7E9C8b6ee632bb71663315d6330914f915 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
 ```
