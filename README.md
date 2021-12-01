@@ -1,7 +1,7 @@
 # Installation
 
-Install Go 1.6. Make sure GOPATH, GOROOT are set and go module is turned on.
-A few depdencies of this project are private repo. You need to config git to use `git` instead of `https` when downloading repo.
+- Install Go 1.6. Make sure GOPATH, GOROOT are set and go module is turned on.
+- A few depdencies of this project are private repo. You need to config git to use `git` instead of `https` when downloading repo.
 Run the following command to replace `https` by `git`.
 
 ```
@@ -13,6 +13,12 @@ To confirm, do `more ~/.gitconfig` and make sure you see the following:
 ```
 [url "git@github.com:"]
 	insteadOf = https://github.com/
+```
+
+- Install mockgen to generate mock structs from interfaces: 
+
+```bash
+go install github.com/golang/mock/mockgen@v1.6.0
 ```
 
 # Running locally without TSS
@@ -126,6 +132,8 @@ port: 3306
 username: root
 password: password
 ```
+
+You can run `make dev-mysql-up` (make sure you installed Docker) to initialize databases with default settings
 
 #### Run ganache-cli
 
