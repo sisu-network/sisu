@@ -19,9 +19,6 @@ const (
 	TxOutStatusDeployingToBlockchain TxOutStatus = "deploying_to_chain"
 	TxOutStatusDeployedToBlockchain  TxOutStatus = "deployed_to_chain"
 
-	TxOutStatusDeployingToBlock TxOutStatus = "deploying_to_block"
-	TxOutStatusDeployedToBlock  TxOutStatus = "deployed_to_block"
-
 	// TxOutStatusPreSigning txOut is ready to be signed
 	TxOutStatusPreSigning TxOutStatus = "pre_signing"
 	// TxOutStatusSigning txOut is in singing progress
