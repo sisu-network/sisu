@@ -204,10 +204,10 @@ func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
 		}
 
 		// switch msg.Type() {
-		// case types.MSG_TYPE_KEYGEN_PROPOSAL:
+		// case types.MsgTypeKeygenProposal:
 		// 	return p.CheckKeyGenProposal(msg.(*types.KeygenProposal))
 
-		// case types.MSG_TYPE_KEYGEN_RESULT:
+		// case types.MsgTypeKeygenResult:
 		// 	// TODO: check this keygen result.
 		// case types.MSG_TYPE_OBSERVED_TXS:
 
@@ -241,7 +241,7 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 		log.Verbose("PreAddTxToMempoolFunc: Msg type = ", msg.Type())
 
 		switch msg.Type() {
-		case types.MSG_TYPE_KEYGEN_PROPOSAL:
+		case types.MsgTypeKeygenProposal:
 			proposalMsg := msg.(*types.KeygenProposal)
 			// We dont get serialized data of the proposal msg because the serialized data contains
 			// blockheight. Instead, we only check the chain of the proposal.
@@ -256,7 +256,7 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 				return err
 			}
 
-		case types.MSG_TYPE_OBSERVED_TX:
+		case types.MsgTypeObservedTx:
 			observedTx := msg.(*types.ObservedTx)
 			hash := utils.KeccakHash32(string(observedTx.SerializeWithoutSigner()))
 
@@ -264,7 +264,7 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 				return err
 			}
 
-		case types.MSG_TYPE_TX_OUT:
+		case types.MsgTypeTxOut:
 			txOut := msg.(*types.TxOut)
 			hash := utils.KeccakHash32(string(txOut.SerializeWithoutSigner()))
 

@@ -34,6 +34,13 @@ func (a *ApiHandler) KeygenResult(result htypes.KeygenResult) bool {
 	return true
 }
 
+func (a *ApiHandler) PresignResult(result htypes.KeygenResult) bool {
+	log.Info("There is a Presign Result")
+
+	a.processor.OnKeygenResult(result)
+	return true
+}
+
 // This is a API endpoint to receive transactions with To address we are interested in.
 func (a *ApiHandler) PostObservedTxs(txs *etypes.Txs) {
 	log.Debug("There is new list of transactions from deyes from chain ", txs.Chain)

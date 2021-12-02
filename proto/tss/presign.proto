@@ -1,0 +1,19 @@
+syntax = "proto3";
+package types;
+
+message PartyID {
+  string id = 1;
+  string moniker = 2;
+  bytes key = 3;
+  int32 index = 4;
+}
+
+// Cosmos message to broadcast PresignResult
+message PresignResult {
+  string signer = 1;
+  string chain = 2;
+  bool success = 3;
+  bytes pubkeyBytes = 4;
+  string address = 5;
+  repeated PartyID culprits = 6;
+}

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 CUR_DIR=$(pwd)
-COSMOS_VERSION=0.42.1
+COSMOS_VERSION=0.44.4
 
 for folder in $CUR_DIR/proto/**
 do
