@@ -329,7 +329,7 @@ func (self *ETHChain) transition(newState ChainState) {
 }
 
 func (self *ETHChain) OnSealFinish(block *types.Block) error {
-	log.Debug("Block is sealed, number =", block.Number())
+	log.Debug("Block is sealed, number = ", block.Number())
 
 	if err := self.Accept(block); err != nil {
 		log.Error(err)

@@ -24,6 +24,7 @@ func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.Observed
 	log.Verbose("len(outEntities) = ", len(outEntities))
 	if len(outEntities) > 0 {
 		for _, outEntity := range outEntities {
+			outEntity.Status = string(tssTypes.TxOutStatusPreBroadcast)
 			log.Verbose("Inserting into db, tx hash = ", outEntity.HashWithoutSig)
 		}
 		p.db.InsertTxOuts(outEntities)
@@ -31,7 +32,11 @@ func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.Observed
 
 	for _, msg := range outMsgs {
 		go func(m *tssTypes.TxOut) {
-			p.txSubmit.SubmitMessage(m)
+			if err := p.txSubmit.SubmitMessage(m); err != nil {
+				return
+			}
+
+			p.db.UpdateTxOutStatus(msg.OutChain, msg.GetHash(), tssTypes.TxOutStatusBroadcasted, false)
 		}(msg)
 	}
 
@@ -48,6 +53,10 @@ func (p *Processor) DeliverTxOut(ctx sdk.Context, tx *types.TxOut) ([]byte, erro
 	// TODO: Save this to KV store
 
 	if libchain.IsETHBasedChain(tx.OutChain) {
+		if err := p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusPreSigning, false); err != nil {
+			return nil, err
+		}
+
 		return p.deliverTxOutEth(ctx, tx)
 	}
 
@@ -84,11 +93,19 @@ func (p *Processor) deliverTxOutEth(ctx sdk.Context, tx *types.TxOut) ([]byte, e
 	}
 
 	pubKeys := p.partyManager.GetActivePartyPubkeys()
+	if err := p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusSigning, false); err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
 	err := p.dheartClient.KeySign(keysignReq, pubKeys)
 	if err != nil {
 		log.Error("Keysign: err =", err)
+		_ = p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusSignFailed, false)
 		return nil, err
 	}
+
+	_ = p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusSigned, false)
 
 	return nil, nil
 }
