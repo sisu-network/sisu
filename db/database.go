@@ -174,10 +174,14 @@ func (d *SqlDatabase) GetKeyGen(keyType string) (*tsstypes.KeygenEntity, error) 
 	}
 
 	if rows.Next() {
+		var nullableType, nullableAddress, nullableStatus sql.NullString
 		result := new(tsstypes.KeygenEntity)
-		if err := rows.Scan(&result.Type, result.Address, result.Pubkey, result.Status, result.StartBlock); err != nil {
+		if err := rows.Scan(&nullableType, &nullableAddress, &result.Pubkey, &nullableStatus, &result.StartBlock); err != nil {
 			return nil, err
 		}
+		result.Type = nullableType.String
+		result.Address = nullableAddress.String
+		result.Status = nullableStatus.String
 
 		return result, nil
 	}
@@ -225,7 +229,7 @@ func (d *SqlDatabase) IsChainKeyAddress(keyType, address string) bool {
 }
 
 func (d *SqlDatabase) GetPubKey(keyType string) []byte {
-	query := "SELECT pubkey FROM keygen WHERE chain = ?"
+	query := "SELECT pubkey FROM keygen WHERE key_type = ?"
 	params := []interface{}{keyType}
 
 	rows, err := d.db.Query(query, params...)
@@ -241,6 +245,7 @@ func (d *SqlDatabase) GetPubKey(keyType string) []byte {
 
 	var result []byte
 	if err := rows.Scan(&result); err != nil {
+		log.Error("cannot scan result, err = ", err)
 		return nil
 	}
 

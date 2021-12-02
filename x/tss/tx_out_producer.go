@@ -58,7 +58,7 @@ func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *t
 	var err error
 
 	if libchain.IsETHBasedChain(tx.Chain) {
-		log.Info("Getting tx out for chain", tx.Chain)
+		log.Info("Getting tx out for chain ", tx.Chain)
 		outMsgs, outEntities, err = p.getEthResponse(ctx, height, tx)
 
 		if err != nil {
@@ -188,7 +188,7 @@ func (p *DefaultTxOutputProducer) checkEthDeployContract(ctx sdk.Context, height
 	txs := make([]*ethTypes.Transaction, 0)
 
 	for _, contract := range contracts {
-		nonce := p.worldState.UseAndIncreaseNonce(contract.Chain)
+		nonce := p.worldState.UseAndIncreaseNonce(chain)
 		log.Verbose("nonce for deploying contract:", nonce)
 		if nonce < 0 {
 			log.Error("cannot get nonce for contract")
