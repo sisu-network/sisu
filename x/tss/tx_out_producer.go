@@ -128,7 +128,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 			for i, outTx := range outEthTxs {
 				bz, err := outTx.MarshalBinary()
 				if err != nil {
-					log.Error("Cannot marshall binary")
+					log.Error("Cannot marshall binary", err)
 					continue
 				}
 
@@ -198,7 +198,7 @@ func (p *DefaultTxOutputProducer) checkEthDeployContract(ctx sdk.Context, height
 		txs = append(txs, rawTx)
 	}
 
-	// Update all contract to "deploying" state.
+	// Update all contracts to "deploying" state.
 	p.db.UpdateContractsStatus(contracts, tsstypes.ContractStateDeploying)
 
 	return txs

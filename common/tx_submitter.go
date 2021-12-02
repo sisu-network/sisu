@@ -33,12 +33,12 @@ const (
 	// TODO: put these values into config file.
 	defaultGasAdjustment = 1.0
 	defaultGasLimit      = 300000
-	UN_INITIALIZED_SEQ   = 18446744073709551615 // Max of uint64. This means it's not initialized
+	UnInitializedSeq     = 18446744073709551615 // Max of uint64. This means it's not initialized
 )
 
 var (
-	QUEUE_TIME = time.Second / 2
-	ERR_NONE   = errors.New("This is not an error")
+	QueueTime = time.Second / 2
+	ErrNone   = errors.New("This is not an error")
 )
 
 type QElementPair struct {
@@ -91,7 +91,7 @@ func NewTxSubmitter(cfg config.Config, appKeys *DefaultAppKeys) *TxSubmitter {
 		queue:           make([]*QElementPair, 0),
 		submitRequestCh: make(chan bool),
 		msgStatuses:     make(map[int64]error),
-		curSequence:     UN_INITIALIZED_SEQ,
+		curSequence:     UnInitializedSeq,
 	}
 
 	var err error
@@ -109,8 +109,8 @@ func NewTxSubmitter(cfg config.Config, appKeys *DefaultAppKeys) *TxSubmitter {
 func (t *TxSubmitter) SubmitMessage(msg sdk.Msg) error {
 	log.Debug("Submitting tx ....")
 	seq := t.getSequence()
-	if seq == UN_INITIALIZED_SEQ {
-		return fmt.Errorf("Server is not ready")
+	if seq == UnInitializedSeq {
+		return fmt.Errorf("server is not ready")
 	}
 
 	index := t.addMessage(msg)
@@ -120,7 +120,7 @@ func (t *TxSubmitter) SubmitMessage(msg sdk.Msg) error {
 	t.schedule()
 
 	for {
-		time.Sleep(QUEUE_TIME)
+		time.Sleep(QueueTime)
 
 		t.queueLock.RLock()
 		err = t.msgStatuses[index]
@@ -131,7 +131,7 @@ func (t *TxSubmitter) SubmitMessage(msg sdk.Msg) error {
 	}
 	defer t.removeMessage(index)
 
-	if err != ERR_NONE {
+	if err != ErrNone {
 		return err
 	}
 
@@ -174,11 +174,8 @@ func (t *TxSubmitter) Start() {
 				continue
 			}
 			copy := t.queue
-			t.queueLock.RUnlock()
-
-			t.queueLock.Lock()
 			t.queue = make([]*QElementPair, 0) // Clear the queue
-			t.queueLock.Unlock()
+			t.queueLock.RUnlock()
 
 			if len(copy) == 0 {
 				continue
@@ -203,7 +200,7 @@ func (t *TxSubmitter) Start() {
 				t.sequenceLock.Unlock()
 			} else {
 				log.Debug("Tx submitted successfully")
-				t.updateStatus(copy, ERR_NONE)
+				t.updateStatus(copy, ErrNone)
 				t.incSequence()
 			}
 		}
@@ -230,7 +227,7 @@ func (t *TxSubmitter) SyncBlockSequence(ctx sdk.Context, ak authkeeper.AccountKe
 	}
 
 	t.blockSequence = account.GetSequence()
-	if t.curSequence == UN_INITIALIZED_SEQ {
+	if t.curSequence == UnInitializedSeq {
 		t.curSequence = t.blockSequence
 	}
 }

@@ -46,7 +46,7 @@ type Database interface {
 	GetTxOutWithHash(chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity
 	IsContractDeployTx(chain string, hashWithoutSig string) bool
 	UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string, sig []byte) error
-	UpdateTxOutStatus(chain, hashWithoutSig string, status tsstypes.TxOutStatus) error
+	UpdateTxOutStatus(chain, hash string, status tsstypes.TxOutStatus, isHashWithSig bool) error
 
 	// Mempool tx
 	InsertMempoolTxHash(hash string, blockHeight int64)
@@ -514,12 +514,17 @@ func (d *SqlDatabase) UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string,
 	return nil
 }
 
-func (d *SqlDatabase) UpdateTxOutStatus(chain, hashWithSig string, status tsstypes.TxOutStatus) error {
+func (d *SqlDatabase) UpdateTxOutStatus(chain, hash string, status tsstypes.TxOutStatus, isHashWithSig bool) error {
+	log.Debugf("Updating txout hash(%s) to status(%s), chain(%s)", hash, string(status), chain)
 	query := "UPDATE tx_out SET status = ? WHERE chain = ? AND hash_with_sig = ?"
-	params := []interface{}{status, chain, hashWithSig}
+	if !isHashWithSig {
+		query = "UPDATE tx_out SET status = ? WHERE chain = ? AND hash_without_sig = ?"
+	}
+
+	params := []interface{}{status, chain, hash}
 
 	if _, err := d.db.Exec(query, params...); err != nil {
-		log.Error("failed to update chain status", chain, hashWithSig, ", err =", err)
+		log.Error("failed to update chain status", chain, hash, ", err =", err)
 		return err
 	}
 

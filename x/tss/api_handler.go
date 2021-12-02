@@ -24,7 +24,7 @@ func (a *ApiHandler) Version() string {
 }
 
 // Empty function for checking health only.
-func (api *ApiHandler) CheckHealth() {
+func (a *ApiHandler) CheckHealth() {
 }
 
 func (a *ApiHandler) KeygenResult(result htypes.KeygenResult) bool {
@@ -36,7 +36,7 @@ func (a *ApiHandler) KeygenResult(result htypes.KeygenResult) bool {
 
 // This is a API endpoint to receive transactions with To address we are interested in.
 func (a *ApiHandler) PostObservedTxs(txs *etypes.Txs) {
-	log.Debug("There is new list of transactions from deyes from chain", txs.Chain)
+	log.Debug("There is new list of transactions from deyes from chain ", txs.Chain)
 
 	for _, tx := range txs.Arr {
 		ethTx := &ethtypes.Transaction{}

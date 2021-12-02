@@ -33,21 +33,25 @@ transfer-out erc20 eth-sisu-local 1234 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd5
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Use this when running with docker.
-			sqlConfig := getDockerSqlConfig()
+			//sqlConfig := getDockerSqlConfig()
 
 			// // Use this when running with single node on command line.
-			// cfg, cfgErr := config.ReadConfig()
-			// if cfgErr != nil {
-			// 	panic(cfgErr)
-			// }
-			// sqlConfig := cfg.Sisu.Sql
+			cfg, cfgErr := config.ReadConfig()
+			if cfgErr != nil {
+				panic(cfgErr)
+			}
 
+			sqlConfig := cfg.Sisu.Sql
 			database := db.NewDatabase(sqlConfig)
-			err := database.Init()
-			if err != nil {
+			if err := database.Init(); err != nil {
 				panic(err)
 			}
-			defer database.Close()
+
+			defer func() {
+				if err := database.Close(); err != nil {
+					log.Error("cannot close database", err)
+				}
+			}()
 
 			// Get the contract address of token
 			log.Info("args = ", args)
@@ -86,7 +90,7 @@ transfer-out erc20 eth-sisu-local 1234 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd5
 				tokenAddress := common.HexToAddress(tokenAddressString)
 				erc20Contract, err := erc20.NewErc20(tokenAddress, client)
 				if err != nil {
-					return err
+					panic(err)
 				}
 
 				log.Info("Approving gateway address...")
@@ -102,8 +106,12 @@ transfer-out erc20 eth-sisu-local 1234 0xB369Be7F62cfb3F44965db83404997Fa6EC9Dd5
 					panic(fmt.Errorf("Invalid balance: expected %s, actual %s", amount, allowance))
 				}
 
-				log.Info("Transfering token out....")
+				log.Info("Transferring token out....")
 				auth, err := getAuthTransactor(client, account0.Address)
+				if err != nil {
+					panic(err)
+				}
+
 				tx, err := gateway.TransferOutFromContract(auth, tokenAddress, toChain, recipient, amount)
 				if err != nil {
 					panic(err)
