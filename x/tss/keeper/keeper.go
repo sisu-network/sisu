@@ -69,9 +69,9 @@ func (k *DefaultKeeper) GetObservedTx(ctx sdk.Context, chain string, blockHeight
 	return store.Get(key)
 }
 
-func (k *DefaultKeeper) SavePubKey(ctx sdk.Context, chain string, keyBytes []byte) {
+func (k *DefaultKeeper) SavePubKey(ctx sdk.Context, keyType string, keyBytes []byte) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PUBLIC_KEY_BYTES)
-	store.Set([]byte(chain), keyBytes)
+	store.Set([]byte(keyType), keyBytes)
 }
 
 func (k *DefaultKeeper) GetAllPubKeys(ctx sdk.Context) map[string][]byte {

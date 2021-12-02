@@ -283,7 +283,7 @@ func (p *Processor) checkAndInsertMempoolTx(hash, msgType string) error {
 		return err
 	}
 
-	log.Verbose("Inserting", msgType, "into the mempool table, hash =", hash)
+	log.Verbose("Inserting ", msgType, " into the mempool table, hash = ", hash)
 	p.db.InsertMempoolTxHash(hash, p.currentHeight)
 
 	return nil

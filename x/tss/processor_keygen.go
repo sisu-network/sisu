@@ -3,7 +3,6 @@ package tss
 import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	dhtypes "github.com/sisu-network/dheart/types"
-	"github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
@@ -80,19 +79,23 @@ func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
 	msg := types.NewKeygenResult(signer.String(), result.KeyType, resultEnum, result.PubKeyBytes, result.Address)
 	p.txSubmit.SubmitMessage(msg)
 
+	// Update the address and pubkey of the keygen database.
+	p.db.UpdateKeygenAddress(result.KeyType, result.Address, result.PubKeyBytes)
+
 	// 2. Add the address to the watch list.
 	for _, chainConfig := range p.config.SupportedChains {
 		chain := chainConfig.Symbol
 		deyesClient := p.deyesClients[chain]
+
+		if libchain.GetKeyTypeForChain(chain) != msg.KeyType {
+			continue
+		}
 
 		if deyesClient == nil {
 			log.Critical("Cannot find deyes client for chain", chain)
 		} else {
 			log.Verbose("adding watcher address", result.Address, "for chain", chain)
 			deyesClient.AddWatchAddresses(chain, []string{result.Address})
-
-			// Update the address and pubkey of the keygen database.
-			p.db.UpdateKeygenAddress(chain, result.Address, result.PubKeyBytes)
 		}
 	}
 }
@@ -142,13 +145,14 @@ func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, er
 func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult) ([]byte, error) {
 	// TODO: Save data to KV store.
 	if msg.Result == types.KeygenResult_SUCCESS {
+		log.Info("Keygen succeeded")
 		keygenEntity, err := p.db.GetKeyGen(libchain.KEY_TYPE_ECDSA)
 		if err != nil {
 			return nil, err
 		}
 
-		if keygenEntity.Status != types.KEYGEN_STATUS_GENERATED {
-			log.Info("Keygen result has been processed for keytype", msg.KeyType)
+		if keygenEntity.Status == types.KEYGEN_STATUS_GENERATED {
+			log.Info("Keygen result has been processed for keytype ", msg.KeyType)
 			return nil, nil
 		}
 
@@ -159,16 +163,21 @@ func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult
 		// Save the pubkey to the keeper.
 		p.keeper.SavePubKey(ctx, msg.KeyType, msg.PubKeyBytes)
 
-		// If this is a pubkey address of a ETH chain, save it to the store because we want to watch
-		// transaction that funds the address (we will deploy contracts later).
-		if chain.IsETHBasedChain(msg.KeyType) {
-			p.txOutputProducer.AddKeyAddress(ctx, msg.KeyType, msg.Address)
-		}
-
 		// Check and see if we need to deploy some contracts. If we do, push them into the contract
 		// queue for deployment later (after we receive some funding like ether to execute contract
 		// deployment).
-		p.txOutputProducer.SaveContractsToDeploy(msg.KeyType)
+		for _, chainConfig := range p.config.SupportedChains {
+			chain := chainConfig.Symbol
+			if libchain.GetKeyTypeForChain(chain) == msg.KeyType {
+				p.txOutputProducer.SaveContractsToDeploy(chain)
+			}
+
+			// If this is a pubkey address of a ETH chain, save it to the store because we want to watch
+			// transaction that funds the address (we will deploy contracts later).
+			if libchain.IsETHBasedChain(chain) {
+				p.txOutputProducer.AddKeyAddress(ctx, chain, msg.Address)
+			}
+		}
 	} else {
 		// TODO: handle failure case
 	}
