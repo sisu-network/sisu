@@ -86,7 +86,7 @@ Example:
 				Eth: config.ETHConfig{
 					Host:          "0.0.0.0",
 					Port:          1234,
-					ImportAccount: true,
+					ImportAccount: false,
 				},
 				Tss: config.TssConfig{
 					Enable:     enableTss,

@@ -7,10 +7,10 @@ import (
 
 var _ sdk.Msg = &KeygenProposal{}
 
-func NewMsgKeygenProposal(signer string, chain string, id string, craetedBlock int64) *KeygenProposal {
+func NewMsgKeygenProposal(signer string, keyType string, id string, craetedBlock int64) *KeygenProposal {
 	return &KeygenProposal{
 		Signer:       signer,
-		Chain:        chain,
+		KeyType:      keyType,
 		Id:           id,
 		CreatedBlock: craetedBlock,
 	}

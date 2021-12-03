@@ -58,7 +58,7 @@ func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *t
 	var err error
 
 	if libchain.IsETHBasedChain(tx.Chain) {
-		log.Info("Getting tx out for chain", tx.Chain)
+		log.Info("Getting tx out for chain ", tx.Chain)
 		outMsgs, outEntities, err = p.getEthResponse(ctx, height, tx)
 
 		if err != nil {
@@ -114,7 +114,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 	// 1. Check if this is a transaction sent to our key address. If this is true, it's likely a tx
 	// that funds our account.
-	if ethTx.To() != nil && p.db.IsChainKeyAddress(tx.Chain, ethTx.To().String()) {
+	if ethTx.To() != nil && p.db.IsChainKeyAddress(libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
 		contracts := p.db.GetPendingDeployContracts(tx.Chain)
 		log.Verbose("len(contracts) = ", len(contracts))
 
@@ -188,7 +188,7 @@ func (p *DefaultTxOutputProducer) checkEthDeployContract(ctx sdk.Context, height
 	txs := make([]*ethTypes.Transaction, 0)
 
 	for _, contract := range contracts {
-		nonce := p.worldState.UseAndIncreaseNonce(contract.Chain)
+		nonce := p.worldState.UseAndIncreaseNonce(chain)
 		log.Verbose("nonce for deploying contract:", nonce)
 		if nonce < 0 {
 			log.Error("cannot get nonce for contract")

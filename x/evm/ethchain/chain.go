@@ -290,7 +290,7 @@ func (self *ETHChain) checkNonceAndBalance(tx *types.Transaction, from common.Ad
 
 	// Ensure the transaction adheres to nonce ordering
 	if self.lastBlockState.GetNonce(from) > tx.Nonce() {
-		log.Debug("self.lastBlockState.GetNonce(from) = ", self.lastBlockState.GetNonce(from))
+		log.Info("self.lastBlockState.GetNonce(from) = ", self.lastBlockState.GetNonce(from))
 		return core.ErrNonceTooLow
 	}
 
@@ -329,7 +329,7 @@ func (self *ETHChain) transition(newState ChainState) {
 }
 
 func (self *ETHChain) OnSealFinish(block *types.Block) error {
-	log.Debug("Block is sealed, number = ", block.Number())
+	log.Info("Block is sealed, number = ", block.Number())
 
 	if err := self.Accept(block); err != nil {
 		log.Error(err)
@@ -350,7 +350,9 @@ func (self *ETHChain) OnSealFinish(block *types.Block) error {
 	self.genBlockDoneCh <- true
 
 	size, err := self.PendingSize()
-	log.Debug("Pending size = ", size)
+	if size > 0 {
+		log.Info("Pending size = ", size)
+	}
 
 	return nil
 }
@@ -406,8 +408,6 @@ func (self *ETHChain) ImportAccounts() {
 	accounts := utils.GetLocalAccounts()
 
 	if len(ks.Accounts()) <= 10 {
-		log.Debug("Importing accounts...")
-
 		for _, account := range accounts {
 			privateKey, err := wallet.PrivateKey(account)
 			if err != nil {
