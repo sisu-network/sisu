@@ -162,8 +162,6 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 	// Check Vote result.
 	for len(p.keygenBlockPairs) > 0 && !p.globalData.IsCatchingUp() {
 		log.Debug("blockHeight = ", blockHeight)
-		log.Debug("p.keygenBlockPairs[0].blockHeight = ", p.keygenBlockPairs[0].blockHeight)
-
 		if blockHeight < p.keygenBlockPairs[0].blockHeight {
 			break
 		}
@@ -180,14 +178,12 @@ func (p *Processor) EndBlock(ctx sdk.Context) {
 }
 
 func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
-	log.Debug("TSSProcessor: checking tx. Message length = ", len(msgs))
-
 	for _, msg := range msgs {
 		if msg.Route() != types.ModuleName {
 			return fmt.Errorf("Some message is not a TSS message")
 		}
 
-		log.Debug("Checking tx: Msg type = ", msg.Type())
+		log.Info("Checking tx: Msg type = ", msg.Type())
 
 		switch msg.(type) {
 		case *types.KeygenProposal:

@@ -53,7 +53,7 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 			blockHeight,
 		)
 
-		log.Debug("Submitting proposal message for", keyType)
+		log.Info("Submitting proposal message for", keyType)
 		go func() {
 			err := p.txSubmit.SubmitMessage(proposal)
 
@@ -148,6 +148,7 @@ func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult
 		log.Info("Keygen succeeded")
 		keygenEntity, err := p.db.GetKeyGen(libchain.KEY_TYPE_ECDSA)
 		if err != nil {
+			log.Error("Cannot get keygen, err = ", err)
 			return nil, err
 		}
 
@@ -166,15 +167,18 @@ func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult
 		// Check and see if we need to deploy some contracts. If we do, push them into the contract
 		// queue for deployment later (after we receive some funding like ether to execute contract
 		// deployment).
+
 		for _, chainConfig := range p.config.SupportedChains {
 			chain := chainConfig.Symbol
 			if libchain.GetKeyTypeForChain(chain) == msg.KeyType {
+				log.Info("Saving contracts for chain ", chain)
 				p.txOutputProducer.SaveContractsToDeploy(chain)
 			}
 
 			// If this is a pubkey address of a ETH chain, save it to the store because we want to watch
 			// transaction that funds the address (we will deploy contracts later).
 			if libchain.IsETHBasedChain(chain) {
+				log.Info("Adding key address ", msg.Address)
 				p.txOutputProducer.AddKeyAddress(ctx, chain, msg.Address)
 			}
 		}
