@@ -74,7 +74,12 @@ func (s *KVStore) Close() error {
 }
 
 func (s *KVStore) CreateKeygen(ctx sdk.Context, chain string) error {
-	return nil
+	store := prefix.NewStore(ctx.KVStore(s.storeKey), PrefixKeygen)
+
+	kgEntity := &tsstypes.KeygenEntity{
+		Chain: chain,
+	}
+
 }
 
 func (s *KVStore) UpdateKeygenAddress(ctx sdk.Context, chain, address string, pubKey []byte) {
