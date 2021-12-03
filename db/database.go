@@ -45,7 +45,6 @@ type Database interface {
 	GetContractFromAddress(chain, address string) *tsstypes.ContractEntity
 	GetContractFromHash(chain, hash string) *tsstypes.ContractEntity
 	UpdateContractsStatus(contracts []*tsstypes.ContractEntity, status string) error
-	UpdateContractDeployTx(chain, id string, txHash string)
 	UpdateContractAddress(chain, hash, address string)
 
 	// Txout
@@ -417,15 +416,6 @@ func (d *SqlDatabase) UpdateContractsStatus(contracts []*tsstypes.ContractEntity
 	return nil
 }
 
-func (d *SqlDatabase) UpdateContractDeployTx(chain, hash string, txHash string) {
-	query := "UPDATE contract SET tx_hash = ? WHERE chain = ? AND hash = ?"
-	params := []interface{}{txHash, chain, hash}
-
-	_, err := d.db.Exec(query, params...)
-	if err != nil {
-		log.Error("failed to update contract deploy tx, err =", err)
-	}
-}
 
 func (d *SqlDatabase) IsContractDeployTx(chain string, hashWithoutSig string) bool {
 	query := "SELECT contract_hash FROM tx_out WHERE chain=? AND hash_without_sig = ?"
