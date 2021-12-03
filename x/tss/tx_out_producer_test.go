@@ -1,7 +1,10 @@
 package tss
 
 import (
-	"fmt"
+	"math/big"
+	"math/rand"
+	"testing"
+
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -13,9 +16,6 @@ import (
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 	"github.com/stretchr/testify/require"
-	"math/big"
-	"math/rand"
-	"testing"
 )
 
 func TestTxOutProducer_getContractTx(t *testing.T) {
@@ -49,6 +49,8 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 }
 
 func TestTxOutProducer_getEthResponse(t *testing.T) {
+	t.Parallel()
+
 	ctrl := gomock.NewController(t)
 	t.Cleanup(func() {
 		ctrl.Finish()
@@ -72,8 +74,6 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 	mockDb.EXPECT().UpdateContractsStatus(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	mockAppKeys := mock.NewMockAppKeys(ctrl)
-	//signerInfo := mock.KeyringInfo{}
-	//mockAppKeys.EXPECT().GetSignerInfo().Return(&signerInfo).Times(2)
 	accAddress := []byte{1, 2, 3}
 	mockAppKeys.EXPECT().GetSignerAddress().Return(accAddress).Times(1)
 
@@ -122,76 +122,4 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, txOuts, 1)
 	require.Len(t, txOutEntities, 1)
-}
-
-func TestTxOutProducer_GetTxOuts(t *testing.T) {
-
-	ctrl := gomock.NewController(t)
-	t.Cleanup(func() {
-		ctrl.Finish()
-	})
-
-	contractEntities := []*types.ContractEntity{
-		{
-			Chain:    "ganache",
-			Hash:     "",
-			ByteCode: nil,
-			Name:     "",
-			Address:  "",
-			Status:   "",
-		},
-	}
-
-	contractEntity := &types.ContractEntity{
-		Chain:    "ganache",
-		Hash:     "",
-		ByteCode: nil,
-		Name:     "",
-		Address:  "",
-		Status:   "",
-	}
-
-	mockDb := mock.NewMockDatabase(ctrl)
-	mockDb.EXPECT().GetPubKey(gomock.Any()).Return([]byte{})
-	mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(true).MinTimes(1)
-	mockDb.EXPECT().GetPendingDeployContracts(gomock.Any()).Return(contractEntities).MinTimes(1)
-	mockDb.EXPECT().GetContractFromAddress(gomock.Any(), gomock.Any()).Return(contractEntity).MinTimes(1)
-	mockDb.EXPECT().UpdateContractsStatus(gomock.Any(), gomock.Any()).Return(nil).MinTimes(1)
-
-	worldState := NewWorldState(config.TssConfig{}, mockDb, nil)
-	txOutProducer := NewTxOutputProducer(worldState, nil, nil, mockDb, config.TssConfig{})
-
-	signer := ethTypes.NewEIP2930Signer(common.Big1)
-	recipient := common.HexToAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87")
-	addr := common.HexToAddress("0x0000000000000000000000000000000000000001")
-	accesses := ethTypes.AccessList{{Address: addr, StorageKeys: []common.Hash{{0}}}}
-
-	txdata := &ethTypes.AccessListTx{
-		ChainID:    big.NewInt(1),
-		Nonce:      10,
-		To:         &recipient,
-		Gas:        123457,
-		GasPrice:   big.NewInt(10),
-		AccessList: accesses,
-		Data:       []byte("abcdef"),
-	}
-
-	key, err := crypto.GenerateKey()
-	require.NoError(t, err)
-
-	tx, err := ethTypes.SignNewTx(key, signer, txdata)
-	require.NoError(t, err)
-
-	outBytes, err := tx.MarshalBinary()
-	require.NoError(t, err)
-
-	ctx := sdk.Context{}
-	observedTx := types.ObservedTx{
-		Chain:       "ganache1",
-		BlockHeight: 10,
-		Serialized:  outBytes,
-	}
-	txOuts, txIdentities := txOutProducer.GetTxOuts(ctx, 0, &observedTx)
-	fmt.Println("txOuts", txOuts)
-	fmt.Println("txIdentities", txIdentities)
 }
