@@ -49,7 +49,7 @@ type Processor struct {
 	keyAddress string
 
 	// Dheart & Deyes client
-	dheartClient *tssclients.DheartClient
+	dheartClient tssclients.DheartClient
 	deyesClients map[string]*tssclients.DeyesClient
 
 	// A map of chain -> map ()

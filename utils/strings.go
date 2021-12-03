@@ -24,4 +24,3 @@ func AllInAlphabet(s string, alphabet string) bool {
 	}
 	return true
 }
-
