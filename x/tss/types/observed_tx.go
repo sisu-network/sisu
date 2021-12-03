@@ -24,7 +24,7 @@ func (msg *ObservedTx) Route() string {
 
 // Type ...
 func (msg *ObservedTx) Type() string {
-	return MSG_TYPE_OBSERVED_TX
+	return MsgTypeObservedTx
 }
 
 // GetSigners ...

@@ -50,7 +50,7 @@ type Processor struct {
 
 	// Dheart & Deyes client
 	dheartClient *tssclients.DheartClient
-	deyesClients map[string]*tssclients.DeyesClient
+	deyesClients map[string]tssclients.DeyesClient
 
 	// A map of chain -> map ()
 	worldState       WorldState
@@ -81,7 +81,7 @@ func NewProcessor(keeper keeper.DefaultKeeper,
 		keygenVoteResult:  make(map[string]map[string]bool),
 		// And array that stores block numbers where we should do final vote count.
 		keygenBlockPairs: make([]BlockSymbolPair, 0),
-		deyesClients:     make(map[string]*tssclients.DeyesClient),
+		deyesClients:     make(map[string]tssclients.DeyesClient),
 	}
 
 	return p
@@ -256,7 +256,7 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 				return err
 			}
 
-		case types.MSG_TYPE_OBSERVED_TX:
+		case types.MsgTypeObservedTx:
 			observedTx := msg.(*types.ObservedTx)
 			hash := utils.KeccakHash32(string(observedTx.SerializeWithoutSigner()))
 
