@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	ethTypes "github.com/sisu-network/dcore/core/types"
 	"github.com/sisu-network/dcore/ethclient"
+	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
@@ -42,7 +43,7 @@ fund-account eth-sisu-local 1234 ganache1 7545 10
 
 				// Get chain and local chain URL
 				chain := args[i]
-				pubKeyBytes := allPubKeys[chain]
+				pubKeyBytes := allPubKeys[libchain.KEY_TYPE_ECDSA]
 
 				if pubKeyBytes == nil {
 					return fmt.Errorf("cannot find pubkey for chain %s", chain)

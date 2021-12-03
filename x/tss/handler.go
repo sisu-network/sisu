@@ -43,7 +43,7 @@ func handleKeygenProposal(msg *types.KeygenProposal, processor *Processor) (*sdk
 }
 
 func handleKeygenResult(ctx sdk.Context, msg *types.KeygenResult, processor *Processor) (*sdk.Result, error) {
-	log.Debug("Handling TSS Keygen result")
+	log.Verbose("Handling TSS Keygen result")
 	data, err := processor.DeliverKeygenResult(ctx, msg)
 	return &sdk.Result{
 		Data: data,
