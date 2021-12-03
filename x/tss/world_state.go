@@ -2,6 +2,7 @@ package tss
 
 import (
 	"github.com/ethereum/go-ethereum/crypto"
+	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/db"
@@ -32,15 +33,17 @@ func NewWorldState(tssConfig config.TssConfig, db db.Database, deyesClients map[
 }
 
 func (ws *DefaultWorldState) UseAndIncreaseNonce(chain string) int64 {
-	pubKeyBytes := ws.db.GetPubKey(chain)
+	keyType := libchain.GetKeyTypeForChain(chain)
+
+	pubKeyBytes := ws.db.GetPubKey(keyType)
 	if pubKeyBytes == nil {
-		log.Error("cannot find pub key for chain", chain)
+		log.Error("cannot find pub key for keyType", chain)
 		return -1
 	}
 
 	pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
 	if err != nil {
-		log.Error("cannot unmarshal public key", err)
+		log.Error("Cannot unmarshal pubkey, err = ", err)
 		return -1
 	}
 

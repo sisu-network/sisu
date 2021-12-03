@@ -23,8 +23,6 @@ RUN go mod download
 
 COPY . .
 
-RUN go mod tidy
-
 RUN go build -o ./out/sisu ./cmd/sisud/main.go
 
 RUN rm /root/.ssh/id_rsa

@@ -21,11 +21,11 @@ import (
 )
 
 const (
-	ProposeBlockInterval = 1000
+	PROPOSE_BLOCK_INTERVAL = 1000
 )
 
 var (
-	ErrInvalidMessasgeType = fmt.Errorf("Invalid Message Type")
+	ERR_INVALID_MESSASGE_TYPE = fmt.Errorf("Invalid Message Type")
 )
 
 // A major struct that processes complicated logic of TSS keysign and keygen. Read the documentation
@@ -101,10 +101,10 @@ func (p *Processor) Init() {
 // Connect to Dheart server and set private key for dheart. Note that this is the tendermint private
 // key, not signer key in the keyring.
 func (p *Processor) connectToDheart() {
+	var err error
 	url := fmt.Sprintf("http://%s:%d", p.config.DheartHost, p.config.DheartPort)
 	log.Info("Connecting to Dheart server at", url)
 
-	var err error
 	p.dheartClient, err = tssclients.DialDheart(url)
 	if err != nil {
 		log.Error("Failed to connect to Dheart. Err =", err)
@@ -162,8 +162,6 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 	// Check Vote result.
 	for len(p.keygenBlockPairs) > 0 && !p.globalData.IsCatchingUp() {
 		log.Debug("blockHeight = ", blockHeight)
-		log.Debug("p.keygenBlockPairs[0].blockHeight = ", p.keygenBlockPairs[0].blockHeight)
-
 		if blockHeight < p.keygenBlockPairs[0].blockHeight {
 			break
 		}
@@ -180,16 +178,12 @@ func (p *Processor) EndBlock(ctx sdk.Context) {
 }
 
 func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
-	log.Debug("TSSProcessor: checking tx. Message length = ", len(msgs))
-
 	for _, msg := range msgs {
 		if msg.Route() != types.ModuleName {
-			err := fmt.Errorf("some message is not a TSS message")
-			log.Error(err)
-			return err
+			return fmt.Errorf("Some message is not a TSS message")
 		}
 
-		log.Debug("Checking tx: Msg type = ", msg.Type())
+		log.Info("Checking tx: Msg type = ", msg.Type())
 
 		switch msg.(type) {
 		case *types.KeygenProposal:
@@ -245,13 +239,13 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 			proposalMsg := msg.(*types.KeygenProposal)
 			// We dont get serialized data of the proposal msg because the serialized data contains
 			// blockheight. Instead, we only check the chain of the proposal.
-			key := fmt.Sprintf("KeygenProposal__%s", proposalMsg.Chain)
-			if !p.db.MempoolTxExistedRange(key, p.currentHeight-ProposeBlockInterval/2, p.currentHeight+ProposeBlockInterval/2) {
+			key := fmt.Sprintf("KeygenProposal__%s", proposalMsg.KeyType)
+			if !p.db.MempoolTxExistedRange(key, p.currentHeight-PROPOSE_BLOCK_INTERVAL/2, p.currentHeight+PROPOSE_BLOCK_INTERVAL/2) {
 				// Insert into the db
 				p.db.InsertMempoolTxHash(key, p.currentHeight)
 				return nil
 			} else {
-				err := fmt.Errorf("The keygen proposal has been inclued in a block for chain %s", proposalMsg.Chain)
+				err := fmt.Errorf("The keygen proposal has been inclued in a block for keyType %s", proposalMsg.KeyType)
 				log.Verbose(err)
 				return err
 			}

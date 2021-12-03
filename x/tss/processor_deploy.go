@@ -6,6 +6,8 @@ import (
 	etypes "github.com/sisu-network/deyes/types"
 	htypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/lib/log"
+
+	libchain "github.com/sisu-network/lib/chain"
 )
 
 // deploySignedTx creates a deployment request and sends it to deyes.
@@ -13,7 +15,7 @@ func (p *Processor) deploySignedTx(bz []byte, keysignResult *htypes.KeysignResul
 	log.Debug("Sending final tx to the deyes for deployment for chain", keysignResult.OutChain)
 	deyeClient := p.deyesClients[keysignResult.OutChain]
 
-	pubkey := p.db.GetPubKey(keysignResult.OutChain)
+	pubkey := p.db.GetPubKey(libchain.GetKeyTypeForChain(keysignResult.OutChain))
 	if pubkey == nil {
 		return fmt.Errorf("Cannot get pubkey for chain %s", keysignResult.OutChain)
 	}
