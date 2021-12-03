@@ -1,18 +1,20 @@
 package tss
 
 import (
-	"math/big"
-	"math/rand"
-	"testing"
-
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/golang/mock/gomock"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
+	"github.com/sisu-network/sisu/tests/mock"
+	"math/big"
+	"math/rand"
+	"strings"
+	"testing"
+
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/contracts/eth/erc20gateway"
-	"github.com/sisu-network/sisu/tests/mock"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 	"github.com/stretchr/testify/require"
@@ -51,75 +53,160 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 func TestTxOutProducer_getEthResponse(t *testing.T) {
 	t.Parallel()
 
-	ctrl := gomock.NewController(t)
-	t.Cleanup(func() {
-		ctrl.Finish()
-	})
+	t.Run("transaction_send_to_key", func(t *testing.T) {
+		t.Parallel()
 
-	contractEntities := []*types.ContractEntity{
-		{
-			Chain: "eth",
-			Hash:  SupportedContracts[ContractErc20].AbiHash,
-		},
-	}
+		ctrl := gomock.NewController(t)
+		t.Cleanup(func() {
+			ctrl.Finish()
+		})
 
-	privKey, err := crypto.GenerateKey()
-	require.NoError(t, err)
+		contractEntities := []*types.ContractEntity{
+			{
+				Chain: "eth",
+				Hash:  SupportedContracts[ContractErc20].AbiHash,
+			},
+		}
 
-	pubkeyBytes := crypto.FromECDSAPub(&privKey.PublicKey)
-	mockDb := mock.NewMockDatabase(ctrl)
-	mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(true).Times(1)
-	mockDb.EXPECT().GetPendingDeployContracts(gomock.Any()).Return(contractEntities).Times(1)
-	mockDb.EXPECT().GetPubKey("eth").Return(pubkeyBytes).Times(1)
-	mockDb.EXPECT().UpdateContractsStatus(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+		privKey, err := crypto.GenerateKey()
+		require.NoError(t, err)
 
-	mockAppKeys := mock.NewMockAppKeys(ctrl)
-	accAddress := []byte{1, 2, 3}
-	mockAppKeys.EXPECT().GetSignerAddress().Return(accAddress).Times(1)
+		pubkeyBytes := crypto.FromECDSAPub(&privKey.PublicKey)
+		mockDb := mock.NewMockDatabase(ctrl)
+		mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(true).Times(1)
+		mockDb.EXPECT().GetPendingDeployContracts(gomock.Any()).Return(contractEntities).Times(1)
+		mockDb.EXPECT().GetPubKey("eth").Return(pubkeyBytes).Times(1)
+		mockDb.EXPECT().UpdateContractsStatus(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	amount := big.NewInt(rand.Int63())
-	gasLimit := uint64(rand.Int63())
-	gasPrice := big.NewInt(rand.Int63())
-	ethTransaction := ethTypes.NewTx(&ethTypes.LegacyTx{
-		GasPrice: gasPrice,
-		Gas:      gasLimit,
-		To:       &common.Address{},
-		Value:    amount,
-	})
-	binary, err := ethTransaction.MarshalBinary()
-	require.NoError(t, err)
+		mockAppKeys := mock.NewMockAppKeys(ctrl)
+		accAddress := []byte{1, 2, 3}
+		mockAppKeys.EXPECT().GetSignerAddress().Return(accAddress).Times(1)
 
-	observedTx := types.ObservedTx{
-		BlockHeight: 1,
-		Serialized:  binary,
-	}
+		amount := big.NewInt(rand.Int63())
+		gasLimit := uint64(rand.Int63())
+		gasPrice := big.NewInt(rand.Int63())
+		ethTransaction := ethTypes.NewTx(&ethTypes.LegacyTx{
+			GasPrice: gasPrice,
+			Gas:      gasLimit,
+			To:       &common.Address{},
+			Value:    amount,
+		})
+		binary, err := ethTransaction.MarshalBinary()
+		require.NoError(t, err)
 
-	worldState := DefaultWorldState{
-		db:        mockDb,
-		tssConfig: config.TssConfig{},
-		nonces: map[string]int64{
-			"eth": rand.Int63(),
-		},
-		deyesClients: nil,
-	}
-	txOutProducer := DefaultTxOutputProducer{
-		worldState: &worldState,
-		tssConfig: config.TssConfig{
-			Enable: true,
-			SupportedChains: map[string]config.TssChainConfig{
-				"ganache": {
-					Symbol:   "ganache",
-					DeyesUrl: "http://0.0.0.0:1234",
+		observedTx := types.ObservedTx{
+			BlockHeight: 1,
+			Serialized:  binary,
+		}
+
+		worldState := DefaultWorldState{
+			db:        mockDb,
+			tssConfig: config.TssConfig{},
+			nonces: map[string]int64{
+				"eth": rand.Int63(),
+			},
+			deyesClients: nil,
+		}
+		txOutProducer := DefaultTxOutputProducer{
+			worldState: &worldState,
+			tssConfig: config.TssConfig{
+				Enable: true,
+				SupportedChains: map[string]config.TssChainConfig{
+					"ganache": {
+						Symbol:   "ganache",
+						DeyesUrl: "http://0.0.0.0:1234",
+					},
 				},
 			},
-		},
-		db:      mockDb,
-		appKeys: mockAppKeys,
-	}
+			db:      mockDb,
+			appKeys: mockAppKeys,
+		}
 
-	ctx := sdk.Context{}
-	txOuts, txOutEntities, err := txOutProducer.getEthResponse(ctx, 1, &observedTx)
-	require.NoError(t, err)
-	require.Len(t, txOuts, 1)
-	require.Len(t, txOutEntities, 1)
+		ctx := sdk.Context{}
+		txOuts, txOutEntities, err := txOutProducer.getEthResponse(ctx, 1, &observedTx)
+		require.NoError(t, err)
+		require.Len(t, txOuts, 1)
+		require.Len(t, txOutEntities, 1)
+	})
+
+	t.Run("transaction_send_to_contract", func(t *testing.T) {
+		t.Parallel()
+
+		ctrl := gomock.NewController(t)
+		t.Cleanup(func() {
+			ctrl.Finish()
+		})
+
+		contractEntity := &types.ContractEntity{
+			Chain: "eth",
+			Hash:  SupportedContracts[ContractErc20].AbiHash,
+		}
+
+		privKey, err := crypto.GenerateKey()
+		require.NoError(t, err)
+
+		pubkeyBytes := crypto.FromECDSAPub(&privKey.PublicKey)
+		mockDb := mock.NewMockDatabase(ctrl)
+		mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(false).Times(1)
+		mockDb.EXPECT().GetContractFromAddress(gomock.Any(), gomock.Any()).Return(contractEntity).Times(1)
+		mockDb.EXPECT().GetContractFromHash(gomock.Any(), gomock.Any()).Return(contractEntity).Times(1)
+		mockDb.EXPECT().GetPubKey("eth").Return(pubkeyBytes).Times(1)
+
+		mockAppKeys := mock.NewMockAppKeys(ctrl)
+		accAddress := []byte{1, 2, 3}
+		mockAppKeys.EXPECT().GetSignerAddress().Return(accAddress).Times(1)
+
+		abi, err := abi.JSON(strings.NewReader(SupportedContracts[ContractErc20].AbiString))
+		require.NoError(t, err)
+		amount := big.NewInt(rand.Int63())
+		hex := "ab1257528b3782fb40d7ed5f72e624b744dffb2f"
+		data, err := abi.Pack(MethodTransferOutFromContract, common.HexToAddress(hex), "eth", hex, &amount)
+		require.NoError(t, err)
+
+		gasLimit := uint64(rand.Int63())
+		gasPrice := big.NewInt(rand.Int63())
+		ethTransaction := ethTypes.NewTx(&ethTypes.LegacyTx{
+			GasPrice: gasPrice,
+			Gas:      gasLimit,
+			To:       &common.Address{},
+			Value:    big.NewInt(rand.Int63()),
+			Data:     data,
+		})
+		binary, err := ethTransaction.MarshalBinary()
+		require.NoError(t, err)
+
+		observedTx := types.ObservedTx{
+			BlockHeight: 1,
+			Serialized:  binary,
+		}
+
+		worldState := DefaultWorldState{
+			db:        mockDb,
+			tssConfig: config.TssConfig{},
+			nonces: map[string]int64{
+				"eth": rand.Int63(),
+			},
+			deyesClients: nil,
+		}
+		txOutProducer := DefaultTxOutputProducer{
+			worldState: &worldState,
+			tssConfig: config.TssConfig{
+				Enable: true,
+				SupportedChains: map[string]config.TssChainConfig{
+					"ganache": {
+						Symbol:   "ganache",
+						DeyesUrl: "http://0.0.0.0:1234",
+					},
+				},
+			},
+			db:      mockDb,
+			appKeys: mockAppKeys,
+		}
+
+		ctx := sdk.Context{}
+		txOuts, txOutEntities, err := txOutProducer.getEthResponse(ctx, 1, &observedTx)
+		require.NoError(t, err)
+		require.Len(t, txOuts, 1)
+		require.Len(t, txOutEntities, 1)
+	})
 }
