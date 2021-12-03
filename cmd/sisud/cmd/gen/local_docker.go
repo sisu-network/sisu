@@ -103,7 +103,7 @@ Example:
 			dockerConfig := getDockerConfig([]string{"192.168.10.2", "192.168.10.3"}, chainIds, "192.168.10.4", ips)
 
 			nodeConfigs := make([]config.Config, numValidators)
-			for i, _ := range ips {
+			for i := range ips {
 				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
 
 				if err := os.MkdirAll(dir, nodeDirPerm); err != nil {
@@ -147,7 +147,7 @@ Example:
 				panic(err)
 			}
 
-			for i, _ := range ips {
+			for i := range ips {
 				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
 				generateHeartToml(i, dir, dockerConfig, peerIds)
 			}

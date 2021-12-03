@@ -1,12 +1,8 @@
 package tss
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
-	"math/big"
 	"testing"
 
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/golang/mock/gomock"
 	"github.com/sisu-network/cosmos-sdk/crypto/keys/ed25519"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
@@ -67,7 +63,7 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 		t.Parallel()
 
 		ctrl := gomock.NewController(t)
-		t.Cleanup( func() {
+		t.Cleanup(func() {
 			ctrl.Finish()
 		})
 
@@ -105,47 +101,4 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 
 		require.NoError(t, processor.OnObservedTxs(txs))
 	})
-}
-
-func TestProcessor_createAndBroadcastTxOuts(t *testing.T) {
-	t.Parallel()
-
-	t.Run("success", func(t *testing.T) {
-		t.Parallel()
-
-		processor := &Processor{}
-		signer    := ethTypes.NewEIP2930Signer(common.Big1)
-		recipient := common.HexToAddress("095e7baea6a6c7c4c2dfeb977efac326af552d87")
-		addr      := common.HexToAddress("0x0000000000000000000000000000000000000001")
-		accesses  := ethTypes.AccessList{{Address: addr, StorageKeys: []common.Hash{{0}}}}
-
-		txdata := &ethTypes.AccessListTx{
-			ChainID:    big.NewInt(1),
-			Nonce:      10,
-			To:         &recipient,
-			Gas:        123457,
-			GasPrice:   big.NewInt(10),
-			AccessList: accesses,
-			Data:       []byte("abcdef"),
-		}
-
-		key, err := crypto.GenerateKey()
-		require.NoError(t, err)
-
-		tx, err := ethTypes.SignNewTx(key, signer, txdata)
-		require.NoError(t, err)
-
-		outBytes, err := tx.MarshalBinary()
-		require.NoError(t, err)
-
-		ctx := sdk.Context{}
-		observedTx := types.ObservedTx{
-			Chain:       "ganache1",
-			BlockHeight: 10,
-			Serialized:  outBytes,
-		}
-		txOuts := processor.createAndBroadcastTxOuts(ctx, &observedTx)
-		require.NotNil(t, txOuts)
-	})
-
 }
