@@ -64,8 +64,6 @@ If this is a testnet or mainnet, generate account using "sisu keys" command.`))
 
 	// TODO: Use signer name for
 	ak.signerInfo = infos[0]
-	log.Debug("signerInfo =", ak.signerInfo.GetName(), ak.signerInfo.GetAddress())
-
 	// Set the private key from keyring
 	ak.setPrivateKey()
 

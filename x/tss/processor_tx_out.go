@@ -36,7 +36,7 @@ func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.Observed
 				return
 			}
 
-			p.db.UpdateTxOutStatus(msg.OutChain, msg.GetHash(), tssTypes.TxOutStatusBroadcasted, false)
+			p.db.UpdateTxOutStatus(m.OutChain, m.GetHash(), tssTypes.TxOutStatusBroadcasted, false)
 		}(msg)
 	}
 
