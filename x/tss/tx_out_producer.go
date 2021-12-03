@@ -239,7 +239,7 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *tsstypes.ContractEntit
 
 		// Get all allowed chains
 		allowedChains := make([]string, 0)
-		for chain, _ := range p.tssConfig.SupportedChains {
+		for chain := range p.tssConfig.SupportedChains {
 			if chain != contract.Chain {
 				allowedChains = append(allowedChains, chain)
 			}

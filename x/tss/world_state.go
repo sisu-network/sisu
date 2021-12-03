@@ -19,10 +19,10 @@ type DefaultWorldState struct {
 	db           db.Database
 	tssConfig    config.TssConfig
 	nonces       map[string]int64
-	deyesClients map[string]*tssclients.DeyesClient
+	deyesClients map[string]tssclients.DeyesClient
 }
 
-func NewWorldState(tssConfig config.TssConfig, db db.Database, deyesClients map[string]*tssclients.DeyesClient) WorldState {
+func NewWorldState(tssConfig config.TssConfig, db db.Database, deyesClients map[string]tssclients.DeyesClient) WorldState {
 	return &DefaultWorldState{
 		tssConfig:    tssConfig,
 		db:           db,
@@ -40,6 +40,7 @@ func (ws *DefaultWorldState) UseAndIncreaseNonce(chain string) int64 {
 
 	pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
 	if err != nil {
+		log.Error("cannot unmarshal public key", err)
 		return -1
 	}
 
