@@ -4,13 +4,13 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/golang/mock/gomock"
+	ctypes "github.com/sisu-network/cosmos-sdk/crypto/types"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/tests/mock"
 	"github.com/sisu-network/sisu/x/tss/types"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 	"github.com/stretchr/testify/require"
 	"math/big"
-	"math/rand"
 	"testing"
 )
 
@@ -26,6 +26,12 @@ func TestDeliverTxOut(t *testing.T) {
 	mockDb.EXPECT().UpdateTxOutStatus("eth", gomock.Any(), tssTypes.TxOutStatusPreSigning, gomock.Any()).Return(nil).Times(1)
 	mockDb.EXPECT().UpdateTxOutStatus("eth", gomock.Any(), tssTypes.TxOutStatusSigning, gomock.Any()).Return(nil).Times(1)
 	mockDb.EXPECT().UpdateTxOutStatus("eth", gomock.Any(), tssTypes.TxOutStatusSigned, gomock.Any()).Return(nil).Times(1)
+
+	mockPartyManager := mock.NewMockPartyManager(ctrl)
+	mockPartyManager.EXPECT().GetActivePartyPubkeys().Return([]ctypes.PubKey{}).Times(1)
+
+	mockDheartClient := mock.NewMockDheartClient(ctrl)
+	mockDheartClient.EXPECT().KeySign(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	amount := big.NewInt(100)
 	gasLimit := uint64(100)
@@ -46,8 +52,8 @@ func TestDeliverTxOut(t *testing.T) {
 	}
 
 	p := &Processor{
-		partyManager: &mock.PartyManager{},
-		dheartClient: &mock.DheartClient{},
+		partyManager: mockPartyManager,
+		dheartClient: mockDheartClient,
 		db:           mockDb,
 	}
 
