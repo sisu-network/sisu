@@ -9,28 +9,37 @@ import (
 	"github.com/sisu-network/lib/log"
 )
 
-type DheartClient struct {
+//go:generate mockgen -source=dheart_client.go -destination=../../../tests/mock/dheart_client.go -package=mock
+
+type DheartClient interface {
+	SetPrivKey(encodedKey string, keyType string) error
+	CheckHealth() error
+	KeyGen(keygenId string, chain string, pubKeys []ctypes.PubKey) error
+	KeySign(req *htypes.KeysignRequest, pubKeys []ctypes.PubKey) error
+}
+
+type DefaultDheartClient struct {
 	client *rpc.Client
 }
 
 // DialDheart connects a client to the given URL.
-func DialDheart(rawurl string) (*DheartClient, error) {
+func DialDheart(rawurl string) (*DefaultDheartClient, error) {
 	return dialDheartContext(context.Background(), rawurl)
 }
 
-func dialDheartContext(ctx context.Context, rawurl string) (*DheartClient, error) {
+func dialDheartContext(ctx context.Context, rawurl string) (*DefaultDheartClient, error) {
 	c, err := rpc.DialContext(ctx, rawurl)
 	if err != nil {
 		return nil, err
 	}
-	return newDheartClient(c), nil
+	return newDefaultDheartClient(c), nil
 }
 
-func newDheartClient(c *rpc.Client) *DheartClient {
-	return &DheartClient{c}
+func newDefaultDheartClient(c *rpc.Client) *DefaultDheartClient {
+	return &DefaultDheartClient{c}
 }
 
-func (c *DheartClient) SetPrivKey(encodedKey string, keyType string) error {
+func (c *DefaultDheartClient) SetPrivKey(encodedKey string, keyType string) error {
 	var result string
 	err := c.client.CallContext(context.Background(), &result, "tss_setPrivKey", encodedKey, keyType)
 	if err != nil {
@@ -41,7 +50,7 @@ func (c *DheartClient) SetPrivKey(encodedKey string, keyType string) error {
 	return nil
 }
 
-func (c *DheartClient) CheckHealth() error {
+func (c *DefaultDheartClient) CheckHealth() error {
 	var result interface{}
 	err := c.client.CallContext(context.Background(), &result, "tss_checkHealth")
 	if err != nil {
@@ -52,7 +61,7 @@ func (c *DheartClient) CheckHealth() error {
 	return nil
 }
 
-func (c *DheartClient) KeyGen(keygenId string, chain string, pubKeys []ctypes.PubKey) error {
+func (c *DefaultDheartClient) KeyGen(keygenId string, chain string, pubKeys []ctypes.PubKey) error {
 	// Wrap pubkeys
 	wrappers := c.getPubkeyWrapper(pubKeys)
 
@@ -68,7 +77,7 @@ func (c *DheartClient) KeyGen(keygenId string, chain string, pubKeys []ctypes.Pu
 	return nil
 }
 
-func (c *DheartClient) getPubkeyWrapper(pubKeys []ctypes.PubKey) []htypes.PubKeyWrapper {
+func (c *DefaultDheartClient) getPubkeyWrapper(pubKeys []ctypes.PubKey) []htypes.PubKeyWrapper {
 	wrappers := make([]htypes.PubKeyWrapper, len(pubKeys))
 	for i, pubKey := range pubKeys {
 		switch pubKey.Type() {
@@ -88,7 +97,7 @@ func (c *DheartClient) getPubkeyWrapper(pubKeys []ctypes.PubKey) []htypes.PubKey
 	return wrappers
 }
 
-func (c *DheartClient) KeySign(req *htypes.KeysignRequest, pubKeys []ctypes.PubKey) error {
+func (c *DefaultDheartClient) KeySign(req *htypes.KeysignRequest, pubKeys []ctypes.PubKey) error {
 	log.Verbose("Broadcasting key signing to Dheart")
 
 	wrappers := c.getPubkeyWrapper(pubKeys)

@@ -24,7 +24,7 @@ func (msg *KeygenResult) Route() string {
 
 // Type ...
 func (msg *KeygenResult) Type() string {
-	return MSG_TYPE_KEYGEN_RESULT
+	return MsgTypeKeygenResult
 }
 
 // GetSigners ...

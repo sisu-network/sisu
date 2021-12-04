@@ -63,7 +63,7 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 		t.Parallel()
 
 		ctrl := gomock.NewController(t)
-		t.Cleanup( func() {
+		t.Cleanup(func() {
 			ctrl.Finish()
 		})
 

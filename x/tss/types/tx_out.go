@@ -49,7 +49,7 @@ func (msg *TxOut) Route() string {
 
 // Type ...
 func (msg *TxOut) Type() string {
-	return MSG_TYPE_TX_OUT
+	return MsgTypeTxOut
 }
 
 // GetSigners ...
