@@ -9,7 +9,6 @@ import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/tests/mock"
 	"math/big"
-	"math/rand"
 	"strings"
 	"testing"
 
@@ -82,9 +81,9 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		accAddress := []byte{1, 2, 3}
 		mockAppKeys.EXPECT().GetSignerAddress().Return(accAddress).Times(1)
 
-		amount := big.NewInt(rand.Int63())
-		gasLimit := uint64(rand.Int63())
-		gasPrice := big.NewInt(rand.Int63())
+		amount := big.NewInt(100)
+		gasLimit := uint64(100)
+		gasPrice := big.NewInt(100)
 		ethTransaction := ethTypes.NewTx(&ethTypes.LegacyTx{
 			GasPrice: gasPrice,
 			Gas:      gasLimit,
@@ -104,7 +103,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 			db:        mockDb,
 			tssConfig: config.TssConfig{},
 			nonces: map[string]int64{
-				"eth": rand.Int63(),
+				"eth": 100,
 			},
 			deyesClients: nil,
 		}
@@ -159,18 +158,18 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 
 		abi, err := abi.JSON(strings.NewReader(SupportedContracts[ContractErc20].AbiString))
 		require.NoError(t, err)
-		amount := big.NewInt(rand.Int63())
+		amount := big.NewInt(100)
 		hex := "ab1257528b3782fb40d7ed5f72e624b744dffb2f"
 		data, err := abi.Pack(MethodTransferOutFromContract, common.HexToAddress(hex), "eth", hex, &amount)
 		require.NoError(t, err)
 
-		gasLimit := uint64(rand.Int63())
-		gasPrice := big.NewInt(rand.Int63())
+		gasLimit := uint64(100)
+		gasPrice := big.NewInt(100)
 		ethTransaction := ethTypes.NewTx(&ethTypes.LegacyTx{
 			GasPrice: gasPrice,
 			Gas:      gasLimit,
 			To:       &common.Address{},
-			Value:    big.NewInt(rand.Int63()),
+			Value:    big.NewInt(100),
 			Data:     data,
 		})
 		binary, err := ethTransaction.MarshalBinary()
@@ -185,7 +184,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 			db:        mockDb,
 			tssConfig: config.TssConfig{},
 			nonces: map[string]int64{
-				"eth": rand.Int63(),
+				"eth": 100,
 			},
 			deyesClients: nil,
 		}

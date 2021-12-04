@@ -27,9 +27,9 @@ func TestDeliverTxOut(t *testing.T) {
 	mockDb.EXPECT().UpdateTxOutStatus("eth", gomock.Any(), tssTypes.TxOutStatusSigning, gomock.Any()).Return(nil).Times(1)
 	mockDb.EXPECT().UpdateTxOutStatus("eth", gomock.Any(), tssTypes.TxOutStatusSigned, gomock.Any()).Return(nil).Times(1)
 
-	amount := big.NewInt(rand.Int63())
-	gasLimit := uint64(rand.Int63())
-	gasPrice := big.NewInt(rand.Int63())
+	amount := big.NewInt(100)
+	gasLimit := uint64(100)
+	gasPrice := big.NewInt(100)
 	ethTransaction := ethTypes.NewTx(&ethTypes.LegacyTx{
 		GasPrice: gasPrice,
 		Gas:      gasLimit,
