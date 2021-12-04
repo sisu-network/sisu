@@ -9,6 +9,8 @@ import (
 	"github.com/sisu-network/lib/log"
 )
 
+//go:generate mockgen -source=dheart_client.go -destination=../../../tests/mock/dheart_client.go -package=mock
+
 type DheartClient interface {
 	SetPrivKey(encodedKey string, keyType string) error
 	CheckHealth() error
