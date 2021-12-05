@@ -100,6 +100,9 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Tr
 				p.getGasPrice(toChain),
 				input,
 			)
+
+			log.Verbose("ERC20 producer: rawTx hash = ", rawTx.Hash())
+
 			bz, err := rawTx.MarshalBinary()
 			if err != nil {
 				return nil, err

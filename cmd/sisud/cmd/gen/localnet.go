@@ -83,22 +83,17 @@ Example:
 						Schema:   "sisu",
 					},
 				},
-				Eth: config.ETHConfig{
-					Host:          "0.0.0.0",
-					Port:          1234,
-					ImportAccount: false,
-				},
 				Tss: config.TssConfig{
 					Enable:     enableTss,
 					DheartHost: "0.0.0.0",
 					DheartPort: 5678,
 					SupportedChains: map[string]config.TssChainConfig{
-						"eth-sisu-local": {
-							Symbol:   "eth-sisu-local",
-							DeyesUrl: "http://0.0.0.0:31001",
-						},
 						"ganache1": {
 							Symbol:   "ganache1",
+							DeyesUrl: "http://0.0.0.0:31001",
+						},
+						"ganache2": {
+							Symbol:   "ganache2",
 							DeyesUrl: "http://0.0.0.0:31001",
 						},
 					},
