@@ -82,7 +82,7 @@ func transferEth(url, recipient string, wallet *hdwallet.Wallet, amount int) {
 		panic(err)
 	}
 
-	log.Info("fromAccount.Address = ", fromAccount.Address, "recipient = ", recipient)
+	log.Info("from Account.Address = ", fromAccount.Address, " recipient = ", recipient)
 
 	nonce, err := client.PendingNonceAt(context.Background(), fromAccount.Address)
 	if err != nil {
