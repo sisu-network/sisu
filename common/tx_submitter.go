@@ -12,7 +12,6 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/app/params"
 	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/x/evm/types"
 
 	"github.com/sisu-network/cosmos-sdk/client"
 	"github.com/sisu-network/cosmos-sdk/client/flags"
@@ -47,7 +46,6 @@ type QElementPair struct {
 }
 
 type TxSubmit interface {
-	SubmitEThTx(data []byte) error
 	SubmitMessage(msg sdk.Msg) error
 }
 
@@ -253,11 +251,6 @@ func (t *TxSubmitter) updateStatus(list []*QElementPair, err error) {
 	for _, pair := range list {
 		t.msgStatuses[pair.index] = err
 	}
-}
-
-func (t *TxSubmitter) SubmitEThTx(data []byte) error {
-	msg := types.NewMsgEthTx(t.clientCtx.GetFromAddress().String(), data)
-	return t.SubmitMessage(msg)
 }
 
 func convert(list []*QElementPair) []sdk.Msg {

@@ -240,11 +240,6 @@ func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, 
 				Schema:   fmt.Sprintf("sisu%d", index),
 			},
 		},
-		Eth: config.ETHConfig{
-			Host:          "0.0.0.0",
-			Port:          1234,
-			ImportAccount: true,
-		},
 		Tss: config.TssConfig{
 			Enable: true,
 			// Enable:     false,
