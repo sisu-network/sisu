@@ -83,11 +83,6 @@ Example:
 						Schema:   "sisu",
 					},
 				},
-				Eth: config.ETHConfig{
-					Host:          "0.0.0.0",
-					Port:          1234,
-					ImportAccount: false,
-				},
 				Tss: config.TssConfig{
 					Enable:     enableTss,
 					DheartHost: "0.0.0.0",
