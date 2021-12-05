@@ -19,7 +19,7 @@ Usage:
 deploy-erc20 [Port]
 
 Example:
-deploy-erc20 1234
+deploy-erc20 7545
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			port, err := strconv.Atoi(args[0])
