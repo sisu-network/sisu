@@ -29,7 +29,7 @@ Usage:
 transfer-out [ContractType] [FromChain] [Port] [TokenAddress] [ToChain] [RecipientAddress]
 
 Example:
-transfer-out erc20 eth-sisu-local 1234 0xf0D676183dD5ae6b370adDdbE770235F23546f9d ganache1 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
+transfer-out erc20 ganache1 7545 0xf0D676183dD5ae6b370adDdbE770235F23546f9d ganache2 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// Use this when running with docker.
