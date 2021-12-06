@@ -110,8 +110,8 @@ func (s *KVStore) UpdateTxOutStatus(ctx sdk.Context, chain, hash string, status 
 	if !isHashWithSig {
 		var txOut *tsstypes.TxOutEntity
 		key := getTxOutKey(chain, hash)
-		txOutBiz := store.Get(key)
-		if err := json.Unmarshal(txOutBiz, txOut); err != nil {
+		txOutBz := store.Get(key)
+		if err := json.Unmarshal(txOutBz, txOut); err != nil {
 			log.Error(err)
 			return err
 		}
