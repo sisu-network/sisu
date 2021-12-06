@@ -57,6 +57,9 @@ type Processor struct {
 	keygenVoteResult map[string]map[string]bool
 	keygenBlockPairs []BlockSymbolPair
 	db               db.Database
+
+	// KVStore
+	kvStore *KVStore
 }
 
 func NewProcessor(keeper keeper.DefaultKeeper,
@@ -67,6 +70,7 @@ func NewProcessor(keeper keeper.DefaultKeeper,
 	txDecoder sdk.TxDecoder,
 	txSubmit common.TxSubmit,
 	globalData common.GlobalData,
+	storeKey sdk.StoreKey,
 ) *Processor {
 	p := &Processor{
 		keeper:            &keeper,
@@ -82,6 +86,7 @@ func NewProcessor(keeper keeper.DefaultKeeper,
 		// And array that stores block numbers where we should do final vote count.
 		keygenBlockPairs: make([]BlockSymbolPair, 0),
 		deyesClients:     make(map[string]*tssclients.DeyesClient),
+		kvStore:          NewDefaultKVStore(storeKey),
 	}
 
 	return p

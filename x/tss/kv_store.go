@@ -23,8 +23,7 @@ var _ KVDatabase = (*KVStore)(nil)
 
 // KVDatabase has the same interface with db.Database with 1 more parameter: sdk.Context
 type KVDatabase interface {
-	// Txout
-	InsertTxOuts(ctx sdk.Context, txs []*tsstypes.TxOutEntity)
+	InsertTxOut(ctx sdk.Context, tx *tsstypes.TxOutEntity)
 	GetTxOutWithHash(ctx sdk.Context, chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity
 	UpdateTxOutSig(ctx sdk.Context, chain, hashWithoutSign, hashWithSig string, sig []byte) error
 	UpdateTxOutStatus(ctx sdk.Context, chain, hash string, status tsstypes.TxOutStatus, isHashWithSig bool) error
@@ -38,18 +37,16 @@ func NewDefaultKVStore(store sdk.StoreKey) *KVStore {
 	return &KVStore{storeKey: store}
 }
 
-func (s *KVStore) InsertTxOuts(ctx sdk.Context, txs []*tsstypes.TxOutEntity) {
+func (s *KVStore) InsertTxOut(ctx sdk.Context, tx *tsstypes.TxOutEntity) {
 	store := prefix.NewStore(ctx.KVStore(s.storeKey), PrefixTxOut)
-	for _, tx := range txs {
-		bz, err := json.Marshal(tx)
-		if err != nil {
-			log.Error(err)
-			continue
-		}
-
-		key := getTxOutKey(tx.InChain, tx.HashWithoutSig)
-		store.Set(key, bz)
+	bz, err := json.Marshal(tx)
+	if err != nil {
+		log.Error(err)
+		return
 	}
+
+	key := getTxOutKey(tx.InChain, tx.HashWithoutSig)
+	store.Set(key, bz)
 }
 
 func (s *KVStore) GetTxOutWithHash(ctx sdk.Context, chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity {
