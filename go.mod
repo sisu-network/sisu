@@ -14,7 +14,6 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/go-retryablehttp v0.7.0
-	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
 	github.com/joho/godotenv v1.3.0
 	github.com/libp2p/go-libp2p-core v0.8.0
 	github.com/morikuni/aec v1.0.0 // indirect
