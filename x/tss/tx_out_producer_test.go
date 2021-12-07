@@ -1,6 +1,10 @@
 package tss
 
 import (
+	"math/big"
+	"strings"
+	"testing"
+
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -8,9 +12,6 @@ import (
 	"github.com/golang/mock/gomock"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/tests/mock"
-	"math/big"
-	"strings"
-	"testing"
 
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/contracts/eth/erc20gateway"
@@ -45,8 +46,8 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 	tx := txOutProducer.getContractTx(contractEntity, 100)
 	require.NotNil(t, tx)
 	require.EqualValues(t, 100, tx.Nonce())
-	require.EqualValues(t, *big.NewInt(1700000000), *tx.GasPrice())
-	require.EqualValues(t, *big.NewInt(1700000000), *tx.GasFeeCap())
+	require.EqualValues(t, *big.NewInt(10000000000), *tx.GasPrice())
+	require.EqualValues(t, *big.NewInt(10000000000), *tx.GasFeeCap())
 }
 
 func TestTxOutProducer_getEthResponse(t *testing.T) {
