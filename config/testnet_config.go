@@ -4,12 +4,7 @@ import (
 	"os"
 
 	"github.com/BurntSushi/toml"
-	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/utils"
-)
-
-var (
-	testnetEthChainId = libchain.GetChainIntFromId("eth-sisu-testnet")
 )
 
 type TestnetConfig struct {

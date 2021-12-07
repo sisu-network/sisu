@@ -6,14 +6,11 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/sisu-network/cosmos-sdk/crypto/keyring"
-	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/utils"
 )
 
 var (
-	basicTxGasLimit = 21000
-	initialBalance  = new(big.Int).Mul(big.NewInt(10000), utils.ONE_ETHER_IN_WEI) // 10,000 ETHER
-	localEthChainId = libchain.GetChainIntFromId("eth-sisu-local")
+	initialBalance = new(big.Int).Mul(big.NewInt(10000), utils.ONE_ETHER_IN_WEI) // 10,000 ETHER
 )
 
 func localSisuConfig() *SisuConfig {
