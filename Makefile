@@ -14,12 +14,12 @@ test:
 fmt:
 	find . -name "*.go" | grep -v -E "(.*/proto/.*|./*/mock/.*)" | xargs -I '{}' gofmt -s -w '{}'
 
-dev-mysql-up:
+dev-up:
 	@docker compose \
 		-f docker/docker-compose-mysql.dev.yml \
 		up -d
 
-dev-mysql-down:
+dev-down:
 	@docker compose \
 		-f docker/docker-compose-mysql.dev.yml \
 		down -v --rmi local
