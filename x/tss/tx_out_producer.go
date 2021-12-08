@@ -25,7 +25,7 @@ import (
 type TxOutputProducer interface {
 	AddKeyAddress(ctx sdk.Context, chain, addr string) error
 	GetTxOuts(ctx sdk.Context, height int64, tx *types.ObservedTx) ([]*tssTypes.TxOut, []*tssTypes.TxOutEntity)
-	SaveContractsToDeploy(chain string)
+	SaveContractsToDeploy(ctx sdk.Context, chain string)
 }
 
 type DefaultTxOutputProducer struct {
@@ -37,11 +37,12 @@ type DefaultTxOutputProducer struct {
 	keeper        keeper.Keeper
 	appKeys       common.AppKeys
 	db            db.Database
+	kvStore       KVDatabase
 	ethDeployment *EthDeployment
 	tssConfig     config.TssConfig
 }
 
-func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys common.AppKeys, db db.Database, tssConfig config.TssConfig) TxOutputProducer {
+func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys common.AppKeys, kvStore KVDatabase, db db.Database, tssConfig config.TssConfig) TxOutputProducer {
 	return &DefaultTxOutputProducer{
 		worldState:    worldState,
 		keeper:        keeper,
@@ -49,6 +50,7 @@ func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys co
 		tssConfig:     tssConfig,
 		ethDeployment: NewEthDeployment(),
 		db:            db,
+		kvStore:       kvStore,
 	}
 }
 
@@ -115,7 +117,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 	// 1. Check if this is a transaction sent to our key address. If this is true, it's likely a tx
 	// that funds our account.
 	if ethTx.To() != nil && p.db.IsChainKeyAddress(libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
-		contracts := p.db.GetPendingDeployContracts(tx.Chain)
+		contracts := p.kvStore.GetPendingDeployContracts(ctx, tx.Chain)
 		log.Verbose("len(contracts) = ", len(contracts))
 
 		if len(contracts) > 0 {
@@ -158,7 +160,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 	if ethTx.To() != nil && len(ethTx.Data()) >= 4 {
 		log.Verbose("ethTx.To() = ", ethTx.To())
 
-		responseTx, err := p.createErc20ContractResponse(ethTx, tx.Chain)
+		responseTx, err := p.createErc20ContractResponse(ctx, ethTx, tx.Chain)
 		if err == nil {
 			outMsg := tsstypes.NewMsgTxOut(
 				p.appKeys.GetSignerAddress().String(),
@@ -199,7 +201,9 @@ func (p *DefaultTxOutputProducer) checkEthDeployContract(ctx sdk.Context, height
 	}
 
 	// Update all contracts to "deploying" state.
-	p.db.UpdateContractsStatus(contracts, tsstypes.ContractStateDeploying)
+	if err := p.kvStore.UpdateContractsStatus(ctx, contracts, tsstypes.ContractStateDeploying); err != nil {
+		return nil
+	}
 
 	return txs
 }
@@ -207,7 +211,7 @@ func (p *DefaultTxOutputProducer) checkEthDeployContract(ctx sdk.Context, height
 // Save a list of contracts that are pending to be deployed. This is often call after a key is
 // generated for a chain. We cannot deploy immediately after key generation because we don't have
 // enough balance in the account.
-func (p *DefaultTxOutputProducer) SaveContractsToDeploy(chain string) {
+func (p *DefaultTxOutputProducer) SaveContractsToDeploy(ctx sdk.Context, chain string) {
 	if libchain.IsETHBasedChain(chain) {
 		contracts := make([]*types.ContractEntity, 0, len(SupportedContracts))
 
@@ -222,7 +226,7 @@ func (p *DefaultTxOutputProducer) SaveContractsToDeploy(chain string) {
 			contracts = append(contracts, contract)
 		}
 
-		p.db.InsertContracts(contracts)
+		p.kvStore.InsertContracts(ctx, contracts)
 	}
 }
 

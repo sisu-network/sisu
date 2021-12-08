@@ -23,10 +23,15 @@ var _ KVDatabase = (*KVStore)(nil)
 
 // KVDatabase has the same interface with db.Database with 1 more parameter: sdk.Context
 type KVDatabase interface {
-	InsertTxOut(ctx sdk.Context, tx *tsstypes.TxOutEntity)
+	InsertTxOut(ctx sdk.Context, txs []*tsstypes.TxOutEntity)
 	GetTxOutWithHash(ctx sdk.Context, chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity
 	UpdateTxOutSig(ctx sdk.Context, chain, hashWithoutSign, hashWithSig string, sig []byte) error
 	UpdateTxOutStatus(ctx sdk.Context, chain, hash string, status tsstypes.TxOutStatus, isHashWithSig bool) error
+
+	InsertContracts(ctx sdk.Context, contracts []*tsstypes.ContractEntity)
+	GetPendingDeployContracts(ctx sdk.Context, chain string) []*tsstypes.ContractEntity
+	GetContractFromHash(ctx sdk.Context, chain, hash string) *tsstypes.ContractEntity
+	UpdateContractsStatus(ctx sdk.Context, contracts []*tsstypes.ContractEntity, status string) error
 }
 
 type KVStore struct {
@@ -37,16 +42,19 @@ func NewDefaultKVStore(store sdk.StoreKey) *KVStore {
 	return &KVStore{storeKey: store}
 }
 
-func (s *KVStore) InsertTxOut(ctx sdk.Context, tx *tsstypes.TxOutEntity) {
+func (s *KVStore) InsertTxOut(ctx sdk.Context, txs []*tsstypes.TxOutEntity) {
 	store := prefix.NewStore(ctx.KVStore(s.storeKey), PrefixTxOut)
-	bz, err := json.Marshal(tx)
-	if err != nil {
-		log.Error(err)
-		return
-	}
 
-	key := getTxOutKey(tx.InChain, tx.HashWithoutSig)
-	store.Set(key, bz)
+	for _, tx := range txs {
+		bz, err := json.Marshal(tx)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		key := getTxOutKey(tx.InChain, tx.HashWithoutSig)
+		store.Set(key, bz)
+	}
 }
 
 func (s *KVStore) GetTxOutWithHash(ctx sdk.Context, chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity {
@@ -137,8 +145,85 @@ func (s *KVStore) UpdateTxOutStatus(ctx sdk.Context, chain, hash string, status 
 	return nil
 }
 
+func (s *KVStore) InsertContracts(ctx sdk.Context, contracts []*tsstypes.ContractEntity) {
+	store := prefix.NewStore(ctx.KVStore(s.storeKey), PrefixContract)
+
+	for _, contract := range contracts {
+		bz, err := json.Marshal(contract)
+		if err != nil {
+			log.Error(err)
+			continue
+		}
+		key := getContractKey(contract.Chain, contract.Hash)
+		store.Set(key, bz)
+	}
+}
+
+func (s *KVStore) GetPendingDeployContracts(ctx sdk.Context, chain string) []*tsstypes.ContractEntity {
+	store := prefix.NewStore(ctx.KVStore(s.storeKey), PrefixContract)
+
+	pendingContracts := make([]*tsstypes.ContractEntity, 0)
+	for iter := store.Iterator(nil, nil); iter.Valid(); iter.Next() {
+		var contract *tsstypes.ContractEntity
+		if err := json.Unmarshal(iter.Value(), contract); err != nil {
+			log.Error(err)
+			continue
+		}
+
+		if contract != nil && strings.EqualFold(contract.Chain, chain) && len(contract.Status) == 0 {
+			pendingContracts = append(pendingContracts, contract)
+		}
+	}
+
+	return pendingContracts
+}
+
+func (s *KVStore) GetContractFromHash(ctx sdk.Context, chain, hash string) *tsstypes.ContractEntity {
+	store := prefix.NewStore(ctx.KVStore(s.storeKey), PrefixContract)
+
+	key := getContractKey(chain, hash)
+	contractBz := store.Get(key)
+	var contract *tsstypes.ContractEntity
+	if err := json.Unmarshal(contractBz, contract); err != nil {
+		log.Error(err)
+		return nil
+	}
+
+	return contract
+}
+
+func (s *KVStore) UpdateContractsStatus(ctx sdk.Context, contracts []*tsstypes.ContractEntity, status string) error {
+	store := prefix.NewStore(ctx.KVStore(s.storeKey), PrefixContract)
+
+	for _, updateContract := range contracts {
+		key := getContractKey(updateContract.Chain, updateContract.Hash)
+		contractBz := store.Get(key)
+		if len(contractBz) == 0 {
+			log.Warnf("cannot find contract for chain(%s) with hash(%s)", updateContract.Chain, updateContract.Hash)
+			continue
+		}
+
+		var contract *tsstypes.ContractEntity
+		if err := json.Unmarshal(contractBz, contract); err != nil {
+			log.Error(err)
+			return err
+		}
+
+		contract.Status = status
+		if err := saveRecord(store, key, contract); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func getTxOutKey(chain, hashWithoutSig string) []byte {
 	return []byte(strings.Join([]string{chain, hashWithoutSig}, KVSeparator))
+}
+
+func getContractKey(chain, hash string) []byte {
+	return []byte(strings.Join([]string{chain, hash}, KVSeparator))
 }
 
 func saveRecord(store prefix.Store, key []byte, entity interface{}) error {

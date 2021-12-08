@@ -28,6 +28,12 @@ func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.Observed
 			log.Verbose("Inserting into db, tx hash = ", outEntity.HashWithoutSig)
 		}
 		p.db.InsertTxOuts(outEntities)
+		p.kvStore.InsertTxOut(ctx, outEntities)
+	}
+
+	// If we're catching up, do not submit txOut messages
+	if !p.globalData.IsCatchingUp() {
+		return []*tssTypes.TxOut{}
 	}
 
 	for _, msg := range outMsgs {
@@ -44,12 +50,10 @@ func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.Observed
 }
 
 func (p *Processor) CheckTxOut(ctx sdk.Context, msg *types.TxOut) error {
-	txOutEntity := tssTypes.TxOutToEntity(msg)
-	privTxOut := p.db.GetTxOutWithHash(txOutEntity.InChain, txOutEntity.HashWithoutSig, false)
+	pubTxOutEntity := tssTypes.TxOutToEntity(msg)
+	privTxOut := p.db.GetTxOutWithHash(pubTxOutEntity.InChain, pubTxOutEntity.HashWithoutSig, false)
 
-	// Handle case txOut is not found in private database
 	if privTxOut == nil {
-		// Push to a queue to retry later?
 		return nil
 	}
 
@@ -59,7 +63,6 @@ func (p *Processor) CheckTxOut(ctx sdk.Context, msg *types.TxOut) error {
 
 func (p *Processor) DeliverTxOut(ctx sdk.Context, tx *types.TxOut) ([]byte, error) {
 	// TODO: check if this tx has been requested to be signed
-	p.kvStore.InsertTxOut(ctx, tssTypes.TxOutToEntity(tx))
 
 	if libchain.IsETHBasedChain(tx.OutChain) {
 		if err := p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusPreSigning, false); err != nil {

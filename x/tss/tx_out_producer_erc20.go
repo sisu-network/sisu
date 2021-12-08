@@ -9,12 +9,13 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	sdk "github.com/sisu-network/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
 
-func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Transaction, fromChain string) (*types.TxResponse, error) {
+func (p *DefaultTxOutputProducer) createErc20ContractResponse(ctx sdk.Context, ethTx *ethTypes.Transaction, fromChain string) (*types.TxResponse, error) {
 	erc20Contract := SupportedContracts[ContractErc20]
 
 	contract := p.db.GetContractFromAddress(fromChain, ethTx.To().String())
@@ -66,7 +67,7 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ethTx *ethTypes.Tr
 
 		// TODO: Creates tx out for other chains.
 		if libchain.IsETHBasedChain(toChain) {
-			toChainContract := p.db.GetContractFromHash(toChain, erc20Contract.AbiHash)
+			toChainContract := p.kvStore.GetContractFromHash(ctx, toChain, erc20Contract.AbiHash)
 			if toChainContract == nil {
 				log.Error("cannot find erc20 contract for toChain %s", toChain)
 				return nil, fmt.Errorf("cannot find erc20 contract for toChain %s", toChain)
