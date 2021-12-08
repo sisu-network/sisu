@@ -41,7 +41,6 @@ type DockerNodeConfig struct {
 
 	NodeData []struct {
 		Ip          string
-		EthPortMap  int
 		GrpcPortMap int
 	}
 }
@@ -103,7 +102,7 @@ Example:
 			dockerConfig := getDockerConfig([]string{"192.168.10.2", "192.168.10.3"}, chainIds, "192.168.10.4", ips)
 
 			nodeConfigs := make([]config.Config, numValidators)
-			for i, _ := range ips {
+			for i := range ips {
 				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
 
 				if err := os.MkdirAll(dir, nodeDirPerm); err != nil {
@@ -147,7 +146,7 @@ Example:
 				panic(err)
 			}
 
-			for i, _ := range ips {
+			for i := range ips {
 				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
 				generateHeartToml(i, dir, dockerConfig, peerIds)
 			}
@@ -203,7 +202,6 @@ func getDockerConfig(ganacheIps []string, chainIds []*big.Int, mysqlIp string, i
 	}, len(ganacheIps))
 	docker.NodeData = make([]struct {
 		Ip          string
-		EthPortMap  int
 		GrpcPortMap int
 	}, len(ips))
 
@@ -217,7 +215,6 @@ func getDockerConfig(ganacheIps []string, chainIds []*big.Int, mysqlIp string, i
 	// Node data
 	for i, ip := range ips {
 		docker.NodeData[i].Ip = ip
-		docker.NodeData[i].EthPortMap = 1234 + i
 		docker.NodeData[i].GrpcPortMap = 9090 + i
 	}
 
@@ -240,23 +237,18 @@ func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, 
 				Schema:   fmt.Sprintf("sisu%d", index),
 			},
 		},
-		Eth: config.ETHConfig{
-			Host:          "0.0.0.0",
-			Port:          1234,
-			ImportAccount: true,
-		},
 		Tss: config.TssConfig{
 			Enable: true,
 			// Enable:     false,
 			DheartHost: fmt.Sprintf("dheart%d", index),
 			DheartPort: 5678,
 			SupportedChains: map[string]config.TssChainConfig{
-				"eth-sisu-local": {
-					Symbol:   "eth-sisu-local",
-					DeyesUrl: fmt.Sprintf("http://deyes%d:31001", index),
-				},
 				"ganache1": {
 					Symbol:   "ganache1",
+					DeyesUrl: fmt.Sprintf("http://deyes%d:31001", index),
+				},
+				"ganache2": {
+					Symbol:   "ganache2",
 					DeyesUrl: fmt.Sprintf("http://deyes%d:31001", index),
 				},
 			},
@@ -278,6 +270,13 @@ services:
       - networkId=189985
     ports:
       - 7545:7545
+  ganache2:
+    image: ganache-cli
+    environment:
+      - port=7545
+      - networkId=189986
+    ports:
+      - 7546:7545
   mysql:
     image: mysql:8.0.19
     command: "--default-authentication-plugin=mysql_native_password"
@@ -305,7 +304,6 @@ services:
       - 26656
       - 26657
     ports:
-      - {{ $nodeData.EthPortMap }}:1234
       - {{ $nodeData.GrpcPortMap }}:9090
     restart: on-failure
     depends_on:
@@ -375,17 +373,16 @@ server_port = 31001
 sisu_server_url = "{{ .SisuServerUrl }}"
 
 [chains]
-[chains.eth-sisu-local]
-  chain = "eth-sisu-local"
-  block_time = 3000
-  starting_block = 0
-  rpc_url = "http://sisu0:1234"
-
 [chains.ganache1]
   chain = "ganache1"
   block_time = 1000
   starting_block = 0
   rpc_url = "http://ganache1:7545"
+[chains.ganache2]
+  chain = "ganache2"
+  block_time = 1000
+  starting_block = 0
+  rpc_url = "http://ganache2:7545"
 `
 
 	tmpl := template.New("eyesToml")

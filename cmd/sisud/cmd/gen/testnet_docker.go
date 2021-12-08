@@ -101,7 +101,7 @@ Example:
 			dockerConfig := exe.getDockerConfig([]string{"192.168.10.2", "192.168.10.3"}, chainIds, "192.168.10.4", ips)
 
 			nodeConfigs := make([]config.Config, numValidators)
-			for i, _ := range ips {
+			for i := range ips {
 				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
 
 				if err := os.MkdirAll(dir, nodeDirPerm); err != nil {
@@ -145,7 +145,7 @@ Example:
 				panic(err)
 			}
 
-			for i, _ := range ips {
+			for i := range ips {
 				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
 				exe.generateHeartToml(i, dir, dockerConfig, peerIds)
 			}
@@ -216,7 +216,6 @@ func (exe *TestnetDockerExecutor) getDockerConfig(ganacheIps []string, chainIds 
 	}, len(ganacheIps))
 	docker.NodeData = make([]struct {
 		Ip          string
-		EthPortMap  int
 		GrpcPortMap int
 	}, len(ips))
 
@@ -230,7 +229,6 @@ func (exe *TestnetDockerExecutor) getDockerConfig(ganacheIps []string, chainIds 
 	// Node data
 	for i, ip := range ips {
 		docker.NodeData[i].Ip = ip
-		docker.NodeData[i].EthPortMap = 1234 + i
 		docker.NodeData[i].GrpcPortMap = 9090 + i
 	}
 
@@ -252,11 +250,6 @@ func (exe *TestnetDockerExecutor) getNodeSettings(chainID, keyringBackend string
 				Password: "password",
 				Schema:   fmt.Sprintf("sisu%d", index),
 			},
-		},
-		Eth: config.ETHConfig{
-			Host:          "0.0.0.0",
-			Port:          1234,
-			ImportAccount: true,
 		},
 		Tss: config.TssConfig{
 			Enable: true,
@@ -311,7 +304,6 @@ services:
       - 26656
       - 26657
     ports:
-      - {{ $nodeData.EthPortMap }}:1234
       - {{ $nodeData.GrpcPortMap }}:9090
     restart: on-failure
     depends_on:
@@ -381,11 +373,11 @@ server_port = 31001
 sisu_server_url = "{{ .SisuServerUrl }}"
 
 [chains]
-[chains.eth-sisu-local]
-  chain = "eth-sisu-local"
-  block_time = 4000
+[chains.ganache1]
+  chain = "ganache1"
+  block_time = 1000
   starting_block = 0
-  rpc_url = "http://sisu0:1234"
+  rpc_url = "http://ganache1:7545"
 
 [chains.eth-ropsten]
   chain = "eth-ropsten"

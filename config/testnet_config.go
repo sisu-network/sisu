@@ -1,104 +1,15 @@
 package config
 
 import (
-	"math/big"
 	"os"
-	"path/filepath"
 
 	"github.com/BurntSushi/toml"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/sisu-network/dcore/core"
-	"github.com/sisu-network/dcore/eth/ethconfig"
-	"github.com/sisu-network/dcore/miner"
-	"github.com/sisu-network/dcore/node"
-	"github.com/sisu-network/dcore/params"
-	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/utils"
-)
-
-var (
-	testnetEthChainId = libchain.GetChainIntFromId("eth-sisu-testnet")
 )
 
 type TestnetConfig struct {
 	sisuConfig *SisuConfig
-	ethConfig  *ETHConfig
 	tssConfig  *TssConfig
-}
-
-func testnetETHConfig(baseDir string) *ETHConfig {
-	home := baseDir + "/eth"
-
-	return &ETHConfig{
-		Eth:           testTestnetEthConfig(),
-		Host:          "0.0.0.0",
-		Port:          1234,
-		DbPath:        home + "leveldb",
-		Node:          getTestnetEthNodeConfig(home),
-		ImportAccount: false,
-	}
-}
-
-func testTestnetEthConfig() *ethconfig.Config {
-	config := ethconfig.Defaults
-	chainConfig := &params.ChainConfig{
-		ChainID:             testnetEthChainId,
-		HomesteadBlock:      big.NewInt(0),
-		DAOForkBlock:        big.NewInt(0),
-		DAOForkSupport:      true,
-		EIP150Block:         big.NewInt(0),
-		EIP150Hash:          common.HexToHash("0x2086799aeebeae135c246c65021c82b4e15a2c451340993aacfd2751886514f0"),
-		EIP155Block:         big.NewInt(0),
-		EIP158Block:         big.NewInt(0),
-		ByzantiumBlock:      big.NewInt(0),
-		ConstantinopleBlock: big.NewInt(0),
-		PetersburgBlock:     big.NewInt(0),
-		IstanbulBlock:       big.NewInt(0),
-		BerlinBlock:         big.NewInt(0),
-	}
-
-	blockGasLimit := uint64(15000000)
-	alloc := make(map[common.Address]core.GenesisAccount)
-
-	addrs := []common.Address{
-		common.HexToAddress("0x018309Ce82ED587F568B3ae04549897d88066eE1"),
-		common.HexToAddress("0xF3DD08440Dbc82F9728f10044b4fF25B8DffE3C2"),
-	}
-	for _, addr := range addrs {
-		alloc[addr] = core.GenesisAccount{
-			Balance: initialBalance,
-		}
-	}
-
-	config.Genesis = &core.Genesis{
-		Config:     chainConfig,
-		Nonce:      0,
-		Number:     0,
-		ExtraData:  hexutil.MustDecode("0x00"),
-		GasLimit:   blockGasLimit,
-		Difficulty: big.NewInt(0),
-		Alloc:      alloc,
-	}
-
-	config.Miner = miner.Config{
-		BlockGasLimit: blockGasLimit,
-	}
-
-	config.TxPool = core.TxPoolConfig{
-		PriceLimit: 50,
-	}
-
-	return &config
-}
-
-func getTestnetEthNodeConfig(ethHome string) *node.Config {
-	ksDir := ethHome + "/keystore"
-
-	return &node.Config{
-		KeyStoreDir:         ksDir,
-		AllowUnprotectedTxs: false,
-	}
 }
 
 func testnetTssConfig(baseDir string) *TssConfig {
@@ -131,12 +42,4 @@ func testnetTssConfig(baseDir string) *TssConfig {
 	}
 
 	return config
-}
-
-func overrideTestnetConfig(config *Config) {
-	config.Eth.Eth = testTestnetEthConfig()
-	config.Eth.Node = &node.Config{
-		KeyStoreDir:         filepath.Join(config.Eth.Dir, "keystore"),
-		AllowUnprotectedTxs: false,
-	}
 }

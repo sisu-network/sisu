@@ -23,7 +23,7 @@ func (msg *KeygenProposal) Route() string {
 
 // Type ...
 func (msg *KeygenProposal) Type() string {
-	return MSG_TYPE_KEYGEN_PROPOSAL
+	return MsgTypeKeygenProposal
 }
 
 // GetSigners ...

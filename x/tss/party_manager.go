@@ -5,6 +5,8 @@ import (
 	"github.com/sisu-network/sisu/common"
 )
 
+//go:generate mockgen -source=party_manager.go -destination=../../tests/mock/party_manager.go -package=mock
+
 type Party struct {
 	pubKey ctypes.PubKey
 }

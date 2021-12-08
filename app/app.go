@@ -88,9 +88,6 @@ import (
 	"github.com/sisu-network/sisu/server"
 	"github.com/sisu-network/sisu/x/auth"
 	"github.com/sisu-network/sisu/x/auth/ante"
-	"github.com/sisu-network/sisu/x/evm"
-	evmKeeper "github.com/sisu-network/sisu/x/evm/keeper"
-	evmtypes "github.com/sisu-network/sisu/x/evm/types"
 	"github.com/sisu-network/sisu/x/sisu"
 	sisukeeper "github.com/sisu-network/sisu/x/sisu/keeper"
 	sisutypes "github.com/sisu-network/sisu/x/sisu/types"
@@ -151,7 +148,6 @@ var (
 		transfer.AppModuleBasic{},
 		vesting.AppModuleBasic{},
 		sisu.AppModuleBasic{},
-		evm.AppModuleBasic{},
 		tss.AppModuleBasic{},
 	)
 
@@ -222,7 +218,6 @@ type App struct {
 	sisuKeeper sisukeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
-	evmKeeper evmKeeper.Keeper
 	tssKeeper tssKeeper.DefaultKeeper
 
 	// the module manager
@@ -301,10 +296,6 @@ func New(
 	app.txSubmitter = common.NewTxSubmitter(cfg, app.appKeys)
 	go app.txSubmitter.Start()
 
-	// EVM keeper
-	app.evmKeeper = *evmKeeper.NewKeeper(appCodec, app.txSubmitter, &cfg.Eth)
-	app.evmKeeper.Initialize()
-
 	// TSS keeper
 	tssConfig := cfg.Tss
 	log.Info("tssConfig = ", tssConfig)
@@ -351,7 +342,6 @@ func New(
 		transferModule,
 
 		sisu.NewAppModule(appCodec, app.sisuKeeper),
-		evm.NewAppModule(appCodec, app.evmKeeper),
 	}
 
 	tendermintPrivKeyFile := filepath.Join(cfg.Sisu.Dir, "config/priv_validator_key.json")
@@ -371,8 +361,7 @@ func New(
 
 	// Set module begin
 	beginBlockers := []string{upgradetypes.ModuleName, minttypes.ModuleName, distrtypes.ModuleName, slashingtypes.ModuleName,
-		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName,
-		evmtypes.ModuleName}
+		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName}
 
 	if tssConfig.Enable {
 		beginBlockers = append(beginBlockers, tsstypes.ModuleName)
@@ -384,7 +373,7 @@ func New(
 	app.mm.SetOrderBeginBlockers(beginBlockers...)
 
 	// Set module end blocker
-	endBlockers := []string{evmtypes.ModuleName,
+	endBlockers := []string{
 		crisistypes.ModuleName,
 		govtypes.ModuleName,
 		stakingtypes.ModuleName}
@@ -413,7 +402,6 @@ func New(
 		evidencetypes.ModuleName,
 		ibctransfertypes.ModuleName,
 		sisutypes.ModuleName,
-		evmtypes.ModuleName,
 	}
 
 	if tssConfig.Enable {
@@ -436,9 +424,9 @@ func New(
 	app.SetAnteHandler(
 		ante.NewAnteHandler(
 			tssConfig,
-			app.AccountKeeper, app.BankKeeper, app.evmKeeper,
+			app.AccountKeeper, app.BankKeeper,
 			ante.DefaultSigVerificationGasConsumer, encodingConfig.TxConfig.SignModeHandler(),
-			app.evmKeeper.GetEthValidator(), tssProcessor,
+			tssProcessor,
 		),
 	)
 	app.SetEndBlocker(app.EndBlocker)

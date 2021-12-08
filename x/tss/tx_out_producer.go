@@ -38,18 +38,16 @@ type DefaultTxOutputProducer struct {
 	appKeys       common.AppKeys
 	db            db.Database
 	kvStore       KVDatabase
-	ethDeployment *EthDeployment
 	tssConfig     config.TssConfig
 }
 
 func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys common.AppKeys, kvStore KVDatabase, db db.Database, tssConfig config.TssConfig) TxOutputProducer {
 	return &DefaultTxOutputProducer{
-		worldState:    worldState,
-		keeper:        keeper,
-		appKeys:       appKeys,
-		tssConfig:     tssConfig,
-		ethDeployment: NewEthDeployment(),
-		db:            db,
+		worldState: worldState,
+		keeper:     keeper,
+		appKeys:    appKeys,
+		tssConfig:  tssConfig,
+		db:         db,
 		kvStore:       kvStore,
 	}
 }
@@ -243,7 +241,7 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *tsstypes.ContractEntit
 
 		// Get all allowed chains
 		allowedChains := make([]string, 0)
-		for chain, _ := range p.tssConfig.SupportedChains {
+		for chain := range p.tssConfig.SupportedChains {
 			if chain != contract.Chain {
 				allowedChains = append(allowedChains, chain)
 			}
@@ -282,7 +280,8 @@ func (p *DefaultTxOutputProducer) getGasPrice(chain string) *big.Int {
 	switch chain {
 	case "eth-ropsten":
 		return big.NewInt(1700000000)
-
+	case "eth-binance-testnet":
+		return big.NewInt(10000000000) // 10 Gwei
 	}
-	return big.NewInt(1700000000)
+	return big.NewInt(10000000000) // 10 Gwei
 }

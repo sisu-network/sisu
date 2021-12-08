@@ -69,6 +69,7 @@ func RandomNaturalNumber(n int) int {
 	}
 	return v % n
 }
+
 // IsDecimalString checks if string contains only decimal digits or not
 func IsDecimalString(s string) bool {
 	return CompiledRegex.DecimalString.MatchString(s)
