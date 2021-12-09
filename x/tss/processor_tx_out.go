@@ -27,13 +27,7 @@ func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.Observed
 			outEntity.Status = string(tssTypes.TxOutStatusPreBroadcast)
 			log.Verbose("Inserting into db, tx hash = ", outEntity.HashWithoutSig)
 		}
-		p.db.InsertTxOuts(outEntities)
 		p.kvStore.InsertTxOut(ctx, outEntities)
-	}
-
-	// If we're catching up, do not submit txOut messages
-	if !p.globalData.IsCatchingUp() {
-		return []*tssTypes.TxOut{}
 	}
 
 	for _, msg := range outMsgs {
@@ -42,7 +36,7 @@ func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.Observed
 				return
 			}
 
-			p.db.UpdateTxOutStatus(m.OutChain, m.GetHash(), tssTypes.TxOutStatusBroadcasted, false)
+			p.kvStore.UpdateTxOutStatus(ctx, m.OutChain, m.GetHash(), tssTypes.TxOutStatusBroadcasted, false)
 		}(msg)
 	}
 
@@ -65,17 +59,17 @@ func (p *Processor) DeliverTxOut(ctx sdk.Context, tx *types.TxOut) ([]byte, erro
 	// TODO: check if this tx has been requested to be signed
 
 	if libchain.IsETHBasedChain(tx.OutChain) {
-		if err := p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusPreSigning, false); err != nil {
+		if err := p.kvStore.UpdateTxOutStatus(ctx, tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusPreSigning, false); err != nil {
 			return nil, err
 		}
 
-		return p.deliverTxOutEth(ctx, tx)
+		return p.deliverTxOutEth(p.currentHeight, tx)
 	}
 
 	return nil, nil
 }
 
-func (p *Processor) deliverTxOutEth(ctx sdk.Context, tx *types.TxOut) ([]byte, error) {
+func (p *Processor) deliverTxOutEth(blockHeight int64, tx *types.TxOut) ([]byte, error) {
 	outHash := tx.GetHash()
 
 	log.Verbose("Delivering TXOUT for chain", tx.OutChain, " tx hash = ", tx.GetHash())
@@ -97,7 +91,7 @@ func (p *Processor) deliverTxOutEth(ctx sdk.Context, tx *types.TxOut) ([]byte, e
 
 	// 4. Send it to Dheart for signing.
 	keysignReq := &hTypes.KeysignRequest{
-		Id:             p.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), outHash),
+		Id:             p.getKeysignRequestId(tx.OutChain, blockHeight, outHash),
 		OutChain:       tx.OutChain,
 		OutBlockHeight: p.currentHeight,
 		OutHash:        outHash,

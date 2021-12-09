@@ -349,7 +349,7 @@ func New(
 	if err != nil {
 		panic(err)
 	}
-	tssProcessor := tss.NewProcessor(app.tssKeeper, tssConfig, nodeKey.PrivKey, app.appKeys, app.db, app.txDecoder, app.txSubmitter, app.globalData, keys[sisutypes.StoreKey])
+	tssProcessor := tss.NewProcessor(app.tssKeeper, tssConfig, nodeKey.PrivKey, app.appKeys, app.db, app.txDecoder, app.txSubmitter, app.globalData, keys[tsstypes.StoreKey])
 	if tssConfig.Enable {
 		log.Info("TSS is enabled")
 		tssProcessor.Init()

@@ -70,18 +70,20 @@ func (k *DefaultKeeper) GetObservedTx(ctx sdk.Context, chain string, blockHeight
 }
 
 func (k *DefaultKeeper) SavePubKey(ctx sdk.Context, keyType string, keyBytes []byte) {
+	log.Info("keeper store info:", k.storeKey.String())
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PUBLIC_KEY_BYTES)
 	store.Set([]byte(keyType), keyBytes)
+	log.Info("Saved successfully")
 }
 
 func (k *DefaultKeeper) GetAllPubKeys(ctx sdk.Context) map[string][]byte {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PUBLIC_KEY_BYTES)
-	iter := store.Iterator(nil, nil)
 	ret := make(map[string][]byte)
-	for ; iter.Valid(); iter.Next() {
+	for iter := store.Iterator(nil, nil); iter.Valid(); iter.Next() {
 		ret[string(iter.Key())] = iter.Value()
 	}
 
+	log.Info("Length of all pubkeys: ", len(ret))
 	return ret
 }
 

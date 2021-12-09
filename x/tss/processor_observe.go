@@ -50,7 +50,10 @@ func (p *Processor) CheckObservedTxs(ctx sdk.Context, msgs *tssTypes.ObservedTx)
 
 // Delivers observed Txs.
 func (p *Processor) DeliverObservedTxs(ctx sdk.Context, tx *tssTypes.ObservedTx) ([]byte, error) {
-	// TODO: Update the KVstore
+	// If we're catching up, do not submit txOut messages
+	if !p.globalData.IsCatchingUp() {
+		return nil, nil
+	}
 
 	// Save this to our local storage in case we have not seen it.
 	p.createAndBroadcastTxOuts(ctx, tx)

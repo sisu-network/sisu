@@ -40,7 +40,7 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 		}
 
 		if keygenEntity != nil && keygenEntity.Status != "" {
-			log.Info(keyType, "has been generated")
+			log.Info(keyType, " has been generated")
 			continue
 		}
 
@@ -94,7 +94,7 @@ func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
 		if deyesClient == nil {
 			log.Critical("Cannot find deyes client for chain", chain)
 		} else {
-			log.Verbose("adding watcher address", result.Address, "for chain", chain)
+			log.Verbosef("adding watcher address %s for chain %s", result.Address, chain)
 			deyesClient.AddWatchAddresses(chain, []string{result.Address})
 		}
 	}
@@ -143,7 +143,6 @@ func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, er
 }
 
 func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult) ([]byte, error) {
-	// TODO: Save data to KV store.
 	if msg.Result == types.KeygenResult_SUCCESS {
 		log.Info("Keygen succeeded")
 		keygenEntity, err := p.db.GetKeyGen(libchain.KEY_TYPE_ECDSA)

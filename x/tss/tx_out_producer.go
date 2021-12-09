@@ -115,7 +115,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 	// 1. Check if this is a transaction sent to our key address. If this is true, it's likely a tx
 	// that funds our account.
 	if ethTx.To() != nil && p.db.IsChainKeyAddress(libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
-		contracts := p.kvStore.GetPendingDeployContracts(ctx, tx.Chain)
+		contracts := p.db.GetPendingDeployContracts(tx.Chain)
 		log.Verbose("len(contracts) = ", len(contracts))
 
 		if len(contracts) > 0 {
@@ -199,7 +199,7 @@ func (p *DefaultTxOutputProducer) checkEthDeployContract(ctx sdk.Context, height
 	}
 
 	// Update all contracts to "deploying" state.
-	if err := p.kvStore.UpdateContractsStatus(ctx, contracts, tsstypes.ContractStateDeploying); err != nil {
+	if err := p.db.UpdateContractsStatus(contracts, tsstypes.ContractStateDeploying); err != nil {
 		return nil
 	}
 
@@ -224,7 +224,7 @@ func (p *DefaultTxOutputProducer) SaveContractsToDeploy(ctx sdk.Context, chain s
 			contracts = append(contracts, contract)
 		}
 
-		p.kvStore.InsertContracts(ctx, contracts)
+		p.db.InsertContracts(contracts)
 	}
 }
 

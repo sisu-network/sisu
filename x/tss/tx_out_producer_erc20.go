@@ -67,7 +67,7 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ctx sdk.Context, e
 
 		// TODO: Creates tx out for other chains.
 		if libchain.IsETHBasedChain(toChain) {
-			toChainContract := p.kvStore.GetContractFromHash(ctx, toChain, erc20Contract.AbiHash)
+			toChainContract := p.db.GetContractFromHash(toChain, erc20Contract.AbiHash)
 			if toChainContract == nil {
 				log.Error("cannot find erc20 contract for toChain %s", toChain)
 				return nil, fmt.Errorf("cannot find erc20 contract for toChain %s", toChain)
