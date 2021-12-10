@@ -251,7 +251,7 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *tsstypes.ContractEntit
 
 		input, err := parsedAbi.Pack("", contract.Chain, allowedChains)
 		if err != nil {
-			log.Error("cannot pack allowedChains, err =", err)
+			log.Error("cannot pack allowedChains, err = ", err)
 			return nil
 		}
 

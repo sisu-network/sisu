@@ -21,12 +21,9 @@ var (
 
 var _ KVDatabase = (*KVStore)(nil)
 
-// KVDatabase has the same interface with db.Database with 1 more parameter: sdk.Context
 type KVDatabase interface {
-	InsertTxOut(ctx sdk.Context, txs []*tsstypes.TxOutEntity)
+	InsertTxOuts(ctx sdk.Context, txs []*tsstypes.TxOutEntity)
 	GetTxOutWithHash(ctx sdk.Context, chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity
-	UpdateTxOutSig(ctx sdk.Context, chain, hashWithoutSign, hashWithSig string, sig []byte) error
-	UpdateTxOutStatus(ctx sdk.Context, chain, hash string, status tsstypes.TxOutStatus, isHashWithSig bool) error
 }
 
 type KVStore struct {
@@ -37,7 +34,7 @@ func NewDefaultKVStore(storeKey sdk.StoreKey) *KVStore {
 	return &KVStore{storeKey: storeKey}
 }
 
-func (s *KVStore) InsertTxOut(ctx sdk.Context, txs []*tsstypes.TxOutEntity) {
+func (s *KVStore) InsertTxOuts(ctx sdk.Context, txs []*tsstypes.TxOutEntity) {
 	store := prefix.NewStore(ctx.KVStore(s.storeKey), PrefixTxOut)
 
 	for _, tx := range txs {
@@ -62,7 +59,7 @@ func (s *KVStore) GetTxOutWithHash(ctx sdk.Context, chain string, hash string, i
 			return nil
 		}
 
-		var txOut *tsstypes.TxOutEntity
+		txOut := &tsstypes.TxOutEntity{}
 		if err := json.Unmarshal(txOutBz, txOut); err != nil {
 			log.Error(err)
 			return nil
@@ -75,7 +72,7 @@ func (s *KVStore) GetTxOutWithHash(ctx sdk.Context, chain string, hash string, i
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
-		var txOut *tsstypes.TxOutEntity
+		txOut := &tsstypes.TxOutEntity{}
 		if err := json.Unmarshal(iter.Value(), txOut); err != nil {
 			log.Error(err)
 			continue
@@ -89,33 +86,20 @@ func (s *KVStore) GetTxOutWithHash(ctx sdk.Context, chain string, hash string, i
 	return nil
 }
 
-func (s *KVStore) UpdateTxOutSig(ctx sdk.Context, chain, hashWithoutSign, hashWithSig string, sig []byte) error {
-	store := prefix.NewStore(ctx.KVStore(s.storeKey), PrefixTxOut)
-
-	var txOut *tsstypes.TxOutEntity
-	key := getTxOutKey(chain, hashWithoutSign)
-	txOutBiz := store.Get(key)
-	if err := json.Unmarshal(txOutBiz, txOut); err != nil {
-		log.Error(err)
-		return err
-	}
-
-	txOut.HashWithSig = hashWithSig
-	txOut.Signature = string(sig)
-
-	_ = saveRecord(store, key, txOut)
-	return nil
-}
-
 func (s *KVStore) UpdateTxOutStatus(ctx sdk.Context, chain, hash string, status tsstypes.TxOutStatus, isHashWithSig bool) error {
 	store := prefix.NewStore(ctx.KVStore(s.storeKey), PrefixTxOut)
 
 	if !isHashWithSig {
-		var txOut *tsstypes.TxOutEntity
+		txOut := &tsstypes.TxOutEntity{}
 		key := getTxOutKey(chain, hash)
 		txOutBz := store.Get(key)
+		if len(txOutBz) == 0 {
+			log.Warnf("cannot find txout for chain(%s), hash(%s), isHashWithSig(%s)", chain, hash, isHashWithSig)
+			return nil
+		}
+
 		if err := json.Unmarshal(txOutBz, txOut); err != nil {
-			log.Error(err)
+			log.Error("json unmarshal error: ", err)
 			return err
 		}
 
@@ -128,7 +112,7 @@ func (s *KVStore) UpdateTxOutStatus(ctx sdk.Context, chain, hash string, status 
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
-		var txOut *tsstypes.TxOutEntity
+		txOut := &tsstypes.TxOutEntity{}
 		if err := json.Unmarshal(iter.Value(), txOut); err != nil {
 			log.Error(err)
 			continue

@@ -14,6 +14,11 @@ import (
 
 // This function is called after dheart sends Sisu keysign result.
 func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
+	if result == nil {
+		log.Warn("key sign result is nil")
+		return
+	}
+
 	// Post the keysign result to cosmos chain.
 	msg := types.NewKeysignResult(p.appKeys.GetSignerAddress().String(), result.OutChain, result.OutHash, result.Success, result.Signature)
 	go p.txSubmit.SubmitMessage(msg)
@@ -25,6 +30,7 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 		txEntity := p.db.GetTxOutWithHash(result.OutChain, result.OutHash, false)
 		if txEntity == nil {
 			log.Error("Cannot find tx out with hash", result.OutHash)
+			return
 		}
 
 		tx := &etypes.Transaction{}
