@@ -13,7 +13,7 @@ type TxOutEntity struct {
 	ContractHash string // optional field for Eth contracts
 }
 
-func TxOutToEntity(txOut *TxOut) *TxOutEntity {
+func (txOut *TxOut) ToEntity() *TxOutEntity {
 	return &TxOutEntity{
 		OutChain:        txOut.OutChain,
 		HashWithoutSig:  txOut.GetHash(),

@@ -33,12 +33,12 @@ type DefaultTxOutputProducer struct {
 	// Map from: chain -> address -> bool.
 	ethKeyAddrs map[string]map[string]bool
 
-	worldState    WorldState
-	keeper        keeper.Keeper
-	appKeys       common.AppKeys
-	db            db.Database
-	kvStore       KVDatabase
-	tssConfig     config.TssConfig
+	worldState WorldState
+	keeper     keeper.Keeper
+	appKeys    common.AppKeys
+	db         db.Database
+	kvStore    KVDatabase
+	tssConfig  config.TssConfig
 }
 
 func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys common.AppKeys, kvStore KVDatabase, db db.Database, tssConfig config.TssConfig) TxOutputProducer {
@@ -48,7 +48,7 @@ func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys co
 		appKeys:    appKeys,
 		tssConfig:  tssConfig,
 		db:         db,
-		kvStore:       kvStore,
+		kvStore:    kvStore,
 	}
 }
 
@@ -143,7 +143,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 				outMsgs = append(outMsgs, outMsg)
 
-				outEntity := tssTypes.TxOutToEntity(outMsg)
+				outEntity := outMsg.ToEntity()
 				outEntity.ContractHash = contracts[i].Hash
 				outEntities = append(outEntities, outEntity)
 			}
@@ -171,7 +171,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 			outMsgs = append(outMsgs, outMsg)
 
-			outEntity := tssTypes.TxOutToEntity(outMsg)
+			outEntity := outMsg.ToEntity()
 			outEntities = append(outEntities, outEntity)
 		} else {
 			log.Error("cannot get response for erc20 tx, err =", err)

@@ -45,7 +45,7 @@ func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.Observed
 }
 
 func (p *Processor) CheckTxOut(ctx sdk.Context, msg *types.TxOut) error {
-	pubTxOutEntity := tssTypes.TxOutToEntity(msg)
+	pubTxOutEntity := msg.ToEntity()
 	privTxOut := p.db.GetTxOutWithHash(pubTxOutEntity.InChain, pubTxOutEntity.HashWithoutSig, false)
 
 	if privTxOut == nil {
