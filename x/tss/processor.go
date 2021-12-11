@@ -174,7 +174,11 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 }
 
 func (p *Processor) EndBlock(ctx sdk.Context) {
-	// Do nothing
+	if !p.globalData.IsCatchingUp() {
+		// Inform dheart that we have reached end of block so that dheart could run presign works.
+		log.Verbose("End block reached, height = ", p.currentHeight)
+		p.dheartClient.BlockEnd(p.currentHeight)
+	}
 }
 
 func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
