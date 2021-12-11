@@ -10,7 +10,6 @@ import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/golang/mock/gomock"
-	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/tests/mock"
 
 	"github.com/sisu-network/sisu/config"
@@ -123,8 +122,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 			appKeys: mockAppKeys,
 		}
 
-		ctx := sdk.Context{}
-		txOuts, txOutEntities, err := txOutProducer.getEthResponse(ctx, 1, &observedTx)
+		txOuts, txOutEntities, err := txOutProducer.getEthResponse(&observedTx)
 		require.NoError(t, err)
 		require.Len(t, txOuts, 1)
 		require.Len(t, txOutEntities, 1)
@@ -204,8 +202,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 			appKeys: mockAppKeys,
 		}
 
-		ctx := sdk.Context{}
-		txOuts, txOutEntities, err := txOutProducer.getEthResponse(ctx, 1, &observedTx)
+		txOuts, txOutEntities, err := txOutProducer.getEthResponse(&observedTx)
 		require.NoError(t, err)
 		require.Len(t, txOuts, 1)
 		require.Len(t, txOutEntities, 1)

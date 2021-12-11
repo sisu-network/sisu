@@ -35,7 +35,7 @@ func (s *KVStore) InsertTxOuts(ctx sdk.Context, txs []*tsstypes.TxOutEntity) {
 
 	for _, tx := range txs {
 		key := getTxOutKey(tx.InChain, tx.HashWithoutSig)
-		_ = saveRecord(store, key, tx)
+		_ = saveKVStoreRecord(store, key, tx)
 	}
 }
 
@@ -43,7 +43,7 @@ func getTxOutKey(chain, hashWithoutSig string) []byte {
 	return []byte(strings.Join([]string{chain, hashWithoutSig}, KVSeparator))
 }
 
-func saveRecord(store prefix.Store, key []byte, entity interface{}) error {
+func saveKVStoreRecord(store prefix.Store, key []byte, entity interface{}) error {
 	bz, err := json.Marshal(entity)
 	if err != nil {
 		log.Error(err)

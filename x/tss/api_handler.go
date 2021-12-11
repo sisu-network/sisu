@@ -38,6 +38,7 @@ func (a *ApiHandler) KeygenResult(result htypes.KeygenResult) bool {
 func (a *ApiHandler) PostObservedTxs(txs *etypes.Txs) {
 	// If this node is catching up, any observedTx from Deyes would be ignore
 	if !a.processor.globalData.IsCatchingUp() {
+		log.Warn("Ignore observedTx from Deyes because this node is in catching up process")
 		return
 	}
 
