@@ -16,6 +16,7 @@ type DheartClient interface {
 	CheckHealth() error
 	KeyGen(keygenId string, chain string, pubKeys []ctypes.PubKey) error
 	KeySign(req *htypes.KeysignRequest, pubKeys []ctypes.PubKey) error
+	BlockEnd(blockHeight int64) error
 }
 
 type DefaultDheartClient struct {
@@ -106,6 +107,17 @@ func (c *DefaultDheartClient) KeySign(req *htypes.KeysignRequest, pubKeys []ctyp
 	err := c.client.CallContext(context.Background(), &r, "tss_keySign", req, wrappers)
 	if err != nil {
 		log.Error("Cannot send KeySign request, err = ", err)
+		return err
+	}
+
+	return nil
+}
+
+func (c *DefaultDheartClient) BlockEnd(blockHeight int64) error {
+	var r interface{}
+	err := c.client.CallContext(context.Background(), &r, "tss_blockEnd", blockHeight)
+	if err != nil {
+		log.Error("Cannot call block end, err = ", err)
 		return err
 	}
 
