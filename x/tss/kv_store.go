@@ -13,17 +13,13 @@ import (
 const KVSeparator = "__"
 
 var (
-	PrefixKeygen    = []byte("keygen")
-	PrefixContract  = []byte("contract")
-	PrefixTxOut     = []byte("txout")
-	PrefixMempoolTx = []byte("mempool")
+	PrefixTxOut = []byte("txout")
 )
 
 var _ KVDatabase = (*KVStore)(nil)
 
 type KVDatabase interface {
 	InsertTxOuts(ctx sdk.Context, txs []*tsstypes.TxOutEntity)
-	GetTxOutWithHash(ctx sdk.Context, chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity
 }
 
 type KVStore struct {
@@ -38,96 +34,9 @@ func (s *KVStore) InsertTxOuts(ctx sdk.Context, txs []*tsstypes.TxOutEntity) {
 	store := prefix.NewStore(ctx.KVStore(s.storeKey), PrefixTxOut)
 
 	for _, tx := range txs {
-		bz, err := json.Marshal(tx)
-		if err != nil {
-			log.Error(err)
-			return
-		}
-
 		key := getTxOutKey(tx.InChain, tx.HashWithoutSig)
-		store.Set(key, bz)
+		_ = saveRecord(store, key, tx)
 	}
-}
-
-func (s *KVStore) GetTxOutWithHash(ctx sdk.Context, chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity {
-	store := prefix.NewStore(ctx.KVStore(s.storeKey), PrefixTxOut)
-
-	if !isHashWithSig {
-		txOutBz := store.Get(getTxOutKey(chain, hash))
-		if len(txOutBz) == 0 {
-			log.Warnf("cannot find txout for chain(%s), hash(%s), isHashWithSig(%v)", chain, hash, isHashWithSig)
-			return nil
-		}
-
-		txOut := &tsstypes.TxOutEntity{}
-		if err := json.Unmarshal(txOutBz, txOut); err != nil {
-			log.Error(err)
-			return nil
-		}
-
-		return txOut
-	}
-
-	iter := store.Iterator(nil, nil)
-	defer iter.Close()
-
-	for ; iter.Valid(); iter.Next() {
-		txOut := &tsstypes.TxOutEntity{}
-		if err := json.Unmarshal(iter.Value(), txOut); err != nil {
-			log.Error(err)
-			continue
-		}
-
-		if strings.EqualFold(txOut.HashWithSig, hash) {
-			return txOut
-		}
-	}
-
-	return nil
-}
-
-func (s *KVStore) UpdateTxOutStatus(ctx sdk.Context, chain, hash string, status tsstypes.TxOutStatus, isHashWithSig bool) error {
-	store := prefix.NewStore(ctx.KVStore(s.storeKey), PrefixTxOut)
-
-	if !isHashWithSig {
-		txOut := &tsstypes.TxOutEntity{}
-		key := getTxOutKey(chain, hash)
-		txOutBz := store.Get(key)
-		if len(txOutBz) == 0 {
-			log.Warnf("cannot find txout for chain(%s), hash(%s), isHashWithSig(%s)", chain, hash, isHashWithSig)
-			return nil
-		}
-
-		if err := json.Unmarshal(txOutBz, txOut); err != nil {
-			log.Error("json unmarshal error: ", err)
-			return err
-		}
-
-		txOut.Status = string(status)
-		_ = saveRecord(store, key, txOut)
-		return nil
-	}
-
-	iter := store.Iterator(nil, nil)
-	defer iter.Close()
-
-	for ; iter.Valid(); iter.Next() {
-		txOut := &tsstypes.TxOutEntity{}
-		if err := json.Unmarshal(iter.Value(), txOut); err != nil {
-			log.Error(err)
-			continue
-		}
-
-		if !strings.EqualFold(txOut.HashWithSig, hash) {
-			continue
-		}
-
-		txOut.Status = string(status)
-		_ = saveRecord(store, iter.Key(), txOut)
-		return nil
-	}
-
-	return nil
 }
 
 func getTxOutKey(chain, hashWithoutSig string) []byte {

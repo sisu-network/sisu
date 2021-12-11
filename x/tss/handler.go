@@ -52,14 +52,6 @@ func handleKeygenResult(ctx sdk.Context, msg *types.KeygenResult, processor *Pro
 
 func handleObservedTx(ctx sdk.Context, msg *types.ObservedTx, processor *Processor) (*sdk.Result, error) {
 	// Update the count for all txs.
-	// If we're catching up, do not process observedTx messages
-	if !processor.globalData.IsCatchingUp() {
-		log.Info("handleObservedTx. Not catching up, ignore")
-		return &sdk.Result{
-			Log: "the node is catching up. Ignore all observedTx messages",
-		}, nil
-	}
-
 	log.Verbose("Handling ObservedTxs for chain", msg.Chain)
 	data, err := processor.DeliverObservedTxs(ctx, msg)
 	return &sdk.Result{
@@ -68,14 +60,6 @@ func handleObservedTx(ctx sdk.Context, msg *types.ObservedTx, processor *Process
 }
 
 func handleTxOut(ctx sdk.Context, msg *types.TxOut, processor *Processor) (*sdk.Result, error) {
-	// If we're catching up, do not process txOut messages
-	if !processor.globalData.IsCatchingUp() {
-		log.Info("handleTxOut. Not catching up, ignore")
-		return &sdk.Result{
-			Log: "the node is catching up. Ignore all txOut messages",
-		}, nil
-	}
-
 	log.Verbose("Handling Txout, hash = ", msg.GetHash())
 	data, err := processor.DeliverTxOut(ctx, msg)
 	return &sdk.Result{

@@ -18,7 +18,7 @@ import (
 // Produces response for an observed tx. This has to be deterministic based on all the data that
 // the processor has.
 func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.ObservedTx) []*tssTypes.TxOut {
-	outMsgs, outEntities := p.txOutputProducer.GetTxOuts(ctx, p.currentHeight, tx)
+	outMsgs, outEntities := p.txOutputProducer.GetTxOuts(tx)
 
 	// Save this to database
 	log.Verbose("len(outEntities) = ", len(outEntities))

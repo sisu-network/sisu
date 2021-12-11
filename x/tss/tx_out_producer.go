@@ -24,8 +24,8 @@ import (
 // produces a list (could contain only one element) of transaction output.
 type TxOutputProducer interface {
 	AddKeyAddress(ctx sdk.Context, chain, addr string) error
-	GetTxOuts(ctx sdk.Context, height int64, tx *types.ObservedTx) ([]*tssTypes.TxOut, []*tssTypes.TxOutEntity)
-	SaveContractsToDeploy(ctx sdk.Context, chain string)
+	GetTxOuts(tx *types.ObservedTx) ([]*tssTypes.TxOut, []*tssTypes.TxOutEntity)
+	SaveContractsToDeploy(chain string)
 }
 
 type DefaultTxOutputProducer struct {
@@ -37,29 +37,27 @@ type DefaultTxOutputProducer struct {
 	keeper     keeper.Keeper
 	appKeys    common.AppKeys
 	db         db.Database
-	kvStore    KVDatabase
 	tssConfig  config.TssConfig
 }
 
-func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys common.AppKeys, kvStore KVDatabase, db db.Database, tssConfig config.TssConfig) TxOutputProducer {
+func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys common.AppKeys, db db.Database, tssConfig config.TssConfig) TxOutputProducer {
 	return &DefaultTxOutputProducer{
 		worldState: worldState,
 		keeper:     keeper,
 		appKeys:    appKeys,
 		tssConfig:  tssConfig,
 		db:         db,
-		kvStore:    kvStore,
 	}
 }
 
-func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *types.ObservedTx) ([]*tssTypes.TxOut, []*tssTypes.TxOutEntity) {
+func (p *DefaultTxOutputProducer) GetTxOuts(tx *types.ObservedTx) ([]*tssTypes.TxOut, []*tssTypes.TxOutEntity) {
 	outMsgs := make([]*tssTypes.TxOut, 0)
 	outEntities := make([]*tssTypes.TxOutEntity, 0)
 	var err error
 
 	if libchain.IsETHBasedChain(tx.Chain) {
 		log.Info("Getting tx out for chain ", tx.Chain)
-		outMsgs, outEntities, err = p.getEthResponse(ctx, height, tx)
+		outMsgs, outEntities, err = p.getEthResponse(tx)
 
 		if err != nil {
 			log.Error("Cannot get response for an eth tx, err = ", err)
@@ -100,7 +98,7 @@ func (p *DefaultTxOutputProducer) AddKeyAddress(ctx sdk.Context, chain, addr str
 }
 
 // Get ETH out from an observed tx. Only do this if this is a validator node.
-func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, tx *types.ObservedTx) ([]*tsstypes.TxOut, []*tssTypes.TxOutEntity, error) {
+func (p *DefaultTxOutputProducer) getEthResponse(tx *types.ObservedTx) ([]*tsstypes.TxOut, []*tssTypes.TxOutEntity, error) {
 	ethTx := &ethTypes.Transaction{}
 
 	err := ethTx.UnmarshalBinary(tx.Serialized)
@@ -123,7 +121,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 			// Get the list of deploy transactions. Those txs need to posted and verified (by validators)
 			// to the Sisu chain.
-			outEthTxs := p.checkEthDeployContract(ctx, height, tx.Chain, contracts)
+			outEthTxs := p.checkEthDeployContract(tx.Chain, contracts)
 
 			for i, outTx := range outEthTxs {
 				bz, err := outTx.MarshalBinary()
@@ -158,7 +156,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 	if ethTx.To() != nil && len(ethTx.Data()) >= 4 {
 		log.Verbose("ethTx.To() = ", ethTx.To())
 
-		responseTx, err := p.createErc20ContractResponse(ctx, ethTx, tx.Chain)
+		responseTx, err := p.createErc20ContractResponse(ethTx, tx.Chain)
 		if err == nil {
 			outMsg := tsstypes.NewMsgTxOut(
 				p.appKeys.GetSignerAddress().String(),
@@ -184,7 +182,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 }
 
 // Check if we can deploy contract after seeing some ETH being sent to our ethereum address.
-func (p *DefaultTxOutputProducer) checkEthDeployContract(ctx sdk.Context, height int64, chain string, contracts []*tsstypes.ContractEntity) []*ethTypes.Transaction {
+func (p *DefaultTxOutputProducer) checkEthDeployContract(chain string, contracts []*tsstypes.ContractEntity) []*ethTypes.Transaction {
 	txs := make([]*ethTypes.Transaction, 0)
 
 	for _, contract := range contracts {
@@ -209,7 +207,7 @@ func (p *DefaultTxOutputProducer) checkEthDeployContract(ctx sdk.Context, height
 // Save a list of contracts that are pending to be deployed. This is often call after a key is
 // generated for a chain. We cannot deploy immediately after key generation because we don't have
 // enough balance in the account.
-func (p *DefaultTxOutputProducer) SaveContractsToDeploy(ctx sdk.Context, chain string) {
+func (p *DefaultTxOutputProducer) SaveContractsToDeploy(chain string) {
 	if libchain.IsETHBasedChain(chain) {
 		contracts := make([]*types.ContractEntity, 0, len(SupportedContracts))
 

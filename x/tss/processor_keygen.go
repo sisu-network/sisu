@@ -171,7 +171,7 @@ func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult
 			chain := chainConfig.Symbol
 			if libchain.GetKeyTypeForChain(chain) == msg.KeyType {
 				log.Info("Saving contracts for chain ", chain)
-				p.txOutputProducer.SaveContractsToDeploy(ctx, chain)
+				p.txOutputProducer.SaveContractsToDeploy(chain)
 			}
 
 			// If this is a pubkey address of a ETH chain, save it to the store because we want to watch

@@ -36,6 +36,11 @@ func (a *ApiHandler) KeygenResult(result htypes.KeygenResult) bool {
 
 // This is a API endpoint to receive transactions with To address we are interested in.
 func (a *ApiHandler) PostObservedTxs(txs *etypes.Txs) {
+	// If this node is catching up, any observedTx from Deyes would be ignore
+	if !a.processor.globalData.IsCatchingUp() {
+		return
+	}
+
 	log.Debug("There is new list of transactions from deyes from chain ", txs.Chain)
 
 	for _, tx := range txs.Arr {

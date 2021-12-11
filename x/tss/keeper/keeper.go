@@ -77,7 +77,10 @@ func (k *DefaultKeeper) SavePubKey(ctx sdk.Context, keyType string, keyBytes []b
 func (k *DefaultKeeper) GetAllPubKeys(ctx sdk.Context) map[string][]byte {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PUBLIC_KEY_BYTES)
 	ret := make(map[string][]byte)
-	for iter := store.Iterator(nil, nil); iter.Valid(); iter.Next() {
+	iter := store.Iterator(nil, nil)
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
 		ret[string(iter.Key())] = iter.Value()
 	}
 
@@ -104,6 +107,8 @@ func (k *DefaultKeeper) GetAllEthKeyAddrs(ctx sdk.Context) (map[string]map[strin
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_ETH_KEY_ADDRESS)
 
 	iter := store.Iterator(nil, nil)
+	defer iter.Close()
+
 	for ; iter.Valid(); iter.Next() {
 		m2 := make(map[string]bool)
 		err := json.Unmarshal(iter.Value(), &m2)
