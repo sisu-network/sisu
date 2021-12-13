@@ -35,6 +35,20 @@ func (m *MockDheartClient) EXPECT() *MockDheartClientMockRecorder {
 	return m.recorder
 }
 
+// BlockEnd mocks base method.
+func (m *MockDheartClient) BlockEnd(blockHeight int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BlockEnd", blockHeight)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// BlockEnd indicates an expected call of BlockEnd.
+func (mr *MockDheartClientMockRecorder) BlockEnd(blockHeight interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BlockEnd", reflect.TypeOf((*MockDheartClient)(nil).BlockEnd), blockHeight)
+}
+
 // CheckHealth mocks base method.
 func (m *MockDheartClient) CheckHealth() error {
 	m.ctrl.T.Helper()
