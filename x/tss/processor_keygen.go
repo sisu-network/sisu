@@ -26,7 +26,7 @@ type BlockSymbolPair struct {
 
 func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 	if p.globalData.IsCatchingUp() ||
-		p.lastProposeBlockHeight != 0 && blockHeight-p.lastProposeBlockHeight <= PROPOSE_BLOCK_INTERVAL {
+		p.lastProposeBlockHeight != 0 && blockHeight-p.lastProposeBlockHeight <= ProposeBlockInterval {
 		return
 	}
 
@@ -123,7 +123,8 @@ func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, er
 		return nil, nil
 	}
 
-	err = p.db.CreateKeygen(msg.KeyType, p.currentHeight)
+	blockHeight := p.currentHeight.Load().(int64)
+	err = p.db.CreateKeygen(msg.KeyType, blockHeight)
 	if err != nil {
 		log.Error(err)
 	}
@@ -131,7 +132,7 @@ func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, er
 	// Send a signal to Dheart to start keygen process.
 	log.Info("Sending keygen request to Dheart. KeyType =", msg.KeyType)
 	pubKeys := p.partyManager.GetActivePartyPubkeys()
-	keygenId := GetKeygenId(msg.KeyType, p.currentHeight, pubKeys)
+	keygenId := GetKeygenId(msg.KeyType, blockHeight, pubKeys)
 	err = p.dheartClient.KeyGen(keygenId, msg.KeyType, pubKeys)
 	if err != nil {
 		log.Error(err)
