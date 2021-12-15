@@ -43,17 +43,29 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) error {
 	return nil
 }
 
-func (p *Processor) CheckObservedTxs(ctx sdk.Context, msgs *tssTypes.ObservedTx) error {
-	// TODO: implement this. Compare this observed txs with what we have in database.
+func (p *Processor) CheckObservedTxs(ctx sdk.Context, tx *tssTypes.ObservedTx) error {
+	preTx := p.keeper.GetObservedTx(ctx, tx.Chain, tx.BlockHeight, tx.TxHash)
+	if preTx != nil {
+		return ErrMessageHasBeenProcessed
+	}
 	return nil
 }
 
 // Delivers observed Txs.
 func (p *Processor) DeliverObservedTxs(ctx sdk.Context, tx *tssTypes.ObservedTx) ([]byte, error) {
-	// TODO: Update the KVstore
+	preTx := p.keeper.GetObservedTx(ctx, tx.Chain, tx.BlockHeight, tx.TxHash)
+	if preTx != nil {
+		// This tx has been processed and saved into KVStore before.
+		return nil, nil
+	}
 
-	// Save this to our local storage in case we have not seen it.
-	p.createAndBroadcastTxOuts(ctx, tx)
+	// Save this to KVStore
+	p.keeper.SaveObservedTx(ctx, tx)
+
+	if !p.globalData.IsCatchingUp() {
+		// Creates TxOut. TODO: Only do this for top validator nodes.
+		p.createAndBroadcastTxOuts(ctx, tx)
+	}
 
 	return nil, nil
 }
