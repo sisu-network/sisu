@@ -10,6 +10,8 @@ import (
 	ctypes "github.com/sisu-network/cosmos-sdk/crypto/types"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/tests/mock"
+	mockcommon "github.com/sisu-network/sisu/tests/mock/common"
+	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
 	"github.com/sisu-network/sisu/x/tss/types"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 	"github.com/stretchr/testify/require"
@@ -52,10 +54,19 @@ func TestDeliverTxOut(t *testing.T) {
 		OutBytes: binary,
 	}
 
+	mockKeeper := mocktss.NewMockKeeper(ctrl)
+	mockKeeper.EXPECT().IsTxOutExisted(gomock.Any(), gomock.Any()).Return(false).Times(1)
+	mockKeeper.EXPECT().SaveTxOut(gomock.Any(), gomock.Any()).Times(1)
+
+	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
+	mockGlobalData.EXPECT().IsCatchingUp().Return(false).Times(1)
+
 	p := &Processor{
 		partyManager: mockPartyManager,
 		dheartClient: mockDheartClient,
 		db:           mockDb,
+		keeper:       mockKeeper,
+		globalData:   mockGlobalData,
 	}
 	p.currentHeight.Store(int64(0))
 
