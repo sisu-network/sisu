@@ -10,6 +10,8 @@ import (
 	ctypes "github.com/sisu-network/cosmos-sdk/crypto/types"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/tests/mock"
+	mockcommon "github.com/sisu-network/sisu/tests/mock/common"
+	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
 	"github.com/sisu-network/sisu/x/tss/types"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 	"github.com/stretchr/testify/require"
@@ -52,12 +54,56 @@ func TestDeliverTxOut(t *testing.T) {
 		OutBytes: binary,
 	}
 
+	mockKeeper := mocktss.NewMockKeeper(ctrl)
+	mockKeeper.EXPECT().IsTxOutExisted(gomock.Any(), gomock.Any()).Return(false).Times(1)
+	mockKeeper.EXPECT().SaveTxOut(gomock.Any(), gomock.Any()).Times(1)
+
+	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
+	mockGlobalData.EXPECT().IsCatchingUp().Return(false).Times(1)
+
 	p := &Processor{
 		partyManager: mockPartyManager,
 		dheartClient: mockDheartClient,
 		db:           mockDb,
+		keeper:       mockKeeper,
+		globalData:   mockGlobalData,
 	}
 	p.currentHeight.Store(int64(0))
+
+	bytes, err := p.DeliverTxOut(ctx, &txOut)
+	require.NoError(t, err)
+	require.Empty(t, bytes)
+}
+
+func TestDeliverTxOut_BlockCatchingUp(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	t.Cleanup(func() {
+		ctrl.Finish()
+	})
+
+	ctx := sdk.Context{}
+	txOut := types.TxOut{
+		OutChain: "eth",
+	}
+
+	mockKeeper := mocktss.NewMockKeeper(ctrl)
+	mockKeeper.EXPECT().IsTxOutExisted(gomock.Any(), gomock.Any()).Return(false).Times(1)
+	mockKeeper.EXPECT().SaveTxOut(gomock.Any(), gomock.Any()).Times(1)
+
+	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
+	mockGlobalData.EXPECT().IsCatchingUp().Return(true).Times(1) // block is catching up.
+
+	// This is the case when a node is catching up with the network, no TSS call is made.
+	mockDb := mock.NewMockDatabase(ctrl)
+	mockDb.EXPECT().UpdateTxOutStatus("eth", gomock.Any(), tssTypes.TxOutStatusPreSigning, gomock.Any()).Return(nil).Times(0)
+
+	p := &Processor{
+		db:         mockDb,
+		keeper:     mockKeeper,
+		globalData: mockGlobalData,
+	}
 
 	bytes, err := p.DeliverTxOut(ctx, &txOut)
 	require.NoError(t, err)
