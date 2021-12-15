@@ -25,7 +25,8 @@ const (
 )
 
 var (
-	ErrInvalidMessageType = fmt.Errorf("Invalid Message Type")
+	ErrInvalidMessageType      = fmt.Errorf("Invalid Message Type")
+	ErrMessageHasBeenProcessed = fmt.Errorf("Message has been processed")
 )
 
 // A major struct that processes complicated logic of TSS keysign and keygen. Read the documentation
