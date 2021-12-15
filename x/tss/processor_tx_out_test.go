@@ -1,6 +1,9 @@
 package tss
 
 import (
+	"math/big"
+	"testing"
+
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/golang/mock/gomock"
@@ -10,8 +13,6 @@ import (
 	"github.com/sisu-network/sisu/x/tss/types"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 	"github.com/stretchr/testify/require"
-	"math/big"
-	"testing"
 )
 
 func TestDeliverTxOut(t *testing.T) {
@@ -56,6 +57,7 @@ func TestDeliverTxOut(t *testing.T) {
 		dheartClient: mockDheartClient,
 		db:           mockDb,
 	}
+	p.currentHeight.Store(int64(0))
 
 	bytes, err := p.DeliverTxOut(ctx, &txOut)
 	require.NoError(t, err)

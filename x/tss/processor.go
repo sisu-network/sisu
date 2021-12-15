@@ -25,7 +25,7 @@ const (
 )
 
 var (
-	ERR_INVALID_MESSASGE_TYPE  = fmt.Errorf("Invalid Message Type")
+	ErrInvalidMessageType      = fmt.Errorf("Invalid Message Type")
 	ErrMessageHasBeenProcessed = fmt.Errorf("Message has been processed")
 )
 
@@ -39,7 +39,7 @@ type Processor struct {
 	lastProposeBlockHeight int64
 	appKeys                common.AppKeys
 	globalData             common.GlobalData
-	currentHeight          int64
+	currentHeight          atomic.Value
 	partyManager           PartyManager
 	txOutputProducer       TxOutputProducer
 	lastContext            atomic.Value
@@ -84,6 +84,8 @@ func NewProcessor(keeper keeper.DefaultKeeper,
 		keygenBlockPairs: make([]BlockSymbolPair, 0),
 		deyesClients:     make(map[string]*tssclients.DeyesClient),
 	}
+
+	p.currentHeight.Store(int64(0))
 
 	return p
 }
@@ -150,7 +152,7 @@ func (p *Processor) connectToDeyes() {
 }
 
 func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
-	p.currentHeight = blockHeight
+	p.currentHeight.Store(blockHeight)
 	p.setContext(ctx)
 
 	// Check keygen proposal
@@ -177,8 +179,9 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 func (p *Processor) EndBlock(ctx sdk.Context) {
 	if !p.globalData.IsCatchingUp() {
 		// Inform dheart that we have reached end of block so that dheart could run presign works.
-		log.Verbose("End block reached, height = ", p.currentHeight)
-		p.dheartClient.BlockEnd(p.currentHeight)
+		height := p.currentHeight.Load().(int64)
+		log.Verbose("End block reached, height = ", height)
+		p.dheartClient.BlockEnd(height)
 	}
 }
 
@@ -245,9 +248,10 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 			// We dont get serialized data of the proposal msg because the serialized data contains
 			// blockheight. Instead, we only check the chain of the proposal.
 			key := fmt.Sprintf("KeygenProposal__%s", proposalMsg.KeyType)
-			if !p.db.MempoolTxExistedRange(key, p.currentHeight-ProposeBlockInterval/2, p.currentHeight+ProposeBlockInterval/2) {
+			height := p.currentHeight.Load().(int64)
+			if !p.db.MempoolTxExistedRange(key, height-ProposeBlockInterval/2, height+ProposeBlockInterval/2) {
 				// Insert into the db
-				p.db.InsertMempoolTxHash(key, p.currentHeight)
+				p.db.InsertMempoolTxHash(key, height)
 				return nil
 			} else {
 				err := fmt.Errorf("The keygen proposal has been inclued in a block for keyType %s", proposalMsg.KeyType)
@@ -285,7 +289,7 @@ func (p *Processor) checkAndInsertMempoolTx(hash, msgType string) error {
 	}
 
 	log.Verbose("Inserting ", msgType, " into the mempool table, hash = ", hash)
-	p.db.InsertMempoolTxHash(hash, p.currentHeight)
+	p.db.InsertMempoolTxHash(hash, p.currentHeight.Load().(int64))
 
 	return nil
 }
