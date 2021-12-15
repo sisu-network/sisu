@@ -44,8 +44,7 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) error {
 }
 
 func (p *Processor) CheckObservedTxs(ctx sdk.Context, tx *tssTypes.ObservedTx) error {
-	preTx := p.keeper.GetObservedTx(ctx, tx.Chain, tx.BlockHeight, tx.TxHash)
-	if preTx != nil {
+	if p.keeper.IsObservedTxExisted(ctx, tx) {
 		return ErrMessageHasBeenProcessed
 	}
 	return nil
@@ -53,9 +52,8 @@ func (p *Processor) CheckObservedTxs(ctx sdk.Context, tx *tssTypes.ObservedTx) e
 
 // Delivers observed Txs.
 func (p *Processor) DeliverObservedTxs(ctx sdk.Context, tx *tssTypes.ObservedTx) ([]byte, error) {
-	preTx := p.keeper.GetObservedTx(ctx, tx.Chain, tx.BlockHeight, tx.TxHash)
-	if preTx != nil {
-		// This tx has been processed and saved into KVStore before.
+	if p.keeper.IsObservedTxExisted(ctx, tx) {
+		// The tx has been processed before.
 		return nil, nil
 	}
 

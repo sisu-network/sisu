@@ -32,7 +32,7 @@ var (
 type Keeper interface {
 	// Observed Tx
 	SaveObservedTx(ctx sdk.Context, tx *types.ObservedTx)
-	GetObservedTx(ctx sdk.Context, chain string, blockHeight int64, hash string) []byte
+	IsObservedTxExisted(ctx sdk.Context, tx *types.ObservedTx) bool
 
 	// TxOut
 	SaveTxOut(ctx sdk.Context, msg *types.TxOut)
@@ -70,19 +70,16 @@ func (k *DefaultKeeper) SaveObservedTx(ctx sdk.Context, tx *types.ObservedTx) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixObservedTx)
 	key := k.getObservedTxKey(tx.Chain, tx.BlockHeight, tx.TxHash)
 
-	bz, err := tx.Marshal()
-	if err != nil {
-		log.Error("SaveObservedTx: Cannot marshal an ObservedTx, err = ", err)
-		return
-	}
+	bz := tx.SerializeWithoutSigner()
 	store.Set(key, bz)
 }
 
-func (k *DefaultKeeper) GetObservedTx(ctx sdk.Context, chain string, blockHeight int64, hash string) []byte {
+// func (k *DefaultKeeper) GetObservedTx(ctx sdk.Context, chain string, blockHeight int64, hash string) []byte {
+func (k *DefaultKeeper) IsObservedTxExisted(ctx sdk.Context, tx *types.ObservedTx) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixObservedTx)
-	key := k.getObservedTxKey(chain, blockHeight, hash)
+	key := k.getObservedTxKey(tx.GetChain(), tx.GetBlockHeight(), tx.GetTxHash())
 
-	return store.Get(key)
+	return store.Get(key) != nil
 }
 
 func (k *DefaultKeeper) SaveTxOut(ctx sdk.Context, msg *types.TxOut) {
@@ -90,11 +87,7 @@ func (k *DefaultKeeper) SaveTxOut(ctx sdk.Context, msg *types.TxOut) {
 	outHash := utils.KeccakHash32(string(msg.OutBytes))
 	key := k.getTxOutKey(msg.InChain, msg.OutChain, msg.InBlockHeight, outHash)
 
-	bz, err := msg.Marshal()
-	if err != nil {
-		log.Error("SaveTxOut: Cannot marshal a TxOut, err = ", err)
-		return
-	}
+	bz := msg.SerializeWithoutSigner()
 	store.Set(key, bz)
 }
 
@@ -103,7 +96,7 @@ func (k *DefaultKeeper) IsTxOutExisted(ctx sdk.Context, msg *types.TxOut) bool {
 	outHash := utils.KeccakHash32(string(msg.OutBytes))
 	key := k.getTxOutKey(msg.InChain, msg.OutChain, msg.InBlockHeight, outHash)
 
-	return store.Get(key) == nil
+	return store.Get(key) != nil
 }
 
 func (k *DefaultKeeper) SavePubKey(ctx sdk.Context, keyType string, keyBytes []byte) {
