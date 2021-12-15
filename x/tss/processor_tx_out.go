@@ -18,7 +18,7 @@ import (
 // Produces response for an observed tx. This has to be deterministic based on all the data that
 // the processor has.
 func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.ObservedTx) []*tssTypes.TxOut {
-	outMsgs, outEntities := p.txOutputProducer.GetTxOuts(ctx, p.currentHeight, tx)
+	outMsgs, outEntities := p.txOutputProducer.GetTxOuts(ctx, p.currentHeight.Load().(int64), tx)
 
 	// Save this to database
 	log.Verbose("len(outEntities) = ", len(outEntities))
@@ -87,7 +87,7 @@ func (p *Processor) deliverTxOutEth(ctx sdk.Context, tx *types.TxOut) ([]byte, e
 	keysignReq := &hTypes.KeysignRequest{
 		Id:             p.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), outHash),
 		OutChain:       tx.OutChain,
-		OutBlockHeight: p.currentHeight,
+		OutBlockHeight: p.currentHeight.Load().(int64),
 		OutHash:        outHash,
 		BytesToSign:    hash[:],
 	}
