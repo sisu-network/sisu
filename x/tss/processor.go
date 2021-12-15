@@ -84,7 +84,7 @@ func NewProcessor(keeper keeper.DefaultKeeper,
 		deyesClients:     make(map[string]*tssclients.DeyesClient),
 	}
 
-	p.currentHeight.Store(0)
+	p.currentHeight.Store(int64(0))
 
 	return p
 }
