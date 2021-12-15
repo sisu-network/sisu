@@ -74,3 +74,38 @@ func TestDeliverTxOut(t *testing.T) {
 	require.NoError(t, err)
 	require.Empty(t, bytes)
 }
+
+func TestDeliverTxOut_BlockCatchingUp(t *testing.T) {
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	t.Cleanup(func() {
+		ctrl.Finish()
+	})
+
+	ctx := sdk.Context{}
+	txOut := types.TxOut{
+		OutChain: "eth",
+	}
+
+	mockKeeper := mocktss.NewMockKeeper(ctrl)
+	mockKeeper.EXPECT().IsTxOutExisted(gomock.Any(), gomock.Any()).Return(false).Times(1)
+	mockKeeper.EXPECT().SaveTxOut(gomock.Any(), gomock.Any()).Times(1)
+
+	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
+	mockGlobalData.EXPECT().IsCatchingUp().Return(true).Times(1) // block is catching up.
+
+	// This is the case when a node is catching up with the network, no TSS call is made.
+	mockDb := mock.NewMockDatabase(ctrl)
+	mockDb.EXPECT().UpdateTxOutStatus("eth", gomock.Any(), tssTypes.TxOutStatusPreSigning, gomock.Any()).Return(nil).Times(0)
+
+	p := &Processor{
+		db:         mockDb,
+		keeper:     mockKeeper,
+		globalData: mockGlobalData,
+	}
+
+	bytes, err := p.DeliverTxOut(ctx, &txOut)
+	require.NoError(t, err)
+	require.Empty(t, bytes)
+}
