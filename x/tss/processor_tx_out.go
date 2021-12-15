@@ -43,27 +43,40 @@ func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.Observed
 	return outMsgs
 }
 
+// CheckTxOut checks if a TxOut message is valid before it is added into Sisu block.
 func (p *Processor) CheckTxOut(ctx sdk.Context, msg *types.TxOut) error {
-	// TODO: implement this.
+	if p.keeper.IsTxOutExisted(ctx, msg) {
+		return ErrMessageHasBeenProcessed
+	}
+
 	return nil
 }
 
+// DeliverTxOut executes a TxOut transaction after it's included in Sisu block. If this node is
+// catching up with the network, we would not send the tx to TSS for signing.
 func (p *Processor) DeliverTxOut(ctx sdk.Context, tx *types.TxOut) ([]byte, error) {
-	// TODO: check if this tx has been requested to be signed
-	// TODO: Save this to KV store
+	if p.keeper.IsTxOutExisted(ctx, tx) {
+		return nil, nil
+	}
 
-	if libchain.IsETHBasedChain(tx.OutChain) {
-		if err := p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusPreSigning, false); err != nil {
-			return nil, err
+	p.keeper.SaveTxOut(ctx, tx)
+
+	if !p.globalData.IsCatchingUp() {
+		// Only Deliver TxOut if the chain has been up to date.
+		if libchain.IsETHBasedChain(tx.OutChain) {
+			if err := p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusPreSigning, false); err != nil {
+				return nil, err
+			}
+
+			return p.signTx(ctx, tx)
 		}
-
-		return p.deliverTxOutEth(ctx, tx)
 	}
 
 	return nil, nil
 }
 
-func (p *Processor) deliverTxOutEth(ctx sdk.Context, tx *types.TxOut) ([]byte, error) {
+// signTx sends a TxOut to dheart for TSS signing.
+func (p *Processor) signTx(ctx sdk.Context, tx *types.TxOut) ([]byte, error) {
 	outHash := tx.GetHash()
 
 	log.Verbose("Delivering TXOUT for chain", tx.OutChain, " tx hash = ", tx.GetHash())

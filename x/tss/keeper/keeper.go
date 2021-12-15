@@ -3,12 +3,12 @@ package keeper
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/sisu-network/cosmos-sdk/store/prefix"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
-	tssTypes "github.com/sisu-network/sisu/x/tss/types"
+	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/tss/types"
 )
 
 const (
@@ -17,9 +17,10 @@ const (
 
 // TODO: clean up this list
 var (
-	PREFIX_OBSERVED_TX      = []byte{0x01}
-	PREFIX_PUBLIC_KEY_BYTES = []byte{0x02}
-	PREFIX_ETH_KEY_ADDRESS  = []byte{0x03}
+	prefixObservedTx      = []byte{0x01}
+	prefixPublicKeyBytes  = []byte{0x02}
+	prefixEthKeyAddresses = []byte{0x03}
+	prefixTxOut           = []byte{0x04}
 
 	// List of on memory keys. These data are not persisted into kvstore.
 	// List of contracts that need to be deployed to a chain.
@@ -29,8 +30,14 @@ var (
 )
 
 type Keeper interface {
-	SaveObservedTx(ctx sdk.Context, tx *tssTypes.ObservedTx)
+	// Observed Tx
+	SaveObservedTx(ctx sdk.Context, tx *types.ObservedTx)
 	GetObservedTx(ctx sdk.Context, chain string, blockHeight int64, hash string) []byte
+
+	// TxOut
+	SaveTxOut(ctx sdk.Context, msg *types.TxOut)
+	IsTxOutExisted(ctx sdk.Context, msg *types.TxOut) bool
+
 	SavePubKey(ctx sdk.Context, chain string, keyBytes []byte)
 	GetAllPubKeys(ctx sdk.Context) map[string][]byte
 	SaveEthKeyAddrs(ctx sdk.Context, chain string, keyAddrs map[string]bool) error
@@ -49,33 +56,63 @@ func NewKeeper(storeKey sdk.StoreKey) *DefaultKeeper {
 	return keeper
 }
 
-func (k *DefaultKeeper) getKey(chain string, height int64, hash string) []byte {
+func (k *DefaultKeeper) getObservedTxKey(chain string, height int64, hash string) []byte {
 	// Replace all the _ in the chain.
-	chain = strings.Replace(chain, "_", "*", -1)
-	return []byte(fmt.Sprintf("%s_%d_%s", chain, height, hash))
+	return []byte(fmt.Sprintf("%s__%d__%s", chain, height, hash))
 }
 
-func (k *DefaultKeeper) SaveObservedTx(ctx sdk.Context, tx *tssTypes.ObservedTx) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_OBSERVED_TX)
-	key := k.getKey(tx.Chain, tx.BlockHeight, tx.TxHash)
+func (k *DefaultKeeper) getTxOutKey(inChain string, outChain string, height int64, hash string) []byte {
+	// Replace all the _ in the chain.
+	return []byte(fmt.Sprintf("%s__%s__%d__%s", inChain, outChain, height, hash))
+}
 
-	store.Set(key, tx.Serialized)
+func (k *DefaultKeeper) SaveObservedTx(ctx sdk.Context, tx *types.ObservedTx) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixObservedTx)
+	key := k.getObservedTxKey(tx.Chain, tx.BlockHeight, tx.TxHash)
+
+	bz, err := tx.Marshal()
+	if err != nil {
+		log.Error("SaveObservedTx: Cannot marshal an ObservedTx, err = ", err)
+		return
+	}
+	store.Set(key, bz)
 }
 
 func (k *DefaultKeeper) GetObservedTx(ctx sdk.Context, chain string, blockHeight int64, hash string) []byte {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_OBSERVED_TX)
-	key := k.getKey(chain, blockHeight, hash)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixObservedTx)
+	key := k.getObservedTxKey(chain, blockHeight, hash)
 
 	return store.Get(key)
 }
 
+func (k *DefaultKeeper) SaveTxOut(ctx sdk.Context, msg *types.TxOut) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
+	outHash := utils.KeccakHash32(string(msg.OutBytes))
+	key := k.getTxOutKey(msg.InChain, msg.OutChain, msg.InBlockHeight, outHash)
+
+	bz, err := msg.Marshal()
+	if err != nil {
+		log.Error("SaveTxOut: Cannot marshal a TxOut, err = ", err)
+		return
+	}
+	store.Set(key, bz)
+}
+
+func (k *DefaultKeeper) IsTxOutExisted(ctx sdk.Context, msg *types.TxOut) bool {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
+	outHash := utils.KeccakHash32(string(msg.OutBytes))
+	key := k.getTxOutKey(msg.InChain, msg.OutChain, msg.InBlockHeight, outHash)
+
+	return store.Get(key) == nil
+}
+
 func (k *DefaultKeeper) SavePubKey(ctx sdk.Context, keyType string, keyBytes []byte) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PUBLIC_KEY_BYTES)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPublicKeyBytes)
 	store.Set([]byte(keyType), keyBytes)
 }
 
 func (k *DefaultKeeper) GetAllPubKeys(ctx sdk.Context) map[string][]byte {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_PUBLIC_KEY_BYTES)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPublicKeyBytes)
 	iter := store.Iterator(nil, nil)
 	ret := make(map[string][]byte)
 	for ; iter.Valid(); iter.Next() {
@@ -87,7 +124,7 @@ func (k *DefaultKeeper) GetAllPubKeys(ctx sdk.Context) map[string][]byte {
 
 func (k *DefaultKeeper) SaveEthKeyAddrs(ctx sdk.Context, chain string, keyAddrs map[string]bool) error {
 	key := fmt.Sprintf(KEY_ETH_KEY_ADDRESS, chain)
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_ETH_KEY_ADDRESS)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixEthKeyAddresses)
 
 	bz, err := json.Marshal(keyAddrs)
 	if err != nil {
@@ -101,7 +138,7 @@ func (k *DefaultKeeper) SaveEthKeyAddrs(ctx sdk.Context, chain string, keyAddrs 
 
 func (k *DefaultKeeper) GetAllEthKeyAddrs(ctx sdk.Context) (map[string]map[string]bool, error) {
 	m := make(map[string]map[string]bool)
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), PREFIX_ETH_KEY_ADDRESS)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixEthKeyAddresses)
 
 	iter := store.Iterator(nil, nil)
 	for ; iter.Valid(); iter.Next() {

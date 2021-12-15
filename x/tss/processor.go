@@ -21,11 +21,12 @@ import (
 )
 
 const (
-	PROPOSE_BLOCK_INTERVAL = 1000
+	ProposeBlockInterval = 1000
 )
 
 var (
-	ERR_INVALID_MESSASGE_TYPE = fmt.Errorf("Invalid Message Type")
+	ERR_INVALID_MESSASGE_TYPE  = fmt.Errorf("Invalid Message Type")
+	ErrMessageHasBeenProcessed = fmt.Errorf("Message has been processed")
 )
 
 // A major struct that processes complicated logic of TSS keysign and keygen. Read the documentation
@@ -244,7 +245,7 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 			// We dont get serialized data of the proposal msg because the serialized data contains
 			// blockheight. Instead, we only check the chain of the proposal.
 			key := fmt.Sprintf("KeygenProposal__%s", proposalMsg.KeyType)
-			if !p.db.MempoolTxExistedRange(key, p.currentHeight-PROPOSE_BLOCK_INTERVAL/2, p.currentHeight+PROPOSE_BLOCK_INTERVAL/2) {
+			if !p.db.MempoolTxExistedRange(key, p.currentHeight-ProposeBlockInterval/2, p.currentHeight+ProposeBlockInterval/2) {
 				// Insert into the db
 				p.db.InsertMempoolTxHash(key, p.currentHeight)
 				return nil

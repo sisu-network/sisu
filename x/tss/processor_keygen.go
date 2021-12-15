@@ -26,7 +26,7 @@ type BlockSymbolPair struct {
 
 func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 	if p.globalData.IsCatchingUp() ||
-		p.lastProposeBlockHeight != 0 && blockHeight-p.lastProposeBlockHeight <= PROPOSE_BLOCK_INTERVAL {
+		p.lastProposeBlockHeight != 0 && blockHeight-p.lastProposeBlockHeight <= ProposeBlockInterval {
 		return
 	}
 
