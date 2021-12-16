@@ -64,6 +64,20 @@ func (mr *MockKeeperMockRecorder) GetAllPubKeys(ctx interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPubKeys", reflect.TypeOf((*MockKeeper)(nil).GetAllPubKeys), ctx)
 }
 
+// IsKeygenProposalExisted mocks base method.
+func (m *MockKeeper) IsKeygenProposalExisted(ctx types.Context, msg *types0.KeygenProposal) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsKeygenProposalExisted", ctx, msg)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsKeygenProposalExisted indicates an expected call of IsKeygenProposalExisted.
+func (mr *MockKeeperMockRecorder) IsKeygenProposalExisted(ctx, msg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKeygenProposalExisted", reflect.TypeOf((*MockKeeper)(nil).IsKeygenProposalExisted), ctx, msg)
+}
+
 // IsObservedTxExisted mocks base method.
 func (m *MockKeeper) IsObservedTxExisted(ctx types.Context, msg *types0.ObservedTx) bool {
 	m.ctrl.T.Helper()

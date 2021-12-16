@@ -12,6 +12,7 @@ import (
 	"github.com/sisu-network/sisu/tests/mock"
 	mockcommon "github.com/sisu-network/sisu/tests/mock/common"
 	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
+	mocktssclients "github.com/sisu-network/sisu/tests/mock/tss/tssclients"
 	"github.com/sisu-network/sisu/x/tss/types"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 	"github.com/stretchr/testify/require"
@@ -30,10 +31,10 @@ func TestDeliverTxOut(t *testing.T) {
 	mockDb.EXPECT().UpdateTxOutStatus("eth", gomock.Any(), tssTypes.TxOutStatusSigning, gomock.Any()).Return(nil).Times(1)
 	mockDb.EXPECT().UpdateTxOutStatus("eth", gomock.Any(), tssTypes.TxOutStatusSigned, gomock.Any()).Return(nil).Times(1)
 
-	mockPartyManager := mock.NewMockPartyManager(ctrl)
+	mockPartyManager := mocktss.NewMockPartyManager(ctrl)
 	mockPartyManager.EXPECT().GetActivePartyPubkeys().Return([]ctypes.PubKey{}).Times(1)
 
-	mockDheartClient := mock.NewMockDheartClient(ctrl)
+	mockDheartClient := mocktssclients.NewMockDheartClient(ctrl)
 	mockDheartClient.EXPECT().KeySign(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	amount := big.NewInt(100)
