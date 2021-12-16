@@ -1,15 +1,18 @@
 syntax = "proto3";
 package types;
 
-// Note: all new fields in this proto MUST be included in SerializeWithoutSigner in the go file.
 message KeygenProposal {
-  string signer = 1;
-  string keyType = 2;
+  string keyType = 1;
 
   // Random id for this proposal.
-  string id = 3;
+  string id = 2;
 
-  int64 createdBlock = 4;
+  int64 createdBlock = 3;
+}
+
+message KeygenProposalWithSigner {
+  string signer = 1;
+  KeygenProposal data = 2;
 }
 
 message KeygenResult {

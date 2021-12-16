@@ -46,7 +46,7 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 
 		// Broadcast a message.
 		signer := p.appKeys.GetSignerAddress()
-		proposal := types.NewMsgKeygenProposal(
+		proposal := types.NewMsgKeygenProposalWithSigner(
 			signer.String(),
 			keyType,
 			utils.GenerateRandomString(16),
@@ -100,12 +100,14 @@ func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
 	}
 }
 
-func (p *Processor) CheckKeyGenProposal(msg *types.KeygenProposal) error {
+func (p *Processor) CheckKeyGenProposal(wrapper *types.KeygenProposalWithSigner) error {
 	// TODO: Check if we see the same need to have keygen proposal here.
 	return nil
 }
 
-func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, error) {
+func (p *Processor) DeliverKeyGenProposal(wrapper *types.KeygenProposalWithSigner) ([]byte, error) {
+	msg := wrapper.Data
+
 	log.Info("Delivering keygen proposal")
 
 	// TODO: Save data to KV store.

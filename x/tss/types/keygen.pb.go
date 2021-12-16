@@ -44,16 +44,14 @@ func (x KeygenResult_Result) String() string {
 }
 
 func (KeygenResult_Result) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_dbc836e6b96b1a93, []int{1, 0}
+	return fileDescriptor_dbc836e6b96b1a93, []int{2, 0}
 }
 
-// Note: all new fields in this proto MUST be included in SerializeWithoutSigner in the go file.
 type KeygenProposal struct {
-	Signer  string `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
-	KeyType string `protobuf:"bytes,2,opt,name=keyType,proto3" json:"keyType,omitempty"`
+	KeyType string `protobuf:"bytes,1,opt,name=keyType,proto3" json:"keyType,omitempty"`
 	// Random id for this proposal.
-	Id           string `protobuf:"bytes,3,opt,name=id,proto3" json:"id,omitempty"`
-	CreatedBlock int64  `protobuf:"varint,4,opt,name=createdBlock,proto3" json:"createdBlock,omitempty"`
+	Id           string `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
+	CreatedBlock int64  `protobuf:"varint,3,opt,name=createdBlock,proto3" json:"createdBlock,omitempty"`
 }
 
 func (m *KeygenProposal) Reset()         { *m = KeygenProposal{} }
@@ -89,13 +87,6 @@ func (m *KeygenProposal) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_KeygenProposal proto.InternalMessageInfo
 
-func (m *KeygenProposal) GetSigner() string {
-	if m != nil {
-		return m.Signer
-	}
-	return ""
-}
-
 func (m *KeygenProposal) GetKeyType() string {
 	if m != nil {
 		return m.KeyType
@@ -117,6 +108,58 @@ func (m *KeygenProposal) GetCreatedBlock() int64 {
 	return 0
 }
 
+type KeygenProposalWithSigner struct {
+	Signer string          `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
+	Data   *KeygenProposal `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+}
+
+func (m *KeygenProposalWithSigner) Reset()         { *m = KeygenProposalWithSigner{} }
+func (m *KeygenProposalWithSigner) String() string { return proto.CompactTextString(m) }
+func (*KeygenProposalWithSigner) ProtoMessage()    {}
+func (*KeygenProposalWithSigner) Descriptor() ([]byte, []int) {
+	return fileDescriptor_dbc836e6b96b1a93, []int{1}
+}
+func (m *KeygenProposalWithSigner) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *KeygenProposalWithSigner) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_KeygenProposalWithSigner.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *KeygenProposalWithSigner) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_KeygenProposalWithSigner.Merge(m, src)
+}
+func (m *KeygenProposalWithSigner) XXX_Size() int {
+	return m.Size()
+}
+func (m *KeygenProposalWithSigner) XXX_DiscardUnknown() {
+	xxx_messageInfo_KeygenProposalWithSigner.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_KeygenProposalWithSigner proto.InternalMessageInfo
+
+func (m *KeygenProposalWithSigner) GetSigner() string {
+	if m != nil {
+		return m.Signer
+	}
+	return ""
+}
+
+func (m *KeygenProposalWithSigner) GetData() *KeygenProposal {
+	if m != nil {
+		return m.Data
+	}
+	return nil
+}
+
 type KeygenResult struct {
 	Signer      string              `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
 	KeyType     string              `protobuf:"bytes,2,opt,name=keyType,proto3" json:"keyType,omitempty"`
@@ -129,7 +172,7 @@ func (m *KeygenResult) Reset()         { *m = KeygenResult{} }
 func (m *KeygenResult) String() string { return proto.CompactTextString(m) }
 func (*KeygenResult) ProtoMessage()    {}
 func (*KeygenResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_dbc836e6b96b1a93, []int{1}
+	return fileDescriptor_dbc836e6b96b1a93, []int{2}
 }
 func (m *KeygenResult) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -196,30 +239,33 @@ func (m *KeygenResult) GetResult() KeygenResult_Result {
 func init() {
 	proto.RegisterEnum("types.KeygenResult_Result", KeygenResult_Result_name, KeygenResult_Result_value)
 	proto.RegisterType((*KeygenProposal)(nil), "types.KeygenProposal")
+	proto.RegisterType((*KeygenProposalWithSigner)(nil), "types.KeygenProposalWithSigner")
 	proto.RegisterType((*KeygenResult)(nil), "types.KeygenResult")
 }
 
 func init() { proto.RegisterFile("keygen.proto", fileDescriptor_dbc836e6b96b1a93) }
 
 var fileDescriptor_dbc836e6b96b1a93 = []byte{
-	// 273 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x90, 0x31, 0x6a, 0xf3, 0x30,
-	0x18, 0x86, 0x2d, 0xe7, 0x8f, 0x43, 0xbe, 0x18, 0x13, 0x34, 0xfc, 0x88, 0x0e, 0xc2, 0x78, 0xf2,
-	0xe4, 0x21, 0x3d, 0x41, 0x1d, 0x52, 0x28, 0xe9, 0x50, 0xe4, 0xe6, 0x00, 0x4e, 0xfc, 0x11, 0x8c,
-	0x4d, 0x6c, 0x24, 0xa5, 0xa0, 0x5b, 0xf4, 0x58, 0x1d, 0x33, 0x74, 0xe8, 0x58, 0xec, 0x8b, 0x94,
-	0x28, 0x0e, 0xa4, 0x6b, 0x27, 0xf1, 0x3e, 0x92, 0x78, 0x5e, 0x5e, 0xf0, 0x2b, 0x34, 0x7b, 0x3c,
-	0x24, 0xad, 0x6c, 0x74, 0x43, 0xc7, 0xda, 0xb4, 0xa8, 0xa2, 0x37, 0x08, 0xd6, 0x16, 0xbf, 0xc8,
-	0xa6, 0x6d, 0x54, 0x5e, 0xd3, 0xff, 0xe0, 0xa9, 0x72, 0x7f, 0x40, 0xc9, 0x48, 0x48, 0xe2, 0xa9,
-	0x18, 0x12, 0x65, 0x30, 0xa9, 0xd0, 0xbc, 0x9a, 0x16, 0x99, 0x6b, 0x2f, 0xae, 0x91, 0x06, 0xe0,
-	0x96, 0x05, 0x1b, 0x59, 0xe8, 0x96, 0x05, 0x8d, 0xc0, 0xdf, 0x49, 0xcc, 0x35, 0x16, 0x69, 0xdd,
-	0xec, 0x2a, 0xf6, 0x2f, 0x24, 0xf1, 0x48, 0xfc, 0x62, 0xd1, 0x27, 0x01, 0xff, 0x22, 0x16, 0xa8,
-	0x8e, 0xb5, 0xfe, 0x83, 0x36, 0x84, 0x59, 0x7b, 0xdc, 0xae, 0xd1, 0xa4, 0x46, 0xa3, 0xb2, 0x7e,
-	0x5f, 0xdc, 0xa2, 0xf3, 0xdf, 0xbc, 0x28, 0x24, 0x2a, 0x65, 0x3b, 0x4c, 0xc5, 0x35, 0xd2, 0x05,
-	0x78, 0xd2, 0x7a, 0xd9, 0x38, 0x24, 0x71, 0xb0, 0xb8, 0x4b, 0xec, 0x1c, 0xc9, 0x6d, 0xa5, 0xe4,
-	0x72, 0x88, 0xe1, 0x65, 0x14, 0x81, 0x37, 0x74, 0x9d, 0xc1, 0x24, 0xdb, 0x2c, 0x97, 0xab, 0x2c,
-	0x9b, 0x3b, 0xe7, 0xf0, 0xf8, 0xf0, 0xf4, 0xbc, 0x11, 0xab, 0x39, 0x49, 0xd9, 0x47, 0xc7, 0xc9,
-	0xa9, 0xe3, 0xe4, 0xbb, 0xe3, 0xe4, 0xbd, 0xe7, 0xce, 0xa9, 0xe7, 0xce, 0x57, 0xcf, 0x9d, 0xad,
-	0x67, 0x67, 0xbf, 0xff, 0x09, 0x00, 0x00, 0xff, 0xff, 0x70, 0x65, 0xf9, 0x19, 0x86, 0x01, 0x00,
+	// 305 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x74, 0x51, 0xcf, 0x6a, 0xc2, 0x30,
+	0x18, 0x6f, 0xaa, 0x56, 0xf6, 0x59, 0x44, 0x02, 0x1b, 0x61, 0x87, 0x52, 0x72, 0x72, 0x97, 0x1e,
+	0xdc, 0x13, 0x4c, 0x71, 0x30, 0xdc, 0x61, 0xa4, 0x93, 0x9d, 0x36, 0xa8, 0xe6, 0xc3, 0x15, 0xc5,
+	0x96, 0x24, 0x1e, 0xf2, 0x16, 0x7b, 0xac, 0x1d, 0x3d, 0xec, 0xb0, 0xe3, 0xd0, 0x17, 0x19, 0xa6,
+	0x1d, 0xd8, 0xc3, 0x4e, 0xc9, 0xef, 0x97, 0xef, 0xfb, 0xfd, 0x21, 0x10, 0xae, 0xd1, 0xae, 0x70,
+	0x9b, 0x94, 0xaa, 0x30, 0x05, 0xed, 0x18, 0x5b, 0xa2, 0xe6, 0x6f, 0xd0, 0x9f, 0x39, 0xfa, 0x49,
+	0x15, 0x65, 0xa1, 0xb3, 0x0d, 0x65, 0xd0, 0x5d, 0xa3, 0x7d, 0xb6, 0x25, 0x32, 0x12, 0x93, 0xe1,
+	0x85, 0xf8, 0x83, 0xb4, 0x0f, 0x7e, 0x2e, 0x99, 0xef, 0x48, 0x3f, 0x97, 0x94, 0x43, 0xb8, 0x54,
+	0x98, 0x19, 0x94, 0xe3, 0x4d, 0xb1, 0x5c, 0xb3, 0x56, 0x4c, 0x86, 0x2d, 0xd1, 0xe0, 0xf8, 0x2b,
+	0xb0, 0xa6, 0xfe, 0x4b, 0x6e, 0xde, 0xd3, 0x7c, 0xb5, 0x45, 0x45, 0xaf, 0x20, 0xd0, 0xee, 0x56,
+	0x1b, 0xd5, 0x88, 0xde, 0x40, 0x5b, 0x66, 0x26, 0x73, 0x4e, 0xbd, 0xd1, 0x65, 0xe2, 0x92, 0x26,
+	0x4d, 0x19, 0xe1, 0x46, 0xf8, 0x17, 0x81, 0xb0, 0x7a, 0x10, 0xa8, 0x77, 0x1b, 0xf3, 0xaf, 0xe6,
+	0x59, 0x2b, 0xbf, 0xd9, 0x2a, 0x86, 0x5e, 0xb9, 0x5b, 0xcc, 0xd0, 0x8e, 0xad, 0x41, 0xed, 0x4a,
+	0x84, 0xe2, 0x9c, 0x3a, 0xed, 0x66, 0x52, 0x2a, 0xd4, 0x9a, 0xb5, 0xab, 0xdd, 0x1a, 0xd2, 0x11,
+	0x04, 0xca, 0xf9, 0xb2, 0x4e, 0x4c, 0x86, 0xfd, 0xd1, 0x75, 0x23, 0x6b, 0x15, 0x29, 0xa9, 0x0e,
+	0x51, 0x4f, 0x72, 0x0e, 0x41, 0x9d, 0xb5, 0x07, 0xdd, 0x74, 0x3e, 0x99, 0x4c, 0xd3, 0x74, 0xe0,
+	0x9d, 0xc0, 0xfd, 0xdd, 0xc3, 0xe3, 0x5c, 0x4c, 0x07, 0x64, 0xcc, 0x3e, 0x0f, 0x11, 0xd9, 0x1f,
+	0x22, 0xf2, 0x73, 0x88, 0xc8, 0xc7, 0x31, 0xf2, 0xf6, 0xc7, 0xc8, 0xfb, 0x3e, 0x46, 0xde, 0x22,
+	0x70, 0xbf, 0x77, 0xfb, 0x1b, 0x00, 0x00, 0xff, 0xff, 0xb6, 0xb4, 0x1a, 0xdc, 0xcd, 0x01, 0x00,
 	0x00,
 }
 
@@ -246,19 +292,54 @@ func (m *KeygenProposal) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	if m.CreatedBlock != 0 {
 		i = encodeVarintKeygen(dAtA, i, uint64(m.CreatedBlock))
 		i--
-		dAtA[i] = 0x20
+		dAtA[i] = 0x18
 	}
 	if len(m.Id) > 0 {
 		i -= len(m.Id)
 		copy(dAtA[i:], m.Id)
 		i = encodeVarintKeygen(dAtA, i, uint64(len(m.Id)))
 		i--
-		dAtA[i] = 0x1a
+		dAtA[i] = 0x12
 	}
 	if len(m.KeyType) > 0 {
 		i -= len(m.KeyType)
 		copy(dAtA[i:], m.KeyType)
 		i = encodeVarintKeygen(dAtA, i, uint64(len(m.KeyType)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *KeygenProposalWithSigner) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *KeygenProposalWithSigner) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *KeygenProposalWithSigner) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Data != nil {
+		{
+			size, err := m.Data.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintKeygen(dAtA, i, uint64(size))
+		}
 		i--
 		dAtA[i] = 0x12
 	}
@@ -345,10 +426,6 @@ func (m *KeygenProposal) Size() (n int) {
 	}
 	var l int
 	_ = l
-	l = len(m.Signer)
-	if l > 0 {
-		n += 1 + l + sovKeygen(uint64(l))
-	}
 	l = len(m.KeyType)
 	if l > 0 {
 		n += 1 + l + sovKeygen(uint64(l))
@@ -359,6 +436,23 @@ func (m *KeygenProposal) Size() (n int) {
 	}
 	if m.CreatedBlock != 0 {
 		n += 1 + sovKeygen(uint64(m.CreatedBlock))
+	}
+	return n
+}
+
+func (m *KeygenProposalWithSigner) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Signer)
+	if l > 0 {
+		n += 1 + l + sovKeygen(uint64(l))
+	}
+	if m.Data != nil {
+		l = m.Data.Size()
+		n += 1 + l + sovKeygen(uint64(l))
 	}
 	return n
 }
@@ -428,6 +522,139 @@ func (m *KeygenProposal) Unmarshal(dAtA []byte) error {
 		switch fieldNum {
 		case 1:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field KeyType", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowKeygen
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthKeygen
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthKeygen
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.KeyType = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 2:
+			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
+			}
+			var stringLen uint64
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowKeygen
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				stringLen |= uint64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			intStringLen := int(stringLen)
+			if intStringLen < 0 {
+				return ErrInvalidLengthKeygen
+			}
+			postIndex := iNdEx + intStringLen
+			if postIndex < 0 {
+				return ErrInvalidLengthKeygen
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			m.Id = string(dAtA[iNdEx:postIndex])
+			iNdEx = postIndex
+		case 3:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field CreatedBlock", wireType)
+			}
+			m.CreatedBlock = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowKeygen
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.CreatedBlock |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipKeygen(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthKeygen
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *KeygenProposalWithSigner) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowKeygen
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: KeygenProposalWithSigner: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: KeygenProposalWithSigner: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Signer", wireType)
 			}
 			var stringLen uint64
@@ -460,9 +687,9 @@ func (m *KeygenProposal) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field KeyType", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Data", wireType)
 			}
-			var stringLen uint64
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowKeygen
@@ -472,75 +699,28 @@ func (m *KeygenProposal) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthKeygen
 			}
-			postIndex := iNdEx + intStringLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthKeygen
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.KeyType = string(dAtA[iNdEx:postIndex])
+			if m.Data == nil {
+				m.Data = &KeygenProposal{}
+			}
+			if err := m.Data.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
 			iNdEx = postIndex
-		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Id", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowKeygen
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthKeygen
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthKeygen
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Id = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 4:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field CreatedBlock", wireType)
-			}
-			m.CreatedBlock = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowKeygen
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.CreatedBlock |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipKeygen(dAtA[iNdEx:])
