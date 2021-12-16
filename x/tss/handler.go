@@ -17,8 +17,8 @@ func NewHandler(k keeper.DefaultKeeper, txSubmit common.TxSubmit, processor *Pro
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 
 		switch msg := msg.(type) {
-		case *types.KeygenProposal:
-			return handleKeygenProposal(msg, processor)
+		case *types.KeygenProposalWithSigner:
+			return handleKeygenProposal(ctx, msg, processor)
 		case *types.KeygenResult:
 			return handleKeygenResult(ctx, msg, processor)
 		case *types.ObservedTx:
@@ -35,8 +35,8 @@ func NewHandler(k keeper.DefaultKeeper, txSubmit common.TxSubmit, processor *Pro
 	}
 }
 
-func handleKeygenProposal(msg *types.KeygenProposal, processor *Processor) (*sdk.Result, error) {
-	data, err := processor.DeliverKeyGenProposal(msg)
+func handleKeygenProposal(ctx sdk.Context, msg *types.KeygenProposalWithSigner, processor *Processor) (*sdk.Result, error) {
+	data, err := processor.DeliverKeyGenProposal(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err

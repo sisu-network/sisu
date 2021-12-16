@@ -11,28 +11,26 @@ import (
 	"github.com/sisu-network/sisu/x/tss/types"
 )
 
-const (
-	OBSERVED_TX_CACHE_SIZE = 2500
-)
-
 // TODO: clean up this list
 var (
 	prefixObservedTx      = []byte{0x01}
 	prefixPublicKeyBytes  = []byte{0x02}
 	prefixEthKeyAddresses = []byte{0x03}
 	prefixTxOut           = []byte{0x04}
+	prefixKeygenProposal  = []byte{0x05}
 
-	// List of on memory keys. These data are not persisted into kvstore.
-	// List of contracts that need to be deployed to a chain.
-	KEY_ETH_KEY_ADDRESS    = "eth_key_address_%s"       // chain
-	KEY_CONTRACT_QUEUE     = "contract_queue_%s_%s"     // chain
-	KEY_DEPLOYING_CONTRACT = "deploying_contract_%s_%s" // chain - contract hash
+	// Deprecated
+	KEY_ETH_KEY_ADDRESS = "eth_key_address_%s" // chain
 )
 
+// go:generate mockgen -source x/tss/keeper/keeper.go -destination=tests/mock/tss/keeper.go -package=mock
 type Keeper interface {
+	SaveKeygenProposal(ctx sdk.Context, msg *types.KeygenProposal)
+	IsKeygenProposalExisted(ctx sdk.Context, msg *types.KeygenProposal) bool
+
 	// Observed Tx
-	SaveObservedTx(ctx sdk.Context, tx *types.ObservedTx)
-	IsObservedTxExisted(ctx sdk.Context, tx *types.ObservedTx) bool
+	SaveObservedTx(ctx sdk.Context, msg *types.ObservedTx)
+	IsObservedTxExisted(ctx sdk.Context, msg *types.ObservedTx) bool
 
 	// TxOut
 	SaveTxOut(ctx sdk.Context, msg *types.TxOut)
@@ -66,15 +64,36 @@ func (k *DefaultKeeper) getTxOutKey(inChain string, outChain string, height int6
 	return []byte(fmt.Sprintf("%s__%s__%d__%s", inChain, outChain, height, hash))
 }
 
-func (k *DefaultKeeper) SaveObservedTx(ctx sdk.Context, tx *types.ObservedTx) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixObservedTx)
-	key := k.getObservedTxKey(tx.Chain, tx.BlockHeight, tx.TxHash)
+func (k *DefaultKeeper) getKeygenProposalKey(keyType string, id string) []byte {
+	return []byte(fmt.Sprintf("%s__%s", keyType, id))
+}
 
-	bz := tx.SerializeWithoutSigner()
+func (k *DefaultKeeper) SaveKeygenProposal(ctx sdk.Context, msg *types.KeygenProposal) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenProposal)
+	key := k.getKeygenProposalKey(msg.KeyType, msg.Id)
+
+	bz, err := msg.Marshal()
+	if err != nil {
+		log.Error("SaveKeygenProposal: cannot marshal keygen proposal, err = ", err)
+	}
 	store.Set(key, bz)
 }
 
-// func (k *DefaultKeeper) GetObservedTx(ctx sdk.Context, chain string, blockHeight int64, hash string) []byte {
+func (k *DefaultKeeper) IsKeygenProposalExisted(ctx sdk.Context, msg *types.KeygenProposal) bool {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenProposal)
+	key := k.getKeygenProposalKey(msg.KeyType, msg.Id)
+
+	return store.Get(key) != nil
+}
+
+func (k *DefaultKeeper) SaveObservedTx(ctx sdk.Context, msg *types.ObservedTx) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixObservedTx)
+	key := k.getObservedTxKey(msg.Chain, msg.BlockHeight, msg.TxHash)
+
+	bz := msg.SerializeWithoutSigner()
+	store.Set(key, bz)
+}
+
 func (k *DefaultKeeper) IsObservedTxExisted(ctx sdk.Context, tx *types.ObservedTx) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixObservedTx)
 	key := k.getObservedTxKey(tx.GetChain(), tx.GetBlockHeight(), tx.GetTxHash())
