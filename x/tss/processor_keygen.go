@@ -46,7 +46,7 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 
 		// Broadcast a message.
 		signer := p.appKeys.GetSignerAddress()
-		proposal := types.NewMsgKeygenProposal(
+		proposal := types.NewMsgKeygenProposalWithSigner(
 			signer.String(),
 			keyType,
 			utils.GenerateRandomString(16),
@@ -100,18 +100,31 @@ func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
 	}
 }
 
-func (p *Processor) CheckKeyGenProposal(msg *types.KeygenProposal) error {
-	// TODO: Check if we see the same need to have keygen proposal here.
+func (p *Processor) CheckKeyGenProposal(ctx sdk.Context, wrapper *types.KeygenProposalWithSigner) error {
+	msg := wrapper.Data
+
+	if p.keeper.IsKeygenProposalExisted(ctx, msg) {
+		log.Verbose("The keygen proposal has been processed")
+		return ErrMessageHasBeenProcessed
+	}
+
 	return nil
 }
 
-func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, error) {
-	log.Info("Delivering keygen proposal")
+func (p *Processor) DeliverKeyGenProposal(ctx sdk.Context, wrapper *types.KeygenProposalWithSigner) ([]byte, error) {
+	msg := wrapper.Data
 
-	// TODO: Save data to KV store.
+	if p.keeper.IsKeygenProposalExisted(ctx, msg) {
+		log.Verbose("The keygen proposal has been processed")
+		return nil, nil
+	}
+	p.keeper.SaveKeygenProposal(ctx, msg)
+
 	if p.globalData.IsCatchingUp() {
 		return nil, nil
 	}
+
+	log.Info("Delivering keygen proposal")
 
 	keygenEntity, err := p.db.GetKeyGen(libchain.KEY_TYPE_ECDSA)
 	if err != nil {
@@ -133,6 +146,7 @@ func (p *Processor) DeliverKeyGenProposal(msg *types.KeygenProposal) ([]byte, er
 	log.Info("Sending keygen request to Dheart. KeyType =", msg.KeyType)
 	pubKeys := p.partyManager.GetActivePartyPubkeys()
 	keygenId := GetKeygenId(msg.KeyType, blockHeight, pubKeys)
+
 	err = p.dheartClient.KeyGen(keygenId, msg.KeyType, pubKeys)
 	if err != nil {
 		log.Error(err)
