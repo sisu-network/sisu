@@ -194,8 +194,8 @@ func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
 		log.Info("Checking tx: Msg type = ", msg.Type())
 
 		switch msg.(type) {
-		case *types.KeygenProposal:
-			return p.CheckKeyGenProposal(msg.(*types.KeygenProposal))
+		case *types.KeygenProposalWithSigner:
+			return p.CheckKeyGenProposal(msg.(*types.KeygenProposalWithSigner))
 		case *types.KeygenResult:
 		case *types.ObservedTx:
 			return p.CheckObservedTxs(ctx, msg.(*types.ObservedTx))
@@ -243,18 +243,19 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 		log.Verbose("PreAddTxToMempoolFunc: Msg type = ", msg.Type())
 
 		switch msg.Type() {
-		case types.MsgTypeKeygenProposal:
-			proposalMsg := msg.(*types.KeygenProposal)
+		case types.MsgTypeKeygenProposalWithSigner:
+			proposalMsg := msg.(*types.KeygenProposalWithSigner)
+
 			// We dont get serialized data of the proposal msg because the serialized data contains
 			// blockheight. Instead, we only check the chain of the proposal.
-			key := fmt.Sprintf("KeygenProposal__%s", proposalMsg.KeyType)
+			key := fmt.Sprintf("KeygenProposal__%s", proposalMsg.Data.KeyType)
 			height := p.currentHeight.Load().(int64)
 			if !p.db.MempoolTxExistedRange(key, height-ProposeBlockInterval/2, height+ProposeBlockInterval/2) {
 				// Insert into the db
 				p.db.InsertMempoolTxHash(key, height)
 				return nil
 			} else {
-				err := fmt.Errorf("The keygen proposal has been inclued in a block for keyType %s", proposalMsg.KeyType)
+				err := fmt.Errorf("The keygen proposal has been inclued in a block for keyType %s", proposalMsg.Data.KeyType)
 				log.Verbose(err)
 				return err
 			}
