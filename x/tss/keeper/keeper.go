@@ -11,10 +11,6 @@ import (
 	"github.com/sisu-network/sisu/x/tss/types"
 )
 
-const (
-	OBSERVED_TX_CACHE_SIZE = 2500
-)
-
 // TODO: clean up this list
 var (
 	prefixObservedTx      = []byte{0x01}
@@ -30,6 +26,7 @@ var (
 // go:generate mockgen -source x/tss/keeper/keeper.go -destination=tests/mock/tss/keeper.go -package=mock
 type Keeper interface {
 	SaveKeygenProposal(ctx sdk.Context, msg *types.KeygenProposal)
+	IsKeygenProposalExisted(ctx sdk.Context, msg *types.KeygenProposal) bool
 
 	// Observed Tx
 	SaveObservedTx(ctx sdk.Context, msg *types.ObservedTx)
@@ -67,16 +64,26 @@ func (k *DefaultKeeper) getTxOutKey(inChain string, outChain string, height int6
 	return []byte(fmt.Sprintf("%s__%s__%d__%s", inChain, outChain, height, hash))
 }
 
-func (k *DefaultKeeper) getKeygenProposalKey(keyType string, id string, createdBlock int64) []byte {
-	return []byte(fmt.Sprintf("%s__%s__%d", keyType, id, createdBlock))
+func (k *DefaultKeeper) getKeygenProposalKey(keyType string, id string) []byte {
+	return []byte(fmt.Sprintf("%s__%s", keyType, id))
 }
 
 func (k *DefaultKeeper) SaveKeygenProposal(ctx sdk.Context, msg *types.KeygenProposal) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenProposal)
-	key := k.getKeygenProposalKey(msg.KeyType, msg.Id, msg.CreatedBlock)
+	key := k.getKeygenProposalKey(msg.KeyType, msg.Id)
 
-	// TODO: Fix this
-	store.Set(key, []byte(""))
+	bz, err := msg.Marshal()
+	if err != nil {
+		log.Error("SaveKeygenProposal: cannot marshal keygen proposal, err = ", err)
+	}
+	store.Set(key, bz)
+}
+
+func (k *DefaultKeeper) IsKeygenProposalExisted(ctx sdk.Context, msg *types.KeygenProposal) bool {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenProposal)
+	key := k.getKeygenProposalKey(msg.KeyType, msg.Id)
+
+	return store.Get(key) != nil
 }
 
 func (k *DefaultKeeper) SaveObservedTx(ctx sdk.Context, msg *types.ObservedTx) {
@@ -87,7 +94,6 @@ func (k *DefaultKeeper) SaveObservedTx(ctx sdk.Context, msg *types.ObservedTx) {
 	store.Set(key, bz)
 }
 
-// func (k *DefaultKeeper) GetObservedTx(ctx sdk.Context, chain string, blockHeight int64, hash string) []byte {
 func (k *DefaultKeeper) IsObservedTxExisted(ctx sdk.Context, tx *types.ObservedTx) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixObservedTx)
 	key := k.getObservedTxKey(tx.GetChain(), tx.GetBlockHeight(), tx.GetTxHash())
