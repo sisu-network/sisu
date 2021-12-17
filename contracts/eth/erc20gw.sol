@@ -143,26 +143,70 @@ interface IERC20 {
 }
 
 contract ERC20Gateway is Ownable {
-    constructor() {
+    bool public pause;
+
+    // list of supported chains
+    // key: chainId
+    // value: true if this chain is supported
+    mapping(string => bool) public supportedChains;
+
+    constructor(string[] memory _supportedChains) {
+        pause = false;
+
+        for (uint i = 0; i < _supportedChains.length; i++) {
+            supportedChains[_supportedChains[i]] = true;
+        }
     }
 
-    event TransferInEvent(address indexed token, address indexed sender, uint256 indexed amount);
+    event TransferInEvent(string indexed destChain, address indexed token, address indexed sender, uint256 amount);
     event TransferOutEvent(address indexed token, address indexed reipient, uint256 amount);
+    event RemoveSupportedChainEvent(string indexed chain);
+    event AddSupportedChainEvent(string indexed chain);
 
+    modifier isNotPaused {
+        require(pause == false, "Gateway is paused");
+        _;
+    }
+
+    // User can call TransferIn to deposit their ERC20 token to gateway
     // Anyone can call TransferIn
-    function TransferIn(address _token, uint256 _amount) public {
+    function TransferIn(string memory destChain, address _token, uint256 _amount) public isNotPaused {
+        require(supportedChains[destChain] == true, "destChain is not supported");
         TransferHelper.safeTransferFrom(_token, msg.sender, address(this), _amount);
 
-        emit TransferInEvent(_token, msg.sender, _amount);
+        emit TransferInEvent(destChain, _token, msg.sender, _amount);
     }
 
-    // Only pool owner can call TransferOut
-    function TransferOut(address _token, address recipient, uint256 _amount) onlyOwner public {
+    // Pool owner call TransferOut to release user's ERC20 token in destination chain
+    // Triggered by bridge's backend
+    function TransferOut(address _token, address recipient, uint256 _amount) public onlyOwner isNotPaused {
         uint256 gwBalance = IERC20(_token).balanceOf(address(this));
         require(gwBalance >= _amount, "Gateway balance is less than required amount");
 
         TransferHelper.safeTransferFrom(_token, address(this), recipient, _amount);
 
         emit TransferOutEvent(_token, recipient, _amount);
+    }
+
+    function Pause() public onlyOwner {
+        require(pause == false, "Gateway is paused already");
+        pause = true;
+    }
+
+    function Resume() public onlyOwner {
+        require(pause == true, "Gateway is not paused already");
+        pause = false;
+    }
+
+    function RemoveSupportedChain(string memory chain) public onlyOwner {
+        supportedChains[chain] = false;
+
+        emit RemoveSupportedChainEvent(chain);
+    }
+
+    function AddSupportedChain(string memory chain) public onlyOwner {
+        supportedChains[chain] = true;
+
+        emit AddSupportedChainEvent(chain);
     }
 }

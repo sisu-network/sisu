@@ -30,7 +30,7 @@ var (
 
 // Erc20gwMetaData contains all meta data concerning the Erc20gw contract.
 var Erc20gwMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"TransferInEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"reipient\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"TransferOutEvent\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"TransferIn\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_token\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"TransferOut\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"string[]\",\"name\":\"_supportedChains\",\"type\":\"string[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"string\",\"name\":\"chain\",\"type\":\"string\"}],\"name\":\"AddSupportedChainEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"string\",\"name\":\"chain\",\"type\":\"string\"}],\"name\":\"RemoveSupportedChainEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"string\",\"name\":\"destChain\",\"type\":\"string\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"TransferInEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"reipient\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"TransferOutEvent\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"chain\",\"type\":\"string\"}],\"name\":\"AddSupportedChain\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"Pause\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"chain\",\"type\":\"string\"}],\"name\":\"RemoveSupportedChain\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"Resume\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"destChain\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"_token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"TransferIn\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_token\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"TransferOut\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pause\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"supportedChains\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // Erc20gwABI is the input ABI used to generate the binding from.
@@ -210,25 +210,171 @@ func (_Erc20gw *Erc20gwCallerSession) Owner() (common.Address, error) {
 	return _Erc20gw.Contract.Owner(&_Erc20gw.CallOpts)
 }
 
-// TransferIn is a paid mutator transaction binding the contract method 0x20bdd1a9.
+// Pause is a free data retrieval call binding the contract method 0x8456cb59.
 //
-// Solidity: function TransferIn(address _token, uint256 _amount) returns()
-func (_Erc20gw *Erc20gwTransactor) TransferIn(opts *bind.TransactOpts, _token common.Address, _amount *big.Int) (*types.Transaction, error) {
-	return _Erc20gw.contract.Transact(opts, "TransferIn", _token, _amount)
+// Solidity: function pause() view returns(bool)
+func (_Erc20gw *Erc20gwCaller) Pause(opts *bind.CallOpts) (bool, error) {
+	var out []interface{}
+	err := _Erc20gw.contract.Call(opts, &out, "pause")
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
 }
 
-// TransferIn is a paid mutator transaction binding the contract method 0x20bdd1a9.
+// Pause is a free data retrieval call binding the contract method 0x8456cb59.
 //
-// Solidity: function TransferIn(address _token, uint256 _amount) returns()
-func (_Erc20gw *Erc20gwSession) TransferIn(_token common.Address, _amount *big.Int) (*types.Transaction, error) {
-	return _Erc20gw.Contract.TransferIn(&_Erc20gw.TransactOpts, _token, _amount)
+// Solidity: function pause() view returns(bool)
+func (_Erc20gw *Erc20gwSession) Pause() (bool, error) {
+	return _Erc20gw.Contract.Pause(&_Erc20gw.CallOpts)
 }
 
-// TransferIn is a paid mutator transaction binding the contract method 0x20bdd1a9.
+// Pause is a free data retrieval call binding the contract method 0x8456cb59.
 //
-// Solidity: function TransferIn(address _token, uint256 _amount) returns()
-func (_Erc20gw *Erc20gwTransactorSession) TransferIn(_token common.Address, _amount *big.Int) (*types.Transaction, error) {
-	return _Erc20gw.Contract.TransferIn(&_Erc20gw.TransactOpts, _token, _amount)
+// Solidity: function pause() view returns(bool)
+func (_Erc20gw *Erc20gwCallerSession) Pause() (bool, error) {
+	return _Erc20gw.Contract.Pause(&_Erc20gw.CallOpts)
+}
+
+// SupportedChains is a free data retrieval call binding the contract method 0x6c30aaa2.
+//
+// Solidity: function supportedChains(string ) view returns(bool)
+func (_Erc20gw *Erc20gwCaller) SupportedChains(opts *bind.CallOpts, arg0 string) (bool, error) {
+	var out []interface{}
+	err := _Erc20gw.contract.Call(opts, &out, "supportedChains", arg0)
+
+	if err != nil {
+		return *new(bool), err
+	}
+
+	out0 := *abi.ConvertType(out[0], new(bool)).(*bool)
+
+	return out0, err
+
+}
+
+// SupportedChains is a free data retrieval call binding the contract method 0x6c30aaa2.
+//
+// Solidity: function supportedChains(string ) view returns(bool)
+func (_Erc20gw *Erc20gwSession) SupportedChains(arg0 string) (bool, error) {
+	return _Erc20gw.Contract.SupportedChains(&_Erc20gw.CallOpts, arg0)
+}
+
+// SupportedChains is a free data retrieval call binding the contract method 0x6c30aaa2.
+//
+// Solidity: function supportedChains(string ) view returns(bool)
+func (_Erc20gw *Erc20gwCallerSession) SupportedChains(arg0 string) (bool, error) {
+	return _Erc20gw.Contract.SupportedChains(&_Erc20gw.CallOpts, arg0)
+}
+
+// AddSupportedChain is a paid mutator transaction binding the contract method 0xfc69a67a.
+//
+// Solidity: function AddSupportedChain(string chain) returns()
+func (_Erc20gw *Erc20gwTransactor) AddSupportedChain(opts *bind.TransactOpts, chain string) (*types.Transaction, error) {
+	return _Erc20gw.contract.Transact(opts, "AddSupportedChain", chain)
+}
+
+// AddSupportedChain is a paid mutator transaction binding the contract method 0xfc69a67a.
+//
+// Solidity: function AddSupportedChain(string chain) returns()
+func (_Erc20gw *Erc20gwSession) AddSupportedChain(chain string) (*types.Transaction, error) {
+	return _Erc20gw.Contract.AddSupportedChain(&_Erc20gw.TransactOpts, chain)
+}
+
+// AddSupportedChain is a paid mutator transaction binding the contract method 0xfc69a67a.
+//
+// Solidity: function AddSupportedChain(string chain) returns()
+func (_Erc20gw *Erc20gwTransactorSession) AddSupportedChain(chain string) (*types.Transaction, error) {
+	return _Erc20gw.Contract.AddSupportedChain(&_Erc20gw.TransactOpts, chain)
+}
+
+// Pause is a paid mutator transaction binding the contract method 0x6985a022.
+//
+// Solidity: function Pause() returns()
+func (_Erc20gw *Erc20gwTransactor) Pause(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _Erc20gw.contract.Transact(opts, "Pause")
+}
+
+// Pause is a paid mutator transaction binding the contract method 0x6985a022.
+//
+// Solidity: function Pause() returns()
+func (_Erc20gw *Erc20gwSession) Pause() (*types.Transaction, error) {
+	return _Erc20gw.Contract.Pause(&_Erc20gw.TransactOpts)
+}
+
+// Pause is a paid mutator transaction binding the contract method 0x6985a022.
+//
+// Solidity: function Pause() returns()
+func (_Erc20gw *Erc20gwTransactorSession) Pause() (*types.Transaction, error) {
+	return _Erc20gw.Contract.Pause(&_Erc20gw.TransactOpts)
+}
+
+// RemoveSupportedChain is a paid mutator transaction binding the contract method 0x58b67fe1.
+//
+// Solidity: function RemoveSupportedChain(string chain) returns()
+func (_Erc20gw *Erc20gwTransactor) RemoveSupportedChain(opts *bind.TransactOpts, chain string) (*types.Transaction, error) {
+	return _Erc20gw.contract.Transact(opts, "RemoveSupportedChain", chain)
+}
+
+// RemoveSupportedChain is a paid mutator transaction binding the contract method 0x58b67fe1.
+//
+// Solidity: function RemoveSupportedChain(string chain) returns()
+func (_Erc20gw *Erc20gwSession) RemoveSupportedChain(chain string) (*types.Transaction, error) {
+	return _Erc20gw.Contract.RemoveSupportedChain(&_Erc20gw.TransactOpts, chain)
+}
+
+// RemoveSupportedChain is a paid mutator transaction binding the contract method 0x58b67fe1.
+//
+// Solidity: function RemoveSupportedChain(string chain) returns()
+func (_Erc20gw *Erc20gwTransactorSession) RemoveSupportedChain(chain string) (*types.Transaction, error) {
+	return _Erc20gw.Contract.RemoveSupportedChain(&_Erc20gw.TransactOpts, chain)
+}
+
+// Resume is a paid mutator transaction binding the contract method 0x490d6d11.
+//
+// Solidity: function Resume() returns()
+func (_Erc20gw *Erc20gwTransactor) Resume(opts *bind.TransactOpts) (*types.Transaction, error) {
+	return _Erc20gw.contract.Transact(opts, "Resume")
+}
+
+// Resume is a paid mutator transaction binding the contract method 0x490d6d11.
+//
+// Solidity: function Resume() returns()
+func (_Erc20gw *Erc20gwSession) Resume() (*types.Transaction, error) {
+	return _Erc20gw.Contract.Resume(&_Erc20gw.TransactOpts)
+}
+
+// Resume is a paid mutator transaction binding the contract method 0x490d6d11.
+//
+// Solidity: function Resume() returns()
+func (_Erc20gw *Erc20gwTransactorSession) Resume() (*types.Transaction, error) {
+	return _Erc20gw.Contract.Resume(&_Erc20gw.TransactOpts)
+}
+
+// TransferIn is a paid mutator transaction binding the contract method 0xbd574101.
+//
+// Solidity: function TransferIn(string destChain, address _token, uint256 _amount) returns()
+func (_Erc20gw *Erc20gwTransactor) TransferIn(opts *bind.TransactOpts, destChain string, _token common.Address, _amount *big.Int) (*types.Transaction, error) {
+	return _Erc20gw.contract.Transact(opts, "TransferIn", destChain, _token, _amount)
+}
+
+// TransferIn is a paid mutator transaction binding the contract method 0xbd574101.
+//
+// Solidity: function TransferIn(string destChain, address _token, uint256 _amount) returns()
+func (_Erc20gw *Erc20gwSession) TransferIn(destChain string, _token common.Address, _amount *big.Int) (*types.Transaction, error) {
+	return _Erc20gw.Contract.TransferIn(&_Erc20gw.TransactOpts, destChain, _token, _amount)
+}
+
+// TransferIn is a paid mutator transaction binding the contract method 0xbd574101.
+//
+// Solidity: function TransferIn(string destChain, address _token, uint256 _amount) returns()
+func (_Erc20gw *Erc20gwTransactorSession) TransferIn(destChain string, _token common.Address, _amount *big.Int) (*types.Transaction, error) {
+	return _Erc20gw.Contract.TransferIn(&_Erc20gw.TransactOpts, destChain, _token, _amount)
 }
 
 // TransferOut is a paid mutator transaction binding the contract method 0x5d2c285d.
@@ -292,6 +438,150 @@ func (_Erc20gw *Erc20gwSession) TransferOwnership(newOwner common.Address) (*typ
 // Solidity: function transferOwnership(address newOwner) returns()
 func (_Erc20gw *Erc20gwTransactorSession) TransferOwnership(newOwner common.Address) (*types.Transaction, error) {
 	return _Erc20gw.Contract.TransferOwnership(&_Erc20gw.TransactOpts, newOwner)
+}
+
+// Erc20gwAddSupportedChainEventIterator is returned from FilterAddSupportedChainEvent and is used to iterate over the raw logs and unpacked data for AddSupportedChainEvent events raised by the Erc20gw contract.
+type Erc20gwAddSupportedChainEventIterator struct {
+	Event *Erc20gwAddSupportedChainEvent // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *Erc20gwAddSupportedChainEventIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(Erc20gwAddSupportedChainEvent)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(Erc20gwAddSupportedChainEvent)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *Erc20gwAddSupportedChainEventIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *Erc20gwAddSupportedChainEventIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// Erc20gwAddSupportedChainEvent represents a AddSupportedChainEvent event raised by the Erc20gw contract.
+type Erc20gwAddSupportedChainEvent struct {
+	Chain common.Hash
+	Raw   types.Log // Blockchain specific contextual infos
+}
+
+// FilterAddSupportedChainEvent is a free log retrieval operation binding the contract event 0x7fa5b6d08b213cf08846553aed6553e01273440fcfb334111e8376b02ed434a7.
+//
+// Solidity: event AddSupportedChainEvent(string indexed chain)
+func (_Erc20gw *Erc20gwFilterer) FilterAddSupportedChainEvent(opts *bind.FilterOpts, chain []string) (*Erc20gwAddSupportedChainEventIterator, error) {
+
+	var chainRule []interface{}
+	for _, chainItem := range chain {
+		chainRule = append(chainRule, chainItem)
+	}
+
+	logs, sub, err := _Erc20gw.contract.FilterLogs(opts, "AddSupportedChainEvent", chainRule)
+	if err != nil {
+		return nil, err
+	}
+	return &Erc20gwAddSupportedChainEventIterator{contract: _Erc20gw.contract, event: "AddSupportedChainEvent", logs: logs, sub: sub}, nil
+}
+
+// WatchAddSupportedChainEvent is a free log subscription operation binding the contract event 0x7fa5b6d08b213cf08846553aed6553e01273440fcfb334111e8376b02ed434a7.
+//
+// Solidity: event AddSupportedChainEvent(string indexed chain)
+func (_Erc20gw *Erc20gwFilterer) WatchAddSupportedChainEvent(opts *bind.WatchOpts, sink chan<- *Erc20gwAddSupportedChainEvent, chain []string) (event.Subscription, error) {
+
+	var chainRule []interface{}
+	for _, chainItem := range chain {
+		chainRule = append(chainRule, chainItem)
+	}
+
+	logs, sub, err := _Erc20gw.contract.WatchLogs(opts, "AddSupportedChainEvent", chainRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(Erc20gwAddSupportedChainEvent)
+				if err := _Erc20gw.contract.UnpackLog(event, "AddSupportedChainEvent", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseAddSupportedChainEvent is a log parse operation binding the contract event 0x7fa5b6d08b213cf08846553aed6553e01273440fcfb334111e8376b02ed434a7.
+//
+// Solidity: event AddSupportedChainEvent(string indexed chain)
+func (_Erc20gw *Erc20gwFilterer) ParseAddSupportedChainEvent(log types.Log) (*Erc20gwAddSupportedChainEvent, error) {
+	event := new(Erc20gwAddSupportedChainEvent)
+	if err := _Erc20gw.contract.UnpackLog(event, "AddSupportedChainEvent", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
 }
 
 // Erc20gwOwnershipTransferredIterator is returned from FilterOwnershipTransferred and is used to iterate over the raw logs and unpacked data for OwnershipTransferred events raised by the Erc20gw contract.
@@ -447,6 +737,150 @@ func (_Erc20gw *Erc20gwFilterer) ParseOwnershipTransferred(log types.Log) (*Erc2
 	return event, nil
 }
 
+// Erc20gwRemoveSupportedChainEventIterator is returned from FilterRemoveSupportedChainEvent and is used to iterate over the raw logs and unpacked data for RemoveSupportedChainEvent events raised by the Erc20gw contract.
+type Erc20gwRemoveSupportedChainEventIterator struct {
+	Event *Erc20gwRemoveSupportedChainEvent // Event containing the contract specifics and raw log
+
+	contract *bind.BoundContract // Generic contract to use for unpacking event data
+	event    string              // Event name to use for unpacking event data
+
+	logs chan types.Log        // Log channel receiving the found contract events
+	sub  ethereum.Subscription // Subscription for errors, completion and termination
+	done bool                  // Whether the subscription completed delivering logs
+	fail error                 // Occurred error to stop iteration
+}
+
+// Next advances the iterator to the subsequent event, returning whether there
+// are any more events found. In case of a retrieval or parsing error, false is
+// returned and Error() can be queried for the exact failure.
+func (it *Erc20gwRemoveSupportedChainEventIterator) Next() bool {
+	// If the iterator failed, stop iterating
+	if it.fail != nil {
+		return false
+	}
+	// If the iterator completed, deliver directly whatever's available
+	if it.done {
+		select {
+		case log := <-it.logs:
+			it.Event = new(Erc20gwRemoveSupportedChainEvent)
+			if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+				it.fail = err
+				return false
+			}
+			it.Event.Raw = log
+			return true
+
+		default:
+			return false
+		}
+	}
+	// Iterator still in progress, wait for either a data or an error event
+	select {
+	case log := <-it.logs:
+		it.Event = new(Erc20gwRemoveSupportedChainEvent)
+		if err := it.contract.UnpackLog(it.Event, it.event, log); err != nil {
+			it.fail = err
+			return false
+		}
+		it.Event.Raw = log
+		return true
+
+	case err := <-it.sub.Err():
+		it.done = true
+		it.fail = err
+		return it.Next()
+	}
+}
+
+// Error returns any retrieval or parsing error occurred during filtering.
+func (it *Erc20gwRemoveSupportedChainEventIterator) Error() error {
+	return it.fail
+}
+
+// Close terminates the iteration process, releasing any pending underlying
+// resources.
+func (it *Erc20gwRemoveSupportedChainEventIterator) Close() error {
+	it.sub.Unsubscribe()
+	return nil
+}
+
+// Erc20gwRemoveSupportedChainEvent represents a RemoveSupportedChainEvent event raised by the Erc20gw contract.
+type Erc20gwRemoveSupportedChainEvent struct {
+	Chain common.Hash
+	Raw   types.Log // Blockchain specific contextual infos
+}
+
+// FilterRemoveSupportedChainEvent is a free log retrieval operation binding the contract event 0xf300fb61ffb72cae02d1183cefa3fd9604388876c9dae6eab266d6a2a69ca635.
+//
+// Solidity: event RemoveSupportedChainEvent(string indexed chain)
+func (_Erc20gw *Erc20gwFilterer) FilterRemoveSupportedChainEvent(opts *bind.FilterOpts, chain []string) (*Erc20gwRemoveSupportedChainEventIterator, error) {
+
+	var chainRule []interface{}
+	for _, chainItem := range chain {
+		chainRule = append(chainRule, chainItem)
+	}
+
+	logs, sub, err := _Erc20gw.contract.FilterLogs(opts, "RemoveSupportedChainEvent", chainRule)
+	if err != nil {
+		return nil, err
+	}
+	return &Erc20gwRemoveSupportedChainEventIterator{contract: _Erc20gw.contract, event: "RemoveSupportedChainEvent", logs: logs, sub: sub}, nil
+}
+
+// WatchRemoveSupportedChainEvent is a free log subscription operation binding the contract event 0xf300fb61ffb72cae02d1183cefa3fd9604388876c9dae6eab266d6a2a69ca635.
+//
+// Solidity: event RemoveSupportedChainEvent(string indexed chain)
+func (_Erc20gw *Erc20gwFilterer) WatchRemoveSupportedChainEvent(opts *bind.WatchOpts, sink chan<- *Erc20gwRemoveSupportedChainEvent, chain []string) (event.Subscription, error) {
+
+	var chainRule []interface{}
+	for _, chainItem := range chain {
+		chainRule = append(chainRule, chainItem)
+	}
+
+	logs, sub, err := _Erc20gw.contract.WatchLogs(opts, "RemoveSupportedChainEvent", chainRule)
+	if err != nil {
+		return nil, err
+	}
+	return event.NewSubscription(func(quit <-chan struct{}) error {
+		defer sub.Unsubscribe()
+		for {
+			select {
+			case log := <-logs:
+				// New log arrived, parse the event and forward to the user
+				event := new(Erc20gwRemoveSupportedChainEvent)
+				if err := _Erc20gw.contract.UnpackLog(event, "RemoveSupportedChainEvent", log); err != nil {
+					return err
+				}
+				event.Raw = log
+
+				select {
+				case sink <- event:
+				case err := <-sub.Err():
+					return err
+				case <-quit:
+					return nil
+				}
+			case err := <-sub.Err():
+				return err
+			case <-quit:
+				return nil
+			}
+		}
+	}), nil
+}
+
+// ParseRemoveSupportedChainEvent is a log parse operation binding the contract event 0xf300fb61ffb72cae02d1183cefa3fd9604388876c9dae6eab266d6a2a69ca635.
+//
+// Solidity: event RemoveSupportedChainEvent(string indexed chain)
+func (_Erc20gw *Erc20gwFilterer) ParseRemoveSupportedChainEvent(log types.Log) (*Erc20gwRemoveSupportedChainEvent, error) {
+	event := new(Erc20gwRemoveSupportedChainEvent)
+	if err := _Erc20gw.contract.UnpackLog(event, "RemoveSupportedChainEvent", log); err != nil {
+		return nil, err
+	}
+	event.Raw = log
+	return event, nil
+}
+
 // Erc20gwTransferInEventIterator is returned from FilterTransferInEvent and is used to iterate over the raw logs and unpacked data for TransferInEvent events raised by the Erc20gw contract.
 type Erc20gwTransferInEventIterator struct {
 	Event *Erc20gwTransferInEvent // Event containing the contract specifics and raw log
@@ -516,17 +950,22 @@ func (it *Erc20gwTransferInEventIterator) Close() error {
 
 // Erc20gwTransferInEvent represents a TransferInEvent event raised by the Erc20gw contract.
 type Erc20gwTransferInEvent struct {
-	Token  common.Address
-	Sender common.Address
-	Amount *big.Int
-	Raw    types.Log // Blockchain specific contextual infos
+	DestChain common.Hash
+	Token     common.Address
+	Sender    common.Address
+	Amount    *big.Int
+	Raw       types.Log // Blockchain specific contextual infos
 }
 
-// FilterTransferInEvent is a free log retrieval operation binding the contract event 0xb7275fa1625b051238c95d6354c70b3ab71046400d703334de68a46923e6274c.
+// FilterTransferInEvent is a free log retrieval operation binding the contract event 0x28b8d4ba55a81ea694c0446c5914f4b2e4762e943d9fb9bae9e525ac9e788850.
 //
-// Solidity: event TransferInEvent(address indexed token, address indexed sender, uint256 indexed amount)
-func (_Erc20gw *Erc20gwFilterer) FilterTransferInEvent(opts *bind.FilterOpts, token []common.Address, sender []common.Address, amount []*big.Int) (*Erc20gwTransferInEventIterator, error) {
+// Solidity: event TransferInEvent(string indexed destChain, address indexed token, address indexed sender, uint256 amount)
+func (_Erc20gw *Erc20gwFilterer) FilterTransferInEvent(opts *bind.FilterOpts, destChain []string, token []common.Address, sender []common.Address) (*Erc20gwTransferInEventIterator, error) {
 
+	var destChainRule []interface{}
+	for _, destChainItem := range destChain {
+		destChainRule = append(destChainRule, destChainItem)
+	}
 	var tokenRule []interface{}
 	for _, tokenItem := range token {
 		tokenRule = append(tokenRule, tokenItem)
@@ -535,23 +974,23 @@ func (_Erc20gw *Erc20gwFilterer) FilterTransferInEvent(opts *bind.FilterOpts, to
 	for _, senderItem := range sender {
 		senderRule = append(senderRule, senderItem)
 	}
-	var amountRule []interface{}
-	for _, amountItem := range amount {
-		amountRule = append(amountRule, amountItem)
-	}
 
-	logs, sub, err := _Erc20gw.contract.FilterLogs(opts, "TransferInEvent", tokenRule, senderRule, amountRule)
+	logs, sub, err := _Erc20gw.contract.FilterLogs(opts, "TransferInEvent", destChainRule, tokenRule, senderRule)
 	if err != nil {
 		return nil, err
 	}
 	return &Erc20gwTransferInEventIterator{contract: _Erc20gw.contract, event: "TransferInEvent", logs: logs, sub: sub}, nil
 }
 
-// WatchTransferInEvent is a free log subscription operation binding the contract event 0xb7275fa1625b051238c95d6354c70b3ab71046400d703334de68a46923e6274c.
+// WatchTransferInEvent is a free log subscription operation binding the contract event 0x28b8d4ba55a81ea694c0446c5914f4b2e4762e943d9fb9bae9e525ac9e788850.
 //
-// Solidity: event TransferInEvent(address indexed token, address indexed sender, uint256 indexed amount)
-func (_Erc20gw *Erc20gwFilterer) WatchTransferInEvent(opts *bind.WatchOpts, sink chan<- *Erc20gwTransferInEvent, token []common.Address, sender []common.Address, amount []*big.Int) (event.Subscription, error) {
+// Solidity: event TransferInEvent(string indexed destChain, address indexed token, address indexed sender, uint256 amount)
+func (_Erc20gw *Erc20gwFilterer) WatchTransferInEvent(opts *bind.WatchOpts, sink chan<- *Erc20gwTransferInEvent, destChain []string, token []common.Address, sender []common.Address) (event.Subscription, error) {
 
+	var destChainRule []interface{}
+	for _, destChainItem := range destChain {
+		destChainRule = append(destChainRule, destChainItem)
+	}
 	var tokenRule []interface{}
 	for _, tokenItem := range token {
 		tokenRule = append(tokenRule, tokenItem)
@@ -560,12 +999,8 @@ func (_Erc20gw *Erc20gwFilterer) WatchTransferInEvent(opts *bind.WatchOpts, sink
 	for _, senderItem := range sender {
 		senderRule = append(senderRule, senderItem)
 	}
-	var amountRule []interface{}
-	for _, amountItem := range amount {
-		amountRule = append(amountRule, amountItem)
-	}
 
-	logs, sub, err := _Erc20gw.contract.WatchLogs(opts, "TransferInEvent", tokenRule, senderRule, amountRule)
+	logs, sub, err := _Erc20gw.contract.WatchLogs(opts, "TransferInEvent", destChainRule, tokenRule, senderRule)
 	if err != nil {
 		return nil, err
 	}
@@ -597,9 +1032,9 @@ func (_Erc20gw *Erc20gwFilterer) WatchTransferInEvent(opts *bind.WatchOpts, sink
 	}), nil
 }
 
-// ParseTransferInEvent is a log parse operation binding the contract event 0xb7275fa1625b051238c95d6354c70b3ab71046400d703334de68a46923e6274c.
+// ParseTransferInEvent is a log parse operation binding the contract event 0x28b8d4ba55a81ea694c0446c5914f4b2e4762e943d9fb9bae9e525ac9e788850.
 //
-// Solidity: event TransferInEvent(address indexed token, address indexed sender, uint256 indexed amount)
+// Solidity: event TransferInEvent(string indexed destChain, address indexed token, address indexed sender, uint256 amount)
 func (_Erc20gw *Erc20gwFilterer) ParseTransferInEvent(log types.Log) (*Erc20gwTransferInEvent, error) {
 	event := new(Erc20gwTransferInEvent)
 	if err := _Erc20gw.contract.UnpackLog(event, "TransferInEvent", log); err != nil {
