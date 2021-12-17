@@ -1,7 +1,0 @@
-syntax = "proto3";
-package types;
-
-message EthTx{
-  string author = 1;
-  bytes data = 2;
-}
