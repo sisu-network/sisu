@@ -158,8 +158,8 @@ contract ERC20Gateway is Ownable {
         }
     }
 
-    event TransferInEvent(string indexed destChain, address indexed token, address indexed sender, uint256 amount);
-    event TransferOutEvent(address indexed token, address indexed reipient, uint256 amount);
+    event TransferOutEvent(string indexed destChain, address indexed token, address indexed sender, uint256 amount);
+    event TransferInEvent(address indexed token, address indexed reipient, uint256 amount);
     event RemoveSupportedChainEvent(string indexed chain);
     event AddSupportedChainEvent(string indexed chain);
 
@@ -168,24 +168,24 @@ contract ERC20Gateway is Ownable {
         _;
     }
 
-    // User can call TransferIn to deposit their ERC20 token to gateway
-    // Anyone can call TransferIn
-    function TransferIn(string memory destChain, address _token, uint256 _amount) public isNotPaused {
+    // User can call TransferOut to deposit their ERC20 token to gateway
+    // Anyone can call TransferOut
+    function TransferOut(string memory destChain, address _token, uint256 _amount) public isNotPaused {
         require(supportedChains[destChain] == true, "destChain is not supported");
         TransferHelper.safeTransferFrom(_token, msg.sender, address(this), _amount);
 
-        emit TransferInEvent(destChain, _token, msg.sender, _amount);
+        emit TransferOutEvent(destChain, _token, msg.sender, _amount);
     }
 
-    // Pool owner call TransferOut to release user's ERC20 token in destination chain
+    // Pool owner call TransferIn to release user's ERC20 token in destination chain
     // Triggered by bridge's backend
-    function TransferOut(address _token, address recipient, uint256 _amount) public onlyOwner isNotPaused {
+    function TransferIn(address _token, address recipient, uint256 _amount) public onlyOwner isNotPaused {
         uint256 gwBalance = IERC20(_token).balanceOf(address(this));
         require(gwBalance >= _amount, "Gateway balance is less than required amount");
 
         TransferHelper.safeTransferFrom(_token, address(this), recipient, _amount);
 
-        emit TransferOutEvent(_token, recipient, _amount);
+        emit TransferInEvent(_token, recipient, _amount);
     }
 
     function PauseGateway() public onlyOwner {
