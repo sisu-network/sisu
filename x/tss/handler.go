@@ -19,7 +19,7 @@ func NewHandler(k keeper.DefaultKeeper, txSubmit common.TxSubmit, processor *Pro
 		switch msg := msg.(type) {
 		case *types.KeygenProposalWithSigner:
 			return handleKeygenProposal(ctx, msg, processor)
-		case *types.KeygenResult:
+		case *types.KeygenResultWithSigner:
 			return handleKeygenResult(ctx, msg, processor)
 		case *types.ObservedTx:
 			return handleObservedTx(ctx, msg, processor)
@@ -42,7 +42,7 @@ func handleKeygenProposal(ctx sdk.Context, msg *types.KeygenProposalWithSigner, 
 	}, err
 }
 
-func handleKeygenResult(ctx sdk.Context, msg *types.KeygenResult, processor *Processor) (*sdk.Result, error) {
+func handleKeygenResult(ctx sdk.Context, msg *types.KeygenResultWithSigner, processor *Processor) (*sdk.Result, error) {
 	log.Verbose("Handling TSS Keygen result")
 	data, err := processor.DeliverKeygenResult(ctx, msg)
 	return &sdk.Result{
