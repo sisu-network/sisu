@@ -188,12 +188,12 @@ contract ERC20Gateway is Ownable {
         emit TransferOutEvent(_token, recipient, _amount);
     }
 
-    function Pause() public onlyOwner {
+    function PauseGateway() public onlyOwner {
         require(pause == false, "Gateway is paused already");
         pause = true;
     }
 
-    function Resume() public onlyOwner {
+    function ResumeGateway() public onlyOwner {
         require(pause == true, "Gateway is not paused already");
         pause = false;
     }
