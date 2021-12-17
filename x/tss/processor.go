@@ -196,7 +196,7 @@ func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
 		switch msg.(type) {
 		case *types.KeygenProposalWithSigner:
 			return p.CheckKeyGenProposal(ctx, msg.(*types.KeygenProposalWithSigner))
-		case *types.KeygenResult:
+		case *types.KeygenResultWithSigner:
 		case *types.ObservedTx:
 			return p.CheckObservedTxs(ctx, msg.(*types.ObservedTx))
 		case *types.TxOut:

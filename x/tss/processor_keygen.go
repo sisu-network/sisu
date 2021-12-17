@@ -76,8 +76,9 @@ func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
 		resultEnum = types.KeygenResult_SUCCESS
 	}
 
-	msg := types.NewKeygenResult(signer.String(), result.KeyType, resultEnum, result.PubKeyBytes, result.Address)
-	p.txSubmit.SubmitMessage(msg)
+	wrappedMsg := types.NewKeygenResultWithSigner(signer.String(), result.KeyType, resultEnum, result.PubKeyBytes, result.Address)
+	p.txSubmit.SubmitMessage(wrappedMsg)
+	msg := wrappedMsg.Data
 
 	// Update the address and pubkey of the keygen database.
 	p.db.UpdateKeygenAddress(result.KeyType, result.Address, result.PubKeyBytes)
@@ -157,7 +158,9 @@ func (p *Processor) DeliverKeyGenProposal(ctx sdk.Context, wrapper *types.Keygen
 	return []byte{}, nil
 }
 
-func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult) ([]byte, error) {
+func (p *Processor) DeliverKeygenResult(ctx sdk.Context, wrappedMsg *types.KeygenResultWithSigner) ([]byte, error) {
+	msg := wrappedMsg.Data
+
 	// TODO: Save data to KV store.
 	if msg.Result == types.KeygenResult_SUCCESS {
 		log.Info("Keygen succeeded")
