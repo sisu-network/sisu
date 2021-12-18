@@ -168,13 +168,14 @@ func (p *Processor) checkKeygenResult(ctx sdk.Context, wrappedMsg *types.KeygenR
 
 		return nil
 	} else {
-		// Process failure case. For failure case, we allow multiple
+		// TODO: Process failure case. For failure case, we allow multiple message as each node can have
+		// different blames.
 	}
 
 	return nil
 }
 
-func (p *Processor) DeliverKeygenResult(ctx sdk.Context, wrappedMsg *types.KeygenResultWithSigner) ([]byte, error) {
+func (p *Processor) deliverKeygenResult(ctx sdk.Context, wrappedMsg *types.KeygenResultWithSigner) ([]byte, error) {
 	msg := wrappedMsg.Data
 
 	if msg.Result == types.KeygenResult_SUCCESS {

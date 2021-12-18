@@ -43,7 +43,7 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) error {
 	return nil
 }
 
-func (p *Processor) CheckObservedTxs(ctx sdk.Context, tx *tssTypes.ObservedTx) error {
+func (p *Processor) checkObservedTxs(ctx sdk.Context, tx *tssTypes.ObservedTx) error {
 	if p.keeper.IsObservedTxExisted(ctx, tx) {
 		return ErrMessageHasBeenProcessed
 	}
@@ -51,7 +51,7 @@ func (p *Processor) CheckObservedTxs(ctx sdk.Context, tx *tssTypes.ObservedTx) e
 }
 
 // Delivers observed Txs.
-func (p *Processor) DeliverObservedTxs(ctx sdk.Context, tx *tssTypes.ObservedTx) ([]byte, error) {
+func (p *Processor) deliverObservedTxs(ctx sdk.Context, tx *tssTypes.ObservedTx) ([]byte, error) {
 	if p.keeper.IsObservedTxExisted(ctx, tx) {
 		// The tx has been processed before.
 		return nil, nil
