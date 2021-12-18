@@ -120,6 +120,18 @@ func (mr *MockKeeperMockRecorder) SaveEthKeyAddrs(ctx, chain, keyAddrs interface
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveEthKeyAddrs", reflect.TypeOf((*MockKeeper)(nil).SaveEthKeyAddrs), ctx, chain, keyAddrs)
 }
 
+// SaveKeygen mocks base method.
+func (m *MockKeeper) SaveKeygen(ctx types.Context, msg *types0.KeygenResult) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SaveKeygen", ctx, msg)
+}
+
+// SaveKeygen indicates an expected call of SaveKeygen.
+func (mr *MockKeeperMockRecorder) SaveKeygen(ctx, msg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveKeygen", reflect.TypeOf((*MockKeeper)(nil).SaveKeygen), ctx, msg)
+}
+
 // SaveKeygenProposal mocks base method.
 func (m *MockKeeper) SaveKeygenProposal(ctx types.Context, msg *types0.KeygenProposal) {
 	m.ctrl.T.Helper()

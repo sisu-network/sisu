@@ -36,7 +36,7 @@ func NewHandler(k keeper.DefaultKeeper, txSubmit common.TxSubmit, processor *Pro
 }
 
 func handleKeygenProposal(ctx sdk.Context, msg *types.KeygenProposalWithSigner, processor *Processor) (*sdk.Result, error) {
-	data, err := processor.DeliverKeyGenProposal(ctx, msg)
+	data, err := processor.deliverKeyGenProposal(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err
