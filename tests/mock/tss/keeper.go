@@ -35,21 +35,6 @@ func (m *MockKeeper) EXPECT() *MockKeeperMockRecorder {
 	return m.recorder
 }
 
-// GetAllEthKeyAddrs mocks base method.
-func (m *MockKeeper) GetAllEthKeyAddrs(ctx types.Context) (map[string]map[string]bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllEthKeyAddrs", ctx)
-	ret0, _ := ret[0].(map[string]map[string]bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAllEthKeyAddrs indicates an expected call of GetAllEthKeyAddrs.
-func (mr *MockKeeperMockRecorder) GetAllEthKeyAddrs(ctx interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllEthKeyAddrs", reflect.TypeOf((*MockKeeper)(nil).GetAllEthKeyAddrs), ctx)
-}
-
 // GetAllPubKeys mocks base method.
 func (m *MockKeeper) GetAllPubKeys(ctx types.Context) map[string][]byte {
 	m.ctrl.T.Helper()
@@ -62,6 +47,20 @@ func (m *MockKeeper) GetAllPubKeys(ctx types.Context) map[string][]byte {
 func (mr *MockKeeperMockRecorder) GetAllPubKeys(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPubKeys", reflect.TypeOf((*MockKeeper)(nil).GetAllPubKeys), ctx)
+}
+
+// IsKeygenExisted mocks base method.
+func (m *MockKeeper) IsKeygenExisted(ctx types.Context, msg *types0.KeygenResult) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsKeygenExisted", ctx, msg)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsKeygenExisted indicates an expected call of IsKeygenExisted.
+func (mr *MockKeeperMockRecorder) IsKeygenExisted(ctx, msg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKeygenExisted", reflect.TypeOf((*MockKeeper)(nil).IsKeygenExisted), ctx, msg)
 }
 
 // IsKeygenProposalExisted mocks base method.
@@ -106,20 +105,6 @@ func (mr *MockKeeperMockRecorder) IsTxOutExisted(ctx, msg interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTxOutExisted", reflect.TypeOf((*MockKeeper)(nil).IsTxOutExisted), ctx, msg)
 }
 
-// SaveEthKeyAddrs mocks base method.
-func (m *MockKeeper) SaveEthKeyAddrs(ctx types.Context, chain string, keyAddrs map[string]bool) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SaveEthKeyAddrs", ctx, chain, keyAddrs)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SaveEthKeyAddrs indicates an expected call of SaveEthKeyAddrs.
-func (mr *MockKeeperMockRecorder) SaveEthKeyAddrs(ctx, chain, keyAddrs interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveEthKeyAddrs", reflect.TypeOf((*MockKeeper)(nil).SaveEthKeyAddrs), ctx, chain, keyAddrs)
-}
-
 // SaveKeygen mocks base method.
 func (m *MockKeeper) SaveKeygen(ctx types.Context, msg *types0.KeygenResult) {
 	m.ctrl.T.Helper()
@@ -154,18 +139,6 @@ func (m *MockKeeper) SaveObservedTx(ctx types.Context, msg *types0.ObservedTx) {
 func (mr *MockKeeperMockRecorder) SaveObservedTx(ctx, msg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveObservedTx", reflect.TypeOf((*MockKeeper)(nil).SaveObservedTx), ctx, msg)
-}
-
-// SavePubKey mocks base method.
-func (m *MockKeeper) SavePubKey(ctx types.Context, chain string, keyBytes []byte) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SavePubKey", ctx, chain, keyBytes)
-}
-
-// SavePubKey indicates an expected call of SavePubKey.
-func (mr *MockKeeperMockRecorder) SavePubKey(ctx, chain, keyBytes interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SavePubKey", reflect.TypeOf((*MockKeeper)(nil).SavePubKey), ctx, chain, keyBytes)
 }
 
 // SaveTxOut mocks base method.
