@@ -195,25 +195,20 @@ func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
 
 		switch msg.(type) {
 		case *types.KeygenProposalWithSigner:
-			return p.CheckKeyGenProposal(ctx, msg.(*types.KeygenProposalWithSigner))
+			return p.checkKeyGenProposal(ctx, msg.(*types.KeygenProposalWithSigner))
+
 		case *types.KeygenResultWithSigner:
+			return p.checkKeygenResult(ctx, msg.(*types.KeygenResultWithSigner))
+
 		case *types.ObservedTx:
 			return p.CheckObservedTxs(ctx, msg.(*types.ObservedTx))
+
 		case *types.TxOut:
 			return p.CheckTxOut(ctx, msg.(*types.TxOut))
+
 		case *types.KeysignResult:
 			return p.CheckKeysignResult(ctx, msg.(*types.KeysignResult))
 		}
-
-		// switch msg.Type() {
-		// case types.MsgTypeKeygenProposal:
-		// 	return p.CheckKeyGenProposal(msg.(*types.KeygenProposal))
-
-		// case types.MsgTypeKeygenResult:
-		// 	// TODO: check this keygen result.
-		// case types.MSG_TYPE_OBSERVED_TXS:
-
-		// }
 	}
 
 	return nil
