@@ -201,13 +201,13 @@ func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
 			return p.checkKeygenResult(ctx, msg.(*types.KeygenResultWithSigner))
 
 		case *types.ObservedTx:
-			return p.CheckObservedTxs(ctx, msg.(*types.ObservedTx))
+			return p.checkObservedTxs(ctx, msg.(*types.ObservedTx))
 
 		case *types.TxOut:
-			return p.CheckTxOut(ctx, msg.(*types.TxOut))
+			return p.checkTxOut(ctx, msg.(*types.TxOut))
 
 		case *types.KeysignResult:
-			return p.CheckKeysignResult(ctx, msg.(*types.KeysignResult))
+			return p.checkKeysignResult(ctx, msg.(*types.KeysignResult))
 		}
 	}
 
