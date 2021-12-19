@@ -211,3 +211,10 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		require.Len(t, txOutEntities, 1)
 	})
 }
+
+func TestTxOutProducer_createERC20TransferIn(t *testing.T) {
+	t.Skip()
+
+	// Please run ganache and deploy ERC20 gateway + ERC20 token before run this test
+	//txOutProducer := DefaultTxOutputProducer{}
+}
