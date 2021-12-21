@@ -66,7 +66,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		contractEntities := []*types.ContractEntity{
 			{
 				Chain: "eth",
-				Hash:  SupportedContracts[ContractErc20].AbiHash,
+				Hash:  SupportedContracts[ContractErc20Gateway].AbiHash,
 			},
 		}
 
@@ -142,7 +142,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 
 		contractEntity := &types.ContractEntity{
 			Chain: "eth",
-			Hash:  SupportedContracts[ContractErc20].AbiHash,
+			Hash:  SupportedContracts[ContractErc20Gateway].AbiHash,
 		}
 
 		privKey, err := crypto.GenerateKey()
@@ -159,7 +159,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		accAddress := []byte{1, 2, 3}
 		mockAppKeys.EXPECT().GetSignerAddress().Return(accAddress).Times(1)
 
-		abi, err := abi.JSON(strings.NewReader(SupportedContracts[ContractErc20].AbiString))
+		abi, err := abi.JSON(strings.NewReader(SupportedContracts[ContractErc20Gateway].AbiString))
 		require.NoError(t, err)
 		amount := big.NewInt(100)
 		hex := "ab1257528b3782fb40d7ed5f72e624b744dffb2f"
@@ -224,7 +224,7 @@ func TestTxOutProducer_createERC20TransferIn(t *testing.T) {
 	tokenAddr := "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
 	recipient := "0xbcd4042de499d14e55001ccbb24a551f3b954096"
 	amount := big.NewInt(9999)
-	txResponse, err := txOutProducer.createERC20TransferIn(gatewayAddr, tokenAddr, recipient, amount, "eth")
+	txResponse, err := txOutProducer.callERC20TransferIn(gatewayAddr, tokenAddr, recipient, amount, "eth")
 	require.NoError(t, err)
 
 	signer := ethTypes.NewEIP2930Signer(big.NewInt(31337))

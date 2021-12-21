@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	ContractErc20 = "erc20"
+	ContractErc20Gateway = "erc20"
 
 	MethodTransferOutFromContract = "transferOutFromContract"
 	MethodTransferIn              = "TransferIn"
@@ -22,7 +22,7 @@ var (
 		Abi                     abi.ABI
 		MethodNames             []string
 	}{
-		ContractErc20: {
+		ContractErc20Gateway: {
 			AbiString: erc20gateway.Erc20gwMetaData.ABI,
 			Bin:       erc20gateway.Erc20gwMetaData.Bin,
 			AbiHash:   utils.KeccakHash32(erc20gateway.Erc20gwMetaData.Bin),
@@ -33,9 +33,9 @@ var (
 // init initializes variables used throughout this package.
 func init() {
 	// 1. Initializes abi fields for SupportedContracts
-	if entry, ok := SupportedContracts[ContractErc20]; ok {
-		entry.Abi, _ = abi.JSON(strings.NewReader(SupportedContracts[ContractErc20].AbiString))
-		SupportedContracts[ContractErc20] = entry
+	if entry, ok := SupportedContracts[ContractErc20Gateway]; ok {
+		entry.Abi, _ = abi.JSON(strings.NewReader(SupportedContracts[ContractErc20Gateway].AbiString))
+		SupportedContracts[ContractErc20Gateway] = entry
 	}
 
 	// 2. Make sure that all the method names in our struct are present in the ABI methods. This is

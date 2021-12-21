@@ -30,7 +30,7 @@ var (
 
 // Erc20gwMetaData contains all meta data concerning the Erc20gw contract.
 var Erc20gwMetaData = &bind.MetaData{
-	ABI: "[{\"inputs\":[{\"internalType\":\"string[]\",\"name\":\"_supportedChains\",\"type\":\"string[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"string\",\"name\":\"chain\",\"type\":\"string\"}],\"name\":\"AddSupportedChainEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"string\",\"name\":\"chain\",\"type\":\"string\"}],\"name\":\"RemoveSupportedChainEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"reipient\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"TransferInEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"string\",\"name\":\"destChain\",\"type\":\"string\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"TransferOutEvent\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"chain\",\"type\":\"string\"}],\"name\":\"AddSupportedChain\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"PauseGateway\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"chain\",\"type\":\"string\"}],\"name\":\"RemoveSupportedChain\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"ResumeGateway\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_token\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"TransferIn\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"destChain\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"_token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"TransferOut\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pause\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"supportedChains\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
+	ABI: "[{\"inputs\":[{\"internalType\":\"string[]\",\"name\":\"_supportedChains\",\"type\":\"string[]\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"string\",\"name\":\"chain\",\"type\":\"string\"}],\"name\":\"AddSupportedChainEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"string\",\"name\":\"chain\",\"type\":\"string\"}],\"name\":\"RemoveSupportedChainEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"reipient\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"TransferInEvent\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"string\",\"name\":\"destChain\",\"type\":\"string\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"token\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"TransferOutEvent\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"chain\",\"type\":\"string\"}],\"name\":\"AddSupportedChain\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"PauseGateway\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"chain\",\"type\":\"string\"}],\"name\":\"RemoveSupportedChain\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"ResumeGateway\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_token\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"TransferIn\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"_destChain\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"_token\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"TransferOut\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"pause\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"name\":\"supportedChains\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]",
 }
 
 // Erc20gwABI is the input ABI used to generate the binding from.
@@ -358,44 +358,44 @@ func (_Erc20gw *Erc20gwTransactorSession) ResumeGateway() (*types.Transaction, e
 
 // TransferIn is a paid mutator transaction binding the contract method 0x8ab008cb.
 //
-// Solidity: function TransferIn(address _token, address recipient, uint256 _amount) returns()
-func (_Erc20gw *Erc20gwTransactor) TransferIn(opts *bind.TransactOpts, _token common.Address, recipient common.Address, _amount *big.Int) (*types.Transaction, error) {
-	return _Erc20gw.contract.Transact(opts, "TransferIn", _token, recipient, _amount)
+// Solidity: function TransferIn(address _token, address _recipient, uint256 _amount) returns()
+func (_Erc20gw *Erc20gwTransactor) TransferIn(opts *bind.TransactOpts, _token common.Address, _recipient common.Address, _amount *big.Int) (*types.Transaction, error) {
+	return _Erc20gw.contract.Transact(opts, "TransferIn", _token, _recipient, _amount)
 }
 
 // TransferIn is a paid mutator transaction binding the contract method 0x8ab008cb.
 //
-// Solidity: function TransferIn(address _token, address recipient, uint256 _amount) returns()
-func (_Erc20gw *Erc20gwSession) TransferIn(_token common.Address, recipient common.Address, _amount *big.Int) (*types.Transaction, error) {
-	return _Erc20gw.Contract.TransferIn(&_Erc20gw.TransactOpts, _token, recipient, _amount)
+// Solidity: function TransferIn(address _token, address _recipient, uint256 _amount) returns()
+func (_Erc20gw *Erc20gwSession) TransferIn(_token common.Address, _recipient common.Address, _amount *big.Int) (*types.Transaction, error) {
+	return _Erc20gw.Contract.TransferIn(&_Erc20gw.TransactOpts, _token, _recipient, _amount)
 }
 
 // TransferIn is a paid mutator transaction binding the contract method 0x8ab008cb.
 //
-// Solidity: function TransferIn(address _token, address recipient, uint256 _amount) returns()
-func (_Erc20gw *Erc20gwTransactorSession) TransferIn(_token common.Address, recipient common.Address, _amount *big.Int) (*types.Transaction, error) {
-	return _Erc20gw.Contract.TransferIn(&_Erc20gw.TransactOpts, _token, recipient, _amount)
+// Solidity: function TransferIn(address _token, address _recipient, uint256 _amount) returns()
+func (_Erc20gw *Erc20gwTransactorSession) TransferIn(_token common.Address, _recipient common.Address, _amount *big.Int) (*types.Transaction, error) {
+	return _Erc20gw.Contract.TransferIn(&_Erc20gw.TransactOpts, _token, _recipient, _amount)
 }
 
 // TransferOut is a paid mutator transaction binding the contract method 0xaa1e756e.
 //
-// Solidity: function TransferOut(string destChain, address _token, uint256 _amount) returns()
-func (_Erc20gw *Erc20gwTransactor) TransferOut(opts *bind.TransactOpts, destChain string, _token common.Address, _amount *big.Int) (*types.Transaction, error) {
-	return _Erc20gw.contract.Transact(opts, "TransferOut", destChain, _token, _amount)
+// Solidity: function TransferOut(string _destChain, address _token, uint256 _amount) returns()
+func (_Erc20gw *Erc20gwTransactor) TransferOut(opts *bind.TransactOpts, _destChain string, _token common.Address, _amount *big.Int) (*types.Transaction, error) {
+	return _Erc20gw.contract.Transact(opts, "TransferOut", _destChain, _token, _amount)
 }
 
 // TransferOut is a paid mutator transaction binding the contract method 0xaa1e756e.
 //
-// Solidity: function TransferOut(string destChain, address _token, uint256 _amount) returns()
-func (_Erc20gw *Erc20gwSession) TransferOut(destChain string, _token common.Address, _amount *big.Int) (*types.Transaction, error) {
-	return _Erc20gw.Contract.TransferOut(&_Erc20gw.TransactOpts, destChain, _token, _amount)
+// Solidity: function TransferOut(string _destChain, address _token, uint256 _amount) returns()
+func (_Erc20gw *Erc20gwSession) TransferOut(_destChain string, _token common.Address, _amount *big.Int) (*types.Transaction, error) {
+	return _Erc20gw.Contract.TransferOut(&_Erc20gw.TransactOpts, _destChain, _token, _amount)
 }
 
 // TransferOut is a paid mutator transaction binding the contract method 0xaa1e756e.
 //
-// Solidity: function TransferOut(string destChain, address _token, uint256 _amount) returns()
-func (_Erc20gw *Erc20gwTransactorSession) TransferOut(destChain string, _token common.Address, _amount *big.Int) (*types.Transaction, error) {
-	return _Erc20gw.Contract.TransferOut(&_Erc20gw.TransactOpts, destChain, _token, _amount)
+// Solidity: function TransferOut(string _destChain, address _token, uint256 _amount) returns()
+func (_Erc20gw *Erc20gwTransactorSession) TransferOut(_destChain string, _token common.Address, _amount *big.Int) (*types.Transaction, error) {
+	return _Erc20gw.Contract.TransferOut(&_Erc20gw.TransactOpts, _destChain, _token, _amount)
 }
 
 // RenounceOwnership is a paid mutator transaction binding the contract method 0x715018a6.

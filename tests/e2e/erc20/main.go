@@ -57,7 +57,7 @@ func getPrivateKeyAndAddress(hexString string) (*ecdsa.PrivateKey, ethcommon.Add
 }
 
 func deployErc20Gateway(client *ethclient.Client, chain string) ethcommon.Address {
-	erc20 := tss.SupportedContracts[tss.ContractErc20]
+	erc20 := tss.SupportedContracts[tss.ContractErc20Gateway]
 	parsedAbi, err := abi.JSON(strings.NewReader(erc20.AbiString))
 	if err != nil {
 		panic(err)
@@ -105,7 +105,7 @@ func testTransferIn(client *ethclient.Client, contractAddress ethcommon.Address,
 	assetId string, recipient ethcommon.Address, amount *big.Int) {
 	privKey, accountAddress := getPrivateKeyAndAddress(privateKeyHexes[0])
 
-	erc20Contract := tss.SupportedContracts[tss.ContractErc20]
+	erc20Contract := tss.SupportedContracts[tss.ContractErc20Gateway]
 
 	input, err := erc20Contract.Abi.Pack(tss.MethodTransferIn, assetId, recipient, amount)
 	if err != nil {

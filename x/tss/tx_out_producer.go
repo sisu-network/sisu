@@ -154,26 +154,22 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 	// 2. Check if this is a tx sent to one of our contracts.
 	if ethTx.To() != nil && len(ethTx.Data()) >= 4 {
-		//log.Verbose("ethTx.To() = ", ethTx.To())
-		//
-		//responseTx, err := p.createErc20ContractResponse(ethTx, tx.Chain)
-		//if err == nil {
-		//	outMsg := tsstypes.NewMsgTxOut(
-		//		p.appKeys.GetSignerAddress().String(),
-		//		tx.BlockHeight,
-		//		tx.Chain,
-		//		tx.TxHash,
-		//		responseTx.OutChain, // Could be different chain
-		//		responseTx.RawBytes,
-		//	)
-		//
-		//	outMsgs = append(outMsgs, outMsg)
-		//
-		//	outEntity := tssTypes.TxOutToEntity(outMsg)
-		//	outEntities = append(outEntities, outEntity)
-		//} else {
-		//	log.Error("cannot get response for erc20 tx, err =", err)
-		//}
+		responseTx, err := p.processERC20TransferIn(ethTx, "eth")
+		if err == nil {
+			outMsg := tsstypes.NewMsgTxOut(
+				p.appKeys.GetSignerAddress().String(),
+				tx.BlockHeight,
+				tx.Chain,
+				tx.TxHash,
+				responseTx.OutChain, // Could be different chain
+				responseTx.RawBytes,
+			)
+
+			outMsgs = append(outMsgs, outMsg)
+
+			outEntity := tssTypes.TxOutToEntity(outMsg)
+			outEntities = append(outEntities, outEntity)
+		}
 	}
 
 	// 3. Check other types of transaction.
@@ -225,7 +221,7 @@ func (p *DefaultTxOutputProducer) SaveContractsToDeploy(chain string) {
 }
 
 func (p *DefaultTxOutputProducer) getContractTx(contract *tsstypes.ContractEntity, nonce int64) *ethTypes.Transaction {
-	erc20 := SupportedContracts[ContractErc20]
+	erc20 := SupportedContracts[ContractErc20Gateway]
 	switch contract.Hash {
 	case erc20.AbiHash:
 		// This is erc20 contract.
