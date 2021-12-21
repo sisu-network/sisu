@@ -19,7 +19,7 @@ func NewHandler(k keeper.DefaultKeeper, txSubmit common.TxSubmit, processor *Pro
 		switch msg := msg.(type) {
 		case *types.KeygenProposalWithSigner:
 			return handleKeygenProposal(ctx, msg, processor)
-		case *types.KeygenResult:
+		case *types.KeygenResultWithSigner:
 			return handleKeygenResult(ctx, msg, processor)
 		case *types.ObservedTx:
 			return handleObservedTx(ctx, msg, processor)
@@ -36,15 +36,15 @@ func NewHandler(k keeper.DefaultKeeper, txSubmit common.TxSubmit, processor *Pro
 }
 
 func handleKeygenProposal(ctx sdk.Context, msg *types.KeygenProposalWithSigner, processor *Processor) (*sdk.Result, error) {
-	data, err := processor.DeliverKeyGenProposal(ctx, msg)
+	data, err := processor.deliverKeyGenProposal(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err
 }
 
-func handleKeygenResult(ctx sdk.Context, msg *types.KeygenResult, processor *Processor) (*sdk.Result, error) {
+func handleKeygenResult(ctx sdk.Context, msg *types.KeygenResultWithSigner, processor *Processor) (*sdk.Result, error) {
 	log.Verbose("Handling TSS Keygen result")
-	data, err := processor.DeliverKeygenResult(ctx, msg)
+	data, err := processor.deliverKeygenResult(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err
@@ -53,7 +53,7 @@ func handleKeygenResult(ctx sdk.Context, msg *types.KeygenResult, processor *Pro
 func handleObservedTx(ctx sdk.Context, msg *types.ObservedTx, processor *Processor) (*sdk.Result, error) {
 	// Update the count for all txs.
 	log.Verbose("Handling ObservedTxs for chain", msg.Chain)
-	data, err := processor.DeliverObservedTxs(ctx, msg)
+	data, err := processor.deliverObservedTxs(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err
@@ -61,7 +61,7 @@ func handleObservedTx(ctx sdk.Context, msg *types.ObservedTx, processor *Process
 
 func handleTxOut(ctx sdk.Context, msg *types.TxOut, processor *Processor) (*sdk.Result, error) {
 	log.Verbose("Handling Txout, hash = ", msg.GetHash())
-	data, err := processor.DeliverTxOut(ctx, msg)
+	data, err := processor.deliverTxOut(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err
@@ -69,7 +69,7 @@ func handleTxOut(ctx sdk.Context, msg *types.TxOut, processor *Processor) (*sdk.
 
 func handleKeysignResult(ctx sdk.Context, msg *types.KeysignResult, processor *Processor) (*sdk.Result, error) {
 	log.Verbose("Handling Keysign Result")
-	data, err := processor.DeliverKeysignResult(ctx, msg)
+	data, err := processor.deliverKeysignResult(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err

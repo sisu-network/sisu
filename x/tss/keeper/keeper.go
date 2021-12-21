@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/sisu-network/cosmos-sdk/store/prefix"
@@ -11,22 +10,23 @@ import (
 	"github.com/sisu-network/sisu/x/tss/types"
 )
 
-// TODO: clean up this list
 var (
-	prefixObservedTx      = []byte{0x01}
-	prefixPublicKeyBytes  = []byte{0x02}
-	prefixEthKeyAddresses = []byte{0x03}
-	prefixTxOut           = []byte{0x04}
-	prefixKeygenProposal  = []byte{0x05}
-
-	// Deprecated
-	KEY_ETH_KEY_ADDRESS = "eth_key_address_%s" // chain
+	prefixKeygenProposal = []byte{0x01}
+	prefixKeygen         = []byte{0x02}
+	prefixObservedTx     = []byte{0x03}
+	prefixTxOut          = []byte{0x04}
 )
 
 // go:generate mockgen -source x/tss/keeper/keeper.go -destination=tests/mock/tss/keeper.go -package=mock
 type Keeper interface {
+	// KeygenProposal
 	SaveKeygenProposal(ctx sdk.Context, msg *types.KeygenProposal)
 	IsKeygenProposalExisted(ctx sdk.Context, msg *types.KeygenProposal) bool
+
+	// Keygen
+	SaveKeygen(ctx sdk.Context, msg *types.KeygenResult)
+	GetAllPubKeys(ctx sdk.Context) map[string][]byte
+	IsKeygenExisted(ctx sdk.Context, msg *types.KeygenResult) bool
 
 	// Observed Tx
 	SaveObservedTx(ctx sdk.Context, msg *types.ObservedTx)
@@ -35,11 +35,6 @@ type Keeper interface {
 	// TxOut
 	SaveTxOut(ctx sdk.Context, msg *types.TxOut)
 	IsTxOutExisted(ctx sdk.Context, msg *types.TxOut) bool
-
-	SavePubKey(ctx sdk.Context, chain string, keyBytes []byte)
-	GetAllPubKeys(ctx sdk.Context) map[string][]byte
-	SaveEthKeyAddrs(ctx sdk.Context, chain string, keyAddrs map[string]bool) error
-	GetAllEthKeyAddrs(ctx sdk.Context) (map[string]map[string]bool, error)
 }
 
 type DefaultKeeper struct {
@@ -55,17 +50,23 @@ func NewKeeper(storeKey sdk.StoreKey) *DefaultKeeper {
 }
 
 func (k *DefaultKeeper) getObservedTxKey(chain string, height int64, hash string) []byte {
-	// Replace all the _ in the chain.
+	// chain, height, hash
 	return []byte(fmt.Sprintf("%s__%d__%s", chain, height, hash))
 }
 
 func (k *DefaultKeeper) getTxOutKey(inChain string, outChain string, height int64, hash string) []byte {
-	// Replace all the _ in the chain.
+	// inChain, outChain, height, hash
 	return []byte(fmt.Sprintf("%s__%s__%d__%s", inChain, outChain, height, hash))
 }
 
 func (k *DefaultKeeper) getKeygenProposalKey(keyType string, id string) []byte {
+	// keyType + id
 	return []byte(fmt.Sprintf("%s__%s", keyType, id))
+}
+
+func (k *DefaultKeeper) getKeygenResultKey(keyType string) []byte {
+	// keyType
+	return []byte(fmt.Sprintf("%s", keyType))
 }
 
 func (k *DefaultKeeper) SaveKeygenProposal(ctx sdk.Context, msg *types.KeygenProposal) {
@@ -82,6 +83,46 @@ func (k *DefaultKeeper) SaveKeygenProposal(ctx sdk.Context, msg *types.KeygenPro
 func (k *DefaultKeeper) IsKeygenProposalExisted(ctx sdk.Context, msg *types.KeygenProposal) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenProposal)
 	key := k.getKeygenProposalKey(msg.KeyType, msg.Id)
+
+	return store.Get(key) != nil
+}
+
+func (k *DefaultKeeper) SaveKeygen(ctx sdk.Context, msg *types.KeygenResult) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygen)
+	key := k.getKeygenResultKey(msg.KeyType)
+
+	bz, err := msg.Marshal()
+	if err != nil {
+		log.Error("Cannot marshal KeygenResult message, err = ", err)
+		return
+	}
+
+	store.Set(key, bz)
+}
+
+func (k *DefaultKeeper) GetAllPubKeys(ctx sdk.Context) map[string][]byte {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygen)
+
+	iter := store.Iterator(nil, nil)
+	ret := make(map[string][]byte)
+	for ; iter.Valid(); iter.Next() {
+		bz := iter.Value()
+		msg := &types.KeygenResult{}
+		err := msg.Unmarshal(bz)
+		if err != nil {
+			log.Error("cannot unmarshal KeygenResult message, err = ", err)
+			continue
+		}
+
+		ret[string(iter.Key())] = msg.PubKeyBytes
+	}
+
+	return ret
+}
+
+func (k *DefaultKeeper) IsKeygenExisted(ctx sdk.Context, msg *types.KeygenResult) bool {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygen)
+	key := k.getKeygenResultKey(msg.KeyType)
 
 	return store.Get(key) != nil
 }
@@ -116,52 +157,4 @@ func (k *DefaultKeeper) IsTxOutExisted(ctx sdk.Context, msg *types.TxOut) bool {
 	key := k.getTxOutKey(msg.InChain, msg.OutChain, msg.InBlockHeight, outHash)
 
 	return store.Get(key) != nil
-}
-
-func (k *DefaultKeeper) SavePubKey(ctx sdk.Context, keyType string, keyBytes []byte) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPublicKeyBytes)
-	store.Set([]byte(keyType), keyBytes)
-}
-
-func (k *DefaultKeeper) GetAllPubKeys(ctx sdk.Context) map[string][]byte {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPublicKeyBytes)
-	iter := store.Iterator(nil, nil)
-	ret := make(map[string][]byte)
-	for ; iter.Valid(); iter.Next() {
-		ret[string(iter.Key())] = iter.Value()
-	}
-
-	return ret
-}
-
-func (k *DefaultKeeper) SaveEthKeyAddrs(ctx sdk.Context, chain string, keyAddrs map[string]bool) error {
-	key := fmt.Sprintf(KEY_ETH_KEY_ADDRESS, chain)
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixEthKeyAddresses)
-
-	bz, err := json.Marshal(keyAddrs)
-	if err != nil {
-		log.Error("cannot marshal key addrs, err =", err)
-		return err
-	}
-
-	store.Set([]byte(key), bz)
-	return nil
-}
-
-func (k *DefaultKeeper) GetAllEthKeyAddrs(ctx sdk.Context) (map[string]map[string]bool, error) {
-	m := make(map[string]map[string]bool)
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixEthKeyAddresses)
-
-	iter := store.Iterator(nil, nil)
-	for ; iter.Valid(); iter.Next() {
-		m2 := make(map[string]bool)
-		err := json.Unmarshal(iter.Value(), &m2)
-		if err != nil {
-			log.Error("cannot unmarshal value with key", iter.Key())
-			return nil, err
-		}
-		m[string(iter.Key())] = m2
-	}
-
-	return m, nil
 }

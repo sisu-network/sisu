@@ -43,8 +43,8 @@ func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.Observed
 	return outMsgs
 }
 
-// CheckTxOut checks if a TxOut message is valid before it is added into Sisu block.
-func (p *Processor) CheckTxOut(ctx sdk.Context, msg *types.TxOut) error {
+// checkTxOut checks if a TxOut message is valid before it is added into Sisu block.
+func (p *Processor) checkTxOut(ctx sdk.Context, msg *types.TxOut) error {
 	if p.keeper.IsTxOutExisted(ctx, msg) {
 		return ErrMessageHasBeenProcessed
 	}
@@ -52,9 +52,9 @@ func (p *Processor) CheckTxOut(ctx sdk.Context, msg *types.TxOut) error {
 	return nil
 }
 
-// DeliverTxOut executes a TxOut transaction after it's included in Sisu block. If this node is
+// deliverTxOut executes a TxOut transaction after it's included in Sisu block. If this node is
 // catching up with the network, we would not send the tx to TSS for signing.
-func (p *Processor) DeliverTxOut(ctx sdk.Context, tx *types.TxOut) ([]byte, error) {
+func (p *Processor) deliverTxOut(ctx sdk.Context, tx *types.TxOut) ([]byte, error) {
 	if p.keeper.IsTxOutExisted(ctx, tx) {
 		return nil, nil
 	}

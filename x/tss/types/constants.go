@@ -2,7 +2,8 @@ package types
 
 const (
 	MsgTypeKeygenProposalWithSigner = "KeygenProposalWithSigner"
-	MsgTypeKeygenResult             = "KeygenResult"
+	MsgTypeKeygenResultWithSigner   = "KeygenResultWithSigner"
 	MsgTypeObservedTx               = "ObservedTx"
 	MsgTypeTxOut                    = "TxOut"
+	MsgTypeKeysignResult            = "KeysignResult"
 )
