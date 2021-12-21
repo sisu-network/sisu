@@ -13,7 +13,9 @@ import (
 func (p *DefaultTxOutputProducer) createERC20TransferIn(gatewayAddress, tokenAddress, recipient string, amount *big.Int, destChain string) (*types.TxResponse, error) {
 	erc20GatewayContract := SupportedContracts[ContractErc20]
 
-	input, err := erc20GatewayContract.Abi.Pack(MethodTransferIn, ethcommon.HexToAddress(tokenAddress), recipient, amount)
+	tokenAddr := ethcommon.HexToAddress(tokenAddress)
+	recipientAddr := ethcommon.HexToAddress(recipient)
+	input, err := erc20GatewayContract.Abi.Pack(MethodTransferIn, tokenAddr, recipientAddr, amount)
 	if err != nil {
 		log.Error(err)
 		return nil, err

@@ -179,7 +179,7 @@ contract ERC20Gateway is Ownable {
         uint256 gwBalance = IERC20(_token).balanceOf(address(this));
         require(gwBalance >= _amount, "Gateway balance is less than required amount");
 
-        TransferHelper.safeTransferFrom(_token, address(this), recipient, _amount);
+        TransferHelper.safeTransfer(_token, recipient, _amount);
 
         emit TransferInEvent(_token, recipient, _amount);
     }
