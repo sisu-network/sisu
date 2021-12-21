@@ -71,7 +71,7 @@ func TestDeliverTxOut(t *testing.T) {
 	}
 	p.currentHeight.Store(int64(0))
 
-	bytes, err := p.DeliverTxOut(ctx, &txOut)
+	bytes, err := p.deliverTxOut(ctx, &txOut)
 	require.NoError(t, err)
 	require.Empty(t, bytes)
 }
@@ -106,7 +106,7 @@ func TestDeliverTxOut_BlockCatchingUp(t *testing.T) {
 		globalData: mockGlobalData,
 	}
 
-	bytes, err := p.DeliverTxOut(ctx, &txOut)
+	bytes, err := p.deliverTxOut(ctx, &txOut)
 	require.NoError(t, err)
 	require.Empty(t, bytes)
 }

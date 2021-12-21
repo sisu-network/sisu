@@ -15,7 +15,7 @@ import (
 )
 
 // Test happy case for keygen proposal.
-func TestProcessor_DeliverKeygenProposal(t *testing.T) {
+func TestProcessor_deliverKeyGenProposal(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
 	t.Cleanup(func() {
@@ -58,11 +58,11 @@ func TestProcessor_DeliverKeygenProposal(t *testing.T) {
 	}
 	p.currentHeight.Store(int64(0))
 
-	p.DeliverKeyGenProposal(ctx, wrapper)
+	p.deliverKeyGenProposal(ctx, wrapper)
 }
 
 // Test Deliver KeygenProposal while the node is catching up.
-func TestProcessor_DeliverKeygenProposal_CatchingUp(t *testing.T) {
+func TestProcessor_deliverKeyGenProposal_CatchingUp(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
 	t.Cleanup(func() {
@@ -96,5 +96,5 @@ func TestProcessor_DeliverKeygenProposal_CatchingUp(t *testing.T) {
 	}
 	p.currentHeight.Store(int64(0))
 
-	p.DeliverKeyGenProposal(ctx, wrapper)
+	p.deliverKeyGenProposal(ctx, wrapper)
 }

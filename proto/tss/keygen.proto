@@ -15,12 +15,16 @@ message KeygenProposalWithSigner {
   KeygenProposal data = 2;
 }
 
-message KeygenResult {
+message KeygenResultWithSigner {
   string signer = 1;
-  string keyType = 2;
-  bytes pubKeyBytes = 3;
-  string address = 4;
-  Result result = 5;
+  KeygenResult data = 2;
+}
+
+message KeygenResult {
+  string keyType = 1;
+  bytes pubKeyBytes = 2;
+  string address = 3;
+  Result result = 4;
 
   enum Result {
     SUCCESS = 0;

@@ -76,8 +76,9 @@ func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
 		resultEnum = types.KeygenResult_SUCCESS
 	}
 
-	msg := types.NewKeygenResult(signer.String(), result.KeyType, resultEnum, result.PubKeyBytes, result.Address)
-	p.txSubmit.SubmitMessage(msg)
+	wrappedMsg := types.NewKeygenResultWithSigner(signer.String(), result.KeyType, resultEnum, result.PubKeyBytes, result.Address)
+	p.txSubmit.SubmitMessage(wrappedMsg)
+	msg := wrappedMsg.Data
 
 	// Update the address and pubkey of the keygen database.
 	p.db.UpdateKeygenAddress(result.KeyType, result.Address, result.PubKeyBytes)
@@ -94,13 +95,13 @@ func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
 		if deyesClient == nil {
 			log.Critical("Cannot find deyes client for chain", chain)
 		} else {
-			log.Verbose("adding watcher address", result.Address, "for chain", chain)
+			log.Verbose("adding watcher address ", result.Address, " for chain ", chain)
 			deyesClient.AddWatchAddresses(chain, []string{result.Address})
 		}
 	}
 }
 
-func (p *Processor) CheckKeyGenProposal(ctx sdk.Context, wrapper *types.KeygenProposalWithSigner) error {
+func (p *Processor) checkKeyGenProposal(ctx sdk.Context, wrapper *types.KeygenProposalWithSigner) error {
 	msg := wrapper.Data
 
 	if p.keeper.IsKeygenProposalExisted(ctx, msg) {
@@ -111,7 +112,7 @@ func (p *Processor) CheckKeyGenProposal(ctx sdk.Context, wrapper *types.KeygenPr
 	return nil
 }
 
-func (p *Processor) DeliverKeyGenProposal(ctx sdk.Context, wrapper *types.KeygenProposalWithSigner) ([]byte, error) {
+func (p *Processor) deliverKeyGenProposal(ctx sdk.Context, wrapper *types.KeygenProposalWithSigner) ([]byte, error) {
 	msg := wrapper.Data
 
 	if p.keeper.IsKeygenProposalExisted(ctx, msg) {
@@ -157,49 +158,50 @@ func (p *Processor) DeliverKeyGenProposal(ctx sdk.Context, wrapper *types.Keygen
 	return []byte{}, nil
 }
 
-func (p *Processor) DeliverKeygenResult(ctx sdk.Context, msg *types.KeygenResult) ([]byte, error) {
-	// TODO: Save data to KV store.
+func (p *Processor) checkKeygenResult(ctx sdk.Context, wrappedMsg *types.KeygenResultWithSigner) error {
+	msg := wrappedMsg.Data
+
+	if msg.Result == types.KeygenResult_SUCCESS {
+		if p.keeper.IsKeygenExisted(ctx, msg) {
+			return ErrMessageHasBeenProcessed
+		}
+
+		return nil
+	} else {
+		// TODO: Process failure case. For failure case, we allow multiple message as each node can have
+		// different blames.
+	}
+
+	return nil
+}
+
+func (p *Processor) deliverKeygenResult(ctx sdk.Context, wrappedMsg *types.KeygenResultWithSigner) ([]byte, error) {
+	msg := wrappedMsg.Data
+
 	if msg.Result == types.KeygenResult_SUCCESS {
 		log.Info("Keygen succeeded")
-		keygenEntity, err := p.db.GetKeyGen(libchain.KEY_TYPE_ECDSA)
-		if err != nil {
-			log.Error("Cannot get keygen, err = ", err)
-			return nil, err
-		}
 
-		if keygenEntity.Status == types.KEYGEN_STATUS_GENERATED {
-			log.Info("Keygen result has been processed for keytype ", msg.KeyType)
-			return nil, nil
-		}
+		// Save to KVStore
+		p.keeper.SaveKeygen(ctx, msg)
 
-		// Update key address
-		p.db.UpdateKeygenStatus(msg.KeyType, types.KEYGEN_STATUS_GENERATED)
-
-		// If this keygen is successful, prepare for contract deployment.
-		// Save the pubkey to the keeper.
-		p.keeper.SavePubKey(ctx, msg.KeyType, msg.PubKeyBytes)
-
-		// Check and see if we need to deploy some contracts. If we do, push them into the contract
-		// queue for deployment later (after we receive some funding like ether to execute contract
-		// deployment).
-
-		for _, chainConfig := range p.config.SupportedChains {
-			chain := chainConfig.Symbol
-			if libchain.GetKeyTypeForChain(chain) == msg.KeyType {
-				log.Info("Saving contracts for chain ", chain)
-				p.txOutputProducer.SaveContractsToDeploy(chain)
-			}
-
-			// If this is a pubkey address of a ETH chain, save it to the store because we want to watch
-			// transaction that funds the address (we will deploy contracts later).
-			if libchain.IsETHBasedChain(chain) {
-				log.Info("Adding key address ", msg.Address)
-				p.txOutputProducer.AddKeyAddress(ctx, chain, msg.Address)
-			}
-		}
+		// We need to add this new watched address even though we are still catching up with blockchain.
+		p.addWatchAddressAfterKeygen(ctx, msg)
 	} else {
 		// TODO: handle failure case
 	}
 
 	return nil, nil
+}
+
+func (p *Processor) addWatchAddressAfterKeygen(ctx sdk.Context, msg *types.KeygenResult) {
+	// Check and see if we need to deploy some contracts. If we do, push them into the contract
+	// queue for deployment later (after we receive some funding like ether to execute contract
+	// deployment).
+	for _, chainConfig := range p.config.SupportedChains {
+		chain := chainConfig.Symbol
+		if libchain.GetKeyTypeForChain(chain) == msg.KeyType {
+			log.Info("Saving contracts for chain ", chain)
+			p.txOutputProducer.SaveContractsToDeploy(chain)
+		}
+	}
 }
