@@ -1,6 +1,8 @@
 package tss
 
 import (
+	"fmt"
+
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
@@ -108,6 +110,7 @@ func (p *Processor) doTss(msg *types.KeygenProposal, blockHeight int64) {
 	}
 
 	if keygenEntity != nil && keygenEntity.Status != "" {
+		fmt.Println("keygenEntity.Status = ", keygenEntity.Status)
 		log.Info("Deliver keygen proposal: keygen has been processed")
 		return
 	}

@@ -9,10 +9,13 @@ var _ sdk.Msg = &KeygenResultWithSigner{}
 
 func NewKeygenResultWithSigner(signer string, keyType string, result KeygenResult_Result, pubKeyBytes []byte, address string) *KeygenResultWithSigner {
 	keygenResult := &KeygenResult{
-		KeyType:     keyType,
-		Result:      result,
-		PubKeyBytes: pubKeyBytes,
-		Address:     address,
+		Keygen: &Keygen{
+			KeyType:     keyType,
+			PubKeyBytes: pubKeyBytes,
+			Address:     address,
+		},
+
+		Result: result,
 	}
 
 	return &KeygenResultWithSigner{

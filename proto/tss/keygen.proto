@@ -21,13 +21,19 @@ message KeygenResultWithSigner {
 }
 
 message KeygenResult {
-  string keyType = 1;
-  bytes pubKeyBytes = 2;
-  string address = 3;
-  Result result = 4;
+  Keygen keygen = 1;
+  Result result = 2;
 
   enum Result {
     SUCCESS = 0;
     FAILURE = 1;
   }
+}
+
+message Keygen {
+  string keyType = 1;
+  bytes pubKeyBytes = 2;
+  string address = 3;
+  string status = 4;
+  int64 startBlock = 5;
 }

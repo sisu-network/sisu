@@ -36,7 +36,7 @@ func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
 		chain := chainConfig.Symbol
 		deyesClient := p.deyesClients[chain]
 
-		if libchain.GetKeyTypeForChain(chain) != msg.KeyType {
+		if libchain.GetKeyTypeForChain(chain) != msg.Keygen.KeyType {
 			continue
 		}
 
@@ -90,7 +90,7 @@ func (p *Processor) addWatchAddressAfterKeygen(ctx sdk.Context, msg *types.Keyge
 	// deployment).
 	for _, chainConfig := range p.config.SupportedChains {
 		chain := chainConfig.Symbol
-		if libchain.GetKeyTypeForChain(chain) == msg.KeyType {
+		if libchain.GetKeyTypeForChain(chain) == msg.Keygen.KeyType {
 			log.Info("Saving contracts for chain ", chain)
 			p.txOutputProducer.SaveContractsToDeploy(chain)
 		}

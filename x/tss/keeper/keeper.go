@@ -89,7 +89,7 @@ func (k *DefaultKeeper) IsKeygenProposalExisted(ctx sdk.Context, msg *types.Keyg
 
 func (k *DefaultKeeper) SaveKeygen(ctx sdk.Context, msg *types.KeygenResult) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygen)
-	key := k.getKeygenResultKey(msg.KeyType)
+	key := k.getKeygenResultKey(msg.Keygen.KeyType)
 
 	bz, err := msg.Marshal()
 	if err != nil {
@@ -114,7 +114,7 @@ func (k *DefaultKeeper) GetAllPubKeys(ctx sdk.Context) map[string][]byte {
 			continue
 		}
 
-		ret[string(iter.Key())] = msg.PubKeyBytes
+		ret[string(iter.Key())] = msg.Keygen.PubKeyBytes
 	}
 
 	return ret
@@ -122,7 +122,7 @@ func (k *DefaultKeeper) GetAllPubKeys(ctx sdk.Context) map[string][]byte {
 
 func (k *DefaultKeeper) IsKeygenExisted(ctx sdk.Context, msg *types.KeygenResult) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygen)
-	key := k.getKeygenResultKey(msg.KeyType)
+	key := k.getKeygenResultKey(msg.Keygen.KeyType)
 
 	return store.Get(key) != nil
 }
