@@ -1,8 +1,6 @@
 package tss
 
 import (
-	"fmt"
-
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
@@ -75,6 +73,7 @@ func (p *Processor) checkKeyGenProposal(ctx sdk.Context, wrapper *types.KeygenPr
 func (p *Processor) deliverKeyGenProposal(ctx sdk.Context, wrapper *types.KeygenProposalWithSigner) ([]byte, error) {
 	msg := wrapper.Data
 
+	// TODO: Check if we have processed a keygen proposal recently.
 	if p.keeper.IsKeygenProposalExisted(ctx, msg) {
 		log.Verbose("The keygen proposal has been processed")
 		return nil, nil
@@ -103,24 +102,12 @@ func (p *Processor) deliverKeyGenProposal(ctx sdk.Context, wrapper *types.Keygen
 func (p *Processor) doTss(msg *types.KeygenProposal, blockHeight int64) {
 	log.Info("Delivering keygen proposal")
 
-	keygenEntity, err := p.db.GetKeyGen(libchain.KEY_TYPE_ECDSA)
-	if err != nil {
-		log.Error("Failed to get keygen entity")
-		return
-	}
-
-	if keygenEntity != nil && keygenEntity.Status != "" {
-		fmt.Println("keygenEntity.Status = ", keygenEntity.Status)
-		log.Info("Deliver keygen proposal: keygen has been processed")
-		return
-	}
-
 	// Send a signal to Dheart to start keygen process.
 	log.Info("Sending keygen request to Dheart. KeyType =", msg.KeyType)
 	pubKeys := p.partyManager.GetActivePartyPubkeys()
 	keygenId := GetKeygenId(msg.KeyType, blockHeight, pubKeys)
 
-	err = p.dheartClient.KeyGen(keygenId, msg.KeyType, pubKeys)
+	err := p.dheartClient.KeyGen(keygenId, msg.KeyType, pubKeys)
 	if err != nil {
 		log.Error(err)
 		return

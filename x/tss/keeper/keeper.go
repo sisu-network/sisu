@@ -11,10 +11,12 @@ import (
 )
 
 var (
-	prefixKeygenProposal = []byte{0x01}
-	prefixKeygen         = []byte{0x02}
-	prefixObservedTx     = []byte{0x03}
-	prefixTxOut          = []byte{0x04}
+	prefixKeygenProposal   = []byte{0x01}
+	prefixKeygen           = []byte{0x02}
+	prefixContract         = []byte{0x03}
+	prefixContractByteCode = []byte{0x04}
+	prefixObservedTx       = []byte{0x05}
+	prefixTxOut            = []byte{0x06}
 )
 
 // go:generate mockgen -source x/tss/keeper/keeper.go -destination=tests/mock/tss/keeper.go -package=mock
@@ -27,6 +29,10 @@ type Keeper interface {
 	SaveKeygen(ctx sdk.Context, msg *types.KeygenResult)
 	GetAllPubKeys(ctx sdk.Context) map[string][]byte
 	IsKeygenExisted(ctx sdk.Context, msg *types.KeygenResult) bool
+
+	// Contracts
+	SaveContracts(ctx sdk.Context, msgs []*types.Contract)
+	GetPendingContracts(ctx sdk.Context, chain string) []*types.Contract
 
 	// Observed Tx
 	SaveObservedTx(ctx sdk.Context, msg *types.ObservedTx)
@@ -59,9 +65,9 @@ func (k *DefaultKeeper) getTxOutKey(inChain string, outChain string, height int6
 	return []byte(fmt.Sprintf("%s__%s__%d__%s", inChain, outChain, height, hash))
 }
 
-func (k *DefaultKeeper) getKeygenProposalKey(keyType string, id string) []byte {
+func (k *DefaultKeeper) getKeygenProposalKey(keyType string, createdBlock int64) []byte {
 	// keyType + id
-	return []byte(fmt.Sprintf("%s__%s", keyType, id))
+	return []byte(fmt.Sprintf("%s__%d", keyType, createdBlock))
 }
 
 func (k *DefaultKeeper) getKeygenResultKey(keyType string) []byte {
@@ -71,7 +77,7 @@ func (k *DefaultKeeper) getKeygenResultKey(keyType string) []byte {
 
 func (k *DefaultKeeper) SaveKeygenProposal(ctx sdk.Context, msg *types.KeygenProposal) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenProposal)
-	key := k.getKeygenProposalKey(msg.KeyType, msg.Id)
+	key := k.getKeygenProposalKey(msg.KeyType, msg.CreatedBlock)
 
 	bz, err := msg.Marshal()
 	if err != nil {
@@ -82,7 +88,7 @@ func (k *DefaultKeeper) SaveKeygenProposal(ctx sdk.Context, msg *types.KeygenPro
 
 func (k *DefaultKeeper) IsKeygenProposalExisted(ctx sdk.Context, msg *types.KeygenProposal) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenProposal)
-	key := k.getKeygenProposalKey(msg.KeyType, msg.Id)
+	key := k.getKeygenProposalKey(msg.KeyType, msg.CreatedBlock)
 
 	return store.Get(key) != nil
 }
@@ -91,7 +97,7 @@ func (k *DefaultKeeper) SaveKeygen(ctx sdk.Context, msg *types.KeygenResult) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygen)
 	key := k.getKeygenResultKey(msg.Keygen.KeyType)
 
-	bz, err := msg.Marshal()
+	bz, err := msg.Keygen.Marshal()
 	if err != nil {
 		log.Error("Cannot marshal KeygenResult message, err = ", err)
 		return
@@ -107,14 +113,14 @@ func (k *DefaultKeeper) GetAllPubKeys(ctx sdk.Context) map[string][]byte {
 	ret := make(map[string][]byte)
 	for ; iter.Valid(); iter.Next() {
 		bz := iter.Value()
-		msg := &types.KeygenResult{}
+		msg := &types.Keygen{}
 		err := msg.Unmarshal(bz)
 		if err != nil {
 			log.Error("cannot unmarshal KeygenResult message, err = ", err)
 			continue
 		}
 
-		ret[string(iter.Key())] = msg.Keygen.PubKeyBytes
+		ret[string(iter.Key())] = msg.PubKeyBytes
 	}
 
 	return ret

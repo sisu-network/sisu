@@ -3,7 +3,9 @@ package types
 const (
 	MsgTypeKeygenProposalWithSigner = "KeygenProposalWithSigner"
 	MsgTypeKeygenResultWithSigner   = "KeygenResultWithSigner"
-	MsgTypeObservedTx               = "ObservedTx"
-	MsgTypeTxOut                    = "TxOut"
-	MsgTypeKeysignResult            = "KeysignResult"
+	MsgTypeContractsWithSigner      = "ContractsWithSigner"
+
+	MsgTypeObservedTx    = "ObservedTx"
+	MsgTypeTxOut         = "TxOut"
+	MsgTypeKeysignResult = "KeysignResult"
 )

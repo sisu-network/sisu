@@ -105,6 +105,18 @@ func (mr *MockKeeperMockRecorder) IsTxOutExisted(ctx, msg interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTxOutExisted", reflect.TypeOf((*MockKeeper)(nil).IsTxOutExisted), ctx, msg)
 }
 
+// SaveContracts mocks base method.
+func (m *MockKeeper) SaveContracts(ctx types.Context, msgs []*types0.Contract) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SaveContracts", ctx, msgs)
+}
+
+// SaveContracts indicates an expected call of SaveContracts.
+func (mr *MockKeeperMockRecorder) SaveContracts(ctx, msgs interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveContracts", reflect.TypeOf((*MockKeeper)(nil).SaveContracts), ctx, msgs)
+}
+
 // SaveKeygen mocks base method.
 func (m *MockKeeper) SaveKeygen(ctx types.Context, msg *types0.KeygenResult) {
 	m.ctrl.T.Helper()

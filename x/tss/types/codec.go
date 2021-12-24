@@ -19,7 +19,12 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
 
 	registry.RegisterImplementations((*sdk.Msg)(nil), &KeygenProposalWithSigner{})
+	// registry.RegisterImplementations((*sdk.Msg)(nil), &KeygenProposal{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &KeygenResultWithSigner{})
+	// registry.RegisterImplementations((*sdk.Msg)(nil), &KeygenResult{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &ContractsWithSigner{})
+	// registry.RegisterImplementations((*sdk.Msg)(nil), &Contracts{})
+	// registry.RegisterImplementations((*sdk.Msg)(nil), &Contract{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &ObservedTx{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TxOut{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &KeysignResult{})

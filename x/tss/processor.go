@@ -208,6 +208,9 @@ func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
 
 		case *types.KeysignResult:
 			return p.checkKeysignResult(ctx, msg.(*types.KeysignResult))
+
+		case *types.ContractsWithSigner:
+			return p.checkContracts(ctx, msg.(*types.ContractsWithSigner))
 		}
 	}
 
@@ -270,6 +273,18 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 			if err := p.checkAndInsertMempoolTx(hash, "tx out"); err != nil {
 				return err
 			}
+
+		case types.MsgTypeContractsWithSigner:
+			data := msg.(*types.ContractsWithSigner).Data
+
+			bz, err := data.Marshal()
+			if err == nil {
+				hash := utils.KeccakHash32(string(bz))
+				if err := p.checkAndInsertMempoolTx(hash, "contracts"); err != nil {
+					return err
+				}
+			}
+
 		}
 	}
 
