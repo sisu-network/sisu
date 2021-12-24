@@ -14,11 +14,12 @@ import (
 	tsstypes "github.com/sisu-network/sisu/x/tss/types"
 )
 
-//go:generate mockgen -source=database.go -destination=../tests/mock/db.go -package=mock
+//go:generate mockgen -source=db/database.go -destination=tests/mock/db.go -package=mock
 
 // Make sure struct implement interface at compile-time
 var _ Database = (*SqlDatabase)(nil)
 
+// This is an interface of a private database that is only be used by this node and not other nodes.
 type Database interface {
 	Init() error
 	Close() error
@@ -33,7 +34,7 @@ type Database interface {
 	UpdateKeygenStatus(keyType, status string)
 
 	// Contracts
-	InsertContracts(contracts []*tsstypes.ContractEntity)
+	InsertContracts(contracts []*types.Contract)
 	GetPendingDeployContracts(chain string) []*tsstypes.ContractEntity
 	GetContractFromAddress(chain, address string) *tsstypes.ContractEntity
 	GetContractFromHash(chain, hash string) *tsstypes.ContractEntity
@@ -262,15 +263,14 @@ func (d *SqlDatabase) UpdateKeygenStatus(keyType, status string) {
 	}
 }
 
-func (d *SqlDatabase) InsertContracts(contracts []*tsstypes.ContractEntity) {
-	query := "INSERT INTO contract (chain, hash, byteCode, name) VALUES "
-	query = query + getQueryQuestionMark(len(contracts), 4)
+func (d *SqlDatabase) InsertContracts(contracts []*types.Contract) {
+	query := "INSERT INTO contract (chain, hash, name) VALUES "
+	query = query + getQueryQuestionMark(len(contracts), 3)
 
-	params := make([]interface{}, 0, 4*len(contracts))
+	params := make([]interface{}, 0, 3*len(contracts))
 	for _, contract := range contracts {
 		params = append(params, contract.Chain)
 		params = append(params, contract.Hash)
-		params = append(params, contract.ByteCode)
 		params = append(params, contract.Name)
 	}
 
@@ -332,12 +332,11 @@ func (d *SqlDatabase) GetContractFromAddress(chain, address string) *tsstypes.Co
 		}
 
 		return &tsstypes.ContractEntity{
-			Chain:    chain.String,
-			Hash:     hash.String,
-			ByteCode: byteCode,
-			Name:     name.String,
-			Address:  address.String,
-			Status:   status.String,
+			Chain:   chain.String,
+			Hash:    hash.String,
+			Name:    name.String,
+			Address: address.String,
+			Status:  status.String,
 		}
 	}
 
@@ -364,12 +363,11 @@ func (d *SqlDatabase) GetContractFromHash(chain, hash string) *tsstypes.Contract
 		}
 
 		return &tsstypes.ContractEntity{
-			Chain:    chain.String,
-			Hash:     hash.String,
-			ByteCode: byteCode,
-			Name:     name.String,
-			Address:  address.String,
-			Status:   status.String,
+			Chain:   chain.String,
+			Hash:    hash.String,
+			Name:    name.String,
+			Address: address.String,
+			Status:  status.String,
 		}
 	}
 

@@ -27,6 +27,8 @@ func NewHandler(k keeper.DefaultKeeper, txSubmit common.TxSubmit, processor *Pro
 			return handleTxOut(ctx, msg, processor)
 		case *types.KeysignResult:
 			return handleKeysignResult(ctx, msg, processor)
+		case *types.ContractsWithSigner:
+			return handleContractWithSigner(ctx, msg, processor)
 
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)
@@ -70,6 +72,13 @@ func handleTxOut(ctx sdk.Context, msg *types.TxOut, processor *Processor) (*sdk.
 func handleKeysignResult(ctx sdk.Context, msg *types.KeysignResult, processor *Processor) (*sdk.Result, error) {
 	log.Verbose("Handling Keysign Result")
 	data, err := processor.deliverKeysignResult(ctx, msg)
+	return &sdk.Result{
+		Data: data,
+	}, err
+}
+
+func handleContractWithSigner(ctx sdk.Context, msg *types.ContractsWithSigner, processor *Processor) (*sdk.Result, error) {
+	data, err := processor.deliverContracts(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err

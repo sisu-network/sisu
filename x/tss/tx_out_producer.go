@@ -25,7 +25,6 @@ import (
 type TxOutputProducer interface {
 	// AddKeyAddress(ctx sdk.Context, chain, addr string) error
 	GetTxOuts(ctx sdk.Context, height int64, tx *types.ObservedTx) ([]*tssTypes.TxOut, []*tssTypes.TxOutEntity)
-	SaveContractsToDeploy(chain string)
 }
 
 type DefaultTxOutputProducer struct {
@@ -67,36 +66,6 @@ func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *t
 	return outMsgs, outEntities
 }
 
-// func (p *DefaultTxOutputProducer) getEthKeyAddrs(ctx sdk.Context) (map[string]map[string]bool, error) {
-// 	if p.ethKeyAddrs != nil {
-// 		return p.ethKeyAddrs, nil
-// 	}
-
-// 	var err error
-// 	p.ethKeyAddrs, err = p.keeper.GetAllEthKeyAddrs(ctx)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return p.ethKeyAddrs, nil
-// }
-
-// func (p *DefaultTxOutputProducer) AddKeyAddress(ctx sdk.Context, chain, addr string) error {
-// 	keyAddrs, err := p.getEthKeyAddrs(ctx)
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	m := keyAddrs[chain]
-// 	if m == nil {
-// 		m = make(map[string]bool)
-// 	}
-// 	m[addr] = true
-// 	p.ethKeyAddrs[chain] = m
-
-// 	return p.keeper.SaveEthKeyAddrs(ctx, chain, m)
-// }
-
 // Get ETH out from an observed tx. Only do this if this is a validator node.
 func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, tx *types.ObservedTx) ([]*tsstypes.TxOut, []*tssTypes.TxOutEntity, error) {
 	ethTx := &ethTypes.Transaction{}
@@ -114,6 +83,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 	// that funds our account.
 	if ethTx.To() != nil && p.db.IsChainKeyAddress(libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
 		contracts := p.db.GetPendingDeployContracts(tx.Chain)
+		// contracts := p.keeper.GetPendingContracts(ctx, tx.Chain)
 		log.Verbose("len(contracts) = ", len(contracts))
 
 		if len(contracts) > 0 {
@@ -200,28 +170,6 @@ func (p *DefaultTxOutputProducer) checkEthDeployContract(ctx sdk.Context, height
 	p.db.UpdateContractsStatus(contracts, tsstypes.ContractStateDeploying)
 
 	return txs
-}
-
-// Save a list of contracts that are pending to be deployed. This is often call after a key is
-// generated for a chain. We cannot deploy immediately after key generation because we don't have
-// enough balance in the account.
-func (p *DefaultTxOutputProducer) SaveContractsToDeploy(chain string) {
-	if libchain.IsETHBasedChain(chain) {
-		contracts := make([]*types.ContractEntity, 0, len(SupportedContracts))
-
-		for name, c := range SupportedContracts {
-			contract := &types.ContractEntity{
-				Chain:    chain,
-				Hash:     c.AbiHash,
-				ByteCode: ecommon.FromHex(c.Bin),
-				Name:     name,
-			}
-
-			contracts = append(contracts, contract)
-		}
-
-		p.db.InsertContracts(contracts)
-	}
 }
 
 func (p *DefaultTxOutputProducer) getContractTx(contract *tsstypes.ContractEntity, nonce int64) *ethTypes.Transaction {
