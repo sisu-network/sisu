@@ -1,8 +1,6 @@
 package tss
 
 import (
-	"fmt"
-
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	libchain "github.com/sisu-network/lib/chain"
@@ -47,9 +45,10 @@ func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 }
 
 func (p *Processor) checkTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner) error {
-	if p.keeper.IsTxInExisted(ctx, msgWithSigner.Data) {
+	if p.db.IsTxInExisted(msgWithSigner.Data) {
 		return ErrMessageHasBeenProcessed
 	}
+
 	return nil
 }
 
@@ -57,10 +56,13 @@ func (p *Processor) checkTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSign
 func (p *Processor) deliverTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner) ([]byte, error) {
 	msg := msgWithSigner.Data
 
-	if p.keeper.IsTxInExisted(ctx, msg) {
+	if p.db.IsTxInExisted(msg) {
 		// The tx has been processed before.
 		return nil, nil
 	}
+
+	// Insert this into db table.
+	p.db.InsertTxIn(msg)
 
 	// Save this to KVStore
 	p.keeper.SaveTxIn(ctx, msg)
@@ -69,7 +71,7 @@ func (p *Processor) deliverTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSi
 	txOuts := p.createTxOuts(ctx, msg)
 
 	if !p.globalData.IsCatchingUp() {
-		fmt.Println("Broadcasting txout....")
+		log.Info("Broadcasting txout....")
 
 		// Creates TxOut. TODO: Only do this for top validator nodes.
 		for _, msg := range txOuts {
