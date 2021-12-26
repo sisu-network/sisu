@@ -18,9 +18,10 @@ func (p *Processor) createPendingContracts(ctx sdk.Context, msg *types.KeygenRes
 
 			for name, c := range SupportedContracts {
 				contract := &types.Contract{
-					Chain: chain,
-					Hash:  c.AbiHash,
-					Name:  name,
+					Chain:     chain,
+					Hash:      c.AbiHash,
+					Name:      name,
+					ByteCodes: []byte(c.Bin),
 				}
 
 				contracts = append(contracts, contract)
@@ -46,11 +47,8 @@ func (p *Processor) deliverContracts(ctx sdk.Context, wrappedMsg *types.Contract
 	// TODO: Don't do duplicated delivery
 	log.Info("Deliver pending contracts")
 
-	// Save this contract to keeper and our db.
-	p.db.InsertContracts(wrappedMsg.Data.Contracts)
-
 	// Save into KVStore
-	p.keeper.SaveContracts(ctx, wrappedMsg.Data.Contracts)
+	p.keeper.SaveContracts(ctx, wrappedMsg.Data.Contracts, true)
 
 	return nil, nil
 }

@@ -16,15 +16,13 @@ import (
 	"github.com/sisu-network/sisu/db"
 	"github.com/sisu-network/sisu/x/tss/keeper"
 	"github.com/sisu-network/sisu/x/tss/types"
-	tssTypes "github.com/sisu-network/sisu/x/tss/types"
-	tsstypes "github.com/sisu-network/sisu/x/tss/types"
 )
 
 // This structs produces transaction output based on input. For a given tx input, this struct
 // produces a list (could contain only one element) of transaction output.
 type TxOutputProducer interface {
 	// AddKeyAddress(ctx sdk.Context, chain, addr string) error
-	GetTxOuts(ctx sdk.Context, height int64, tx *types.ObservedTx) ([]*tssTypes.TxOut, []*tssTypes.TxOutEntity)
+	GetTxOuts(ctx sdk.Context, height int64, tx *types.ObservedTx) []*types.TxOutWithSigner
 }
 
 type DefaultTxOutputProducer struct {
@@ -49,41 +47,38 @@ func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys co
 	}
 }
 
-func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *types.ObservedTx) ([]*tssTypes.TxOut, []*tssTypes.TxOutEntity) {
-	outMsgs := make([]*tssTypes.TxOut, 0)
-	outEntities := make([]*tssTypes.TxOutEntity, 0)
+func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *types.ObservedTx) []*types.TxOutWithSigner {
+	outMsgs := make([]*types.TxOutWithSigner, 0)
 	var err error
 
 	if libchain.IsETHBasedChain(tx.Chain) {
 		log.Info("Getting tx out for chain ", tx.Chain)
-		outMsgs, outEntities, err = p.getEthResponse(ctx, height, tx)
+		outMsgs, err = p.getEthResponse(ctx, height, tx)
 
 		if err != nil {
 			log.Error("Cannot get response for an eth tx, err = ", err)
 		}
 	}
 
-	return outMsgs, outEntities
+	return outMsgs
 }
 
 // Get ETH out from an observed tx. Only do this if this is a validator node.
-func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, tx *types.ObservedTx) ([]*tsstypes.TxOut, []*tssTypes.TxOutEntity, error) {
+func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, tx *types.ObservedTx) ([]*types.TxOutWithSigner, error) {
 	ethTx := &ethTypes.Transaction{}
 
 	err := ethTx.UnmarshalBinary(tx.Serialized)
 	if err != nil {
 		log.Error("Failed to unmarshall eth tx. err =", err)
-		return nil, nil, err
+		return nil, err
 	}
 
-	outMsgs := make([]*tssTypes.TxOut, 0)
-	outEntities := make([]*tssTypes.TxOutEntity, 0)
+	outMsgs := make([]*types.TxOutWithSigner, 0)
 
 	// 1. Check if this is a transaction sent to our key address. If this is true, it's likely a tx
 	// that funds our account.
 	if ethTx.To() != nil && p.db.IsChainKeyAddress(libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
-		contracts := p.db.GetPendingDeployContracts(tx.Chain)
-		// contracts := p.keeper.GetPendingContracts(ctx, tx.Chain)
+		contracts := p.keeper.GetPendingContracts(ctx, tx.Chain)
 		log.Verbose("len(contracts) = ", len(contracts))
 
 		if len(contracts) > 0 {
@@ -91,16 +86,16 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 			// Get the list of deploy transactions. Those txs need to posted and verified (by validators)
 			// to the Sisu chain.
-			outEthTxs := p.checkEthDeployContract(ctx, height, tx.Chain, contracts)
+			outEthTxs := p.getEthContractDeploymentTx(ctx, height, tx.Chain, contracts)
 
-			for i, outTx := range outEthTxs {
+			for _, outTx := range outEthTxs {
 				bz, err := outTx.MarshalBinary()
 				if err != nil {
 					log.Error("Cannot marshall binary", err)
 					continue
 				}
 
-				outMsg := tsstypes.NewMsgTxOut(
+				outMsg := types.NewMsgTxOutWithSigner(
 					p.appKeys.GetSignerAddress().String(),
 					tx.BlockHeight,
 					tx.Chain,
@@ -110,14 +105,10 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 				)
 
 				outMsgs = append(outMsgs, outMsg)
-
-				outEntity := tssTypes.TxOutToEntity(outMsg)
-				outEntity.ContractHash = contracts[i].Hash
-				outEntities = append(outEntities, outEntity)
 			}
 
 			if len(outMsgs) > 0 {
-				return outMsgs, outEntities, nil
+				return outMsgs, nil
 			}
 		}
 	}
@@ -126,9 +117,9 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 	if ethTx.To() != nil && len(ethTx.Data()) >= 4 {
 		log.Verbose("ethTx.To() = ", ethTx.To())
 
-		responseTx, err := p.createErc20ContractResponse(ethTx, tx.Chain)
+		responseTx, err := p.createErc20ContractResponse(ctx, ethTx, tx.Chain)
 		if err == nil {
-			outMsg := tsstypes.NewMsgTxOut(
+			outMsg := types.NewMsgTxOutWithSigner(
 				p.appKeys.GetSignerAddress().String(),
 				tx.BlockHeight,
 				tx.Chain,
@@ -138,9 +129,6 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 			)
 
 			outMsgs = append(outMsgs, outMsg)
-
-			outEntity := tssTypes.TxOutToEntity(outMsg)
-			outEntities = append(outEntities, outEntity)
 		} else {
 			log.Error("cannot get response for erc20 tx, err =", err)
 		}
@@ -148,11 +136,11 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 	// 3. Check other types of transaction.
 
-	return outMsgs, outEntities, nil
+	return outMsgs, nil
 }
 
 // Check if we can deploy contract after seeing some ETH being sent to our ethereum address.
-func (p *DefaultTxOutputProducer) checkEthDeployContract(ctx sdk.Context, height int64, chain string, contracts []*tsstypes.ContractEntity) []*ethTypes.Transaction {
+func (p *DefaultTxOutputProducer) getEthContractDeploymentTx(ctx sdk.Context, height int64, chain string, contracts []*types.Contract) []*ethTypes.Transaction {
 	txs := make([]*ethTypes.Transaction, 0)
 
 	for _, contract := range contracts {
@@ -167,12 +155,12 @@ func (p *DefaultTxOutputProducer) checkEthDeployContract(ctx sdk.Context, height
 	}
 
 	// Update all contracts to "deploying" state.
-	p.db.UpdateContractsStatus(contracts, tsstypes.ContractStateDeploying)
+	// p.db.UpdateContractsStatus(contracts, types.ContractStateDeploying)
 
 	return txs
 }
 
-func (p *DefaultTxOutputProducer) getContractTx(contract *tsstypes.ContractEntity, nonce int64) *ethTypes.Transaction {
+func (p *DefaultTxOutputProducer) getContractTx(contract *types.Contract, nonce int64) *ethTypes.Transaction {
 	erc20 := SupportedContracts[ContractErc20]
 	switch contract.Hash {
 	case erc20.AbiHash:

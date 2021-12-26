@@ -9,8 +9,6 @@ type TxOutEntity struct {
 	BytesWithoutSig []byte
 	Status          string
 	Signature       string
-
-	ContractHash string // optional field for Eth contracts
 }
 
 func TxOutToEntity(txOut *TxOut) *TxOutEntity {

@@ -49,6 +49,20 @@ func (mr *MockKeeperMockRecorder) GetAllPubKeys(ctx interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPubKeys", reflect.TypeOf((*MockKeeper)(nil).GetAllPubKeys), ctx)
 }
 
+// GetPendingContracts mocks base method.
+func (m *MockKeeper) GetPendingContracts(ctx types.Context, chain string) []*types0.Contract {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPendingContracts", ctx, chain)
+	ret0, _ := ret[0].([]*types0.Contract)
+	return ret0
+}
+
+// GetPendingContracts indicates an expected call of GetPendingContracts.
+func (mr *MockKeeperMockRecorder) GetPendingContracts(ctx, chain interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingContracts", reflect.TypeOf((*MockKeeper)(nil).GetPendingContracts), ctx, chain)
+}
+
 // IsKeygenExisted mocks base method.
 func (m *MockKeeper) IsKeygenExisted(ctx types.Context, msg *types0.KeygenResult) bool {
 	m.ctrl.T.Helper()
@@ -106,15 +120,15 @@ func (mr *MockKeeperMockRecorder) IsTxOutExisted(ctx, msg interface{}) *gomock.C
 }
 
 // SaveContracts mocks base method.
-func (m *MockKeeper) SaveContracts(ctx types.Context, msgs []*types0.Contract) {
+func (m *MockKeeper) SaveContracts(ctx types.Context, msgs []*types0.Contract, saveByteCode bool) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SaveContracts", ctx, msgs)
+	m.ctrl.Call(m, "SaveContracts", ctx, msgs, saveByteCode)
 }
 
 // SaveContracts indicates an expected call of SaveContracts.
-func (mr *MockKeeperMockRecorder) SaveContracts(ctx, msgs interface{}) *gomock.Call {
+func (mr *MockKeeperMockRecorder) SaveContracts(ctx, msgs, saveByteCode interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveContracts", reflect.TypeOf((*MockKeeper)(nil).SaveContracts), ctx, msgs)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveContracts", reflect.TypeOf((*MockKeeper)(nil).SaveContracts), ctx, msgs, saveByteCode)
 }
 
 // SaveKeygen mocks base method.

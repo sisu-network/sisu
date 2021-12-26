@@ -77,36 +77,36 @@ func TestKeeper_SaveAndGetTxOut(t *testing.T) {
 	t.Parallel()
 	keeper, ctx := getTestKeeperAndContext()
 
-	txOut := &types.TxOut{
-		Signer:        "signer",
-		InChain:       "eth",
-		OutChain:      "bitcoin",
-		InBlockHeight: 1,
-		OutBytes:      []byte("Hash"),
+	txOutWithSigner := &types.TxOutWithSigner{
+		Signer: "signer",
+		Data: &types.TxOut{
+			InChain:       "eth",
+			OutChain:      "bitcoin",
+			InBlockHeight: 1,
+			OutBytes:      []byte("Hash"),
+		},
 	}
 
-	keeper.SaveTxOut(ctx, txOut)
-	require.Equal(t, true, keeper.IsTxOutExisted(ctx, txOut))
+	keeper.SaveTxOut(ctx, txOutWithSigner.Data)
+	require.Equal(t, true, keeper.IsTxOutExisted(ctx, txOutWithSigner.Data))
 
 	// Different signer would not change the observedTx retrieval
-	other := *txOut
-	other.Signer = "signer2"
-	require.Equal(t, true, keeper.IsTxOutExisted(ctx, txOut))
+	other := *txOutWithSigner.Data
+	require.Equal(t, true, keeper.IsTxOutExisted(ctx, txOutWithSigner.Data))
 
 	// Any chain in InChain, OutChain, BlockHeight, OutBytes would not retrieve the txOut.
-	other = *txOut
 	other.InChain = "sisu"
 	require.Equal(t, false, keeper.IsTxOutExisted(ctx, &other))
 
-	other = *txOut
+	other = *txOutWithSigner.Data
 	other.OutChain = "sisu"
 	require.Equal(t, false, keeper.IsTxOutExisted(ctx, &other))
 
-	other = *txOut
+	other = *txOutWithSigner.Data
 	other.InBlockHeight = 2
 	require.Equal(t, false, keeper.IsTxOutExisted(ctx, &other))
 
-	other = *txOut
+	other = *txOutWithSigner.Data
 	other.OutBytes = []byte("other")
 	require.Equal(t, false, keeper.IsTxOutExisted(ctx, &other))
 }

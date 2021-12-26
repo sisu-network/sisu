@@ -105,20 +105,6 @@ func (mr *MockDatabaseMockRecorder) GetKeyGen(keyType interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeyGen", reflect.TypeOf((*MockDatabase)(nil).GetKeyGen), keyType)
 }
 
-// GetPendingDeployContracts mocks base method.
-func (m *MockDatabase) GetPendingDeployContracts(chain string) []*types.ContractEntity {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetPendingDeployContracts", chain)
-	ret0, _ := ret[0].([]*types.ContractEntity)
-	return ret0
-}
-
-// GetPendingDeployContracts indicates an expected call of GetPendingDeployContracts.
-func (mr *MockDatabaseMockRecorder) GetPendingDeployContracts(chain interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingDeployContracts", reflect.TypeOf((*MockDatabase)(nil).GetPendingDeployContracts), chain)
-}
-
 // GetPubKey mocks base method.
 func (m *MockDatabase) GetPubKey(keyType string) []byte {
 	m.ctrl.T.Helper()
@@ -161,18 +147,6 @@ func (mr *MockDatabaseMockRecorder) Init() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockDatabase)(nil).Init))
 }
 
-// InsertContracts mocks base method.
-func (m *MockDatabase) InsertContracts(contracts []*types.Contract) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "InsertContracts", contracts)
-}
-
-// InsertContracts indicates an expected call of InsertContracts.
-func (mr *MockDatabaseMockRecorder) InsertContracts(contracts interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertContracts", reflect.TypeOf((*MockDatabase)(nil).InsertContracts), contracts)
-}
-
 // InsertMempoolTxHash mocks base method.
 func (m *MockDatabase) InsertMempoolTxHash(hash string, blockHeight int64) {
 	m.ctrl.T.Helper()
@@ -186,7 +160,7 @@ func (mr *MockDatabaseMockRecorder) InsertMempoolTxHash(hash, blockHeight interf
 }
 
 // InsertTxOuts mocks base method.
-func (m *MockDatabase) InsertTxOuts(txs []*types.TxOutEntity) {
+func (m *MockDatabase) InsertTxOuts(txs []*types.TxOut) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "InsertTxOuts", txs)
 }

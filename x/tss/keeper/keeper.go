@@ -6,7 +6,6 @@ import (
 	"github.com/sisu-network/cosmos-sdk/store/prefix"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
 
@@ -31,7 +30,7 @@ type Keeper interface {
 	IsKeygenExisted(ctx sdk.Context, msg *types.KeygenResult) bool
 
 	// Contracts
-	SaveContracts(ctx sdk.Context, msgs []*types.Contract)
+	SaveContracts(ctx sdk.Context, msgs []*types.Contract, saveByteCode bool)
 	GetPendingContracts(ctx sdk.Context, chain string) []*types.Contract
 
 	// Observed Tx
@@ -150,17 +149,20 @@ func (k *DefaultKeeper) IsObservedTxExisted(ctx sdk.Context, tx *types.ObservedT
 
 func (k *DefaultKeeper) SaveTxOut(ctx sdk.Context, msg *types.TxOut) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
-	outHash := utils.KeccakHash32(string(msg.OutBytes))
-	key := k.getTxOutKey(msg.InChain, msg.OutChain, msg.InBlockHeight, outHash)
+	key := k.getTxOutKey(msg.InChain, msg.OutChain, msg.InBlockHeight, msg.GetHash())
 
-	bz := msg.SerializeWithoutSigner()
+	bz, err := msg.Marshal()
+	if err != nil {
+		log.Error("Cannot marshal tx out")
+		return
+	}
+
 	store.Set(key, bz)
 }
 
 func (k *DefaultKeeper) IsTxOutExisted(ctx sdk.Context, msg *types.TxOut) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
-	outHash := utils.KeccakHash32(string(msg.OutBytes))
-	key := k.getTxOutKey(msg.InChain, msg.OutChain, msg.InBlockHeight, outHash)
+	key := k.getTxOutKey(msg.InChain, msg.OutChain, msg.InBlockHeight, msg.GetHash())
 
 	return store.Get(key) != nil
 }

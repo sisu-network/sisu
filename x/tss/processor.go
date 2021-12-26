@@ -203,8 +203,8 @@ func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
 		case *types.ObservedTx:
 			return p.checkObservedTxs(ctx, msg.(*types.ObservedTx))
 
-		case *types.TxOut:
-			return p.checkTxOut(ctx, msg.(*types.TxOut))
+		case *types.TxOutWithSigner:
+			return p.checkTxOut(ctx, msg.(*types.TxOutWithSigner))
 
 		case *types.KeysignResult:
 			return p.checkKeysignResult(ctx, msg.(*types.KeysignResult))
@@ -266,9 +266,14 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 				return err
 			}
 
-		case types.MsgTypeTxOut:
-			txOut := msg.(*types.TxOut)
-			hash := utils.KeccakHash32(string(txOut.SerializeWithoutSigner()))
+		case types.MsgTypeTxOutWithSigner:
+			txOut := msg.(*types.TxOutWithSigner).Data
+			bz, err := txOut.Marshal()
+			if err != nil {
+				return err
+			}
+
+			hash := utils.KeccakHash32(string(bz))
 
 			if err := p.checkAndInsertMempoolTx(hash, "tx out"); err != nil {
 				return err

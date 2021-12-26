@@ -39,9 +39,7 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 		mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(true).MinTimes(1)
 		mockDb.EXPECT().UpdateTxOutStatus(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).MinTimes(1)
 		mockDb.EXPECT().GetTxOutWithHash(gomock.Any(), gomock.Any(), gomock.Any()).Return(
-			&types.TxOutEntity{
-				ContractHash: utils.RandomHeximalString(64),
-			}).MinTimes(1)
+			&types.TxOutEntity{}).MinTimes(1)
 		mockDb.EXPECT().UpdateContractsStatus(gomock.Any(), gomock.Any()).Return(nil).MinTimes(1)
 
 		txs := &eyesTypes.Txs{
