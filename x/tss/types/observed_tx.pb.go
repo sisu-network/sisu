@@ -23,19 +23,70 @@ var _ = math.Inf
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 // Note: all new fields in this proto MUST be included in SerializeWithoutSigner in the go file.
+type ObservedTxWithSigner struct {
+	Signer string      `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
+	Data   *ObservedTx `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+}
+
+func (m *ObservedTxWithSigner) Reset()         { *m = ObservedTxWithSigner{} }
+func (m *ObservedTxWithSigner) String() string { return proto.CompactTextString(m) }
+func (*ObservedTxWithSigner) ProtoMessage()    {}
+func (*ObservedTxWithSigner) Descriptor() ([]byte, []int) {
+	return fileDescriptor_2b040b825bdb87c3, []int{0}
+}
+func (m *ObservedTxWithSigner) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *ObservedTxWithSigner) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_ObservedTxWithSigner.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *ObservedTxWithSigner) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ObservedTxWithSigner.Merge(m, src)
+}
+func (m *ObservedTxWithSigner) XXX_Size() int {
+	return m.Size()
+}
+func (m *ObservedTxWithSigner) XXX_DiscardUnknown() {
+	xxx_messageInfo_ObservedTxWithSigner.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ObservedTxWithSigner proto.InternalMessageInfo
+
+func (m *ObservedTxWithSigner) GetSigner() string {
+	if m != nil {
+		return m.Signer
+	}
+	return ""
+}
+
+func (m *ObservedTxWithSigner) GetData() *ObservedTx {
+	if m != nil {
+		return m.Data
+	}
+	return nil
+}
+
 type ObservedTx struct {
-	Signer      string `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
-	Chain       string `protobuf:"bytes,2,opt,name=chain,proto3" json:"chain,omitempty"`
-	BlockHeight int64  `protobuf:"varint,3,opt,name=blockHeight,proto3" json:"blockHeight,omitempty"`
-	TxHash      string `protobuf:"bytes,4,opt,name=txHash,proto3" json:"txHash,omitempty"`
-	Serialized  []byte `protobuf:"bytes,5,opt,name=serialized,proto3" json:"serialized,omitempty"`
+	Chain       string `protobuf:"bytes,1,opt,name=chain,proto3" json:"chain,omitempty"`
+	BlockHeight int64  `protobuf:"varint,2,opt,name=blockHeight,proto3" json:"blockHeight,omitempty"`
+	TxHash      string `protobuf:"bytes,3,opt,name=txHash,proto3" json:"txHash,omitempty"`
+	Serialized  []byte `protobuf:"bytes,4,opt,name=serialized,proto3" json:"serialized,omitempty"`
 }
 
 func (m *ObservedTx) Reset()         { *m = ObservedTx{} }
 func (m *ObservedTx) String() string { return proto.CompactTextString(m) }
 func (*ObservedTx) ProtoMessage()    {}
 func (*ObservedTx) Descriptor() ([]byte, []int) {
-	return fileDescriptor_2b040b825bdb87c3, []int{0}
+	return fileDescriptor_2b040b825bdb87c3, []int{1}
 }
 func (m *ObservedTx) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
@@ -63,13 +114,6 @@ func (m *ObservedTx) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_ObservedTx proto.InternalMessageInfo
-
-func (m *ObservedTx) GetSigner() string {
-	if m != nil {
-		return m.Signer
-	}
-	return ""
-}
 
 func (m *ObservedTx) GetChain() string {
 	if m != nil {
@@ -100,25 +144,70 @@ func (m *ObservedTx) GetSerialized() []byte {
 }
 
 func init() {
+	proto.RegisterType((*ObservedTxWithSigner)(nil), "types.ObservedTxWithSigner")
 	proto.RegisterType((*ObservedTx)(nil), "types.ObservedTx")
 }
 
 func init() { proto.RegisterFile("observed_tx.proto", fileDescriptor_2b040b825bdb87c3) }
 
 var fileDescriptor_2b040b825bdb87c3 = []byte{
-	// 187 bytes of a gzipped FileDescriptorProto
+	// 219 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0xcc, 0x4f, 0x2a, 0x4e,
 	0x2d, 0x2a, 0x4b, 0x4d, 0x89, 0x2f, 0xa9, 0xd0, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x2d,
-	0xa9, 0x2c, 0x48, 0x2d, 0x56, 0x9a, 0xc2, 0xc8, 0xc5, 0xe5, 0x0f, 0x95, 0x0c, 0xa9, 0x10, 0x12,
-	0xe3, 0x62, 0x2b, 0xce, 0x4c, 0xcf, 0x4b, 0x2d, 0x92, 0x60, 0x54, 0x60, 0xd4, 0xe0, 0x0c, 0x82,
-	0xf2, 0x84, 0x44, 0xb8, 0x58, 0x93, 0x33, 0x12, 0x33, 0xf3, 0x24, 0x98, 0xc0, 0xc2, 0x10, 0x8e,
-	0x90, 0x02, 0x17, 0x77, 0x52, 0x4e, 0x7e, 0x72, 0xb6, 0x47, 0x6a, 0x66, 0x7a, 0x46, 0x89, 0x04,
-	0xb3, 0x02, 0xa3, 0x06, 0x73, 0x10, 0xb2, 0x10, 0xc8, 0xbc, 0x92, 0x0a, 0x8f, 0xc4, 0xe2, 0x0c,
-	0x09, 0x16, 0x88, 0x79, 0x10, 0x9e, 0x90, 0x1c, 0x17, 0x57, 0x71, 0x6a, 0x51, 0x66, 0x62, 0x4e,
-	0x66, 0x55, 0x6a, 0x8a, 0x04, 0xab, 0x02, 0xa3, 0x06, 0x4f, 0x10, 0x92, 0x88, 0x93, 0xc4, 0x89,
-	0x47, 0x72, 0x8c, 0x17, 0x1e, 0xc9, 0x31, 0x3e, 0x78, 0x24, 0xc7, 0x38, 0xe1, 0xb1, 0x1c, 0xc3,
-	0x85, 0xc7, 0x72, 0x0c, 0x37, 0x1e, 0xcb, 0x31, 0x24, 0xb1, 0x81, 0x9d, 0x6f, 0x0c, 0x08, 0x00,
-	0x00, 0xff, 0xff, 0x77, 0x9f, 0x8f, 0xd2, 0xd3, 0x00, 0x00, 0x00,
+	0xa9, 0x2c, 0x48, 0x2d, 0x56, 0x0a, 0xe5, 0x12, 0xf1, 0x87, 0xca, 0x85, 0x54, 0x84, 0x67, 0x96,
+	0x64, 0x04, 0x67, 0xa6, 0xe7, 0xa5, 0x16, 0x09, 0x89, 0x71, 0xb1, 0x15, 0x83, 0x59, 0x12, 0x8c,
+	0x0a, 0x8c, 0x1a, 0x9c, 0x41, 0x50, 0x9e, 0x90, 0x2a, 0x17, 0x4b, 0x4a, 0x62, 0x49, 0xa2, 0x04,
+	0x93, 0x02, 0xa3, 0x06, 0xb7, 0x91, 0xa0, 0x1e, 0xd8, 0x14, 0x3d, 0x84, 0x11, 0x41, 0x60, 0x69,
+	0xa5, 0x1a, 0x2e, 0x2e, 0x84, 0x98, 0x90, 0x08, 0x17, 0x6b, 0x72, 0x46, 0x62, 0x66, 0x1e, 0xd4,
+	0x2c, 0x08, 0x47, 0x48, 0x81, 0x8b, 0x3b, 0x29, 0x27, 0x3f, 0x39, 0xdb, 0x23, 0x35, 0x33, 0x3d,
+	0xa3, 0x04, 0x6c, 0x22, 0x73, 0x10, 0xb2, 0x10, 0xc8, 0x11, 0x25, 0x15, 0x1e, 0x89, 0xc5, 0x19,
+	0x12, 0xcc, 0x10, 0x47, 0x40, 0x78, 0x42, 0x72, 0x5c, 0x5c, 0xc5, 0xa9, 0x45, 0x99, 0x89, 0x39,
+	0x99, 0x55, 0xa9, 0x29, 0x12, 0x2c, 0x0a, 0x8c, 0x1a, 0x3c, 0x41, 0x48, 0x22, 0x4e, 0x12, 0x27,
+	0x1e, 0xc9, 0x31, 0x5e, 0x78, 0x24, 0xc7, 0xf8, 0xe0, 0x91, 0x1c, 0xe3, 0x84, 0xc7, 0x72, 0x0c,
+	0x17, 0x1e, 0xcb, 0x31, 0xdc, 0x78, 0x2c, 0xc7, 0x90, 0xc4, 0x06, 0xf6, 0xbc, 0x31, 0x20, 0x00,
+	0x00, 0xff, 0xff, 0xf0, 0x0e, 0xee, 0x0d, 0x11, 0x01, 0x00, 0x00,
+}
+
+func (m *ObservedTxWithSigner) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *ObservedTxWithSigner) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *ObservedTxWithSigner) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Data != nil {
+		{
+			size, err := m.Data.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintObservedTx(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Signer) > 0 {
+		i -= len(m.Signer)
+		copy(dAtA[i:], m.Signer)
+		i = encodeVarintObservedTx(dAtA, i, uint64(len(m.Signer)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
 }
 
 func (m *ObservedTx) Marshal() (dAtA []byte, err error) {
@@ -146,31 +235,24 @@ func (m *ObservedTx) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.Serialized)
 		i = encodeVarintObservedTx(dAtA, i, uint64(len(m.Serialized)))
 		i--
-		dAtA[i] = 0x2a
+		dAtA[i] = 0x22
 	}
 	if len(m.TxHash) > 0 {
 		i -= len(m.TxHash)
 		copy(dAtA[i:], m.TxHash)
 		i = encodeVarintObservedTx(dAtA, i, uint64(len(m.TxHash)))
 		i--
-		dAtA[i] = 0x22
+		dAtA[i] = 0x1a
 	}
 	if m.BlockHeight != 0 {
 		i = encodeVarintObservedTx(dAtA, i, uint64(m.BlockHeight))
 		i--
-		dAtA[i] = 0x18
+		dAtA[i] = 0x10
 	}
 	if len(m.Chain) > 0 {
 		i -= len(m.Chain)
 		copy(dAtA[i:], m.Chain)
 		i = encodeVarintObservedTx(dAtA, i, uint64(len(m.Chain)))
-		i--
-		dAtA[i] = 0x12
-	}
-	if len(m.Signer) > 0 {
-		i -= len(m.Signer)
-		copy(dAtA[i:], m.Signer)
-		i = encodeVarintObservedTx(dAtA, i, uint64(len(m.Signer)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -188,7 +270,7 @@ func encodeVarintObservedTx(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *ObservedTx) Size() (n int) {
+func (m *ObservedTxWithSigner) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -198,6 +280,19 @@ func (m *ObservedTx) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovObservedTx(uint64(l))
 	}
+	if m.Data != nil {
+		l = m.Data.Size()
+		n += 1 + l + sovObservedTx(uint64(l))
+	}
+	return n
+}
+
+func (m *ObservedTx) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
 	l = len(m.Chain)
 	if l > 0 {
 		n += 1 + l + sovObservedTx(uint64(l))
@@ -222,7 +317,7 @@ func sovObservedTx(x uint64) (n int) {
 func sozObservedTx(x uint64) (n int) {
 	return sovObservedTx(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ObservedTx) Unmarshal(dAtA []byte) error {
+func (m *ObservedTxWithSigner) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -245,10 +340,10 @@ func (m *ObservedTx) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ObservedTx: wiretype end group for non-group")
+			return fmt.Errorf("proto: ObservedTxWithSigner: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ObservedTx: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ObservedTxWithSigner: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -285,6 +380,92 @@ func (m *ObservedTx) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Data", wireType)
+			}
+			var msglen int
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowObservedTx
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				msglen |= int(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+			if msglen < 0 {
+				return ErrInvalidLengthObservedTx
+			}
+			postIndex := iNdEx + msglen
+			if postIndex < 0 {
+				return ErrInvalidLengthObservedTx
+			}
+			if postIndex > l {
+				return io.ErrUnexpectedEOF
+			}
+			if m.Data == nil {
+				m.Data = &ObservedTx{}
+			}
+			if err := m.Data.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
+			}
+			iNdEx = postIndex
+		default:
+			iNdEx = preIndex
+			skippy, err := skipObservedTx(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthObservedTx
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *ObservedTx) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowObservedTx
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: ObservedTx: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: ObservedTx: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
+			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Chain", wireType)
 			}
 			var stringLen uint64
@@ -315,7 +496,7 @@ func (m *ObservedTx) Unmarshal(dAtA []byte) error {
 			}
 			m.Chain = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 3:
+		case 2:
 			if wireType != 0 {
 				return fmt.Errorf("proto: wrong wireType = %d for field BlockHeight", wireType)
 			}
@@ -334,7 +515,7 @@ func (m *ObservedTx) Unmarshal(dAtA []byte) error {
 					break
 				}
 			}
-		case 4:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field TxHash", wireType)
 			}
@@ -366,7 +547,7 @@ func (m *ObservedTx) Unmarshal(dAtA []byte) error {
 			}
 			m.TxHash = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 5:
+		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Serialized", wireType)
 			}

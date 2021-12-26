@@ -5,8 +5,8 @@ const (
 	MsgTypeKeygenResultWithSigner   = "KeygenResultWithSigner"
 	MsgTypeContractsWithSigner      = "ContractsWithSigner"
 	MsgTypeTxOutWithSigner          = "TxOutWithSigner"
+	MsgTypeObservedTxWithSigner     = "ObservedTxWithSigner"
 
-	MsgTypeObservedTx    = "ObservedTx"
 	MsgTypeTxOut         = "TxOut"
 	MsgTypeKeysignResult = "KeysignResult"
 )

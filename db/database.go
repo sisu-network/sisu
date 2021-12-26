@@ -40,6 +40,8 @@ type Database interface {
 	UpdateContractDeployTx(chain, id string, txHash string)
 	UpdateContractAddress(chain, hash, address string)
 
+	// TxIn
+
 	// Txout
 	InsertTxOuts(txs []*types.TxOut)
 	GetTxOutWithHash(chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity

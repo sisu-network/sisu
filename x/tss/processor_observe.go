@@ -8,6 +8,7 @@ import (
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/tss/types"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 )
 
@@ -24,7 +25,7 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) error {
 		} else if len(tx.To) > 0 {
 			// 2. This is a transaction to our key account or one of our contracts. Create a message to
 			// indicate that we have observed this transaction and broadcast it to cosmos chain.
-			hash := utils.GetObservedTxHash(txs.Block, txs.Chain, tx.Serialized)
+			hash := utils.GetTxInHash(txs.Block, txs.Chain, tx.Serialized)
 			observedTxs := tssTypes.NewObservedTxs(
 				p.appKeys.GetSignerAddress().String(),
 				txs.Chain,
@@ -45,25 +46,27 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) error {
 	return nil
 }
 
-func (p *Processor) checkObservedTxs(ctx sdk.Context, tx *tssTypes.ObservedTx) error {
-	if p.keeper.IsObservedTxExisted(ctx, tx) {
+func (p *Processor) checkObservedTx(ctx sdk.Context, msgWithSigner *types.ObservedTxWithSigner) error {
+	if p.keeper.IsObservedTxExisted(ctx, msgWithSigner.Data) {
 		return ErrMessageHasBeenProcessed
 	}
 	return nil
 }
 
 // Delivers observed Txs.
-func (p *Processor) deliverObservedTxs(ctx sdk.Context, tx *tssTypes.ObservedTx) ([]byte, error) {
-	if p.keeper.IsObservedTxExisted(ctx, tx) {
+func (p *Processor) deliverObservedTx(ctx sdk.Context, msgWithSigner *types.ObservedTxWithSigner) ([]byte, error) {
+	msg := msgWithSigner.Data
+
+	if p.keeper.IsObservedTxExisted(ctx, msg) {
 		// The tx has been processed before.
 		return nil, nil
 	}
 
 	// Save this to KVStore
-	p.keeper.SaveObservedTx(ctx, tx)
+	p.keeper.SaveObservedTx(ctx, msg)
 
 	// Creates and broadcast TxOuts
-	txOuts := p.createTxOuts(ctx, tx)
+	txOuts := p.createTxOuts(ctx, msg)
 
 	if !p.globalData.IsCatchingUp() {
 		fmt.Println("Broadcasting txout....")

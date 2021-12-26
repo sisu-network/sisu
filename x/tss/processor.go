@@ -200,8 +200,8 @@ func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
 		case *types.KeygenResultWithSigner:
 			return p.checkKeygenResult(ctx, msg.(*types.KeygenResultWithSigner))
 
-		case *types.ObservedTx:
-			return p.checkObservedTxs(ctx, msg.(*types.ObservedTx))
+		case *types.ObservedTxWithSigner:
+			return p.checkObservedTx(ctx, msg.(*types.ObservedTxWithSigner))
 
 		case *types.TxOutWithSigner:
 			return p.checkTxOut(ctx, msg.(*types.TxOutWithSigner))
@@ -258,11 +258,15 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 				return err
 			}
 
-		case types.MsgTypeObservedTx:
-			observedTx := msg.(*types.ObservedTx)
-			hash := utils.KeccakHash32(string(observedTx.SerializeWithoutSigner()))
+		case types.MsgTypeObservedTxWithSigner:
+			txIn := msg.(*types.ObservedTxWithSigner).Data
+			bz, err := txIn.Marshal()
+			if err != nil {
+				return err
+			}
 
-			if err := p.checkAndInsertMempoolTx(hash, "observed tx"); err != nil {
+			hash := utils.KeccakHash32(string(bz))
+			if err := p.checkAndInsertMempoolTx(hash, "tx in"); err != nil {
 				return err
 			}
 
@@ -274,7 +278,6 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 			}
 
 			hash := utils.KeccakHash32(string(bz))
-
 			if err := p.checkAndInsertMempoolTx(hash, "tx out"); err != nil {
 				return err
 			}

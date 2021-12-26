@@ -136,7 +136,12 @@ func (k *DefaultKeeper) SaveObservedTx(ctx sdk.Context, msg *types.ObservedTx) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixObservedTx)
 	key := k.getObservedTxKey(msg.Chain, msg.BlockHeight, msg.TxHash)
 
-	bz := msg.SerializeWithoutSigner()
+	bz, err := msg.Marshal()
+	if err != nil {
+		log.Error("Cannot marshal TxIn")
+		return
+	}
+
 	store.Set(key, bz)
 }
 
