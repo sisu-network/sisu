@@ -41,7 +41,7 @@ func (p *Processor) deploySignedTx(bz []byte, keysignResult *htypes.KeysignResul
 // OnTxDeploymentResult is a callback after there is a deployment result from deyes.
 func (p *Processor) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 	chain := result.Chain
-	outHash := result.TxHash
+	// outHash := result.TxHash
 	isContractDeployment := result.IsEthContractDeployment
 
 	log.Info("There is a deployment result")
@@ -55,7 +55,7 @@ func (p *Processor) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 			deyeClient.AddWatchAddresses(chain, []string{result.DeployedAddr})
 
 			// Update database with the deployed address
-			p.db.UpdateContractAddress(chain, outHash, result.DeployedAddr)
+			// p.db.UpdateContractAddress(chain, outHash, result.DeployedAddr)
 		}
 	} else {
 		// TODO: Handle deployment failure

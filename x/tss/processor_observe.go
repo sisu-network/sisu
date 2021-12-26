@@ -1,6 +1,8 @@
 package tss
 
 import (
+	"fmt"
+
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	libchain "github.com/sisu-network/lib/chain"
@@ -60,9 +62,22 @@ func (p *Processor) deliverObservedTxs(ctx sdk.Context, tx *tssTypes.ObservedTx)
 	// Save this to KVStore
 	p.keeper.SaveObservedTx(ctx, tx)
 
+	// Creates and broadcast TxOuts
+	txOuts := p.createTxOuts(ctx, tx)
+
 	if !p.globalData.IsCatchingUp() {
+		fmt.Println("Broadcasting txout....")
+
 		// Creates TxOut. TODO: Only do this for top validator nodes.
-		p.createAndBroadcastTxOuts(ctx, tx)
+		for _, msg := range txOuts {
+			go func(m *tssTypes.TxOutWithSigner) {
+				if err := p.txSubmit.SubmitMessage(m); err != nil {
+					return
+				}
+
+				// p.db.UpdateTxOutStatus(m.OutChain, m.GetHash(), tssTypes.TxOutStatusBroadcasted, false)
+			}(msg)
+		}
 	}
 
 	return nil, nil
@@ -86,15 +101,15 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string) error {
 			return nil
 		}
 
-		log.Info("Updating contract status. Contract hash = ", txOut.ContractHash)
-		if err := p.db.UpdateContractsStatus([]*tssTypes.ContractEntity{
-			{
-				Chain: chain,
-				Hash:  txOut.ContractHash,
-			},
-		}, tssTypes.ContractStateDeployed); err != nil {
-			return err
-		}
+		// log.Info("Updating contract status. Contract hash = ", txOut.ContractHash)
+		// if err := p.db.UpdateContractsStatus([]*types.ContractEntity{
+		// 	{
+		// 		Chain: chain,
+		// 		Hash:  txOut.ContractHash,
+		// 	},
+		// }, tssTypes.ContractStateDeployed); err != nil {
+		// 	return err
+		// }
 
 		if err := p.db.UpdateTxOutStatus(
 			txOut.OutChain,

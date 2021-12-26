@@ -50,9 +50,11 @@ func TestDeliverTxOut(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := sdk.Context{}
-	txOut := types.TxOut{
-		OutChain: "eth",
-		OutBytes: binary,
+	txOutWithSigner := &types.TxOutWithSigner{
+		Data: &types.TxOut{
+			OutChain: "eth",
+			OutBytes: binary,
+		},
 	}
 
 	mockKeeper := mocktss.NewMockKeeper(ctrl)
@@ -71,7 +73,7 @@ func TestDeliverTxOut(t *testing.T) {
 	}
 	p.currentHeight.Store(int64(0))
 
-	bytes, err := p.deliverTxOut(ctx, &txOut)
+	bytes, err := p.deliverTxOut(ctx, txOutWithSigner)
 	require.NoError(t, err)
 	require.Empty(t, bytes)
 }
@@ -85,8 +87,10 @@ func TestDeliverTxOut_BlockCatchingUp(t *testing.T) {
 	})
 
 	ctx := sdk.Context{}
-	txOut := types.TxOut{
-		OutChain: "eth",
+	txOutWithSigner := &types.TxOutWithSigner{
+		Data: &types.TxOut{
+			OutChain: "eth",
+		},
 	}
 
 	mockKeeper := mocktss.NewMockKeeper(ctrl)
@@ -106,7 +110,7 @@ func TestDeliverTxOut_BlockCatchingUp(t *testing.T) {
 		globalData: mockGlobalData,
 	}
 
-	bytes, err := p.deliverTxOut(ctx, &txOut)
+	bytes, err := p.deliverTxOut(ctx, txOutWithSigner)
 	require.NoError(t, err)
 	require.Empty(t, bytes)
 }

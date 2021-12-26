@@ -34,8 +34,6 @@ type Database interface {
 	UpdateKeygenStatus(keyType, status string)
 
 	// Contracts
-	InsertContracts(contracts []*types.Contract)
-	GetPendingDeployContracts(chain string) []*tsstypes.ContractEntity
 	GetContractFromAddress(chain, address string) *tsstypes.ContractEntity
 	GetContractFromHash(chain, hash string) *tsstypes.ContractEntity
 	UpdateContractsStatus(contracts []*tsstypes.ContractEntity, status string) error
@@ -43,7 +41,7 @@ type Database interface {
 	UpdateContractAddress(chain, hash, address string)
 
 	// Txout
-	InsertTxOuts(txs []*tsstypes.TxOutEntity)
+	InsertTxOuts(txs []*types.TxOut)
 	GetTxOutWithHash(chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity
 	IsContractDeployTx(chain string, hashWithoutSig string) bool
 	UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string, sig []byte) error
@@ -262,56 +260,6 @@ func (d *SqlDatabase) UpdateKeygenStatus(keyType, status string) {
 		log.Error("failed to udpate keygen status for key type", keyType, ", err = ", err)
 	}
 }
-
-func (d *SqlDatabase) InsertContracts(contracts []*types.Contract) {
-	query := "INSERT INTO contract (chain, hash, name) VALUES "
-	query = query + getQueryQuestionMark(len(contracts), 3)
-
-	params := make([]interface{}, 0, 3*len(contracts))
-	for _, contract := range contracts {
-		params = append(params, contract.Chain)
-		params = append(params, contract.Hash)
-		params = append(params, contract.Name)
-	}
-
-	_, err := d.db.Exec(query, params...)
-	if err != nil {
-		log.Error("failed to insert contract into db, err = ", err)
-	}
-}
-
-func (d *SqlDatabase) GetPendingDeployContracts(chain string) []*tsstypes.ContractEntity {
-	query := "SELECT chain, hash, name, status FROM contract WHERE chain=?"
-	params := []interface{}{chain}
-	result := make([]*tsstypes.ContractEntity, 0)
-
-	rows, err := d.db.Query(query, params...)
-	if err != nil {
-		return result
-	}
-
-	defer rows.Close()
-
-	for rows.Next() {
-		var chain, hash, name, status sql.NullString
-		if err := rows.Scan(&chain, &hash, &name, &status); err != nil {
-			log.Error("cannot scan row, err =", err)
-			continue
-		}
-
-		if status.String == "" {
-			result = append(result, &tsstypes.ContractEntity{
-				Chain:  chain.String,
-				Hash:   hash.String,
-				Name:   name.String,
-				Status: status.String,
-			})
-		}
-	}
-
-	return result
-}
-
 func (d *SqlDatabase) GetContractFromAddress(chain, address string) *tsstypes.ContractEntity {
 	query := "SELECT chain, hash, byteCode, name, address, status FROM contract WHERE chain=? AND address = ?"
 	params := []interface{}{chain, address}
@@ -434,19 +382,18 @@ func (d *SqlDatabase) UpdateContractAddress(chain, outHash, address string) {
 	}
 }
 
-func (d *SqlDatabase) InsertTxOuts(txs []*tsstypes.TxOutEntity) {
-	query := "INSERT INTO tx_out (chain, hash_without_sig, in_chain, in_hash, bytes_without_sig, contract_hash) VALUES "
-	query = query + getQueryQuestionMark(len(txs), 6)
+func (d *SqlDatabase) InsertTxOuts(txs []*types.TxOut) {
+	query := "INSERT INTO tx_out (chain, hash_without_sig, in_chain, in_hash, bytes_without_sig) VALUES "
+	query = query + getQueryQuestionMark(len(txs), 5)
 
 	params := make([]interface{}, 0, len(txs)*6)
 
 	for _, tx := range txs {
 		params = append(params, tx.OutChain)
-		params = append(params, tx.HashWithoutSig)
+		params = append(params, tx.GetHash())
 		params = append(params, tx.InChain)
 		params = append(params, tx.InHash)
-		params = append(params, tx.BytesWithoutSig)
-		params = append(params, tx.ContractHash)
+		params = append(params, tx.OutBytes)
 	}
 
 	_, err := d.db.Exec(query, params...)
@@ -488,7 +435,6 @@ func (d *SqlDatabase) GetTxOutWithHash(chain string, hash string, isHashWithSig 
 			BytesWithoutSig: bytesWithoutSig,
 			Status:          status.String,
 			Signature:       string(signature),
-			ContractHash:    contractHash.String,
 		}
 	}
 

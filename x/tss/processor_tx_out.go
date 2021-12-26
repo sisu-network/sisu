@@ -17,35 +17,25 @@ import (
 
 // Produces response for an observed tx. This has to be deterministic based on all the data that
 // the processor has.
-func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.ObservedTx) []*tssTypes.TxOut {
-	outMsgs, outEntities := p.txOutputProducer.GetTxOuts(ctx, p.currentHeight.Load().(int64), tx)
+func (p *Processor) createTxOuts(ctx sdk.Context, tx *types.ObservedTx) []*types.TxOutWithSigner {
+	txOutWithSigners := p.txOutputProducer.GetTxOuts(ctx, p.currentHeight.Load().(int64), tx)
 
 	// Save this to database
-	log.Verbose("len(outEntities) = ", len(outEntities))
-	if len(outEntities) > 0 {
-		for _, outEntity := range outEntities {
-			outEntity.Status = string(tssTypes.TxOutStatusPreBroadcast)
-			log.Verbose("Inserting into db, tx hash = ", outEntity.HashWithoutSig)
+	log.Verbose("len(txOut) = ", len(txOutWithSigners))
+	if len(txOutWithSigners) > 0 {
+		txOuts := make([]*types.TxOut, len(txOutWithSigners))
+		for i, outWithSigner := range txOutWithSigners {
+			txOuts[i] = outWithSigner.Data
 		}
-		p.db.InsertTxOuts(outEntities)
+		p.db.InsertTxOuts(txOuts)
 	}
 
-	for _, msg := range outMsgs {
-		go func(m *tssTypes.TxOut) {
-			if err := p.txSubmit.SubmitMessage(m); err != nil {
-				return
-			}
-
-			p.db.UpdateTxOutStatus(m.OutChain, m.GetHash(), tssTypes.TxOutStatusBroadcasted, false)
-		}(msg)
-	}
-
-	return outMsgs
+	return txOutWithSigners
 }
 
 // checkTxOut checks if a TxOut message is valid before it is added into Sisu block.
-func (p *Processor) checkTxOut(ctx sdk.Context, msg *types.TxOut) error {
-	if p.keeper.IsTxOutExisted(ctx, msg) {
+func (p *Processor) checkTxOut(ctx sdk.Context, msg *types.TxOutWithSigner) error {
+	if p.keeper.IsTxOutExisted(ctx, msg.Data) {
 		return ErrMessageHasBeenProcessed
 	}
 
@@ -54,7 +44,9 @@ func (p *Processor) checkTxOut(ctx sdk.Context, msg *types.TxOut) error {
 
 // deliverTxOut executes a TxOut transaction after it's included in Sisu block. If this node is
 // catching up with the network, we would not send the tx to TSS for signing.
-func (p *Processor) deliverTxOut(ctx sdk.Context, tx *types.TxOut) ([]byte, error) {
+func (p *Processor) deliverTxOut(ctx sdk.Context, txWithSigner *types.TxOutWithSigner) ([]byte, error) {
+	tx := txWithSigner.Data
+
 	if p.keeper.IsTxOutExisted(ctx, tx) {
 		return nil, nil
 	}

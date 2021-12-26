@@ -19,11 +19,15 @@ func (k *DefaultKeeper) getContractByteCodeKey(chain string, hash string) []byte
 	return []byte(fmt.Sprintf("%s__%s", chain, hash))
 }
 
-func (k *DefaultKeeper) SaveContracts(ctx sdk.Context, msgs []*types.Contract) {
+func (k *DefaultKeeper) SaveContracts(ctx sdk.Context, msgs []*types.Contract, saveByteCode bool) {
 	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
 	byteCodeStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractByteCode)
 
+	log.Info("Saving contracts, contracts length = ", len(msgs))
+
 	for _, msg := range msgs {
+		log.Infof("Saving contract on chain %s with hash = %s", msg.Chain, msg.Hash)
+
 		bz, err := msg.Marshal()
 		if err != nil {
 			log.Error("Cannot marshal contract message, err = ", err)
@@ -32,14 +36,22 @@ func (k *DefaultKeeper) SaveContracts(ctx sdk.Context, msgs []*types.Contract) {
 
 		// Save byte code into separate store since it's rarely read.
 		copy := &types.Contract{}
-		err = copy.Unmarshal(bz)
-		if err != nil {
-			log.Error("Cannot unmarshal contract message, err = ", err)
-			continue
+		if msg.ByteCodes == nil {
+			// ByteCode is nil, the copy is the same object reference as message
+			copy = msg
+		} else {
+			// ByteCode is not nil, we need to remove the bytecode from the copy.
+			err = copy.Unmarshal(bz)
+			if err != nil {
+				log.Error("Cannot unmarshal contract message, err = ", err)
+				continue
+			}
+
+			// Set bytecode to nil
+			copy.ByteCodes = nil
 		}
 
-		// Set bytecode to nil
-		copy.ByteCodes = nil
+		// Get the serialized bytes of copy
 		bz, err = copy.Marshal()
 		if err != nil {
 			log.Error("Cannot marshal contract copy, err = ", err)
@@ -47,10 +59,13 @@ func (k *DefaultKeeper) SaveContracts(ctx sdk.Context, msgs []*types.Contract) {
 		}
 
 		contractKey := k.getContractKey(msg.Chain, msg.Hash)
-		byteCodeKey := k.getContractByteCodeKey(msg.Chain, msg.Hash)
-
 		contractStore.Set(contractKey, bz)
-		byteCodeStore.Set(byteCodeKey, msg.ByteCodes)
+
+		// Save byte code
+		if saveByteCode && msg.ByteCodes != nil {
+			byteCodeKey := k.getContractByteCodeKey(msg.Chain, msg.Hash)
+			byteCodeStore.Set(byteCodeKey, msg.ByteCodes)
+		}
 	}
 }
 
@@ -60,7 +75,8 @@ func (k *DefaultKeeper) GetPendingContracts(ctx sdk.Context, chain string) []*ty
 
 	contracts := make([]*types.Contract, 0)
 
-	iter := contractStore.Iterator([]byte(fmt.Sprintf("%s__", chain)), nil)
+	iter := contractStore.Iterator([]byte(fmt.Sprintf("%s__", chain)), []byte(fmt.Sprintf("%s__~", chain)))
+
 	for ; iter.Valid(); iter.Next() {
 		key := iter.Key()
 		bz := iter.Value()

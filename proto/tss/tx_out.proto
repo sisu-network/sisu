@@ -5,13 +5,17 @@ enum TxOutType {
   CONTRACT_DEPLOYMENT = 0;
 }
 
+message TxOutWithSigner {
+  string signer = 1;
+  TxOut data = 2;
+}
+
 // Note: all new fields in this proto MUST be included in SerializeWithoutSigner in the go file.
 message TxOut {
   TxOutType txType = 1;
-  string signer = 2;
-  string inChain = 3;
-  string outChain = 4;
-  int64 inBlockHeight = 5;
-  string inHash = 6;
-  bytes outBytes = 7;
+  string inChain = 2;
+  string outChain = 3;
+  int64 inBlockHeight = 4;
+  string inHash = 5;
+  bytes outBytes = 6;
 }

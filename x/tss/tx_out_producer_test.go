@@ -24,7 +24,7 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 	t.Parallel()
 
 	hash := utils.KeccakHash32(erc20gateway.Erc20gatewayBin)
-	contractEntity := &types.ContractEntity{
+	contract := &types.Contract{
 		Chain: "eth",
 		Hash:  hash,
 	}
@@ -43,7 +43,7 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 		},
 	}
 
-	tx := txOutProducer.getContractTx(contractEntity, 100)
+	tx := txOutProducer.getContractTx(contract, 100)
 	require.NotNil(t, tx)
 	require.EqualValues(t, 100, tx.Nonce())
 	require.EqualValues(t, *big.NewInt(10000000000), *tx.GasPrice())
@@ -61,20 +61,12 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 			ctrl.Finish()
 		})
 
-		contractEntities := []*types.ContractEntity{
-			{
-				Chain: "eth",
-				Hash:  SupportedContracts[ContractErc20].AbiHash,
-			},
-		}
-
 		privKey, err := crypto.GenerateKey()
 		require.NoError(t, err)
 
 		pubkeyBytes := crypto.FromECDSAPub(&privKey.PublicKey)
 		mockDb := mock.NewMockDatabase(ctrl)
 		mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(true).Times(1)
-		mockDb.EXPECT().GetPendingDeployContracts(gomock.Any()).Return(contractEntities).Times(1)
 		mockDb.EXPECT().GetPubKey("ecdsa").Return(pubkeyBytes).Times(1)
 		mockDb.EXPECT().UpdateContractsStatus(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
@@ -124,10 +116,9 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		}
 
 		ctx := sdk.Context{}
-		txOuts, txOutEntities, err := txOutProducer.getEthResponse(ctx, 1, &observedTx)
+		txOuts, err := txOutProducer.getEthResponse(ctx, 1, &observedTx)
 		require.NoError(t, err)
 		require.Len(t, txOuts, 1)
-		require.Len(t, txOutEntities, 1)
 	})
 
 	t.Run("transaction_send_to_contract", func(t *testing.T) {
@@ -205,9 +196,8 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		}
 
 		ctx := sdk.Context{}
-		txOuts, txOutEntities, err := txOutProducer.getEthResponse(ctx, 1, &observedTx)
+		txOuts, err := txOutProducer.getEthResponse(ctx, 1, &observedTx)
 		require.NoError(t, err)
 		require.Len(t, txOuts, 1)
-		require.Len(t, txOutEntities, 1)
 	})
 }
