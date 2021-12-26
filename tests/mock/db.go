@@ -159,6 +159,18 @@ func (mr *MockDatabaseMockRecorder) InsertMempoolTxHash(hash, blockHeight interf
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertMempoolTxHash", reflect.TypeOf((*MockDatabase)(nil).InsertMempoolTxHash), hash, blockHeight)
 }
 
+// InsertTxIn mocks base method.
+func (m *MockDatabase) InsertTxIn(txIn *types.TxIn) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "InsertTxIn", txIn)
+}
+
+// InsertTxIn indicates an expected call of InsertTxIn.
+func (mr *MockDatabaseMockRecorder) InsertTxIn(txIn interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertTxIn", reflect.TypeOf((*MockDatabase)(nil).InsertTxIn), txIn)
+}
+
 // InsertTxOuts mocks base method.
 func (m *MockDatabase) InsertTxOuts(txs []*types.TxOut) {
 	m.ctrl.T.Helper()
@@ -197,6 +209,20 @@ func (m *MockDatabase) IsContractDeployTx(chain, hashWithoutSig string) bool {
 func (mr *MockDatabaseMockRecorder) IsContractDeployTx(chain, hashWithoutSig interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsContractDeployTx", reflect.TypeOf((*MockDatabase)(nil).IsContractDeployTx), chain, hashWithoutSig)
+}
+
+// IsTxInExisted mocks base method.
+func (m *MockDatabase) IsTxInExisted(txIn *types.TxIn) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsTxInExisted", txIn)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsTxInExisted indicates an expected call of IsTxInExisted.
+func (mr *MockDatabaseMockRecorder) IsTxInExisted(txIn interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTxInExisted", reflect.TypeOf((*MockDatabase)(nil).IsTxInExisted), txIn)
 }
 
 // MempoolTxExisted mocks base method.

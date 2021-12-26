@@ -41,6 +41,8 @@ type Database interface {
 	UpdateContractAddress(chain, hash, address string)
 
 	// TxIn
+	InsertTxIn(txIn *types.TxIn)
+	IsTxInExisted(txIn *types.TxIn) bool
 
 	// Txout
 	InsertTxOuts(txs []*types.TxOut)
@@ -382,6 +384,31 @@ func (d *SqlDatabase) UpdateContractAddress(chain, outHash, address string) {
 	if err != nil {
 		log.Error("failed to update contract address, err =", err)
 	}
+}
+
+func (d *SqlDatabase) InsertTxIn(txIn *types.TxIn) {
+	query := "INSERT IGNORE INTO tx_in (chain, hash, block_height, serialized) VALUES(?, ?, ?, ?)"
+	params := []interface{}{txIn.Chain, txIn.TxHash, txIn.BlockHeight, txIn.Serialized}
+
+	_, err := d.db.Exec(query, params...)
+	if err != nil {
+		log.Error("failed to insert TxIn into table, err =", err)
+	}
+}
+
+func (d *SqlDatabase) IsTxInExisted(txIn *types.TxIn) bool {
+	query := "SELECT chain FROM tx_in WHERE chain=? AND hash=? AND block_height=?"
+	params := []interface{}{txIn.Chain, txIn.TxHash, txIn.BlockHeight}
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		log.Error("failed to query TxIn, err =", err)
+		return false
+	}
+
+	defer rows.Close()
+
+	return rows.Next()
 }
 
 func (d *SqlDatabase) InsertTxOuts(txs []*types.TxOut) {
