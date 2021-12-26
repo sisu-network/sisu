@@ -86,7 +86,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		binary, err := ethTransaction.MarshalBinary()
 		require.NoError(t, err)
 
-		observedTx := types.ObservedTx{
+		observedTx := types.TxIn{
 			BlockHeight: 1,
 			Serialized:  binary,
 			Chain:       "eth",
@@ -167,7 +167,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		binary, err := ethTransaction.MarshalBinary()
 		require.NoError(t, err)
 
-		observedTx := types.ObservedTx{
+		observedTx := types.TxIn{
 			BlockHeight: 1,
 			Serialized:  binary,
 		}

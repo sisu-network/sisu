@@ -48,7 +48,7 @@ func (a *ApiHandler) PostObservedTxs(txs *etypes.Txs) {
 	}
 
 	// There is a new transaction that we are interested in.
-	a.processor.OnObservedTxs(txs)
+	a.processor.OnTxIns(txs)
 }
 
 func (a *ApiHandler) KeysignResult(result *htypes.KeysignResult) {

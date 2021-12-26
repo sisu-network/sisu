@@ -91,18 +91,18 @@ func (mr *MockKeeperMockRecorder) IsKeygenProposalExisted(ctx, msg interface{}) 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKeygenProposalExisted", reflect.TypeOf((*MockKeeper)(nil).IsKeygenProposalExisted), ctx, msg)
 }
 
-// IsObservedTxExisted mocks base method.
-func (m *MockKeeper) IsObservedTxExisted(ctx types.Context, msg *types0.ObservedTx) bool {
+// IsTxInExisted mocks base method.
+func (m *MockKeeper) IsTxInExisted(ctx types.Context, msg *types0.TxIn) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsObservedTxExisted", ctx, msg)
+	ret := m.ctrl.Call(m, "IsTxInExisted", ctx, msg)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-// IsObservedTxExisted indicates an expected call of IsObservedTxExisted.
-func (mr *MockKeeperMockRecorder) IsObservedTxExisted(ctx, msg interface{}) *gomock.Call {
+// IsTxInExisted indicates an expected call of IsTxInExisted.
+func (mr *MockKeeperMockRecorder) IsTxInExisted(ctx, msg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsObservedTxExisted", reflect.TypeOf((*MockKeeper)(nil).IsObservedTxExisted), ctx, msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTxInExisted", reflect.TypeOf((*MockKeeper)(nil).IsTxInExisted), ctx, msg)
 }
 
 // IsTxOutExisted mocks base method.
@@ -155,16 +155,16 @@ func (mr *MockKeeperMockRecorder) SaveKeygenProposal(ctx, msg interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveKeygenProposal", reflect.TypeOf((*MockKeeper)(nil).SaveKeygenProposal), ctx, msg)
 }
 
-// SaveObservedTx mocks base method.
-func (m *MockKeeper) SaveObservedTx(ctx types.Context, msg *types0.ObservedTx) {
+// SaveTxIn mocks base method.
+func (m *MockKeeper) SaveTxIn(ctx types.Context, msg *types0.TxIn) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SaveObservedTx", ctx, msg)
+	m.ctrl.Call(m, "SaveTxIn", ctx, msg)
 }
 
-// SaveObservedTx indicates an expected call of SaveObservedTx.
-func (mr *MockKeeperMockRecorder) SaveObservedTx(ctx, msg interface{}) *gomock.Call {
+// SaveTxIn indicates an expected call of SaveTxIn.
+func (mr *MockKeeperMockRecorder) SaveTxIn(ctx, msg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveObservedTx", reflect.TypeOf((*MockKeeper)(nil).SaveObservedTx), ctx, msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTxIn", reflect.TypeOf((*MockKeeper)(nil).SaveTxIn), ctx, msg)
 }
 
 // SaveTxOut mocks base method.

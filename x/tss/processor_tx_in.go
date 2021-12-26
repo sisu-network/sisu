@@ -14,10 +14,10 @@ import (
 
 // Processed list of transactions sent from deyes to Sisu api server.
 // TODO: handle error correctly
-func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) error {
+func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 	log.Verbose("There is a new list of txs from deyes, len =", len(txs.Arr))
 
-	// Create ObservedTx messages and broadcast to the Sisu chain.
+	// Create TxIn messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
 		// 1. Check if this tx is from one of our key. If it is, update the status of TxOut to confirmed.
 		if p.db.IsChainKeyAddress(libchain.KEY_TYPE_ECDSA, tx.From) {
@@ -26,7 +26,7 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) error {
 			// 2. This is a transaction to our key account or one of our contracts. Create a message to
 			// indicate that we have observed this transaction and broadcast it to cosmos chain.
 			hash := utils.GetTxInHash(txs.Block, txs.Chain, tx.Serialized)
-			observedTxs := tssTypes.NewObservedTxs(
+			txIn := tssTypes.NewTxInWithSigner(
 				p.appKeys.GetSignerAddress().String(),
 				txs.Chain,
 				hash,
@@ -36,7 +36,7 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) error {
 
 			// TODO: handle error correctly
 			go func() {
-				if err := p.txSubmit.SubmitMessage(observedTxs); err != nil {
+				if err := p.txSubmit.SubmitMessage(txIn); err != nil {
 					return
 				}
 			}()
@@ -46,24 +46,24 @@ func (p *Processor) OnObservedTxs(txs *eyesTypes.Txs) error {
 	return nil
 }
 
-func (p *Processor) checkObservedTx(ctx sdk.Context, msgWithSigner *types.ObservedTxWithSigner) error {
-	if p.keeper.IsObservedTxExisted(ctx, msgWithSigner.Data) {
+func (p *Processor) checkTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner) error {
+	if p.keeper.IsTxInExisted(ctx, msgWithSigner.Data) {
 		return ErrMessageHasBeenProcessed
 	}
 	return nil
 }
 
 // Delivers observed Txs.
-func (p *Processor) deliverObservedTx(ctx sdk.Context, msgWithSigner *types.ObservedTxWithSigner) ([]byte, error) {
+func (p *Processor) deliverTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner) ([]byte, error) {
 	msg := msgWithSigner.Data
 
-	if p.keeper.IsObservedTxExisted(ctx, msg) {
+	if p.keeper.IsTxInExisted(ctx, msg) {
 		// The tx has been processed before.
 		return nil, nil
 	}
 
 	// Save this to KVStore
-	p.keeper.SaveObservedTx(ctx, msg)
+	p.keeper.SaveTxIn(ctx, msg)
 
 	// Creates and broadcast TxOuts
 	txOuts := p.createTxOuts(ctx, msg)

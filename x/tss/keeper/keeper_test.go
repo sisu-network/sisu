@@ -40,7 +40,7 @@ func TestKeeper_SaveAndGetObservedTx(t *testing.T) {
 	t.Parallel()
 	keeper, ctx := getTestKeeperAndContext()
 
-	observedTx := &types.ObservedTx{
+	observedTx := &types.TxIn{
 		Chain:       "eth",
 		BlockHeight: 1,
 		TxHash:      "Hash",
@@ -48,28 +48,28 @@ func TestKeeper_SaveAndGetObservedTx(t *testing.T) {
 	}
 
 	// Save observed Tx
-	keeper.SaveObservedTx(ctx, observedTx)
+	keeper.SaveTxIn(ctx, observedTx)
 
 	// Check Observed Tx
-	require.Equal(t, true, keeper.IsObservedTxExisted(ctx, observedTx))
+	require.Equal(t, true, keeper.IsTxInExisted(ctx, observedTx))
 
 	// Different signer would not change the observedTx retrieval
 	other := *observedTx
 	other.Chain = "signer2"
-	require.Equal(t, true, keeper.IsObservedTxExisted(ctx, observedTx))
+	require.Equal(t, true, keeper.IsTxInExisted(ctx, observedTx))
 
 	// Any change in the chain, block height or tx hash would not retrieve the observed tx.
 	other = *observedTx
 	other.Chain = "bitcoin"
-	require.Equal(t, false, keeper.IsObservedTxExisted(ctx, &other))
+	require.Equal(t, false, keeper.IsTxInExisted(ctx, &other))
 
 	other = *observedTx
 	other.BlockHeight = 2
-	require.Equal(t, false, keeper.IsObservedTxExisted(ctx, &other))
+	require.Equal(t, false, keeper.IsTxInExisted(ctx, &other))
 
 	other = *observedTx
 	other.TxHash = "Hash2"
-	require.Equal(t, false, keeper.IsObservedTxExisted(ctx, &other))
+	require.Equal(t, false, keeper.IsTxInExisted(ctx, &other))
 }
 
 func TestKeeper_SaveAndGetTxOut(t *testing.T) {

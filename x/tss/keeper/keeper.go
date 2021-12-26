@@ -14,7 +14,7 @@ var (
 	prefixKeygen           = []byte{0x02}
 	prefixContract         = []byte{0x03}
 	prefixContractByteCode = []byte{0x04}
-	prefixObservedTx       = []byte{0x05}
+	prefixTxIn             = []byte{0x05}
 	prefixTxOut            = []byte{0x06}
 )
 
@@ -33,9 +33,9 @@ type Keeper interface {
 	SaveContracts(ctx sdk.Context, msgs []*types.Contract, saveByteCode bool)
 	GetPendingContracts(ctx sdk.Context, chain string) []*types.Contract
 
-	// Observed Tx
-	SaveObservedTx(ctx sdk.Context, msg *types.ObservedTx)
-	IsObservedTxExisted(ctx sdk.Context, msg *types.ObservedTx) bool
+	// TxIn
+	SaveTxIn(ctx sdk.Context, msg *types.TxIn)
+	IsTxInExisted(ctx sdk.Context, msg *types.TxIn) bool
 
 	// TxOut
 	SaveTxOut(ctx sdk.Context, msg *types.TxOut)
@@ -54,7 +54,7 @@ func NewKeeper(storeKey sdk.StoreKey) *DefaultKeeper {
 	return keeper
 }
 
-func (k *DefaultKeeper) getObservedTxKey(chain string, height int64, hash string) []byte {
+func (k *DefaultKeeper) getTxInKey(chain string, height int64, hash string) []byte {
 	// chain, height, hash
 	return []byte(fmt.Sprintf("%s__%d__%s", chain, height, hash))
 }
@@ -132,9 +132,9 @@ func (k *DefaultKeeper) IsKeygenExisted(ctx sdk.Context, msg *types.KeygenResult
 	return store.Get(key) != nil
 }
 
-func (k *DefaultKeeper) SaveObservedTx(ctx sdk.Context, msg *types.ObservedTx) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixObservedTx)
-	key := k.getObservedTxKey(msg.Chain, msg.BlockHeight, msg.TxHash)
+func (k *DefaultKeeper) SaveTxIn(ctx sdk.Context, msg *types.TxIn) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxIn)
+	key := k.getTxInKey(msg.Chain, msg.BlockHeight, msg.TxHash)
 
 	bz, err := msg.Marshal()
 	if err != nil {
@@ -145,9 +145,9 @@ func (k *DefaultKeeper) SaveObservedTx(ctx sdk.Context, msg *types.ObservedTx) {
 	store.Set(key, bz)
 }
 
-func (k *DefaultKeeper) IsObservedTxExisted(ctx sdk.Context, tx *types.ObservedTx) bool {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixObservedTx)
-	key := k.getObservedTxKey(tx.GetChain(), tx.GetBlockHeight(), tx.GetTxHash())
+func (k *DefaultKeeper) IsTxInExisted(ctx sdk.Context, tx *types.TxIn) bool {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxIn)
+	key := k.getTxInKey(tx.GetChain(), tx.GetBlockHeight(), tx.GetTxHash())
 
 	return store.Get(key) != nil
 }
