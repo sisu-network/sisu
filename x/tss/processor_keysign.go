@@ -21,14 +21,13 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 	// Sends it to deyes for deployment.
 	if result.Success {
 		// Find the tx in txout table
-
-		txEntity := p.db.GetTxOutWithHash(result.OutChain, result.OutHash, false)
-		if txEntity == nil {
+		txOut := p.db.GetTxOutWithHash(result.OutChain, result.OutHash, false)
+		if txOut == nil {
 			log.Error("Cannot find tx out with hash", result.OutHash)
 		}
 
 		tx := &etypes.Transaction{}
-		if err := tx.UnmarshalBinary(txEntity.BytesWithoutSig); err != nil {
+		if err := tx.UnmarshalBinary(txOut.BytesWithoutSig); err != nil {
 			log.Error("cannot unmarshal tx, err =", err)
 			return
 		}

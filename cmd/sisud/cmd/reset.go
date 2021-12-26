@@ -148,6 +148,7 @@ func deleteSql() error {
 	log.Info("Deleting sql tables...")
 
 	database.Exec("DROP TABLE contract")
+	database.Exec("DROP TABLE tx_in")
 	database.Exec("DROP TABLE tx_out")
 	database.Exec("DROP TABLE schema_migrations")
 	database.Exec("DROP TABLE keygen")
