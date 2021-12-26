@@ -17,7 +17,7 @@ import (
 
 // Produces response for an observed tx. This has to be deterministic based on all the data that
 // the processor has.
-func (p *Processor) createTxOuts(ctx sdk.Context, tx *types.ObservedTx) []*types.TxOutWithSigner {
+func (p *Processor) createTxOuts(ctx sdk.Context, tx *types.TxIn) []*types.TxOutWithSigner {
 	txOutWithSigners := p.txOutputProducer.GetTxOuts(ctx, p.currentHeight.Load().(int64), tx)
 
 	// Save this to database

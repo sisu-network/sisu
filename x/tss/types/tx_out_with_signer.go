@@ -10,7 +10,7 @@ type TxOutStatus string
 
 const (
 	TxOutStatusConfirmed TxOutStatus = "confirmed"
-	// TxOutStatusPreBroadcast after produce from observedTx, the txOut is ready to broadcast to Cosmos chain
+	// TxOutStatusPreBroadcast after produce from txIn, the txOut is ready to broadcast to Cosmos chain
 	TxOutStatusPreBroadcast TxOutStatus = "pre_broadcast"
 	// TxOutStatusBroadcasted TxOut has broadcasted to Cosmos chain successfully
 	TxOutStatusBroadcasted TxOutStatus = "broadcasted"

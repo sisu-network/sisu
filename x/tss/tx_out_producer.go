@@ -22,7 +22,7 @@ import (
 // produces a list (could contain only one element) of transaction output.
 type TxOutputProducer interface {
 	// AddKeyAddress(ctx sdk.Context, chain, addr string) error
-	GetTxOuts(ctx sdk.Context, height int64, tx *types.ObservedTx) []*types.TxOutWithSigner
+	GetTxOuts(ctx sdk.Context, height int64, tx *types.TxIn) []*types.TxOutWithSigner
 }
 
 type DefaultTxOutputProducer struct {
@@ -47,7 +47,7 @@ func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys co
 	}
 }
 
-func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *types.ObservedTx) []*types.TxOutWithSigner {
+func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *types.TxIn) []*types.TxOutWithSigner {
 	outMsgs := make([]*types.TxOutWithSigner, 0)
 	var err error
 
@@ -64,7 +64,7 @@ func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *t
 }
 
 // Get ETH out from an observed tx. Only do this if this is a validator node.
-func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, tx *types.ObservedTx) ([]*types.TxOutWithSigner, error) {
+func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, tx *types.TxIn) ([]*types.TxOutWithSigner, error) {
 	ethTx := &ethTypes.Transaction{}
 
 	err := ethTx.UnmarshalBinary(tx.Serialized)

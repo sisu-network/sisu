@@ -20,7 +20,7 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 		t.Parallel()
 
 		processor := &Processor{}
-		require.NoError(t, processor.OnObservedTxs(&eyesTypes.Txs{}))
+		require.NoError(t, processor.OnTxIns(&eyesTypes.Txs{}))
 	})
 
 	t.Run("success_from_our_key", func(t *testing.T) {
@@ -54,7 +54,7 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 		processor := &Processor{}
 		processor.db = mockDb
 
-		require.NoError(t, processor.OnObservedTxs(txs))
+		require.NoError(t, processor.OnTxIns(txs))
 	})
 
 	t.Run("success_to_our_key", func(t *testing.T) {
@@ -97,6 +97,6 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 			txSubmit: txSubmitterMock,
 		}
 
-		require.NoError(t, processor.OnObservedTxs(txs))
+		require.NoError(t, processor.OnTxIns(txs))
 	})
 }
