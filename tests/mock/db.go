@@ -225,6 +225,20 @@ func (mr *MockDatabaseMockRecorder) IsTxInExisted(txIn interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTxInExisted", reflect.TypeOf((*MockDatabase)(nil).IsTxInExisted), txIn)
 }
 
+// IsTxOutExisted mocks base method.
+func (m *MockDatabase) IsTxOutExisted(txOut *types.TxOut) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsTxOutExisted", txOut)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsTxOutExisted indicates an expected call of IsTxOutExisted.
+func (mr *MockDatabaseMockRecorder) IsTxOutExisted(txOut interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTxOutExisted", reflect.TypeOf((*MockDatabase)(nil).IsTxOutExisted), txOut)
+}
+
 // MempoolTxExisted mocks base method.
 func (m *MockDatabase) MempoolTxExisted(hash string) bool {
 	m.ctrl.T.Helper()

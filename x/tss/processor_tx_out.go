@@ -15,27 +15,9 @@ import (
 	"github.com/sisu-network/lib/log"
 )
 
-// Produces response for an observed tx. This has to be deterministic based on all the data that
-// the processor has.
-func (p *Processor) createTxOuts(ctx sdk.Context, tx *types.TxIn) []*types.TxOutWithSigner {
-	txOutWithSigners := p.txOutputProducer.GetTxOuts(ctx, p.currentHeight.Load().(int64), tx)
-
-	// Save this to database
-	log.Verbose("len(txOut) = ", len(txOutWithSigners))
-	if len(txOutWithSigners) > 0 {
-		txOuts := make([]*types.TxOut, len(txOutWithSigners))
-		for i, outWithSigner := range txOutWithSigners {
-			txOuts[i] = outWithSigner.Data
-		}
-		p.db.InsertTxOuts(txOuts)
-	}
-
-	return txOutWithSigners
-}
-
 // checkTxOut checks if a TxOut message is valid before it is added into Sisu block.
 func (p *Processor) checkTxOut(ctx sdk.Context, msg *types.TxOutWithSigner) error {
-	if p.keeper.IsTxOutExisted(ctx, msg.Data) {
+	if p.db.IsTxOutExisted(msg.Data) {
 		return ErrMessageHasBeenProcessed
 	}
 
@@ -44,23 +26,30 @@ func (p *Processor) checkTxOut(ctx sdk.Context, msg *types.TxOutWithSigner) erro
 
 // deliverTxOut executes a TxOut transaction after it's included in Sisu block. If this node is
 // catching up with the network, we would not send the tx to TSS for signing.
-func (p *Processor) deliverTxOut(ctx sdk.Context, txWithSigner *types.TxOutWithSigner) ([]byte, error) {
-	tx := txWithSigner.Data
+func (p *Processor) deliverTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWithSigner) ([]byte, error) {
+	txOut := msgWithSigner.Data
 
-	if p.keeper.IsTxOutExisted(ctx, tx) {
+	if p.db.IsTxOutExisted(txOut) {
 		return nil, nil
 	}
 
-	p.keeper.SaveTxOut(ctx, tx)
+	// Save this to KVStore
+	p.keeper.SaveTxOut(ctx, txOut)
 
+	// Save this to private db.
+	txs := make([]*types.TxOut, 1)
+	txs[1] = txOut
+	p.db.InsertTxOuts(txs)
+
+	// Do key signing if this node is not catching up.
 	if !p.globalData.IsCatchingUp() {
 		// Only Deliver TxOut if the chain has been up to date.
-		if libchain.IsETHBasedChain(tx.OutChain) {
-			if err := p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusPreSigning, false); err != nil {
+		if libchain.IsETHBasedChain(txOut.OutChain) {
+			if err := p.db.UpdateTxOutStatus(txOut.OutChain, txOut.GetHash(), tssTypes.TxOutStatusPreSigning, false); err != nil {
 				return nil, err
 			}
 
-			return p.signTx(ctx, tx)
+			return p.signTx(ctx, txOut)
 		}
 	}
 

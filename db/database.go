@@ -46,6 +46,8 @@ type Database interface {
 
 	// Txout
 	InsertTxOuts(txs []*types.TxOut)
+	IsTxOutExisted(txOut *types.TxOut) bool
+
 	GetTxOutWithHash(chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity
 	IsContractDeployTx(chain string, hashWithoutSig string) bool
 	UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string, sig []byte) error
@@ -351,7 +353,7 @@ func (d *SqlDatabase) UpdateContractDeployTx(chain, hash string, txHash string) 
 }
 
 func (d *SqlDatabase) IsContractDeployTx(chain string, hashWithoutSig string) bool {
-	query := "SELECT contract_hash FROM tx_out WHERE chain=? AND hash_without_sig = ?"
+	query := "SELECT contract_hash FROM tx_out WHERE chain=? AND out_hash = ?"
 	params := []interface{}{
 		chain,
 		hashWithoutSig,
@@ -377,7 +379,7 @@ func (d *SqlDatabase) IsContractDeployTx(chain string, hashWithoutSig string) bo
 }
 
 func (d *SqlDatabase) UpdateContractAddress(chain, outHash, address string) {
-	query := "UPDATE contract SET address = ? WHERE chain = ? AND hash = (SELECT contract_hash FROM tx_out WHERE chain = ? AND hash_without_sig = ?)"
+	query := "UPDATE contract SET address = ? WHERE chain = ? AND hash = (SELECT contract_hash FROM tx_out WHERE chain = ? AND out_hash = ?)"
 	params := []interface{}{address, chain, chain, outHash}
 
 	_, err := d.db.Exec(query, params...)
@@ -412,16 +414,16 @@ func (d *SqlDatabase) IsTxInExisted(txIn *types.TxIn) bool {
 }
 
 func (d *SqlDatabase) InsertTxOuts(txs []*types.TxOut) {
-	query := "INSERT INTO tx_out (chain, hash_without_sig, in_chain, in_hash, bytes_without_sig) VALUES "
+	query := "INSERT IGNORE INTO tx_out (in_chain, in_hash, out_chain, out_hash, bytes_without_sig) VALUES "
 	query = query + getQueryQuestionMark(len(txs), 5)
 
-	params := make([]interface{}, 0, len(txs)*6)
+	params := make([]interface{}, 0, len(txs)*5)
 
 	for _, tx := range txs {
-		params = append(params, tx.OutChain)
-		params = append(params, tx.GetHash())
 		params = append(params, tx.InChain)
 		params = append(params, tx.InHash)
+		params = append(params, tx.OutChain)
+		params = append(params, tx.GetHash())
 		params = append(params, tx.OutBytes)
 	}
 
@@ -431,12 +433,26 @@ func (d *SqlDatabase) InsertTxOuts(txs []*types.TxOut) {
 	}
 }
 
+func (d *SqlDatabase) IsTxOutExisted(txOut *types.TxOut) bool {
+	query := "SELECT in_chain FROM tx_out WHERE in_chain = ? AND out_chain = ? AND out_hash = ?"
+	params := []interface{}{txOut.InChain, txOut.OutChain, txOut.GetHash()}
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		log.Error("failed to query tx out, err = ", err)
+		return false
+	}
+	defer rows.Close()
+
+	return rows.Next()
+}
+
 func (d *SqlDatabase) GetTxOutWithHash(chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity {
 	var query string
 	if isHashWithSig {
-		query = "SELECT chain, status, hash_without_sig, hash_with_sig, in_chain, in_hash, bytes_without_sig, signature, contract_hash FROM tx_out WHERE chain = ? AND hash_with_sig = ?"
+		query = "SELECT chain, status, out_hash, hash_with_sig, in_chain, in_hash, bytes_without_sig, signature, contract_hash FROM tx_out WHERE chain = ? AND hash_with_sig = ?"
 	} else {
-		query = "SELECT chain, status, hash_without_sig, hash_with_sig, in_chain, in_hash, bytes_without_sig, signature, contract_hash FROM tx_out WHERE chain = ? AND hash_without_sig = ?"
+		query = "SELECT chain, status, out_hash, hash_with_sig, in_chain, in_hash, bytes_without_sig, signature, contract_hash FROM tx_out WHERE chain = ? AND out_hash = ?"
 	}
 	params := []interface{}{chain, hash}
 
@@ -471,7 +487,7 @@ func (d *SqlDatabase) GetTxOutWithHash(chain string, hash string, isHashWithSig 
 }
 
 func (d *SqlDatabase) UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string, sig []byte) error {
-	query := "UPDATE tx_out SET signature = ?, hash_with_sig = ? WHERE chain = ? AND hash_without_sig = ?"
+	query := "UPDATE tx_out SET signature = ?, hash_with_sig = ? WHERE chain = ? AND out_hash = ?"
 	params := []interface{}{
 		sig,
 		hashWithSig,
@@ -491,7 +507,7 @@ func (d *SqlDatabase) UpdateTxOutStatus(chain, hash string, status tsstypes.TxOu
 	log.Debugf("Updating txout hash(%s) to status(%s), chain(%s)", hash, string(status), chain)
 	query := "UPDATE tx_out SET status = ? WHERE chain = ? AND hash_with_sig = ?"
 	if !isHashWithSig {
-		query = "UPDATE tx_out SET status = ? WHERE chain = ? AND hash_without_sig = ?"
+		query = "UPDATE tx_out SET status = ? WHERE chain = ? AND out_hash = ?"
 	}
 
 	params := []interface{}{status, chain, hash}

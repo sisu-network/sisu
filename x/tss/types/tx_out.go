@@ -5,5 +5,5 @@ import (
 )
 
 func (msg *TxOut) GetHash() string {
-	return utils.KeccakHash32(msg.OutChain + string(msg.OutBytes))
+	return utils.KeccakHash32(string(msg.OutBytes))
 }

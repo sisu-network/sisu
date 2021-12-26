@@ -59,9 +59,9 @@ func (k *DefaultKeeper) getTxInKey(chain string, height int64, hash string) []by
 	return []byte(fmt.Sprintf("%s__%d__%s", chain, height, hash))
 }
 
-func (k *DefaultKeeper) getTxOutKey(inChain string, outChain string, height int64, hash string) []byte {
+func (k *DefaultKeeper) getTxOutKey(inChain string, outChain string, outHash string) []byte {
 	// inChain, outChain, height, hash
-	return []byte(fmt.Sprintf("%s__%s__%d__%s", inChain, outChain, height, hash))
+	return []byte(fmt.Sprintf("%s__%s__%s", inChain, outChain, outHash))
 }
 
 func (k *DefaultKeeper) getKeygenProposalKey(keyType string, createdBlock int64) []byte {
@@ -154,7 +154,7 @@ func (k *DefaultKeeper) IsTxInExisted(ctx sdk.Context, tx *types.TxIn) bool {
 
 func (k *DefaultKeeper) SaveTxOut(ctx sdk.Context, msg *types.TxOut) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
-	key := k.getTxOutKey(msg.InChain, msg.OutChain, msg.InBlockHeight, msg.GetHash())
+	key := k.getTxOutKey(msg.InChain, msg.OutChain, msg.GetHash())
 
 	bz, err := msg.Marshal()
 	if err != nil {
@@ -167,7 +167,7 @@ func (k *DefaultKeeper) SaveTxOut(ctx sdk.Context, msg *types.TxOut) {
 
 func (k *DefaultKeeper) IsTxOutExisted(ctx sdk.Context, msg *types.TxOut) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
-	key := k.getTxOutKey(msg.InChain, msg.OutChain, msg.InBlockHeight, msg.GetHash())
+	key := k.getTxOutKey(msg.InChain, msg.OutChain, msg.GetHash())
 
 	return store.Get(key) != nil
 }

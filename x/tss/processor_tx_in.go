@@ -61,20 +61,32 @@ func (p *Processor) deliverTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSi
 		return nil, nil
 	}
 
-	// Insert this into db table.
+	// Insert this TxIn into db table.
 	p.db.InsertTxIn(msg)
 
 	// Save this to KVStore
 	p.keeper.SaveTxIn(ctx, msg)
 
-	// Creates and broadcast TxOuts
-	txOuts := p.createTxOuts(ctx, msg)
+	// Creates and broadcast TxOuts. This has to be deterministic based on all the data that the
+	// processor has.
+	txOutWithSigners := p.txOutputProducer.GetTxOuts(ctx, ctx.BlockHeight(), msg)
 
+	// Save this TxOut to database
+	log.Verbose("len(txOut) = ", len(txOutWithSigners))
+	if len(txOutWithSigners) > 0 {
+		txOuts := make([]*types.TxOut, len(txOutWithSigners))
+		for i, outWithSigner := range txOutWithSigners {
+			txOuts[i] = outWithSigner.Data
+		}
+		p.db.InsertTxOuts(txOuts)
+	}
+
+	// If this node is not catching up, broadcast the tx.
 	if !p.globalData.IsCatchingUp() {
 		log.Info("Broadcasting txout....")
 
 		// Creates TxOut. TODO: Only do this for top validator nodes.
-		for _, msg := range txOuts {
+		for _, msg := range txOutWithSigners {
 			go func(m *tssTypes.TxOutWithSigner) {
 				if err := p.txSubmit.SubmitMessage(m); err != nil {
 					return
