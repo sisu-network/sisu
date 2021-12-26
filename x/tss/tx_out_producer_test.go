@@ -1,8 +1,6 @@
 package tss
 
 import (
-	"context"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"math/big"
 	"strings"
 	"testing"
@@ -16,7 +14,7 @@ import (
 	"github.com/sisu-network/sisu/tests/mock"
 
 	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/contracts/eth/erc20gateway"
+	"github.com/sisu-network/sisu/contracts/eth/erc20gw"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 	"github.com/stretchr/testify/require"
@@ -25,7 +23,7 @@ import (
 func TestTxOutProducer_getContractTx(t *testing.T) {
 	t.Parallel()
 
-	hash := utils.KeccakHash32(erc20gateway.Erc20gatewayBin)
+	hash := utils.KeccakHash32(erc20gw.Erc20gwMetaData.Bin)
 	contractEntity := &types.ContractEntity{
 		Chain: "eth",
 		Hash:  hash,
@@ -214,39 +212,3 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 	})
 }
 
-func TestTxOutProducer_createERC20TransferIn(t *testing.T) {
-	// Uncomment t.Skip() to run this test
-	t.Skip()
-
-	// Please run ganache and deploy ERC20 gateway + ERC20 token before running this test. See repo smart-contracts to get instructions
-	txOutProducer := DefaultTxOutputProducer{}
-	gatewayAddr := "0x5FbDB2315678afecb367f032d93F642f64180aa3"
-	tokenAddr := "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512"
-	recipient := "0xbcd4042de499d14e55001ccbb24a551f3b954096"
-	amount := big.NewInt(9999)
-	txResponse, err := txOutProducer.callERC20TransferIn(gatewayAddr, tokenAddr, recipient, amount, "eth")
-	require.NoError(t, err)
-
-	signer := ethTypes.NewEIP2930Signer(big.NewInt(31337))
-	txHash := signer.Hash(txResponse.EthTx)
-
-	privKeyHex := "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
-	privKey, err := crypto.HexToECDSA(privKeyHex)
-	require.NoError(t, err)
-
-	sig, err := crypto.Sign(txHash.Bytes(), privKey)
-	require.NoError(t, err)
-
-	signedTx, err := txResponse.EthTx.WithSignature(signer, sig)
-	require.NoError(t, err)
-
-	ethClient := initETHClient(t, "http://localhost:8545")
-	err = ethClient.SendTransaction(context.Background(), signedTx)
-	require.NoError(t, err)
-}
-
-func initETHClient(t *testing.T, rawURL string) *ethclient.Client {
-	ethClient, err := ethclient.Dial(rawURL)
-	require.NoError(t, err)
-	return ethClient
-}

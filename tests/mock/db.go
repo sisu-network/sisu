@@ -105,6 +105,21 @@ func (mr *MockDatabaseMockRecorder) GetKeyGen(keyType interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeyGen", reflect.TypeOf((*MockDatabase)(nil).GetKeyGen), keyType)
 }
 
+// GetLatestContractByName mocks base method.
+func (m *MockDatabase) GetLatestContractByName(chain, name string) (*types.ContractEntity, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLatestContractByName", chain, name)
+	ret0, _ := ret[0].(*types.ContractEntity)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLatestContractByName indicates an expected call of GetLatestContractByName.
+func (mr *MockDatabaseMockRecorder) GetLatestContractByName(chain, name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestContractByName", reflect.TypeOf((*MockDatabase)(nil).GetLatestContractByName), chain, name)
+}
+
 // GetPendingDeployContracts mocks base method.
 func (m *MockDatabase) GetPendingDeployContracts(chain string) []*types.ContractEntity {
 	m.ctrl.T.Helper()

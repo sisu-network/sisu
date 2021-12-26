@@ -154,7 +154,8 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 	// 2. Check if this is a tx sent to one of our contracts.
 	if ethTx.To() != nil && len(ethTx.Data()) >= 4 {
-		responseTx, err := p.processERC20TransferIn(ethTx, "eth")
+		// TODO: compare method name to trigger corresponding function
+		responseTx, err := p.processERC20TransferIn(ethTx)
 		if err == nil {
 			outMsg := tsstypes.NewMsgTxOut(
 				p.appKeys.GetSignerAddress().String(),
@@ -189,6 +190,11 @@ func (p *DefaultTxOutputProducer) checkEthDeployContract(ctx sdk.Context, height
 			continue
 		}
 		rawTx := p.getContractTx(contract, nonce)
+		if rawTx == nil {
+			log.Warn("raw Tx is nil")
+			continue
+		}
+
 		txs = append(txs, rawTx)
 	}
 
@@ -221,41 +227,42 @@ func (p *DefaultTxOutputProducer) SaveContractsToDeploy(chain string) {
 }
 
 func (p *DefaultTxOutputProducer) getContractTx(contract *tsstypes.ContractEntity, nonce int64) *ethTypes.Transaction {
-	erc20 := SupportedContracts[ContractErc20Gateway]
+	erc20gw := SupportedContracts[ContractErc20Gateway]
 	switch contract.Hash {
-	case erc20.AbiHash:
-		// This is erc20 contract.
-		parsedAbi, err := abi.JSON(strings.NewReader(erc20.AbiString))
+	case erc20gw.AbiHash:
+		// This is erc20gw contract.
+		parsedAbi, err := abi.JSON(strings.NewReader(erc20gw.AbiString))
 		if err != nil {
-			log.Error("cannot parse erc20 abi. abi = ", erc20.AbiString, "err =", err)
+			log.Error("cannot parse erc20 abi. abi = ", erc20gw.AbiString, "err =", err)
 			return nil
 		}
 
 		// Get all allowed chains
-		allowedChains := make([]string, 0)
+		supportedChains := make([]string, 0)
 		for chain := range p.tssConfig.SupportedChains {
 			if chain != contract.Chain {
-				allowedChains = append(allowedChains, chain)
+				supportedChains = append(supportedChains, chain)
 			}
 		}
 
-		log.Info("Allowed chains for chain", contract.Chain, "are: ", allowedChains)
+		log.Info("Allowed chains for chain", contract.Chain, "are: ", supportedChains)
 
-		input, err := parsedAbi.Pack("", contract.Chain, allowedChains)
+		input, err := parsedAbi.Pack("", supportedChains)
 		if err != nil {
-			log.Error("cannot pack allowedChains, err =", err)
+			log.Error("cannot pack supportedChains, err =", err)
 			return nil
 		}
 
-		byteCode := ecommon.FromHex(erc20.Bin)
+		byteCode := ecommon.FromHex(erc20gw.Bin)
 		input = append(byteCode, input...)
 
-		rawTx := ethTypes.NewContractCreation(
-			uint64(nonce),
-			big.NewInt(0),
-			p.getGasLimit(contract.Chain),
-			p.getGasPrice(contract.Chain),
-			input)
+		rawTx := ethTypes.NewTx(&ethTypes.AccessListTx{
+			Nonce:    uint64(nonce),
+			GasPrice: p.getGasPrice(contract.Chain),
+			Gas:      p.getGasLimit(contract.Chain),
+			Value:    big.NewInt(0),
+			Data:     input,
+		})
 		return rawTx
 	}
 
@@ -264,16 +271,16 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *tsstypes.ContractEntit
 
 func (p *DefaultTxOutputProducer) getGasLimit(chain string) uint64 {
 	// TODO: Make this dependent on different chains.
-	return uint64(5000000)
+	return uint64(8_000_000)
 }
 
 func (p *DefaultTxOutputProducer) getGasPrice(chain string) *big.Int {
 	// TODO: Make this dependent on different chains.
-	switch chain {
-	case "eth-ropsten":
-		return big.NewInt(1700000000)
-	case "eth-binance-testnet":
-		return big.NewInt(10000000000) // 10 Gwei
-	}
-	return big.NewInt(10000000000) // 10 Gwei
+	//switch chain {
+	//case "eth-ropsten":
+	//	return big.NewInt(1700000000)
+	//case "eth-binance-testnet":
+	//	return big.NewInt(10000000000) // 10 Gwei
+	//}
+	return big.NewInt(400000000000) // 10 Gwei
 }

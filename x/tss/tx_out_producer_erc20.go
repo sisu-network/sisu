@@ -12,7 +12,8 @@ import (
 	"github.com/sisu-network/sisu/x/tss/types"
 )
 
-func (p *DefaultTxOutputProducer) processERC20TransferIn(ethTx *ethTypes.Transaction, destChain string) (*types.TxResponse, error) {
+func (p *DefaultTxOutputProducer) processERC20TransferIn(ethTx *ethTypes.Transaction) (*types.TxResponse, error) {
+	log.Debug("Processing ERC20 transfer In")
 	erc20GatewayContract := SupportedContracts[ContractErc20Gateway]
 	gwAbi := erc20GatewayContract.Abi
 	callData := ethTx.Data()
@@ -21,7 +22,7 @@ func (p *DefaultTxOutputProducer) processERC20TransferIn(ethTx *ethTypes.Transac
 		return nil, err
 	}
 
-	tokenAddr, ok := txParams["_token"].(ethcommon.Address)
+	tokenAddr, ok := txParams["_tokenIn"].(ethcommon.Address)
 	if !ok {
 		err := fmt.Errorf("cannot convert _token to type ethcommon.Address: %v", txParams)
 		log.Error(err)
@@ -42,10 +43,18 @@ func (p *DefaultTxOutputProducer) processERC20TransferIn(ethTx *ethTypes.Transac
 		return nil, err
 	}
 
-	return p.callERC20TransferIn(*ethTx.To(), tokenAddr, recipient, amount, destChain)
+	destChain, ok := txParams["_destChain"].(string)
+	if !ok {
+		err := fmt.Errorf("cannot convert _destChain to type string: %v", txParams)
+		log.Error(err)
+		return nil, err
+	}
+
+	return p.callERC20TransferIn(tokenAddr, recipient, amount, destChain)
 }
 
-func (p *DefaultTxOutputProducer) callERC20TransferIn(gatewayAddress, tokenAddress, recipient ethcommon.Address, amount *big.Int, destChain string) (*types.TxResponse, error) {
+func (p *DefaultTxOutputProducer) callERC20TransferIn(tokenAddress, recipient ethcommon.Address, amount *big.Int, destChain string) (*types.TxResponse, error) {
+	gw, err := p.db.GetLatestContractByName(destChain, ContractErc20Gateway)
 	erc20GatewayContract := SupportedContracts[ContractErc20Gateway]
 
 	input, err := erc20GatewayContract.Abi.Pack(MethodTransferIn, tokenAddress, recipient, amount)
@@ -61,6 +70,8 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(gatewayAddress, tokenAddre
 		return nil, err
 	}
 
+	gatewayAddress := ethcommon.HexToAddress(gw.Address)
+	log.Debugf("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, amount: %d", destChain, gatewayAddress.String(), tokenAddress, recipient, amount.Int64())
 	rawTx := ethTypes.NewTx(&ethTypes.AccessListTx{
 		Nonce:    uint64(nonce),
 		GasPrice: p.getGasPrice(destChain),

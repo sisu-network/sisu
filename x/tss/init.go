@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	ContractErc20Gateway = "erc20"
+	ContractErc20Gateway = "erc20gateway"
 
 	MethodTransferOutFromContract = "transferOutFromContract"
 	MethodTransferIn              = "TransferIn"

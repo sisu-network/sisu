@@ -37,6 +37,7 @@ type Database interface {
 	GetPendingDeployContracts(chain string) []*tsstypes.ContractEntity
 	GetContractFromAddress(chain, address string) *tsstypes.ContractEntity
 	GetContractFromHash(chain, hash string) *tsstypes.ContractEntity
+	GetLatestContractByName(chain, name string) (*tsstypes.ContractEntity, error)
 	UpdateContractsStatus(contracts []*tsstypes.ContractEntity, status string) error
 	UpdateContractDeployTx(chain, id string, txHash string)
 	UpdateContractAddress(chain, hash, address string)
@@ -310,6 +311,44 @@ func (d *SqlDatabase) GetPendingDeployContracts(chain string) []*tsstypes.Contra
 	}
 
 	return result
+}
+
+
+// TODO: should insert new column created_at or updated_at?
+func (d *SqlDatabase) GetLatestContractByName(chain, contractName string) (*tsstypes.ContractEntity, error) {
+	query := "SELECT chain, hash, byteCode, name, address, status FROM contract WHERE chain= ? AND name = ?"
+	params := []interface{}{chain, contractName}
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		return nil, err
+	}
+
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Error(err)
+		}
+	}()
+
+	if rows.Next() {
+		var chain, hash, name, address, status sql.NullString
+		var byteCode []byte
+
+		if err := rows.Scan(&chain, &hash, &byteCode, &name, &address, &status); err != nil {
+			return nil, err
+		}
+
+		return &tsstypes.ContractEntity{
+			Chain:    chain.String,
+			Hash:     hash.String,
+			ByteCode: byteCode,
+			Name:     name.String,
+			Address:  address.String,
+			Status:   status.String,
+		}, nil
+	}
+
+	return nil, nil
 }
 
 func (d *SqlDatabase) GetContractFromAddress(chain, address string) *tsstypes.ContractEntity {
