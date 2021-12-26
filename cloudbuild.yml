@@ -44,5 +44,5 @@ availableSecrets:
   - versionName: projects/675495041485/secrets/sisu-github-puller/versions/latest
     env: 'SSH_KEY'
 
-# images: 
-#   - 'gcr.io/$PROJECT_ID/$_SERVICE_NAME:$BRANCH_NAME'
+images: 
+  - 'gcr.io/$PROJECT_ID/$_SERVICE_NAME:$BRANCH_NAME'
