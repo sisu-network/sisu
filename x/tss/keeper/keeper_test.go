@@ -41,7 +41,6 @@ func TestKeeper_SaveAndGetObservedTx(t *testing.T) {
 	keeper, ctx := getTestKeeperAndContext()
 
 	observedTx := &types.ObservedTx{
-		Signer:      "signer",
 		Chain:       "eth",
 		BlockHeight: 1,
 		TxHash:      "Hash",

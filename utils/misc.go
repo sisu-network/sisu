@@ -49,7 +49,7 @@ func MinInt(x, y int) int {
 	return x
 }
 
-func GetObservedTxHash(blockHeight int64, chain string, txBytes []byte) string {
+func GetTxInHash(blockHeight int64, chain string, txBytes []byte) string {
 	bz := []byte(chain + strconv.FormatInt(blockHeight, 10))
 	bz = append(txBytes, bz...)
 	return KeccakHash32(string(bz))
