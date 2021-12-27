@@ -58,10 +58,12 @@ type Processor struct {
 	worldState       WorldState
 	keygenVoteResult map[string]map[string]bool
 	keygenBlockPairs []BlockSymbolPair
-	db               db.Database
+
+	db        db.Database
+	privateDb keeper.PrivateDb
 }
 
-func NewProcessor(keeper keeper.DefaultKeeper,
+func NewProcessor(k keeper.DefaultKeeper,
 	config config.TssConfig,
 	tendermintPrivKey crypto.PrivKey,
 	appKeys *common.DefaultAppKeys,
@@ -71,8 +73,9 @@ func NewProcessor(keeper keeper.DefaultKeeper,
 	globalData common.GlobalData,
 ) *Processor {
 	p := &Processor{
-		keeper:            &keeper,
+		keeper:            &k,
 		db:                db,
+		privateDb:         keeper.NewPrivateDb(config.Dir),
 		txDecoder:         txDecoder,
 		appKeys:           appKeys,
 		config:            config,
