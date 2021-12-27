@@ -102,10 +102,6 @@ func TestKeeper_SaveAndGetTxOut(t *testing.T) {
 	require.Equal(t, false, keeper.IsTxOutExisted(ctx, &other))
 
 	other = *txOutWithSigner.Data
-	other.InBlockHeight = 2
-	require.Equal(t, false, keeper.IsTxOutExisted(ctx, &other))
-
-	other = *txOutWithSigner.Data
 	other.OutBytes = []byte("other")
 	require.Equal(t, false, keeper.IsTxOutExisted(ctx, &other))
 }

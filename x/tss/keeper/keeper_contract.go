@@ -69,6 +69,13 @@ func (k *DefaultKeeper) SaveContracts(ctx sdk.Context, msgs []*types.Contract, s
 	}
 }
 
+func (k *DefaultKeeper) IsContractExisted(ctx sdk.Context, msg *types.Contract) bool {
+	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
+	contractKey := k.getContractKey(msg.Chain, msg.Hash)
+
+	return contractStore.Has(contractKey)
+}
+
 func (k *DefaultKeeper) GetPendingContracts(ctx sdk.Context, chain string) []*types.Contract {
 	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
 	byteCodeStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractByteCode)
@@ -84,7 +91,7 @@ func (k *DefaultKeeper) GetPendingContracts(ctx sdk.Context, chain string) []*ty
 		contract := &types.Contract{}
 		err := contract.Unmarshal(bz)
 		if err != nil {
-			log.Error("Cannot unmarshal contract bytes")
+			log.Error("GetPendingContracts: Cannot unmarshal contract bytes")
 			continue
 		}
 
@@ -99,4 +106,30 @@ func (k *DefaultKeeper) GetPendingContracts(ctx sdk.Context, chain string) []*ty
 	}
 
 	return contracts
+}
+
+func (k *DefaultKeeper) UpdateContractsStatus(ctx sdk.Context, msgs []*types.Contract, status string) {
+	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
+
+	for _, msg := range msgs {
+		key := k.getContractByteCodeKey(msg.Chain, msg.GetHash())
+
+		bz := contractStore.Get(key)
+		contract := &types.Contract{}
+		err := contract.Unmarshal(bz)
+
+		if err != nil {
+			log.Error("UpdateContractsStatus: Cannot unmarshal contract bytes")
+			return
+		}
+
+		contract.Status = status
+		bz, err = contract.Marshal()
+		if err != nil {
+			log.Error("UpdateContractsStatus: Cannot marshal contract bytes")
+			return
+		}
+
+		contractStore.Set(key, bz)
+	}
 }

@@ -68,7 +68,6 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		mockDb := mock.NewMockDatabase(ctrl)
 		mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(true).Times(1)
 		mockDb.EXPECT().GetPubKey("ecdsa").Return(pubkeyBytes).Times(1)
-		mockDb.EXPECT().UpdateContractsStatus(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 		mockAppKeys := mock.NewMockAppKeys(ctrl)
 		accAddress := []byte{1, 2, 3}

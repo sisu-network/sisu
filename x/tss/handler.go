@@ -17,7 +17,7 @@ func NewHandler(k keeper.DefaultKeeper, txSubmit common.TxSubmit, processor *Pro
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 
 		switch msg := msg.(type) {
-		case *types.KeygenProposalWithSigner:
+		case *types.KeygenWithSigner:
 			return handleKeygenProposal(ctx, msg, processor)
 		case *types.KeygenResultWithSigner:
 			return handleKeygenResult(ctx, msg, processor)
@@ -37,8 +37,8 @@ func NewHandler(k keeper.DefaultKeeper, txSubmit common.TxSubmit, processor *Pro
 	}
 }
 
-func handleKeygenProposal(ctx sdk.Context, msg *types.KeygenProposalWithSigner, processor *Processor) (*sdk.Result, error) {
-	data, err := processor.deliverKeyGenProposal(ctx, msg)
+func handleKeygenProposal(ctx sdk.Context, msg *types.KeygenWithSigner, processor *Processor) (*sdk.Result, error) {
+	data, err := processor.deliverKeygen(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err
@@ -54,7 +54,7 @@ func handleKeygenResult(ctx sdk.Context, msg *types.KeygenResultWithSigner, proc
 
 func handleTxIn(ctx sdk.Context, msg *types.TxInWithSigner, processor *Processor) (*sdk.Result, error) {
 	// Update the count for all txs.
-	log.Verbose("Handling ObservedTxs for chain", msg.Data.Chain)
+	log.Verbose("Handling TxIn for chain", msg.Data.Chain)
 	data, err := processor.deliverTxIn(ctx, msg)
 	return &sdk.Result{
 		Data: data,

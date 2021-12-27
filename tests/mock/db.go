@@ -49,17 +49,17 @@ func (mr *MockDatabaseMockRecorder) Close() *gomock.Call {
 }
 
 // CreateKeygen mocks base method.
-func (m *MockDatabase) CreateKeygen(keyType string, startBlock int64) error {
+func (m *MockDatabase) CreateKeygen(keyType string, index int) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateKeygen", keyType, startBlock)
+	ret := m.ctrl.Call(m, "CreateKeygen", keyType, index)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // CreateKeygen indicates an expected call of CreateKeygen.
-func (mr *MockDatabaseMockRecorder) CreateKeygen(keyType, startBlock interface{}) *gomock.Call {
+func (mr *MockDatabaseMockRecorder) CreateKeygen(keyType, index interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateKeygen", reflect.TypeOf((*MockDatabase)(nil).CreateKeygen), keyType, startBlock)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateKeygen", reflect.TypeOf((*MockDatabase)(nil).CreateKeygen), keyType, index)
 }
 
 // GetContractFromAddress mocks base method.
@@ -105,6 +105,20 @@ func (mr *MockDatabaseMockRecorder) GetKeyGen(keyType interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeyGen", reflect.TypeOf((*MockDatabase)(nil).GetKeyGen), keyType)
 }
 
+// GetKeygenResult mocks base method.
+func (m *MockDatabase) GetKeygenResult(keyType string, index int) types.KeygenResult_Result {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetKeygenResult", keyType, index)
+	ret0, _ := ret[0].(types.KeygenResult_Result)
+	return ret0
+}
+
+// GetKeygenResult indicates an expected call of GetKeygenResult.
+func (mr *MockDatabaseMockRecorder) GetKeygenResult(keyType, index interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeygenResult", reflect.TypeOf((*MockDatabase)(nil).GetKeygenResult), keyType, index)
+}
+
 // GetPubKey mocks base method.
 func (m *MockDatabase) GetPubKey(keyType string) []byte {
 	m.ctrl.T.Helper()
@@ -120,10 +134,10 @@ func (mr *MockDatabaseMockRecorder) GetPubKey(keyType interface{}) *gomock.Call 
 }
 
 // GetTxOutWithHash mocks base method.
-func (m *MockDatabase) GetTxOutWithHash(chain, hash string, isHashWithSig bool) *types.TxOutEntity {
+func (m *MockDatabase) GetTxOutWithHash(chain, hash string, isHashWithSig bool) *types.TxOut {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTxOutWithHash", chain, hash, isHashWithSig)
-	ret0, _ := ret[0].(*types.TxOutEntity)
+	ret0, _ := ret[0].(*types.TxOut)
 	return ret0
 }
 
@@ -147,6 +161,20 @@ func (mr *MockDatabaseMockRecorder) Init() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockDatabase)(nil).Init))
 }
 
+// InsertKeygenResultSuccess mocks base method.
+func (m *MockDatabase) InsertKeygenResultSuccess(keyType string, index int) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertKeygenResultSuccess", keyType, index)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InsertKeygenResultSuccess indicates an expected call of InsertKeygenResultSuccess.
+func (mr *MockDatabaseMockRecorder) InsertKeygenResultSuccess(keyType, index interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertKeygenResultSuccess", reflect.TypeOf((*MockDatabase)(nil).InsertKeygenResultSuccess), keyType, index)
+}
+
 // InsertMempoolTxHash mocks base method.
 func (m *MockDatabase) InsertMempoolTxHash(hash string, blockHeight int64) {
 	m.ctrl.T.Helper()
@@ -160,9 +188,11 @@ func (mr *MockDatabaseMockRecorder) InsertMempoolTxHash(hash, blockHeight interf
 }
 
 // InsertTxIn mocks base method.
-func (m *MockDatabase) InsertTxIn(txIn *types.TxIn) {
+func (m *MockDatabase) InsertTxIn(txIn *types.TxIn) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "InsertTxIn", txIn)
+	ret := m.ctrl.Call(m, "InsertTxIn", txIn)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // InsertTxIn indicates an expected call of InsertTxIn.
@@ -172,9 +202,11 @@ func (mr *MockDatabaseMockRecorder) InsertTxIn(txIn interface{}) *gomock.Call {
 }
 
 // InsertTxOuts mocks base method.
-func (m *MockDatabase) InsertTxOuts(txs []*types.TxOut) {
+func (m *MockDatabase) InsertTxOuts(txs []*types.TxOut) error {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "InsertTxOuts", txs)
+	ret := m.ctrl.Call(m, "InsertTxOuts", txs)
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // InsertTxOuts indicates an expected call of InsertTxOuts.
@@ -209,6 +241,34 @@ func (m *MockDatabase) IsContractDeployTx(chain, hashWithoutSig string) bool {
 func (mr *MockDatabaseMockRecorder) IsContractDeployTx(chain, hashWithoutSig interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsContractDeployTx", reflect.TypeOf((*MockDatabase)(nil).IsContractDeployTx), chain, hashWithoutSig)
+}
+
+// IsContractExisted mocks base method.
+func (m *MockDatabase) IsContractExisted(contract *types.Contract) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsContractExisted", contract)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsContractExisted indicates an expected call of IsContractExisted.
+func (mr *MockDatabaseMockRecorder) IsContractExisted(contract interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsContractExisted", reflect.TypeOf((*MockDatabase)(nil).IsContractExisted), contract)
+}
+
+// IsKeygenExisted mocks base method.
+func (m *MockDatabase) IsKeygenExisted(keyType string, index int) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsKeygenExisted", keyType, index)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsKeygenExisted indicates an expected call of IsKeygenExisted.
+func (mr *MockDatabaseMockRecorder) IsKeygenExisted(keyType, index interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKeygenExisted", reflect.TypeOf((*MockDatabase)(nil).IsKeygenExisted), keyType, index)
 }
 
 // IsTxInExisted mocks base method.
@@ -253,18 +313,18 @@ func (mr *MockDatabaseMockRecorder) MempoolTxExisted(hash interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MempoolTxExisted", reflect.TypeOf((*MockDatabase)(nil).MempoolTxExisted), hash)
 }
 
-// MempoolTxExistedRange mocks base method.
-func (m *MockDatabase) MempoolTxExistedRange(hash string, minBlock, maxBlock int64) bool {
+// SaveContracts mocks base method.
+func (m *MockDatabase) SaveContracts(contracts []*types.Contract) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "MempoolTxExistedRange", hash, minBlock, maxBlock)
-	ret0, _ := ret[0].(bool)
+	ret := m.ctrl.Call(m, "SaveContracts", contracts)
+	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// MempoolTxExistedRange indicates an expected call of MempoolTxExistedRange.
-func (mr *MockDatabaseMockRecorder) MempoolTxExistedRange(hash, minBlock, maxBlock interface{}) *gomock.Call {
+// SaveContracts indicates an expected call of SaveContracts.
+func (mr *MockDatabaseMockRecorder) SaveContracts(contracts interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "MempoolTxExistedRange", reflect.TypeOf((*MockDatabase)(nil).MempoolTxExistedRange), hash, minBlock, maxBlock)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveContracts", reflect.TypeOf((*MockDatabase)(nil).SaveContracts), contracts)
 }
 
 // UpdateContractAddress mocks base method.
@@ -291,20 +351,6 @@ func (mr *MockDatabaseMockRecorder) UpdateContractDeployTx(chain, id, txHash int
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateContractDeployTx", reflect.TypeOf((*MockDatabase)(nil).UpdateContractDeployTx), chain, id, txHash)
 }
 
-// UpdateContractsStatus mocks base method.
-func (m *MockDatabase) UpdateContractsStatus(contracts []*types.ContractEntity, status string) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateContractsStatus", contracts, status)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateContractsStatus indicates an expected call of UpdateContractsStatus.
-func (mr *MockDatabaseMockRecorder) UpdateContractsStatus(contracts, status interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateContractsStatus", reflect.TypeOf((*MockDatabase)(nil).UpdateContractsStatus), contracts, status)
-}
-
 // UpdateKeygenAddress mocks base method.
 func (m *MockDatabase) UpdateKeygenAddress(keyType, address string, pubKey []byte) {
 	m.ctrl.T.Helper()
@@ -315,18 +361,6 @@ func (m *MockDatabase) UpdateKeygenAddress(keyType, address string, pubKey []byt
 func (mr *MockDatabaseMockRecorder) UpdateKeygenAddress(keyType, address, pubKey interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateKeygenAddress", reflect.TypeOf((*MockDatabase)(nil).UpdateKeygenAddress), keyType, address, pubKey)
-}
-
-// UpdateKeygenStatus mocks base method.
-func (m *MockDatabase) UpdateKeygenStatus(keyType, status string) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateKeygenStatus", keyType, status)
-}
-
-// UpdateKeygenStatus indicates an expected call of UpdateKeygenStatus.
-func (mr *MockDatabaseMockRecorder) UpdateKeygenStatus(keyType, status interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateKeygenStatus", reflect.TypeOf((*MockDatabase)(nil).UpdateKeygenStatus), keyType, status)
 }
 
 // UpdateTxOutSig mocks base method.

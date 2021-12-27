@@ -18,10 +18,10 @@ import (
 // checkTxOut checks if a TxOut message is valid before it is added into Sisu block.
 func (p *Processor) checkTxOut(ctx sdk.Context, msg *types.TxOutWithSigner) error {
 	if p.db.IsTxOutExisted(msg.Data) {
-		return ErrMessageHasBeenProcessed
+		return nil
 	}
 
-	return nil
+	return ErrCannotFindMessage
 }
 
 // deliverTxOut executes a TxOut transaction after it's included in Sisu block. If this node is
@@ -29,16 +29,18 @@ func (p *Processor) checkTxOut(ctx sdk.Context, msg *types.TxOutWithSigner) erro
 func (p *Processor) deliverTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWithSigner) ([]byte, error) {
 	txOut := msgWithSigner.Data
 
-	if p.db.IsTxOutExisted(txOut) {
+	if p.keeper.IsTxOutExisted(ctx, txOut) {
 		return nil, nil
 	}
+
+	log.Info("Delivering TxOut")
 
 	// Save this to KVStore
 	p.keeper.SaveTxOut(ctx, txOut)
 
 	// Save this to private db.
 	txs := make([]*types.TxOut, 1)
-	txs[1] = txOut
+	txs[0] = txOut
 	p.db.InsertTxOuts(txs)
 
 	// Do key signing if this node is not catching up.

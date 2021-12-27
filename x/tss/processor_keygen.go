@@ -1,95 +1,113 @@
 package tss
 
 import (
+	"fmt"
+
 	sdk "github.com/sisu-network/cosmos-sdk/types"
-	dhtypes "github.com/sisu-network/dheart/types"
+	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
-
-	libchain "github.com/sisu-network/lib/chain"
 )
 
-type BlockSymbolPair struct {
-	blockHeight int64
-	chain       string
-}
-
-// Called after having key generation result from Sisu's api server.
-func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
-	// 1. Post result to the cosmos chain
-	signer := p.appKeys.GetSignerAddress()
-
-	resultEnum := types.KeygenResult_FAILURE
-	if result.Success {
-		resultEnum = types.KeygenResult_SUCCESS
+/**
+Process for generating a new key:
+- Wait for the app to catch up
+- If there is no support for a particular chain, creates a proposal to include a chain
+- When other nodes receive the proposal, top N validator nodes vote to see if it should accept that.
+- After M blocks (M is a constant) since a proposal is sent, count the number of yes vote. If there
+are enough validator supporting the new chain, send a message to TSS engine to do keygen.
+*/
+func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
+	// TODO: We can replace this by sending command from client instead of running at the beginning
+	// of each block.
+	if p.globalData.IsCatchingUp() {
+		return
 	}
 
-	wrappedMsg := types.NewKeygenResultWithSigner(signer.String(), result.KeyType, resultEnum, result.PubKeyBytes, result.Address)
-	p.txSubmit.SubmitMessage(wrappedMsg)
-
-	// Update the address and pubkey of the keygen database.
-	p.db.UpdateKeygenAddress(result.KeyType, result.Address, result.PubKeyBytes)
-}
-
-func (p *Processor) checkKeygenResult(ctx sdk.Context, wrappedMsg *types.KeygenResultWithSigner) error {
-	msg := wrappedMsg.Data
-
-	if msg.Result == types.KeygenResult_SUCCESS {
-		if p.keeper.IsKeygenExisted(ctx, msg) {
-			return ErrMessageHasBeenProcessed
+	// Check ECDSA only (for now)
+	keyTypes := []string{libchain.KEY_TYPE_ECDSA}
+	for _, keyType := range keyTypes {
+		if p.keeper.IsKeygenExisted(ctx, keyType, 0) {
+			continue
 		}
 
-		return nil
-	} else {
-		// TODO: Process failure case. For failure case, we allow multiple message as each node can have
-		// different blames.
+		// Broadcast a message.
+		signer := p.appKeys.GetSignerAddress()
+		proposal := types.NewMsgKeygenWithSigner(
+			signer.String(),
+			keyType,
+			0,
+		)
+
+		// Create a new keygen entry in the db.
+		err := p.db.CreateKeygen(keyType, 0)
+		if err != nil {
+			log.Error(err)
+		}
+
+		log.Info("Submitting proposal message for", keyType)
+		go func() {
+			err := p.txSubmit.SubmitMessage(proposal)
+
+			if err != nil {
+				log.Error(err)
+			}
+		}()
 	}
+}
+
+func (p *Processor) checkKeygen(ctx sdk.Context, wrapper *types.KeygenWithSigner) error {
+	ok := p.db.IsKeygenExisted(wrapper.Data.KeyType, int(wrapper.Data.Index))
+	if !ok {
+		fmt.Println("Keygen does not exist")
+		return ErrCannotFindMessage
+	}
+
+	// TODO: Check if this is in the KVStore to avoid double processing.
 
 	return nil
 }
 
-func (p *Processor) deliverKeygenResult(ctx sdk.Context, wrappedMsg *types.KeygenResultWithSigner) ([]byte, error) {
-	msg := wrappedMsg.Data
+func (p *Processor) deliverKeygen(ctx sdk.Context, wrapper *types.KeygenWithSigner) ([]byte, error) {
+	msg := wrapper.Data
 
-	if p.keeper.IsKeygenExisted(ctx, msg) {
-		// This has been processed before.
+	// TODO: Check if we have processed a keygen proposal recently.
+	if p.keeper.IsKeygenExisted(ctx, msg.KeyType, int(msg.Index)) {
+		log.Verbose("The keygen proposal has been processed")
 		return nil, nil
 	}
 
-	if msg.Result == types.KeygenResult_SUCCESS {
-		log.Info("Keygen succeeded")
+	log.Info("Delivering keygen....")
 
-		// Save to KVStore
-		p.keeper.SaveKeygen(ctx, msg)
+	// Save this into Keeper.
+	p.keeper.SaveKeygen(ctx, msg)
 
-		// Add list the public key address to watch.
-		p.addWatchAddress(msg)
+	// Save this in our private db.
+	p.db.CreateKeygen(msg.KeyType, int(msg.Index))
 
-		if !p.globalData.IsCatchingUp() {
-			p.createPendingContracts(ctx, msg)
-		}
-	} else {
-		// TODO: handle failure case
+	if p.globalData.IsCatchingUp() {
+		return nil, nil
 	}
 
-	return nil, nil
+	// Invoke TSS keygen in dheart
+	p.doTss(msg, ctx.BlockHeight())
+
+	return []byte{}, nil
 }
 
-func (p *Processor) addWatchAddress(msg *types.KeygenResult) {
-	// 2. Add the address to the watch list.
-	for _, chainConfig := range p.config.SupportedChains {
-		chain := chainConfig.Symbol
-		deyesClient := p.deyesClients[chain]
+func (p *Processor) doTss(msg *types.Keygen, blockHeight int64) {
+	log.Info("doing keygen tsss...")
 
-		if libchain.GetKeyTypeForChain(chain) != msg.Keygen.KeyType {
-			continue
-		}
+	// Send a signal to Dheart to start keygen process.
+	log.Info("Sending keygen request to Dheart. KeyType =", msg.KeyType)
+	pubKeys := p.partyManager.GetActivePartyPubkeys()
+	keygenId := GetKeygenId(msg.KeyType, blockHeight, pubKeys)
 
-		if deyesClient == nil {
-			log.Critical("Cannot find deyes client for chain", chain)
-		} else {
-			log.Verbose("adding watcher address ", msg.Keygen.Address, " for chain ", chain)
-			deyesClient.AddWatchAddresses(chain, []string{msg.Keygen.Address})
-		}
+	err := p.dheartClient.KeyGen(keygenId, msg.KeyType, pubKeys)
+	if err != nil {
+		log.Error(err)
+		return
 	}
+
+	log.Info("Keygen request is sent successfully.")
 }

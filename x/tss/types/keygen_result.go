@@ -8,19 +8,17 @@ import (
 var _ sdk.Msg = &KeygenResultWithSigner{}
 
 func NewKeygenResultWithSigner(signer string, keyType string, result KeygenResult_Result, pubKeyBytes []byte, address string) *KeygenResultWithSigner {
-	keygenResult := &KeygenResult{
+	return &KeygenResultWithSigner{
+		Signer: signer,
 		Keygen: &Keygen{
 			KeyType:     keyType,
 			PubKeyBytes: pubKeyBytes,
 			Address:     address,
 		},
-
-		Result: result,
-	}
-
-	return &KeygenResultWithSigner{
-		Signer: signer,
-		Data:   keygenResult,
+		Data: &KeygenResult{
+			From:   signer,
+			Result: result,
+		},
 	}
 }
 
