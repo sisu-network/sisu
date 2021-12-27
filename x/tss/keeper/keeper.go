@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/sisu-network/cosmos-sdk/store/prefix"
+	cstypes "github.com/sisu-network/cosmos-sdk/store/types"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
@@ -58,6 +59,8 @@ func (k *DefaultKeeper) getTxOutKey(inChain string, outChain string, outHash str
 	return []byte(fmt.Sprintf("%s__%s__%s", inChain, outChain, outHash))
 }
 
+///// Keygen
+
 func (k *DefaultKeeper) SaveKeygen(ctx sdk.Context, msg *types.Keygen) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygen)
 	saveKeygen(store, msg)
@@ -67,6 +70,8 @@ func (k *DefaultKeeper) IsKeygenExisted(ctx sdk.Context, keyType string, index i
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygen)
 	return isKeygenExisted(store, keyType, index)
 }
+
+///// Keygen Result
 
 func (k *DefaultKeeper) SaveKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenResult)
@@ -151,4 +156,20 @@ func (k *DefaultKeeper) IsTxOutExisted(ctx sdk.Context, msg *types.TxOut) bool {
 	key := k.getTxOutKey(msg.InChain, msg.OutChain, msg.GetHash())
 
 	return store.Get(key) != nil
+}
+
+///// Debug
+
+// PrintStore is a debug function
+func (k *DefaultKeeper) PrintStore(ctx sdk.Context, name string) {
+	log.Info("Printing ALL values in store ", name)
+	var store cstypes.KVStore
+	switch name {
+	case "keygen":
+		store = prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygen)
+	case "contract":
+		store = prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
+	}
+
+	printStore(store)
 }

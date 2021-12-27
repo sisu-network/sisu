@@ -10,6 +10,8 @@ import (
 // createPendingContracts creates and broadcast pending contracts. All nodes need to agree what
 // contracts to deploy on what chains.
 func (p *Processor) createPendingContracts(ctx sdk.Context, msg *types.Keygen) {
+	log.Info("Create and broadcast contracts...")
+
 	contracts := make([]*types.Contract, 0)
 	for _, chainConfig := range p.config.SupportedChains {
 		chain := chainConfig.Symbol
@@ -30,7 +32,7 @@ func (p *Processor) createPendingContracts(ctx sdk.Context, msg *types.Keygen) {
 	}
 
 	// Save this private db
-	p.db.SaveContracts(contracts)
+	p.privateDb.SaveContracts(contracts, true)
 
 	go func() {
 		signer := p.appKeys.GetSignerAddress()
@@ -43,7 +45,7 @@ func (p *Processor) createPendingContracts(ctx sdk.Context, msg *types.Keygen) {
 
 func (p *Processor) checkContracts(ctx sdk.Context, wrappedMsg *types.ContractsWithSigner) error {
 	for _, contract := range wrappedMsg.Data.Contracts {
-		if !p.db.IsContractExisted(contract) {
+		if !p.privateDb.IsContractExisted(contract) {
 			return ErrCannotFindMessage
 		}
 	}
@@ -64,11 +66,9 @@ func (p *Processor) deliverContracts(ctx sdk.Context, wrappedMsg *types.Contract
 		}
 	}
 
-	// Save into KVStore
+	// Save into KVStore & private db
 	p.keeper.SaveContracts(ctx, wrappedMsg.Data.Contracts, true)
-
-	// Save this private db
-	p.db.SaveContracts(wrappedMsg.Data.Contracts)
+	p.privateDb.SaveContracts(wrappedMsg.Data.Contracts, true)
 
 	return nil, nil
 }

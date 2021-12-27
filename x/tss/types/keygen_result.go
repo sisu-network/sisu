@@ -7,11 +7,12 @@ import (
 
 var _ sdk.Msg = &KeygenResultWithSigner{}
 
-func NewKeygenResultWithSigner(signer string, keyType string, result KeygenResult_Result, pubKeyBytes []byte, address string) *KeygenResultWithSigner {
+func NewKeygenResultWithSigner(signer string, keyType string, index int, result KeygenResult_Result, pubKeyBytes []byte, address string) *KeygenResultWithSigner {
 	return &KeygenResultWithSigner{
 		Signer: signer,
 		Keygen: &Keygen{
 			KeyType:     keyType,
+			Index:       int32(index),
 			PubKeyBytes: pubKeyBytes,
 			Address:     address,
 		},
