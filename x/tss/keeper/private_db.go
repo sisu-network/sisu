@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"fmt"
+
 	adstore "github.com/sisu-network/cosmos-sdk/store/dbadapter"
 	"github.com/sisu-network/cosmos-sdk/store/prefix"
 	cosmostypes "github.com/sisu-network/cosmos-sdk/store/types"
@@ -32,7 +34,9 @@ type defaultPrivateDb struct {
 }
 
 func NewPrivateDb(dbDir string) PrivateDb {
-	db, err := dbm.NewDB("private_db", dbm.GoLevelDBBackend, dbDir)
+	fmt.Println("dbDir = ", dbDir)
+
+	db, err := dbm.NewDB("private", dbm.GoLevelDBBackend, dbDir)
 	if err != nil {
 		panic(err)
 	}

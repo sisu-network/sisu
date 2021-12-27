@@ -349,7 +349,8 @@ func New(
 	if err != nil {
 		panic(err)
 	}
-	tssProcessor := tss.NewProcessor(app.tssKeeper, tssConfig, nodeKey.PrivKey, app.appKeys, app.db, app.txDecoder, app.txSubmitter, app.globalData)
+	privateDataDir := filepath.Join(cfg.Sisu.Dir, "config")
+	tssProcessor := tss.NewProcessor(app.tssKeeper, tssConfig, nodeKey.PrivKey, app.appKeys, app.db, privateDataDir, app.txDecoder, app.txSubmitter, app.globalData)
 	if tssConfig.Enable {
 		log.Info("TSS is enabled")
 		tssProcessor.Init()

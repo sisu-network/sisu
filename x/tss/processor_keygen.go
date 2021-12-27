@@ -40,10 +40,10 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 		)
 
 		// Create a new keygen entry in the db.
-		err := p.db.CreateKeygen(keyType, 0)
-		if err != nil {
-			log.Error(err)
-		}
+		p.privateDb.SaveKeygen(&types.Keygen{
+			KeyType: keyType,
+			Index:   0,
+		})
 
 		log.Info("Submitting proposal message for", keyType)
 		go func() {
@@ -57,7 +57,7 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 }
 
 func (p *Processor) checkKeygen(ctx sdk.Context, wrapper *types.KeygenWithSigner) error {
-	ok := p.db.IsKeygenExisted(wrapper.Data.KeyType, int(wrapper.Data.Index))
+	ok := p.privateDb.IsKeygenExisted(wrapper.Data.KeyType, int(wrapper.Data.Index))
 	if !ok {
 		fmt.Println("Keygen does not exist")
 		return ErrCannotFindMessage
@@ -83,7 +83,7 @@ func (p *Processor) deliverKeygen(ctx sdk.Context, wrapper *types.KeygenWithSign
 	p.keeper.SaveKeygen(ctx, msg)
 
 	// Save this in our private db.
-	p.db.CreateKeygen(msg.KeyType, int(msg.Index))
+	p.privateDb.SaveKeygen(msg)
 
 	if p.globalData.IsCatchingUp() {
 		return nil, nil

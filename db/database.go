@@ -25,12 +25,11 @@ type Database interface {
 	Close() error
 
 	// Keygen
-	CreateKeygen(keyType string, index int) error
-	IsKeygenExisted(keyType string, index int) bool
+	// CreateKeygen(keyType string, index int) error
+	// IsKeygenExisted(keyType string, index int) bool
+	// GetKeyGen(keyType string) (*tsstypes.KeygenEntity, error)
+	// UpdateKeygenAddress(keyType, address string, pubKey []byte)
 
-	GetKeyGen(keyType string) (*tsstypes.KeygenEntity, error)
-
-	UpdateKeygenAddress(keyType, address string, pubKey []byte)
 	IsChainKeyAddress(keyType string, address string) bool
 	GetPubKey(keyType string) []byte
 
@@ -39,7 +38,7 @@ type Database interface {
 	GetKeygenResult(keyType string, index int) types.KeygenResult_Result
 
 	// Contracts
-	SaveContracts(contracts []*types.Contract) error
+	// SaveContracts(contracts []*types.Contract) error
 	IsContractExisted(contract *types.Contract) bool
 
 	GetContractFromAddress(chain, address string) *tsstypes.ContractEntity

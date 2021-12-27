@@ -212,3 +212,14 @@ func updateContractsStatus(contractStore cstypes.KVStore, msgs []*types.Contract
 		contractStore.Set(key, bz)
 	}
 }
+
+/// Debug functions
+func printStore(store cstypes.KVStore) {
+	log.Info("======== DEBUGGING")
+	iter := store.Iterator(nil, nil)
+	for ; iter.Valid(); iter.Next() {
+		log.Info("key = ", string(iter.Key()))
+		log.Info("value = ", string(iter.Value()))
+	}
+	log.Info("======== END OF DEBUGGING")
+}

@@ -18,34 +18,34 @@ type BlockSymbolPair struct {
 
 // Called after having key generation result from Sisu's api server.
 func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
-	// 1. Post result to the cosmos chain
-	signer := p.appKeys.GetSignerAddress()
-
 	resultEnum := types.KeygenResult_FAILURE
 	if result.Success {
 		resultEnum = types.KeygenResult_SUCCESS
-
-		// Update the address and pubkey of the keygen database.
-		p.db.UpdateKeygenAddress(result.KeyType, result.Address, result.PubKeyBytes)
-
-		// Update the result
-		p.db.InsertKeygenResultSuccess(result.KeyType, result.KeygenIndex)
 	}
+
+	signerMsg := types.NewKeygenResultWithSigner(
+		p.appKeys.GetSignerAddress().String(),
+		result.KeyType,
+		result.KeygenIndex,
+		resultEnum,
+		result.PubKeyBytes,
+		result.Address,
+	)
+
+	// Save the result to private db
+	p.privateDb.SaveKeygenResult(signerMsg)
 
 	log.Info("There is keygen result from dheart, resultEnum = ", resultEnum)
 
-	wrappedMsg := types.NewKeygenResultWithSigner(signer.String(), result.KeyType, resultEnum, result.PubKeyBytes, result.Address)
-	p.txSubmit.SubmitMessage(wrappedMsg)
+	p.txSubmit.SubmitMessage(signerMsg)
 }
 
-func (p *Processor) checkKeygenResult(ctx sdk.Context, wrappedMsg *types.KeygenResultWithSigner) error {
-	keygenMsg := wrappedMsg.Keygen
-
+func (p *Processor) checkKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) error {
 	fmt.Println("Checking keygen result....")
 
-	if wrappedMsg.Data.Result == types.KeygenResult_SUCCESS {
+	if signerMsg.Data.Result == types.KeygenResult_SUCCESS {
 		// Check if we have this data in our private db.
-		if p.db.GetKeygenResult(keygenMsg.KeyType, int(keygenMsg.Index)) != types.KeygenResult_SUCCESS {
+		if !p.privateDb.IsKeygenResultSuccess(signerMsg) {
 			return ErrValueDoesNotMatch
 		}
 
@@ -63,22 +63,24 @@ func (p *Processor) checkKeygenResult(ctx sdk.Context, wrappedMsg *types.KeygenR
 func (p *Processor) deliverKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) ([]byte, error) {
 	msg := signerMsg.Data
 
-	if p.keeper.IsKeygenResultSuccess(ctx, signerMsg) {
-		// This has been processed before.
-		fmt.Println("This has been processed before")
-		return nil, nil
-	}
-
 	fmt.Println("Delivering keygen result")
 
 	if msg.Result == types.KeygenResult_SUCCESS {
 		log.Info("Keygen succeeded")
 
-		// Save to KVStore
-		p.keeper.SaveKeygenResult(ctx, signerMsg)
+		if p.keeper.IsKeygenResultSuccess(ctx, signerMsg) {
+			// This has been processed before.
+			fmt.Println("This has been processed before")
+			return nil, nil
+		}
 
-		// Update the result
-		p.db.InsertKeygenResultSuccess(signerMsg.Keygen.KeyType, int(signerMsg.Keygen.Index))
+		// Save keygen to KVStore & private db
+		p.keeper.SaveKeygen(ctx, signerMsg.Keygen)
+		p.privateDb.SaveKeygen(signerMsg.Keygen)
+
+		// Save result to KVStore & private db
+		p.keeper.SaveKeygenResult(ctx, signerMsg)
+		p.privateDb.SaveKeygenResult(signerMsg)
 
 		// Add list the public key address to watch.
 		p.addWatchAddress(signerMsg.Keygen)
