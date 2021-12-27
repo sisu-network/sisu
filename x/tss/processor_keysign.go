@@ -27,7 +27,7 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 		}
 
 		tx := &etypes.Transaction{}
-		if err := tx.UnmarshalBinary(txOut.BytesWithoutSig); err != nil {
+		if err := tx.UnmarshalBinary(txOut.OutBytes); err != nil {
 			log.Error("cannot unmarshal tx, err =", err)
 			return
 		}

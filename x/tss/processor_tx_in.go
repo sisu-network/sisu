@@ -23,8 +23,9 @@ func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 		} else if len(tx.To) > 0 {
 			// 2. This is a transaction to our key account or one of our contracts. Create a message to
 			// indicate that we have observed this transaction and broadcast it to cosmos chain.
+			// TODO: handle error correctly
 			hash := utils.GetTxInHash(txs.Block, txs.Chain, tx.Serialized)
-			txIn := tssTypes.NewTxInWithSigner(
+			txIn := types.NewTxInWithSigner(
 				p.appKeys.GetSignerAddress().String(),
 				txs.Chain,
 				hash,
@@ -32,12 +33,14 @@ func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 				tx.Serialized,
 			)
 
-			// TODO: handle error correctly
-			go func() {
-				if err := p.txSubmit.SubmitMessage(txIn); err != nil {
+			// Save tx in into db
+			p.db.InsertTxIn(txIn.Data)
+
+			go func(tx *types.TxInWithSigner) {
+				if err := p.txSubmit.SubmitMessage(tx); err != nil {
 					return
 				}
-			}()
+			}(txIn)
 		}
 	}
 
@@ -45,18 +48,19 @@ func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 }
 
 func (p *Processor) checkTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner) error {
+	// Make sure we should have seen this TxIn in our table.
 	if p.db.IsTxInExisted(msgWithSigner.Data) {
-		return ErrMessageHasBeenProcessed
+		return nil
 	}
 
-	return nil
+	return ErrCannotFindMessage
 }
 
 // Delivers observed Txs.
 func (p *Processor) deliverTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner) ([]byte, error) {
 	msg := msgWithSigner.Data
 
-	if p.db.IsTxInExisted(msg) {
+	if p.keeper.IsTxInExisted(ctx, msg) {
 		// The tx has been processed before.
 		return nil, nil
 	}
@@ -130,7 +134,7 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string) error {
 
 		if err := p.db.UpdateTxOutStatus(
 			txOut.OutChain,
-			txOut.HashWithoutSig,
+			string(txOut.OutBytes),
 			tssTypes.TxOutStatusDeployedToBlockchain,
 			false); err != nil {
 			return err

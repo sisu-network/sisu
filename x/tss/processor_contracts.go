@@ -9,11 +9,11 @@ import (
 
 // createPendingContracts creates and broadcast pending contracts. All nodes need to agree what
 // contracts to deploy on what chains.
-func (p *Processor) createPendingContracts(ctx sdk.Context, msg *types.KeygenResult) {
+func (p *Processor) createPendingContracts(ctx sdk.Context, msg *types.Keygen) {
 	contracts := make([]*types.Contract, 0)
 	for _, chainConfig := range p.config.SupportedChains {
 		chain := chainConfig.Symbol
-		if libchain.GetKeyTypeForChain(chain) == msg.Keygen.KeyType {
+		if libchain.GetKeyTypeForChain(chain) == msg.KeyType {
 			log.Info("Saving contracts for chain ", chain)
 
 			for name, c := range SupportedContracts {
@@ -29,6 +29,9 @@ func (p *Processor) createPendingContracts(ctx sdk.Context, msg *types.KeygenRes
 		}
 	}
 
+	// Save this private db
+	p.db.SaveContracts(contracts)
+
 	go func() {
 		signer := p.appKeys.GetSignerAddress()
 		p.txSubmit.SubmitMessage(types.NewContractsWithSigner(
@@ -39,7 +42,14 @@ func (p *Processor) createPendingContracts(ctx sdk.Context, msg *types.KeygenRes
 }
 
 func (p *Processor) checkContracts(ctx sdk.Context, wrappedMsg *types.ContractsWithSigner) error {
-	// TODO: validate contracts to deploy here.
+	for _, contract := range wrappedMsg.Data.Contracts {
+		if !p.db.IsContractExisted(contract) {
+			return ErrCannotFindMessage
+		}
+	}
+
+	// TODO: Check with KVStore
+
 	return nil
 }
 
@@ -47,8 +57,18 @@ func (p *Processor) deliverContracts(ctx sdk.Context, wrappedMsg *types.Contract
 	// TODO: Don't do duplicated delivery
 	log.Info("Deliver pending contracts")
 
+	for _, contract := range wrappedMsg.Data.Contracts {
+		if p.keeper.IsContractExisted(ctx, contract) {
+			log.Infof("Contract %s has been processed", contract.Name)
+			return nil, nil
+		}
+	}
+
 	// Save into KVStore
 	p.keeper.SaveContracts(ctx, wrappedMsg.Data.Contracts, true)
+
+	// Save this private db
+	p.db.SaveContracts(wrappedMsg.Data.Contracts)
 
 	return nil, nil
 }

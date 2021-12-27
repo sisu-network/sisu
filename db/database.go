@@ -25,30 +25,37 @@ type Database interface {
 	Close() error
 
 	// Keygen
-	CreateKeygen(keyType string, startBlock int64) error
+	CreateKeygen(keyType string, index int) error
+	IsKeygenExisted(keyType string, index int) bool
+
 	GetKeyGen(keyType string) (*tsstypes.KeygenEntity, error)
 
 	UpdateKeygenAddress(keyType, address string, pubKey []byte)
 	IsChainKeyAddress(keyType string, address string) bool
 	GetPubKey(keyType string) []byte
-	UpdateKeygenStatus(keyType, status string)
+
+	// KeygenResult
+	InsertKeygenResultSuccess(keyType string, index int) error
+	GetKeygenResult(keyType string, index int) types.KeygenResult_Result
 
 	// Contracts
+	SaveContracts(contracts []*types.Contract) error
+	IsContractExisted(contract *types.Contract) bool
+
 	GetContractFromAddress(chain, address string) *tsstypes.ContractEntity
 	GetContractFromHash(chain, hash string) *tsstypes.ContractEntity
-	UpdateContractsStatus(contracts []*tsstypes.ContractEntity, status string) error
 	UpdateContractDeployTx(chain, id string, txHash string)
 	UpdateContractAddress(chain, hash, address string)
 
 	// TxIn
-	InsertTxIn(txIn *types.TxIn)
+	InsertTxIn(txIn *types.TxIn) error
 	IsTxInExisted(txIn *types.TxIn) bool
 
 	// Txout
-	InsertTxOuts(txs []*types.TxOut)
+	InsertTxOuts(txs []*types.TxOut) error
 	IsTxOutExisted(txOut *types.TxOut) bool
+	GetTxOutWithHash(chain string, hash string, isHashWithSig bool) *types.TxOut
 
-	GetTxOutWithHash(chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity
 	IsContractDeployTx(chain string, hashWithoutSig string) bool
 	UpdateTxOutSig(chain, hashWithoutSign, hashWithSig string, sig []byte) error
 	UpdateTxOutStatus(chain, hash string, status tsstypes.TxOutStatus, isHashWithSig bool) error
@@ -56,7 +63,6 @@ type Database interface {
 	// Mempool tx
 	InsertMempoolTxHash(hash string, blockHeight int64)
 	MempoolTxExisted(hash string) bool
-	MempoolTxExistedRange(hash string, minBlock int64, maxBlock int64) bool
 }
 
 type SqlDatabase struct {
@@ -156,17 +162,36 @@ func (d *SqlDatabase) Close() error {
 	return d.db.Close()
 }
 
-func (d *SqlDatabase) CreateKeygen(keyType string, startBlock int64) error {
-	query := "INSERT INTO keygen (key_type, start_block, status) VALUES (?, ?, ?)"
-	params := []interface{}{keyType, startBlock, types.KEYGEN_STATUS_GENERATING}
+func (d *SqlDatabase) CreateKeygen(keyType string, index int) error {
+	query := "INSERT IGNORE INTO keygen (key_type, keygen_index) VALUES (?, ?)"
+	params := []interface{}{keyType, index}
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
-		log.Error("failed to create new keygen with type", keyType, ", err = ", err)
+		log.Error("failed to create new keygen with type ", keyType, ", err = ", err)
 		return err
 	}
 
+	fmt.Println("CreateKeygen: ", keyType, index)
+
 	return nil
+}
+
+func (d *SqlDatabase) IsKeygenExisted(keyType string, index int) bool {
+	query := "SELECT key_type FROM keygen WHERE key_type = ? AND keygen_index = ?"
+	params := []interface{}{keyType, index}
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		log.Error("failed to query keygen with type", keyType, ", err = ", err)
+		return false
+	}
+
+	defer rows.Close()
+
+	fmt.Println("IsKeygenExisted: ", keyType, index)
+
+	return rows.Next()
 }
 
 func (d *SqlDatabase) GetKeyGen(keyType string) (*tsstypes.KeygenEntity, error) {
@@ -257,17 +282,85 @@ func (d *SqlDatabase) GetPubKey(keyType string) []byte {
 	return result
 }
 
-func (d *SqlDatabase) UpdateKeygenStatus(keyType, status string) {
-	query := "UPDATE keygen SET status = ? WHERE key_type = ?"
-	params := []interface{}{status, keyType}
+//////////////  Keygenresult  //////////////
+
+func (d *SqlDatabase) InsertKeygenResultSuccess(keyType string, index int) error {
+	query := "INSERT INTO keygen_result (key_type, keygen_index, result) VALUES (?, ?, ?)"
+	params := []interface{}{keyType, index, int(types.KeygenResult_SUCCESS)}
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
-		log.Error("failed to udpate keygen status for key type", keyType, ", err = ", err)
+		log.Error("InsertKeygenResultSuccess: failed to insert keygen result success for key type ", keyType, ", err = ", err)
+		return err
 	}
+
+	return nil
 }
+
+func (d *SqlDatabase) GetKeygenResult(keyType string, index int) types.KeygenResult_Result {
+	query := "SELECT result FROM keygen_result WHERE key_type = ? AND keygen_index = ?"
+	params := []interface{}{keyType, index}
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		log.Error("GetKeygenResult: failed to query keygen result for key type ", keyType, ", err = ", err)
+		return -1
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		var value int
+		if err := rows.Scan(&value); err != nil {
+			log.Error("GetKeygenResult: Failed to scan value")
+			return -1
+		}
+
+		return types.KeygenResult_Result(value)
+	}
+
+	return -1
+}
+
+//////////////  Contract //////////////
+
+func (d *SqlDatabase) SaveContracts(contracts []*types.Contract) error {
+	query := "INSERT IGNORE INTO contract (chain, hash, byte_code, name) VALUES "
+	query = query + getQueryQuestionMark(len(contracts), 4)
+
+	params := make([]interface{}, 0, 4*len(contracts))
+	for _, contract := range contracts {
+		params = append(params, contract.Chain)
+		params = append(params, contract.Hash)
+		params = append(params, contract.ByteCodes)
+		params = append(params, contract.Name)
+	}
+
+	_, err := d.db.Exec(query, params...)
+	if err != nil {
+		log.Error("SaveContracts: failed to insert contract into db, err = ", err)
+		return err
+	}
+
+	return nil
+}
+
+func (d *SqlDatabase) IsContractExisted(contract *types.Contract) bool {
+	query := "SELECT chain FROM contract WHERE chain = ? AND hash = ?"
+	params := []interface{}{contract.Chain, contract.Hash}
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		log.Error("IsContractExisted: failed to query contract into db, err = ", err)
+		return false
+	}
+
+	defer rows.Close()
+
+	return rows.Next()
+}
+
 func (d *SqlDatabase) GetContractFromAddress(chain, address string) *tsstypes.ContractEntity {
-	query := "SELECT chain, hash, byteCode, name, address, status FROM contract WHERE chain=? AND address = ?"
+	query := "SELECT chain, hash, byte_code, name, address, status FROM contract WHERE chain=? AND address = ?"
 	params := []interface{}{chain, address}
 
 	rows, err := d.db.Query(query, params...)
@@ -298,7 +391,7 @@ func (d *SqlDatabase) GetContractFromAddress(chain, address string) *tsstypes.Co
 }
 
 func (d *SqlDatabase) GetContractFromHash(chain, hash string) *tsstypes.ContractEntity {
-	query := "SELECT chain, hash, byteCode, name, address, status FROM contract WHERE chain=? AND hash = ?"
+	query := "SELECT chain, hash, byte_code, name, address, status FROM contract WHERE chain=? AND hash = ?"
 	params := []interface{}{chain, hash}
 
 	rows, err := d.db.Query(query, params...)
@@ -322,20 +415,6 @@ func (d *SqlDatabase) GetContractFromHash(chain, hash string) *tsstypes.Contract
 			Name:    name.String,
 			Address: address.String,
 			Status:  status.String,
-		}
-	}
-
-	return nil
-}
-
-func (d *SqlDatabase) UpdateContractsStatus(contracts []*tsstypes.ContractEntity, status string) error {
-	for _, contract := range contracts {
-		query := "UPDATE contract SET status = ? WHERE chain = ? AND hash = ?"
-		params := []interface{}{status, contract.Chain, contract.Hash}
-
-		if _, err := d.db.Exec(query, params...); err != nil {
-			log.Error("failed to update contract status, err =", err, ". len(contracts) =", len(contracts))
-			return err
 		}
 	}
 
@@ -388,14 +467,17 @@ func (d *SqlDatabase) UpdateContractAddress(chain, outHash, address string) {
 	}
 }
 
-func (d *SqlDatabase) InsertTxIn(txIn *types.TxIn) {
+func (d *SqlDatabase) InsertTxIn(txIn *types.TxIn) error {
 	query := "INSERT IGNORE INTO tx_in (chain, hash, block_height, serialized) VALUES(?, ?, ?, ?)"
 	params := []interface{}{txIn.Chain, txIn.TxHash, txIn.BlockHeight, txIn.Serialized}
 
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
 		log.Error("failed to insert TxIn into table, err =", err)
+		return err
 	}
+
+	return nil
 }
 
 func (d *SqlDatabase) IsTxInExisted(txIn *types.TxIn) bool {
@@ -413,7 +495,7 @@ func (d *SqlDatabase) IsTxInExisted(txIn *types.TxIn) bool {
 	return rows.Next()
 }
 
-func (d *SqlDatabase) InsertTxOuts(txs []*types.TxOut) {
+func (d *SqlDatabase) InsertTxOuts(txs []*types.TxOut) error {
 	query := "INSERT IGNORE INTO tx_out (in_chain, in_hash, out_chain, out_hash, bytes_without_sig) VALUES "
 	query = query + getQueryQuestionMark(len(txs), 5)
 
@@ -430,7 +512,10 @@ func (d *SqlDatabase) InsertTxOuts(txs []*types.TxOut) {
 	_, err := d.db.Exec(query, params...)
 	if err != nil {
 		log.Error("failed to insert txout into table, err = ", err)
+		return err
 	}
+
+	return nil
 }
 
 func (d *SqlDatabase) IsTxOutExisted(txOut *types.TxOut) bool {
@@ -447,7 +532,7 @@ func (d *SqlDatabase) IsTxOutExisted(txOut *types.TxOut) bool {
 	return rows.Next()
 }
 
-func (d *SqlDatabase) GetTxOutWithHash(chain string, hash string, isHashWithSig bool) *tsstypes.TxOutEntity {
+func (d *SqlDatabase) GetTxOutWithHash(chain string, hash string, isHashWithSig bool) *types.TxOut {
 	var query string
 	if isHashWithSig {
 		query = "SELECT chain, status, out_hash, hash_with_sig, in_chain, in_hash, bytes_without_sig, signature, contract_hash FROM tx_out WHERE chain = ? AND hash_with_sig = ?"
@@ -471,15 +556,11 @@ func (d *SqlDatabase) GetTxOutWithHash(chain string, hash string, isHashWithSig 
 			return nil
 		}
 
-		return &tsstypes.TxOutEntity{
-			OutChain:        chain.String,
-			HashWithoutSig:  hashWithoutSig.String,
-			HashWithSig:     hashWithSig.String,
-			InChain:         inChain.String,
-			InHash:          inHash.String,
-			BytesWithoutSig: bytesWithoutSig,
-			Status:          status.String,
-			Signature:       string(signature),
+		return &types.TxOut{
+			OutChain: chain.String,
+			InChain:  inChain.String,
+			InHash:   inHash.String,
+			OutBytes: bytesWithoutSig,
 		}
 	}
 
@@ -533,19 +614,6 @@ func (d *SqlDatabase) InsertMempoolTxHash(hash string, blockHeight int64) {
 func (d *SqlDatabase) MempoolTxExisted(hash string) bool {
 	query := "SELECT hash FROM mempool_tx WHERE hash=?"
 	params := []interface{}{hash}
-
-	rows, err := d.db.Query(query, params...)
-	if err != nil {
-		log.Error("failed to query mempool_tx, err =", err)
-	}
-	defer rows.Close()
-
-	return rows.Next()
-}
-
-func (d *SqlDatabase) MempoolTxExistedRange(hash string, minBlock int64, maxBlock int64) bool {
-	query := "SELECT hash FROM mempool_tx WHERE hash=? AND block_height >= ? AND block_height <= ?"
-	params := []interface{}{hash, minBlock, maxBlock}
 
 	rows, err := d.db.Query(query, params...)
 	if err != nil {

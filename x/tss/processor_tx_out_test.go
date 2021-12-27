@@ -103,6 +103,7 @@ func TestDeliverTxOut_BlockCatchingUp(t *testing.T) {
 	// This is the case when a node is catching up with the network, no TSS call is made.
 	mockDb := mock.NewMockDatabase(ctrl)
 	mockDb.EXPECT().UpdateTxOutStatus("eth", gomock.Any(), tssTypes.TxOutStatusPreSigning, gomock.Any()).Return(nil).Times(0)
+	mockDb.EXPECT().InsertTxOuts(gomock.Any()).Return(nil).Times(1)
 
 	p := &Processor{
 		db:         mockDb,

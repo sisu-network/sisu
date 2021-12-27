@@ -18,13 +18,11 @@ func RegisterCodec(cdc *codec.LegacyAmino) {
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
 
-	registry.RegisterImplementations((*sdk.Msg)(nil), &KeygenProposalWithSigner{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &KeygenWithSigner{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &KeygenResultWithSigner{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &ContractsWithSigner{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TxInWithSigner{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TxOutWithSigner{})
-	// registry.RegisterImplementations((*sdk.Msg)(nil), &Contracts{})
-	// registry.RegisterImplementations((*sdk.Msg)(nil), &Contract{})
 
 	registry.RegisterImplementations((*sdk.Msg)(nil), &KeysignResult{})
 

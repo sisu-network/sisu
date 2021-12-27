@@ -192,10 +192,9 @@ func (t *TxSubmitter) Start() {
 				log.Error("Cannot broadcast transaction", err)
 				t.updateStatus(copy, err)
 
-				// Use block sequence for the sequence.
-				t.sequenceLock.Lock()
-				t.curSequence = t.blockSequence
-				t.sequenceLock.Unlock()
+				// t.sequenceLock.Lock()
+				// t.curSequence = t.blockSequence
+				// t.sequenceLock.Unlock()
 			} else {
 				log.Debug("Tx submitted successfully")
 				t.updateStatus(copy, ErrNone)

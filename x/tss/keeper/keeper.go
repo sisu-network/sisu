@@ -12,26 +12,30 @@ import (
 var (
 	prefixKeygenProposal   = []byte{0x01}
 	prefixKeygen           = []byte{0x02}
-	prefixContract         = []byte{0x03}
-	prefixContractByteCode = []byte{0x04}
-	prefixTxIn             = []byte{0x05}
-	prefixTxOut            = []byte{0x06}
+	prefixKeygenResult     = []byte{0x03}
+	prefixContract         = []byte{0x04}
+	prefixContractByteCode = []byte{0x05}
+	prefixTxIn             = []byte{0x06}
+	prefixTxOut            = []byte{0x07}
 )
 
 // go:generate mockgen -source x/tss/keeper/keeper.go -destination=tests/mock/tss/keeper.go -package=mock
 type Keeper interface {
-	// KeygenProposal
-	SaveKeygenProposal(ctx sdk.Context, msg *types.KeygenProposal)
-	IsKeygenProposalExisted(ctx sdk.Context, msg *types.KeygenProposal) bool
-
 	// Keygen
-	SaveKeygen(ctx sdk.Context, msg *types.KeygenResult)
+	SaveKeygen(ctx sdk.Context, msg *types.Keygen)
+	IsKeygenExisted(ctx sdk.Context, keyType string, index int) bool
 	GetAllPubKeys(ctx sdk.Context) map[string][]byte
-	IsKeygenExisted(ctx sdk.Context, msg *types.KeygenResult) bool
+
+	// Keygen Result
+	SaveKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner)
+	IsKeygenResultSuccess(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) bool
 
 	// Contracts
 	SaveContracts(ctx sdk.Context, msgs []*types.Contract, saveByteCode bool)
+	IsContractExisted(ctx sdk.Context, msg *types.Contract) bool
+
 	GetPendingContracts(ctx sdk.Context, chain string) []*types.Contract
+	UpdateContractsStatus(ctx sdk.Context, msgs []*types.Contract, status string)
 
 	// TxIn
 	SaveTxIn(ctx sdk.Context, msg *types.TxIn)
@@ -64,19 +68,19 @@ func (k *DefaultKeeper) getTxOutKey(inChain string, outChain string, outHash str
 	return []byte(fmt.Sprintf("%s__%s__%s", inChain, outChain, outHash))
 }
 
-func (k *DefaultKeeper) getKeygenProposalKey(keyType string, createdBlock int64) []byte {
+func (k *DefaultKeeper) getKeygenKey(keyType string, index int) []byte {
 	// keyType + id
-	return []byte(fmt.Sprintf("%s__%d", keyType, createdBlock))
+	return []byte(fmt.Sprintf("%s__%d", keyType, index))
 }
 
-func (k *DefaultKeeper) getKeygenResultKey(keyType string) []byte {
+func (k *DefaultKeeper) getKeygenResultKey(keyType string, index int, from string) []byte {
 	// keyType
-	return []byte(fmt.Sprintf("%s", keyType))
+	return []byte(fmt.Sprintf("%s__%d__%s", keyType, index, from))
 }
 
-func (k *DefaultKeeper) SaveKeygenProposal(ctx sdk.Context, msg *types.KeygenProposal) {
+func (k *DefaultKeeper) SaveKeygen(ctx sdk.Context, msg *types.Keygen) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenProposal)
-	key := k.getKeygenProposalKey(msg.KeyType, msg.CreatedBlock)
+	key := k.getKeygenKey(msg.KeyType, int(msg.Index))
 
 	bz, err := msg.Marshal()
 	if err != nil {
@@ -85,24 +89,51 @@ func (k *DefaultKeeper) SaveKeygenProposal(ctx sdk.Context, msg *types.KeygenPro
 	store.Set(key, bz)
 }
 
-func (k *DefaultKeeper) IsKeygenProposalExisted(ctx sdk.Context, msg *types.KeygenProposal) bool {
+func (k *DefaultKeeper) IsKeygenExisted(ctx sdk.Context, keyType string, index int) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenProposal)
-	key := k.getKeygenProposalKey(msg.KeyType, msg.CreatedBlock)
+	key := k.getKeygenKey(keyType, index)
 
 	return store.Get(key) != nil
 }
 
-func (k *DefaultKeeper) SaveKeygen(ctx sdk.Context, msg *types.KeygenResult) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygen)
-	key := k.getKeygenResultKey(msg.Keygen.KeyType)
+func (k *DefaultKeeper) SaveKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenResult)
+	key := k.getKeygenResultKey(signerMsg.Keygen.KeyType, int(signerMsg.Keygen.Index), signerMsg.Data.From)
 
-	bz, err := msg.Keygen.Marshal()
+	bz, err := signerMsg.Data.Marshal()
 	if err != nil {
-		log.Error("Cannot marshal KeygenResult message, err = ", err)
+		log.Error("SaveKeygenResult: Cannot marshal KeygenResult message, err = ", err)
 		return
 	}
 
 	store.Set(key, bz)
+}
+
+// Keygen is considered successful if at least there is at least 1 successful KeygenReslut in the
+// KVStore.
+func (k *DefaultKeeper) IsKeygenResultSuccess(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) bool {
+	msg := signerMsg.Keygen
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenResult)
+
+	begin := []byte(fmt.Sprintf("%s__%d__", msg.KeyType, int(msg.Index)))
+	end := []byte(fmt.Sprintf("%s__%d__~", msg.KeyType, int(msg.Index)))
+
+	iter := store.Iterator(begin, end)
+	for ; iter.Valid(); iter.Next() {
+		bz := iter.Value()
+		msg := &types.KeygenResult{}
+		err := msg.Unmarshal(bz)
+		if err != nil {
+			log.Error("Cannot unmarshal keygen result")
+			continue
+		}
+
+		if msg.Result == types.KeygenResult_SUCCESS {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (k *DefaultKeeper) GetAllPubKeys(ctx sdk.Context) map[string][]byte {
@@ -123,13 +154,6 @@ func (k *DefaultKeeper) GetAllPubKeys(ctx sdk.Context) map[string][]byte {
 	}
 
 	return ret
-}
-
-func (k *DefaultKeeper) IsKeygenExisted(ctx sdk.Context, msg *types.KeygenResult) bool {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygen)
-	key := k.getKeygenResultKey(msg.Keygen.KeyType)
-
-	return store.Get(key) != nil
 }
 
 func (k *DefaultKeeper) SaveTxIn(ctx sdk.Context, msg *types.TxIn) {

@@ -63,32 +63,46 @@ func (mr *MockKeeperMockRecorder) GetPendingContracts(ctx, chain interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingContracts", reflect.TypeOf((*MockKeeper)(nil).GetPendingContracts), ctx, chain)
 }
 
-// IsKeygenExisted mocks base method.
-func (m *MockKeeper) IsKeygenExisted(ctx types.Context, msg *types0.KeygenResult) bool {
+// IsContractExisted mocks base method.
+func (m *MockKeeper) IsContractExisted(ctx types.Context, msg *types0.Contract) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsKeygenExisted", ctx, msg)
+	ret := m.ctrl.Call(m, "IsContractExisted", ctx, msg)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsContractExisted indicates an expected call of IsContractExisted.
+func (mr *MockKeeperMockRecorder) IsContractExisted(ctx, msg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsContractExisted", reflect.TypeOf((*MockKeeper)(nil).IsContractExisted), ctx, msg)
+}
+
+// IsKeygenExisted mocks base method.
+func (m *MockKeeper) IsKeygenExisted(ctx types.Context, keyType string, index int) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsKeygenExisted", ctx, keyType, index)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
 // IsKeygenExisted indicates an expected call of IsKeygenExisted.
-func (mr *MockKeeperMockRecorder) IsKeygenExisted(ctx, msg interface{}) *gomock.Call {
+func (mr *MockKeeperMockRecorder) IsKeygenExisted(ctx, keyType, index interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKeygenExisted", reflect.TypeOf((*MockKeeper)(nil).IsKeygenExisted), ctx, msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKeygenExisted", reflect.TypeOf((*MockKeeper)(nil).IsKeygenExisted), ctx, keyType, index)
 }
 
-// IsKeygenProposalExisted mocks base method.
-func (m *MockKeeper) IsKeygenProposalExisted(ctx types.Context, msg *types0.KeygenProposal) bool {
+// IsKeygenResultSuccess mocks base method.
+func (m *MockKeeper) IsKeygenResultSuccess(ctx types.Context, signerMsg *types0.KeygenResultWithSigner) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsKeygenProposalExisted", ctx, msg)
+	ret := m.ctrl.Call(m, "IsKeygenResultSuccess", ctx, signerMsg)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
-// IsKeygenProposalExisted indicates an expected call of IsKeygenProposalExisted.
-func (mr *MockKeeperMockRecorder) IsKeygenProposalExisted(ctx, msg interface{}) *gomock.Call {
+// IsKeygenResultSuccess indicates an expected call of IsKeygenResultSuccess.
+func (mr *MockKeeperMockRecorder) IsKeygenResultSuccess(ctx, signerMsg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKeygenProposalExisted", reflect.TypeOf((*MockKeeper)(nil).IsKeygenProposalExisted), ctx, msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKeygenResultSuccess", reflect.TypeOf((*MockKeeper)(nil).IsKeygenResultSuccess), ctx, signerMsg)
 }
 
 // IsTxInExisted mocks base method.
@@ -132,7 +146,7 @@ func (mr *MockKeeperMockRecorder) SaveContracts(ctx, msgs, saveByteCode interfac
 }
 
 // SaveKeygen mocks base method.
-func (m *MockKeeper) SaveKeygen(ctx types.Context, msg *types0.KeygenResult) {
+func (m *MockKeeper) SaveKeygen(ctx types.Context, msg *types0.Keygen) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SaveKeygen", ctx, msg)
 }
@@ -143,16 +157,16 @@ func (mr *MockKeeperMockRecorder) SaveKeygen(ctx, msg interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveKeygen", reflect.TypeOf((*MockKeeper)(nil).SaveKeygen), ctx, msg)
 }
 
-// SaveKeygenProposal mocks base method.
-func (m *MockKeeper) SaveKeygenProposal(ctx types.Context, msg *types0.KeygenProposal) {
+// SaveKeygenResult mocks base method.
+func (m *MockKeeper) SaveKeygenResult(ctx types.Context, signerMsg *types0.KeygenResultWithSigner) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SaveKeygenProposal", ctx, msg)
+	m.ctrl.Call(m, "SaveKeygenResult", ctx, signerMsg)
 }
 
-// SaveKeygenProposal indicates an expected call of SaveKeygenProposal.
-func (mr *MockKeeperMockRecorder) SaveKeygenProposal(ctx, msg interface{}) *gomock.Call {
+// SaveKeygenResult indicates an expected call of SaveKeygenResult.
+func (mr *MockKeeperMockRecorder) SaveKeygenResult(ctx, signerMsg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveKeygenProposal", reflect.TypeOf((*MockKeeper)(nil).SaveKeygenProposal), ctx, msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveKeygenResult", reflect.TypeOf((*MockKeeper)(nil).SaveKeygenResult), ctx, signerMsg)
 }
 
 // SaveTxIn mocks base method.
@@ -177,4 +191,16 @@ func (m *MockKeeper) SaveTxOut(ctx types.Context, msg *types0.TxOut) {
 func (mr *MockKeeperMockRecorder) SaveTxOut(ctx, msg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTxOut", reflect.TypeOf((*MockKeeper)(nil).SaveTxOut), ctx, msg)
+}
+
+// UpdateContractsStatus mocks base method.
+func (m *MockKeeper) UpdateContractsStatus(ctx types.Context, msgs []*types0.Contract, status string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateContractsStatus", ctx, msgs, status)
+}
+
+// UpdateContractsStatus indicates an expected call of UpdateContractsStatus.
+func (mr *MockKeeperMockRecorder) UpdateContractsStatus(ctx, msgs, status interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateContractsStatus", reflect.TypeOf((*MockKeeper)(nil).UpdateContractsStatus), ctx, msgs, status)
 }
