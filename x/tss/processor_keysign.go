@@ -21,7 +21,7 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 	// Sends it to deyes for deployment.
 	if result.Success {
 		// Find the tx in txout table
-		txOut := p.privateDb.GetTxOut(request.InChain, request.OutChain, request.OutHash)
+		txOut := p.privateDb.GetTxOut(request.OutChain, request.OutHash)
 		if txOut == nil {
 			log.Error("Cannot find tx out with hash", request.OutHash)
 		}

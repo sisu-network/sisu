@@ -38,7 +38,7 @@ type Database interface {
 
 	// Contracts
 	// SaveContracts(contracts []*types.Contract) error
-	IsContractExisted(contract *types.Contract) bool
+	// IsContractExisted(contract *types.Contract) bool
 
 	GetContractFromAddress(chain, address string) *tsstypes.ContractEntity
 	GetContractFromHash(chain, hash string) *tsstypes.ContractEntity

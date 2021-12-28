@@ -63,17 +63,17 @@ func (mr *MockPrivateDbMockRecorder) GetPendingContracts(chain interface{}) *gom
 }
 
 // GetTxOut mocks base method.
-func (m *MockPrivateDb) GetTxOut(inChain, outChain, hash string) *types.TxOut {
+func (m *MockPrivateDb) GetTxOut(outChain, hash string) *types.TxOut {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTxOut", inChain, outChain, hash)
+	ret := m.ctrl.Call(m, "GetTxOut", outChain, hash)
 	ret0, _ := ret[0].(*types.TxOut)
 	return ret0
 }
 
 // GetTxOut indicates an expected call of GetTxOut.
-func (mr *MockPrivateDbMockRecorder) GetTxOut(inChain, outChain, hash interface{}) *gomock.Call {
+func (mr *MockPrivateDbMockRecorder) GetTxOut(outChain, hash interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxOut", reflect.TypeOf((*MockPrivateDb)(nil).GetTxOut), inChain, outChain, hash)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxOut", reflect.TypeOf((*MockPrivateDb)(nil).GetTxOut), outChain, hash)
 }
 
 // IsContractExisted mocks base method.

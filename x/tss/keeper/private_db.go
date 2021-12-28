@@ -39,7 +39,7 @@ type PrivateDb interface {
 	// TxOut
 	SaveTxOut(msg *types.TxOut)
 	IsTxOutExisted(msg *types.TxOut) bool
-	GetTxOut(inChain string, outChain, hash string) *types.TxOut
+	GetTxOut(outChain, hash string) *types.TxOut
 }
 
 type defaultPrivateDb struct {
@@ -165,9 +165,9 @@ func (db *defaultPrivateDb) IsTxOutExisted(msg *types.TxOut) bool {
 	return isTxOutExisted(store, msg)
 }
 
-func (db *defaultPrivateDb) GetTxOut(inChain string, outChain, hash string) *types.TxOut {
+func (db *defaultPrivateDb) GetTxOut(outChain, hash string) *types.TxOut {
 	store := db.prefixes[string(prefixTxOut)]
-	return getTxOut(store, inChain, outChain, hash)
+	return getTxOut(store, outChain, hash)
 }
 
 ///// Debug
