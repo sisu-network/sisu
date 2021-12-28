@@ -43,9 +43,9 @@ func getTxInKey(chain string, height int64, hash string) []byte {
 	return []byte(fmt.Sprintf("%s__%d__%s", chain, height, hash))
 }
 
-func getTxOutKey(inChain string, outChain string, outHash string) []byte {
-	// inChain, outChain, height, hash
-	return []byte(fmt.Sprintf("%s__%s__%s", inChain, outChain, outHash))
+func getTxOutKey(outChain string, outHash string) []byte {
+	// outChain, hash
+	return []byte(fmt.Sprintf("%s__%s", outChain, outHash))
 }
 
 ///// Keygen
@@ -312,7 +312,7 @@ func isTxInExisted(store cstypes.KVStore, msg *types.TxIn) bool {
 
 ///// TxOut
 func saveTxOut(store cstypes.KVStore, msg *types.TxOut) {
-	key := getTxOutKey(msg.InChain, msg.OutChain, msg.GetHash())
+	key := getTxOutKey(msg.OutChain, msg.GetHash())
 	bz, err := msg.Marshal()
 	if err != nil {
 		log.Error("Cannot marshal tx out")
@@ -323,12 +323,12 @@ func saveTxOut(store cstypes.KVStore, msg *types.TxOut) {
 }
 
 func isTxOutExisted(store cstypes.KVStore, msg *types.TxOut) bool {
-	key := getTxOutKey(msg.InChain, msg.OutChain, msg.GetHash())
+	key := getTxOutKey(msg.OutChain, msg.GetHash())
 	return store.Has(key)
 }
 
-func getTxOut(store cstypes.KVStore, inChain string, outChain, hash string) *types.TxOut {
-	key := getTxOutKey(inChain, outChain, hash)
+func getTxOut(store cstypes.KVStore, outChain, hash string) *types.TxOut {
+	key := getTxOutKey(outChain, hash)
 	bz := store.Get(key)
 
 	if bz == nil {
