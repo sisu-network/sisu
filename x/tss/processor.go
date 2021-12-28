@@ -153,7 +153,7 @@ func (p *Processor) connectToDeyes() {
 		p.deyesClients[chain] = deyeClient
 	}
 
-	p.worldState = NewWorldState(p.config, p.db, p.deyesClients)
+	p.worldState = NewWorldState(p.config, p.privateDb, p.deyesClients)
 }
 
 func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
@@ -309,8 +309,6 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 
 		}
 	}
-
-	fmt.Println("AAAA Done")
 
 	return nil
 }

@@ -1,8 +1,6 @@
 package keeper
 
 import (
-	"fmt"
-
 	"github.com/sisu-network/cosmos-sdk/store/prefix"
 	cstypes "github.com/sisu-network/cosmos-sdk/store/types"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
@@ -12,10 +10,13 @@ import (
 
 // go:generate mockgen -source x/tss/keeper/keeper.go -destination=tests/mock/tss/keeper.go -package=mock
 type Keeper interface {
+	// Debug
+	PrintStore(ctx sdk.Context, name string)
+
 	// Keygen
 	SaveKeygen(ctx sdk.Context, msg *types.Keygen)
 	IsKeygenExisted(ctx sdk.Context, keyType string, index int) bool
-	GetAllPubKeys(ctx sdk.Context) map[string][]byte
+	IsKeygenAddress(ctx sdk.Context, keyType string, address string) bool
 
 	// Keygen Result
 	SaveKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner)
@@ -49,16 +50,6 @@ func NewKeeper(storeKey sdk.StoreKey) *DefaultKeeper {
 	return keeper
 }
 
-func (k *DefaultKeeper) getTxInKey(chain string, height int64, hash string) []byte {
-	// chain, height, hash
-	return []byte(fmt.Sprintf("%s__%d__%s", chain, height, hash))
-}
-
-func (k *DefaultKeeper) getTxOutKey(inChain string, outChain string, outHash string) []byte {
-	// inChain, outChain, height, hash
-	return []byte(fmt.Sprintf("%s__%s__%s", inChain, outChain, outHash))
-}
-
 ///// Keygen
 
 func (k *DefaultKeeper) SaveKeygen(ctx sdk.Context, msg *types.Keygen) {
@@ -69,6 +60,11 @@ func (k *DefaultKeeper) SaveKeygen(ctx sdk.Context, msg *types.Keygen) {
 func (k *DefaultKeeper) IsKeygenExisted(ctx sdk.Context, keyType string, index int) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygen)
 	return isKeygenExisted(store, keyType, index)
+}
+
+func (k *DefaultKeeper) IsKeygenAddress(ctx sdk.Context, keyType string, address string) bool {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygen)
+	return isKeygenAddress(store, keyType, address)
 }
 
 ///// Keygen Result
@@ -83,24 +79,6 @@ func (k *DefaultKeeper) SaveKeygenResult(ctx sdk.Context, signerMsg *types.Keyge
 func (k *DefaultKeeper) IsKeygenResultSuccess(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenResult)
 	return isKeygenResultSuccess(store, signerMsg)
-}
-
-func (k *DefaultKeeper) GetAllPubKeys(ctx sdk.Context) map[string][]byte {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygen)
-	return getAllPubKeys(store)
-}
-
-func (k *DefaultKeeper) SaveTxIn(ctx sdk.Context, msg *types.TxIn) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxIn)
-	key := k.getTxInKey(msg.Chain, msg.BlockHeight, msg.TxHash)
-
-	bz, err := msg.Marshal()
-	if err != nil {
-		log.Error("Cannot marshal TxIn")
-		return
-	}
-
-	store.Set(key, bz)
 }
 
 ///// Contracts
@@ -130,38 +108,33 @@ func (k *DefaultKeeper) UpdateContractsStatus(ctx sdk.Context, msgs []*types.Con
 }
 
 ///// TxIn
-
-func (k *DefaultKeeper) IsTxInExisted(ctx sdk.Context, tx *types.TxIn) bool {
+func (k *DefaultKeeper) SaveTxIn(ctx sdk.Context, msg *types.TxIn) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxIn)
-	key := k.getTxInKey(tx.GetChain(), tx.GetBlockHeight(), tx.GetTxHash())
-
-	return store.Get(key) != nil
+	saveTxIn(store, msg)
 }
+
+func (k *DefaultKeeper) IsTxInExisted(ctx sdk.Context, msg *types.TxIn) bool {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxIn)
+	return isTxInExisted(store, msg)
+}
+
+///// TxOut
 
 func (k *DefaultKeeper) SaveTxOut(ctx sdk.Context, msg *types.TxOut) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
-	key := k.getTxOutKey(msg.InChain, msg.OutChain, msg.GetHash())
-
-	bz, err := msg.Marshal()
-	if err != nil {
-		log.Error("Cannot marshal tx out")
-		return
-	}
-
-	store.Set(key, bz)
+	saveTxOut(store, msg)
 }
 
 func (k *DefaultKeeper) IsTxOutExisted(ctx sdk.Context, msg *types.TxOut) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
-	key := k.getTxOutKey(msg.InChain, msg.OutChain, msg.GetHash())
-
-	return store.Get(key) != nil
+	return isTxOutExisted(store, msg)
 }
 
 ///// Debug
 
 // PrintStore is a debug function
 func (k *DefaultKeeper) PrintStore(ctx sdk.Context, name string) {
+	log.Info("======== DEBUGGING")
 	log.Info("Printing ALL values in store ", name)
 	var store cstypes.KVStore
 	switch name {
@@ -172,4 +145,5 @@ func (k *DefaultKeeper) PrintStore(ctx sdk.Context, name string) {
 	}
 
 	printStore(store)
+	log.Info("======== END OF DEBUGGING")
 }

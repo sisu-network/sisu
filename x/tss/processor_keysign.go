@@ -4,7 +4,6 @@ import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	htypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 
 	etypes "github.com/ethereum/go-ethereum/core/types"
@@ -15,15 +14,16 @@ import (
 // This function is called after dheart sends Sisu keysign result.
 func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 	// Post the keysign result to cosmos chain.
-	msg := types.NewKeysignResult(p.appKeys.GetSignerAddress().String(), result.OutChain, result.OutHash, result.Success, result.Signature)
+	request := result.Request
+	msg := types.NewKeysignResult(p.appKeys.GetSignerAddress().String(), request.OutChain, request.OutHash, result.Success, result.Signature)
 	go p.txSubmit.SubmitMessage(msg)
 
 	// Sends it to deyes for deployment.
 	if result.Success {
 		// Find the tx in txout table
-		txOut := p.db.GetTxOutWithHash(result.OutChain, result.OutHash, false)
+		txOut := p.privateDb.GetTxOut(request.InChain, request.OutChain, request.OutHash)
 		if txOut == nil {
-			log.Error("Cannot find tx out with hash", result.OutHash)
+			log.Error("Cannot find tx out with hash", request.OutHash)
 		}
 
 		tx := &etypes.Transaction{}
@@ -33,7 +33,7 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 		}
 
 		// Create full tx with signature.
-		chainId := libchain.GetChainIntFromId(result.OutChain)
+		chainId := libchain.GetChainIntFromId(request.OutChain)
 		signedTx, err := tx.WithSignature(etypes.NewEIP2930Signer(chainId), result.Signature)
 		if err != nil {
 			log.Error("cannot set signatuer for tx, err =", err)
@@ -46,17 +46,17 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 			return
 		}
 
-		// Add the signature to txOuts
-		p.db.UpdateTxOutSig(
-			result.OutChain,
-			result.OutHash,
-			utils.KeccakHash32(string(bz)),
-			result.Signature,
-		)
+		// TODO: Add the signature to txOuts
+		// p.db.UpdateTxOutSig(
+		// 	request.OutChain,
+		// 	request.OutHash,
+		// 	utils.KeccakHash32(string(bz)),
+		// 	result.Signature,
+		// )
 
 		// If this is a contract deployment transaction, update the contract table with the hash of the
 		// deployment tx bytes.
-		isContractDeployment := chain.IsETHBasedChain(result.OutChain) && p.db.IsContractDeployTx(result.OutChain, result.OutHash)
+		isContractDeployment := chain.IsETHBasedChain(request.OutChain) && p.db.IsContractDeployTx(request.OutChain, request.OutHash)
 		err = p.deploySignedTx(bz, result, isContractDeployment)
 		if err != nil {
 			log.Error("deployment error: ", err)

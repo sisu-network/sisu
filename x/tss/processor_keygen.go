@@ -1,8 +1,6 @@
 package tss
 
 import (
-	"fmt"
-
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
@@ -59,7 +57,6 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 func (p *Processor) checkKeygen(ctx sdk.Context, wrapper *types.KeygenWithSigner) error {
 	ok := p.privateDb.IsKeygenExisted(wrapper.Data.KeyType, int(wrapper.Data.Index))
 	if !ok {
-		fmt.Println("Keygen does not exist")
 		return ErrCannotFindMessage
 	}
 

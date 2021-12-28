@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"strings"
 
 	cstypes "github.com/sisu-network/cosmos-sdk/store/types"
 	"github.com/sisu-network/lib/log"
@@ -19,12 +20,12 @@ var (
 
 func getKeygenKey(keyType string, index int) []byte {
 	// keyType + id
-	return []byte(fmt.Sprintf("%s__%d", keyType, index))
+	return []byte(fmt.Sprintf("%s__%06d", keyType, index))
 }
 
 func getKeygenResultKey(keyType string, index int, from string) []byte {
 	// keyType
-	return []byte(fmt.Sprintf("%s__%d__%s", keyType, index, from))
+	return []byte(fmt.Sprintf("%s__%06d__%s", keyType, index, from))
 }
 
 func getContractKey(chain string, hash string) []byte {
@@ -36,6 +37,18 @@ func getContractByteCodeKey(chain string, hash string) []byte {
 	// chain + hash
 	return []byte(fmt.Sprintf("%s__%s", chain, hash))
 }
+
+func getTxInKey(chain string, height int64, hash string) []byte {
+	// chain, height, hash
+	return []byte(fmt.Sprintf("%s__%d__%s", chain, height, hash))
+}
+
+func getTxOutKey(inChain string, outChain string, outHash string) []byte {
+	// inChain, outChain, height, hash
+	return []byte(fmt.Sprintf("%s__%s__%s", inChain, outChain, outHash))
+}
+
+///// Keygen
 
 func saveKeygen(store cstypes.KVStore, msg *types.Keygen) {
 	key := getKeygenKey(msg.KeyType, int(msg.Index))
@@ -64,6 +77,72 @@ func saveKeygenResult(store cstypes.KVStore, signerMsg *types.KeygenResultWithSi
 
 	store.Set(key, bz)
 }
+
+func isKeygenAddress(store cstypes.KVStore, keyType string, address string) bool {
+	begin := []byte(fmt.Sprintf("%s__", keyType))
+
+	iter := store.ReverseIterator(begin, nil)
+	for ; iter.Valid(); iter.Next() {
+		msg := &types.Keygen{}
+		if err := msg.Unmarshal(iter.Value()); err != nil {
+			log.Error("IsKeygenAddress: cannot unmarshal keygen")
+			continue
+		}
+
+		if msg.Address == address {
+			return true
+		}
+	}
+
+	return false
+}
+
+func getKeygenPubkey(store cstypes.KVStore, keyType string) []byte {
+	begin := []byte(fmt.Sprintf("%s__", keyType))
+
+	iter := store.ReverseIterator(begin, nil)
+	for ; iter.Valid(); iter.Next() {
+		msg := &types.Keygen{}
+		if err := msg.Unmarshal(iter.Value()); err != nil {
+			log.Error("IsKeygenAddress: cannot unmarshal keygen")
+			continue
+		}
+
+		if msg.PubKeyBytes != nil && len(msg.PubKeyBytes) > 0 {
+			return msg.PubKeyBytes
+		}
+	}
+
+	return nil
+}
+
+func getAllKeygenPubkeys(store cstypes.KVStore) map[string][]byte {
+	iter := store.Iterator(nil, nil)
+
+	result := make(map[string][]byte)
+
+	for ; iter.Valid(); iter.Next() {
+		key := string(iter.Key())
+		index := strings.Index(key, "__")
+		if index < 0 {
+			continue
+		}
+
+		keyType := key[0:index]
+		msg := &types.Keygen{}
+		if err := msg.Unmarshal(iter.Value()); err != nil {
+			log.Error("getAllKeygenPubkeys: cannot unmarshal keygen")
+			continue
+		}
+		if len(msg.PubKeyBytes) > 0 {
+			result[keyType] = msg.PubKeyBytes
+		}
+	}
+
+	return result
+}
+
+///// Keygen Result
 
 // Keygen is considered successful if at least there is at least 1 successful KeygenReslut in the
 // KVStore.
@@ -213,13 +292,64 @@ func updateContractsStatus(contractStore cstypes.KVStore, msgs []*types.Contract
 	}
 }
 
+///// TxIn
+func saveTxIn(store cstypes.KVStore, msg *types.TxIn) {
+	key := getTxInKey(msg.Chain, msg.BlockHeight, msg.TxHash)
+
+	bz, err := msg.Marshal()
+	if err != nil {
+		log.Error("Cannot marshal TxIn")
+		return
+	}
+
+	store.Set(key, bz)
+}
+
+func isTxInExisted(store cstypes.KVStore, msg *types.TxIn) bool {
+	key := getTxInKey(msg.GetChain(), msg.GetBlockHeight(), msg.GetTxHash())
+	return store.Has(key)
+}
+
+///// TxOut
+func saveTxOut(store cstypes.KVStore, msg *types.TxOut) {
+	key := getTxOutKey(msg.InChain, msg.OutChain, msg.GetHash())
+	bz, err := msg.Marshal()
+	if err != nil {
+		log.Error("Cannot marshal tx out")
+		return
+	}
+
+	store.Set(key, bz)
+}
+
+func isTxOutExisted(store cstypes.KVStore, msg *types.TxOut) bool {
+	key := getTxOutKey(msg.InChain, msg.OutChain, msg.GetHash())
+	return store.Has(key)
+}
+
+func getTxOut(store cstypes.KVStore, inChain string, outChain, hash string) *types.TxOut {
+	key := getTxOutKey(inChain, outChain, hash)
+	bz := store.Get(key)
+
+	if bz == nil {
+		return nil
+	}
+
+	txOut := &types.TxOut{}
+	err := txOut.Unmarshal(bz)
+	if err != nil {
+		log.Error("getTxOUt: Cannot unmasharl txout")
+		return nil
+	}
+
+	return txOut
+}
+
 /// Debug functions
 func printStore(store cstypes.KVStore) {
-	log.Info("======== DEBUGGING")
 	iter := store.Iterator(nil, nil)
 	for ; iter.Valid(); iter.Next() {
 		log.Info("key = ", string(iter.Key()))
 		log.Info("value = ", string(iter.Value()))
 	}
-	log.Info("======== END OF DEBUGGING")
 }

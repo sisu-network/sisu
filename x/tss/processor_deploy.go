@@ -12,18 +12,19 @@ import (
 
 // deploySignedTx creates a deployment request and sends it to deyes.
 func (p *Processor) deploySignedTx(bz []byte, keysignResult *htypes.KeysignResult, isContractDeployment bool) error {
-	log.Debug("Sending final tx to the deyes for deployment for chain", keysignResult.OutChain)
-	deyeClient := p.deyesClients[keysignResult.OutChain]
+	request := keysignResult.Request
+	log.Debug("Sending final tx to the deyes for deployment for chain", request.OutChain)
+	deyeClient := p.deyesClients[request.OutChain]
 
-	pubkey := p.db.GetPubKey(libchain.GetKeyTypeForChain(keysignResult.OutChain))
+	pubkey := p.privateDb.GetKeygenPubkey(libchain.GetKeyTypeForChain(request.OutChain))
 	if pubkey == nil {
-		return fmt.Errorf("Cannot get pubkey for chain %s", keysignResult.OutChain)
+		return fmt.Errorf("Cannot get pubkey for chain %s", request.OutChain)
 	}
 
 	if deyeClient != nil {
 		request := &etypes.DispatchedTxRequest{
-			Chain:                   keysignResult.OutChain,
-			TxHash:                  keysignResult.OutHash,
+			Chain:                   request.OutChain,
+			TxHash:                  request.OutHash,
 			Tx:                      bz,
 			PubKey:                  pubkey,
 			IsEthContractDeployment: isContractDeployment,
@@ -31,7 +32,7 @@ func (p *Processor) deploySignedTx(bz []byte, keysignResult *htypes.KeysignResul
 
 		go deyeClient.Dispatch(request)
 	} else {
-		err := fmt.Errorf("Cannot find deyes client for chain %s", keysignResult.OutChain)
+		err := fmt.Errorf("Cannot find deyes client for chain %s", request.OutChain)
 		return err
 	}
 
@@ -54,7 +55,7 @@ func (p *Processor) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 			deyeClient := p.deyesClients[chain]
 			deyeClient.AddWatchAddresses(chain, []string{result.DeployedAddr})
 
-			// Update database with the deployed address
+			// TODO: Update database with the deployed address
 			// p.db.UpdateContractAddress(chain, outHash, result.DeployedAddr)
 		}
 	} else {
