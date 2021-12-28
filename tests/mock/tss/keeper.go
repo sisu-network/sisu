@@ -77,6 +77,20 @@ func (mr *MockKeeperMockRecorder) IsContractExisted(ctx, msg interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsContractExisted", reflect.TypeOf((*MockKeeper)(nil).IsContractExisted), ctx, msg)
 }
 
+// IsKeygenAddress mocks base method.
+func (m *MockKeeper) IsKeygenAddress(ctx types.Context, keyType, address string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsKeygenAddress", ctx, keyType, address)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsKeygenAddress indicates an expected call of IsKeygenAddress.
+func (mr *MockKeeperMockRecorder) IsKeygenAddress(ctx, keyType, address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKeygenAddress", reflect.TypeOf((*MockKeeper)(nil).IsKeygenAddress), ctx, keyType, address)
+}
+
 // IsKeygenExisted mocks base method.
 func (m *MockKeeper) IsKeygenExisted(ctx types.Context, keyType string, index int) bool {
 	m.ctrl.T.Helper()
@@ -131,6 +145,18 @@ func (m *MockKeeper) IsTxOutExisted(ctx types.Context, msg *types0.TxOut) bool {
 func (mr *MockKeeperMockRecorder) IsTxOutExisted(ctx, msg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTxOutExisted", reflect.TypeOf((*MockKeeper)(nil).IsTxOutExisted), ctx, msg)
+}
+
+// PrintStore mocks base method.
+func (m *MockKeeper) PrintStore(ctx types.Context, name string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PrintStore", ctx, name)
+}
+
+// PrintStore indicates an expected call of PrintStore.
+func (mr *MockKeeperMockRecorder) PrintStore(ctx, name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrintStore", reflect.TypeOf((*MockKeeper)(nil).PrintStore), ctx, name)
 }
 
 // SaveContracts mocks base method.

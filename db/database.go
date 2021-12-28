@@ -29,8 +29,7 @@ type Database interface {
 	// IsKeygenExisted(keyType string, index int) bool
 	// GetKeyGen(keyType string) (*tsstypes.KeygenEntity, error)
 	// UpdateKeygenAddress(keyType, address string, pubKey []byte)
-
-	IsChainKeyAddress(keyType string, address string) bool
+	// IsChainKeyAddress(keyType string, address string) bool
 	GetPubKey(keyType string) []byte
 
 	// KeygenResult
@@ -47,8 +46,8 @@ type Database interface {
 	UpdateContractAddress(chain, hash, address string)
 
 	// TxIn
-	InsertTxIn(txIn *types.TxIn) error
-	IsTxInExisted(txIn *types.TxIn) bool
+	// InsertTxIn(txIn *types.TxIn) error
+	// IsTxInExisted(txIn *types.TxIn) bool
 
 	// Txout
 	InsertTxOuts(txs []*types.TxOut) error
@@ -171,8 +170,6 @@ func (d *SqlDatabase) CreateKeygen(keyType string, index int) error {
 		return err
 	}
 
-	fmt.Println("CreateKeygen: ", keyType, index)
-
 	return nil
 }
 
@@ -187,8 +184,6 @@ func (d *SqlDatabase) IsKeygenExisted(keyType string, index int) bool {
 	}
 
 	defer rows.Close()
-
-	fmt.Println("IsKeygenExisted: ", keyType, index)
 
 	return rows.Next()
 }

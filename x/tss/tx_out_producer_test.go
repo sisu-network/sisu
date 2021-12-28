@@ -12,6 +12,7 @@ import (
 	"github.com/golang/mock/gomock"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/tests/mock"
+	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
 
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/contracts/eth/erc20gateway"
@@ -65,6 +66,9 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		require.NoError(t, err)
 
 		pubkeyBytes := crypto.FromECDSAPub(&privKey.PublicKey)
+		mockPrivateDb := mocktss.NewMockPrivateDb(ctrl)
+		mockPrivateDb.EXPECT().GetKeygenPubkey("ecdsa").Return(pubkeyBytes).Times(1)
+
 		mockDb := mock.NewMockDatabase(ctrl)
 		mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(true).Times(1)
 		mockDb.EXPECT().GetPubKey("ecdsa").Return(pubkeyBytes).Times(1)
@@ -92,7 +96,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		}
 
 		worldState := DefaultWorldState{
-			db:        mockDb,
+			privateDb: mockPrivateDb,
 			tssConfig: config.TssConfig{},
 			nonces: map[string]int64{
 				"eth": 100,
@@ -137,6 +141,9 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		require.NoError(t, err)
 
 		pubkeyBytes := crypto.FromECDSAPub(&privKey.PublicKey)
+		mockPrivateDb := mocktss.NewMockPrivateDb(ctrl)
+		mockPrivateDb.EXPECT().GetKeygenPubkey("ecdsa").Return(pubkeyBytes).Times(1)
+
 		mockDb := mock.NewMockDatabase(ctrl)
 		mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(false).Times(1)
 		mockDb.EXPECT().GetContractFromAddress(gomock.Any(), gomock.Any()).Return(contractEntity).Times(1)
@@ -172,7 +179,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		}
 
 		worldState := DefaultWorldState{
-			db:        mockDb,
+			privateDb: mockPrivateDb,
 			tssConfig: config.TssConfig{},
 			nonces: map[string]int64{
 				"eth": 100,
