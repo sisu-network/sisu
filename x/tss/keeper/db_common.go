@@ -9,13 +9,16 @@ import (
 	"github.com/sisu-network/sisu/x/tss/types"
 )
 
+// TODO: Move txout's byte into separate store.
 var (
 	prefixKeygen           = []byte{0x01}
 	prefixKeygenResult     = []byte{0x02}
 	prefixContract         = []byte{0x03}
 	prefixContractByteCode = []byte{0x04}
-	prefixTxIn             = []byte{0x05}
-	prefixTxOut            = []byte{0x06}
+	prefixContractAddress  = []byte{0x05}
+	prefixTxIn             = []byte{0x06}
+	prefixTxOut            = []byte{0x07}
+	prefixTxOutConfirm     = []byte{0x08}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -33,11 +36,6 @@ func getContractKey(chain string, hash string) []byte {
 	return []byte(fmt.Sprintf("%s__%s", chain, hash))
 }
 
-func getContractByteCodeKey(chain string, hash string) []byte {
-	// chain + hash
-	return []byte(fmt.Sprintf("%s__%s", chain, hash))
-}
-
 func getTxInKey(chain string, height int64, hash string) []byte {
 	// chain, height, hash
 	return []byte(fmt.Sprintf("%s__%d__%s", chain, height, hash))
@@ -46,6 +44,16 @@ func getTxInKey(chain string, height int64, hash string) []byte {
 func getTxOutKey(outChain string, outHash string) []byte {
 	// outChain, hash
 	return []byte(fmt.Sprintf("%s__%s", outChain, outHash))
+}
+
+func getTxOutConfirmKey(outChain string, outHash string) []byte {
+	// outChain, hash
+	return []byte(fmt.Sprintf("%s__%s", outChain, outHash))
+}
+
+func getContractAddressKey(chain string, address string) []byte {
+	// chain, address
+	return []byte(fmt.Sprintf("%s__%s", chain, address))
 }
 
 ///// Keygen
@@ -187,50 +195,52 @@ func getAllPubKeys(store cstypes.KVStore) map[string][]byte {
 	return ret
 }
 
-func saveContracts(contractStore cstypes.KVStore, byteCodeStore cstypes.KVStore, msgs []*types.Contract, saveByteCode bool) {
-	log.Info("Saving contracts, contracts length = ", len(msgs))
+///// Contract
 
+func saveContracts(contractStore cstypes.KVStore, byteCodeStore cstypes.KVStore, msgs []*types.Contract) {
 	for _, msg := range msgs {
-		log.Infof("Saving contract on chain %s with hash = %s", msg.Chain, msg.Hash)
+		saveContract(contractStore, byteCodeStore, msg)
+	}
+}
 
-		bz, err := msg.Marshal()
+func saveContract(contractStore cstypes.KVStore, byteCodeStore cstypes.KVStore, msg *types.Contract) {
+	bz, err := msg.Marshal()
+	if err != nil {
+		log.Error("Cannot marshal contract message, err = ", err)
+		return
+	}
+
+	// Save byte code into separate store since it's rarely read.
+	copy := &types.Contract{}
+	if msg.ByteCodes == nil {
+		// ByteCode is nil, the copy is the same object reference as message
+		copy = msg
+	} else {
+		// ByteCode is not nil, we need to remove the bytecode from the copy.
+		err = copy.Unmarshal(bz)
 		if err != nil {
-			log.Error("Cannot marshal contract message, err = ", err)
-			continue
+			log.Error("Cannot unmarshal contract message, err = ", err)
+			return
 		}
 
-		// Save byte code into separate store since it's rarely read.
-		copy := &types.Contract{}
-		if msg.ByteCodes == nil {
-			// ByteCode is nil, the copy is the same object reference as message
-			copy = msg
-		} else {
-			// ByteCode is not nil, we need to remove the bytecode from the copy.
-			err = copy.Unmarshal(bz)
-			if err != nil {
-				log.Error("Cannot unmarshal contract message, err = ", err)
-				continue
-			}
+		// Set bytecode to nil
+		copy.ByteCodes = nil
+	}
 
-			// Set bytecode to nil
-			copy.ByteCodes = nil
-		}
+	// Get the serialized bytes of copy
+	bz, err = copy.Marshal()
+	if err != nil {
+		log.Error("Cannot marshal contract copy, err = ", err)
+		return
+	}
 
-		// Get the serialized bytes of copy
-		bz, err = copy.Marshal()
-		if err != nil {
-			log.Error("Cannot marshal contract copy, err = ", err)
-			continue
-		}
+	contractKey := getContractKey(msg.Chain, msg.Hash)
+	contractStore.Set(contractKey, bz)
 
-		contractKey := getContractKey(msg.Chain, msg.Hash)
-		contractStore.Set(contractKey, bz)
-
-		// Save byte code
-		if saveByteCode && msg.ByteCodes != nil {
-			byteCodeKey := getContractByteCodeKey(msg.Chain, msg.Hash)
-			byteCodeStore.Set(byteCodeKey, msg.ByteCodes)
-		}
+	// Save byte code
+	if byteCodeStore != nil && len(msg.ByteCodes) > 0 {
+		byteCodeKey := getContractKey(msg.Chain, msg.Hash)
+		byteCodeStore.Set(byteCodeKey, msg.ByteCodes)
 	}
 }
 
@@ -268,9 +278,10 @@ func getPendingContracts(contractStore cstypes.KVStore, byteCodeStore cstypes.KV
 	return contracts
 }
 
+// TODO: Remove this. The status should be put in separate store.
 func updateContractsStatus(contractStore cstypes.KVStore, msgs []*types.Contract, status string) {
 	for _, msg := range msgs {
-		key := getContractByteCodeKey(msg.Chain, msg.GetHash())
+		key := getContractKey(msg.Chain, msg.GetHash())
 
 		bz := contractStore.Get(key)
 		contract := &types.Contract{}
@@ -290,6 +301,75 @@ func updateContractsStatus(contractStore cstypes.KVStore, msgs []*types.Contract
 
 		contractStore.Set(key, bz)
 	}
+}
+
+func getContract(contractStore cstypes.KVStore, byteCodeStore cstypes.KVStore, chain string, contractHash string) *types.Contract {
+	key := getContractKey(chain, contractHash)
+	bz := contractStore.Get(key)
+
+	if bz == nil {
+		log.Error("getContract: serialized contract is nil")
+		return nil
+	}
+
+	contract := &types.Contract{}
+	err := contract.Unmarshal(bz)
+	if err != nil {
+		log.Error("getContract: cannot unmarshal contract, err = ", err)
+		return nil
+	}
+
+	if byteCodeStore != nil {
+		contract.ByteCodes = byteCodeStore.Get(key)
+	}
+
+	return contract
+}
+
+func updateContractAddress(contractStore cstypes.KVStore, chain string, hash string, address string) {
+	contract := getContract(contractStore, nil, chain, hash)
+	if contract == nil {
+		return
+	}
+
+	contract.Address = address
+	saveContracts(contractStore, nil, []*types.Contract{contract})
+}
+
+///// Contract Address
+func createContractAddress(caStore cstypes.KVStore, txOutStore cstypes.KVStore, chain string, txOutHash string, address string) {
+	// Find the txout in the contract hash
+	txOut := getTxOut(txOutStore, chain, txOutHash)
+	if txOut == nil {
+		log.Error("createContractAddress: cannot find txOut with hash ", txOutHash)
+		return
+	}
+
+	if len(txOut.ContractHash) == 0 {
+		log.Error("createContractAddress: contract hash hash length = 0")
+		return
+	}
+
+	ca := &types.ContractAddress{
+		Chain:        chain,
+		Address:      address,
+		ContractHash: txOut.ContractHash,
+		TxOutHash:    txOutHash,
+	}
+	bz, err := ca.Marshal()
+	if err != nil {
+		log.Error("createContractAddress: cannot marhsal contract adress, err = ", err)
+		return
+	}
+
+	key := getContractAddressKey(chain, address)
+	caStore.Set(key, bz)
+}
+
+func isContractExistedAtAddress(store cstypes.KVStore, chain, address string) bool {
+	key := getContractAddressKey(chain, address)
+
+	return store.Has(key)
 }
 
 ///// TxIn
@@ -345,11 +425,41 @@ func getTxOut(store cstypes.KVStore, outChain, hash string) *types.TxOut {
 	return txOut
 }
 
+///// TxOutConfirm
+func saveTxOutConfirm(store cstypes.KVStore, msg *types.TxOutConfirm) {
+	key := getTxOutConfirmKey(msg.OutChain, msg.OutHash)
+	bz, err := msg.Marshal()
+	if err != nil {
+		log.Error("Cannot marshal tx out")
+		return
+	}
+
+	store.Set(key, bz)
+}
+
+func isTxOutConfirmExisted(store cstypes.KVStore, outChain, hash string) bool {
+	key := getTxOutConfirmKey(outChain, hash)
+	return store.Has(key)
+}
+
 /// Debug functions
 func printStore(store cstypes.KVStore) {
 	iter := store.Iterator(nil, nil)
+	count := 0
 	for ; iter.Valid(); iter.Next() {
 		log.Info("key = ", string(iter.Key()))
 		log.Info("value = ", string(iter.Value()))
+		count += 1
 	}
+	log.Info("printStore: Total element count: ", count)
+}
+
+func printStoreKeys(store cstypes.KVStore) {
+	iter := store.Iterator(nil, nil)
+	count := 0
+	for ; iter.Valid(); iter.Next() {
+		log.Info("key = ", string(iter.Key()))
+		count += 1
+	}
+	log.Info("printStoreKey: Total element count: ", count)
 }

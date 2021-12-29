@@ -43,6 +43,8 @@ func (p *Processor) deliverTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWith
 	p.keeper.SaveTxOut(ctx, txOut)
 	p.privateDb.SaveTxOut(txOut)
 
+	// If this is a txout deployment,
+
 	// Do key signing if this node is not catching up.
 	if !p.globalData.IsCatchingUp() {
 		// Only Deliver TxOut if the chain has been up to date.
@@ -58,7 +60,10 @@ func (p *Processor) deliverTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWith
 func (p *Processor) signTx(ctx sdk.Context, tx *types.TxOut) {
 	outHash := tx.GetHash()
 
-	log.Verbose("Delivering TXOUT for chain", tx.OutChain, " tx hash = ", tx.GetHash())
+	log.Info("Delivering TXOUT for chain", tx.OutChain, " tx hash = ", tx.GetHash())
+	if tx.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
+		log.Info("This TxOut is a contract deployment")
+	}
 
 	ethTx := &etypes.Transaction{}
 	if err := ethTx.UnmarshalBinary(tx.OutBytes); err != nil {

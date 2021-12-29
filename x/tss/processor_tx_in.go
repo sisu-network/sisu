@@ -1,6 +1,8 @@
 package tss
 
 import (
+	"fmt"
+
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	libchain "github.com/sisu-network/lib/chain"
@@ -19,7 +21,7 @@ func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 	for _, tx := range txs.Arr {
 		// 1. Check if this tx is from one of our key. If it is, update the status of TxOut to confirmed.
 		if p.privateDb.IsKeygenAddress(libchain.KEY_TYPE_ECDSA, tx.From) {
-			return p.confirmTx(tx, txs.Chain)
+			return p.confirmTx(tx, txs.Chain, txs.Block)
 		} else if len(tx.To) > 0 {
 			// 2. This is a transaction to our key account or one of our contracts. Create a message to
 			// indicate that we have observed this transaction and broadcast it to cosmos chain.
@@ -48,11 +50,6 @@ func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 }
 
 func (p *Processor) checkTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner) error {
-	if err := msgWithSigner.ValidateBasic(); err != nil {
-		log.Error("Failed to validate TxInWithSigner message")
-		return err
-	}
-
 	// Make sure we should have seen this TxIn in our table.
 	if !p.privateDb.IsTxInExisted(msgWithSigner.Data) {
 		return ErrCannotFindMessage
@@ -115,47 +112,35 @@ func (p *Processor) deliverTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSi
 	return nil, nil
 }
 
-func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string) error {
-	// TODO: Reimplement this function using KVStore instead of sql database.
-	if true {
-		return nil
-	}
+func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64) error {
+	log.Verbose("This is a transaction from us. We need to confirm it. Chain = ", chain)
 
-	log.Verbose("This is a transaction from us. We need to confirm it. Chain =", chain)
+	fmt.Println("AAAAAAA 000000")
+	// txHash := utils.KeccakHash32(string(tx.Serialized))
 
-	txHash := utils.KeccakHash32(string(tx.Serialized))
-	// if err := p.db.UpdateTxOutStatus(chain, txHash, tssTypes.TxOutStatusConfirmed, true); err != nil {
-	// 	return err
-	// }
+	p.privateDb.PrintStoreKeys("txOut")
+	fmt.Println("AAAAAAA 111111, chain = ", chain, " txhash = ", tx.Hash)
+	txOut := p.privateDb.GetTxOut(chain, tx.Hash)
+	fmt.Println("AAAAAAA 222222, txOut = ", txOut)
+	confirmMsg := types.NewTxOutConfirmWithSigner(
+		p.appKeys.GetSignerAddress().String(),
+		txOut.TxType,
+		txOut.OutChain,
+		txOut.GetHash(),
+		blockHeight,
+	)
 
-	// If this is a contract deployment, mark the contract as deployed.
-	if libchain.IsETHBasedChain(chain) && len(tx.To) == 0 {
-		log.Info("This is a tx deployment")
-		txOut := p.db.GetTxOutWithHash(chain, txHash, true)
+	fmt.Println("AAAAAAA 33333333")
 
-		if txOut == nil {
-			log.Warn("txOut by txHash", txHash, "is not found")
-			return nil
-		}
+	// Save this into db
+	p.privateDb.SaveTxOutConfirm(confirmMsg.Data)
 
-		// log.Info("Updating contract status. Contract hash = ", txOut.ContractHash)
-		// if err := p.db.UpdateContractsStatus([]*types.ContractEntity{
-		// 	{
-		// 		Chain: chain,
-		// 		Hash:  txOut.ContractHash,
-		// 	},
-		// }, tssTypes.ContractStateDeployed); err != nil {
-		// 	return err
-		// }
+	fmt.Println("AAAAAAA 44444444")
 
-		// if err := p.db.UpdateTxOutStatus(
-		// 	txOut.OutChain,
-		// 	string(txOut.OutBytes),
-		// 	tssTypes.TxOutStatusDeployedToBlockchain,
-		// 	false); err != nil {
-		// 	return err
-		// }
-	}
+	go func() {
+		fmt.Println("Submitting confirm msg.....")
+		p.txSubmit.SubmitMessage(confirmMsg)
+	}()
 
 	return nil
 }

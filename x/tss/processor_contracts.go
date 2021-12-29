@@ -66,6 +66,8 @@ func (p *Processor) deliverContracts(ctx sdk.Context, wrappedMsg *types.Contract
 		}
 	}
 
+	log.Info("Saving contracts, contracts length = ", len(wrappedMsg.Data.Contracts))
+
 	// Save into KVStore & private db
 	p.keeper.SaveContracts(ctx, wrappedMsg.Data.Contracts, true)
 	p.privateDb.SaveContracts(wrappedMsg.Data.Contracts, true)
