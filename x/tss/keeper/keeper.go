@@ -23,11 +23,17 @@ type Keeper interface {
 	IsKeygenResultSuccess(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) bool
 
 	// Contracts
+	SaveContract(ctx sdk.Context, msg *types.Contract, saveByteCode bool)
 	SaveContracts(ctx sdk.Context, msgs []*types.Contract, saveByteCode bool)
 	IsContractExisted(ctx sdk.Context, msg *types.Contract) bool
-
+	GetContract(ctx sdk.Context, chain string, hash string, includeByteCode bool) *types.Contract
 	GetPendingContracts(ctx sdk.Context, chain string) []*types.Contract
-	UpdateContractsStatus(ctx sdk.Context, msgs []*types.Contract, status string)
+	UpdateContractAddress(ctx sdk.Context, chain string, hash string, address string)
+
+	UpdateContractsStatus(ctx sdk.Context, msgs []*types.Contract, status string) // Consider removing this function
+
+	// Contract Address
+	CreateContractAddress(ctx sdk.Context, chain string, txOutHash string, address string)
 
 	// TxIn
 	SaveTxIn(ctx sdk.Context, msg *types.TxIn)
@@ -36,6 +42,11 @@ type Keeper interface {
 	// TxOut
 	SaveTxOut(ctx sdk.Context, msg *types.TxOut)
 	IsTxOutExisted(ctx sdk.Context, msg *types.TxOut) bool
+	GetTxOut(ctx sdk.Context, chain, hash string) *types.TxOut
+
+	// TxOutConfirm
+	SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutConfirm)
+	IsTxOutConfirmExisted(ctx sdk.Context, outChain, hash string) bool
 }
 
 type DefaultKeeper struct {
@@ -83,16 +94,42 @@ func (k *DefaultKeeper) IsKeygenResultSuccess(ctx sdk.Context, signerMsg *types.
 
 ///// Contracts
 
+func (k *DefaultKeeper) SaveContract(ctx sdk.Context, msg *types.Contract, saveByteCode bool) {
+	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
+	var byteCodeStore cstypes.KVStore
+	byteCodeStore = nil
+	if saveByteCode {
+		byteCodeStore = prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractByteCode)
+	}
+
+	saveContract(contractStore, byteCodeStore, msg)
+}
+
 func (k *DefaultKeeper) SaveContracts(ctx sdk.Context, msgs []*types.Contract, saveByteCode bool) {
 	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
-	byteCodeStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractByteCode)
+	var byteCodeStore cstypes.KVStore
+	byteCodeStore = nil
+	if saveByteCode {
+		byteCodeStore = prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractByteCode)
+	}
 
-	saveContracts(contractStore, byteCodeStore, msgs, saveByteCode)
+	saveContracts(contractStore, byteCodeStore, msgs)
 }
 
 func (k *DefaultKeeper) IsContractExisted(ctx sdk.Context, msg *types.Contract) bool {
 	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
 	return isContractExisted(contractStore, msg)
+}
+
+func (k *DefaultKeeper) GetContract(ctx sdk.Context, chain string, hash string, includeByteCode bool) *types.Contract {
+	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
+	var byteCodeStore cstypes.KVStore
+	byteCodeStore = nil
+	if includeByteCode {
+		byteCodeStore = prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractByteCode)
+	}
+
+	return getContract(contractStore, byteCodeStore, chain, hash)
 }
 
 func (k *DefaultKeeper) GetPendingContracts(ctx sdk.Context, chain string) []*types.Contract {
@@ -102,9 +139,23 @@ func (k *DefaultKeeper) GetPendingContracts(ctx sdk.Context, chain string) []*ty
 	return getPendingContracts(contractStore, byteCodeStore, chain)
 }
 
+func (k *DefaultKeeper) UpdateContractAddress(ctx sdk.Context, chain string, hash string, address string) {
+	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
+	updateContractAddress(contractStore, chain, hash, address)
+}
+
 func (k *DefaultKeeper) UpdateContractsStatus(ctx sdk.Context, msgs []*types.Contract, status string) {
 	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
 	updateContractsStatus(contractStore, msgs, status)
+}
+
+///// Contract Address
+
+func (k *DefaultKeeper) CreateContractAddress(ctx sdk.Context, chain string, txOutHash string, address string) {
+	caStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractAddress)
+	txOutStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
+
+	createContractAddress(caStore, txOutStore, chain, txOutHash, address)
 }
 
 ///// TxIn
@@ -128,6 +179,22 @@ func (k *DefaultKeeper) SaveTxOut(ctx sdk.Context, msg *types.TxOut) {
 func (k *DefaultKeeper) IsTxOutExisted(ctx sdk.Context, msg *types.TxOut) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
 	return isTxOutExisted(store, msg)
+}
+
+func (k *DefaultKeeper) GetTxOut(ctx sdk.Context, chain, hash string) *types.TxOut {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
+	return getTxOut(store, chain, hash)
+}
+
+///// TxOutConfirm
+func (k *DefaultKeeper) SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutConfirm) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutConfirm)
+	saveTxOutConfirm(store, msg)
+}
+
+func (k *DefaultKeeper) IsTxOutConfirmExisted(ctx sdk.Context, outChain, hash string) bool {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutConfirm)
+	return isTxOutConfirmExisted(store, outChain, hash)
 }
 
 ///// Debug

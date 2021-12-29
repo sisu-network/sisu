@@ -114,8 +114,8 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 					},
 				},
 			},
-			db:      mockDb,
-			appKeys: mockAppKeys,
+			privateDb: mockPrivateDb,
+			appKeys:   mockAppKeys,
 		}
 
 		ctx := sdk.Context{}

@@ -349,7 +349,7 @@ func New(
 	if err != nil {
 		panic(err)
 	}
-	privateDataDir := filepath.Join(cfg.Sisu.Dir, "config")
+	privateDataDir := filepath.Join(cfg.Sisu.Dir, "data")
 	tssProcessor := tss.NewProcessor(app.tssKeeper, tssConfig, nodeKey.PrivKey, app.appKeys, app.db, privateDataDir, app.txDecoder, app.txSubmitter, app.globalData)
 	if tssConfig.Enable {
 		log.Info("TSS is enabled")

@@ -103,7 +103,7 @@ func (p *Processor) Init() {
 		p.connectToDeyes()
 	}
 
-	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.keeper, p.appKeys, p.db, p.config)
+	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.keeper, p.appKeys, p.privateDb, p.config)
 }
 
 // Connect to Dheart server and set private key for dheart. Note that this is the tendermint private
@@ -216,6 +216,9 @@ func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
 
 		case *types.ContractsWithSigner:
 			return p.checkContracts(ctx, msg.(*types.ContractsWithSigner))
+
+		case *types.TxOutConfirmWithSigner:
+			return p.checkTxOutConfirm(ctx, msg.(*types.TxOutConfirmWithSigner))
 		}
 	}
 
@@ -307,6 +310,15 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 				}
 			}
 
+		case types.MsgTypeTxOutConfirmationWithSigner:
+			data := msg.(*types.TxOutConfirmWithSigner).Data
+			bz, err := data.Marshal()
+			if err == nil {
+				hash := utils.KeccakHash32(string(bz))
+				if err := p.checkAndInsertMempoolTx(hash, "tx out confirm"); err != nil {
+					return err
+				}
+			}
 		}
 	}
 

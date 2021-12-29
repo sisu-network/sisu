@@ -35,18 +35,30 @@ func (m *MockKeeper) EXPECT() *MockKeeperMockRecorder {
 	return m.recorder
 }
 
-// GetAllPubKeys mocks base method.
-func (m *MockKeeper) GetAllPubKeys(ctx types.Context) map[string][]byte {
+// CreateContractAddress mocks base method.
+func (m *MockKeeper) CreateContractAddress(ctx types.Context, chain, txOutHash, address string) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllPubKeys", ctx)
-	ret0, _ := ret[0].(map[string][]byte)
+	m.ctrl.Call(m, "CreateContractAddress", ctx, chain, txOutHash, address)
+}
+
+// CreateContractAddress indicates an expected call of CreateContractAddress.
+func (mr *MockKeeperMockRecorder) CreateContractAddress(ctx, chain, txOutHash, address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateContractAddress", reflect.TypeOf((*MockKeeper)(nil).CreateContractAddress), ctx, chain, txOutHash, address)
+}
+
+// GetContract mocks base method.
+func (m *MockKeeper) GetContract(ctx types.Context, chain, hash string, includeByteCode bool) *types0.Contract {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContract", ctx, chain, hash, includeByteCode)
+	ret0, _ := ret[0].(*types0.Contract)
 	return ret0
 }
 
-// GetAllPubKeys indicates an expected call of GetAllPubKeys.
-func (mr *MockKeeperMockRecorder) GetAllPubKeys(ctx interface{}) *gomock.Call {
+// GetContract indicates an expected call of GetContract.
+func (mr *MockKeeperMockRecorder) GetContract(ctx, chain, hash, includeByteCode interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllPubKeys", reflect.TypeOf((*MockKeeper)(nil).GetAllPubKeys), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContract", reflect.TypeOf((*MockKeeper)(nil).GetContract), ctx, chain, hash, includeByteCode)
 }
 
 // GetPendingContracts mocks base method.
@@ -61,6 +73,20 @@ func (m *MockKeeper) GetPendingContracts(ctx types.Context, chain string) []*typ
 func (mr *MockKeeperMockRecorder) GetPendingContracts(ctx, chain interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingContracts", reflect.TypeOf((*MockKeeper)(nil).GetPendingContracts), ctx, chain)
+}
+
+// GetTxOut mocks base method.
+func (m *MockKeeper) GetTxOut(ctx types.Context, chain, hash string) *types0.TxOut {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTxOut", ctx, chain, hash)
+	ret0, _ := ret[0].(*types0.TxOut)
+	return ret0
+}
+
+// GetTxOut indicates an expected call of GetTxOut.
+func (mr *MockKeeperMockRecorder) GetTxOut(ctx, chain, hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxOut", reflect.TypeOf((*MockKeeper)(nil).GetTxOut), ctx, chain, hash)
 }
 
 // IsContractExisted mocks base method.
@@ -133,6 +159,20 @@ func (mr *MockKeeperMockRecorder) IsTxInExisted(ctx, msg interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTxInExisted", reflect.TypeOf((*MockKeeper)(nil).IsTxInExisted), ctx, msg)
 }
 
+// IsTxOutConfirmExisted mocks base method.
+func (m *MockKeeper) IsTxOutConfirmExisted(ctx types.Context, outChain, hash string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsTxOutConfirmExisted", ctx, outChain, hash)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsTxOutConfirmExisted indicates an expected call of IsTxOutConfirmExisted.
+func (mr *MockKeeperMockRecorder) IsTxOutConfirmExisted(ctx, outChain, hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTxOutConfirmExisted", reflect.TypeOf((*MockKeeper)(nil).IsTxOutConfirmExisted), ctx, outChain, hash)
+}
+
 // IsTxOutExisted mocks base method.
 func (m *MockKeeper) IsTxOutExisted(ctx types.Context, msg *types0.TxOut) bool {
 	m.ctrl.T.Helper()
@@ -157,6 +197,18 @@ func (m *MockKeeper) PrintStore(ctx types.Context, name string) {
 func (mr *MockKeeperMockRecorder) PrintStore(ctx, name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrintStore", reflect.TypeOf((*MockKeeper)(nil).PrintStore), ctx, name)
+}
+
+// SaveContract mocks base method.
+func (m *MockKeeper) SaveContract(ctx types.Context, msg *types0.Contract, saveByteCode bool) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SaveContract", ctx, msg, saveByteCode)
+}
+
+// SaveContract indicates an expected call of SaveContract.
+func (mr *MockKeeperMockRecorder) SaveContract(ctx, msg, saveByteCode interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveContract", reflect.TypeOf((*MockKeeper)(nil).SaveContract), ctx, msg, saveByteCode)
 }
 
 // SaveContracts mocks base method.
@@ -217,6 +269,30 @@ func (m *MockKeeper) SaveTxOut(ctx types.Context, msg *types0.TxOut) {
 func (mr *MockKeeperMockRecorder) SaveTxOut(ctx, msg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTxOut", reflect.TypeOf((*MockKeeper)(nil).SaveTxOut), ctx, msg)
+}
+
+// SaveTxOutConfirm mocks base method.
+func (m *MockKeeper) SaveTxOutConfirm(ctx types.Context, msg *types0.TxOutConfirm) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SaveTxOutConfirm", ctx, msg)
+}
+
+// SaveTxOutConfirm indicates an expected call of SaveTxOutConfirm.
+func (mr *MockKeeperMockRecorder) SaveTxOutConfirm(ctx, msg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTxOutConfirm", reflect.TypeOf((*MockKeeper)(nil).SaveTxOutConfirm), ctx, msg)
+}
+
+// UpdateContractAddress mocks base method.
+func (m *MockKeeper) UpdateContractAddress(ctx types.Context, chain, hash, address string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateContractAddress", ctx, chain, hash, address)
+}
+
+// UpdateContractAddress indicates an expected call of UpdateContractAddress.
+func (mr *MockKeeperMockRecorder) UpdateContractAddress(ctx, chain, hash, address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateContractAddress", reflect.TypeOf((*MockKeeper)(nil).UpdateContractAddress), ctx, chain, hash, address)
 }
 
 // UpdateContractsStatus mocks base method.

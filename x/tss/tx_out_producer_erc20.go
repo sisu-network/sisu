@@ -16,15 +16,8 @@ import (
 )
 
 func (p *DefaultTxOutputProducer) createErc20ContractResponse(ctx sdk.Context, ethTx *ethTypes.Transaction, fromChain string) (*types.TxResponse, error) {
+
 	erc20Contract := SupportedContracts[ContractErc20]
-
-	contract := p.db.GetContractFromAddress(fromChain, ethTx.To().String())
-	if contract == nil {
-		log.Error("Cannot find contract at address", ethTx.To())
-		return nil, fmt.Errorf("cannot find contract for tx sent to %s", ethTx.To())
-	}
-
-	log.Info("Creating response erc20 transaction, contract name =", contract.Name)
 
 	payload := ethTx.Data()
 
@@ -67,11 +60,15 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ctx sdk.Context, e
 
 		// TODO: Creates tx out for other chains.
 		if libchain.IsETHBasedChain(toChain) {
-			toChainContract := p.db.GetContractFromHash(toChain, erc20Contract.AbiHash)
-			if toChainContract == nil {
-				log.Error("cannot find erc20 contract for toChain %s", toChain)
-				return nil, fmt.Errorf("cannot find erc20 contract for toChain %s", toChain)
+			if true {
+				panic("Fix this")
 			}
+
+			// toChainContract := p.db.GetContractFromHash(toChain, erc20Contract.AbiHash)
+			// if toChainContract == nil {
+			// 	log.Error("cannot find erc20 contract for toChain %s", toChain)
+			// 	return nil, fmt.Errorf("cannot find erc20 contract for toChain %s", toChain)
+			// }
 
 			assetId := fromChain + "__" + (params[0].(ethcommon.Address)).Hex()
 			recipient := params[2].(string)
@@ -93,9 +90,13 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ctx sdk.Context, e
 				return nil, fmt.Errorf("cannot find nonce for chain %s", toChain)
 			}
 
+			if true {
+				panic("Fix this")
+			}
 			rawTx := ethTypes.NewTransaction(
 				uint64(nonce),
-				ethcommon.HexToAddress(toChainContract.Address),
+				// ethcommon.HexToAddress(toChainContract.Address),
+				ethcommon.HexToAddress(""),
 				big.NewInt(0),
 				p.getGasLimit(toChain),
 				p.getGasPrice(toChain),

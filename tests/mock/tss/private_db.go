@@ -34,6 +34,32 @@ func (m *MockPrivateDb) EXPECT() *MockPrivateDbMockRecorder {
 	return m.recorder
 }
 
+// CreateContractAddress mocks base method.
+func (m *MockPrivateDb) CreateContractAddress(chain, txOutHash, address string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "CreateContractAddress", chain, txOutHash, address)
+}
+
+// CreateContractAddress indicates an expected call of CreateContractAddress.
+func (mr *MockPrivateDbMockRecorder) CreateContractAddress(chain, txOutHash, address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateContractAddress", reflect.TypeOf((*MockPrivateDb)(nil).CreateContractAddress), chain, txOutHash, address)
+}
+
+// GetContract mocks base method.
+func (m *MockPrivateDb) GetContract(chain, hash string, includeByteCode bool) *types.Contract {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetContract", chain, hash, includeByteCode)
+	ret0, _ := ret[0].(*types.Contract)
+	return ret0
+}
+
+// GetContract indicates an expected call of GetContract.
+func (mr *MockPrivateDbMockRecorder) GetContract(chain, hash, includeByteCode interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContract", reflect.TypeOf((*MockPrivateDb)(nil).GetContract), chain, hash, includeByteCode)
+}
+
 // GetKeygenPubkey mocks base method.
 func (m *MockPrivateDb) GetKeygenPubkey(keyType string) []byte {
 	m.ctrl.T.Helper()
@@ -88,6 +114,20 @@ func (m *MockPrivateDb) IsContractExisted(msg *types.Contract) bool {
 func (mr *MockPrivateDbMockRecorder) IsContractExisted(msg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsContractExisted", reflect.TypeOf((*MockPrivateDb)(nil).IsContractExisted), msg)
+}
+
+// IsContractExistedAtAddress mocks base method.
+func (m *MockPrivateDb) IsContractExistedAtAddress(chain, address string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsContractExistedAtAddress", chain, address)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsContractExistedAtAddress indicates an expected call of IsContractExistedAtAddress.
+func (mr *MockPrivateDbMockRecorder) IsContractExistedAtAddress(chain, address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsContractExistedAtAddress", reflect.TypeOf((*MockPrivateDb)(nil).IsContractExistedAtAddress), chain, address)
 }
 
 // IsKeygenAddress mocks base method.
@@ -146,6 +186,20 @@ func (mr *MockPrivateDbMockRecorder) IsTxInExisted(msg interface{}) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTxInExisted", reflect.TypeOf((*MockPrivateDb)(nil).IsTxInExisted), msg)
 }
 
+// IsTxOutConfirmExisted mocks base method.
+func (m *MockPrivateDb) IsTxOutConfirmExisted(outChain, hash string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsTxOutConfirmExisted", outChain, hash)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsTxOutConfirmExisted indicates an expected call of IsTxOutConfirmExisted.
+func (mr *MockPrivateDbMockRecorder) IsTxOutConfirmExisted(outChain, hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTxOutConfirmExisted", reflect.TypeOf((*MockPrivateDb)(nil).IsTxOutConfirmExisted), outChain, hash)
+}
+
 // IsTxOutExisted mocks base method.
 func (m *MockPrivateDb) IsTxOutExisted(msg *types.TxOut) bool {
 	m.ctrl.T.Helper()
@@ -170,6 +224,18 @@ func (m *MockPrivateDb) PrintStore(name string) {
 func (mr *MockPrivateDbMockRecorder) PrintStore(name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrintStore", reflect.TypeOf((*MockPrivateDb)(nil).PrintStore), name)
+}
+
+// SaveContract mocks base method.
+func (m *MockPrivateDb) SaveContract(msg *types.Contract, saveByteCode bool) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SaveContract", msg, saveByteCode)
+}
+
+// SaveContract indicates an expected call of SaveContract.
+func (mr *MockPrivateDbMockRecorder) SaveContract(msg, saveByteCode interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveContract", reflect.TypeOf((*MockPrivateDb)(nil).SaveContract), msg, saveByteCode)
 }
 
 // SaveContracts mocks base method.
@@ -230,6 +296,30 @@ func (m *MockPrivateDb) SaveTxOut(msg *types.TxOut) {
 func (mr *MockPrivateDbMockRecorder) SaveTxOut(msg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTxOut", reflect.TypeOf((*MockPrivateDb)(nil).SaveTxOut), msg)
+}
+
+// SaveTxOutConfirm mocks base method.
+func (m *MockPrivateDb) SaveTxOutConfirm(msg *types.TxOutConfirm) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SaveTxOutConfirm", msg)
+}
+
+// SaveTxOutConfirm indicates an expected call of SaveTxOutConfirm.
+func (mr *MockPrivateDbMockRecorder) SaveTxOutConfirm(msg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTxOutConfirm", reflect.TypeOf((*MockPrivateDb)(nil).SaveTxOutConfirm), msg)
+}
+
+// UpdateContractAddress mocks base method.
+func (m *MockPrivateDb) UpdateContractAddress(chain, hash, address string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "UpdateContractAddress", chain, hash, address)
+}
+
+// UpdateContractAddress indicates an expected call of UpdateContractAddress.
+func (mr *MockPrivateDbMockRecorder) UpdateContractAddress(chain, hash, address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateContractAddress", reflect.TypeOf((*MockPrivateDb)(nil).UpdateContractAddress), chain, hash, address)
 }
 
 // UpdateContractsStatus mocks base method.

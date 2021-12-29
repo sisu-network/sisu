@@ -43,7 +43,7 @@ type Database interface {
 	GetContractFromAddress(chain, address string) *tsstypes.ContractEntity
 	GetContractFromHash(chain, hash string) *tsstypes.ContractEntity
 	UpdateContractDeployTx(chain, id string, txHash string)
-	UpdateContractAddress(chain, hash, address string)
+	// UpdateContractAddress(chain, hash, address string)
 
 	// TxIn
 	// InsertTxIn(txIn *types.TxIn) error
