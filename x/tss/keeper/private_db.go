@@ -24,7 +24,7 @@ type PrivateDb interface {
 
 	// Keygen Result
 	SaveKeygenResult(signerMsg *types.KeygenResultWithSigner)
-	IsKeygenResultSuccess(signerMsg *types.KeygenResultWithSigner) bool
+	IsKeygenResultSuccess(signerMsg *types.KeygenResultWithSigner, self string) bool
 
 	// Contract
 	SaveContract(msg *types.Contract, saveByteCode bool)
@@ -49,6 +49,11 @@ type PrivateDb interface {
 	SaveTxOut(msg *types.TxOut)
 	IsTxOutExisted(msg *types.TxOut) bool
 	GetTxOut(outChain, hash string) *types.TxOut
+	GetTxOutFromSigHash(outChain, hashWithSig string) *types.TxOut
+
+	// TODO: Add unconfirmed tx store
+	// TxOutSig
+	SaveTxOutSig(msg *types.TxOutSig)
 
 	// TxOutConfirm
 	SaveTxOutConfirm(msg *types.TxOutConfirm)
@@ -129,9 +134,9 @@ func (db *defaultPrivateDb) SaveKeygenResult(signerMsg *types.KeygenResultWithSi
 	saveKeygenResult(store, signerMsg)
 }
 
-func (db *defaultPrivateDb) IsKeygenResultSuccess(signerMsg *types.KeygenResultWithSigner) bool {
+func (db *defaultPrivateDb) IsKeygenResultSuccess(signerMsg *types.KeygenResultWithSigner, self string) bool {
 	store := db.prefixes[string(prefixKeygenResult)]
-	return isKeygenResultSuccess(store, signerMsg)
+	return isKeygenResultSuccess(store, signerMsg, self)
 }
 
 ///// Contract
@@ -229,6 +234,20 @@ func (db *defaultPrivateDb) IsTxOutExisted(msg *types.TxOut) bool {
 func (db *defaultPrivateDb) GetTxOut(outChain, hash string) *types.TxOut {
 	store := db.prefixes[string(prefixTxOut)]
 	return getTxOut(store, outChain, hash)
+}
+
+func (db *defaultPrivateDb) GetTxOutFromSigHash(outChain, hashWithSig string) *types.TxOut {
+	withSigStore := db.prefixes[string(prefixTxOutSig)]
+	txOutSig := getTxOutSig(withSigStore, outChain, hashWithSig)
+
+	noSigStore := db.prefixes[string(prefixTxOut)]
+	return getTxOut(noSigStore, outChain, txOutSig.HashNoSig)
+}
+
+///// TxOutSig
+func (db *defaultPrivateDb) SaveTxOutSig(msg *types.TxOutSig) {
+	store := db.prefixes[string(prefixTxOutSig)]
+	saveTxOutSig(store, msg)
 }
 
 ///// TxOutConfirm

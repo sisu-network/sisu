@@ -89,7 +89,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 			// to the Sisu chain.
 			outEthTxs := p.getEthContractDeploymentTx(ctx, height, tx.Chain, contracts)
 
-			for _, outTx := range outEthTxs {
+			for i, outTx := range outEthTxs {
 				bz, err := outTx.MarshalBinary()
 				fmt.Println("AAAAAA serialized ETH transaction = ", utils.KeccakHash32(string(bz)))
 				if err != nil {
@@ -104,7 +104,9 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 					tx.Chain,
 					tx.TxHash,
 					tx.Chain,
+					outTx.Hash().String(),
 					bz,
+					contracts[i].Hash,
 				)
 
 				outMsgs = append(outMsgs, outMsg)
@@ -120,6 +122,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 	if ethTx.To() != nil &&
 		p.privateDb.IsContractExistedAtAddress(tx.Chain, ethTx.To().String()) && // TODO: Use keeper instead
 		len(ethTx.Data()) >= 4 {
+
 		log.Verbose("ethTx.To() = ", ethTx.To())
 
 		responseTx, err := p.createErc20ContractResponse(ctx, ethTx, tx.Chain)
@@ -131,7 +134,9 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 				tx.Chain,
 				tx.TxHash,
 				responseTx.OutChain, // Could be different chain
+				responseTx.EthTx.Hash().String(),
 				responseTx.RawBytes,
+				"",
 			)
 
 			outMsgs = append(outMsgs, outMsg)

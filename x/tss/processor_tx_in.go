@@ -3,6 +3,9 @@ package tss
 import (
 	"fmt"
 
+	"github.com/ethereum/go-ethereum/common"
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	libchain "github.com/sisu-network/lib/chain"
@@ -45,6 +48,59 @@ func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 			}(signerMsg)
 		}
 	}
+
+	return nil
+}
+
+func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64) error {
+	log.Verbose("This is a transaction from us. We need to confirm it. Chain = ", chain)
+
+	p.privateDb.PrintStoreKeys("txOut")
+	fmt.Println("AAAAAAA 111111, chain = ", chain, " txhash = ", tx.Hash)
+	txOut := p.privateDb.GetTxOutFromSigHash(chain, tx.Hash)
+	if txOut == nil {
+		// TODO: Add unconfirmed tx model
+		log.Verbose("cannot find txOut with full signature hash: ", tx.Hash)
+		return nil
+	}
+
+	fmt.Println("AAAAAAA 22222222, txOut.TxType = ", txOut.TxType)
+
+	contractAddress := ""
+	if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT && libchain.IsETHBasedChain(chain) {
+		ethTx := &ethTypes.Transaction{}
+		err := ethTx.UnmarshalBinary(tx.Serialized)
+		if err != nil {
+			log.Error("cannot unmarshal eth transaction, err = ", err)
+			return err
+		}
+
+		fmt.Println("tx.From = ", tx.From, ethTx.Nonce())
+		contractAddress = crypto.CreateAddress(common.HexToAddress(tx.From), ethTx.Nonce()).String()
+	}
+
+	fmt.Println("AAAAAAAA 222222 contractAddress = ", contractAddress)
+
+	confirmMsg := types.NewTxOutConfirmWithSigner(
+		p.appKeys.GetSignerAddress().String(),
+		txOut.TxType,
+		txOut.OutChain,
+		txOut.OutHash,
+		blockHeight,
+		contractAddress,
+	)
+
+	fmt.Println("AAAAAAA 33333333")
+
+	// Save this into db
+	p.privateDb.SaveTxOutConfirm(confirmMsg.Data)
+
+	fmt.Println("AAAAAAA 44444444")
+
+	go func() {
+		fmt.Println("Submitting confirm msg.....")
+		p.txSubmit.SubmitMessage(confirmMsg)
+	}()
 
 	return nil
 }
@@ -103,44 +159,9 @@ func (p *Processor) deliverTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSi
 				if err := p.txSubmit.SubmitMessage(m); err != nil {
 					return
 				}
-
-				// p.db.UpdateTxOutStatus(m.OutChain, m.GetHash(), tssTypes.TxOutStatusBroadcasted, false)
 			}(msg)
 		}
 	}
 
 	return nil, nil
-}
-
-func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64) error {
-	log.Verbose("This is a transaction from us. We need to confirm it. Chain = ", chain)
-
-	fmt.Println("AAAAAAA 000000")
-	// txHash := utils.KeccakHash32(string(tx.Serialized))
-
-	p.privateDb.PrintStoreKeys("txOut")
-	fmt.Println("AAAAAAA 111111, chain = ", chain, " txhash = ", tx.Hash)
-	txOut := p.privateDb.GetTxOut(chain, tx.Hash)
-	fmt.Println("AAAAAAA 222222, txOut = ", txOut)
-	confirmMsg := types.NewTxOutConfirmWithSigner(
-		p.appKeys.GetSignerAddress().String(),
-		txOut.TxType,
-		txOut.OutChain,
-		txOut.GetHash(),
-		blockHeight,
-	)
-
-	fmt.Println("AAAAAAA 33333333")
-
-	// Save this into db
-	p.privateDb.SaveTxOutConfirm(confirmMsg.Data)
-
-	fmt.Println("AAAAAAA 44444444")
-
-	go func() {
-		fmt.Println("Submitting confirm msg.....")
-		p.txSubmit.SubmitMessage(confirmMsg)
-	}()
-
-	return nil
 }

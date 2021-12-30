@@ -18,6 +18,7 @@ var (
 	prefixContractAddress  = []byte{0x05}
 	prefixTxIn             = []byte{0x06}
 	prefixTxOut            = []byte{0x07}
+	prefixTxOutSig         = []byte{0x07}
 	prefixTxOutConfirm     = []byte{0x08}
 )
 
@@ -46,6 +47,11 @@ func getTxOutKey(outChain string, outHash string) []byte {
 	return []byte(fmt.Sprintf("%s__%s", outChain, outHash))
 }
 
+func getTxOutSigKey(outChain string, hashWithSig string) []byte {
+	// outChain, hash with sig
+	return []byte(fmt.Sprintf("%s__%s", outChain, hashWithSig))
+}
+
 func getTxOutConfirmKey(outChain string, outHash string) []byte {
 	// outChain, hash
 	return []byte(fmt.Sprintf("%s__%s", outChain, outHash))
@@ -72,18 +78,6 @@ func isKeygenExisted(store cstypes.KVStore, keyType string, index int) bool {
 	key := getKeygenKey(keyType, index)
 
 	return store.Get(key) != nil
-}
-
-func saveKeygenResult(store cstypes.KVStore, signerMsg *types.KeygenResultWithSigner) {
-	key := getKeygenResultKey(signerMsg.Keygen.KeyType, int(signerMsg.Keygen.Index), signerMsg.Data.From)
-
-	bz, err := signerMsg.Data.Marshal()
-	if err != nil {
-		log.Error("SaveKeygenResult: Cannot marshal KeygenResult message, err = ", err)
-		return
-	}
-
-	store.Set(key, bz)
 }
 
 func isKeygenAddress(store cstypes.KVStore, keyType string, address string) bool {
@@ -152,22 +146,41 @@ func getAllKeygenPubkeys(store cstypes.KVStore) map[string][]byte {
 
 ///// Keygen Result
 
+func saveKeygenResult(store cstypes.KVStore, signerMsg *types.KeygenResultWithSigner) {
+	fmt.Println("AAAA Saving keygen result, data = ", signerMsg.Keygen.KeyType, int(signerMsg.Keygen.Index), signerMsg.Data.From)
+	fmt.Println("Result = ", signerMsg.Data.Result)
+
+	key := getKeygenResultKey(signerMsg.Keygen.KeyType, int(signerMsg.Keygen.Index), signerMsg.Data.From)
+
+	bz, err := signerMsg.Data.Marshal()
+	if err != nil {
+		log.Error("SaveKeygenResult: Cannot marshal KeygenResult message, err = ", err)
+		return
+	}
+
+	store.Set(key, bz)
+}
+
 // Keygen is considered successful if at least there is at least 1 successful KeygenReslut in the
 // KVStore.
-func isKeygenResultSuccess(store cstypes.KVStore, signerMsg *types.KeygenResultWithSigner) bool {
+func isKeygenResultSuccess(store cstypes.KVStore, signerMsg *types.KeygenResultWithSigner, self string) bool {
 	msg := signerMsg.Keygen
-	begin := []byte(fmt.Sprintf("%s__%d__", msg.KeyType, int(msg.Index)))
-	end := []byte(fmt.Sprintf("%s__%d__~", msg.KeyType, int(msg.Index)))
+	begin := []byte(fmt.Sprintf("%s__%06d__", msg.KeyType, int(msg.Index)))
+	end := []byte(fmt.Sprintf("%s__%06d__~", msg.KeyType, int(msg.Index)))
 
 	iter := store.Iterator(begin, end)
+	count := 0
 	for ; iter.Valid(); iter.Next() {
 		bz := iter.Value()
 		msg := &types.KeygenResult{}
 		err := msg.Unmarshal(bz)
 		if err != nil {
-			log.Error("Cannot unmarshal keygen result")
+			log.Error("isKeygenResultSuccess: cannot unmarshal keygen result")
 			continue
 		}
+		count += 1
+
+		fmt.Println("isKeygenResultSuccess Result = ", msg.Result)
 
 		if msg.Result == types.KeygenResult_SUCCESS {
 			return true
@@ -392,7 +405,7 @@ func isTxInExisted(store cstypes.KVStore, msg *types.TxIn) bool {
 
 ///// TxOut
 func saveTxOut(store cstypes.KVStore, msg *types.TxOut) {
-	key := getTxOutKey(msg.OutChain, msg.GetHash())
+	key := getTxOutKey(msg.OutChain, msg.OutHash)
 	bz, err := msg.Marshal()
 	if err != nil {
 		log.Error("Cannot marshal tx out")
@@ -403,7 +416,7 @@ func saveTxOut(store cstypes.KVStore, msg *types.TxOut) {
 }
 
 func isTxOutExisted(store cstypes.KVStore, msg *types.TxOut) bool {
-	key := getTxOutKey(msg.OutChain, msg.GetHash())
+	key := getTxOutKey(msg.OutChain, msg.OutHash)
 	return store.Has(key)
 }
 
@@ -425,12 +438,43 @@ func getTxOut(store cstypes.KVStore, outChain, hash string) *types.TxOut {
 	return txOut
 }
 
+///// TxOutSig
+func saveTxOutSig(store cstypes.KVStore, msg *types.TxOutSig) {
+	key := getTxOutSigKey(msg.Chain, msg.HashWithSig)
+
+	bz, err := msg.Marshal()
+	if err != nil {
+		log.Error("saveTxOutSig: cannot marshal tx out")
+		return
+	}
+
+	store.Set(key, bz)
+}
+
+func getTxOutSig(store cstypes.KVStore, chain string, hashWithSig string) *types.TxOutSig {
+	key := getTxOutSigKey(chain, hashWithSig)
+	bz := store.Get(key)
+
+	if bz == nil {
+		return nil
+	}
+
+	tx := &types.TxOutSig{}
+	err := tx.Unmarshal(bz)
+	if err != nil {
+		log.Error("getTxOutSig: cannot unmarshal TxOutSig")
+		return nil
+	}
+
+	return tx
+}
+
 ///// TxOutConfirm
 func saveTxOutConfirm(store cstypes.KVStore, msg *types.TxOutConfirm) {
 	key := getTxOutConfirmKey(msg.OutChain, msg.OutHash)
 	bz, err := msg.Marshal()
 	if err != nil {
-		log.Error("Cannot marshal tx out")
+		log.Error("saveTxOutConfirm: Cannot marshal tx out")
 		return
 	}
 

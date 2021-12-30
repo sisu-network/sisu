@@ -1,6 +1,8 @@
 package tss
 
 import (
+	"fmt"
+
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	dhtypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/lib/log"
@@ -41,7 +43,8 @@ func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
 func (p *Processor) checkKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) error {
 	if signerMsg.Data.Result == types.KeygenResult_SUCCESS {
 		// Check if we have this data in our private db.
-		if !p.privateDb.IsKeygenResultSuccess(signerMsg) {
+		if !p.privateDb.IsKeygenResultSuccess(signerMsg, p.appKeys.GetSignerAddress().String()) {
+			fmt.Println("Value does not match, data = ", signerMsg.Keygen.KeyType, int(signerMsg.Keygen.Index), signerMsg.Data.From)
 			return ErrValueDoesNotMatch
 		}
 
@@ -64,7 +67,7 @@ func (p *Processor) deliverKeygenResult(ctx sdk.Context, signerMsg *types.Keygen
 	if msg.Result == types.KeygenResult_SUCCESS {
 		log.Info("Keygen succeeded")
 
-		if p.keeper.IsKeygenResultSuccess(ctx, signerMsg) {
+		if p.keeper.IsKeygenResultSuccess(ctx, signerMsg, p.appKeys.GetSignerAddress().String()) {
 			// This has been processed before.
 			return nil, nil
 		}

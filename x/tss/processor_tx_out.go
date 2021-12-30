@@ -58,9 +58,7 @@ func (p *Processor) deliverTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWith
 
 // signTx sends a TxOut to dheart for TSS signing.
 func (p *Processor) signTx(ctx sdk.Context, tx *types.TxOut) {
-	outHash := tx.GetHash()
-
-	log.Info("Delivering TXOUT for chain", tx.OutChain, " tx hash = ", tx.GetHash())
+	log.Info("Delivering TXOUT for chain", tx.OutChain, " tx hash = ", tx.OutHash)
 	if tx.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
 		log.Info("This TxOut is a contract deployment")
 	}
@@ -80,10 +78,10 @@ func (p *Processor) signTx(ctx sdk.Context, tx *types.TxOut) {
 
 	// 4. Send it to Dheart for signing.
 	keysignReq := &hTypes.KeysignRequest{
-		Id:          p.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), outHash),
+		Id:          p.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), tx.OutHash),
 		InChain:     tx.InChain,
 		OutChain:    tx.OutChain,
-		OutHash:     outHash,
+		OutHash:     tx.OutHash,
 		BytesToSign: hash[:],
 	}
 

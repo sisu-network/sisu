@@ -50,7 +50,7 @@ type Database interface {
 	// IsTxInExisted(txIn *types.TxIn) bool
 
 	// Txout
-	InsertTxOuts(txs []*types.TxOut) error
+	// InsertTxOuts(txs []*types.TxOut) error
 	IsTxOutExisted(txOut *types.TxOut) bool
 	GetTxOutWithHash(chain string, hash string, isHashWithSig bool) *types.TxOut
 
@@ -489,32 +489,32 @@ func (d *SqlDatabase) IsTxInExisted(txIn *types.TxIn) bool {
 	return rows.Next()
 }
 
-func (d *SqlDatabase) InsertTxOuts(txs []*types.TxOut) error {
-	query := "INSERT IGNORE INTO tx_out (in_chain, in_hash, out_chain, out_hash, bytes_without_sig) VALUES "
-	query = query + getQueryQuestionMark(len(txs), 5)
+// func (d *SqlDatabase) InsertTxOuts(txs []*types.TxOut) error {
+// 	query := "INSERT IGNORE INTO tx_out (in_chain, in_hash, out_chain, out_hash, bytes_without_sig) VALUES "
+// 	query = query + getQueryQuestionMark(len(txs), 5)
 
-	params := make([]interface{}, 0, len(txs)*5)
+// 	params := make([]interface{}, 0, len(txs)*5)
 
-	for _, tx := range txs {
-		params = append(params, tx.InChain)
-		params = append(params, tx.InHash)
-		params = append(params, tx.OutChain)
-		params = append(params, tx.GetHash())
-		params = append(params, tx.OutBytes)
-	}
+// 	for _, tx := range txs {
+// 		params = append(params, tx.InChain)
+// 		params = append(params, tx.InHash)
+// 		params = append(params, tx.OutChain)
+// 		params = append(params, tx.OutHash)
+// 		params = append(params, tx.OutBytes)
+// 	}
 
-	_, err := d.db.Exec(query, params...)
-	if err != nil {
-		log.Error("failed to insert txout into table, err = ", err)
-		return err
-	}
+// 	_, err := d.db.Exec(query, params...)
+// 	if err != nil {
+// 		log.Error("failed to insert txout into table, err = ", err)
+// 		return err
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func (d *SqlDatabase) IsTxOutExisted(txOut *types.TxOut) bool {
 	query := "SELECT in_chain FROM tx_out WHERE in_chain = ? AND out_chain = ? AND out_hash = ?"
-	params := []interface{}{txOut.InChain, txOut.OutChain, txOut.GetHash()}
+	params := []interface{}{txOut.InChain, txOut.OutChain, txOut.OutHash}
 
 	rows, err := d.db.Query(query, params...)
 	if err != nil {

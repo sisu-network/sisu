@@ -7,13 +7,14 @@ import (
 
 var _ sdk.Msg = &TxOutWithSigner{}
 
-func NewTxOutConfirmWithSigner(signer string, txType TxOutType, outChain string, hash string, blockHeight int64) *TxOutConfirmWithSigner {
+func NewTxOutConfirmWithSigner(signer string, txType TxOutType, outChain string, hash string, blockHeight int64, contractAddress string) *TxOutConfirmWithSigner {
 	return &TxOutConfirmWithSigner{
 		Signer: signer,
 		Data: &TxOutConfirm{
-			TxType:   txType,
-			OutChain: outChain,
-			OutHash:  hash,
+			TxType:          txType,
+			OutChain:        outChain,
+			OutHash:         hash,
+			ContractAddress: contractAddress,
 		},
 	}
 }
