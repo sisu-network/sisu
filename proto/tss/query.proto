@@ -2,9 +2,13 @@ syntax = "proto3";
 
 package types;
 
+import "proto/tss/contract.proto";
+
 service Query {
   rpc AllPubKeys(QueryAllPubKeysRequest) returns (QueryAllPubKeysResponse) {
   }
+
+  rpc QueryContract(QueryContractRequest) returns (QueryContractResponse) {}
 }
 
 message QueryAllPubKeysRequest {
@@ -12,4 +16,13 @@ message QueryAllPubKeysRequest {
 
 message QueryAllPubKeysResponse {
   map<string, bytes> pubkeys = 1;
+}
+
+message QueryContractRequest {
+  string chain = 1;
+  string hash = 2;
+}
+
+message QueryContractResponse {
+  Contract contract = 1;
 }
