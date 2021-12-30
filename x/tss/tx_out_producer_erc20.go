@@ -60,15 +60,13 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ctx sdk.Context, e
 
 		// TODO: Creates tx out for other chains.
 		if libchain.IsETHBasedChain(toChain) {
-			if true {
-				panic("Fix this")
+			toChainContract := p.keeper.GetContract(ctx, toChain, erc20Contract.AbiHash, false)
+			if toChainContract == nil {
+				log.Error("cannot find erc20 contract for toChain %s", toChain)
+				return nil, fmt.Errorf("cannot find erc20 contract for toChain %s", toChain)
 			}
 
-			// toChainContract := p.db.GetContractFromHash(toChain, erc20Contract.AbiHash)
-			// if toChainContract == nil {
-			// 	log.Error("cannot find erc20 contract for toChain %s", toChain)
-			// 	return nil, fmt.Errorf("cannot find erc20 contract for toChain %s", toChain)
-			// }
+			fmt.Println("toChainContract.Address = ", toChainContract.Address)
 
 			assetId := fromChain + "__" + (params[0].(ethcommon.Address)).Hex()
 			recipient := params[2].(string)
@@ -90,13 +88,9 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ctx sdk.Context, e
 				return nil, fmt.Errorf("cannot find nonce for chain %s", toChain)
 			}
 
-			if true {
-				panic("Fix this")
-			}
 			rawTx := ethTypes.NewTransaction(
 				uint64(nonce),
-				// ethcommon.HexToAddress(toChainContract.Address),
-				ethcommon.HexToAddress(""),
+				ethcommon.HexToAddress(toChainContract.Address),
 				big.NewInt(0),
 				p.getGasLimit(toChain),
 				p.getGasPrice(toChain),

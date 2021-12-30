@@ -76,6 +76,8 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 	outMsgs := make([]*types.TxOutWithSigner, 0)
 
+	fmt.Println("ethTx.To()  = ", ethTx.To())
+
 	// 1. Check if this is a transaction sent to our key address. If this is true, it's likely a tx
 	// that funds our account.
 	if ethTx.To() != nil && p.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
@@ -118,14 +120,19 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 		}
 	}
 
+	fmt.Println("tx.Chain = ", tx.Chain)
+
 	// 2. Check if this is a tx sent to one of our contracts.
 	if ethTx.To() != nil &&
-		p.privateDb.IsContractExistedAtAddress(tx.Chain, ethTx.To().String()) && // TODO: Use keeper instead
+		p.keeper.IsContractExistedAtAddress(ctx, tx.Chain, ethTx.To().String()) && // TODO: Use keeper instead
 		len(ethTx.Data()) >= 4 {
 
 		log.Verbose("ethTx.To() = ", ethTx.To())
 
 		responseTx, err := p.createErc20ContractResponse(ctx, ethTx, tx.Chain)
+
+		fmt.Println("ResponseTx")
+
 		if err == nil {
 			outMsg := types.NewMsgTxOutWithSigner(
 				p.appKeys.GetSignerAddress().String(),

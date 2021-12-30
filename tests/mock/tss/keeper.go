@@ -103,6 +103,20 @@ func (mr *MockKeeperMockRecorder) IsContractExisted(ctx, msg interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsContractExisted", reflect.TypeOf((*MockKeeper)(nil).IsContractExisted), ctx, msg)
 }
 
+// IsContractExistedAtAddress mocks base method.
+func (m *MockKeeper) IsContractExistedAtAddress(ctx types.Context, chain, address string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsContractExistedAtAddress", ctx, chain, address)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsContractExistedAtAddress indicates an expected call of IsContractExistedAtAddress.
+func (mr *MockKeeperMockRecorder) IsContractExistedAtAddress(ctx, chain, address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsContractExistedAtAddress", reflect.TypeOf((*MockKeeper)(nil).IsContractExistedAtAddress), ctx, chain, address)
+}
+
 // IsKeygenAddress mocks base method.
 func (m *MockKeeper) IsKeygenAddress(ctx types.Context, keyType, address string) bool {
 	m.ctrl.T.Helper()

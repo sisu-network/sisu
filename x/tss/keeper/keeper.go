@@ -33,6 +33,7 @@ type Keeper interface {
 
 	// Contract Address
 	CreateContractAddress(ctx sdk.Context, chain string, txOutHash string, address string)
+	IsContractExistedAtAddress(ctx sdk.Context, chain string, address string) bool
 
 	// TxIn
 	SaveTxIn(ctx sdk.Context, msg *types.TxIn)
@@ -155,6 +156,11 @@ func (k *DefaultKeeper) CreateContractAddress(ctx sdk.Context, chain string, txO
 	txOutStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
 
 	createContractAddress(caStore, txOutStore, chain, txOutHash, address)
+}
+
+func (k *DefaultKeeper) IsContractExistedAtAddress(ctx sdk.Context, chain string, address string) bool {
+	caStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractAddress)
+	return isContractExistedAtAddress(caStore, chain, address)
 }
 
 ///// TxIn
