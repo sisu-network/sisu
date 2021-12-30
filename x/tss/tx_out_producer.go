@@ -165,10 +165,6 @@ func (p *DefaultTxOutputProducer) getEthContractDeploymentTx(ctx sdk.Context, he
 		txs = append(txs, rawTx)
 	}
 
-	// Update all contracts to "deploying" state. This is not the cleanest code to do this but passing
-	// the contract back would also complicated.
-	// p.keeper.UpdateContractsStatus(ctx, contracts, types.ContractStateDeploying)
-
 	return txs
 }
 

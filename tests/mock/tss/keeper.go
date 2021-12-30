@@ -296,13 +296,13 @@ func (mr *MockKeeperMockRecorder) UpdateContractAddress(ctx, chain, hash, addres
 }
 
 // UpdateContractsStatus mocks base method.
-func (m *MockKeeper) UpdateContractsStatus(ctx types.Context, msgs []*types0.Contract, status string) {
+func (m *MockKeeper) UpdateContractsStatus(ctx types.Context, chain, contractHash, status string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateContractsStatus", ctx, msgs, status)
+	m.ctrl.Call(m, "UpdateContractsStatus", ctx, chain, contractHash, status)
 }
 
 // UpdateContractsStatus indicates an expected call of UpdateContractsStatus.
-func (mr *MockKeeperMockRecorder) UpdateContractsStatus(ctx, msgs, status interface{}) *gomock.Call {
+func (mr *MockKeeperMockRecorder) UpdateContractsStatus(ctx, chain, contractHash, status interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateContractsStatus", reflect.TypeOf((*MockKeeper)(nil).UpdateContractsStatus), ctx, msgs, status)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateContractsStatus", reflect.TypeOf((*MockKeeper)(nil).UpdateContractsStatus), ctx, chain, contractHash, status)
 }

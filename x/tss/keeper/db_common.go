@@ -278,7 +278,7 @@ func getPendingContracts(contractStore cstypes.KVStore, byteCodeStore cstypes.KV
 			continue
 		}
 
-		if contract.Status != "" {
+		if contract.Address != "" || contract.Status != "" {
 			continue
 		}
 
@@ -292,28 +292,26 @@ func getPendingContracts(contractStore cstypes.KVStore, byteCodeStore cstypes.KV
 }
 
 // TODO: Remove this. The status should be put in separate store.
-func updateContractsStatus(contractStore cstypes.KVStore, msgs []*types.Contract, status string) {
-	for _, msg := range msgs {
-		key := getContractKey(msg.Chain, msg.GetHash())
+func updateContractsStatus(contractStore cstypes.KVStore, chain string, contractHash string, status string) {
+	key := getContractKey(chain, contractHash)
 
-		bz := contractStore.Get(key)
-		contract := &types.Contract{}
-		err := contract.Unmarshal(bz)
+	bz := contractStore.Get(key)
+	contract := &types.Contract{}
+	err := contract.Unmarshal(bz)
 
-		if err != nil {
-			log.Error("UpdateContractsStatus: Cannot unmarshal contract bytes")
-			return
-		}
-
-		contract.Status = status
-		bz, err = contract.Marshal()
-		if err != nil {
-			log.Error("UpdateContractsStatus: Cannot marshal contract bytes")
-			return
-		}
-
-		contractStore.Set(key, bz)
+	if err != nil {
+		log.Error("UpdateContractsStatus: Cannot unmarshal contract bytes")
+		return
 	}
+
+	contract.Status = status
+	bz, err = contract.Marshal()
+	if err != nil {
+		log.Error("UpdateContractsStatus: Cannot marshal contract bytes")
+		return
+	}
+
+	contractStore.Set(key, bz)
 }
 
 func getContract(contractStore cstypes.KVStore, byteCodeStore cstypes.KVStore, chain string, contractHash string) *types.Contract {
