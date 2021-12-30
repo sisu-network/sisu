@@ -12,7 +12,6 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
-	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 )
 
 // Processed list of transactions sent from deyes to Sisu api server.
@@ -52,6 +51,7 @@ func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 	return nil
 }
 
+// confirmTx confirms that a tx has been included in a block on the blockchain.
 func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64) error {
 	log.Verbose("This is a transaction from us. We need to confirm it. Chain = ", chain)
 
@@ -143,19 +143,26 @@ func (p *Processor) deliverTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSi
 	if len(txOutWithSigners) > 0 {
 		txOuts := make([]*types.TxOut, len(txOutWithSigners))
 		for i, outWithSigner := range txOutWithSigners {
-			txOuts[i] = outWithSigner.Data
+			txOut := outWithSigner.Data
+			txOuts[i] = txOut
 
-			p.privateDb.SaveTxOut(outWithSigner.Data)
+			// We only save txOut to privateDb instead of keeper since it's not confirmed by everyone yet
+			p.privateDb.SaveTxOut(txOut)
+
+			// If this is a txOut deployment, mark the contract as being deployed.
+			if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
+				p.keeper.UpdateContractsStatus(ctx, txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
+			}
 		}
 	}
 
 	// If this node is not catching up, broadcast the tx.
-	if !p.globalData.IsCatchingUp() {
+	if !p.globalData.IsCatchingUp() && len(txOutWithSigners) > 0 {
 		log.Info("Broadcasting txout....")
 
 		// Creates TxOut. TODO: Only do this for top validator nodes.
 		for _, msg := range txOutWithSigners {
-			go func(m *tssTypes.TxOutWithSigner) {
+			go func(m *types.TxOutWithSigner) {
 				if err := p.txSubmit.SubmitMessage(m); err != nil {
 					return
 				}

@@ -29,8 +29,7 @@ type Keeper interface {
 	GetContract(ctx sdk.Context, chain string, hash string, includeByteCode bool) *types.Contract
 	GetPendingContracts(ctx sdk.Context, chain string) []*types.Contract
 	UpdateContractAddress(ctx sdk.Context, chain string, hash string, address string)
-
-	UpdateContractsStatus(ctx sdk.Context, msgs []*types.Contract, status string) // Consider removing this function
+	UpdateContractsStatus(ctx sdk.Context, chain string, contractHash string, status string)
 
 	// Contract Address
 	CreateContractAddress(ctx sdk.Context, chain string, txOutHash string, address string)
@@ -144,9 +143,9 @@ func (k *DefaultKeeper) UpdateContractAddress(ctx sdk.Context, chain string, has
 	updateContractAddress(contractStore, chain, hash, address)
 }
 
-func (k *DefaultKeeper) UpdateContractsStatus(ctx sdk.Context, msgs []*types.Contract, status string) {
+func (k *DefaultKeeper) UpdateContractsStatus(ctx sdk.Context, chain string, contractHash string, status string) {
 	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
-	updateContractsStatus(contractStore, msgs, status)
+	updateContractsStatus(contractStore, chain, contractHash, status)
 }
 
 ///// Contract Address

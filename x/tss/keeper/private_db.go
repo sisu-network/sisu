@@ -35,7 +35,7 @@ type PrivateDb interface {
 	GetPendingContracts(chain string) []*types.Contract
 	UpdateContractAddress(chain string, hash string, address string)
 
-	UpdateContractsStatus(msgs []*types.Contract, status string)
+	UpdateContractsStatus(chain string, contractHash string, status string)
 
 	// Contract Address
 	CreateContractAddress(chain string, txOutHash string, address string)
@@ -190,9 +190,9 @@ func (db *defaultPrivateDb) UpdateContractAddress(chain string, hash string, add
 	updateContractAddress(contractStore, chain, hash, address)
 }
 
-func (db *defaultPrivateDb) UpdateContractsStatus(msgs []*types.Contract, status string) {
+func (db *defaultPrivateDb) UpdateContractsStatus(chain string, contractHash string, status string) {
 	contractStore := db.prefixes[string(prefixContract)]
-	updateContractsStatus(contractStore, msgs, status)
+	updateContractsStatus(contractStore, chain, contractHash, status)
 }
 
 ///// Contract Address
