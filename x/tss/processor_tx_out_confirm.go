@@ -1,7 +1,10 @@
 package tss
 
 import (
+	"fmt"
+
 	sdk "github.com/sisu-network/cosmos-sdk/types"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
 
@@ -25,24 +28,47 @@ func (p *Processor) deliverTxOutConfirm(ctx sdk.Context, msgWithSigner *types.Tx
 		return nil, nil
 	}
 
+	log.Info("Delivering TxOutConfirm")
+
 	// Save this to keeper and private db
 	p.keeper.SaveTxOutConfirm(ctx, msg)
 	p.privateDb.SaveTxOutConfirm(msg)
 
+	fmt.Println("msg.TxType = ", msg.TxType)
+
 	// If this is a contract deployment, update the address for the contract.
 	if msg.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
 		txOut := p.keeper.GetTxOut(ctx, msg.OutChain, msg.OutHash)
+		if txOut == nil {
+			log.Critical("cannot find txout from txOutConfirm message, chain & hash = ",
+				msg.OutChain, msg.OutHash)
+			return nil, nil
+		}
+
+		log.Info("txOut.ContractHash = ", txOut.ContractHash)
 
 		// Update the address for the contract.
 		contract := p.keeper.GetContract(ctx, txOut.OutChain, txOut.ContractHash, false)
-		contract.Address = msg.ContractAddress
+		if contract == nil {
+			log.Critical("cannot find contract hash with hash ", txOut.ContractHash, " on chain ", txOut.OutChain)
+			return nil, nil
+		}
 
+		if len(msg.ContractAddress) == 0 {
+			log.Critical("contract address is nil")
+			return nil, nil
+		}
+
+		contract.Address = msg.ContractAddress
+		log.Info("Contract address = ", msg.ContractAddress)
+
+		// Save the contract (with address)
 		p.keeper.SaveContract(ctx, contract, false)
 		p.privateDb.SaveContract(contract, false)
 
-		// Create a new entry with contract & address as key for easy look up.
-		p.keeper.CreateContractAddress(ctx, txOut.OutChain, txOut.GetHash(), msg.ContractAddress)
-		p.privateDb.CreateContractAddress(txOut.OutChain, txOut.GetHash(), msg.ContractAddress)
+		// Create a new entry with contract & address as key for easy txOut look up.
+		p.keeper.CreateContractAddress(ctx, txOut.OutChain, txOut.OutHash, msg.ContractAddress)
+		p.privateDb.CreateContractAddress(txOut.OutChain, txOut.OutHash, msg.ContractAddress)
 
 		// Add the address to deyes to watch
 		p.AddWatchAddresses(msg.OutChain, msg.ContractAddress)

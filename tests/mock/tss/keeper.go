@@ -132,17 +132,17 @@ func (mr *MockKeeperMockRecorder) IsKeygenExisted(ctx, keyType, index interface{
 }
 
 // IsKeygenResultSuccess mocks base method.
-func (m *MockKeeper) IsKeygenResultSuccess(ctx types.Context, signerMsg *types0.KeygenResultWithSigner) bool {
+func (m *MockKeeper) IsKeygenResultSuccess(ctx types.Context, signerMsg *types0.KeygenResultWithSigner, self string) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsKeygenResultSuccess", ctx, signerMsg)
+	ret := m.ctrl.Call(m, "IsKeygenResultSuccess", ctx, signerMsg, self)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
 // IsKeygenResultSuccess indicates an expected call of IsKeygenResultSuccess.
-func (mr *MockKeeperMockRecorder) IsKeygenResultSuccess(ctx, signerMsg interface{}) *gomock.Call {
+func (mr *MockKeeperMockRecorder) IsKeygenResultSuccess(ctx, signerMsg, self interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKeygenResultSuccess", reflect.TypeOf((*MockKeeper)(nil).IsKeygenResultSuccess), ctx, signerMsg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKeygenResultSuccess", reflect.TypeOf((*MockKeeper)(nil).IsKeygenResultSuccess), ctx, signerMsg, self)
 }
 
 // IsTxInExisted mocks base method.

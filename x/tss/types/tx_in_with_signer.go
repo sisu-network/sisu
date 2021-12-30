@@ -1,11 +1,8 @@
 package types
 
 import (
-	fmt "fmt"
-
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	sdkerrors "github.com/sisu-network/cosmos-sdk/types/errors"
-	"github.com/sisu-network/sisu/utils"
 )
 
 var _ sdk.Msg = &TxInWithSigner{}
@@ -56,12 +53,6 @@ func (msg *TxInWithSigner) ValidateBasic() error {
 	_, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid creator address (%s)", err)
-	}
-
-	// Make sure the hash matches.
-	txIn := msg.Data
-	if txIn.TxHash != utils.GetTxInHash(txIn.BlockHeight, txIn.Chain, txIn.Serialized) {
-		return fmt.Errorf("Hash does not match")
 	}
 
 	return nil

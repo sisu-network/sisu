@@ -64,7 +64,6 @@ func handleTxIn(ctx sdk.Context, msg *types.TxInWithSigner, processor *Processor
 }
 
 func handleTxOut(ctx sdk.Context, msg *types.TxOutWithSigner, processor *Processor) (*sdk.Result, error) {
-	log.Verbose("Handling Txout, hash = ", msg.Data.GetHash())
 	data, err := processor.deliverTxOut(ctx, msg)
 	return &sdk.Result{
 		Data: data,

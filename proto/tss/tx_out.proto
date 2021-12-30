@@ -12,15 +12,17 @@ message TxOutWithSigner {
 }
 
 message TxOut {
-  TxOutType txType = 1;
-  string inChain = 2;
-  string outChain = 3;
-  int64 inBlockHeight = 4;
-  string inHash = 5;
-  bytes outBytes = 6;
+  string outChain = 1;
+  string outHash = 2; // Id that identifies the txOut in the outChain
+
+  TxOutType txType = 3;
+  string inChain = 4;
+  int64 inBlockHeight = 5;
+  string inHash = 6;
+  bytes outBytes = 7;
 
   // optional contract hash
-  string contractHash = 7;
+  string contractHash = 8;
 }
 
 message TxOutConfirmWithSigner {
@@ -36,4 +38,12 @@ message TxOutConfirm {
 
   // optional contract address
   string contractAddress = 5;
+}
+
+// TxOut with and full transaction hash (including signature) to look up TxOut when a new tx comes in.
+message TxOutSig {
+  string chain = 1;
+  string hashWithSig = 2;
+
+  string hashNoSig = 3;
 }

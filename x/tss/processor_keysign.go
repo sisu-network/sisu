@@ -1,6 +1,8 @@
 package tss
 
 import (
+	"fmt"
+
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	htypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/lib/log"
@@ -46,13 +48,15 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 			return
 		}
 
-		// TODO: Add the signature to txOuts
-		// p.db.UpdateTxOutSig(
-		// 	request.OutChain,
-		// 	request.OutHash,
-		// 	utils.KeccakHash32(string(bz)),
-		// 	result.Signature,
-		// )
+		// TODO: Broadcast the keysign result that includes this TxOutSig.
+		// Save this to TxOutSig
+		p.privateDb.SaveTxOutSig(&types.TxOutSig{
+			Chain:       result.Request.OutChain,
+			HashWithSig: signedTx.Hash().String(),
+			HashNoSig:   result.Request.OutHash,
+		})
+
+		fmt.Println("BBBBBB signedTx.Hash().String() = ", signedTx.Hash().String())
 
 		// If this is a contract deployment transaction, update the contract table with the hash of the
 		// deployment tx bytes.

@@ -20,7 +20,7 @@ type Keeper interface {
 
 	// Keygen Result
 	SaveKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner)
-	IsKeygenResultSuccess(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) bool
+	IsKeygenResultSuccess(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner, self string) bool
 
 	// Contracts
 	SaveContract(ctx sdk.Context, msg *types.Contract, saveByteCode bool)
@@ -87,9 +87,9 @@ func (k *DefaultKeeper) SaveKeygenResult(ctx sdk.Context, signerMsg *types.Keyge
 
 // Keygen is considered successful if at least there is at least 1 successful KeygenReslut in the
 // KVStore.
-func (k *DefaultKeeper) IsKeygenResultSuccess(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) bool {
+func (k *DefaultKeeper) IsKeygenResultSuccess(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner, self string) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenResult)
-	return isKeygenResultSuccess(store, signerMsg)
+	return isKeygenResultSuccess(store, signerMsg, self)
 }
 
 ///// Contracts
