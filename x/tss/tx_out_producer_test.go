@@ -11,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/golang/mock/gomock"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
+	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/tests/mock"
 	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
 
@@ -67,11 +68,16 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 
 		pubkeyBytes := crypto.FromECDSAPub(&privKey.PublicKey)
 		mockPrivateDb := mocktss.NewMockPrivateDb(ctrl)
-		mockPrivateDb.EXPECT().GetKeygenPubkey("ecdsa").Return(pubkeyBytes).Times(1)
+		mockPrivateDb.EXPECT().GetKeygenPubkey(libchain.KEY_TYPE_ECDSA).Return(pubkeyBytes).Times(1)
 
-		mockDb := mock.NewMockDatabase(ctrl)
-		mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(true).Times(1)
-		mockDb.EXPECT().GetPubKey("ecdsa").Return(pubkeyBytes).Times(1)
+		keeper := mocktss.NewMockKeeper(ctrl)
+		keeper.EXPECT().IsKeygenAddress(gomock.Any(), libchain.KEY_TYPE_ECDSA, gomock.Any()).Return(true).Times(1)
+		keeper.EXPECT().GetPendingContracts(gomock.Any(), "eth").Return([]*types.Contract{
+			{
+				Chain: "eth",
+				Hash:  SupportedContracts[ContractErc20].AbiHash,
+			},
+		}).Times(1)
 
 		mockAppKeys := mock.NewMockAppKeys(ctrl)
 		accAddress := []byte{1, 2, 3}
@@ -105,23 +111,25 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		}
 		txOutProducer := DefaultTxOutputProducer{
 			worldState: &worldState,
+			keeper:     keeper,
 			tssConfig: config.TssConfig{
 				Enable: true,
 				SupportedChains: map[string]config.TssChainConfig{
-					"ganache": {
+					"ganache1": {
 						Symbol:   "ganache",
 						DeyesUrl: "http://0.0.0.0:1234",
 					},
 				},
 			},
-			privateDb: mockPrivateDb,
-			appKeys:   mockAppKeys,
+			appKeys: mockAppKeys,
 		}
 
 		ctx := sdk.Context{}
 		txOuts, err := txOutProducer.getEthResponse(ctx, 1, &observedTx)
 		require.NoError(t, err)
 		require.Len(t, txOuts, 1)
+
+		// TODO Check the output of txOut to make sure that they are correct.
 	})
 
 	t.Run("transaction_send_to_contract", func(t *testing.T) {
@@ -132,23 +140,20 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 			ctrl.Finish()
 		})
 
-		contractEntity := &types.ContractEntity{
-			Chain: "eth",
-			Hash:  SupportedContracts[ContractErc20].AbiHash,
-		}
-
 		privKey, err := crypto.GenerateKey()
 		require.NoError(t, err)
 
 		pubkeyBytes := crypto.FromECDSAPub(&privKey.PublicKey)
 		mockPrivateDb := mocktss.NewMockPrivateDb(ctrl)
-		mockPrivateDb.EXPECT().GetKeygenPubkey("ecdsa").Return(pubkeyBytes).Times(1)
+		mockPrivateDb.EXPECT().GetKeygenPubkey(libchain.KEY_TYPE_ECDSA).Return(pubkeyBytes).Times(1)
 
-		mockDb := mock.NewMockDatabase(ctrl)
-		mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(false).Times(1)
-		mockDb.EXPECT().GetContractFromAddress(gomock.Any(), gomock.Any()).Return(contractEntity).Times(1)
-		mockDb.EXPECT().GetContractFromHash(gomock.Any(), gomock.Any()).Return(contractEntity).Times(1)
-		mockDb.EXPECT().GetPubKey("ecdsa").Return(pubkeyBytes).Times(1)
+		keeper := mocktss.NewMockKeeper(ctrl)
+		keeper.EXPECT().IsKeygenAddress(gomock.Any(), libchain.KEY_TYPE_ECDSA, gomock.Any()).Return(false).Times(1)
+		keeper.EXPECT().IsContractExistedAtAddress(gomock.Any(), "eth", gomock.Any()).Return(true).Times(1)
+		erc20Contract := SupportedContracts[ContractErc20]
+		keeper.EXPECT().GetContract(gomock.Any(), "eth", erc20Contract.AbiHash, false).Return(&types.Contract{
+			Address: "0x12345",
+		}).Times(1)
 
 		mockAppKeys := mock.NewMockAppKeys(ctrl)
 		accAddress := []byte{1, 2, 3}
@@ -175,6 +180,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 
 		observedTx := types.TxIn{
 			BlockHeight: 1,
+			Chain:       "eth",
 			Serialized:  binary,
 		}
 
@@ -188,6 +194,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		}
 		txOutProducer := DefaultTxOutputProducer{
 			worldState: &worldState,
+			keeper:     keeper,
 			tssConfig: config.TssConfig{
 				Enable: true,
 				SupportedChains: map[string]config.TssChainConfig{
@@ -197,13 +204,15 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 					},
 				},
 			},
-			db:      mockDb,
-			appKeys: mockAppKeys,
+			privateDb: mockPrivateDb,
+			appKeys:   mockAppKeys,
 		}
 
 		ctx := sdk.Context{}
 		txOuts, err := txOutProducer.getEthResponse(ctx, 1, &observedTx)
 		require.NoError(t, err)
 		require.Len(t, txOuts, 1)
+
+		// TODO Check the output of txOut to make sure that they are correct.
 	})
 }

@@ -102,6 +102,20 @@ func (mr *MockPrivateDbMockRecorder) GetTxOut(outChain, hash interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxOut", reflect.TypeOf((*MockPrivateDb)(nil).GetTxOut), outChain, hash)
 }
 
+// GetTxOutFromSigHash mocks base method.
+func (m *MockPrivateDb) GetTxOutFromSigHash(outChain, hashWithSig string) *types.TxOut {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTxOutFromSigHash", outChain, hashWithSig)
+	ret0, _ := ret[0].(*types.TxOut)
+	return ret0
+}
+
+// GetTxOutFromSigHash indicates an expected call of GetTxOutFromSigHash.
+func (mr *MockPrivateDbMockRecorder) GetTxOutFromSigHash(outChain, hashWithSig interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxOutFromSigHash", reflect.TypeOf((*MockPrivateDb)(nil).GetTxOutFromSigHash), outChain, hashWithSig)
+}
+
 // IsContractExisted mocks base method.
 func (m *MockPrivateDb) IsContractExisted(msg *types.Contract) bool {
 	m.ctrl.T.Helper()
@@ -159,17 +173,17 @@ func (mr *MockPrivateDbMockRecorder) IsKeygenExisted(keyType, index interface{})
 }
 
 // IsKeygenResultSuccess mocks base method.
-func (m *MockPrivateDb) IsKeygenResultSuccess(signerMsg *types.KeygenResultWithSigner) bool {
+func (m *MockPrivateDb) IsKeygenResultSuccess(signerMsg *types.KeygenResultWithSigner, self string) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "IsKeygenResultSuccess", signerMsg)
+	ret := m.ctrl.Call(m, "IsKeygenResultSuccess", signerMsg, self)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
 // IsKeygenResultSuccess indicates an expected call of IsKeygenResultSuccess.
-func (mr *MockPrivateDbMockRecorder) IsKeygenResultSuccess(signerMsg interface{}) *gomock.Call {
+func (mr *MockPrivateDbMockRecorder) IsKeygenResultSuccess(signerMsg, self interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKeygenResultSuccess", reflect.TypeOf((*MockPrivateDb)(nil).IsKeygenResultSuccess), signerMsg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKeygenResultSuccess", reflect.TypeOf((*MockPrivateDb)(nil).IsKeygenResultSuccess), signerMsg, self)
 }
 
 // IsTxInExisted mocks base method.
@@ -224,6 +238,18 @@ func (m *MockPrivateDb) PrintStore(name string) {
 func (mr *MockPrivateDbMockRecorder) PrintStore(name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrintStore", reflect.TypeOf((*MockPrivateDb)(nil).PrintStore), name)
+}
+
+// PrintStoreKeys mocks base method.
+func (m *MockPrivateDb) PrintStoreKeys(name string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "PrintStoreKeys", name)
+}
+
+// PrintStoreKeys indicates an expected call of PrintStoreKeys.
+func (mr *MockPrivateDbMockRecorder) PrintStoreKeys(name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PrintStoreKeys", reflect.TypeOf((*MockPrivateDb)(nil).PrintStoreKeys), name)
 }
 
 // SaveContract mocks base method.
@@ -310,6 +336,18 @@ func (mr *MockPrivateDbMockRecorder) SaveTxOutConfirm(msg interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTxOutConfirm", reflect.TypeOf((*MockPrivateDb)(nil).SaveTxOutConfirm), msg)
 }
 
+// SaveTxOutSig mocks base method.
+func (m *MockPrivateDb) SaveTxOutSig(msg *types.TxOutSig) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SaveTxOutSig", msg)
+}
+
+// SaveTxOutSig indicates an expected call of SaveTxOutSig.
+func (mr *MockPrivateDbMockRecorder) SaveTxOutSig(msg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTxOutSig", reflect.TypeOf((*MockPrivateDb)(nil).SaveTxOutSig), msg)
+}
+
 // UpdateContractAddress mocks base method.
 func (m *MockPrivateDb) UpdateContractAddress(chain, hash, address string) {
 	m.ctrl.T.Helper()
@@ -323,13 +361,13 @@ func (mr *MockPrivateDbMockRecorder) UpdateContractAddress(chain, hash, address 
 }
 
 // UpdateContractsStatus mocks base method.
-func (m *MockPrivateDb) UpdateContractsStatus(msgs []*types.Contract, status string) {
+func (m *MockPrivateDb) UpdateContractsStatus(chain, contractHash, status string) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UpdateContractsStatus", msgs, status)
+	m.ctrl.Call(m, "UpdateContractsStatus", chain, contractHash, status)
 }
 
 // UpdateContractsStatus indicates an expected call of UpdateContractsStatus.
-func (mr *MockPrivateDbMockRecorder) UpdateContractsStatus(msgs, status interface{}) *gomock.Call {
+func (mr *MockPrivateDbMockRecorder) UpdateContractsStatus(chain, contractHash, status interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateContractsStatus", reflect.TypeOf((*MockPrivateDb)(nil).UpdateContractsStatus), msgs, status)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateContractsStatus", reflect.TypeOf((*MockPrivateDb)(nil).UpdateContractsStatus), chain, contractHash, status)
 }
