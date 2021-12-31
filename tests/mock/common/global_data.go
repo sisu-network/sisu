@@ -2,7 +2,7 @@
 // Source: common/global_data.go
 
 // Package common is a generated GoMock package.
-package common
+package mock
 
 import (
 	reflect "reflect"

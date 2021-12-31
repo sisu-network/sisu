@@ -1,9 +1,5 @@
 syntax = "proto3";
-package sisunetwork.sisu.sisu;
-
-// this line is used by starport scaffolding # proto/tx/import
-
-option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+package types;
 
 // Msg defines the Msg service.
 service Msg {

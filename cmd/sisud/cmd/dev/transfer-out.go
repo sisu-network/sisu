@@ -11,13 +11,12 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
 	erc20Gateway "github.com/sisu-network/sisu/contracts/eth/erc20gateway"
-	"github.com/sisu-network/sisu/db"
-	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
 	"github.com/sisu-network/sisu/x/tss"
+	"github.com/sisu-network/sisu/x/tss/types"
 	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
 )
 
 // WIP. TODO: Complete and clean up this.
@@ -32,27 +31,6 @@ Example:
 transfer-out erc20 ganache1 7545 0xf0D676183dD5ae6b370adDdbE770235F23546f9d ganache2 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Use this when running with docker.
-			//sqlConfig := getDockerSqlConfig()
-
-			// // Use this when running with single node on command line.
-			cfg, cfgErr := config.ReadConfig()
-			if cfgErr != nil {
-				panic(cfgErr)
-			}
-
-			sqlConfig := cfg.Sisu.Sql
-			database := db.NewDatabase(sqlConfig)
-			if err := database.Init(); err != nil {
-				panic(err)
-			}
-
-			defer func() {
-				if err := database.Close(); err != nil {
-					log.Error("cannot close database", err)
-				}
-			}()
-
 			// Get the contract address of token
 			log.Info("args = ", args)
 			contractType := args[0]
@@ -74,10 +52,12 @@ transfer-out erc20 ganache1 7545 0xf0D676183dD5ae6b370adDdbE770235F23546f9d gana
 				}
 
 				hash := tss.SupportedContracts[contractType].AbiHash
-				contract := database.GetContractFromHash(fromChain, hash)
+				contract := queryContract(cmd, fromChain, hash)
 				if contract == nil {
 					panic(fmt.Errorf("cannot find contract"))
 				}
+
+				log.Infof("contract hash & address = %s %s", contract.Hash, contract.Address)
 
 				gatewayAddress := common.HexToAddress(contract.Address)
 				gateway, err := erc20Gateway.NewErc20gateway(gatewayAddress, client)
@@ -130,40 +110,27 @@ transfer-out erc20 ganache1 7545 0xf0D676183dD5ae6b370adDdbE770235F23546f9d gana
 	return cmd
 }
 
-func getDockerSqlConfig() config.SqlConfig {
-	return config.SqlConfig{
-		Host:     "0.0.0.0",
-		Port:     4000,
-		Username: "root",
-		Password: "password",
-		Schema:   "sisu0", // TODO: make this schema configurable
-	}
-}
-
-func deployGatewayContract(toChain string, client *ethclient.Client) (common.Address, *erc20Gateway.Erc20gateway) {
-	auth, err := getAuthTransactor(client, account0.Address)
-	if err != nil {
-		panic(err)
-	}
-
-	gatewayAddress, tx, gateway, err := erc20Gateway.DeployErc20gateway(
-		auth,
-		client,
-		"eth",
-		[]string{toChain},
+func queryContract(cmd *cobra.Command, chain string, hash string) *types.Contract {
+	grpcConn, err := grpc.Dial(
+		"0.0.0.0:9090",
+		grpc.WithInsecure(),
 	)
+	defer grpcConn.Close()
 	if err != nil {
 		panic(err)
 	}
 
-	_, err = bind.WaitDeployed(context.Background(), client, tx)
+	queryClient := types.NewTssQueryClient(grpcConn)
+	req := &types.QueryContractRequest{
+		Chain: chain,
+		Hash:  hash,
+	}
+	res, err := queryClient.QueryContract(cmd.Context(), req)
 	if err != nil {
 		panic(err)
 	}
 
-	log.Info("Gateway was deployed!")
-
-	return gatewayAddress, gateway
+	return res.Contract
 }
 
 func approveAddress(erc20Contract *erc20.Erc20, recipient common.Address, amount *big.Int, client *ethclient.Client) {
@@ -187,24 +154,4 @@ func getBalance(erc20Contract *erc20.Erc20, address common.Address) *big.Int {
 	}
 
 	return tokenBalance
-}
-
-func getTransasctionOpts(wallet *hdwallet.Wallet, chainId *big.Int) *bind.TransactOpts {
-	path := hdwallet.MustParseDerivationPath(fmt.Sprintf("m/44'/60'/0'/0/%d", 0))
-	fromAccount, err := wallet.Derive(path, true)
-	if err != nil {
-		panic(err)
-	}
-
-	privateKey, err := wallet.PrivateKey(fromAccount)
-	if err != nil {
-		return nil
-	}
-
-	opts, err := bind.NewKeyedTransactorWithChainID(privateKey, chainId)
-	if err != nil {
-		panic(err)
-	}
-
-	return opts
 }

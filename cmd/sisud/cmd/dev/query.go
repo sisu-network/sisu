@@ -23,9 +23,6 @@ Example:
 query erc20 ganache2 8545 ganache1__0xf0D676183dD5ae6b370adDdbE770235F23546f9d 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			database := getDatabase()
-			defer database.Close()
-
 			log.Info("args = ", args)
 			contractType := args[0]
 			chain := args[1]
@@ -44,7 +41,7 @@ query erc20 ganache2 8545 ganache1__0xf0D676183dD5ae6b370adDdbE770235F23546f9d 0
 				}
 
 				hash := tss.SupportedContracts[contractType].AbiHash
-				contract := database.GetContractFromHash(chain, hash)
+				contract := queryContract(cmd, chain, hash)
 				if contract == nil {
 					return fmt.Errorf("cannot find contract")
 				}

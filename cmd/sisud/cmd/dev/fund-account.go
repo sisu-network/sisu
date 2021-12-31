@@ -126,7 +126,7 @@ func queryPubKeys(cmd *cobra.Command) map[string][]byte {
 		panic(err)
 	}
 
-	queryClient := tssTypes.NewQueryClient(grpcConn)
+	queryClient := tssTypes.NewTssQueryClient(grpcConn)
 
 	res, err := queryClient.AllPubKeys(cmd.Context(), &tssTypes.QueryAllPubKeysRequest{})
 	if err != nil {

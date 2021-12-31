@@ -5,7 +5,7 @@ import (
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/db"
+	"github.com/sisu-network/sisu/x/tss/keeper"
 	"github.com/sisu-network/sisu/x/tss/tssclients"
 )
 
@@ -17,16 +17,16 @@ type WorldState interface {
 }
 
 type DefaultWorldState struct {
-	db           db.Database
+	privateDb    keeper.PrivateDb
 	tssConfig    config.TssConfig
 	nonces       map[string]int64
 	deyesClients map[string]*tssclients.DeyesClient
 }
 
-func NewWorldState(tssConfig config.TssConfig, db db.Database, deyesClients map[string]*tssclients.DeyesClient) WorldState {
+func NewWorldState(tssConfig config.TssConfig, privateDb keeper.PrivateDb, deyesClients map[string]*tssclients.DeyesClient) WorldState {
 	return &DefaultWorldState{
 		tssConfig:    tssConfig,
-		db:           db,
+		privateDb:    privateDb,
 		nonces:       make(map[string]int64, 0),
 		deyesClients: deyesClients,
 	}
@@ -35,7 +35,7 @@ func NewWorldState(tssConfig config.TssConfig, db db.Database, deyesClients map[
 func (ws *DefaultWorldState) UseAndIncreaseNonce(chain string) int64 {
 	keyType := libchain.GetKeyTypeForChain(chain)
 
-	pubKeyBytes := ws.db.GetPubKey(keyType)
+	pubKeyBytes := ws.privateDb.GetKeygenPubkey(keyType)
 	if pubKeyBytes == nil {
 		log.Error("cannot find pub key for keyType", chain)
 		return -1

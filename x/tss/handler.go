@@ -17,16 +17,20 @@ func NewHandler(k keeper.DefaultKeeper, txSubmit common.TxSubmit, processor *Pro
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 
 		switch msg := msg.(type) {
-		case *types.KeygenProposalWithSigner:
+		case *types.KeygenWithSigner:
 			return handleKeygenProposal(ctx, msg, processor)
 		case *types.KeygenResultWithSigner:
 			return handleKeygenResult(ctx, msg, processor)
-		case *types.ObservedTx:
-			return handleObservedTx(ctx, msg, processor)
-		case *types.TxOut:
+		case *types.TxInWithSigner:
+			return handleTxIn(ctx, msg, processor)
+		case *types.TxOutWithSigner:
 			return handleTxOut(ctx, msg, processor)
 		case *types.KeysignResult:
 			return handleKeysignResult(ctx, msg, processor)
+		case *types.ContractsWithSigner:
+			return handleContractWithSigner(ctx, msg, processor)
+		case *types.TxOutConfirmWithSigner:
+			return handleTxOutConfirm(ctx, msg, processor)
 
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)
@@ -35,8 +39,8 @@ func NewHandler(k keeper.DefaultKeeper, txSubmit common.TxSubmit, processor *Pro
 	}
 }
 
-func handleKeygenProposal(ctx sdk.Context, msg *types.KeygenProposalWithSigner, processor *Processor) (*sdk.Result, error) {
-	data, err := processor.deliverKeyGenProposal(ctx, msg)
+func handleKeygenProposal(ctx sdk.Context, msg *types.KeygenWithSigner, processor *Processor) (*sdk.Result, error) {
+	data, err := processor.deliverKeygen(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err
@@ -50,26 +54,38 @@ func handleKeygenResult(ctx sdk.Context, msg *types.KeygenResultWithSigner, proc
 	}, err
 }
 
-func handleObservedTx(ctx sdk.Context, msg *types.ObservedTx, processor *Processor) (*sdk.Result, error) {
+func handleTxIn(ctx sdk.Context, msg *types.TxInWithSigner, processor *Processor) (*sdk.Result, error) {
 	// Update the count for all txs.
-	log.Verbose("Handling ObservedTxs for chain", msg.Chain)
-	data, err := processor.deliverObservedTxs(ctx, msg)
+	log.Verbose("Handling TxIn for chain", msg.Data.Chain)
+	data, err := processor.deliverTxIn(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err
 }
 
-func handleTxOut(ctx sdk.Context, msg *types.TxOut, processor *Processor) (*sdk.Result, error) {
-	log.Verbose("Handling Txout, hash = ", msg.GetHash())
+func handleTxOut(ctx sdk.Context, msg *types.TxOutWithSigner, processor *Processor) (*sdk.Result, error) {
 	data, err := processor.deliverTxOut(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err
 }
 
+func handleTxOutConfirm(ctx sdk.Context, msg *types.TxOutConfirmWithSigner, processor *Processor) (*sdk.Result, error) {
+	data, err := processor.deliverTxOutConfirm(ctx, msg)
+	return &sdk.Result{
+		Data: data,
+	}, err
+}
+
 func handleKeysignResult(ctx sdk.Context, msg *types.KeysignResult, processor *Processor) (*sdk.Result, error) {
-	log.Verbose("Handling Keysign Result")
 	data, err := processor.deliverKeysignResult(ctx, msg)
+	return &sdk.Result{
+		Data: data,
+	}, err
+}
+
+func handleContractWithSigner(ctx sdk.Context, msg *types.ContractsWithSigner, processor *Processor) (*sdk.Result, error) {
+	data, err := processor.deliverContracts(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err
