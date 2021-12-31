@@ -1,7 +1,6 @@
 package tss
 
 import (
-	"fmt"
 	"math/big"
 	"strings"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/keeper"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
@@ -76,7 +74,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 	outMsgs := make([]*types.TxOutWithSigner, 0)
 
-	fmt.Println("ethTx.To()  = ", ethTx.To())
+	log.Verbose("ethTx.To() = ", ethTx.To())
 
 	// 1. Check if this is a transaction sent to our key address. If this is true, it's likely a tx
 	// that funds our account.
@@ -93,7 +91,6 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 			for i, outTx := range outEthTxs {
 				bz, err := outTx.MarshalBinary()
-				fmt.Println("AAAAAA serialized ETH transaction = ", utils.KeccakHash32(string(bz)))
 				if err != nil {
 					log.Error("Cannot marshall binary", err)
 					continue
@@ -120,18 +117,12 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 		}
 	}
 
-	fmt.Println("tx.Chain = ", tx.Chain)
-
 	// 2. Check if this is a tx sent to one of our contracts.
 	if ethTx.To() != nil &&
 		p.keeper.IsContractExistedAtAddress(ctx, tx.Chain, ethTx.To().String()) && // TODO: Use keeper instead
 		len(ethTx.Data()) >= 4 {
 
-		log.Verbose("ethTx.To() = ", ethTx.To())
-
 		responseTx, err := p.createErc20ContractResponse(ctx, ethTx, tx.Chain)
-
-		fmt.Println("ResponseTx")
 
 		if err == nil {
 			outMsg := types.NewMsgTxOutWithSigner(

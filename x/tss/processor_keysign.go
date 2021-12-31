@@ -1,8 +1,6 @@
 package tss
 
 import (
-	"fmt"
-
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	htypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/lib/log"
@@ -56,7 +54,7 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 			HashNoSig:   result.Request.OutHash,
 		})
 
-		fmt.Println("BBBBBB signedTx.Hash().String() = ", signedTx.Hash().String())
+		log.Info("signedTx hash = ", signedTx.Hash().String())
 
 		// If this is a contract deployment transaction, update the contract table with the hash of the
 		// deployment tx bytes.

@@ -1,8 +1,6 @@
 package tss
 
 import (
-	"fmt"
-
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	dhtypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/lib/log"
@@ -44,7 +42,7 @@ func (p *Processor) checkKeygenResult(ctx sdk.Context, signerMsg *types.KeygenRe
 	if signerMsg.Data.Result == types.KeygenResult_SUCCESS {
 		// Check if we have this data in our private db.
 		if !p.privateDb.IsKeygenResultSuccess(signerMsg, p.appKeys.GetSignerAddress().String()) {
-			fmt.Println("Value does not match, data = ", signerMsg.Keygen.KeyType, int(signerMsg.Keygen.Index), signerMsg.Data.From)
+			log.Verbosef("Value does not match, data = %s %d %s", signerMsg.Keygen.KeyType, int(signerMsg.Keygen.Index), signerMsg.Data.From)
 			return ErrValueDoesNotMatch
 		}
 

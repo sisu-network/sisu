@@ -1,8 +1,6 @@
 package tss
 
 import (
-	"fmt"
-
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
@@ -28,13 +26,11 @@ func (p *Processor) deliverTxOutConfirm(ctx sdk.Context, msgWithSigner *types.Tx
 		return nil, nil
 	}
 
-	log.Info("Delivering TxOutConfirm")
+	log.Info("Delivering TxOutConfirm, msg.TxType = ", msg.TxType)
 
 	// Save this to keeper and private db
 	p.keeper.SaveTxOutConfirm(ctx, msg)
 	p.privateDb.SaveTxOutConfirm(msg)
-
-	fmt.Println("msg.TxType = ", msg.TxType)
 
 	// If this is a contract deployment, update the address for the contract.
 	if msg.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {

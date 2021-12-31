@@ -66,7 +66,7 @@ func (p *DefaultTxOutputProducer) createErc20ContractResponse(ctx sdk.Context, e
 				return nil, fmt.Errorf("cannot find erc20 contract for toChain %s", toChain)
 			}
 
-			fmt.Println("toChainContract.Address = ", toChainContract.Address)
+			log.Info("toChainContract.Address = ", toChainContract.Address)
 
 			assetId := fromChain + "__" + (params[0].(ethcommon.Address)).Hex()
 			recipient := params[2].(string)

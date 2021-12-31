@@ -148,9 +148,6 @@ func getAllKeygenPubkeys(store cstypes.KVStore) map[string][]byte {
 ///// Keygen Result
 
 func saveKeygenResult(store cstypes.KVStore, signerMsg *types.KeygenResultWithSigner) {
-	fmt.Println("AAAA Saving keygen result, data = ", signerMsg.Keygen.KeyType, int(signerMsg.Keygen.Index), signerMsg.Data.From)
-	fmt.Println("Result = ", signerMsg.Data.Result)
-
 	key := getKeygenResultKey(signerMsg.Keygen.KeyType, int(signerMsg.Keygen.Index), signerMsg.Data.From)
 
 	bz, err := signerMsg.Data.Marshal()
@@ -180,8 +177,6 @@ func isKeygenResultSuccess(store cstypes.KVStore, signerMsg *types.KeygenResultW
 			continue
 		}
 		count += 1
-
-		fmt.Println("isKeygenResultSuccess Result = ", msg.Result)
 
 		if msg.Result == types.KeygenResult_SUCCESS {
 			return true
