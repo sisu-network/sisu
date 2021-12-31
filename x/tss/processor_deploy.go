@@ -13,7 +13,7 @@ import (
 // deploySignedTx creates a deployment request and sends it to deyes.
 func (p *Processor) deploySignedTx(bz []byte, keysignResult *htypes.KeysignResult, isContractDeployment bool) error {
 	request := keysignResult.Request
-	log.Debug("Sending final tx to the deyes for deployment for chain", request.OutChain)
+	log.Debug("Sending final tx to the deyes for deployment for chain ", request.OutChain)
 	deyeClient := p.deyesClients[request.OutChain]
 
 	pubkey := p.privateDb.GetKeygenPubkey(libchain.GetKeyTypeForChain(request.OutChain))

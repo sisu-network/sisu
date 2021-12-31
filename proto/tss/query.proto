@@ -4,7 +4,8 @@ package types;
 
 import "proto/tss/contract.proto";
 
-service Query {
+
+service TssQuery {
   rpc AllPubKeys(QueryAllPubKeysRequest) returns (QueryAllPubKeysResponse) {
   }
 
