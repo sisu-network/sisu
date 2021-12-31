@@ -8,44 +8,19 @@ import (
 
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/x/tss/types"
-	tssTypes "github.com/sisu-network/sisu/x/tss/types"
 
 	etypes "github.com/ethereum/go-ethereum/core/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 )
 
-// Produces response for an observed tx. This has to be deterministic based on all the data that
-// the processor has.
-func (p *Processor) createAndBroadcastTxOuts(ctx sdk.Context, tx *types.ObservedTx) []*tssTypes.TxOut {
-	outMsgs, outEntities := p.txOutputProducer.GetTxOuts(ctx, p.currentHeight.Load().(int64), tx)
-
-	// Save this to database
-	log.Verbose("len(outEntities) = ", len(outEntities))
-	if len(outEntities) > 0 {
-		for _, outEntity := range outEntities {
-			outEntity.Status = string(tssTypes.TxOutStatusPreBroadcast)
-			log.Verbose("Inserting into db, tx hash = ", outEntity.HashWithoutSig)
-		}
-		p.db.InsertTxOuts(outEntities)
-	}
-
-	for _, msg := range outMsgs {
-		go func(m *tssTypes.TxOut) {
-			if err := p.txSubmit.SubmitMessage(m); err != nil {
-				return
-			}
-
-			p.db.UpdateTxOutStatus(m.OutChain, m.GetHash(), tssTypes.TxOutStatusBroadcasted, false)
-		}(msg)
-	}
-
-	return outMsgs
-}
-
 // checkTxOut checks if a TxOut message is valid before it is added into Sisu block.
-func (p *Processor) checkTxOut(ctx sdk.Context, msg *types.TxOut) error {
-	if p.keeper.IsTxOutExisted(ctx, msg) {
+func (p *Processor) checkTxOut(ctx sdk.Context, msg *types.TxOutWithSigner) error {
+	if !p.privateDb.IsTxOutExisted(msg.Data) {
+		return ErrCannotFindMessage
+	}
+
+	if p.keeper.IsTxOutExisted(ctx, msg.Data) {
 		return ErrMessageHasBeenProcessed
 	}
 
@@ -54,21 +29,27 @@ func (p *Processor) checkTxOut(ctx sdk.Context, msg *types.TxOut) error {
 
 // deliverTxOut executes a TxOut transaction after it's included in Sisu block. If this node is
 // catching up with the network, we would not send the tx to TSS for signing.
-func (p *Processor) deliverTxOut(ctx sdk.Context, tx *types.TxOut) ([]byte, error) {
-	if p.keeper.IsTxOutExisted(ctx, tx) {
+func (p *Processor) deliverTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWithSigner) ([]byte, error) {
+	txOut := msgWithSigner.Data
+
+	if p.keeper.IsTxOutExisted(ctx, txOut) {
+		// The message has been processed
 		return nil, nil
 	}
 
-	p.keeper.SaveTxOut(ctx, tx)
+	log.Info("Delivering TxOut")
 
+	// Save this to KVStore
+	p.keeper.SaveTxOut(ctx, txOut)
+	p.privateDb.SaveTxOut(txOut)
+
+	// If this is a txout deployment,
+
+	// Do key signing if this node is not catching up.
 	if !p.globalData.IsCatchingUp() {
 		// Only Deliver TxOut if the chain has been up to date.
-		if libchain.IsETHBasedChain(tx.OutChain) {
-			if err := p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusPreSigning, false); err != nil {
-				return nil, err
-			}
-
-			return p.signTx(ctx, tx)
+		if libchain.IsETHBasedChain(txOut.OutChain) {
+			p.signTx(ctx, txOut)
 		}
 	}
 
@@ -76,51 +57,41 @@ func (p *Processor) deliverTxOut(ctx sdk.Context, tx *types.TxOut) ([]byte, erro
 }
 
 // signTx sends a TxOut to dheart for TSS signing.
-func (p *Processor) signTx(ctx sdk.Context, tx *types.TxOut) ([]byte, error) {
-	outHash := tx.GetHash()
-
-	log.Verbose("Delivering TXOUT for chain", tx.OutChain, " tx hash = ", tx.GetHash())
+func (p *Processor) signTx(ctx sdk.Context, tx *types.TxOut) {
+	log.Info("Delivering TXOUT for chain", tx.OutChain, " tx hash = ", tx.OutHash)
+	if tx.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
+		log.Info("This TxOut is a contract deployment")
+	}
 
 	ethTx := &etypes.Transaction{}
 	if err := ethTx.UnmarshalBinary(tx.OutBytes); err != nil {
 		log.Error("cannot unmarshal tx, err =", err)
-		return nil, err
 	}
 
 	signer := libchain.GetEthChainSigner(tx.OutChain)
 	if signer == nil {
 		err := fmt.Errorf("cannot find signer for chain %s", tx.OutChain)
 		log.Error(err)
-		return nil, err
 	}
 
 	hash := signer.Hash(ethTx)
 
 	// 4. Send it to Dheart for signing.
 	keysignReq := &hTypes.KeysignRequest{
-		Id:             p.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), outHash),
-		OutChain:       tx.OutChain,
-		OutBlockHeight: p.currentHeight.Load().(int64),
-		OutHash:        outHash,
-		BytesToSign:    hash[:],
+		Id:          p.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), tx.OutHash),
+		InChain:     tx.InChain,
+		OutChain:    tx.OutChain,
+		OutHash:     tx.OutHash,
+		BytesToSign: hash[:],
 	}
 
 	pubKeys := p.partyManager.GetActivePartyPubkeys()
-	if err := p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusSigning, false); err != nil {
-		log.Error(err)
-		return nil, err
-	}
 
 	err := p.dheartClient.KeySign(keysignReq, pubKeys)
+
 	if err != nil {
 		log.Error("Keysign: err =", err)
-		_ = p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusSignFailed, false)
-		return nil, err
 	}
-
-	_ = p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusSigned, false)
-
-	return nil, nil
 }
 
 func (p *Processor) getKeysignRequestId(chain string, blockHeight int64, txHash string) string {
