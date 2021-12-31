@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	sdk "github.com/sisu-network/cosmos-sdk/types"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 
 	"github.com/sisu-network/cosmos-sdk/store"
@@ -81,6 +82,7 @@ func TestKeeper_SaveAndGetTxOut(t *testing.T) {
 		Data: &types.TxOut{
 			InChain:       "eth",
 			OutChain:      "bitcoin",
+			OutHash:       utils.RandomHeximalString(32),
 			InBlockHeight: 1,
 			OutBytes:      []byte("Hash"),
 		},
@@ -93,15 +95,12 @@ func TestKeeper_SaveAndGetTxOut(t *testing.T) {
 	other := *txOutWithSigner.Data
 	require.Equal(t, true, keeper.IsTxOutExisted(ctx, txOutWithSigner.Data))
 
-	// Any chain in InChain, OutChain, BlockHeight, OutBytes would not retrieve the txOut.
-	other.InChain = "sisu"
-	require.Equal(t, false, keeper.IsTxOutExisted(ctx, &other))
-
+	// Any chain in OutChain, BlockHeight, OutBytes would not retrieve the txOut.
 	other = *txOutWithSigner.Data
 	other.OutChain = "sisu"
 	require.Equal(t, false, keeper.IsTxOutExisted(ctx, &other))
 
 	other = *txOutWithSigner.Data
-	other.OutBytes = []byte("other")
+	other.OutHash = utils.RandomHeximalString(48)
 	require.Equal(t, false, keeper.IsTxOutExisted(ctx, &other))
 }

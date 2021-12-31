@@ -81,6 +81,8 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 
 	fmt.Println("AAAAAAAA 222222 contractAddress = ", contractAddress)
 
+	fmt.Println("txOut = ", contractAddress)
+
 	confirmMsg := types.NewTxOutConfirmWithSigner(
 		p.appKeys.GetSignerAddress().String(),
 		txOut.TxType,
@@ -98,7 +100,7 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 	fmt.Println("AAAAAAA 44444444")
 
 	go func() {
-		fmt.Println("Submitting confirm msg.....")
+		fmt.Println("p.txSubmit = ", p.txSubmit)
 		p.txSubmit.SubmitMessage(confirmMsg)
 	}()
 

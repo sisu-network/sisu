@@ -45,6 +45,7 @@ type QElementPair struct {
 	index int64
 }
 
+// mockgen -source common/tx_submitter.go -destination=tests/mock/common/tx_submitter.go -package=mock
 type TxSubmit interface {
 	SubmitMessage(msg sdk.Msg) error
 }
