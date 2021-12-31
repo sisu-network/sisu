@@ -60,7 +60,7 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 
 		// If this is a contract deployment transaction, update the contract table with the hash of the
 		// deployment tx bytes.
-		isContractDeployment := chain.IsETHBasedChain(request.OutChain) && p.db.IsContractDeployTx(request.OutChain, request.OutHash)
+		isContractDeployment := chain.IsETHBasedChain(request.OutChain) && txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT
 		err = p.deploySignedTx(bz, result, isContractDeployment)
 		if err != nil {
 			log.Error("deployment error: ", err)

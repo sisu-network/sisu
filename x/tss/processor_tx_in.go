@@ -100,7 +100,6 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 	fmt.Println("AAAAAAA 44444444")
 
 	go func() {
-		fmt.Println("p.txSubmit = ", p.txSubmit)
 		p.txSubmit.SubmitMessage(confirmMsg)
 	}()
 
