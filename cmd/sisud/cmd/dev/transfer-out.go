@@ -57,10 +57,7 @@ transfer-out erc20 ganache1 7545 0xf0D676183dD5ae6b370adDdbE770235F23546f9d gana
 					panic(fmt.Errorf("cannot find contract"))
 				}
 
-				// fmt.Println("Contract is not nil, contract hash = ", contract.Hash, contract.Address)
-				contract.Address = "0x9d64dc6c7c9e6df3c08b345be8859ead38154b9f"
-
-				// return nil
+				log.Infof("contract hash & address = %s %s", contract.Hash, contract.Address)
 
 				gatewayAddress := common.HexToAddress(contract.Address)
 				gateway, err := erc20Gateway.NewErc20gateway(gatewayAddress, client)
@@ -123,7 +120,7 @@ func queryContract(cmd *cobra.Command, chain string, hash string) *types.Contrac
 		panic(err)
 	}
 
-	queryClient := types.NewQueryClient(grpcConn)
+	queryClient := types.NewTssQueryClient(grpcConn)
 	req := &types.QueryContractRequest{
 		Chain: chain,
 		Hash:  hash,

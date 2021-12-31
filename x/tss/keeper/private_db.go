@@ -294,6 +294,7 @@ func (db *defaultPrivateDb) PrintStore(name string) {
 
 func (db *defaultPrivateDb) PrintStoreKeys(name string) {
 	log.Info("======== DEBUGGING PrintStoreKeys")
+	log.Info("Printing ALL values in store ", name)
 	store := db.getStoreFromName(name)
 	if store != nil {
 		printStoreKeys(store)

@@ -3,7 +3,7 @@ package types;
 
 // Query defines the gRPC querier service.
 service Query {
-    // this line is used by starport scaffolding # 2
+
 }
 
 // this line is used by starport scaffolding # 3
