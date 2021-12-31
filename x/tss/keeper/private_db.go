@@ -58,6 +58,10 @@ type PrivateDb interface {
 	// TxOutConfirm
 	SaveTxOutConfirm(msg *types.TxOutConfirm)
 	IsTxOutConfirmExisted(outChain, hash string) bool
+
+	// Mempool Tx (only for private db)
+	SaveMempoolTx(hash string)
+	IsMempoolTxExisted(hash string) bool
 }
 
 type defaultPrivateDb struct {
@@ -101,6 +105,8 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes[string(prefixTxOut)] = prefix.NewStore(parent, prefixTxOut)
 	// prefixTxOutConfirm
 	prefixes[string(prefixTxOutConfirm)] = prefix.NewStore(parent, prefixTxOutConfirm)
+	// prefixMempoolTx
+	prefixes[string(prefixMempoolTx)] = prefix.NewStore(parent, prefixMempoolTx)
 
 	return prefixes
 }
@@ -259,6 +265,18 @@ func (db *defaultPrivateDb) SaveTxOutConfirm(msg *types.TxOutConfirm) {
 func (db *defaultPrivateDb) IsTxOutConfirmExisted(chain, hash string) bool {
 	store := db.prefixes[string(prefixTxOutConfirm)]
 	return isTxOutConfirmExisted(store, chain, hash)
+}
+
+///// MempoolTx
+
+func (db *defaultPrivateDb) SaveMempoolTx(hash string) {
+	store := db.prefixes[string(prefixMempoolTx)]
+	store.Set([]byte(hash), []byte(""))
+}
+
+func (db *defaultPrivateDb) IsMempoolTxExisted(hash string) bool {
+	store := db.prefixes[string(prefixMempoolTx)]
+	return store.Has([]byte(hash))
 }
 
 ///// Debug

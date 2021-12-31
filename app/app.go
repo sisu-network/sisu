@@ -8,7 +8,6 @@ import (
 
 	"github.com/sisu-network/cosmos-sdk/client"
 	"github.com/sisu-network/cosmos-sdk/codec/types"
-	"github.com/sisu-network/sisu/db"
 	"github.com/spf13/cast"
 
 	"github.com/sisu-network/lib/log"
@@ -214,7 +213,6 @@ type App struct {
 	ScopedIBCKeeper      capabilitykeeper.ScopedKeeper
 	ScopedTransferKeeper capabilitykeeper.ScopedKeeper
 
-	db         db.Database
 	sisuKeeper sisukeeper.Keeper
 	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
 
@@ -273,12 +271,6 @@ func New(
 	////////////// Sisu related keeper //////////////
 
 	cfg, err := config.ReadConfig()
-	if err != nil {
-		panic(err)
-	}
-
-	app.db = db.NewDatabase(cfg.Sisu.Sql)
-	err = app.db.Init()
 	if err != nil {
 		panic(err)
 	}
@@ -350,7 +342,7 @@ func New(
 		panic(err)
 	}
 	privateDataDir := filepath.Join(cfg.Sisu.Dir, "data")
-	tssProcessor := tss.NewProcessor(app.tssKeeper, tssConfig, nodeKey.PrivKey, app.appKeys, app.db, privateDataDir, app.txDecoder, app.txSubmitter, app.globalData)
+	tssProcessor := tss.NewProcessor(app.tssKeeper, tssConfig, nodeKey.PrivKey, app.appKeys, privateDataDir, app.txDecoder, app.txSubmitter, app.globalData)
 	if tssConfig.Enable {
 		log.Info("TSS is enabled")
 		tssProcessor.Init()

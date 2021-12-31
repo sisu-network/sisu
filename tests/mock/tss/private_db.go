@@ -186,6 +186,20 @@ func (mr *MockPrivateDbMockRecorder) IsKeygenResultSuccess(signerMsg, self inter
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsKeygenResultSuccess", reflect.TypeOf((*MockPrivateDb)(nil).IsKeygenResultSuccess), signerMsg, self)
 }
 
+// IsMempoolTxExisted mocks base method.
+func (m *MockPrivateDb) IsMempoolTxExisted(hash string) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsMempoolTxExisted", hash)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsMempoolTxExisted indicates an expected call of IsMempoolTxExisted.
+func (mr *MockPrivateDbMockRecorder) IsMempoolTxExisted(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsMempoolTxExisted", reflect.TypeOf((*MockPrivateDb)(nil).IsMempoolTxExisted), hash)
+}
+
 // IsTxInExisted mocks base method.
 func (m *MockPrivateDb) IsTxInExisted(msg *types.TxIn) bool {
 	m.ctrl.T.Helper()
@@ -298,6 +312,18 @@ func (m *MockPrivateDb) SaveKeygenResult(signerMsg *types.KeygenResultWithSigner
 func (mr *MockPrivateDbMockRecorder) SaveKeygenResult(signerMsg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveKeygenResult", reflect.TypeOf((*MockPrivateDb)(nil).SaveKeygenResult), signerMsg)
+}
+
+// SaveMempoolTx mocks base method.
+func (m *MockPrivateDb) SaveMempoolTx(hash string) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SaveMempoolTx", hash)
+}
+
+// SaveMempoolTx indicates an expected call of SaveMempoolTx.
+func (mr *MockPrivateDbMockRecorder) SaveMempoolTx(hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveMempoolTx", reflect.TypeOf((*MockPrivateDb)(nil).SaveMempoolTx), hash)
 }
 
 // SaveTxIn mocks base method.

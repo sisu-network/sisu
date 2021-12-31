@@ -13,7 +13,6 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/db"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/keeper"
 	"github.com/sisu-network/sisu/x/tss/tssclients"
@@ -59,7 +58,6 @@ type Processor struct {
 	keygenVoteResult map[string]map[string]bool
 	keygenBlockPairs []BlockSymbolPair
 
-	db        db.Database
 	privateDb keeper.PrivateDb
 }
 
@@ -67,7 +65,6 @@ func NewProcessor(k keeper.DefaultKeeper,
 	config config.TssConfig,
 	tendermintPrivKey crypto.PrivKey,
 	appKeys *common.DefaultAppKeys,
-	db db.Database,
 	dataDir string,
 	txDecoder sdk.TxDecoder,
 	txSubmit common.TxSubmit,
@@ -75,7 +72,6 @@ func NewProcessor(k keeper.DefaultKeeper,
 ) *Processor {
 	p := &Processor{
 		keeper:            &k,
-		db:                db,
 		privateDb:         keeper.NewPrivateDb(dataDir),
 		txDecoder:         txDecoder,
 		appKeys:           appKeys,
@@ -326,7 +322,8 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 }
 
 func (p *Processor) checkAndInsertMempoolTx(hash, msgType string) error {
-	if p.db.MempoolTxExisted(hash) {
+	// if p.db.MempoolTxExisted(hash) {
+	if p.privateDb.IsMempoolTxExisted(hash) {
 		err := fmt.Errorf("%s has been added into the mempool! hash = %s", msgType, hash)
 		log.Verbose(err)
 
@@ -334,7 +331,7 @@ func (p *Processor) checkAndInsertMempoolTx(hash, msgType string) error {
 	}
 
 	log.Verbose("Inserting ", msgType, " into the mempool table, hash = ", hash)
-	p.db.InsertMempoolTxHash(hash, p.currentHeight.Load().(int64))
+	p.privateDb.SaveMempoolTx(hash)
 
 	return nil
 }

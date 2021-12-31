@@ -11,8 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sisu-network/dcore/accounts"
-	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/db"
 	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
 )
 
@@ -80,20 +78,4 @@ func getAuthTransactor(client *ethclient.Client, address common.Address) (*bind.
 	auth.GasLimit = uint64(3000000)
 
 	return auth, nil
-}
-
-func getDatabase() db.Database {
-	// Get db config
-	cfg, err := config.ReadConfig()
-	if err != nil {
-		panic(err)
-	}
-
-	database := db.NewDatabase(cfg.Sisu.Sql)
-	err = database.Init()
-	if err != nil {
-		panic(err)
-	}
-
-	return database
 }

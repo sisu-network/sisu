@@ -20,6 +20,7 @@ var (
 	prefixTxOut            = []byte{0x07}
 	prefixTxOutSig         = []byte{0x07}
 	prefixTxOutConfirm     = []byte{0x08}
+	prefixMempoolTx        = []byte{0x09}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
