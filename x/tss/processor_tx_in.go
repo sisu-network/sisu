@@ -1,8 +1,6 @@
 package tss
 
 import (
-	"fmt"
-
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
@@ -56,7 +54,6 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 	log.Verbose("This is a transaction from us. We need to confirm it. Chain = ", chain)
 
 	p.privateDb.PrintStoreKeys("txOut")
-	fmt.Println("AAAAAAA 111111, chain = ", chain, " txhash = ", tx.Hash)
 	txOut := p.privateDb.GetTxOutFromSigHash(chain, tx.Hash)
 	if txOut == nil {
 		// TODO: Add unconfirmed tx model
@@ -64,7 +61,7 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 		return nil
 	}
 
-	fmt.Println("AAAAAAA 22222222, txOut.TxType = ", txOut.TxType)
+	log.Info("confirming tx: chain, hash, type = ", chain, tx.Hash, txOut.TxType)
 
 	contractAddress := ""
 	if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT && libchain.IsETHBasedChain(chain) {
@@ -75,13 +72,9 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 			return err
 		}
 
-		fmt.Println("tx.From = ", tx.From, ethTx.Nonce())
 		contractAddress = crypto.CreateAddress(common.HexToAddress(tx.From), ethTx.Nonce()).String()
+		log.Info("contractAddress = ", contractAddress)
 	}
-
-	fmt.Println("AAAAAAAA 222222 contractAddress = ", contractAddress)
-
-	fmt.Println("txOut = ", contractAddress)
 
 	confirmMsg := types.NewTxOutConfirmWithSigner(
 		p.appKeys.GetSignerAddress().String(),
@@ -92,12 +85,8 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 		contractAddress,
 	)
 
-	fmt.Println("AAAAAAA 33333333")
-
 	// Save this into db
 	p.privateDb.SaveTxOutConfirm(confirmMsg.Data)
-
-	fmt.Println("AAAAAAA 44444444")
 
 	go func() {
 		p.txSubmit.SubmitMessage(confirmMsg)
