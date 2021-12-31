@@ -86,17 +86,12 @@ func (p *Processor) signTx(ctx sdk.Context, tx *types.TxOut) {
 	}
 
 	pubKeys := p.partyManager.GetActivePartyPubkeys()
-	// if err := p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusSigning, false); err != nil {
-	// 	log.Error(err)
-	// }
 
 	err := p.dheartClient.KeySign(keysignReq, pubKeys)
 
 	if err != nil {
 		log.Error("Keysign: err =", err)
-		// _ = p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusSignFailed, false)
 	}
-	// _ = p.db.UpdateTxOutStatus(tx.OutChain, tx.GetHash(), tssTypes.TxOutStatusSigned, false)
 }
 
 func (p *Processor) getKeysignRequestId(chain string, blockHeight int64, txHash string) string {

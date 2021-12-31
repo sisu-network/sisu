@@ -76,10 +76,8 @@ func (p *Processor) deliverKeygen(ctx sdk.Context, wrapper *types.KeygenWithSign
 
 	log.Info("Delivering keygen....")
 
-	// Save this into Keeper.
+	// Save this into Keeper && private db.
 	p.keeper.SaveKeygen(ctx, msg)
-
-	// Save this in our private db.
 	p.privateDb.SaveKeygen(msg)
 
 	if p.globalData.IsCatchingUp() {

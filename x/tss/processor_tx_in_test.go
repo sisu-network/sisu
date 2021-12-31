@@ -4,16 +4,16 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/sisu-network/cosmos-sdk/crypto/keys/ed25519"
-	sdk "github.com/sisu-network/cosmos-sdk/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
+	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/tests/mock"
+	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 	"github.com/stretchr/testify/require"
 )
 
-func TestProcessor_OnObservedTxs(t *testing.T) {
+func TestProcessor_OnTxIns(t *testing.T) {
 	t.Parallel()
 
 	t.Run("empty_tx", func(t *testing.T) {
@@ -34,12 +34,21 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 		observedChain := "eth"
 		keygenAddress := utils.RandomHeximalString(64)
 
-		// Define mock db
-		mockDb := mock.NewMockDatabase(ctrl)
-		mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(true).MinTimes(1)
-		mockDb.EXPECT().UpdateTxOutStatus(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).MinTimes(1)
-		mockDb.EXPECT().GetTxOutWithHash(gomock.Any(), gomock.Any(), gomock.Any()).Return(
-			&types.TxOut{}).MinTimes(1)
+		mockPrivateDb := mocktss.NewMockPrivateDb(ctrl)
+		mockPrivateDb.EXPECT().IsKeygenAddress(libchain.KEY_TYPE_ECDSA, keygenAddress).Return(true).Times(1)
+		mockPrivateDb.EXPECT().PrintStoreKeys(gomock.Any())
+		mockPrivateDb.EXPECT().GetTxOutFromSigHash(observedChain, gomock.Any()).Return(&types.TxOut{
+			TxType:   types.TxOutType_NORMAL, // non-deployment tx
+			OutChain: "eth2",
+			OutHash:  utils.RandomHeximalString(32),
+		}).Times(1)
+		mockPrivateDb.EXPECT().SaveTxOutConfirm(gomock.Any()).Times(1)
+
+		done := make(chan bool)
+		mockTxSubmit := mock.NewMockTxSubmit(ctrl)
+		mockTxSubmit.EXPECT().SubmitMessage(gomock.Any()).Return(nil).Do(func(id interface{}) {
+			done <- true
+		}).Times(1)
 
 		txs := &eyesTypes.Txs{
 			Chain: observedChain,
@@ -50,10 +59,17 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 				From:       keygenAddress,
 			}},
 		}
-		processor := &Processor{}
-		processor.db = mockDb
+		processor := &Processor{
+			privateDb: mockPrivateDb,
+			appKeys:   getMockAppKey(ctrl),
+			txSubmit:  mockTxSubmit,
+		}
 
-		require.NoError(t, processor.OnTxIns(txs))
+		err := processor.OnTxIns(txs)
+
+		<-done
+
+		require.NoError(t, err)
 	})
 
 	t.Run("success_to_our_key", func(t *testing.T) {
@@ -64,20 +80,19 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 			ctrl.Finish()
 		})
 
-		txSubmitterMock := mock.NewMockTxSubmit(ctrl)
-		txSubmitterMock.EXPECT().SubmitMessage(gomock.Any()).Return(nil).AnyTimes()
-
-		priv := ed25519.GenPrivKey()
-		addr := sdk.AccAddress(priv.PubKey().Address())
-		appKeysMock := mock.NewMockAppKeys(ctrl)
-		appKeysMock.EXPECT().GetSignerAddress().Return(addr).MinTimes(1)
+		done := make(chan bool)
+		mockTxSubmit := mock.NewMockTxSubmit(ctrl)
+		mockTxSubmit.EXPECT().SubmitMessage(gomock.Any()).Return(nil).Do(func(id interface{}) {
+			done <- true
+		}).Times(1)
 
 		observedChain := "eth"
-		mockDb := mock.NewMockDatabase(ctrl)
-		mockDb.EXPECT().IsChainKeyAddress(gomock.Any(), gomock.Any()).Return(false).MinTimes(1)
-		mockDb.EXPECT().UpdateTxOutStatus(observedChain, gomock.Any(), types.TxOutStatusPreBroadcast, gomock.Any()).Return(nil).AnyTimes()
-		mockDb.EXPECT().InsertTxIn(gomock.Any()).Return(nil).MinTimes(1)
-		keygenAddress := utils.RandomHeximalString(64)
+		toAddress := utils.RandomHeximalString(64)
+		fromAddres := utils.RandomHeximalString(64)
+
+		mockPrivateDb := mocktss.NewMockPrivateDb(ctrl)
+		mockPrivateDb.EXPECT().IsKeygenAddress(libchain.KEY_TYPE_ECDSA, fromAddres).Return(false).Times(1)
+		mockPrivateDb.EXPECT().SaveTxIn(gomock.Any()).Times(1)
 
 		txs := &eyesTypes.Txs{
 			Chain: observedChain,
@@ -85,18 +100,21 @@ func TestProcessor_OnObservedTxs(t *testing.T) {
 			Arr: []*eyesTypes.Tx{{
 				Hash:       utils.RandomHeximalString(64),
 				Serialized: []byte{},
-				To:         keygenAddress,
-				From:       utils.RandomHeximalString(64),
+				To:         toAddress,
+				From:       fromAddres,
 			}},
 		}
 
 		// Init processor with mocks
 		processor := &Processor{
-			db:       mockDb,
-			appKeys:  appKeysMock,
-			txSubmit: txSubmitterMock,
+			privateDb: mockPrivateDb,
+			appKeys:   getMockAppKey(ctrl),
+			txSubmit:  mockTxSubmit,
 		}
 
-		require.NoError(t, processor.OnTxIns(txs))
+		err := processor.OnTxIns(txs)
+		<-done
+
+		require.NoError(t, err)
 	})
 }
