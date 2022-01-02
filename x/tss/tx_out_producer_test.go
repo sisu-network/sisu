@@ -46,8 +46,8 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 	tx := txOutProducer.getContractTx(contractEntity, 100)
 	require.NotNil(t, tx)
 	require.EqualValues(t, 100, tx.Nonce())
-	require.EqualValues(t, *big.NewInt(10000000000), *tx.GasPrice())
-	require.EqualValues(t, *big.NewInt(10000000000), *tx.GasFeeCap())
+	require.EqualValues(t, *big.NewInt(400000000000), *tx.GasPrice())
+	require.EqualValues(t, *big.NewInt(400000000000), *tx.GasFeeCap())
 }
 
 func TestTxOutProducer_getEthResponse(t *testing.T) {
