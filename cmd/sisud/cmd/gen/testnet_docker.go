@@ -243,13 +243,6 @@ func (exe *TestnetDockerExecutor) getNodeSettings(chainID, keyringBackend string
 			KeyringBackend: keyringBackend,
 			ApiHost:        "0.0.0.0",
 			ApiPort:        25456,
-			Sql: config.SqlConfig{
-				Host:     "mysql",
-				Port:     3306,
-				Username: "root",
-				Password: "password",
-				Schema:   fmt.Sprintf("sisu%d", index),
-			},
 		},
 		Tss: config.TssConfig{
 			Enable: true,
@@ -450,17 +443,9 @@ use-on-memory = false
 shortcut-preparams = true
 sisu-server-url = "{{ .SisuServerUrl }}"
 port = 5678
-
 ###############################################################################
 ###                        Database Configuration                           ###
 ###############################################################################
-[db]
-  host = "{{ .SqlHost }}"
-  port = 3306
-  username = "root"
-  password = "password"
-  schema = "{{ .Schema }}"
-  migration-path = "file://db/migrations/"
 [connection]
   host = "0.0.0.0"
   port = 28300
