@@ -3,7 +3,10 @@ package tss
 import (
 	"testing"
 
+	sdk "github.com/sisu-network/cosmos-sdk/types"
+
 	"github.com/golang/mock/gomock"
+	"github.com/sisu-network/cosmos-sdk/crypto/keys/ed25519"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/tests/mock"
@@ -44,6 +47,11 @@ func TestProcessor_OnTxIns(t *testing.T) {
 		}).Times(1)
 		mockPrivateDb.EXPECT().SaveTxOutConfirm(gomock.Any()).Times(1)
 
+		priv := ed25519.GenPrivKey()
+		addr := sdk.AccAddress(priv.PubKey().Address())
+		appKeysMock := mock.NewMockAppKeys(ctrl)
+		appKeysMock.EXPECT().GetSignerAddress().Return(addr).MinTimes(1)
+
 		done := make(chan bool)
 		mockTxSubmit := mock.NewMockTxSubmit(ctrl)
 		mockTxSubmit.EXPECT().SubmitMessage(gomock.Any()).Return(nil).Do(func(id interface{}) {
@@ -61,7 +69,7 @@ func TestProcessor_OnTxIns(t *testing.T) {
 		}
 		processor := &Processor{
 			privateDb: mockPrivateDb,
-			appKeys:   getMockAppKey(ctrl),
+			appKeys:   appKeysMock,
 			txSubmit:  mockTxSubmit,
 		}
 
@@ -94,6 +102,11 @@ func TestProcessor_OnTxIns(t *testing.T) {
 		mockPrivateDb.EXPECT().IsKeygenAddress(libchain.KEY_TYPE_ECDSA, fromAddres).Return(false).Times(1)
 		mockPrivateDb.EXPECT().SaveTxIn(gomock.Any()).Times(1)
 
+		priv := ed25519.GenPrivKey()
+		addr := sdk.AccAddress(priv.PubKey().Address())
+		appKeysMock := mock.NewMockAppKeys(ctrl)
+		appKeysMock.EXPECT().GetSignerAddress().Return(addr).MinTimes(1)
+
 		txs := &eyesTypes.Txs{
 			Chain: observedChain,
 			Block: int64(utils.RandomNaturalNumber(1000)),
@@ -108,7 +121,7 @@ func TestProcessor_OnTxIns(t *testing.T) {
 		// Init processor with mocks
 		processor := &Processor{
 			privateDb: mockPrivateDb,
-			appKeys:   getMockAppKey(ctrl),
+			appKeys:   appKeysMock,
 			txSubmit:  mockTxSubmit,
 		}
 

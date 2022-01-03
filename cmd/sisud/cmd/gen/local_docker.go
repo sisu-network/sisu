@@ -229,13 +229,6 @@ func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, 
 			KeyringBackend: keyringBackend,
 			ApiHost:        "0.0.0.0",
 			ApiPort:        25456,
-			Sql: config.SqlConfig{
-				Host:     "mysql",
-				Port:     3306,
-				Username: "root",
-				Password: "password",
-				Schema:   fmt.Sprintf("sisu%d", index),
-			},
 		},
 		Tss: config.TssConfig{
 			Enable: true,
@@ -429,7 +422,7 @@ func generateHeartToml(index int, dir string, dockerConfig DockerNodeConfig, pee
 	}
 
 	peerString := strings.Join(peers, ", ")
-	haertConfig := struct {
+	heartConfig := struct {
 		PeerString    string
 		SisuServerUrl string
 		SqlHost       string
@@ -453,13 +446,6 @@ port = 5678
 ###############################################################################
 ###                        Database Configuration                           ###
 ###############################################################################
-[db]
-  host = "{{ .SqlHost }}"
-  port = 3306
-  username = "root"
-  password = "password"
-  schema = "{{ .Schema }}"
-	migration-path = "file://db/migrations/"
 [connection]
   host = "0.0.0.0"
   port = 28300
@@ -475,7 +461,7 @@ port = 5678
 	}
 
 	var buffer bytes.Buffer
-	err = configTemplate.Execute(&buffer, haertConfig)
+	err = configTemplate.Execute(&buffer, heartConfig)
 
 	tmos.MustWriteFile(filepath.Join(dir, "dheart.toml"), buffer.Bytes(), 0644)
 }
