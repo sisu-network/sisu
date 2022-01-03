@@ -67,7 +67,7 @@ cd ../deyes
 docker build -t deyes .
 docker build -f Dockerfile-ganache -t ganache-cli .
 cd ../sisu
-docker build -t sisu .
+DOCKER_BUILDKIT=1 docker build -t sisu --ssh default=[path_to_ssh_key] . 
 ```
 
 ## Generate data
