@@ -446,6 +446,13 @@ port = 5678
 ###############################################################################
 ###                        Database Configuration                           ###
 ###############################################################################
+[db]
+  host = "{{ .SqlHost }}"
+  port = 3306
+  username = "root"
+  password = "password"
+  schema = "{{ .Schema }}"
+	migration-path = "file://db/migrations/"
 [connection]
   host = "0.0.0.0"
   port = 28300
