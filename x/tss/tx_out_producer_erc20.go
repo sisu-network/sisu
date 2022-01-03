@@ -54,7 +54,12 @@ func (p *DefaultTxOutputProducer) processERC20TransferIn(ethTx *ethTypes.Transac
 }
 
 func (p *DefaultTxOutputProducer) callERC20TransferIn(tokenAddress, recipient ethcommon.Address, amount *big.Int, destChain string) (*types.TxResponse, error) {
-	gw, err := p.privateDb.GetLatestContractByName(destChain, ContractErc20Gateway)
+	gw := p.privateDb.GetLatestContractAddressByName(destChain, ContractErc20Gateway)
+	if len(gw) == 0 {
+		return nil, nil
+	}
+
+	gatewayAddress := ethcommon.HexToAddress(gw)
 	erc20GatewayContract := SupportedContracts[ContractErc20Gateway]
 
 	input, err := erc20GatewayContract.Abi.Pack(MethodTransferIn, tokenAddress, recipient, amount)
@@ -70,7 +75,6 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(tokenAddress, recipient et
 		return nil, err
 	}
 
-	gatewayAddress := ethcommon.HexToAddress(gw.Address)
 	log.Debugf("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, amount: %d", destChain, gatewayAddress.String(), tokenAddress, recipient, amount.Int64())
 	rawTx := ethTypes.NewTx(&ethTypes.AccessListTx{
 		Nonce:    uint64(nonce),

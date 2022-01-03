@@ -37,6 +37,8 @@ type PrivateDb interface {
 
 	UpdateContractsStatus(chain string, contractHash string, status string)
 
+	GetLatestContractAddressByName(chain, name string) string
+
 	// Contract Address
 	CreateContractAddress(chain string, txOutHash string, address string)
 	IsContractExistedAtAddress(chain string, address string) bool
@@ -166,6 +168,9 @@ func (db *defaultPrivateDb) SaveContracts(msgs []*types.Contract, saveByteCode b
 	}
 
 	saveContracts(contractStore, byteCodeStore, msgs)
+
+	contractHashStore := db.prefixes[string(prefixContractName)]
+	saveContractAddressesForName(contractHashStore, msgs)
 }
 
 func (db *defaultPrivateDb) IsContractExisted(msg *types.Contract) bool {
@@ -199,6 +204,11 @@ func (db *defaultPrivateDb) UpdateContractAddress(chain string, hash string, add
 func (db *defaultPrivateDb) UpdateContractsStatus(chain string, contractHash string, status string) {
 	contractStore := db.prefixes[string(prefixContract)]
 	updateContractsStatus(contractStore, chain, contractHash, status)
+}
+
+func (db *defaultPrivateDb) GetLatestContractAddressByName(chain, name string) string {
+	contractNameStore := db.prefixes[string(prefixContractName)]
+	return getContractAddressByName(contractNameStore, chain, name)
 }
 
 ///// Contract Address

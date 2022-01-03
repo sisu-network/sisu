@@ -21,6 +21,7 @@ var (
 	prefixTxOutSig         = []byte{0x07}
 	prefixTxOutConfirm     = []byte{0x08}
 	prefixMempoolTx        = []byte{0x09}
+	prefixContractName     = []byte{0x10}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -36,6 +37,11 @@ func getKeygenResultKey(keyType string, index int, from string) []byte {
 func getContractKey(chain string, hash string) []byte {
 	// chain + hash
 	return []byte(fmt.Sprintf("%s__%s", chain, hash))
+}
+
+func getContractNameKey(chain, name string) []byte {
+	// chain + contract name
+	return []byte(fmt.Sprintf("%s__%s", chain, name))
 }
 
 func getTxInKey(chain string, height int64, hash string) []byte {
@@ -142,6 +148,7 @@ func getAllKeygenPubkeys(store cstypes.KVStore) map[string][]byte {
 		}
 	}
 
+	log.Debug(result)
 	return result
 }
 
@@ -212,6 +219,12 @@ func saveContracts(contractStore cstypes.KVStore, byteCodeStore cstypes.KVStore,
 	}
 }
 
+func saveContractAddressesForName(contractHashStore cstypes.KVStore, msgs []*types.Contract) {
+	for _, msg := range msgs {
+		saveContractAddressForName(contractHashStore, msg)
+	}
+}
+
 func saveContract(contractStore cstypes.KVStore, byteCodeStore cstypes.KVStore, msg *types.Contract) {
 	bz, err := msg.Marshal()
 	if err != nil {
@@ -251,6 +264,11 @@ func saveContract(contractStore cstypes.KVStore, byteCodeStore cstypes.KVStore, 
 		byteCodeKey := getContractKey(msg.Chain, msg.Hash)
 		byteCodeStore.Set(byteCodeKey, msg.ByteCodes)
 	}
+}
+
+func saveContractAddressForName(contractStore cstypes.KVStore, msg *types.Contract) {
+	key := getContractNameKey(msg.Chain, msg.Name)
+	contractStore.Set(key, []byte(msg.Address))
 }
 
 func isContractExisted(contractStore cstypes.KVStore, msg *types.Contract) bool {
@@ -331,6 +349,17 @@ func getContract(contractStore cstypes.KVStore, byteCodeStore cstypes.KVStore, c
 	}
 
 	return contract
+}
+
+func getContractAddressByName(contractNameStore cstypes.KVStore, chain, name string) string {
+	key := getContractNameKey(chain, name)
+	bz := contractNameStore.Get(key)
+	if bz == nil {
+		log.Error("getContractAddressByName: serialized contract hash is nil")
+		return ""
+	}
+
+	return string(bz)
 }
 
 func updateContractAddress(contractStore cstypes.KVStore, chain string, hash string, address string) {
