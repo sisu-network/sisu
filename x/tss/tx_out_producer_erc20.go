@@ -8,11 +8,12 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
 
-func (p *DefaultTxOutputProducer) processERC20TransferIn(ethTx *ethTypes.Transaction) (*types.TxResponse, error) {
+func (p *DefaultTxOutputProducer) processERC20TransferIn(ctx sdk.Context, ethTx *ethTypes.Transaction) (*types.TxResponse, error) {
 	log.Debug("Processing ERC20 transfer In")
 	erc20GatewayContract := SupportedContracts[ContractErc20Gateway]
 	gwAbi := erc20GatewayContract.Abi
@@ -50,17 +51,20 @@ func (p *DefaultTxOutputProducer) processERC20TransferIn(ethTx *ethTypes.Transac
 		return nil, err
 	}
 
-	return p.callERC20TransferIn(tokenAddr, recipient, amount, destChain)
+	return p.callERC20TransferIn(ctx, tokenAddr, recipient, amount, destChain)
 }
 
-func (p *DefaultTxOutputProducer) callERC20TransferIn(tokenAddress, recipient ethcommon.Address, amount *big.Int, destChain string) (*types.TxResponse, error) {
-	gw := p.privateDb.GetLatestContractAddressByName(destChain, ContractErc20Gateway)
+func (p *DefaultTxOutputProducer) callERC20TransferIn(ctx sdk.Context, tokenAddress, recipient ethcommon.Address, amount *big.Int, destChain string) (*types.TxResponse, error) {
+	targetContractName := ContractErc20Gateway
+	gw := p.keeper.GetLatestContractAddressByName(ctx, destChain, targetContractName)
 	if len(gw) == 0 {
-		return nil, nil
+		err := fmt.Errorf("cannot find gw address for type: %s", targetContractName)
+		log.Error(err)
+		return nil, err
 	}
 
 	gatewayAddress := ethcommon.HexToAddress(gw)
-	erc20GatewayContract := SupportedContracts[ContractErc20Gateway]
+	erc20GatewayContract := SupportedContracts[targetContractName]
 
 	input, err := erc20GatewayContract.Abi.Pack(MethodTransferIn, tokenAddress, recipient, amount)
 	if err != nil {

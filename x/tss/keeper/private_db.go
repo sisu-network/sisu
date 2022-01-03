@@ -109,7 +109,7 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes[string(prefixTxOutConfirm)] = prefix.NewStore(parent, prefixTxOutConfirm)
 	// prefixMempoolTx
 	prefixes[string(prefixMempoolTx)] = prefix.NewStore(parent, prefixMempoolTx)
-	// prefix
+	// prefixContractName
 	prefixes[string(prefixContractName)] = prefix.NewStore(parent, prefixContractName)
 
 	return prefixes
@@ -159,6 +159,9 @@ func (db *defaultPrivateDb) SaveContract(msg *types.Contract, saveByteCode bool)
 	}
 
 	saveContract(contractStore, byteCodeStore, msg)
+
+	contractNameStore := db.prefixes[string(prefixContractName)]
+	saveContractAddressForName(contractNameStore, msg)
 }
 
 func (db *defaultPrivateDb) SaveContracts(msgs []*types.Contract, saveByteCode bool) {
@@ -171,8 +174,11 @@ func (db *defaultPrivateDb) SaveContracts(msgs []*types.Contract, saveByteCode b
 
 	saveContracts(contractStore, byteCodeStore, msgs)
 
-	contractHashStore := db.prefixes[string(prefixContractName)]
-	saveContractAddressesForName(contractHashStore, msgs)
+	// After saving contracts, also save contract address for each contract type
+	contractNameStore := db.prefixes[string(prefixContractName)]
+	for _, msg := range msgs {
+		saveContractAddressForName(contractNameStore, msg)
+	}
 }
 
 func (db *defaultPrivateDb) IsContractExisted(msg *types.Contract) bool {

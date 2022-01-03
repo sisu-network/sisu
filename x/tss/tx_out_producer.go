@@ -122,7 +122,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 		p.keeper.IsContractExistedAtAddress(ctx, tx.Chain, ethTx.To().String()) && // TODO: Use keeper instead
 		len(ethTx.Data()) >= 4 {
 
-		responseTx, err := p.processERC20TransferIn(ethTx)
+		responseTx, err := p.processERC20TransferIn(ctx, ethTx)
 
 		if err == nil {
 			outMsg := types.NewMsgTxOutWithSigner(

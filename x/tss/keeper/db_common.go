@@ -219,14 +219,6 @@ func saveContracts(contractStore cstypes.KVStore, byteCodeStore cstypes.KVStore,
 	}
 }
 
-func saveContractAddressesForName(contractHashStore cstypes.KVStore, msgs []*types.Contract) {
-	log.Debug("Saving contract addresses for name ...")
-	for _, msg := range msgs {
-		saveContractAddressForName(contractHashStore, msg)
-	}
-	log.Debug("Done saving contract address")
-}
-
 func saveContract(contractStore cstypes.KVStore, byteCodeStore cstypes.KVStore, msg *types.Contract) {
 	bz, err := msg.Marshal()
 	if err != nil {
