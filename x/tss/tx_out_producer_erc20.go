@@ -1,117 +1,119 @@
 package tss
 
 import (
-	"bytes"
-	"encoding/hex"
+	"errors"
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
-	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
 
-func (p *DefaultTxOutputProducer) createErc20ContractResponse(ctx sdk.Context, ethTx *ethTypes.Transaction, fromChain string) (*types.TxResponse, error) {
-
-	erc20Contract := SupportedContracts[ContractErc20]
-
-	payload := ethTx.Data()
-
-	abiMethods := erc20Contract.Abi.Methods
-	var methodName string
-	for name, method := range abiMethods {
-		hash := crypto.Keccak256([]byte(method.Sig))
-		if bytes.Compare(hash[:4], payload[:4]) == 0 {
-			log.Verbose("Found method: ", name, hex.EncodeToString(hash[:4]))
-			methodName = name
-			break
-		}
-	}
-
-	if methodName == "" {
-		log.Error("cannot find funcName")
-		return nil, fmt.Errorf("cannot find funcName")
-	}
-
-	log.Info("Found method name = ", methodName)
-
-	params, err := abiMethods[methodName].Inputs.Unpack(payload[4:])
+func (p *DefaultTxOutputProducer) processERC20TransferIn(ctx sdk.Context, ethTx *ethTypes.Transaction) (*types.TxResponse, error) {
+	log.Debug("Processing ERC20 transfer In")
+	erc20GatewayContract := SupportedContracts[ContractErc20Gateway]
+	gwAbi := erc20GatewayContract.Abi
+	callData := ethTx.Data()
+	txParams, err := decodeTxParams(gwAbi, callData)
 	if err != nil {
-		log.Error("cannot unpack data", err)
 		return nil, err
 	}
 
-	log.Info("params = ", params)
-
-	switch methodName {
-	case MethodTransferOutFromContract:
-		if len(params) != 4 {
-			log.Error("transferOutFromContract expects 4 params")
-			return nil, fmt.Errorf("transferOutFromContract expects 4 params")
-		}
-
-		// Creates a transferIn function in the other chain.
-		toChain := params[1].(string)
-		log.Info("toChain = ", toChain)
-
-		// TODO: Creates tx out for other chains.
-		if libchain.IsETHBasedChain(toChain) {
-			toChainContract := p.keeper.GetContract(ctx, toChain, erc20Contract.AbiHash, false)
-			if toChainContract == nil {
-				log.Error("cannot find erc20 contract for toChain %s", toChain)
-				return nil, fmt.Errorf("cannot find erc20 contract for toChain %s", toChain)
-			}
-
-			log.Info("toChainContract.Address = ", toChainContract.Address)
-
-			assetId := fromChain + "__" + (params[0].(ethcommon.Address)).Hex()
-			recipient := params[2].(string)
-			amount := params[3]
-
-			log.Info("assetId = ", assetId)
-			log.Info("recipient = ", recipient)
-			log.Info("amount = ", amount)
-
-			input, err := erc20Contract.Abi.Pack(MethodTransferIn, assetId, ethcommon.HexToAddress(recipient), amount)
-			if err != nil {
-				log.Error("cannot pack abi", err)
-				return nil, err
-			}
-
-			nonce := p.worldState.UseAndIncreaseNonce(toChain)
-			if nonce < 0 {
-				log.Error("cannot find nonce for chain %s", toChain)
-				return nil, fmt.Errorf("cannot find nonce for chain %s", toChain)
-			}
-
-			rawTx := ethTypes.NewTransaction(
-				uint64(nonce),
-				ethcommon.HexToAddress(toChainContract.Address),
-				big.NewInt(0),
-				p.getGasLimit(toChain),
-				p.getGasPrice(toChain),
-				input,
-			)
-
-			log.Verbose("ERC20 producer: rawTx hash = ", rawTx.Hash())
-
-			bz, err := rawTx.MarshalBinary()
-			if err != nil {
-				return nil, err
-			}
-
-			return &types.TxResponse{
-				OutChain: toChain,
-				EthTx:    rawTx,
-				RawBytes: bz,
-			}, nil
-		}
-
+	tokenAddr, ok := txParams["_tokenIn"].(ethcommon.Address)
+	if !ok {
+		err := fmt.Errorf("cannot convert _tokenIn to type ethcommon.Address: %v", txParams)
+		log.Error(err)
+		return nil, err
 	}
 
-	return nil, fmt.Errorf("unhandle case")
+	recipient, ok := txParams["_recipient"].(ethcommon.Address)
+	if !ok {
+		err := fmt.Errorf("cannot convert _recipient to type ethcommon.Address: %v", txParams)
+		log.Error(err)
+		return nil, err
+	}
+
+	amount, ok := txParams["_amount"].(*big.Int)
+	if !ok {
+		err := fmt.Errorf("cannot convert _amount to type *big.Int: %v", txParams)
+		log.Error(err)
+		return nil, err
+	}
+
+	destChain, ok := txParams["_destChain"].(string)
+	if !ok {
+		err := fmt.Errorf("cannot convert _destChain to type string: %v", txParams)
+		log.Error(err)
+		return nil, err
+	}
+
+	return p.callERC20TransferIn(ctx, tokenAddr, recipient, amount, destChain)
+}
+
+func (p *DefaultTxOutputProducer) callERC20TransferIn(ctx sdk.Context, tokenAddress, recipient ethcommon.Address, amount *big.Int, destChain string) (*types.TxResponse, error) {
+	targetContractName := ContractErc20Gateway
+	gw := p.keeper.GetLatestContractAddressByName(ctx, destChain, targetContractName)
+	if len(gw) == 0 {
+		err := fmt.Errorf("cannot find gw address for type: %s", targetContractName)
+		log.Error(err)
+		return nil, err
+	}
+
+	gatewayAddress := ethcommon.HexToAddress(gw)
+	erc20GatewayContract := SupportedContracts[targetContractName]
+
+	input, err := erc20GatewayContract.Abi.Pack(MethodTransferIn, tokenAddress, recipient, amount)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	nonce := p.worldState.UseAndIncreaseNonce(destChain)
+	if nonce < 0 {
+		err := errors.New("cannot find nonce for chain " + destChain)
+		log.Error(err)
+		return nil, err
+	}
+
+	log.Debugf("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, amount: %d", destChain, gatewayAddress.String(), tokenAddress, recipient, amount.Int64())
+	rawTx := ethTypes.NewTx(&ethTypes.AccessListTx{
+		Nonce:    uint64(nonce),
+		GasPrice: p.getGasPrice(destChain),
+		Gas:      p.getGasLimit(destChain),
+		To:       &gatewayAddress,
+		Value:    big.NewInt(0),
+		Data:     input,
+	})
+
+	bz, err := rawTx.MarshalBinary()
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	return &types.TxResponse{
+		OutChain: destChain,
+		EthTx:    rawTx,
+		RawBytes: bz,
+	}, nil
+}
+
+func decodeTxParams(abi abi.ABI, callData []byte) (map[string]interface{}, error) {
+	txParams := map[string]interface{}{}
+	m, err := abi.MethodById(callData[:4])
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	if err := m.Inputs.UnpackIntoMap(txParams, callData[4:]); err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	return txParams, nil
 }

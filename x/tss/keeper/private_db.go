@@ -37,6 +37,8 @@ type PrivateDb interface {
 
 	UpdateContractsStatus(chain string, contractHash string, status string)
 
+	GetLatestContractAddressByName(chain, name string) string
+
 	// Contract Address
 	CreateContractAddress(chain string, txOutHash string, address string)
 	IsContractExistedAtAddress(chain string, address string) bool
@@ -107,6 +109,8 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes[string(prefixTxOutConfirm)] = prefix.NewStore(parent, prefixTxOutConfirm)
 	// prefixMempoolTx
 	prefixes[string(prefixMempoolTx)] = prefix.NewStore(parent, prefixMempoolTx)
+	// prefixContractName
+	prefixes[string(prefixContractName)] = prefix.NewStore(parent, prefixContractName)
 
 	return prefixes
 }
@@ -155,6 +159,9 @@ func (db *defaultPrivateDb) SaveContract(msg *types.Contract, saveByteCode bool)
 	}
 
 	saveContract(contractStore, byteCodeStore, msg)
+
+	contractNameStore := db.prefixes[string(prefixContractName)]
+	saveContractAddressForName(contractNameStore, msg)
 }
 
 func (db *defaultPrivateDb) SaveContracts(msgs []*types.Contract, saveByteCode bool) {
@@ -166,6 +173,12 @@ func (db *defaultPrivateDb) SaveContracts(msgs []*types.Contract, saveByteCode b
 	}
 
 	saveContracts(contractStore, byteCodeStore, msgs)
+
+	// After saving contracts, also save contract address for each contract type
+	contractNameStore := db.prefixes[string(prefixContractName)]
+	for _, msg := range msgs {
+		saveContractAddressForName(contractNameStore, msg)
+	}
 }
 
 func (db *defaultPrivateDb) IsContractExisted(msg *types.Contract) bool {
@@ -199,6 +212,11 @@ func (db *defaultPrivateDb) UpdateContractAddress(chain string, hash string, add
 func (db *defaultPrivateDb) UpdateContractsStatus(chain string, contractHash string, status string) {
 	contractStore := db.prefixes[string(prefixContract)]
 	updateContractsStatus(contractStore, chain, contractHash, status)
+}
+
+func (db *defaultPrivateDb) GetLatestContractAddressByName(chain, name string) string {
+	contractNameStore := db.prefixes[string(prefixContractName)]
+	return getContractAddressByName(contractNameStore, chain, name)
 }
 
 ///// Contract Address
