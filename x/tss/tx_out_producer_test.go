@@ -25,7 +25,7 @@ import (
 func TestTxOutProducer_getContractTx(t *testing.T) {
 	t.Parallel()
 
-	hash := utils.KeccakHash32(erc20gateway.Erc20gwMetaData.Bin)
+	hash := utils.KeccakHash32(erc20gateway.Erc20gatewayMetaData.Bin)
 	contract := &types.Contract{
 		Chain: "eth",
 		Hash:  hash,
@@ -48,8 +48,8 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 	tx := txOutProducer.getContractTx(contract, 100)
 	require.NotNil(t, tx)
 	require.EqualValues(t, 100, tx.Nonce())
-	require.EqualValues(t, *big.NewInt(10000000000), *tx.GasPrice())
-	require.EqualValues(t, *big.NewInt(10000000000), *tx.GasFeeCap())
+	require.EqualValues(t, *big.NewInt(400000000000), *tx.GasPrice())
+	require.EqualValues(t, *big.NewInt(400000000000), *tx.GasFeeCap())
 }
 
 func TestTxOutProducer_getEthResponse(t *testing.T) {
@@ -150,10 +150,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		keeper := mocktss.NewMockKeeper(ctrl)
 		keeper.EXPECT().IsKeygenAddress(gomock.Any(), libchain.KEY_TYPE_ECDSA, gomock.Any()).Return(false).Times(1)
 		keeper.EXPECT().IsContractExistedAtAddress(gomock.Any(), "eth", gomock.Any()).Return(true).Times(1)
-		erc20Contract := SupportedContracts[ContractErc20Gateway]
-		keeper.EXPECT().GetContract(gomock.Any(), "eth", erc20Contract.AbiHash, false).Return(&types.Contract{
-			Address: "0x12345",
-		}).Times(1)
+		keeper.EXPECT().GetLatestContractAddressByName(gomock.Any(), gomock.Any(), ContractErc20Gateway).Return("0x12345").Times(1)
 
 		mockAppKeys := mock.NewMockAppKeys(ctrl)
 		accAddress := []byte{1, 2, 3}
@@ -162,8 +159,8 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		abi, err := abi.JSON(strings.NewReader(SupportedContracts[ContractErc20Gateway].AbiString))
 		require.NoError(t, err)
 		amount := big.NewInt(100)
-		hex := "ab1257528b3782fb40d7ed5f72e624b744dffb2f"
-		data, err := abi.Pack(MethodTransferOutFromContract, common.HexToAddress(hex), "eth", hex, &amount)
+		dummyHex := common.HexToAddress("ab1257528b3782fb40d7ed5f72e624b744dffb2f")
+		data, err := abi.Pack(MethodTransferOut, "eth", dummyHex, dummyHex, dummyHex, &amount)
 		require.NoError(t, err)
 
 		gasLimit := uint64(100)

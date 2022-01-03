@@ -61,6 +61,20 @@ func (mr *MockKeeperMockRecorder) GetContract(ctx, chain, hash, includeByteCode 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetContract", reflect.TypeOf((*MockKeeper)(nil).GetContract), ctx, chain, hash, includeByteCode)
 }
 
+// GetLatestContractAddressByName mocks base method.
+func (m *MockKeeper) GetLatestContractAddressByName(ctx types.Context, chain, name string) string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLatestContractAddressByName", ctx, chain, name)
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetLatestContractAddressByName indicates an expected call of GetLatestContractAddressByName.
+func (mr *MockKeeperMockRecorder) GetLatestContractAddressByName(ctx, chain, name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestContractAddressByName", reflect.TypeOf((*MockKeeper)(nil).GetLatestContractAddressByName), ctx, chain, name)
+}
+
 // GetPendingContracts mocks base method.
 func (m *MockKeeper) GetPendingContracts(ctx types.Context, chain string) []*types0.Contract {
 	m.ctrl.T.Helper()

@@ -5,15 +5,15 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	erc20gateway "github.com/sisu-network/sisu/contracts/eth/erc20gateway"
+	"github.com/sisu-network/sisu/contracts/eth/erc20gateway"
 	"github.com/sisu-network/sisu/utils"
 )
 
 const (
 	ContractErc20Gateway = "erc20gateway"
 
-	MethodTransferOutFromContract = "transferOutFromContract"
-	MethodTransferIn              = "TransferIn"
+	MethodTransferIn  = "TransferIn"
+	MethodTransferOut = "TransferOut"
 )
 
 var (
@@ -23,9 +23,9 @@ var (
 		MethodNames             []string
 	}{
 		ContractErc20Gateway: {
-			AbiString: erc20gateway.Erc20gwMetaData.ABI,
-			Bin:       erc20gateway.Erc20gwMetaData.Bin,
-			AbiHash:   utils.KeccakHash32(erc20gateway.Erc20gwMetaData.Bin),
+			AbiString: erc20gateway.Erc20gatewayMetaData.ABI,
+			Bin:       erc20gateway.Erc20gatewayMetaData.Bin,
+			AbiHash:   utils.KeccakHash32(erc20gateway.Erc20gatewayMetaData.Bin),
 		},
 	}
 )

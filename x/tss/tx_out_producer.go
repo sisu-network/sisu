@@ -122,6 +122,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 		p.keeper.IsContractExistedAtAddress(ctx, tx.Chain, ethTx.To().String()) && // TODO: Use keeper instead
 		len(ethTx.Data()) >= 4 {
 
+		// TODO: compare method name to trigger corresponding contract method
 		responseTx, err := p.processERC20TransferIn(ctx, ethTx)
 
 		if err == nil {
@@ -190,7 +191,7 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *types.Contract, nonce 
 			}
 		}
 
-		log.Info("Allowed chains for chain", contract.Chain, "are: ", supportedChains)
+		log.Info("Allowed chains for chain ", contract.Chain, " are: ", supportedChains)
 
 		input, err := parsedAbi.Pack("", supportedChains)
 		if err != nil {

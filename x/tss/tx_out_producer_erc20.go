@@ -25,7 +25,7 @@ func (p *DefaultTxOutputProducer) processERC20TransferIn(ctx sdk.Context, ethTx 
 
 	tokenAddr, ok := txParams["_tokenIn"].(ethcommon.Address)
 	if !ok {
-		err := fmt.Errorf("cannot convert _token to type ethcommon.Address: %v", txParams)
+		err := fmt.Errorf("cannot convert _tokenIn to type ethcommon.Address: %v", txParams)
 		log.Error(err)
 		return nil, err
 	}
