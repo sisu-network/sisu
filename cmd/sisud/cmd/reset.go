@@ -1,16 +1,12 @@
 package cmd
 
 import (
-	"database/sql"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/BurntSushi/toml"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/config"
 
 	"github.com/sisu-network/sisu/app"
 	"github.com/spf13/cobra"
@@ -39,10 +35,6 @@ This command only deletes data files but not config files.
 			}
 
 			if err := resetValidatorState(); err != nil {
-				return err
-			}
-
-			if err := deleteSql(); err != nil {
 				return err
 			}
 
@@ -121,43 +113,4 @@ func resetValidatorState() error {
 
 	path := app.MainAppHome + "/data/priv_validator_state.json"
 	return ioutil.WriteFile(path, []byte(content), 0644)
-}
-
-func deleteSql() error {
-	appDir := os.Getenv("APP_DIR")
-	if appDir == "" {
-		appDir = os.Getenv("HOME") + "/.sisu"
-	}
-
-	cfg := config.Config{}
-	cfg.Sisu.Dir = appDir + "/main"
-	configFile := cfg.Sisu.Dir + "/config/sisu.toml"
-	_, err := toml.DecodeFile(configFile, &cfg)
-	if err != nil {
-		return err
-	}
-
-	sqlConfig := cfg.Sisu.Sql
-
-	database, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", sqlConfig.Username, sqlConfig.Password, sqlConfig.Host, sqlConfig.Port, sqlConfig.Schema))
-	if err != nil {
-		return err
-	}
-
-	defer database.Close()
-
-	log.Info("Deleting sql tables...")
-
-	database.Exec("DROP TABLE contract")
-	database.Exec("DROP TABLE tx_in")
-	database.Exec("DROP TABLE tx_out")
-	database.Exec("DROP TABLE schema_migrations")
-	database.Exec("DROP TABLE keygen")
-	database.Exec("DROP TABLE keygen_result")
-	database.Exec("DROP TABLE mempool_tx")
-
-	database.Exec("TRUNCATE TABLE deyes.watch_address")
-	database.Exec("TRUNCATE TABLE deyes.latest_block_height")
-
-	return nil
 }

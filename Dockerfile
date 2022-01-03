@@ -46,6 +46,5 @@ RUN mv ./output/node0/main ~/.sisu/main
 # Copy config into the container.
 COPY docker-config/local-tss.toml /root/.sisu/tss/tss.toml
 COPY docker-config/app-config.toml /root/.sisu/main/config/config.toml
-COPY db/migrations /app/db/migrations
 
 CMD ["./sisu","start"]
