@@ -109,6 +109,8 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes[string(prefixTxOutConfirm)] = prefix.NewStore(parent, prefixTxOutConfirm)
 	// prefixMempoolTx
 	prefixes[string(prefixMempoolTx)] = prefix.NewStore(parent, prefixMempoolTx)
+	// prefix
+	prefixes[string(prefixContractName)] = prefix.NewStore(parent, prefixContractName)
 
 	return prefixes
 }

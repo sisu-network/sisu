@@ -12,6 +12,7 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/sisu-network/sisu/app"
 	"github.com/spf13/cobra"
 )
