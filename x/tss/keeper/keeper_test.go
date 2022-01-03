@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	sdk "github.com/sisu-network/cosmos-sdk/types"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 
 	"github.com/sisu-network/cosmos-sdk/store"
@@ -40,8 +41,7 @@ func TestKeeper_SaveAndGetObservedTx(t *testing.T) {
 	t.Parallel()
 	keeper, ctx := getTestKeeperAndContext()
 
-	observedTx := &types.ObservedTx{
-		Signer:      "signer",
+	observedTx := &types.TxIn{
 		Chain:       "eth",
 		BlockHeight: 1,
 		TxHash:      "Hash",
@@ -49,64 +49,58 @@ func TestKeeper_SaveAndGetObservedTx(t *testing.T) {
 	}
 
 	// Save observed Tx
-	keeper.SaveObservedTx(ctx, observedTx)
+	keeper.SaveTxIn(ctx, observedTx)
 
 	// Check Observed Tx
-	require.Equal(t, true, keeper.IsObservedTxExisted(ctx, observedTx))
+	require.Equal(t, true, keeper.IsTxInExisted(ctx, observedTx))
 
 	// Different signer would not change the observedTx retrieval
 	other := *observedTx
 	other.Chain = "signer2"
-	require.Equal(t, true, keeper.IsObservedTxExisted(ctx, observedTx))
+	require.Equal(t, true, keeper.IsTxInExisted(ctx, observedTx))
 
 	// Any change in the chain, block height or tx hash would not retrieve the observed tx.
 	other = *observedTx
 	other.Chain = "bitcoin"
-	require.Equal(t, false, keeper.IsObservedTxExisted(ctx, &other))
+	require.Equal(t, false, keeper.IsTxInExisted(ctx, &other))
 
 	other = *observedTx
 	other.BlockHeight = 2
-	require.Equal(t, false, keeper.IsObservedTxExisted(ctx, &other))
+	require.Equal(t, false, keeper.IsTxInExisted(ctx, &other))
 
 	other = *observedTx
 	other.TxHash = "Hash2"
-	require.Equal(t, false, keeper.IsObservedTxExisted(ctx, &other))
+	require.Equal(t, false, keeper.IsTxInExisted(ctx, &other))
 }
 
 func TestKeeper_SaveAndGetTxOut(t *testing.T) {
 	t.Parallel()
 	keeper, ctx := getTestKeeperAndContext()
 
-	txOut := &types.TxOut{
-		Signer:        "signer",
-		InChain:       "eth",
-		OutChain:      "bitcoin",
-		InBlockHeight: 1,
-		OutBytes:      []byte("Hash"),
+	txOutWithSigner := &types.TxOutWithSigner{
+		Signer: "signer",
+		Data: &types.TxOut{
+			InChain:       "eth",
+			OutChain:      "bitcoin",
+			OutHash:       utils.RandomHeximalString(32),
+			InBlockHeight: 1,
+			OutBytes:      []byte("Hash"),
+		},
 	}
 
-	keeper.SaveTxOut(ctx, txOut)
-	require.Equal(t, true, keeper.IsTxOutExisted(ctx, txOut))
+	keeper.SaveTxOut(ctx, txOutWithSigner.Data)
+	require.Equal(t, true, keeper.IsTxOutExisted(ctx, txOutWithSigner.Data))
 
 	// Different signer would not change the observedTx retrieval
-	other := *txOut
-	other.Signer = "signer2"
-	require.Equal(t, true, keeper.IsTxOutExisted(ctx, txOut))
+	other := *txOutWithSigner.Data
+	require.Equal(t, true, keeper.IsTxOutExisted(ctx, txOutWithSigner.Data))
 
-	// Any chain in InChain, OutChain, BlockHeight, OutBytes would not retrieve the txOut.
-	other = *txOut
-	other.InChain = "sisu"
-	require.Equal(t, false, keeper.IsTxOutExisted(ctx, &other))
-
-	other = *txOut
+	// Any chain in OutChain, BlockHeight, OutBytes would not retrieve the txOut.
+	other = *txOutWithSigner.Data
 	other.OutChain = "sisu"
 	require.Equal(t, false, keeper.IsTxOutExisted(ctx, &other))
 
-	other = *txOut
-	other.InBlockHeight = 2
-	require.Equal(t, false, keeper.IsTxOutExisted(ctx, &other))
-
-	other = *txOut
-	other.OutBytes = []byte("other")
+	other = *txOutWithSigner.Data
+	other.OutHash = utils.RandomHeximalString(48)
 	require.Equal(t, false, keeper.IsTxOutExisted(ctx, &other))
 }

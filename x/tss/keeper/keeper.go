@@ -1,45 +1,52 @@
 package keeper
 
 import (
-	"encoding/json"
-	"fmt"
-
 	"github.com/sisu-network/cosmos-sdk/store/prefix"
+	cstypes "github.com/sisu-network/cosmos-sdk/store/types"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
-)
-
-// TODO: clean up this list
-var (
-	prefixObservedTx      = []byte{0x01}
-	prefixPublicKeyBytes  = []byte{0x02}
-	prefixEthKeyAddresses = []byte{0x03}
-	prefixTxOut           = []byte{0x04}
-	prefixKeygenProposal  = []byte{0x05}
-
-	// Deprecated
-	KEY_ETH_KEY_ADDRESS = "eth_key_address_%s" // chain
 )
 
 // go:generate mockgen -source x/tss/keeper/keeper.go -destination=tests/mock/tss/keeper.go -package=mock
 type Keeper interface {
-	SaveKeygenProposal(ctx sdk.Context, msg *types.KeygenProposal)
-	IsKeygenProposalExisted(ctx sdk.Context, msg *types.KeygenProposal) bool
+	// Debug
+	PrintStore(ctx sdk.Context, name string)
 
-	// Observed Tx
-	SaveObservedTx(ctx sdk.Context, msg *types.ObservedTx)
-	IsObservedTxExisted(ctx sdk.Context, msg *types.ObservedTx) bool
+	// Keygen
+	SaveKeygen(ctx sdk.Context, msg *types.Keygen)
+	IsKeygenExisted(ctx sdk.Context, keyType string, index int) bool
+	IsKeygenAddress(ctx sdk.Context, keyType string, address string) bool
+
+	// Keygen Result
+	SaveKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner)
+	IsKeygenResultSuccess(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner, self string) bool
+
+	// Contracts
+	SaveContract(ctx sdk.Context, msg *types.Contract, saveByteCode bool)
+	SaveContracts(ctx sdk.Context, msgs []*types.Contract, saveByteCode bool)
+	IsContractExisted(ctx sdk.Context, msg *types.Contract) bool
+	GetContract(ctx sdk.Context, chain string, hash string, includeByteCode bool) *types.Contract
+	GetPendingContracts(ctx sdk.Context, chain string) []*types.Contract
+	UpdateContractAddress(ctx sdk.Context, chain string, hash string, address string)
+	UpdateContractsStatus(ctx sdk.Context, chain string, contractHash string, status string)
+
+	// Contract Address
+	CreateContractAddress(ctx sdk.Context, chain string, txOutHash string, address string)
+	IsContractExistedAtAddress(ctx sdk.Context, chain string, address string) bool
+
+	// TxIn
+	SaveTxIn(ctx sdk.Context, msg *types.TxIn)
+	IsTxInExisted(ctx sdk.Context, msg *types.TxIn) bool
 
 	// TxOut
 	SaveTxOut(ctx sdk.Context, msg *types.TxOut)
 	IsTxOutExisted(ctx sdk.Context, msg *types.TxOut) bool
+	GetTxOut(ctx sdk.Context, chain, hash string) *types.TxOut
 
-	SavePubKey(ctx sdk.Context, chain string, keyBytes []byte)
-	GetAllPubKeys(ctx sdk.Context) map[string][]byte
-	SaveEthKeyAddrs(ctx sdk.Context, chain string, keyAddrs map[string]bool) error
-	GetAllEthKeyAddrs(ctx sdk.Context) (map[string]map[string]bool, error)
+	// TxOutConfirm
+	SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutConfirm)
+	IsTxOutConfirmExisted(ctx sdk.Context, outChain, hash string) bool
 }
 
 type DefaultKeeper struct {
@@ -54,114 +61,161 @@ func NewKeeper(storeKey sdk.StoreKey) *DefaultKeeper {
 	return keeper
 }
 
-func (k *DefaultKeeper) getObservedTxKey(chain string, height int64, hash string) []byte {
-	// Replace all the _ in the chain.
-	return []byte(fmt.Sprintf("%s__%d__%s", chain, height, hash))
+///// Keygen
+
+func (k *DefaultKeeper) SaveKeygen(ctx sdk.Context, msg *types.Keygen) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygen)
+	saveKeygen(store, msg)
 }
 
-func (k *DefaultKeeper) getTxOutKey(inChain string, outChain string, height int64, hash string) []byte {
-	// Replace all the _ in the chain.
-	return []byte(fmt.Sprintf("%s__%s__%d__%s", inChain, outChain, height, hash))
+func (k *DefaultKeeper) IsKeygenExisted(ctx sdk.Context, keyType string, index int) bool {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygen)
+	return isKeygenExisted(store, keyType, index)
 }
 
-func (k *DefaultKeeper) getKeygenProposalKey(keyType string, id string) []byte {
-	return []byte(fmt.Sprintf("%s__%s", keyType, id))
+func (k *DefaultKeeper) IsKeygenAddress(ctx sdk.Context, keyType string, address string) bool {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygen)
+	return isKeygenAddress(store, keyType, address)
 }
 
-func (k *DefaultKeeper) SaveKeygenProposal(ctx sdk.Context, msg *types.KeygenProposal) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenProposal)
-	key := k.getKeygenProposalKey(msg.KeyType, msg.Id)
+///// Keygen Result
 
-	bz, err := msg.Marshal()
-	if err != nil {
-		log.Error("SaveKeygenProposal: cannot marshal keygen proposal, err = ", err)
+func (k *DefaultKeeper) SaveKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenResult)
+	saveKeygenResult(store, signerMsg)
+}
+
+// Keygen is considered successful if at least there is at least 1 successful KeygenReslut in the
+// KVStore.
+func (k *DefaultKeeper) IsKeygenResultSuccess(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner, self string) bool {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenResult)
+	return isKeygenResultSuccess(store, signerMsg, self)
+}
+
+///// Contracts
+
+func (k *DefaultKeeper) SaveContract(ctx sdk.Context, msg *types.Contract, saveByteCode bool) {
+	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
+	var byteCodeStore cstypes.KVStore
+	byteCodeStore = nil
+	if saveByteCode {
+		byteCodeStore = prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractByteCode)
 	}
-	store.Set(key, bz)
+
+	saveContract(contractStore, byteCodeStore, msg)
 }
 
-func (k *DefaultKeeper) IsKeygenProposalExisted(ctx sdk.Context, msg *types.KeygenProposal) bool {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenProposal)
-	key := k.getKeygenProposalKey(msg.KeyType, msg.Id)
+func (k *DefaultKeeper) SaveContracts(ctx sdk.Context, msgs []*types.Contract, saveByteCode bool) {
+	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
+	var byteCodeStore cstypes.KVStore
+	byteCodeStore = nil
+	if saveByteCode {
+		byteCodeStore = prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractByteCode)
+	}
 
-	return store.Get(key) != nil
+	saveContracts(contractStore, byteCodeStore, msgs)
 }
 
-func (k *DefaultKeeper) SaveObservedTx(ctx sdk.Context, msg *types.ObservedTx) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixObservedTx)
-	key := k.getObservedTxKey(msg.Chain, msg.BlockHeight, msg.TxHash)
-
-	bz := msg.SerializeWithoutSigner()
-	store.Set(key, bz)
+func (k *DefaultKeeper) IsContractExisted(ctx sdk.Context, msg *types.Contract) bool {
+	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
+	return isContractExisted(contractStore, msg)
 }
 
-func (k *DefaultKeeper) IsObservedTxExisted(ctx sdk.Context, tx *types.ObservedTx) bool {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixObservedTx)
-	key := k.getObservedTxKey(tx.GetChain(), tx.GetBlockHeight(), tx.GetTxHash())
+func (k *DefaultKeeper) GetContract(ctx sdk.Context, chain string, hash string, includeByteCode bool) *types.Contract {
+	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
+	var byteCodeStore cstypes.KVStore
+	byteCodeStore = nil
+	if includeByteCode {
+		byteCodeStore = prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractByteCode)
+	}
 
-	return store.Get(key) != nil
+	return getContract(contractStore, byteCodeStore, chain, hash)
 }
+
+func (k *DefaultKeeper) GetPendingContracts(ctx sdk.Context, chain string) []*types.Contract {
+	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
+	byteCodeStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractByteCode)
+
+	return getPendingContracts(contractStore, byteCodeStore, chain)
+}
+
+func (k *DefaultKeeper) UpdateContractAddress(ctx sdk.Context, chain string, hash string, address string) {
+	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
+	updateContractAddress(contractStore, chain, hash, address)
+}
+
+func (k *DefaultKeeper) UpdateContractsStatus(ctx sdk.Context, chain string, contractHash string, status string) {
+	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
+	updateContractsStatus(contractStore, chain, contractHash, status)
+}
+
+///// Contract Address
+
+func (k *DefaultKeeper) CreateContractAddress(ctx sdk.Context, chain string, txOutHash string, address string) {
+	caStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractAddress)
+	txOutStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
+
+	createContractAddress(caStore, txOutStore, chain, txOutHash, address)
+}
+
+func (k *DefaultKeeper) IsContractExistedAtAddress(ctx sdk.Context, chain string, address string) bool {
+	caStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractAddress)
+	return isContractExistedAtAddress(caStore, chain, address)
+}
+
+///// TxIn
+func (k *DefaultKeeper) SaveTxIn(ctx sdk.Context, msg *types.TxIn) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxIn)
+	saveTxIn(store, msg)
+}
+
+func (k *DefaultKeeper) IsTxInExisted(ctx sdk.Context, msg *types.TxIn) bool {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxIn)
+	return isTxInExisted(store, msg)
+}
+
+///// TxOut
 
 func (k *DefaultKeeper) SaveTxOut(ctx sdk.Context, msg *types.TxOut) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
-	outHash := utils.KeccakHash32(string(msg.OutBytes))
-	key := k.getTxOutKey(msg.InChain, msg.OutChain, msg.InBlockHeight, outHash)
-
-	bz := msg.SerializeWithoutSigner()
-	store.Set(key, bz)
+	saveTxOut(store, msg)
 }
 
 func (k *DefaultKeeper) IsTxOutExisted(ctx sdk.Context, msg *types.TxOut) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
-	outHash := utils.KeccakHash32(string(msg.OutBytes))
-	key := k.getTxOutKey(msg.InChain, msg.OutChain, msg.InBlockHeight, outHash)
-
-	return store.Get(key) != nil
+	return isTxOutExisted(store, msg)
 }
 
-func (k *DefaultKeeper) SavePubKey(ctx sdk.Context, keyType string, keyBytes []byte) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPublicKeyBytes)
-	store.Set([]byte(keyType), keyBytes)
+func (k *DefaultKeeper) GetTxOut(ctx sdk.Context, chain, hash string) *types.TxOut {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
+	return getTxOut(store, chain, hash)
 }
 
-func (k *DefaultKeeper) GetAllPubKeys(ctx sdk.Context) map[string][]byte {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPublicKeyBytes)
-	iter := store.Iterator(nil, nil)
-	ret := make(map[string][]byte)
-	for ; iter.Valid(); iter.Next() {
-		ret[string(iter.Key())] = iter.Value()
+///// TxOutConfirm
+func (k *DefaultKeeper) SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutConfirm) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutConfirm)
+	saveTxOutConfirm(store, msg)
+}
+
+func (k *DefaultKeeper) IsTxOutConfirmExisted(ctx sdk.Context, outChain, hash string) bool {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutConfirm)
+	return isTxOutConfirmExisted(store, outChain, hash)
+}
+
+///// Debug
+
+// PrintStore is a debug function
+func (k *DefaultKeeper) PrintStore(ctx sdk.Context, name string) {
+	log.Info("======== DEBUGGING")
+	log.Info("Printing ALL values in store ", name)
+	var store cstypes.KVStore
+	switch name {
+	case "keygen":
+		store = prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygen)
+	case "contract":
+		store = prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
 	}
 
-	return ret
-}
-
-func (k *DefaultKeeper) SaveEthKeyAddrs(ctx sdk.Context, chain string, keyAddrs map[string]bool) error {
-	key := fmt.Sprintf(KEY_ETH_KEY_ADDRESS, chain)
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixEthKeyAddresses)
-
-	bz, err := json.Marshal(keyAddrs)
-	if err != nil {
-		log.Error("cannot marshal key addrs, err =", err)
-		return err
-	}
-
-	store.Set([]byte(key), bz)
-	return nil
-}
-
-func (k *DefaultKeeper) GetAllEthKeyAddrs(ctx sdk.Context) (map[string]map[string]bool, error) {
-	m := make(map[string]map[string]bool)
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixEthKeyAddresses)
-
-	iter := store.Iterator(nil, nil)
-	for ; iter.Valid(); iter.Next() {
-		m2 := make(map[string]bool)
-		err := json.Unmarshal(iter.Value(), &m2)
-		if err != nil {
-			log.Error("cannot unmarshal value with key", iter.Key())
-			return nil, err
-		}
-		m[string(iter.Key())] = m2
-	}
-
-	return m, nil
+	printStore(store)
+	log.Info("======== END OF DEBUGGING")
 }

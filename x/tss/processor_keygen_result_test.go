@@ -7,7 +7,6 @@ import (
 	ctypes "github.com/sisu-network/cosmos-sdk/crypto/types"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
-	"github.com/sisu-network/sisu/tests/mock"
 	mockcommon "github.com/sisu-network/sisu/tests/mock/common"
 	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
 	mocktssclients "github.com/sisu-network/sisu/tests/mock/tss/tssclients"
@@ -15,7 +14,7 @@ import (
 )
 
 // Test happy case for keygen proposal.
-func TestProcessor_DeliverKeygenProposal(t *testing.T) {
+func TestProcessor_deliverKeyGen_normal(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
 	t.Cleanup(func() {
@@ -24,13 +23,12 @@ func TestProcessor_DeliverKeygenProposal(t *testing.T) {
 
 	ctx := sdk.Context{}
 
-	mockDb := mock.NewMockDatabase(ctrl)
-	mockDb.EXPECT().GetKeyGen(libchain.KEY_TYPE_ECDSA).Return(nil, nil).Times(1)
-	mockDb.EXPECT().CreateKeygen(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-
 	mockKeeper := mocktss.NewMockKeeper(ctrl)
-	mockKeeper.EXPECT().IsKeygenProposalExisted(gomock.Any(), gomock.Any()).Return(false).Times(1)
-	mockKeeper.EXPECT().SaveKeygenProposal(ctx, gomock.Any()).Times(1)
+	mockKeeper.EXPECT().IsKeygenExisted(gomock.Any(), gomock.Any(), gomock.Any()).Return(false).Times(1)
+	mockKeeper.EXPECT().SaveKeygen(ctx, gomock.Any()).Times(1)
+
+	mockPrivateDb := mocktss.NewMockPrivateDb(ctrl)
+	mockPrivateDb.EXPECT().SaveKeygen(gomock.Any()).Times(1)
 
 	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
 	mockGlobalData.EXPECT().IsCatchingUp().Return(false).Times(1)
@@ -41,28 +39,28 @@ func TestProcessor_DeliverKeygenProposal(t *testing.T) {
 	mockPartyManager := mocktss.NewMockPartyManager(ctrl)
 	mockPartyManager.EXPECT().GetActivePartyPubkeys().Return([]ctypes.PubKey{}).Times(1)
 
-	wrapper := &types.KeygenProposalWithSigner{
+	wrapper := &types.KeygenWithSigner{
 		Signer: "",
-		Data: &types.KeygenProposal{
+		Data: &types.Keygen{
 			KeyType: libchain.KEY_TYPE_ECDSA,
-			Id:      "keygen",
+			Index:   0,
 		},
 	}
 
 	p := &Processor{
-		db:           mockDb,
 		keeper:       mockKeeper,
+		privateDb:    mockPrivateDb,
 		globalData:   mockGlobalData,
 		partyManager: mockPartyManager,
 		dheartClient: mockDheartClient,
 	}
 	p.currentHeight.Store(int64(0))
 
-	p.DeliverKeyGenProposal(ctx, wrapper)
+	p.deliverKeygen(ctx, wrapper)
 }
 
 // Test Deliver KeygenProposal while the node is catching up.
-func TestProcessor_DeliverKeygenProposal_CatchingUp(t *testing.T) {
+func TestProcessor_deliverKeyGen_CatchingUp(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
 	t.Cleanup(func() {
@@ -71,30 +69,30 @@ func TestProcessor_DeliverKeygenProposal_CatchingUp(t *testing.T) {
 
 	ctx := sdk.Context{}
 
-	mockDb := mock.NewMockDatabase(ctrl)
-	mockDb.EXPECT().GetKeyGen(libchain.KEY_TYPE_ECDSA).Return(nil, nil).Times(0)
+	mockPrivateDb := mocktss.NewMockPrivateDb(ctrl)
+	mockPrivateDb.EXPECT().SaveKeygen(gomock.Any()).Times(1)
 
 	mockKeeper := mocktss.NewMockKeeper(ctrl)
-	mockKeeper.EXPECT().IsKeygenProposalExisted(gomock.Any(), gomock.Any()).Return(false).Times(1)
-	mockKeeper.EXPECT().SaveKeygenProposal(ctx, gomock.Any()).Times(1)
+	mockKeeper.EXPECT().IsKeygenExisted(gomock.Any(), gomock.Any(), gomock.Any()).Return(false).Times(1)
+	mockKeeper.EXPECT().SaveKeygen(ctx, gomock.Any()).Times(1)
 
 	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
 	mockGlobalData.EXPECT().IsCatchingUp().Return(true).Times(1) // block is catching up.
 
-	wrapper := &types.KeygenProposalWithSigner{
+	wrapper := &types.KeygenWithSigner{
 		Signer: "",
-		Data: &types.KeygenProposal{
+		Data: &types.Keygen{
 			KeyType: libchain.KEY_TYPE_ECDSA,
-			Id:      "keygen",
+			Index:   0,
 		},
 	}
 
 	p := &Processor{
-		db:         mockDb,
 		keeper:     mockKeeper,
+		privateDb:  mockPrivateDb,
 		globalData: mockGlobalData,
 	}
 	p.currentHeight.Store(int64(0))
 
-	p.DeliverKeyGenProposal(ctx, wrapper)
+	p.deliverKeygen(ctx, wrapper)
 }

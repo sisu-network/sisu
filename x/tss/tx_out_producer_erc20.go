@@ -54,7 +54,7 @@ func (p *DefaultTxOutputProducer) processERC20TransferIn(ethTx *ethTypes.Transac
 }
 
 func (p *DefaultTxOutputProducer) callERC20TransferIn(tokenAddress, recipient ethcommon.Address, amount *big.Int, destChain string) (*types.TxResponse, error) {
-	gw, err := p.db.GetLatestContractByName(destChain, ContractErc20Gateway)
+	gw, err := p.privateDb.GetLatestContractByName(destChain, ContractErc20Gateway)
 	erc20GatewayContract := SupportedContracts[ContractErc20Gateway]
 
 	input, err := erc20GatewayContract.Abi.Pack(MethodTransferIn, tokenAddress, recipient, amount)

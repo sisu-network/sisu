@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	erc20gateway "github.com/sisu-network/sisu/contracts/eth/erc20gw"
+	erc20gateway "github.com/sisu-network/sisu/contracts/eth/erc20gateway"
 	"github.com/sisu-network/sisu/utils"
 )
 

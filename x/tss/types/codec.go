@@ -18,10 +18,13 @@ func RegisterCodec(cdc *codec.LegacyAmino) {
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
 
-	registry.RegisterImplementations((*sdk.Msg)(nil), &KeygenProposalWithSigner{})
-	registry.RegisterImplementations((*sdk.Msg)(nil), &KeygenResult{})
-	registry.RegisterImplementations((*sdk.Msg)(nil), &ObservedTx{})
-	registry.RegisterImplementations((*sdk.Msg)(nil), &TxOut{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &KeygenWithSigner{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &KeygenResultWithSigner{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &ContractsWithSigner{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &TxInWithSigner{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &TxOutWithSigner{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &TxOutConfirmWithSigner{})
+
 	registry.RegisterImplementations((*sdk.Msg)(nil), &KeysignResult{})
 
 	registry.RegisterInterface("cosmos.crypto.PubKey", (*ctypes.PubKey)(nil))
