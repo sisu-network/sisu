@@ -20,12 +20,6 @@ chain-id = "{{ .Sisu.ChainId}}"
 keyring-backend = "{{ .Sisu.KeyringBackend }}"
 api-host = "{{ .Sisu.ApiHost }}"
 api-port = {{ .Sisu.ApiPort }}
-	[sisu.sql]
-		host = "{{ .Sisu.Sql.Host }}"
-		port = {{ .Sisu.Sql.Port }}
-		username = "{{ .Sisu.Sql.Username }}"
-		password = "{{ .Sisu.Sql.Password }}"
-		schema = "{{ .Sisu.Sql.Schema }}"
 
 ###############################################################################
 ###                         Siu TSS Connfiguration                          ###

@@ -75,13 +75,6 @@ Example:
 					KeyringBackend: keyringBackend,
 					ApiHost:        "0.0.0.0",
 					ApiPort:        25456,
-					Sql: config.SqlConfig{
-						Host:     "0.0.0.0",
-						Port:     3306,
-						Username: "root",
-						Password: "password",
-						Schema:   "sisu",
-					},
 				},
 				Tss: config.TssConfig{
 					Enable:     enableTss,
