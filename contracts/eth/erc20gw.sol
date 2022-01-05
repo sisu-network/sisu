@@ -1,4 +1,4 @@
-pragma solidity >=0.8.4;
+pragma solidity >=0.8.10;
 
 // OpenZeppelin's library: Context, Ownable
 /**
@@ -154,8 +154,8 @@ contract ERC20Gateway is Ownable {
         }
     }
 
-    event TransferOutEvent(string indexed destChain, address indexed token, address indexed sender, uint256 amount);
-    event TransferInEvent(address indexed token, address indexed reipient, uint256 amount);
+    event TransferOutEvent(string indexed destChain, address indexed recipient, address indexed tokenOut, address tokenIn, address sender, uint256 amount);
+    event TransferInEvent(address indexed token, address indexed recipient, uint256 amount);
     event RemoveSupportedChainEvent(string indexed chain);
     event AddSupportedChainEvent(string indexed chain);
 
@@ -166,22 +166,22 @@ contract ERC20Gateway is Ownable {
 
     // User can call TransferOut to deposit their ERC20 token to gateway
     // Anyone can call TransferOut
-    function TransferOut(string memory destChain, address _token, uint256 _amount) public isNotPaused {
-        require(supportedChains[destChain] == true, "destChain is not supported");
-        TransferHelper.safeTransferFrom(_token, msg.sender, address(this), _amount);
+    function TransferOut(string memory _destChain, address _recipient, address _tokenOut, address _tokenIn, uint256 _amount) public isNotPaused {
+        require(supportedChains[_destChain] == true, "destChain is not supported");
+        TransferHelper.safeTransferFrom(_tokenOut, msg.sender, address(this), _amount);
 
-        emit TransferOutEvent(destChain, _token, msg.sender, _amount);
+        emit TransferOutEvent(_destChain, _recipient, _tokenOut, _tokenIn, msg.sender, _amount);
     }
 
     // Pool owner call TransferIn to release user's ERC20 token in destination chain
     // Triggered by bridge's backend
-    function TransferIn(address _token, address recipient, uint256 _amount) public onlyOwner isNotPaused {
+    function TransferIn(address _token, address _recipient, uint256 _amount) public onlyOwner isNotPaused {
         uint256 gwBalance = IERC20(_token).balanceOf(address(this));
         require(gwBalance >= _amount, "Gateway balance is less than required amount");
 
-        TransferHelper.safeTransferFrom(_token, address(this), recipient, _amount);
+        TransferHelper.safeTransfer(_token, _recipient, _amount);
 
-        emit TransferInEvent(_token, recipient, _amount);
+        emit TransferInEvent(_token, _recipient, _amount);
     }
 
     function PauseGateway() public onlyOwner {
