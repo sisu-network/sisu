@@ -3,7 +3,6 @@ package common
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"sync"
@@ -20,7 +19,6 @@ import (
 	"github.com/sisu-network/cosmos-sdk/crypto/keyring"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/cosmos-sdk/types/tx/signing"
-	authkeeper "github.com/sisu-network/cosmos-sdk/x/auth/keeper"
 	authtypes "github.com/sisu-network/cosmos-sdk/x/auth/types"
 	staking "github.com/sisu-network/cosmos-sdk/x/staking/types"
 	rpchttp "github.com/sisu-network/tendermint/rpc/client/http"
@@ -32,7 +30,6 @@ const (
 	// TODO: put these values into config file.
 	defaultGasAdjustment = 1.0
 	defaultGasLimit      = 3_000_000
-	UnInitializedSeq     = 18446744073709551615 // Max of uint64. This means it's not initialized
 )
 
 var (
@@ -66,15 +63,6 @@ type TxSubmitter struct {
 	msgIndex        int64
 	msgStatuses     map[int64]error
 	submitRequestCh chan bool
-
-	// Sequence
-	sequenceLock *sync.RWMutex
-	// Current sequence is the current sequence that will be used for transaction. It's possible that
-	// multiple transactions could submitted within a block and account's sequence could be out
-	// of sync with account keeper.
-	curSequence uint64
-	// blockSequence is the sequence for the account in the last block.
-	blockSequence uint64
 }
 
 var (
@@ -85,12 +73,10 @@ func NewTxSubmitter(cfg config.Config, appKeys *DefaultAppKeys) *TxSubmitter {
 	t := &TxSubmitter{
 		appKeys:         appKeys,
 		cfg:             cfg,
-		sequenceLock:    &sync.RWMutex{},
 		queueLock:       &sync.RWMutex{},
 		queue:           make([]*QElementPair, 0),
 		submitRequestCh: make(chan bool),
 		msgStatuses:     make(map[int64]error),
-		curSequence:     UnInitializedSeq,
 	}
 
 	var err error
@@ -107,10 +93,6 @@ func NewTxSubmitter(cfg config.Config, appKeys *DefaultAppKeys) *TxSubmitter {
 
 func (t *TxSubmitter) SubmitMessage(msg sdk.Msg) error {
 	log.Debug("Submitting tx ....")
-	seq := t.getSequence()
-	if seq == UnInitializedSeq {
-		return fmt.Errorf("server is not ready")
-	}
 
 	index := t.addMessage(msg)
 	var err error
@@ -182,66 +164,20 @@ func (t *TxSubmitter) Start() {
 
 			log.Info("Queue size = ", len(copy))
 
-			// 2. Get account sequence
-			seq := t.getSequence()
-			log.Info("Sequence = ", seq)
-			t.factory = t.factory.WithSequence(seq)
+			// We don't use sequence for transactions.
+			t.factory = t.factory.WithSequence(0)
 
 			// 3. Send all messages
 			msgs := convert(copy)
 			if err := tx.BroadcastTx(t.clientCtx, t.factory, msgs...); err != nil {
-				log.Error("Cannot broadcast transaction", err)
+				log.Error("Cannot broadcast transaction, err = ", err)
 				t.updateStatus(copy, err)
-
-				// t.sequenceLock.Lock()
-				// t.curSequence = t.blockSequence
-				// t.sequenceLock.Unlock()
 			} else {
 				log.Debug("Tx submitted successfully")
 				t.updateStatus(copy, ErrNone)
-				t.incSequence()
 			}
 		}
 	}
-}
-
-func (t *TxSubmitter) SyncBlockSequence(ctx sdk.Context, ak authkeeper.AccountKeeper) {
-	t.sequenceLock.Lock()
-	defer t.sequenceLock.Unlock()
-
-	if t.fromAccount == nil {
-		log.Error("fromAccount is not set yet")
-		return
-	}
-
-	// We create a new context with a new gas meter since ak.GetAccount consumes different gas amount
-	// for different length of the t.fromAccount.
-	copyCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
-	account := ak.GetAccount(copyCtx, t.fromAccount)
-
-	if account == nil {
-		log.Error("cannot find account in the keeper, account =", t.fromAccount)
-		return
-	}
-
-	t.blockSequence = account.GetSequence()
-	if t.curSequence == UnInitializedSeq {
-		t.curSequence = t.blockSequence
-	}
-}
-
-func (t *TxSubmitter) getSequence() uint64 {
-	t.sequenceLock.RLock()
-	defer t.sequenceLock.RUnlock()
-
-	return t.curSequence
-}
-
-func (t *TxSubmitter) incSequence() {
-	t.sequenceLock.Lock()
-	defer t.sequenceLock.Unlock()
-
-	t.curSequence++
 }
 
 func (t *TxSubmitter) updateStatus(list []*QElementPair, err error) {
