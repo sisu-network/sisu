@@ -19,10 +19,9 @@ var (
 	NewSetPubKeyDecorator              = ante.NewSetPubKeyDecorator
 	NewValidateSigCountDecorator       = ante.NewValidateSigCountDecorator
 	NewDeductFeeDecorator              = ante.NewDeductFeeDecorator
-	NewSigGasConsumeDecorator          = ante.NewSigGasConsumeDecorator
-	NewSigVerificationDecorator        = ante.NewSigVerificationDecorator
-	NewIncrementSequenceDecorator      = ante.NewIncrementSequenceDecorator
-	NewMempoolFeeDecorator             = ante.NewMempoolFeeDecorator
+	// NewSigVerificationDecorator   = ante.NewSigVerificationDecorator
+	NewIncrementSequenceDecorator = ante.NewIncrementSequenceDecorator
+	NewMempoolFeeDecorator        = ante.NewMempoolFeeDecorator
 )
 
 type (

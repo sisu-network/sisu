@@ -100,7 +100,7 @@ func TssAnteHandler(
 		NewValidateSigCountDecorator(ak),
 		NewSigVerificationDecorator(ak, signModeHandler),
 		NewTssDecorator(validator),
-		NewIncrementSequenceDecorator(ak),
+		// NewIncrementSequenceDecorator(ak), // We dont use cosmos sequence number anymore
 	}
 
 	return sdk.ChainAnteDecorators(

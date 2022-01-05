@@ -666,8 +666,6 @@ func initParamsKeeper(appCodec codec.BinaryMarshaler, legacyAmino *codec.LegacyA
 
 // BeginBlocker application updates every begin block
 func (app *App) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
-	app.txSubmitter.SyncBlockSequence(ctx, app.AccountKeeper)
-
 	app.globalData.UpdateCatchingUp()
 	app.globalData.UpdateValidatorSets()
 
