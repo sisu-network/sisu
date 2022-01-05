@@ -54,7 +54,6 @@ func TestProcessor_deliverKeyGen_normal(t *testing.T) {
 		partyManager: mockPartyManager,
 		dheartClient: mockDheartClient,
 	}
-	p.currentHeight.Store(int64(0))
 
 	p.deliverKeygen(ctx, wrapper)
 }
@@ -92,7 +91,6 @@ func TestProcessor_deliverKeyGen_CatchingUp(t *testing.T) {
 		privateDb:  mockPrivateDb,
 		globalData: mockGlobalData,
 	}
-	p.currentHeight.Store(int64(0))
 
 	p.deliverKeygen(ctx, wrapper)
 }
