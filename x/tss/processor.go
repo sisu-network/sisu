@@ -39,7 +39,6 @@ type Processor struct {
 	txSubmit              common.TxSubmit
 	appKeys               common.AppKeys
 	globalData            common.GlobalData
-	currentHeight         atomic.Value
 	partyManager          PartyManager
 	txOutputProducer      TxOutputProducer
 	lastContext           atomic.Value
@@ -85,8 +84,6 @@ func NewProcessor(k keeper.DefaultKeeper,
 		keygenBlockPairs: make([]BlockSymbolPair, 0),
 		deyesClients:     make(map[string]*tssclients.DeyesClient),
 	}
-
-	p.currentHeight.Store(int64(0))
 
 	return p
 }
@@ -153,7 +150,6 @@ func (p *Processor) connectToDeyes() {
 }
 
 func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
-	p.currentHeight.Store(blockHeight)
 	p.setContext(ctx)
 
 	// Check keygen proposal
@@ -180,7 +176,7 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 func (p *Processor) EndBlock(ctx sdk.Context) {
 	if !p.globalData.IsCatchingUp() {
 		// Inform dheart that we have reached end of block so that dheart could run presign works.
-		height := p.currentHeight.Load().(int64)
+		height := ctx.BlockHeight()
 		log.Verbose("End block reached, height = ", height)
 		p.dheartClient.BlockEnd(height)
 	}
