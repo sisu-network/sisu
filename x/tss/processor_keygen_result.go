@@ -70,6 +70,8 @@ func (p *Processor) deliverKeygenResult(ctx sdk.Context, signerMsg *types.Keygen
 			return nil, nil
 		}
 
+		log.Info("Saving keygen for ", signerMsg.Keygen.KeyType)
+
 		// Save keygen to KVStore & private db
 		p.keeper.SaveKeygen(ctx, signerMsg.Keygen)
 		p.privateDb.SaveKeygen(signerMsg.Keygen)
