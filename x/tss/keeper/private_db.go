@@ -146,7 +146,7 @@ func (db *defaultPrivateDb) SaveKeygenResult(signerMsg *types.KeygenResultWithSi
 
 func (db *defaultPrivateDb) IsKeygenResultSuccess(signerMsg *types.KeygenResultWithSigner, self string) bool {
 	store := db.prefixes[string(prefixKeygenResult)]
-	return isKeygenResultSuccess(store, signerMsg, self)
+	return isKeygenResultSuccess(store, signerMsg.Keygen.KeyType, signerMsg.Keygen.Index, self)
 }
 
 ///// Contract
