@@ -139,6 +139,8 @@ func getAllKeygenPubkeys(store cstypes.KVStore) map[string][]byte {
 		}
 		if len(msg.PubKeyBytes) > 0 {
 			result[keyType] = msg.PubKeyBytes
+		} else {
+			log.Warn("msg.PubKeyBytes is empty")
 		}
 	}
 
