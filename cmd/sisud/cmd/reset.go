@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"database/sql"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -36,6 +38,10 @@ This command only deletes data files but not config files.
 			}
 
 			if err := resetValidatorState(); err != nil {
+				return err
+			}
+
+			if err := deleteSql(); err != nil {
 				return err
 			}
 
@@ -114,4 +120,26 @@ func resetValidatorState() error {
 
 	path := app.MainAppHome + "/data/priv_validator_state.json"
 	return ioutil.WriteFile(path, []byte(content), 0644)
+}
+
+func deleteSql() error {
+	username := "root"
+	password := "password"
+	host := "localhost"
+	port := 3306
+	schema := "sisu"
+
+	database, err := sql.Open("mysql", fmt.Sprintf("%s:%s@tcp(%s:%d)/%s", username, password, host, port, schema))
+	if err != nil {
+		return err
+	}
+
+	defer database.Close()
+
+	log.Info("Deleting sql tables...")
+
+	database.Exec("TRUNCATE TABLE deyes.watch_address")
+	database.Exec("TRUNCATE TABLE deyes.latest_block_height")
+
+	return nil
 }
