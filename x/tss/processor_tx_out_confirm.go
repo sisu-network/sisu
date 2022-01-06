@@ -56,7 +56,7 @@ func (p *Processor) deliverTxOutConfirm(ctx sdk.Context, msgWithSigner *types.Tx
 		}
 
 		contract.Address = msg.ContractAddress
-		log.Info("Contract address = ", msg.ContractAddress)
+		log.Infof("Contract address for chain %s = %s ", contract.Chain, msg.ContractAddress)
 
 		// Save the contract (with address)
 		p.keeper.SaveContract(ctx, contract, false)

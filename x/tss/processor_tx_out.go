@@ -78,11 +78,16 @@ func (p *Processor) signTx(ctx sdk.Context, tx *types.TxOut) {
 
 	// 4. Send it to Dheart for signing.
 	keysignReq := &hTypes.KeysignRequest{
-		Id:          p.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), tx.OutHash),
-		InChain:     tx.InChain,
-		OutChain:    tx.OutChain,
-		OutHash:     tx.OutHash,
-		BytesToSign: hash[:],
+		KeyType: libchain.KEY_TYPE_ECDSA,
+		KeysignMessages: []*hTypes.KeysignMessage{
+			{
+				Id:          p.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), tx.OutHash),
+				InChain:     tx.InChain,
+				OutChain:    tx.OutChain,
+				OutHash:     tx.OutHash,
+				BytesToSign: hash[:],
+			},
+		},
 	}
 
 	pubKeys := p.partyManager.GetActivePartyPubkeys()
