@@ -1,0 +1,48 @@
+# access the ssh key from Secret Manager, then copy to the .ssh directory
+steps:
+- name: 'gcr.io/cloud-builders/git'
+  secretEnv: ['SSH_KEY']
+  entrypoint: 'bash'
+  args:
+  - -c
+  - |
+    echo "$$SSH_KEY" >> /root/.ssh/id_rsa
+    chmod 400 /root/.ssh/id_rsa
+    cp known_hosts.github /root/.ssh/known_hosts
+  volumes:
+  - name: 'ssh'
+    path: /root/.ssh
+
+# clone the repository with the previous credential
+- name: 'gcr.io/cloud-builders/git'
+  args:
+  - clone
+  - --recurse-submodules
+  - git@github.com:sisu-network/sisu
+  volumes:
+  - name: 'ssh'
+    path: /root/.ssh
+
+# Build the container image
+- name: 'docker.io/library/docker'
+  entrypoint: 'sh'
+  args: ['-c', 'DOCKER_BUILDKIT=1 docker build -t gcr.io/$PROJECT_ID/$_SERVICE_NAME:$BRANCH_NAME  --ssh default=/root/.ssh/id_rsa .']
+  volumes:
+  - name: 'ssh'
+    path: /root/.ssh
+
+# TODO Add tag
+# - name: 'gcr.io/cloud-builders/gcloud'
+#   entrypoint: 'sh'
+#   args: ['-c', 'gcloud container images add-tag gcr.io/$PROJECT_ID/$_SERVICE_NAME:$SHORT_SHA gcr.io/$PROJECT_ID/$_SERVICE_NAME:$BRANCH_NAME --quiet --project=$PROJECT_ID']
+
+substitutions:
+  _SERVICE_NAME: sisu
+
+availableSecrets:
+  secretManager:
+  - versionName: projects/675495041485/secrets/sisu-github-puller/versions/latest
+    env: 'SSH_KEY'
+
+images: 
+  - 'gcr.io/$PROJECT_ID/$_SERVICE_NAME:$BRANCH_NAME'

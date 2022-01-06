@@ -322,7 +322,6 @@ func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
 }
 
 func (p *Processor) checkAndInsertMempoolTx(hash, msgType string) error {
-	// if p.db.MempoolTxExisted(hash) {
 	if p.privateDb.IsMempoolTxExisted(hash) {
 		err := fmt.Errorf("%s has been added into the mempool! hash = %s", msgType, hash)
 		log.Verbose(err)

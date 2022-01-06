@@ -74,6 +74,20 @@ func (mr *MockPrivateDbMockRecorder) GetKeygenPubkey(keyType interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetKeygenPubkey", reflect.TypeOf((*MockPrivateDb)(nil).GetKeygenPubkey), keyType)
 }
 
+// GetLatestContractAddressByName mocks base method.
+func (m *MockPrivateDb) GetLatestContractAddressByName(chain, name string) string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLatestContractAddressByName", chain, name)
+	ret0, _ := ret[0].(string)
+	return ret0
+}
+
+// GetLatestContractAddressByName indicates an expected call of GetLatestContractAddressByName.
+func (mr *MockPrivateDbMockRecorder) GetLatestContractAddressByName(chain, name interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestContractAddressByName", reflect.TypeOf((*MockPrivateDb)(nil).GetLatestContractAddressByName), chain, name)
+}
+
 // GetPendingContracts mocks base method.
 func (m *MockPrivateDb) GetPendingContracts(chain string) []*types.Contract {
 	m.ctrl.T.Helper()

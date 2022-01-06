@@ -4,27 +4,25 @@ import (
 	"fmt"
 
 	etypes "github.com/sisu-network/deyes/types"
-	htypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/lib/log"
 
 	libchain "github.com/sisu-network/lib/chain"
 )
 
 // deploySignedTx creates a deployment request and sends it to deyes.
-func (p *Processor) deploySignedTx(bz []byte, keysignResult *htypes.KeysignResult, isContractDeployment bool) error {
-	request := keysignResult.Request
-	log.Debug("Sending final tx to the deyes for deployment for chain ", request.OutChain)
-	deyeClient := p.deyesClients[request.OutChain]
+func (p *Processor) deploySignedTx(bz []byte, outChain string, outHash string, isContractDeployment bool) error {
+	log.Debug("Sending final tx to the deyes for deployment for chain ", outChain)
+	deyeClient := p.deyesClients[outChain]
 
-	pubkey := p.privateDb.GetKeygenPubkey(libchain.GetKeyTypeForChain(request.OutChain))
+	pubkey := p.privateDb.GetKeygenPubkey(libchain.GetKeyTypeForChain(outChain))
 	if pubkey == nil {
-		return fmt.Errorf("Cannot get pubkey for chain %s", request.OutChain)
+		return fmt.Errorf("Cannot get pubkey for chain %s", outChain)
 	}
 
 	if deyeClient != nil {
 		request := &etypes.DispatchedTxRequest{
-			Chain:                   request.OutChain,
-			TxHash:                  request.OutHash,
+			Chain:                   outChain,
+			TxHash:                  outHash,
 			Tx:                      bz,
 			PubKey:                  pubkey,
 			IsEthContractDeployment: isContractDeployment,
@@ -32,7 +30,7 @@ func (p *Processor) deploySignedTx(bz []byte, keysignResult *htypes.KeysignResul
 
 		go deyeClient.Dispatch(request)
 	} else {
-		err := fmt.Errorf("Cannot find deyes client for chain %s", request.OutChain)
+		err := fmt.Errorf("Cannot find deyes client for chain %s", outChain)
 		return err
 	}
 

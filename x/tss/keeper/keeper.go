@@ -8,6 +8,8 @@ import (
 	"github.com/sisu-network/sisu/x/tss/types"
 )
 
+var _ Keeper = (*DefaultKeeper)(nil)
+
 // go:generate mockgen -source x/tss/keeper/keeper.go -destination=tests/mock/tss/keeper.go -package=mock
 type Keeper interface {
 	// Debug
@@ -34,6 +36,7 @@ type Keeper interface {
 	// Contract Address
 	CreateContractAddress(ctx sdk.Context, chain string, txOutHash string, address string)
 	IsContractExistedAtAddress(ctx sdk.Context, chain string, address string) bool
+	GetLatestContractAddressByName(ctx sdk.Context, chain, name string) string
 
 	// TxIn
 	SaveTxIn(ctx sdk.Context, msg *types.TxIn)
@@ -103,6 +106,9 @@ func (k *DefaultKeeper) SaveContract(ctx sdk.Context, msg *types.Contract, saveB
 	}
 
 	saveContract(contractStore, byteCodeStore, msg)
+
+	contractNameStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractName)
+	saveContractAddressForName(contractNameStore, msg)
 }
 
 func (k *DefaultKeeper) SaveContracts(ctx sdk.Context, msgs []*types.Contract, saveByteCode bool) {
@@ -114,6 +120,11 @@ func (k *DefaultKeeper) SaveContracts(ctx sdk.Context, msgs []*types.Contract, s
 	}
 
 	saveContracts(contractStore, byteCodeStore, msgs)
+
+	contractNameStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractName)
+	for _, msg := range msgs {
+		saveContractAddressForName(contractNameStore, msg)
+	}
 }
 
 func (k *DefaultKeeper) IsContractExisted(ctx sdk.Context, msg *types.Contract) bool {
@@ -161,6 +172,11 @@ func (k *DefaultKeeper) CreateContractAddress(ctx sdk.Context, chain string, txO
 func (k *DefaultKeeper) IsContractExistedAtAddress(ctx sdk.Context, chain string, address string) bool {
 	caStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractAddress)
 	return isContractExistedAtAddress(caStore, chain, address)
+}
+
+func (k *DefaultKeeper) GetLatestContractAddressByName(ctx sdk.Context, chain, name string) string {
+	contractNameStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractName)
+	return getContractAddressByName(contractNameStore, chain, name)
 }
 
 ///// TxIn
