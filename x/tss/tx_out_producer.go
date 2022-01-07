@@ -202,13 +202,14 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *types.Contract, nonce 
 		byteCode := ecommon.FromHex(erc20.Bin)
 		input = append(byteCode, input...)
 
-		rawTx := ethTypes.NewTx(&ethTypes.AccessListTx{
-			Nonce:    uint64(nonce),
-			GasPrice: p.getGasPrice(contract.Chain),
-			Gas:      p.getGasLimit(contract.Chain),
-			Value:    big.NewInt(0),
-			Data:     input,
-		})
+		rawTx := ethTypes.NewContractCreation(
+			uint64(nonce),
+			big.NewInt(0),
+			p.getGasLimit(contract.Chain),
+			p.getGasPrice(contract.Chain),
+			input,
+		)
+
 		return rawTx
 	}
 
@@ -228,5 +229,5 @@ func (p *DefaultTxOutputProducer) getGasPrice(chain string) *big.Int {
 	case "eth-binance-testnet":
 		return big.NewInt(10000000000) // 10 Gwei
 	}
-	return big.NewInt(400000000000) // 10 Gwei
+	return big.NewInt(400000000000) // 400 Gwei
 }
