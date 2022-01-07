@@ -150,7 +150,6 @@ func getAllKeygenPubkeys(store cstypes.KVStore) map[string][]byte {
 		}
 	}
 
-	log.Debug(result)
 	return result
 }
 
