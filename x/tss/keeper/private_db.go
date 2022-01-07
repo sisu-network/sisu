@@ -264,6 +264,10 @@ func (db *defaultPrivateDb) GetTxOutFromSigHash(outChain, hashWithSig string) *t
 	withSigStore := db.prefixes[string(prefixTxOutSig)]
 	txOutSig := getTxOutSig(withSigStore, outChain, hashWithSig)
 
+	if txOutSig == nil {
+		return nil
+	}
+
 	noSigStore := db.prefixes[string(prefixTxOut)]
 	return getTxOut(noSigStore, outChain, txOutSig.HashNoSig)
 }
