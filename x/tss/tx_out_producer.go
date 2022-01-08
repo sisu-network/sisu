@@ -218,16 +218,16 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *types.Contract, nonce 
 
 func (p *DefaultTxOutputProducer) getGasLimit(chain string) uint64 {
 	// TODO: Make this dependent on different chains.
-	return uint64(1_000_000)
+	return uint64(8_000_000)
 }
 
 func (p *DefaultTxOutputProducer) getGasPrice(chain string) *big.Int {
 	// TODO: Make this dependent on different chains.
 	switch chain {
 	case "ganache1":
-		return big.NewInt(1_000_000_000) // 1 Gwei
+		return big.NewInt(2_000_000_000) // 1 Gwei
 	case "ganache2":
-		return big.NewInt(3_000_000_000) // 1 Gwei
+		return big.NewInt(2_000_000_000) // 1 Gwei
 	case "eth-ropsten":
 		return big.NewInt(1_700_000_000)
 	case "eth-binance-testnet":
