@@ -137,14 +137,14 @@ You can run `make dev-mysql-up` (make sure you installed Docker) to initialize d
 
 #### Run ganache-cli
 
-Download ganache-cli (make sure you have version 6.x) and runs the following commands on 2 different terminals:
+Download ganache (make sure you have version **7.x with node 14** and above) and runs the following commands on 2 different terminals:
 
 ```
-ganache-cli --accounts 10 --blockTime 3 --port 7545 --defaultBalanceEther 100000 --networkId 189985 --chainId 189985 --mnemonic "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum"
+ganache-cli --accounts 10 --blockTime 3 --port 8545 --defaultBalanceEther 100000 --chain.networkId 189985 --chain.chainId 189985 --mnemonic "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum"
 ```
 
 ```
-ganache-cli --accounts 10 --blockTime 3 --port 8545 --defaultBalanceEther 100000 --networkId 189986 --chainId 189986 --mnemonic "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum"
+ganache-cli --accounts 10 --blockTime 3 --port 8545 --defaultBalanceEther 100000 --chain.networkId 189986 --chain.chainId 189986 --mnemonic "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum"
 ```
 
 These commands create a simulated blockchain on port 7545 and 8545.
