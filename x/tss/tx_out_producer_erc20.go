@@ -79,7 +79,9 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(ctx sdk.Context, tokenAddr
 		return nil, err
 	}
 
-	log.Debugf("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, amount: %d", destChain, gatewayAddress.String(), tokenAddress, recipient, amount.Int64())
+	log.Debugf("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, amount: %d",
+		destChain, gatewayAddress.String(), tokenAddress, recipient, amount.Int64(),
+	)
 	rawTx := ethTypes.NewTransaction(
 		uint64(nonce),
 		gatewayAddress,
