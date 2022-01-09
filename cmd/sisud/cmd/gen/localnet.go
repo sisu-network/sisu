@@ -77,6 +77,7 @@ Example:
 					ApiPort:        25456,
 				},
 				Tss: config.TssConfig{
+					Index:      1,
 					Enable:     enableTss,
 					DheartHost: "0.0.0.0",
 					DheartPort: 5678,

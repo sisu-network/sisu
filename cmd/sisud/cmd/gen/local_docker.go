@@ -231,8 +231,8 @@ func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, 
 			ApiPort:        25456,
 		},
 		Tss: config.TssConfig{
-			Enable: true,
-			// Enable:     false,
+			Index:      index,
+			Enable:     true,
 			DheartHost: fmt.Sprintf("dheart%d", index),
 			DheartPort: 5678,
 			SupportedChains: map[string]config.TssChainConfig{
@@ -256,37 +256,6 @@ func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, 
 func generateDockerCompose(outputPath string, ips []string, dockerConfig DockerNodeConfig) {
 	const dockerComposeTemplate = `version: "3"
 services:
-  ganache1:
-    image: ganache
-    environment:
-      - port=7545
-      - networkId=189985
-    ports:
-      - 7545:7545
-  ganache2:
-    image: ganache
-    environment:
-      - port=7545
-      - networkId=189986
-    ports:
-      - 8545:7545
-  mysql:
-    image: mysql:8.0.19
-    command: "--default-authentication-plugin=mysql_native_password"
-    restart: always
-    environment:
-      - MYSQL_ROOT_PASSWORD=password
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
-      interval: 3s
-      retries: 5
-      start_period: 30s
-    volumes:
-      - ./db:/var/lib/mysql
-    expose:
-      - 3306
-    ports:
-      - 4000:3306
 {{ range $k, $nodeData := .NodeData }}
   sisu{{ $k }}:
     container_name: sisu{{ $k }}
@@ -298,31 +267,10 @@ services:
       - 26657
     ports:
       - {{ $nodeData.GrpcPortMap }}:9090
+      - 707{{ $k }}:7070
     restart: on-failure
-    depends_on:
-      - mysql
-      - deyes{{ $k }}
-      - dheart{{ $k }}
     volumes:
       - ./node{{ $k }}:/root/.sisu
-  dheart{{ $k }}:
-    image: dheart
-    expose:
-      - 28300
-      - 5678
-    restart: on-failure
-    depends_on:
-      - mysql
-    volumes:
-      - ./node{{ $k }}/dheart.toml:/root/dheart.toml
-  deyes{{ $k }}:
-    image: deyes
-    restart: on-failure
-    depends_on:
-      - mysql
-      - ganache1
-    volumes:
-      - ./node{{ $k }}/deyes.toml:/app/deyes.toml
 {{ end }}
 `
 

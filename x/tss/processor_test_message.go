@@ -9,7 +9,13 @@ import (
 func (p *Processor) checkTxTestMessage(ctx sdk.Context, msg *types.TestMessage) error {
 	log.Info("Checking test message ....")
 
-	return nil
+	if p.config.Index == 0 {
+		return nil
+	}
+
+	log.Error("Cannot find message..., our index = ", p.config.Index)
+
+	return ErrCannotFindMessage
 }
 
 func (p *Processor) deliverTestMessage(ctx sdk.Context, msg *types.TestMessage) ([]byte, error) {

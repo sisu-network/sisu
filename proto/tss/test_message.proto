@@ -3,4 +3,6 @@ package types;
 
 message TestMessage {
   string signer = 1;
+  int32 index = 2;
+  int32 number = 3;
 }

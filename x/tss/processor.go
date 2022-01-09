@@ -91,6 +91,8 @@ func NewProcessor(k keeper.DefaultKeeper,
 func (p *Processor) Init() {
 	log.Info("Initializing TSS Processor...")
 
+	log.Debug("Index = ", p.config.Index)
+
 	go func() {
 		p.runServer()
 	}()
@@ -102,7 +104,8 @@ func (p *Processor) runServer() {
 	root := func(w http.ResponseWriter, req *http.Request) {
 		fmt.Fprintf(w, "hello\n")
 
-		p.txSubmit.SubmitMessage(types.NewTestMessage(p.appKeys.GetSignerAddress().String()))
+		p.txSubmit.SubmitMessage(types.NewTestMessage(p.appKeys.GetSignerAddress().String(), p.config.Index, 0))
+		// p.txSubmit.SubmitMessage(types.NewTestMessage(p.appKeys.GetSignerAddress().String(), p.config.Index, 1))
 	}
 
 	http.HandleFunc("/", root)

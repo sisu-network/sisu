@@ -33,6 +33,7 @@ type TssChainConfig struct {
 // 	 id = 1
 // 	 deyes_url = "http://localhost:31001"
 type TssConfig struct {
+	Index           int                       `toml:"index"`
 	Enable          bool                      `toml:"enable"`
 	DheartHost      string                    `toml:"dheart-host"`
 	DheartPort      int                       `toml:"dheart-port"`

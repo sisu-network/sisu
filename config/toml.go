@@ -25,6 +25,7 @@ api-port = {{ .Sisu.ApiPort }}
 ###                         Siu TSS Connfiguration                          ###
 ###############################################################################
 [tss]
+index = {{ .Tss.Index }}
 enable = {{ .Tss.Enable }}
 dheart-host = "{{ .Tss.DheartHost }}"
 dheart-port = {{ .Tss.DheartPort }}

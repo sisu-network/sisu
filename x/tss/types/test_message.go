@@ -7,9 +7,11 @@ import (
 
 var _ sdk.Msg = &TestMessage{}
 
-func NewTestMessage(signer string) *TestMessage {
+func NewTestMessage(signer string, index int, number int) *TestMessage {
 	return &TestMessage{
 		Signer: signer,
+		Index:  int32(index),
+		Number: int32(number),
 	}
 }
 
