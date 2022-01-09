@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/ethereum/go-ethereum/rpc"
-	eTypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/lib/log"
 )
 
@@ -61,19 +60,6 @@ func (c *DeyesClient) AddWatchAddresses(chain string, addrs []string) error {
 	}
 
 	return nil
-}
-
-func (c *DeyesClient) Dispatch(request *eTypes.DispatchedTxRequest) (*eTypes.DispatchedTxResult, error) {
-	var result = &eTypes.DispatchedTxResult{}
-	err := c.client.CallContext(context.Background(), &result, "deyes_dispatchTx", request)
-	if err != nil {
-		log.Error("Cannot Dispatch tx to the chain", request.Chain, "err =", err)
-		return result, err
-	}
-
-	log.Verbose("Tx has been dispatched")
-
-	return result, nil
 }
 
 func (c *DeyesClient) GetNonce(chain string, address string) int64 {

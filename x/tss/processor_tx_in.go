@@ -1,99 +1,10 @@
 package tss
 
 import (
-	"github.com/ethereum/go-ethereum/common"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	sdk "github.com/sisu-network/cosmos-sdk/types"
-	eyesTypes "github.com/sisu-network/deyes/types"
-	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
-
-// Processed list of transactions sent from deyes to Sisu api server.
-// TODO: handle error correctly
-func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
-	log.Verbose("There is a new list of txs from deyes, len =", len(txs.Arr))
-
-	// Create TxIn messages and broadcast to the Sisu chain.
-	for _, tx := range txs.Arr {
-		// 1. Check if this tx is from one of our key. If it is, update the status of TxOut to confirmed.
-		if p.privateDb.IsKeygenAddress(libchain.KEY_TYPE_ECDSA, tx.From) {
-			return p.confirmTx(tx, txs.Chain, txs.Block)
-		} else if len(tx.To) > 0 {
-			// 2. This is a transaction to our key account or one of our contracts. Create a message to
-			// indicate that we have observed this transaction and broadcast it to cosmos chain.
-			// TODO: handle error correctly
-			hash := utils.GetTxInHash(txs.Block, txs.Chain, tx.Serialized)
-			signerMsg := types.NewTxInWithSigner(
-				p.appKeys.GetSignerAddress().String(),
-				txs.Chain,
-				hash,
-				txs.Block,
-				tx.Serialized,
-			)
-
-			// Save tx in into db
-			p.privateDb.SaveTxIn(signerMsg.Data)
-
-			go func(tx *types.TxInWithSigner) {
-				if err := p.txSubmit.SubmitMessage(tx); err != nil {
-					return
-				}
-			}(signerMsg)
-		}
-	}
-
-	return nil
-}
-
-// confirmTx confirms that a tx has been included in a block on the blockchain.
-func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64) error {
-	log.Verbose("This is a transaction from us. We need to confirm it. Chain = ", chain)
-
-	p.privateDb.PrintStoreKeys("txOut")
-	txOut := p.privateDb.GetTxOutFromSigHash(chain, tx.Hash)
-	if txOut == nil {
-		// TODO: Add unconfirmed tx model
-		log.Verbose("cannot find txOut with full signature hash: ", tx.Hash)
-		return nil
-	}
-
-	log.Info("confirming tx: chain, hash, type = ", chain, " ", tx.Hash, " ", txOut.TxType)
-
-	contractAddress := ""
-	if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT && libchain.IsETHBasedChain(chain) {
-		ethTx := &ethTypes.Transaction{}
-		err := ethTx.UnmarshalBinary(tx.Serialized)
-		if err != nil {
-			log.Error("cannot unmarshal eth transaction, err = ", err)
-			return err
-		}
-
-		contractAddress = crypto.CreateAddress(common.HexToAddress(tx.From), ethTx.Nonce()).String()
-		log.Info("contractAddress = ", contractAddress)
-	}
-
-	confirmMsg := types.NewTxOutConfirmWithSigner(
-		p.appKeys.GetSignerAddress().String(),
-		txOut.TxType,
-		txOut.OutChain,
-		txOut.OutHash,
-		blockHeight,
-		contractAddress,
-	)
-
-	// Save this into db
-	p.privateDb.SaveTxOutConfirm(confirmMsg.Data)
-
-	go func() {
-		p.txSubmit.SubmitMessage(confirmMsg)
-	}()
-
-	return nil
-}
 
 func (p *Processor) checkTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner) error {
 	// Make sure we should have seen this TxIn in our table.
