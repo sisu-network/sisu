@@ -269,7 +269,7 @@ services:
       - port=7545
       - networkId=189986
     ports:
-      - 7546:7545
+      - 8545:7545
   mysql:
     image: mysql:8.0.19
     command: "--default-authentication-plugin=mysql_native_password"
