@@ -3,7 +3,6 @@ package tss
 import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	etypes "github.com/sisu-network/deyes/types"
-	htypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/keeper"
 )
@@ -27,13 +26,6 @@ func (a *ApiHandler) Version() string {
 func (a *ApiHandler) CheckHealth() {
 }
 
-func (a *ApiHandler) KeygenResult(result htypes.KeygenResult) bool {
-	log.Info("There is a Keygen Result")
-
-	a.processor.OnKeygenResult(result)
-	return true
-}
-
 // This is a API endpoint to receive transactions with To address we are interested in.
 func (a *ApiHandler) PostObservedTxs(txs *etypes.Txs) {
 	log.Debug("There is new list of transactions from deyes from chain ", txs.Chain)
@@ -49,11 +41,6 @@ func (a *ApiHandler) PostObservedTxs(txs *etypes.Txs) {
 
 	// There is a new transaction that we are interested in.
 	a.processor.OnTxIns(txs)
-}
-
-func (a *ApiHandler) KeysignResult(result *htypes.KeysignResult) {
-	log.Info("There is keysign result")
-	go a.processor.OnKeysignResult(result)
 }
 
 func (a *ApiHandler) PostDeploymentResult(result *etypes.DispatchedTxResult) {

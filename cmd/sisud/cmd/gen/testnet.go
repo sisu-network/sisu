@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	heartcfg "github.com/sisu-network/dheart/core/config"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
 	"github.com/spf13/cobra"
@@ -208,14 +207,6 @@ func (g *TestnetGenerator) generateHeartToml(index int, inputDir string, outputD
 
 		peers = append(peers, fmt.Sprintf(`"/ip4/%s/tcp/28300/p2p/%s"`, heartIps[i], peerIds[i]))
 	}
-
-	heartConfig, err := heartcfg.ReadConfig(filepath.Join(inputDir, "dheart.toml"))
-	if err != nil {
-		panic(err)
-	}
-
-	heartConfig.Connection.BootstrapPeers = peers
-	heartcfg.WriteConfigFile(filepath.Join(outputDir, "dheart.toml"), heartConfig)
 }
 
 func (g *TestnetGenerator) generateEyesToml(index int, inputDir string, outputDir string) {

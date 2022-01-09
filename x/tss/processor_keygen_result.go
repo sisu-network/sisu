@@ -2,7 +2,6 @@ package tss
 
 import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
-	dhtypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
 
@@ -12,30 +11,6 @@ import (
 type BlockSymbolPair struct {
 	blockHeight int64
 	chain       string
-}
-
-// Called after having key generation result from Sisu's api server.
-func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
-	resultEnum := types.KeygenResult_FAILURE
-	if result.Success {
-		resultEnum = types.KeygenResult_SUCCESS
-	}
-
-	signerMsg := types.NewKeygenResultWithSigner(
-		p.appKeys.GetSignerAddress().String(),
-		result.KeyType,
-		result.KeygenIndex,
-		resultEnum,
-		result.PubKeyBytes,
-		result.Address,
-	)
-
-	// Save the result to private db
-	p.privateDb.SaveKeygenResult(signerMsg)
-
-	log.Info("There is keygen result from dheart, resultEnum = ", resultEnum)
-
-	p.txSubmit.SubmitMessage(signerMsg)
 }
 
 func (p *Processor) checkKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) error {

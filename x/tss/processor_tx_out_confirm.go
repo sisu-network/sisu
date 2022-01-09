@@ -1,6 +1,8 @@
 package tss
 
 import (
+	"fmt"
+
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
@@ -9,10 +11,12 @@ import (
 func (p *Processor) checkTxOutConfirm(ctx sdk.Context, msgWithSigner *types.TxOutConfirmWithSigner) error {
 	msg := msgWithSigner.Data
 	if !p.privateDb.IsTxOutConfirmExisted(msg.OutChain, msg.OutHash) {
+		fmt.Println("Cannot find the tx in our db")
 		return ErrCannotFindMessage
 	}
 
 	if p.keeper.IsTxOutConfirmExisted(ctx, msg.OutChain, msg.OutHash) {
+		fmt.Println("Tx has been included into the keeper")
 		return ErrMessageHasBeenProcessed
 	}
 
