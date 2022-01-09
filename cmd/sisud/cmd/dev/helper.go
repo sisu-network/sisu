@@ -10,8 +10,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/sisu-network/dcore/accounts"
-	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
 )
 
 const (
@@ -20,31 +18,11 @@ const (
 )
 
 var (
-	localWallet *hdwallet.Wallet
-	account0    accounts.Account
 	privateKey0 *ecdsa.PrivateKey
 	nonceMap    map[string]*big.Int
 )
 
 func init() {
-	var err error
-	localWallet, err = hdwallet.NewFromMnemonic(defaultMnemonic)
-	if err != nil {
-		panic(err)
-	}
-
-	path := hdwallet.MustParseDerivationPath(fmt.Sprintf("m/44'/60'/0'/0/%d", 0))
-	account0, err = localWallet.Derive(path, true)
-	if err != nil {
-		panic(err)
-	}
-
-	privateKey0, err = localWallet.PrivateKey(account0)
-	if err != nil {
-		panic(err)
-	}
-
-	nonceMap = make(map[string]*big.Int)
 }
 
 func getEthClient(port int) (*ethclient.Client, error) {

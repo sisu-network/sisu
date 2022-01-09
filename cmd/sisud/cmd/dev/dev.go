@@ -14,8 +14,5 @@ func DevCmd() *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	cmd.AddCommand(FundAccount())
-	cmd.AddCommand(DeployErc20())
-
 	return cmd
 }
