@@ -11,7 +11,6 @@ import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	mockcommon "github.com/sisu-network/sisu/tests/mock/common"
 	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
-	mocktssclients "github.com/sisu-network/sisu/tests/mock/tss/tssclients"
 	"github.com/sisu-network/sisu/x/tss/types"
 	"github.com/stretchr/testify/require"
 )
@@ -26,9 +25,6 @@ func TestDeliverTxOut_Normal(t *testing.T) {
 
 	mockPartyManager := mocktss.NewMockPartyManager(ctrl)
 	mockPartyManager.EXPECT().GetActivePartyPubkeys().Return([]ctypes.PubKey{}).Times(1)
-
-	mockDheartClient := mocktssclients.NewMockDheartClient(ctrl)
-	mockDheartClient.EXPECT().KeySign(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
 	amount := big.NewInt(100)
 	gasLimit := uint64(100)
@@ -64,7 +60,6 @@ func TestDeliverTxOut_Normal(t *testing.T) {
 		keeper:       mockKeeper,
 		privateDb:    mockPrivateDb,
 		partyManager: mockPartyManager,
-		dheartClient: mockDheartClient,
 		globalData:   mockGlobalData,
 	}
 
@@ -98,9 +93,6 @@ func TestDeliverTxOut_BlockCatchingUp(t *testing.T) {
 
 	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
 	mockGlobalData.EXPECT().IsCatchingUp().Return(true).Times(1) // block is catching up.
-
-	mockDheartClient := mocktssclients.NewMockDheartClient(ctrl)
-	mockDheartClient.EXPECT().KeySign(gomock.Any(), gomock.Any()).Return(nil).Times(0)
 
 	p := &Processor{
 		privateDb:  mockPrivateDb,

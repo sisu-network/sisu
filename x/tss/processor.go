@@ -1,7 +1,6 @@
 package tss
 
 import (
-	"encoding/hex"
 	"fmt"
 	"sync/atomic"
 
@@ -91,62 +90,7 @@ func NewProcessor(k keeper.DefaultKeeper,
 func (p *Processor) Init() {
 	log.Info("Initializing TSS Processor...")
 
-	if p.config.Enable {
-		p.connectToDheart()
-		p.connectToDeyes()
-	}
-
 	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.keeper, p.appKeys, p.privateDb, p.config)
-}
-
-// Connect to Dheart server and set private key for dheart. Note that this is the tendermint private
-// key, not signer key in the keyring.
-func (p *Processor) connectToDheart() {
-	var err error
-	url := fmt.Sprintf("http://%s:%d", p.config.DheartHost, p.config.DheartPort)
-	log.Info("Connecting to Dheart server at", url)
-
-	p.dheartClient, err = tssclients.DialDheart(url)
-	if err != nil {
-		log.Error("Failed to connect to Dheart. Err =", err)
-		panic(err)
-	}
-
-	encryptedKey, err := p.appKeys.GetAesEncrypted(p.tendermintPrivKey.Bytes())
-	if err != nil {
-		log.Error("Failed to get encrypted private key. Err =", err)
-		panic(err)
-	}
-
-	log.Info("p.tendermintPrivKey.Type() = ", p.tendermintPrivKey.Type())
-
-	// Pass encrypted private key to dheart
-	if err := p.dheartClient.SetPrivKey(hex.EncodeToString(encryptedKey), p.tendermintPrivKey.Type()); err != nil {
-		panic(err)
-	}
-
-	log.Info("Dheart server connected!")
-}
-
-// Connecto to all deyes.
-func (p *Processor) connectToDeyes() {
-	for chain, chainConfig := range p.config.SupportedChains {
-		log.Info("Deyes url = ", chainConfig.DeyesUrl)
-
-		deyeClient, err := tssclients.DialDeyes(chainConfig.DeyesUrl)
-		if err != nil {
-			log.Error("Failed to connect to deyes", chain, ".Err =", err)
-			panic(err)
-		}
-
-		if err := deyeClient.CheckHealth(); err != nil {
-			panic(err)
-		}
-
-		p.deyesClients[chain] = deyeClient
-	}
-
-	p.worldState = NewWorldState(p.config, p.privateDb, p.deyesClients)
 }
 
 func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
