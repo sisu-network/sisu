@@ -257,14 +257,14 @@ func generateDockerCompose(outputPath string, ips []string, dockerConfig DockerN
 	const dockerComposeTemplate = `version: "3"
 services:
   ganache1:
-    image: ganache-cli
+    image: ganache
     environment:
       - port=7545
       - networkId=189985
     ports:
       - 7545:7545
   ganache2:
-    image: ganache-cli
+    image: ganache
     environment:
       - port=7545
       - networkId=189986

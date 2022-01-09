@@ -45,7 +45,7 @@ enable = false
 To run the app on localhost:
 
 ```
-./scripts/run_local.sh
+./scripts/docker_build_all.sh
 ```
 
 You can now deploy ETH transaction on ganache1 at port 7545.
@@ -61,13 +61,7 @@ Because of high number of services in the docker container (3 x n + 3 where n is
 You need to build sisu, dheart, deyes, ganache images in their corresponding repos. Assume that you save dheart, deyes in the same directory level with sisu.
 
 ```
-cd ../dheart
-docker build -t dheart .
-cd ../deyes
-docker build -t deyes .
-docker build -f Dockerfile-ganache -t ganache-cli .
-cd ../sisu
-DOCKER_BUILDKIT=1 docker build -t sisu --ssh default=[path_to_ssh_key] . 
+
 ```
 
 ## Generate data
@@ -122,7 +116,7 @@ NOTE: if you get into bad data state or you want to reset the blockchain, simply
 
 You need to enable tss in `~/.sisu/main/config/sisu.toml` in order to run full Sisu node.
 
-You will need at least 5 different terminal tabs to run a full Sisu nodes: 2 tabs for ganache-cli, 1 for dheart, 1 for deyes, 1 for sisu.
+You will need at least 5 different terminal tabs to run a full Sisu nodes: 2 tabs for ganache, 1 for dheart, 1 for deyes, 1 for sisu.
 
 In addition, you need to install mysql locally with the following config:
 
@@ -135,7 +129,7 @@ password: password
 
 You can run `make dev-mysql-up` (make sure you installed Docker) to initialize databases with default settings
 
-#### Run ganache-cli
+#### Run ganache
 
 Download ganache (make sure you have version **7.x with node 14** and above) and runs the following commands on 2 different terminals:
 
