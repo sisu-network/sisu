@@ -24,6 +24,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TxInWithSigner{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TxOutWithSigner{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TxOutConfirmWithSigner{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &TestMessage{})
 
 	registry.RegisterImplementations((*sdk.Msg)(nil), &KeysignResult{})
 

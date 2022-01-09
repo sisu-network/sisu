@@ -2,6 +2,7 @@ package tss
 
 import (
 	"fmt"
+	"net/http"
 	"sync/atomic"
 
 	"github.com/sisu-network/tendermint/crypto"
@@ -90,40 +91,33 @@ func NewProcessor(k keeper.DefaultKeeper,
 func (p *Processor) Init() {
 	log.Info("Initializing TSS Processor...")
 
+	go func() {
+		p.runServer()
+	}()
+
 	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.keeper, p.appKeys, p.privateDb, p.config)
 }
 
+func (p *Processor) runServer() {
+	root := func(w http.ResponseWriter, req *http.Request) {
+		fmt.Fprintf(w, "hello\n")
+
+		p.txSubmit.SubmitMessage(types.NewTestMessage(p.appKeys.GetSignerAddress().String()))
+	}
+
+	http.HandleFunc("/", root)
+
+	http.ListenAndServe(":7070", nil)
+}
+
 func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
+	fmt.Println("At BEGIN block", ctx.BlockHeight())
+
 	p.setContext(ctx)
-
-	// Check keygen proposal
-	if blockHeight > 1 {
-		// We need to wait till block 2 for multistore of the app to be updated with latest account info
-		// for signing.
-		p.CheckTssKeygen(ctx, blockHeight)
-	}
-
-	// Check Vote result.
-	for len(p.keygenBlockPairs) > 0 && !p.globalData.IsCatchingUp() {
-		log.Debug("blockHeight = ", blockHeight)
-		if blockHeight < p.keygenBlockPairs[0].blockHeight {
-			break
-		}
-
-		for len(p.keygenBlockPairs) > 0 && blockHeight >= p.keygenBlockPairs[0].blockHeight {
-			// Remove the chain from processing queue.
-			p.keygenBlockPairs = p.keygenBlockPairs[1:]
-		}
-	}
 }
 
 func (p *Processor) EndBlock(ctx sdk.Context) {
-	if !p.globalData.IsCatchingUp() {
-		// Inform dheart that we have reached end of block so that dheart could run presign works.
-		height := ctx.BlockHeight()
-		log.Verbose("End block reached, height = ", height)
-		p.dheartClient.BlockEnd(height)
-	}
+	fmt.Println("At END block", ctx.BlockHeight())
 }
 
 func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
@@ -155,6 +149,9 @@ func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
 
 		case *types.TxOutConfirmWithSigner:
 			return p.checkTxOutConfirm(ctx, msg.(*types.TxOutConfirmWithSigner))
+
+		case *types.TestMessage:
+			return p.checkTxTestMessage(ctx, msg.(*types.TestMessage))
 		}
 	}
 
