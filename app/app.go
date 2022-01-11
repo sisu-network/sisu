@@ -10,8 +10,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/spf13/cast"
 
-	cosmosAnte "github.com/cosmos/cosmos-sdk/x/auth/ante"
-
 	"github.com/sisu-network/lib/log"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmos "github.com/tendermint/tendermint/libs/os"
@@ -416,7 +414,7 @@ func New(
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetAnteHandler(
-		cosmosAnte.NewAnteHandler(
+		ante.NewAnteHandler(
 			app.AccountKeeper,
 			app.BankKeeper,
 			ante.DefaultSigVerificationGasConsumer,
@@ -667,6 +665,8 @@ func initParamsKeeper(appCodec codec.BinaryMarshaler, legacyAmino *codec.LegacyA
 
 // BeginBlocker application updates every begin block
 func (app *App) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+	app.txSubmitter.SyncBlockSequence(ctx, app.AccountKeeper)
+
 	app.globalData.UpdateCatchingUp()
 	app.globalData.UpdateValidatorSets()
 
