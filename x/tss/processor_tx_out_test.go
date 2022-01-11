@@ -67,7 +67,6 @@ func TestDeliverTxOut_Normal(t *testing.T) {
 		dheartClient: mockDheartClient,
 		globalData:   mockGlobalData,
 	}
-	p.currentHeight.Store(int64(0))
 
 	bytes, err := p.deliverTxOut(ctx, txOutWithSigner)
 

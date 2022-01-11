@@ -92,7 +92,7 @@ func (k *DefaultKeeper) SaveKeygenResult(ctx sdk.Context, signerMsg *types.Keyge
 // KVStore.
 func (k *DefaultKeeper) IsKeygenResultSuccess(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner, self string) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenResult)
-	return isKeygenResultSuccess(store, signerMsg, self)
+	return isKeygenResultSuccess(store, signerMsg.Keygen.KeyType, signerMsg.Keygen.Index, self)
 }
 
 ///// Contracts

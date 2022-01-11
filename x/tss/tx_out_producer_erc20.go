@@ -79,15 +79,17 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(ctx sdk.Context, tokenAddr
 		return nil, err
 	}
 
-	log.Debugf("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, amount: %d", destChain, gatewayAddress.String(), tokenAddress, recipient, amount.Int64())
-	rawTx := ethTypes.NewTx(&ethTypes.AccessListTx{
-		Nonce:    uint64(nonce),
-		GasPrice: p.getGasPrice(destChain),
-		Gas:      p.getGasLimit(destChain),
-		To:       &gatewayAddress,
-		Value:    big.NewInt(0),
-		Data:     input,
-	})
+	log.Debugf("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, amount: %d",
+		destChain, gatewayAddress.String(), tokenAddress, recipient, amount.Int64(),
+	)
+	rawTx := ethTypes.NewTransaction(
+		uint64(nonce),
+		gatewayAddress,
+		big.NewInt(0),
+		p.getGasLimit(destChain),
+		p.getGasPrice(destChain),
+		input,
+	)
 
 	bz, err := rawTx.MarshalBinary()
 	if err != nil {

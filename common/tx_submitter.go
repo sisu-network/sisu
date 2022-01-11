@@ -164,9 +164,6 @@ func (t *TxSubmitter) Start() {
 
 			log.Info("Queue size = ", len(copy))
 
-			// We don't use sequence for transactions.
-			t.factory = t.factory.WithSequence(0)
-
 			// 3. Send all messages
 			msgs := convert(copy)
 			if err := tx.BroadcastTx(t.clientCtx, t.factory, msgs...); err != nil {
@@ -245,5 +242,6 @@ func newFactory(clientCtx client.Context) tx.Factory {
 		WithGasAdjustment(defaultGasAdjustment).
 		WithSignMode(signing.SignMode_SIGN_MODE_UNSPECIFIED).
 		WithAccountRetriever(clientCtx.AccountRetriever).
-		WithTxConfig(clientCtx.TxConfig)
+		WithTxConfig(clientCtx.TxConfig).
+		WithSequence(0)
 }
