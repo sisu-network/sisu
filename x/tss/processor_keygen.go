@@ -1,6 +1,8 @@
 package tss
 
 import (
+	"fmt"
+
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
@@ -54,18 +56,25 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 	}
 }
 
-func (p *Processor) checkKeygen(ctx sdk.Context, wrapper *types.KeygenWithSigner) error {
-	ok := p.privateDb.IsKeygenExisted(wrapper.Data.KeyType, int(wrapper.Data.Index))
-	if !ok {
-		return ErrCannotFindMessage
+func (p *Processor) deliverKeygen(ctx sdk.Context, wrapper *types.KeygenWithSigner) ([]byte, error) {
+	bz, err := wrapper.Data.Marshal()
+	if err != nil {
+		return nil, nil
 	}
 
-	// TODO: Check if this is in the KVStore to avoid double processing.
+	// TODO: Check if signer is in the top validator set.
 
-	return nil
+	count := p.keeper.SaveTxVotes(ctx, bz, wrapper.Signer)
+	fmt.Println("count = ", count)
+
+	if count >= p.config.MajorityThreshold {
+		return p.doKeygen(ctx, wrapper)
+	}
+
+	return nil, nil
 }
 
-func (p *Processor) deliverKeygen(ctx sdk.Context, wrapper *types.KeygenWithSigner) ([]byte, error) {
+func (p *Processor) doKeygen(ctx sdk.Context, wrapper *types.KeygenWithSigner) ([]byte, error) {
 	msg := wrapper.Data
 
 	// TODO: Check if we have processed a keygen proposal recently.

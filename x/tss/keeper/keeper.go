@@ -15,6 +15,9 @@ type Keeper interface {
 	// Debug
 	PrintStore(ctx sdk.Context, name string)
 
+	// TxVote
+	SaveTxVotes(ctx sdk.Context, hash []byte, val string) int
+
 	// Keygen
 	SaveKeygen(ctx sdk.Context, msg *types.Keygen)
 	IsKeygenExisted(ctx sdk.Context, keyType string, index int) bool
@@ -62,6 +65,12 @@ func NewKeeper(storeKey sdk.StoreKey) *DefaultKeeper {
 	}
 
 	return keeper
+}
+
+///// TxVote
+func (k *DefaultKeeper) SaveTxVotes(ctx sdk.Context, hash []byte, val string) int {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxVotes)
+	return saveTxVotes(store, hash, val)
 }
 
 ///// Keygen

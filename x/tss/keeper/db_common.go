@@ -11,17 +11,17 @@ import (
 
 // TODO: Move txout's byte into separate store.
 var (
-	prefixKeygen           = []byte{0x01}
-	prefixKeygenResult     = []byte{0x02}
-	prefixContract         = []byte{0x03}
-	prefixContractByteCode = []byte{0x04}
-	prefixContractAddress  = []byte{0x05}
-	prefixTxIn             = []byte{0x06}
-	prefixTxOut            = []byte{0x07}
-	prefixTxOutSig         = []byte{0x07}
-	prefixTxOutConfirm     = []byte{0x08}
-	prefixMempoolTx        = []byte{0x09}
-	prefixContractName     = []byte{0x10}
+	prefixTxVotes          = []byte{0x01} // Vote for a tx by different nodes
+	prefixKeygen           = []byte{0x02}
+	prefixKeygenResult     = []byte{0x03}
+	prefixContract         = []byte{0x04}
+	prefixContractByteCode = []byte{0x05}
+	prefixContractAddress  = []byte{0x06}
+	prefixTxIn             = []byte{0x07}
+	prefixTxOut            = []byte{0x08}
+	prefixTxOutSig         = []byte{0x09}
+	prefixTxOutConfirm     = []byte{0x10}
+	prefixContractName     = []byte{0x11}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -67,6 +67,36 @@ func getTxOutConfirmKey(outChain string, outHash string) []byte {
 func getContractAddressKey(chain string, address string) []byte {
 	// chain, address
 	return []byte(fmt.Sprintf("%s__%s", chain, address))
+}
+
+///// TxVotes
+
+func saveTxVotes(store cstypes.KVStore, hash []byte, validator string) int {
+	vals := make([]string, 0)
+	bz := store.Get(hash)
+	if bz != nil {
+		vals = strings.Split(string(bz), ",")
+	}
+
+	if strings.Index(validator, ",") >= 0 {
+		return len(vals)
+	}
+
+	found := false
+	for _, val := range vals {
+		if val == validator {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		vals = append(vals, validator)
+		bz = []byte(strings.Join(vals, ","))
+		store.Set(hash, bz)
+	}
+
+	return len(vals)
 }
 
 ///// Keygen

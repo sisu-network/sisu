@@ -28,6 +28,7 @@ api-port = {{ .Sisu.ApiPort }}
 enable = {{ .Tss.Enable }}
 dheart-host = "{{ .Tss.DheartHost }}"
 dheart-port = {{ .Tss.DheartPort }}
+majority-threshold = {{ .Tss.MajorityThreshold}}
 [tss.supported-chains] {{ range $k, $v := .Tss.SupportedChains }}
 	[tss.supported-chains.{{ $v.Symbol }}]
 		symbol = "{{ $v.Symbol }}"
