@@ -10,6 +10,8 @@ import (
 	"github.com/sisu-network/cosmos-sdk/codec/types"
 	"github.com/spf13/cast"
 
+	cosmosAnte "github.com/sisu-network/cosmos-sdk/x/auth/ante"
+
 	"github.com/sisu-network/lib/log"
 	abci "github.com/sisu-network/tendermint/abci/types"
 	tmos "github.com/sisu-network/tendermint/libs/os"
@@ -415,11 +417,11 @@ func New(
 	app.SetInitChainer(app.InitChainer)
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetAnteHandler(
-		ante.NewAnteHandler(
-			tssConfig,
-			app.AccountKeeper, app.BankKeeper,
-			ante.DefaultSigVerificationGasConsumer, encodingConfig.TxConfig.SignModeHandler(),
-			tssProcessor,
+		cosmosAnte.NewAnteHandler(
+			app.AccountKeeper,
+			app.BankKeeper,
+			ante.DefaultSigVerificationGasConsumer,
+			encodingConfig.TxConfig.SignModeHandler(),
 		),
 	)
 	app.SetEndBlocker(app.EndBlocker)
