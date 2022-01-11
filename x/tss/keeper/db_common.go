@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	cstypes "github.com/sisu-network/cosmos-sdk/store/types"
+	cstypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
 )

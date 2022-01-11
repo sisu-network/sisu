@@ -3,9 +3,9 @@ package tss
 import (
 	"testing"
 
+	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/golang/mock/gomock"
-	ctypes "github.com/sisu-network/cosmos-sdk/crypto/types"
-	sdk "github.com/sisu-network/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
 	mockcommon "github.com/sisu-network/sisu/tests/mock/common"
 	mocktss "github.com/sisu-network/sisu/tests/mock/tss"

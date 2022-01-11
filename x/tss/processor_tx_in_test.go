@@ -3,10 +3,10 @@ package tss
 import (
 	"testing"
 
-	sdk "github.com/sisu-network/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/golang/mock/gomock"
-	"github.com/sisu-network/cosmos-sdk/crypto/keys/ed25519"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/tests/mock"

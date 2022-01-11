@@ -15,7 +15,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.0
 	github.com/joho/godotenv v1.3.0
 	github.com/libp2p/go-libp2p-core v0.8.0
-	github.com/sisu-network/cosmos-sdk v0.42.1-fork005
+	github.com/cosmos/cosmos-sdk v0.42.1
 	github.com/sisu-network/dcore v0.1.11
 	github.com/sisu-network/deyes v0.1.2
 	github.com/sisu-network/dheart v0.1.4-alpha9

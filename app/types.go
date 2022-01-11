@@ -3,9 +3,9 @@ package app
 import (
 	abci "github.com/sisu-network/tendermint/abci/types"
 
-	"github.com/sisu-network/cosmos-sdk/codec"
-	"github.com/sisu-network/cosmos-sdk/server/types"
-	sdk "github.com/sisu-network/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/server/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // App implements the common methods for a Cosmos SDK-based application

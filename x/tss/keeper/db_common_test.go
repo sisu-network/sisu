@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	memstore "github.com/sisu-network/cosmos-sdk/store/mem"
+	memstore "github.com/cosmos/cosmos-sdk/store/mem"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/x/tss/types"
 	"github.com/stretchr/testify/require"

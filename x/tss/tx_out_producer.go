@@ -7,8 +7,8 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ecommon "github.com/ethereum/go-ethereum/common"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	sdk "github.com/sisu-network/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"

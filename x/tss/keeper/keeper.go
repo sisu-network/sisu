@@ -1,9 +1,9 @@
 package keeper
 
 import (
-	"github.com/sisu-network/cosmos-sdk/store/prefix"
-	cstypes "github.com/sisu-network/cosmos-sdk/store/types"
-	sdk "github.com/sisu-network/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
+	cstypes "github.com/cosmos/cosmos-sdk/store/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
 )

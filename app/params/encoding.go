@@ -1,9 +1,9 @@
 package params
 
 import (
-	"github.com/sisu-network/cosmos-sdk/client"
-	"github.com/sisu-network/cosmos-sdk/codec"
-	"github.com/sisu-network/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/codec/types"
 )
 
 // EncodingConfig specifies the concrete encoding types to use for a given app.

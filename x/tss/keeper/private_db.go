@@ -1,10 +1,10 @@
 package keeper
 
 import (
-	adstore "github.com/sisu-network/cosmos-sdk/store/dbadapter"
-	"github.com/sisu-network/cosmos-sdk/store/prefix"
-	cosmostypes "github.com/sisu-network/cosmos-sdk/store/types"
-	cstypes "github.com/sisu-network/cosmos-sdk/store/types"
+	adstore "github.com/cosmos/cosmos-sdk/store/dbadapter"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
+	cosmostypes "github.com/cosmos/cosmos-sdk/store/types"
+	cstypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
 	dbm "github.com/tendermint/tm-db"
