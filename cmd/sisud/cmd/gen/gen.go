@@ -23,11 +23,11 @@ import (
 	"github.com/sisu-network/sisu/config"
 	"github.com/spf13/cobra"
 
-	tmconfig "github.com/sisu-network/tendermint/config"
-	tmos "github.com/sisu-network/tendermint/libs/os"
-	tmrand "github.com/sisu-network/tendermint/libs/rand"
-	"github.com/sisu-network/tendermint/types"
-	tmtime "github.com/sisu-network/tendermint/types/time"
+	tmconfig "github.com/tendermint/tendermint/config"
+	tmos "github.com/tendermint/tendermint/libs/os"
+	tmrand "github.com/tendermint/tendermint/libs/rand"
+	"github.com/tendermint/tendermint/types"
+	tmtime "github.com/tendermint/tendermint/types/time"
 )
 
 const nodeDirPerm = 0755

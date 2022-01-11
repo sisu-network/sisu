@@ -14,8 +14,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/app"
 	"github.com/sisu-network/sisu/app/params"
-	"github.com/sisu-network/tendermint/libs/log"
 	"github.com/spf13/cast"
+	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 )
 

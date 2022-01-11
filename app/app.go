@@ -4,7 +4,7 @@ import (
 	"io"
 	"path/filepath"
 
-	tlog "github.com/sisu-network/tendermint/libs/log"
+	tlog "github.com/tendermint/tendermint/libs/log"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec/types"
@@ -13,10 +13,9 @@ import (
 	cosmosAnte "github.com/cosmos/cosmos-sdk/x/auth/ante"
 
 	"github.com/sisu-network/lib/log"
-	abci "github.com/sisu-network/tendermint/abci/types"
-	tmos "github.com/sisu-network/tendermint/libs/os"
-	"github.com/sisu-network/tendermint/node"
-	"github.com/sisu-network/tendermint/p2p"
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmos "github.com/tendermint/tendermint/libs/os"
+	"github.com/tendermint/tendermint/p2p"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/cosmos/cosmos-sdk/baseapp"
@@ -95,8 +94,8 @@ import (
 	tss "github.com/sisu-network/sisu/x/tss"
 	tssKeeper "github.com/sisu-network/sisu/x/tss/keeper"
 	tsstypes "github.com/sisu-network/sisu/x/tss/types"
-	tmjson "github.com/sisu-network/tendermint/libs/json"
-	tmproto "github.com/sisu-network/tendermint/proto/tendermint/types"
+	tmjson "github.com/tendermint/tendermint/libs/json"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/sisu-network/sisu/common"
 	sisuAuth "github.com/sisu-network/sisu/x/auth"
@@ -692,13 +691,4 @@ func (app *App) setupApiServer(c config.Config) {
 
 	log.Info("Starting Internal API server")
 	go s.Run()
-}
-
-func (app *App) GetTendermintOptions() []node.Option {
-	options := make([]node.Option, 0)
-	options = append(options, func(n *node.Node) {
-		n.SetPreAddTxFunc(app.tssProcessor.PreAddTxToMempoolFunc)
-	})
-
-	return options
 }

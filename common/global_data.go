@@ -12,7 +12,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/sisu-network/lib/log"
-	pvm "github.com/sisu-network/tendermint/privval"
+	pvm "github.com/tendermint/tendermint/privval"
 
 	"github.com/BurntSushi/toml"
 	"github.com/hashicorp/go-retryablehttp"

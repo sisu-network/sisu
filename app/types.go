@@ -1,7 +1,7 @@
 package app
 
 import (
-	abci "github.com/sisu-network/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/server/types"
