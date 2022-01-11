@@ -146,7 +146,7 @@ func (db *defaultPrivateDb) SaveKeygenResult(signerMsg *types.KeygenResultWithSi
 
 func (db *defaultPrivateDb) IsKeygenResultSuccess(signerMsg *types.KeygenResultWithSigner, self string) bool {
 	store := db.prefixes[string(prefixKeygenResult)]
-	return isKeygenResultSuccess(store, signerMsg, self)
+	return isKeygenResultSuccess(store, signerMsg.Keygen.KeyType, signerMsg.Keygen.Index, self)
 }
 
 ///// Contract
@@ -263,6 +263,10 @@ func (db *defaultPrivateDb) GetTxOut(outChain, hash string) *types.TxOut {
 func (db *defaultPrivateDb) GetTxOutFromSigHash(outChain, hashWithSig string) *types.TxOut {
 	withSigStore := db.prefixes[string(prefixTxOutSig)]
 	txOutSig := getTxOutSig(withSigStore, outChain, hashWithSig)
+
+	if txOutSig == nil {
+		return nil
+	}
 
 	noSigStore := db.prefixes[string(prefixTxOut)]
 	return getTxOut(noSigStore, outChain, txOutSig.HashNoSig)
