@@ -311,6 +311,20 @@ func (mr *MockKeeperMockRecorder) SaveTxOutConfirm(ctx, msg interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTxOutConfirm", reflect.TypeOf((*MockKeeper)(nil).SaveTxOutConfirm), ctx, msg)
 }
 
+// SaveTxVotes mocks base method.
+func (m *MockKeeper) SaveTxVotes(ctx types.Context, hash []byte, val string) int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveTxVotes", ctx, hash, val)
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// SaveTxVotes indicates an expected call of SaveTxVotes.
+func (mr *MockKeeperMockRecorder) SaveTxVotes(ctx, hash, val interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTxVotes", reflect.TypeOf((*MockKeeper)(nil).SaveTxVotes), ctx, hash, val)
+}
+
 // UpdateContractAddress mocks base method.
 func (m *MockKeeper) UpdateContractAddress(ctx types.Context, chain, hash, address string) {
 	m.ctrl.T.Helper()

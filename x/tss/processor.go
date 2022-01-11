@@ -13,7 +13,6 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/keeper"
 	"github.com/sisu-network/sisu/x/tss/tssclients"
 	"github.com/sisu-network/sisu/x/tss/types"
@@ -191,9 +190,6 @@ func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
 		log.Info("Checking tx: Msg type = ", msg.Type())
 
 		switch msg.(type) {
-		case *types.KeygenWithSigner:
-			return p.checkKeygen(ctx, msg.(*types.KeygenWithSigner))
-
 		case *types.KeygenResultWithSigner:
 			return p.checkKeygenResult(ctx, msg.(*types.KeygenResultWithSigner))
 
@@ -225,108 +221,5 @@ func (p *Processor) setContext(ctx sdk.Context) {
 // compare with other txs' hash. Only the first tx with such hash is included in the block. This is
 // to avoid wasting space on Sisu's block due to duplicated tx submitted by multiple users.
 func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
-	log.Verbose("checking new tx before adding into mempool....")
-
-	tx, err := p.txDecoder(txBytes)
-	if err != nil {
-		log.Error("Failed to decode tx")
-		return err
-	}
-
-	msgs := tx.GetMsgs()
-	log.Verbose("PreAddTxToMempoolFunc: msgs length = ", len(msgs))
-
-	for _, msg := range msgs {
-		if msg.Route() != types.RouterKey {
-			continue
-		}
-
-		log.Verbose("PreAddTxToMempoolFunc: Msg type = ", msg.Type())
-
-		switch msg.Type() {
-		case types.MsgTypeKeygenWithSigner:
-			keygenMsg := msg.(*types.KeygenWithSigner)
-
-			key := fmt.Sprintf("keygen__%s__%d", keygenMsg.Data.KeyType, keygenMsg.Data.Index)
-			if err := p.checkAndInsertMempoolTx(key, "keygen"); err != nil {
-				return err
-			}
-
-		case types.MsgTypeKeygenResultWithSigner:
-			resultMsg := msg.(*types.KeygenResultWithSigner)
-			// Only do for success case
-			if resultMsg.Data.Result == types.KeygenResult_SUCCESS {
-				bz, err := resultMsg.Data.Marshal()
-				if err != nil {
-					return err
-				}
-				hash := utils.KeccakHash32(string(bz))
-				key := fmt.Sprintf("keygenresult__%s__%d__%s", resultMsg.Keygen.KeyType, resultMsg.Keygen.Index, hash)
-				if err := p.checkAndInsertMempoolTx(key, "keygen result"); err != nil {
-					return err
-				}
-			}
-
-		case types.MsgTypeTxInWithSigner:
-			txIn := msg.(*types.TxInWithSigner).Data
-			bz, err := txIn.Marshal()
-			if err != nil {
-				return err
-			}
-
-			hash := utils.KeccakHash32(string(bz))
-			if err := p.checkAndInsertMempoolTx(hash, "tx in"); err != nil {
-				return err
-			}
-
-		case types.MsgTypeTxOutWithSigner:
-			txOut := msg.(*types.TxOutWithSigner).Data
-			bz, err := txOut.Marshal()
-			if err != nil {
-				return err
-			}
-
-			hash := utils.KeccakHash32(string(bz))
-			if err := p.checkAndInsertMempoolTx(hash, "tx out"); err != nil {
-				return err
-			}
-
-		case types.MsgTypeContractsWithSigner:
-			data := msg.(*types.ContractsWithSigner).Data
-
-			bz, err := data.Marshal()
-			if err == nil {
-				hash := utils.KeccakHash32(string(bz))
-				if err := p.checkAndInsertMempoolTx(hash, "contracts"); err != nil {
-					return err
-				}
-			}
-
-		case types.MsgTypeTxOutConfirmationWithSigner:
-			data := msg.(*types.TxOutConfirmWithSigner).Data
-			bz, err := data.Marshal()
-			if err == nil {
-				hash := utils.KeccakHash32(string(bz))
-				if err := p.checkAndInsertMempoolTx(hash, "tx out confirm"); err != nil {
-					return err
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
-func (p *Processor) checkAndInsertMempoolTx(hash, msgType string) error {
-	if p.privateDb.IsMempoolTxExisted(hash) {
-		err := fmt.Errorf("%s has been added into the mempool! hash = %s", msgType, hash)
-		log.Verbose(err)
-
-		return err
-	}
-
-	log.Verbose("Inserting ", msgType, " into the mempool table, hash = ", hash)
-	p.privateDb.SaveMempoolTx(hash)
-
 	return nil
 }

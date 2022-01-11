@@ -77,9 +77,10 @@ Example:
 					ApiPort:        25456,
 				},
 				Tss: config.TssConfig{
-					Enable:     enableTss,
-					DheartHost: "0.0.0.0",
-					DheartPort: 5678,
+					Enable:            enableTss,
+					MajorityThreshold: 1,
+					DheartHost:        "0.0.0.0",
+					DheartPort:        5678,
 					SupportedChains: map[string]config.TssChainConfig{
 						"ganache1": {
 							Symbol:   "ganache1",
