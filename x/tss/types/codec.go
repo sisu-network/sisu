@@ -1,15 +1,15 @@
 package types
 
 import (
-	"github.com/sisu-network/cosmos-sdk/codec"
-	cdctypes "github.com/sisu-network/cosmos-sdk/codec/types"
-	"github.com/sisu-network/cosmos-sdk/crypto/keys/ed25519"
-	"github.com/sisu-network/cosmos-sdk/crypto/keys/multisig"
-	"github.com/sisu-network/cosmos-sdk/crypto/keys/secp256k1"
-	ctypes "github.com/sisu-network/cosmos-sdk/crypto/types"
-	sdk "github.com/sisu-network/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/codec"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/sisu-network/cosmos-sdk/types/msgservice"
+	"github.com/cosmos/cosmos-sdk/types/msgservice"
 )
 
 func RegisterCodec(cdc *codec.LegacyAmino) {

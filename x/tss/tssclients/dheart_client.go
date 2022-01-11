@@ -3,8 +3,8 @@ package tssclients
 import (
 	"context"
 
+	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/ethereum/go-ethereum/rpc"
-	ctypes "github.com/sisu-network/cosmos-sdk/crypto/types"
 	htypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/lib/log"
 )

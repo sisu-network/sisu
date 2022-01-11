@@ -7,8 +7,8 @@ package mock
 import (
 	reflect "reflect"
 
+	types "github.com/cosmos/cosmos-sdk/types"
 	gomock "github.com/golang/mock/gomock"
-	types "github.com/sisu-network/cosmos-sdk/types"
 )
 
 // MockTxSubmit is a mock of TxSubmit interface.
