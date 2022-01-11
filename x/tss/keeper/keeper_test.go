@@ -8,8 +8,8 @@ import (
 	"github.com/sisu-network/sisu/x/tss/types"
 
 	"github.com/cosmos/cosmos-sdk/store"
-	"github.com/sisu-network/tendermint/libs/log"
-	tmproto "github.com/sisu-network/tendermint/proto/tendermint/types"
+	"github.com/tendermint/tendermint/libs/log"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
 	"github.com/stretchr/testify/require"

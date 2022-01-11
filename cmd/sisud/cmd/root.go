@@ -6,9 +6,9 @@ import (
 
 	"github.com/sisu-network/sisu/app/params"
 
-	tmcli "github.com/sisu-network/tendermint/libs/cli"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	tmcli "github.com/tendermint/tendermint/libs/cli"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/debug"

@@ -8,7 +8,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/sisu-network/sisu/x/tss/types"
 
-	abci "github.com/sisu-network/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 func NewQuerier(k DefaultKeeper, legacyQuerierCdc *codec.LegacyAmino) sdk.Querier {

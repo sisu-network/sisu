@@ -8,8 +8,8 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	keyring "github.com/sisu-network/cosmos-sdk/crypto/keyring"
-	types "github.com/sisu-network/cosmos-sdk/types"
+	keyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
+	types "github.com/cosmos/cosmos-sdk/types"
 )
 
 // MockAppKeys is a mock of AppKeys interface.

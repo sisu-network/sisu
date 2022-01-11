@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/sisu-network/tendermint/crypto"
-	"github.com/sisu-network/tendermint/mempool"
-	ttypes "github.com/sisu-network/tendermint/types"
+	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/mempool"
+	ttypes "github.com/tendermint/tendermint/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"

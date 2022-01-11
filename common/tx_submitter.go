@@ -21,7 +21,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/tx/signing"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
-	rpchttp "github.com/sisu-network/tendermint/rpc/client/http"
+	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
 )
 
 //go:generate mockgen -source=tx_submitter.go -destination=../tests/mock/tx_submitter.go -package=mock

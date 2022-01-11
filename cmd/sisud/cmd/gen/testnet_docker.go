@@ -15,8 +15,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
-	tmos "github.com/sisu-network/tendermint/libs/os"
 	"github.com/spf13/cobra"
+	tmos "github.com/tendermint/tendermint/libs/os"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
