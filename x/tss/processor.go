@@ -59,17 +59,18 @@ type Processor struct {
 }
 
 func NewProcessor(k keeper.DefaultKeeper,
+	privateDb keeper.PrivateDb,
 	config config.TssConfig,
 	tendermintPrivKey crypto.PrivKey,
 	appKeys *common.DefaultAppKeys,
-	dataDir string,
 	txDecoder sdk.TxDecoder,
 	txSubmit common.TxSubmit,
 	globalData common.GlobalData,
 ) *Processor {
 	p := &Processor{
-		keeper:            &k,
-		privateDb:         keeper.NewPrivateDb(dataDir),
+		keeper: &k,
+		// privateDb:         keeper.NewPrivateDb(dataDir),
+		privateDb:         privateDb,
 		txDecoder:         txDecoder,
 		appKeys:           appKeys,
 		config:            config,
@@ -213,8 +214,8 @@ func (p *Processor) shouldProcessMsg(ctx sdk.Context, msg sdk.Msg) (bool, []byte
 		return false, hash
 	}
 
-	count := p.keeper.SaveTxRecord(ctx, hash, signer)
-	if count >= p.config.MajorityThreshold && !p.keeper.IsTxRecordProcessed(ctx, hash) {
+	count := p.privateDb.SaveTxRecord(hash, signer)
+	if count >= p.config.MajorityThreshold && !p.privateDb.IsTxRecordProcessed(hash) {
 		return true, hash
 	}
 

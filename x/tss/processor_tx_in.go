@@ -37,9 +37,6 @@ func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 				tx.Serialized,
 			)
 
-			// Save tx in into db
-			p.privateDb.SaveTxIn(signerMsg.Data)
-
 			go func(tx *types.TxInWithSigner) {
 				if err := p.txSubmit.SubmitMessage(tx); err != nil {
 					return
@@ -87,9 +84,6 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 		contractAddress,
 	)
 
-	// Save this into db
-	p.privateDb.SaveTxOutConfirm(confirmMsg.Data)
-
 	go func() {
 		p.txSubmit.SubmitMessage(confirmMsg)
 	}()
@@ -97,32 +91,13 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 	return nil
 }
 
-func (p *Processor) checkTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner) error {
-	// Make sure we should have seen this TxIn in our table.
-	if !p.privateDb.IsTxInExisted(msgWithSigner.Data) {
-		return ErrCannotFindMessage
-	}
-
-	// Make sure this message has been processed.
-	if p.keeper.IsTxInExisted(ctx, msgWithSigner.Data) {
-		return ErrMessageHasBeenProcessed
-	}
-
-	return nil
-}
-
-func (p *Processor) deliverTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner) ([]byte, error) {
-	bz, err := msgWithSigner.Data.Marshal()
-	if err != nil {
-		return nil, nil
-	}
-
-	// TODO: Check if signer is in the top validator set.
-	count := p.keeper.SaveTxRecord(ctx, bz, msgWithSigner.Signer)
-	fmt.Println("count = ", count)
-
-	if count >= p.config.MajorityThreshold {
-		return p.doTxIn(ctx, msgWithSigner)
+func (p *Processor) deliverTxIn(ctx sdk.Context, signerMsg *types.TxInWithSigner) ([]byte, error) {
+	if process, hash := p.shouldProcessMsg(ctx, signerMsg); process {
+		fmt.Println("PRocessing TxIn")
+		p.doTxIn(ctx, signerMsg)
+		p.privateDb.ProcessTxRecord(hash)
+	} else {
+		fmt.Println("TxIn Has been processed")
 	}
 
 	return nil, nil
@@ -132,15 +107,9 @@ func (p *Processor) deliverTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSi
 func (p *Processor) doTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner) ([]byte, error) {
 	msg := msgWithSigner.Data
 
-	if p.keeper.IsTxInExisted(ctx, msg) {
-		// The tx has been processed before.
-		return nil, nil
-	}
-
 	log.Info("Deliverying TxIn....")
 
 	// Save this to KVStore & private db.
-	p.keeper.SaveTxIn(ctx, msg)
 	p.privateDb.SaveTxIn(msg)
 
 	// Creates and broadcast TxOuts. This has to be deterministic based on all the data that the
@@ -160,7 +129,7 @@ func (p *Processor) doTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner)
 
 			// If this is a txOut deployment, mark the contract as being deployed.
 			if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
-				p.keeper.UpdateContractsStatus(ctx, txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
+				p.privateDb.UpdateContractsStatus(txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
 			}
 		}
 	}

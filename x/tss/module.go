@@ -108,10 +108,12 @@ type AppModule struct {
 	appKeys    *common.DefaultAppKeys
 	txSubmit   common.TxSubmit
 	globalData common.GlobalData
+	storage    keeper.PrivateDb
 }
 
 func NewAppModule(cdc codec.Marshaler,
 	keeper keeper.DefaultKeeper,
+	storage keeper.PrivateDb,
 	appKeys *common.DefaultAppKeys,
 	txSubmit common.TxSubmit,
 	processor *Processor,
@@ -122,6 +124,7 @@ func NewAppModule(cdc codec.Marshaler,
 		txSubmit:       txSubmit,
 		processor:      processor,
 		keeper:         keeper,
+		storage:        storage,
 		appKeys:        appKeys,
 		globalData:     globalData,
 	}
@@ -148,7 +151,7 @@ func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sd
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterTssQueryServer(cfg.QueryServer(), &am.keeper)
+	types.RegisterTssQueryServer(cfg.QueryServer(), keeper.NewGrpcQuerier(am.storage))
 }
 
 // RegisterInvariants registers the capability module's invariants.
