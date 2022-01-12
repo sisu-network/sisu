@@ -90,6 +90,7 @@ import (
 	sisukeeper "github.com/sisu-network/sisu/x/sisu/keeper"
 	sisutypes "github.com/sisu-network/sisu/x/sisu/types"
 	tss "github.com/sisu-network/sisu/x/tss"
+	"github.com/sisu-network/sisu/x/tss/keeper"
 	tssKeeper "github.com/sisu-network/sisu/x/tss/keeper"
 	tsstypes "github.com/sisu-network/sisu/x/tss/types"
 	tmjson "github.com/tendermint/tendermint/libs/json"
@@ -308,6 +309,16 @@ func New(
 	// we prefer to be more strict in what arguments the modules expect.
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
+	tendermintPrivKeyFile := filepath.Join(cfg.Sisu.Dir, "config/priv_validator_key.json")
+	nodeKey, err := p2p.LoadNodeKey(tendermintPrivKeyFile)
+	if err != nil {
+		panic(err)
+	}
+
+	privateDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "data"))
+	tssProcessor := tss.NewProcessor(app.tssKeeper, privateDb, tssConfig, nodeKey.PrivKey, app.appKeys, app.txDecoder, app.txSubmitter, app.globalData)
+	tssProcessor.Init()
+
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
 
@@ -333,20 +344,9 @@ func New(
 		transferModule,
 
 		sisu.NewAppModule(appCodec, app.sisuKeeper),
+		tss.NewAppModule(appCodec, app.tssKeeper, privateDb, app.appKeys, app.txSubmitter, tssProcessor, app.globalData),
 	}
 
-	tendermintPrivKeyFile := filepath.Join(cfg.Sisu.Dir, "config/priv_validator_key.json")
-	nodeKey, err := p2p.LoadNodeKey(tendermintPrivKeyFile)
-	if err != nil {
-		panic(err)
-	}
-	privateDataDir := filepath.Join(cfg.Sisu.Dir, "data")
-	tssProcessor := tss.NewProcessor(app.tssKeeper, tssConfig, nodeKey.PrivKey, app.appKeys, privateDataDir, app.txDecoder, app.txSubmitter, app.globalData)
-	if tssConfig.Enable {
-		log.Info("TSS is enabled")
-		tssProcessor.Init()
-		modules = append(modules, tss.NewAppModule(appCodec, app.tssKeeper, app.appKeys, app.txSubmitter, tssProcessor, app.globalData))
-	}
 	app.tssProcessor = tssProcessor
 
 	app.mm = module.NewManager(modules...)

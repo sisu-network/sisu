@@ -16,15 +16,24 @@ type PrivateDb interface {
 	PrintStore(name string)
 	PrintStoreKeys(name string)
 
+	// TxRecord
+	SaveTxRecord(hash []byte, val string) int
+
+	// TxRecordProcessed
+	ProcessTxRecord(hash []byte)
+	IsTxRecordProcessed(hash []byte) bool
+
 	// Keygen
 	SaveKeygen(msg *types.Keygen)
 	IsKeygenExisted(keyType string, index int) bool
 	IsKeygenAddress(keyType string, address string) bool
 	GetKeygenPubkey(keyType string) []byte
+	GetAllKeygenPubkeys() map[string][]byte
 
 	// Keygen Result
 	SaveKeygenResult(signerMsg *types.KeygenResultWithSigner)
 	IsKeygenResultSuccess(signerMsg *types.KeygenResultWithSigner, self string) bool
+	GetAllKeygenResult(keygenType string, index int32) []*types.KeygenResultWithSigner
 
 	// Contract
 	SaveContract(msg *types.Contract, saveByteCode bool)
@@ -87,6 +96,10 @@ func NewPrivateDb(dbDir string) PrivateDb {
 func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes := make(map[string]prefix.Store)
 
+	// prefixTxRecord
+	prefixes[string(prefixTxRecord)] = prefix.NewStore(parent, prefixTxRecord)
+	// prefixTxRecordProcessed
+	prefixes[string(prefixTxRecordProcessed)] = prefix.NewStore(parent, prefixTxRecordProcessed)
 	// prefixKeygen
 	prefixes[string(prefixKeygen)] = prefix.NewStore(parent, prefixKeygen)
 	// prefixKeygenResult
@@ -107,6 +120,23 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes[string(prefixContractName)] = prefix.NewStore(parent, prefixContractName)
 
 	return prefixes
+}
+
+///// TxRecord
+func (db *defaultPrivateDb) SaveTxRecord(hash []byte, val string) int {
+	store := db.prefixes[string(prefixTxRecord)]
+	return saveTxRecord(store, hash, val)
+}
+
+///// TxRecordProcessed
+func (db *defaultPrivateDb) ProcessTxRecord(hash []byte) {
+	store := db.prefixes[string(prefixTxRecordProcessed)]
+	processTxRecord(store, hash)
+}
+
+func (db *defaultPrivateDb) IsTxRecordProcessed(hash []byte) bool {
+	store := db.prefixes[string(prefixTxRecordProcessed)]
+	return isTxRecordProcessed(store, hash)
 }
 
 ///// Keygen
@@ -131,6 +161,11 @@ func (db *defaultPrivateDb) GetKeygenPubkey(keyType string) []byte {
 	return getKeygenPubkey(store, keyType)
 }
 
+func (db *defaultPrivateDb) GetAllKeygenPubkeys() map[string][]byte {
+	store := db.prefixes[string(prefixKeygen)]
+	return getAllKeygenPubkeys(store)
+}
+
 ///// Keygen Result
 
 func (db *defaultPrivateDb) SaveKeygenResult(signerMsg *types.KeygenResultWithSigner) {
@@ -141,6 +176,11 @@ func (db *defaultPrivateDb) SaveKeygenResult(signerMsg *types.KeygenResultWithSi
 func (db *defaultPrivateDb) IsKeygenResultSuccess(signerMsg *types.KeygenResultWithSigner, self string) bool {
 	store := db.prefixes[string(prefixKeygenResultWithSigner)]
 	return isKeygenResultSuccess(store, signerMsg.Keygen.KeyType, signerMsg.Keygen.Index, self)
+}
+
+func (db *defaultPrivateDb) GetAllKeygenResult(keygenType string, index int32) []*types.KeygenResultWithSigner {
+	store := db.prefixes[string(prefixKeygenResultWithSigner)]
+	return getAllKeygenResult(store, keygenType, index)
 }
 
 ///// Contract

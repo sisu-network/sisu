@@ -114,6 +114,8 @@ func isTxRecordProcessed(store cstypes.KVStore, hash []byte) bool {
 func saveKeygen(store cstypes.KVStore, msg *types.Keygen) {
 	key := getKeygenKey(msg.KeyType, int(msg.Index))
 
+	fmt.Println("saveKeygen key = ", string(key))
+
 	bz, err := msg.Marshal()
 	if err != nil {
 		log.Error("SaveKeygenProposal: cannot marshal keygen proposal, err = ", err)
@@ -124,7 +126,9 @@ func saveKeygen(store cstypes.KVStore, msg *types.Keygen) {
 func isKeygenExisted(store cstypes.KVStore, keyType string, index int) bool {
 	key := getKeygenKey(keyType, index)
 
-	return store.Get(key) != nil
+	fmt.Println("isKeygenExisted key = ", string(key), store.Has(key))
+
+	return store.Has(key)
 }
 
 func isKeygenAddress(store cstypes.KVStore, keyType string, address string) bool {
@@ -191,24 +195,6 @@ func getAllKeygenPubkeys(store cstypes.KVStore) map[string][]byte {
 	}
 
 	return result
-}
-
-func getAllPubKeys(store cstypes.KVStore) map[string][]byte {
-	iter := store.Iterator(nil, nil)
-	ret := make(map[string][]byte)
-	for ; iter.Valid(); iter.Next() {
-		bz := iter.Value()
-		msg := &types.Keygen{}
-		err := msg.Unmarshal(bz)
-		if err != nil {
-			log.Error("cannot unmarshal KeygenResult message, err = ", err)
-			continue
-		}
-
-		ret[string(iter.Key())] = msg.PubKeyBytes
-	}
-
-	return ret
 }
 
 ///// Keygen Result With Signer

@@ -18,14 +18,14 @@ are enough validator supporting the new chain, send a message to TSS engine to d
 func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 	// TODO: We can replace this by sending command from client instead of running at the beginning
 	// of each block.
-	if p.globalData.IsCatchingUp() {
+	if p.globalData.IsCatchingUp() || ctx.BlockHeight()%50 != 2 {
 		return
 	}
 
 	// Check ECDSA only (for now)
 	keyTypes := []string{libchain.KEY_TYPE_ECDSA}
 	for _, keyType := range keyTypes {
-		if p.keeper.IsKeygenExisted(ctx, keyType, 0) {
+		if p.privateDb.IsKeygenExisted(keyType, 0) {
 			continue
 		}
 
@@ -36,12 +36,6 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 			keyType,
 			0,
 		)
-
-		// Create a new keygen entry in the db.
-		p.privateDb.SaveKeygen(&types.Keygen{
-			KeyType: keyType,
-			Index:   0,
-		})
 
 		log.Info("Submitting proposal message for ", keyType)
 		go func() {
@@ -54,17 +48,17 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 	}
 }
 
-func (p *Processor) deliverKeygen(ctx sdk.Context, wrapper *types.KeygenWithSigner) ([]byte, error) {
-	if process, hash := p.shouldProcessMsg(ctx, wrapper); process {
-		p.doKeygen(ctx, wrapper)
-		p.keeper.ProcessTxRecord(ctx, hash)
+func (p *Processor) deliverKeygen(ctx sdk.Context, signerMsg *types.KeygenWithSigner) ([]byte, error) {
+	if process, hash := p.shouldProcessMsg(ctx, signerMsg); process {
+		p.doKeygen(ctx, signerMsg)
+		p.privateDb.ProcessTxRecord(hash)
 	}
 
 	return nil, nil
 }
 
-func (p *Processor) doKeygen(ctx sdk.Context, wrapper *types.KeygenWithSigner) ([]byte, error) {
-	msg := wrapper.Data
+func (p *Processor) doKeygen(ctx sdk.Context, signerMsg *types.KeygenWithSigner) ([]byte, error) {
+	msg := signerMsg.Data
 
 	// TODO: Check if we have processed a keygen proposal recently.
 	if p.keeper.IsKeygenExisted(ctx, msg.KeyType, int(msg.Index)) {
@@ -75,7 +69,6 @@ func (p *Processor) doKeygen(ctx sdk.Context, wrapper *types.KeygenWithSigner) (
 	log.Info("Delivering keygen....")
 
 	// Save this into Keeper && private db.
-	p.keeper.SaveKeygen(ctx, msg)
 	p.privateDb.SaveKeygen(msg)
 
 	if p.globalData.IsCatchingUp() {
