@@ -90,7 +90,7 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	// prefixKeygen
 	prefixes[string(prefixKeygen)] = prefix.NewStore(parent, prefixKeygen)
 	// prefixKeygenResult
-	prefixes[string(prefixKeygenResult)] = prefix.NewStore(parent, prefixKeygenResult)
+	prefixes[string(prefixKeygenResultWithSigner)] = prefix.NewStore(parent, prefixKeygenResultWithSigner)
 	// prefixContract
 	prefixes[string(prefixContract)] = prefix.NewStore(parent, prefixContract)
 	// prefixContractByteCode
@@ -134,12 +134,12 @@ func (db *defaultPrivateDb) GetKeygenPubkey(keyType string) []byte {
 ///// Keygen Result
 
 func (db *defaultPrivateDb) SaveKeygenResult(signerMsg *types.KeygenResultWithSigner) {
-	store := db.prefixes[string(prefixKeygenResult)]
+	store := db.prefixes[string(prefixKeygenResultWithSigner)]
 	saveKeygenResult(store, signerMsg)
 }
 
 func (db *defaultPrivateDb) IsKeygenResultSuccess(signerMsg *types.KeygenResultWithSigner, self string) bool {
-	store := db.prefixes[string(prefixKeygenResult)]
+	store := db.prefixes[string(prefixKeygenResultWithSigner)]
 	return isKeygenResultSuccess(store, signerMsg.Keygen.KeyType, signerMsg.Keygen.Index, self)
 }
 

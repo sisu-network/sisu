@@ -1,6 +1,8 @@
 package tss
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -109,8 +111,25 @@ func (p *Processor) checkTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSign
 	return nil
 }
 
-// Delivers observed Txs.
 func (p *Processor) deliverTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner) ([]byte, error) {
+	bz, err := msgWithSigner.Data.Marshal()
+	if err != nil {
+		return nil, nil
+	}
+
+	// TODO: Check if signer is in the top validator set.
+	count := p.keeper.SaveTxRecord(ctx, bz, msgWithSigner.Signer)
+	fmt.Println("count = ", count)
+
+	if count >= p.config.MajorityThreshold {
+		return p.doTxIn(ctx, msgWithSigner)
+	}
+
+	return nil, nil
+}
+
+// Delivers observed Txs.
+func (p *Processor) doTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner) ([]byte, error) {
 	msg := msgWithSigner.Data
 
 	if p.keeper.IsTxInExisted(ctx, msg) {
