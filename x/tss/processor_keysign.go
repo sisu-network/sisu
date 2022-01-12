@@ -48,13 +48,13 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 				return
 			}
 
-			// TODO: Broadcast the keysign result that includes this TxOutSig.
-			// Save this to TxOutSig
-			p.privateDb.SaveTxOutSig(&types.TxOutSig{
-				Chain:       keysignMsg.OutChain,
-				HashWithSig: signedTx.Hash().String(),
-				HashNoSig:   keysignMsg.OutHash,
-			})
+			// // TODO: Broadcast the keysign result that includes this TxOutSig.
+			// // Save this to TxOutSig
+			// p.privateDb.SaveTxOutSig(&types.TxOutSig{
+			// 	Chain:       keysignMsg.OutChain,
+			// 	HashWithSig: signedTx.Hash().String(),
+			// 	HashNoSig:   keysignMsg.OutHash,
+			// })
 
 			log.Info("signedTx hash = ", signedTx.Hash().String())
 

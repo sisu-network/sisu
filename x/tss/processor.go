@@ -7,7 +7,6 @@ import (
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/mempool"
-	ttypes "github.com/tendermint/tendermint/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
@@ -190,15 +189,6 @@ func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
 		log.Info("Checking tx: Msg type = ", msg.Type())
 
 		switch msg.(type) {
-		case *types.KeygenResultWithSigner:
-			return p.checkKeygenResult(ctx, msg.(*types.KeygenResultWithSigner))
-
-		case *types.TxInWithSigner:
-			return p.checkTxIn(ctx, msg.(*types.TxInWithSigner))
-
-		case *types.TxOutWithSigner:
-			return p.checkTxOut(ctx, msg.(*types.TxOutWithSigner))
-
 		case *types.KeysignResult:
 			return p.checkKeysignResult(ctx, msg.(*types.KeysignResult))
 
@@ -217,9 +207,16 @@ func (p *Processor) setContext(ctx sdk.Context) {
 	p.lastContext.Store(ctx)
 }
 
-// PreAddTxToMempoolFunc checks if a tx has been included in a block. The hash of the tx is used to
-// compare with other txs' hash. Only the first tx with such hash is included in the block. This is
-// to avoid wasting space on Sisu's block due to duplicated tx submitted by multiple users.
-func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
-	return nil
+func (p *Processor) shouldProcessMsg(ctx sdk.Context, msg sdk.Msg) (bool, []byte) {
+	hash, signer, err := keeper.GetTxRecodrdHash(msg)
+	if err != nil {
+		return false, hash
+	}
+
+	count := p.keeper.SaveTxRecord(ctx, hash, signer)
+	if count >= p.config.MajorityThreshold && !p.keeper.IsTxRecordProcessed(ctx, hash) {
+		return true, hash
+	}
+
+	return false, hash
 }

@@ -14,22 +14,26 @@ import (
 	"github.com/sisu-network/lib/log"
 )
 
-// checkTxOut checks if a TxOut message is valid before it is added into Sisu block.
-func (p *Processor) checkTxOut(ctx sdk.Context, msg *types.TxOutWithSigner) error {
-	if !p.privateDb.IsTxOutExisted(msg.Data) {
-		return ErrCannotFindMessage
+func (p *Processor) deliverTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWithSigner) ([]byte, error) {
+	bz, err := msgWithSigner.Data.Marshal()
+	if err != nil {
+		return nil, nil
 	}
 
-	if p.keeper.IsTxOutExisted(ctx, msg.Data) {
-		return ErrMessageHasBeenProcessed
+	// TODO: Check if signer is in the top validator set.
+	count := p.keeper.SaveTxRecord(ctx, bz, msgWithSigner.Signer)
+	fmt.Println("count = ", count)
+
+	if count >= p.config.MajorityThreshold {
+		return p.doTxOut(ctx, msgWithSigner)
 	}
 
-	return nil
+	return nil, nil
 }
 
 // deliverTxOut executes a TxOut transaction after it's included in Sisu block. If this node is
 // catching up with the network, we would not send the tx to TSS for signing.
-func (p *Processor) deliverTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWithSigner) ([]byte, error) {
+func (p *Processor) doTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWithSigner) ([]byte, error) {
 	txOut := msgWithSigner.Data
 
 	if p.keeper.IsTxOutExisted(ctx, txOut) {

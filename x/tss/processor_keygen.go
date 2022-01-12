@@ -1,8 +1,6 @@
 package tss
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
@@ -57,18 +55,9 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 }
 
 func (p *Processor) deliverKeygen(ctx sdk.Context, wrapper *types.KeygenWithSigner) ([]byte, error) {
-	bz, err := wrapper.Data.Marshal()
-	if err != nil {
-		return nil, nil
-	}
-
-	// TODO: Check if signer is in the top validator set.
-
-	count := p.keeper.SaveTxVotes(ctx, bz, wrapper.Signer)
-	fmt.Println("count = ", count)
-
-	if count >= p.config.MajorityThreshold {
-		return p.doKeygen(ctx, wrapper)
+	if process, hash := p.shouldProcessMsg(ctx, wrapper); process {
+		p.doKeygen(ctx, wrapper)
+		p.keeper.ProcessTxRecord(ctx, hash)
 	}
 
 	return nil, nil

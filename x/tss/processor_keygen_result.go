@@ -38,31 +38,24 @@ func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
 	p.txSubmit.SubmitMessage(signerMsg)
 }
 
-func (p *Processor) checkKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) error {
-	if signerMsg.Data.Result == types.KeygenResult_SUCCESS {
-		// Check if we have this data in our private db.
-		if !p.privateDb.IsKeygenResultSuccess(signerMsg, p.appKeys.GetSignerAddress().String()) {
-			log.Verbosef("Value does not match, data = %s %d %s", signerMsg.Keygen.KeyType, int(signerMsg.Keygen.Index), signerMsg.Data.From)
-			return ErrValueDoesNotMatch
-		}
-
-		// TODO: Check if we have processed this message before.
-
-		return nil
-	} else {
-		// TODO: Process failure case. For failure case, we allow multiple message as each node can have
-		// different blames.
+func (p *Processor) deliverKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) ([]byte, error) {
+	if process, hash := p.shouldProcessMsg(ctx, signerMsg); process {
+		p.doKeygenResult(ctx, signerMsg)
+		p.keeper.ProcessTxRecord(ctx, hash)
 	}
 
-	return nil
+	return nil, nil
 }
 
-func (p *Processor) deliverKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) ([]byte, error) {
+func (p *Processor) doKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) ([]byte, error) {
 	msg := signerMsg.Data
 
 	log.Info("Delivering keygen result, result = ", msg.Result)
 
-	if msg.Result == types.KeygenResult_SUCCESS {
+	result := p.getKeygenResult(ctx, signerMsg)
+
+	// TODO: Get majority of the votes here.
+	if result == types.KeygenResult_SUCCESS {
 		log.Info("Keygen succeeded")
 
 		if p.keeper.IsKeygenResultSuccess(ctx, signerMsg, p.appKeys.GetSignerAddress().String()) {
@@ -91,6 +84,24 @@ func (p *Processor) deliverKeygenResult(ctx sdk.Context, signerMsg *types.Keygen
 	}
 
 	return nil, nil
+}
+
+func (p *Processor) getKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) types.KeygenResult_Result {
+	results := p.keeper.GetAllKeygenResult(ctx, signerMsg.Keygen.KeyType, signerMsg.Keygen.Index)
+
+	// Check the majority of the results
+	successCount := 0
+	for _, result := range results {
+		if result.Data.Result == types.KeygenResult_SUCCESS {
+			successCount += 1
+		}
+	}
+
+	if successCount >= (len(results)+1)/2 {
+		return types.KeygenResult_SUCCESS
+	}
+
+	return types.KeygenResult_FAILURE
 }
 
 func (p *Processor) addWatchAddress(msg *types.Keygen) {

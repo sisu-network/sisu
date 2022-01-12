@@ -11,17 +11,18 @@ import (
 
 // TODO: Move txout's byte into separate store.
 var (
-	prefixTxVotes          = []byte{0x01} // Vote for a tx by different nodes
-	prefixKeygen           = []byte{0x02}
-	prefixKeygenResult     = []byte{0x03}
-	prefixContract         = []byte{0x04}
-	prefixContractByteCode = []byte{0x05}
-	prefixContractAddress  = []byte{0x06}
-	prefixTxIn             = []byte{0x07}
-	prefixTxOut            = []byte{0x08}
-	prefixTxOutSig         = []byte{0x09}
-	prefixTxOutConfirm     = []byte{0x10}
-	prefixContractName     = []byte{0x11}
+	prefixTxRecord               = []byte{0x01} // Vote for a tx by different nodes
+	prefixTxRecordProcessed      = []byte{0x02}
+	prefixKeygen                 = []byte{0x03}
+	prefixKeygenResultWithSigner = []byte{0x04}
+	prefixContract               = []byte{0x05}
+	prefixContractByteCode       = []byte{0x06}
+	prefixContractAddress        = []byte{0x07}
+	prefixTxIn                   = []byte{0x08}
+	prefixTxOut                  = []byte{0x09}
+	prefixTxOutSig               = []byte{0x0A}
+	prefixTxOutConfirm           = []byte{0x0B}
+	prefixContractName           = []byte{0x0C}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -69,9 +70,9 @@ func getContractAddressKey(chain string, address string) []byte {
 	return []byte(fmt.Sprintf("%s__%s", chain, address))
 }
 
-///// TxVotes
+///// TxREcord
 
-func saveTxVotes(store cstypes.KVStore, hash []byte, validator string) int {
+func saveTxRecord(store cstypes.KVStore, hash []byte, validator string) int {
 	vals := make([]string, 0)
 	bz := store.Get(hash)
 	if bz != nil {
@@ -90,6 +91,7 @@ func saveTxVotes(store cstypes.KVStore, hash []byte, validator string) int {
 		}
 	}
 
+	// Only save the result when the validator has not posted the tx record yet.
 	if !found {
 		vals = append(vals, validator)
 		bz = []byte(strings.Join(vals, ","))
@@ -97,6 +99,14 @@ func saveTxVotes(store cstypes.KVStore, hash []byte, validator string) int {
 	}
 
 	return len(vals)
+}
+
+func processTxRecord(store cstypes.KVStore, hash []byte) {
+	store.Set(hash, []byte{})
+}
+
+func isTxRecordProcessed(store cstypes.KVStore, hash []byte) bool {
+	return store.Has(hash)
 }
 
 ///// Keygen
@@ -183,12 +193,30 @@ func getAllKeygenPubkeys(store cstypes.KVStore) map[string][]byte {
 	return result
 }
 
-///// Keygen Result
+func getAllPubKeys(store cstypes.KVStore) map[string][]byte {
+	iter := store.Iterator(nil, nil)
+	ret := make(map[string][]byte)
+	for ; iter.Valid(); iter.Next() {
+		bz := iter.Value()
+		msg := &types.Keygen{}
+		err := msg.Unmarshal(bz)
+		if err != nil {
+			log.Error("cannot unmarshal KeygenResult message, err = ", err)
+			continue
+		}
+
+		ret[string(iter.Key())] = msg.PubKeyBytes
+	}
+
+	return ret
+}
+
+///// Keygen Result With Signer
 
 func saveKeygenResult(store cstypes.KVStore, signerMsg *types.KeygenResultWithSigner) {
 	key := getKeygenResultKey(signerMsg.Keygen.KeyType, int(signerMsg.Keygen.Index), signerMsg.Data.From)
 
-	bz, err := signerMsg.Data.Marshal()
+	bz, err := signerMsg.Marshal()
 	if err != nil {
 		log.Error("SaveKeygenResult: Cannot marshal KeygenResult message, err = ", err)
 		return
@@ -223,22 +251,26 @@ func isKeygenResultSuccess(store cstypes.KVStore, keygenType string, index int32
 	return false
 }
 
-func getAllPubKeys(store cstypes.KVStore) map[string][]byte {
-	iter := store.Iterator(nil, nil)
-	ret := make(map[string][]byte)
+func getAllKeygenResult(store cstypes.KVStore, keygenType string, index int32) []*types.KeygenResultWithSigner {
+	begin := []byte(fmt.Sprintf("%s__%06d__", keygenType, index))
+	end := []byte(fmt.Sprintf("%s__%06d__~", keygenType, index))
+
+	results := make([]*types.KeygenResultWithSigner, 0)
+
+	iter := store.Iterator(begin, end)
 	for ; iter.Valid(); iter.Next() {
 		bz := iter.Value()
-		msg := &types.Keygen{}
+		msg := &types.KeygenResultWithSigner{}
 		err := msg.Unmarshal(bz)
 		if err != nil {
-			log.Error("cannot unmarshal KeygenResult message, err = ", err)
+			log.Error("isKeygenResultSuccess: cannot unmarshal keygen result")
 			continue
 		}
 
-		ret[string(iter.Key())] = msg.PubKeyBytes
+		results = append(results, msg)
 	}
 
-	return ret
+	return results
 }
 
 ///// Contract
