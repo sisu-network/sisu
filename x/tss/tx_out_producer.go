@@ -30,19 +30,17 @@ type DefaultTxOutputProducer struct {
 	ethKeyAddrs map[string]map[string]bool
 
 	worldState WorldState
-	keeper     keeper.Keeper
 	appKeys    common.AppKeys
-	privateDb  keeper.Storage
+	publicDb   keeper.Storage
 	tssConfig  config.TssConfig
 }
 
-func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys common.AppKeys, privateDb keeper.Storage, tssConfig config.TssConfig) TxOutputProducer {
+func NewTxOutputProducer(worldState WorldState, appKeys common.AppKeys, publicDb keeper.Storage, tssConfig config.TssConfig) TxOutputProducer {
 	return &DefaultTxOutputProducer{
 		worldState: worldState,
-		keeper:     keeper,
 		appKeys:    appKeys,
 		tssConfig:  tssConfig,
-		privateDb:  privateDb,
+		publicDb:   publicDb,
 	}
 }
 
@@ -78,8 +76,8 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 	// 1. Check if this is a transaction sent to our key address. If this is true, it's likely a tx
 	// that funds our account.
-	if ethTx.To() != nil && p.privateDb.IsKeygenAddress(libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
-		contracts := p.privateDb.GetPendingContracts(tx.Chain)
+	if ethTx.To() != nil && p.publicDb.IsKeygenAddress(libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
+		contracts := p.publicDb.GetPendingContracts(tx.Chain)
 		log.Verbose("len(contracts) = ", len(contracts))
 
 		if len(contracts) > 0 {
@@ -119,7 +117,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 	// 2. Check if this is a tx sent to one of our contracts.
 	if ethTx.To() != nil &&
-		p.privateDb.IsContractExistedAtAddress(tx.Chain, ethTx.To().String()) && // TODO: Use keeper instead
+		p.publicDb.IsContractExistedAtAddress(tx.Chain, ethTx.To().String()) && // TODO: Use keeper instead
 		len(ethTx.Data()) >= 4 {
 
 		// TODO: compare method name to trigger corresponding contract method
