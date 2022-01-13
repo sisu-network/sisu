@@ -114,8 +114,6 @@ func isTxRecordProcessed(store cstypes.KVStore, hash []byte) bool {
 func saveKeygen(store cstypes.KVStore, msg *types.Keygen) {
 	key := getKeygenKey(msg.KeyType, int(msg.Index))
 
-	fmt.Println("saveKeygen key = ", string(key))
-
 	bz, err := msg.Marshal()
 	if err != nil {
 		log.Error("SaveKeygenProposal: cannot marshal keygen proposal, err = ", err)
@@ -125,8 +123,6 @@ func saveKeygen(store cstypes.KVStore, msg *types.Keygen) {
 
 func isKeygenExisted(store cstypes.KVStore, keyType string, index int) bool {
 	key := getKeygenKey(keyType, index)
-
-	fmt.Println("isKeygenExisted key = ", string(key), store.Has(key))
 
 	return store.Has(key)
 }
@@ -334,6 +330,7 @@ func getPendingContracts(contractStore cstypes.KVStore, byteCodeStore cstypes.KV
 			continue
 		}
 
+		// Pending contracts are contracts that do not have address or status
 		if contract.Address != "" || contract.Status != "" {
 			continue
 		}

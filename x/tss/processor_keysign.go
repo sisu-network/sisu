@@ -23,7 +23,7 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 		// Sends it to deyes for deployment.
 		if result.Success {
 			// Find the tx in txout table
-			txOut := p.privateDb.GetTxOut(keysignMsg.OutChain, keysignMsg.OutHash)
+			txOut := p.publicDb.GetTxOut(keysignMsg.OutChain, keysignMsg.OutHash)
 			if txOut == nil {
 				log.Error("Cannot find tx out with hash", keysignMsg.OutHash)
 			}
@@ -50,11 +50,11 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 
 			// // TODO: Broadcast the keysign result that includes this TxOutSig.
 			// // Save this to TxOutSig
-			// p.privateDb.SaveTxOutSig(&types.TxOutSig{
-			// 	Chain:       keysignMsg.OutChain,
-			// 	HashWithSig: signedTx.Hash().String(),
-			// 	HashNoSig:   keysignMsg.OutHash,
-			// })
+			p.privateDb.SaveTxOutSig(&types.TxOutSig{
+				Chain:       keysignMsg.OutChain,
+				HashWithSig: signedTx.Hash().String(),
+				HashNoSig:   keysignMsg.OutHash,
+			})
 
 			log.Info("signedTx hash = ", signedTx.Hash().String())
 
@@ -70,10 +70,6 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 			// TODO: handle failure case here.
 		}
 	}
-}
-
-func (p *Processor) checkKeysignResult(ctx sdk.Context, msg *types.KeysignResult) error {
-	return nil
 }
 
 func (p *Processor) deliverKeysignResult(ctx sdk.Context, msg *types.KeysignResult) ([]byte, error) {

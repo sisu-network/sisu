@@ -14,7 +14,6 @@ import (
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/tss/keeper"
 	"github.com/sisu-network/sisu/x/tss/tssclients"
-	"github.com/sisu-network/sisu/x/tss/types"
 )
 
 const (
@@ -55,10 +54,12 @@ type Processor struct {
 	keygenVoteResult map[string]map[string]bool
 	keygenBlockPairs []BlockSymbolPair
 
+	publicDb  keeper.PrivateDb
 	privateDb keeper.PrivateDb
 }
 
 func NewProcessor(k keeper.DefaultKeeper,
+	publicDb keeper.PrivateDb,
 	privateDb keeper.PrivateDb,
 	config config.TssConfig,
 	tendermintPrivKey crypto.PrivKey,
@@ -68,8 +69,8 @@ func NewProcessor(k keeper.DefaultKeeper,
 	globalData common.GlobalData,
 ) *Processor {
 	p := &Processor{
-		keeper: &k,
-		// privateDb:         keeper.NewPrivateDb(dataDir),
+		keeper:            &k,
+		publicDb:          publicDb,
 		privateDb:         privateDb,
 		txDecoder:         txDecoder,
 		appKeys:           appKeys,
@@ -95,7 +96,7 @@ func (p *Processor) Init() {
 		p.connectToDeyes()
 	}
 
-	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.keeper, p.appKeys, p.privateDb, p.config)
+	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.keeper, p.appKeys, p.publicDb, p.config)
 }
 
 // Connect to Dheart server and set private key for dheart. Note that this is the tendermint private
@@ -145,7 +146,7 @@ func (p *Processor) connectToDeyes() {
 		p.deyesClients[chain] = deyeClient
 	}
 
-	p.worldState = NewWorldState(p.config, p.privateDb, p.deyesClients)
+	p.worldState = NewWorldState(p.config, p.publicDb, p.deyesClients)
 }
 
 func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
@@ -181,41 +182,22 @@ func (p *Processor) EndBlock(ctx sdk.Context) {
 	}
 }
 
-func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
-	for _, msg := range msgs {
-		if msg.Route() != types.ModuleName {
-			return fmt.Errorf("Some message is not a TSS message")
-		}
-
-		log.Info("Checking tx: Msg type = ", msg.Type())
-
-		switch msg.(type) {
-		case *types.KeysignResult:
-			return p.checkKeysignResult(ctx, msg.(*types.KeysignResult))
-
-		case *types.ContractsWithSigner:
-			return p.checkContracts(ctx, msg.(*types.ContractsWithSigner))
-
-		case *types.TxOutConfirmWithSigner:
-			return p.checkTxOutConfirm(ctx, msg.(*types.TxOutConfirmWithSigner))
-		}
-	}
-
-	return nil
-}
-
 func (p *Processor) setContext(ctx sdk.Context) {
 	p.lastContext.Store(ctx)
 }
 
+// shouldProcessMsg counts how many validators have posted the same transaction to blockchain before
+// processing.
+//
+// When adding new message type, remember to add its serialization in the GetTxRecodrdHash.
 func (p *Processor) shouldProcessMsg(ctx sdk.Context, msg sdk.Msg) (bool, []byte) {
 	hash, signer, err := keeper.GetTxRecodrdHash(msg)
 	if err != nil {
 		return false, hash
 	}
 
-	count := p.privateDb.SaveTxRecord(hash, signer)
-	if count >= p.config.MajorityThreshold && !p.privateDb.IsTxRecordProcessed(hash) {
+	count := p.publicDb.SaveTxRecord(hash, signer)
+	if count >= p.config.MajorityThreshold && !p.publicDb.IsTxRecordProcessed(hash) {
 		return true, hash
 	}
 

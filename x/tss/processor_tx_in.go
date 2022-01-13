@@ -1,8 +1,6 @@
 package tss
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -22,7 +20,7 @@ func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 	// Create TxIn messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
 		// 1. Check if this tx is from one of our key. If it is, update the status of TxOut to confirmed.
-		if p.privateDb.IsKeygenAddress(libchain.KEY_TYPE_ECDSA, tx.From) {
+		if p.publicDb.IsKeygenAddress(libchain.KEY_TYPE_ECDSA, tx.From) {
 			return p.confirmTx(tx, txs.Chain, txs.Block)
 		} else if len(tx.To) > 0 {
 			// 2. This is a transaction to our key account or one of our contracts. Create a message to
@@ -52,11 +50,16 @@ func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64) error {
 	log.Verbose("This is a transaction from us. We need to confirm it. Chain = ", chain)
 
-	p.privateDb.PrintStoreKeys("txOut")
-	txOut := p.privateDb.GetTxOutFromSigHash(chain, tx.Hash)
+	// The txOutSig is in private db while txOut should come from common db.
+	txOutSig := p.privateDb.GetTxOutSig(chain, tx.Hash)
+	if txOutSig == nil {
+		log.Verbose("cannot find txOutSig with full signature hash: ", tx.Hash)
+		return nil
+	}
+
+	txOut := p.publicDb.GetTxOut(chain, txOutSig.HashNoSig)
 	if txOut == nil {
-		// TODO: Add unconfirmed tx model
-		log.Verbose("cannot find txOut with full signature hash: ", tx.Hash)
+		log.Verbose("cannot find txOut with hash (with no sig): ", txOutSig.HashNoSig)
 		return nil
 	}
 
@@ -93,11 +96,8 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 
 func (p *Processor) deliverTxIn(ctx sdk.Context, signerMsg *types.TxInWithSigner) ([]byte, error) {
 	if process, hash := p.shouldProcessMsg(ctx, signerMsg); process {
-		fmt.Println("PRocessing TxIn")
 		p.doTxIn(ctx, signerMsg)
-		p.privateDb.ProcessTxRecord(hash)
-	} else {
-		fmt.Println("TxIn Has been processed")
+		p.publicDb.ProcessTxRecord(hash)
 	}
 
 	return nil, nil
@@ -110,7 +110,7 @@ func (p *Processor) doTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner)
 	log.Info("Deliverying TxIn....")
 
 	// Save this to KVStore & private db.
-	p.privateDb.SaveTxIn(msg)
+	p.publicDb.SaveTxIn(msg)
 
 	// Creates and broadcast TxOuts. This has to be deterministic based on all the data that the
 	// processor has.
@@ -124,12 +124,9 @@ func (p *Processor) doTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner)
 			txOut := outWithSigner.Data
 			txOuts[i] = txOut
 
-			// We only save txOut to privateDb instead of keeper since it's not confirmed by everyone yet
-			p.privateDb.SaveTxOut(txOut)
-
 			// If this is a txOut deployment, mark the contract as being deployed.
 			if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
-				p.privateDb.UpdateContractsStatus(txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
+				p.publicDb.UpdateContractsStatus(txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
 			}
 		}
 	}

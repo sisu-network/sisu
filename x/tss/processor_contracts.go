@@ -31,9 +31,6 @@ func (p *Processor) createPendingContracts(ctx sdk.Context, msg *types.Keygen) {
 		}
 	}
 
-	// Save this private db
-	p.privateDb.SaveContracts(contracts, true)
-
 	go func() {
 		signer := p.appKeys.GetSignerAddress()
 		p.txSubmit.SubmitMessage(types.NewContractsWithSigner(
@@ -43,24 +40,21 @@ func (p *Processor) createPendingContracts(ctx sdk.Context, msg *types.Keygen) {
 	}()
 }
 
-func (p *Processor) checkContracts(ctx sdk.Context, wrappedMsg *types.ContractsWithSigner) error {
-	for _, contract := range wrappedMsg.Data.Contracts {
-		if !p.privateDb.IsContractExisted(contract) {
-			return ErrCannotFindMessage
-		}
+func (p *Processor) deliverContracts(ctx sdk.Context, signerMsg *types.ContractsWithSigner) ([]byte, error) {
+	if process, hash := p.shouldProcessMsg(ctx, signerMsg); process {
+		p.doContracts(ctx, signerMsg)
+		p.publicDb.ProcessTxRecord(hash)
 	}
 
-	// TODO: Check with KVStore
-
-	return nil
+	return nil, nil
 }
 
-func (p *Processor) deliverContracts(ctx sdk.Context, wrappedMsg *types.ContractsWithSigner) ([]byte, error) {
+func (p *Processor) doContracts(ctx sdk.Context, wrappedMsg *types.ContractsWithSigner) ([]byte, error) {
 	// TODO: Don't do duplicated delivery
 	log.Info("Deliver pending contracts")
 
 	for _, contract := range wrappedMsg.Data.Contracts {
-		if p.keeper.IsContractExisted(ctx, contract) {
+		if p.publicDb.IsContractExisted(contract) {
 			log.Infof("Contract %s has been processed", contract.Name)
 			return nil, nil
 		}
@@ -69,8 +63,7 @@ func (p *Processor) deliverContracts(ctx sdk.Context, wrappedMsg *types.Contract
 	log.Info("Saving contracts, contracts length = ", len(wrappedMsg.Data.Contracts))
 
 	// Save into KVStore & private db
-	p.keeper.SaveContracts(ctx, wrappedMsg.Data.Contracts, true)
-	p.privateDb.SaveContracts(wrappedMsg.Data.Contracts, true)
+	p.publicDb.SaveContracts(wrappedMsg.Data.Contracts, true)
 
 	return nil, nil
 }

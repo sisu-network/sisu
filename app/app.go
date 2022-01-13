@@ -315,8 +315,12 @@ func New(
 		panic(err)
 	}
 
-	privateDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "data"))
-	tssProcessor := tss.NewProcessor(app.tssKeeper, privateDb, tssConfig, nodeKey.PrivKey, app.appKeys, app.txDecoder, app.txSubmitter, app.globalData)
+	// storage that contains common data for all the nodes
+	storage := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "data"))
+	privateDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "private"))
+
+	tssProcessor := tss.NewProcessor(app.tssKeeper, storage, privateDb, tssConfig, nodeKey.PrivKey,
+		app.appKeys, app.txDecoder, app.txSubmitter, app.globalData)
 	tssProcessor.Init()
 
 	// NOTE: Any module instantiated in the module manager that is later modified
@@ -344,7 +348,7 @@ func New(
 		transferModule,
 
 		sisu.NewAppModule(appCodec, app.sisuKeeper),
-		tss.NewAppModule(appCodec, app.tssKeeper, privateDb, app.appKeys, app.txSubmitter, tssProcessor, app.globalData),
+		tss.NewAppModule(appCodec, app.tssKeeper, storage, app.appKeys, app.txSubmitter, tssProcessor, app.globalData),
 	}
 
 	app.tssProcessor = tssProcessor

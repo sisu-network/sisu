@@ -32,6 +32,26 @@ func GetTxRecodrdHash(msg sdk.Msg) ([]byte, string, error) {
 		}
 		return []byte(utils.KeccakHash32(string(serialized))), msg.Signer, nil
 
+	case *types.TxOutWithSigner:
+		serialized, err := msg.Data.Marshal()
+		if err != nil {
+			return nil, "", err
+		}
+		return []byte(utils.KeccakHash32(string(serialized))), msg.Signer, nil
+
+	case *types.TxOutConfirmWithSigner:
+		serialized, err := msg.Data.Marshal()
+		if err != nil {
+			return nil, "", err
+		}
+		return []byte(utils.KeccakHash32(string(serialized))), msg.Signer, nil
+
+	case *types.ContractsWithSigner:
+		serialized, err := msg.Data.Marshal()
+		if err != nil {
+			return nil, "", err
+		}
+		return []byte(utils.KeccakHash32(string(serialized))), msg.Signer, nil
 	}
 
 	return nil, "", NotFound

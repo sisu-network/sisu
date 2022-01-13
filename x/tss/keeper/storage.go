@@ -40,12 +40,9 @@ type PrivateDb interface {
 	SaveContracts(msgs []*types.Contract, saveByteCode bool)
 	IsContractExisted(msg *types.Contract) bool
 	GetContract(chain string, hash string, includeByteCode bool) *types.Contract
-
 	GetPendingContracts(chain string) []*types.Contract
 	UpdateContractAddress(chain string, hash string, address string)
-
 	UpdateContractsStatus(chain string, contractHash string, status string)
-
 	GetLatestContractAddressByName(chain, name string) string
 
 	// Contract Address
@@ -60,7 +57,9 @@ type PrivateDb interface {
 	SaveTxOut(msg *types.TxOut)
 	IsTxOutExisted(msg *types.TxOut) bool
 	GetTxOut(outChain, hash string) *types.TxOut
-	GetTxOutFromSigHash(outChain, hashWithSig string) *types.TxOut
+
+	// TxOutSig
+	GetTxOutSig(outChain, hashWithSig string) *types.TxOutSig
 
 	// TODO: Add unconfirmed tx store
 	// TxOutSig
@@ -114,6 +113,8 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes[string(prefixTxIn)] = prefix.NewStore(parent, prefixTxIn)
 	// prefixTxOut
 	prefixes[string(prefixTxOut)] = prefix.NewStore(parent, prefixTxOut)
+	// prefixTxOutSig
+	prefixes[string(prefixTxOutSig)] = prefix.NewStore(parent, prefixTxOutSig)
 	// prefixTxOutConfirm
 	prefixes[string(prefixTxOutConfirm)] = prefix.NewStore(parent, prefixTxOutConfirm)
 	// prefixContractName
@@ -294,16 +295,11 @@ func (db *defaultPrivateDb) GetTxOut(outChain, hash string) *types.TxOut {
 	return getTxOut(store, outChain, hash)
 }
 
-func (db *defaultPrivateDb) GetTxOutFromSigHash(outChain, hashWithSig string) *types.TxOut {
+func (db *defaultPrivateDb) GetTxOutSig(outChain, hashWithSig string) *types.TxOutSig {
 	withSigStore := db.prefixes[string(prefixTxOutSig)]
 	txOutSig := getTxOutSig(withSigStore, outChain, hashWithSig)
 
-	if txOutSig == nil {
-		return nil
-	}
-
-	noSigStore := db.prefixes[string(prefixTxOut)]
-	return getTxOut(noSigStore, outChain, txOutSig.HashNoSig)
+	return txOutSig
 }
 
 ///// TxOutSig

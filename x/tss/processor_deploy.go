@@ -14,7 +14,7 @@ func (p *Processor) deploySignedTx(bz []byte, outChain string, outHash string, i
 	log.Debug("Sending final tx to the deyes for deployment for chain ", outChain)
 	deyeClient := p.deyesClients[outChain]
 
-	pubkey := p.privateDb.GetKeygenPubkey(libchain.GetKeyTypeForChain(outChain))
+	pubkey := p.publicDb.GetKeygenPubkey(libchain.GetKeyTypeForChain(outChain))
 	if pubkey == nil {
 		return fmt.Errorf("Cannot get pubkey for chain %s", outChain)
 	}
