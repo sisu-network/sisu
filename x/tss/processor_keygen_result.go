@@ -31,7 +31,7 @@ func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
 	)
 
 	// Save the result to private db
-	p.privateDb.SaveKeygenResult(signerMsg)
+	p.publicDb.SaveKeygenResult(signerMsg)
 
 	log.Info("There is keygen result from dheart, resultEnum = ", resultEnum)
 
@@ -41,7 +41,7 @@ func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
 func (p *Processor) deliverKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) ([]byte, error) {
 	if process, hash := p.shouldProcessMsg(ctx, signerMsg); process {
 		p.doKeygenResult(ctx, signerMsg)
-		p.privateDb.ProcessTxRecord(hash)
+		p.publicDb.ProcessTxRecord(hash)
 	}
 
 	return nil, nil
@@ -59,7 +59,7 @@ func (p *Processor) doKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResul
 		log.Info("Keygen succeeded")
 
 		// Save result to KVStore & private db
-		p.privateDb.SaveKeygenResult(signerMsg)
+		p.publicDb.SaveKeygenResult(signerMsg)
 
 		// Add list the public key address to watch.
 		p.addWatchAddress(signerMsg.Keygen)
@@ -75,7 +75,7 @@ func (p *Processor) doKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResul
 }
 
 func (p *Processor) getKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) types.KeygenResult_Result {
-	results := p.privateDb.GetAllKeygenResult(signerMsg.Keygen.KeyType, signerMsg.Keygen.Index)
+	results := p.publicDb.GetAllKeygenResult(signerMsg.Keygen.KeyType, signerMsg.Keygen.Index)
 
 	// Check the majority of the results
 	successCount := 0
@@ -89,7 +89,7 @@ func (p *Processor) getKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResu
 		// TODO: Choose the address with most vote.
 		// Save keygen Address
 		log.Info("Saving keygen...")
-		p.privateDb.SaveKeygen(signerMsg.Keygen)
+		p.publicDb.SaveKeygen(signerMsg.Keygen)
 
 		return types.KeygenResult_SUCCESS
 	}

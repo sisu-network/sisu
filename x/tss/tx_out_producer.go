@@ -78,8 +78,8 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 	// 1. Check if this is a transaction sent to our key address. If this is true, it's likely a tx
 	// that funds our account.
-	if ethTx.To() != nil && p.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
-		contracts := p.keeper.GetPendingContracts(ctx, tx.Chain)
+	if ethTx.To() != nil && p.privateDb.IsKeygenAddress(libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
+		contracts := p.privateDb.GetPendingContracts(tx.Chain)
 		log.Verbose("len(contracts) = ", len(contracts))
 
 		if len(contracts) > 0 {
@@ -119,7 +119,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 	// 2. Check if this is a tx sent to one of our contracts.
 	if ethTx.To() != nil &&
-		p.keeper.IsContractExistedAtAddress(ctx, tx.Chain, ethTx.To().String()) && // TODO: Use keeper instead
+		p.privateDb.IsContractExistedAtAddress(tx.Chain, ethTx.To().String()) && // TODO: Use keeper instead
 		len(ethTx.Data()) >= 4 {
 
 		// TODO: compare method name to trigger corresponding contract method

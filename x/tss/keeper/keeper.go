@@ -1,8 +1,6 @@
 package keeper
 
 import (
-	"fmt"
-
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	cstypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -82,13 +80,11 @@ func (k *DefaultKeeper) SaveTxRecord(ctx sdk.Context, hash []byte, val string) i
 
 func (k *DefaultKeeper) ProcessTxRecord(ctx sdk.Context, hash []byte) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxRecordProcessed)
-	fmt.Println("ProcessTxRecord, hash = ", string(hash))
 	processTxRecord(store, hash)
 }
 
 func (k *DefaultKeeper) IsTxRecordProcessed(ctx sdk.Context, hash []byte) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxRecordProcessed)
-	fmt.Println("IsTxRecordProcessed, hash = ", string(hash))
 	return isTxRecordProcessed(store, hash)
 }
 

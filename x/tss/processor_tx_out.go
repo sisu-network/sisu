@@ -14,18 +14,10 @@ import (
 	"github.com/sisu-network/lib/log"
 )
 
-func (p *Processor) deliverTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWithSigner) ([]byte, error) {
-	bz, err := msgWithSigner.Data.Marshal()
-	if err != nil {
-		return nil, nil
-	}
-
-	// TODO: Check if signer is in the top validator set.
-	count := p.keeper.SaveTxRecord(ctx, bz, msgWithSigner.Signer)
-	fmt.Println("count = ", count)
-
-	if count >= p.config.MajorityThreshold {
-		return p.doTxOut(ctx, msgWithSigner)
+func (p *Processor) deliverTxOut(ctx sdk.Context, signerMsg *types.TxOutWithSigner) ([]byte, error) {
+	if process, hash := p.shouldProcessMsg(ctx, signerMsg); process {
+		p.doTxOut(ctx, signerMsg)
+		p.publicDb.ProcessTxRecord(hash)
 	}
 
 	return nil, nil
@@ -36,16 +28,10 @@ func (p *Processor) deliverTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWith
 func (p *Processor) doTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWithSigner) ([]byte, error) {
 	txOut := msgWithSigner.Data
 
-	if p.keeper.IsTxOutExisted(ctx, txOut) {
-		// The message has been processed
-		return nil, nil
-	}
-
 	log.Info("Delivering TxOut")
 
 	// Save this to KVStore
-	p.keeper.SaveTxOut(ctx, txOut)
-	p.privateDb.SaveTxOut(txOut)
+	p.publicDb.SaveTxOut(txOut)
 
 	// If this is a txout deployment,
 

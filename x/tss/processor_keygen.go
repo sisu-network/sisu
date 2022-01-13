@@ -25,7 +25,7 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 	// Check ECDSA only (for now)
 	keyTypes := []string{libchain.KEY_TYPE_ECDSA}
 	for _, keyType := range keyTypes {
-		if p.privateDb.IsKeygenExisted(keyType, 0) {
+		if p.publicDb.IsKeygenExisted(keyType, 0) {
 			continue
 		}
 
@@ -51,7 +51,7 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 func (p *Processor) deliverKeygen(ctx sdk.Context, signerMsg *types.KeygenWithSigner) ([]byte, error) {
 	if process, hash := p.shouldProcessMsg(ctx, signerMsg); process {
 		p.doKeygen(ctx, signerMsg)
-		p.privateDb.ProcessTxRecord(hash)
+		p.publicDb.ProcessTxRecord(hash)
 	}
 
 	return nil, nil
@@ -60,16 +60,10 @@ func (p *Processor) deliverKeygen(ctx sdk.Context, signerMsg *types.KeygenWithSi
 func (p *Processor) doKeygen(ctx sdk.Context, signerMsg *types.KeygenWithSigner) ([]byte, error) {
 	msg := signerMsg.Data
 
-	// TODO: Check if we have processed a keygen proposal recently.
-	if p.keeper.IsKeygenExisted(ctx, msg.KeyType, int(msg.Index)) {
-		log.Verbose("The keygen proposal has been processed")
-		return nil, nil
-	}
-
 	log.Info("Delivering keygen....")
 
 	// Save this into Keeper && private db.
-	p.privateDb.SaveKeygen(msg)
+	p.publicDb.SaveKeygen(msg)
 
 	if p.globalData.IsCatchingUp() {
 		return nil, nil

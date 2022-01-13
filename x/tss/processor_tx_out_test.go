@@ -62,7 +62,7 @@ func TestDeliverTxOut_Normal(t *testing.T) {
 
 	p := &Processor{
 		keeper:       mockKeeper,
-		privateDb:    mockPrivateDb,
+		publicDb:     mockPrivateDb,
 		partyManager: mockPartyManager,
 		dheartClient: mockDheartClient,
 		globalData:   mockGlobalData,
@@ -103,7 +103,7 @@ func TestDeliverTxOut_BlockCatchingUp(t *testing.T) {
 	mockDheartClient.EXPECT().KeySign(gomock.Any(), gomock.Any()).Return(nil).Times(0)
 
 	p := &Processor{
-		privateDb:  mockPrivateDb,
+		publicDb:   mockPrivateDb,
 		keeper:     mockKeeper,
 		globalData: mockGlobalData,
 	}

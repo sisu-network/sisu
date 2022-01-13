@@ -40,7 +40,7 @@ func TestProcessor_OnTxIns(t *testing.T) {
 		mockPrivateDb := mocktss.NewMockPrivateDb(ctrl)
 		mockPrivateDb.EXPECT().IsKeygenAddress(libchain.KEY_TYPE_ECDSA, keygenAddress).Return(true).Times(1)
 		mockPrivateDb.EXPECT().PrintStoreKeys(gomock.Any())
-		mockPrivateDb.EXPECT().GetTxOutFromSigHash(observedChain, gomock.Any()).Return(&types.TxOut{
+		mockPrivateDb.EXPECT().GetTxOutSig(observedChain, gomock.Any()).Return(&types.TxOut{
 			TxType:   types.TxOutType_NORMAL, // non-deployment tx
 			OutChain: "eth2",
 			OutHash:  utils.RandomHeximalString(32),
@@ -68,9 +68,9 @@ func TestProcessor_OnTxIns(t *testing.T) {
 			}},
 		}
 		processor := &Processor{
-			privateDb: mockPrivateDb,
-			appKeys:   appKeysMock,
-			txSubmit:  mockTxSubmit,
+			publicDb: mockPrivateDb,
+			appKeys:  appKeysMock,
+			txSubmit: mockTxSubmit,
 		}
 
 		err := processor.OnTxIns(txs)
@@ -120,9 +120,9 @@ func TestProcessor_OnTxIns(t *testing.T) {
 
 		// Init processor with mocks
 		processor := &Processor{
-			privateDb: mockPrivateDb,
-			appKeys:   appKeysMock,
-			txSubmit:  mockTxSubmit,
+			publicDb: mockPrivateDb,
+			appKeys:  appKeysMock,
+			txSubmit: mockTxSubmit,
 		}
 
 		err := processor.OnTxIns(txs)

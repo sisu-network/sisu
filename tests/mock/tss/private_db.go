@@ -144,18 +144,18 @@ func (mr *MockPrivateDbMockRecorder) GetTxOut(outChain, hash interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxOut", reflect.TypeOf((*MockPrivateDb)(nil).GetTxOut), outChain, hash)
 }
 
-// GetTxOutFromSigHash mocks base method.
-func (m *MockPrivateDb) GetTxOutFromSigHash(outChain, hashWithSig string) *types.TxOut {
+// GetTxOutSig mocks base method.
+func (m *MockPrivateDb) GetTxOutSig(outChain, hashWithSig string) *types.TxOutSig {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTxOutFromSigHash", outChain, hashWithSig)
-	ret0, _ := ret[0].(*types.TxOut)
+	ret := m.ctrl.Call(m, "GetTxOutSig", outChain, hashWithSig)
+	ret0, _ := ret[0].(*types.TxOutSig)
 	return ret0
 }
 
-// GetTxOutFromSigHash indicates an expected call of GetTxOutFromSigHash.
-func (mr *MockPrivateDbMockRecorder) GetTxOutFromSigHash(outChain, hashWithSig interface{}) *gomock.Call {
+// GetTxOutSig indicates an expected call of GetTxOutSig.
+func (mr *MockPrivateDbMockRecorder) GetTxOutSig(outChain, hashWithSig interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxOutFromSigHash", reflect.TypeOf((*MockPrivateDb)(nil).GetTxOutFromSigHash), outChain, hashWithSig)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxOutSig", reflect.TypeOf((*MockPrivateDb)(nil).GetTxOutSig), outChain, hashWithSig)
 }
 
 // IsContractExisted mocks base method.

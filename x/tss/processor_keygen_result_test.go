@@ -49,7 +49,7 @@ func TestProcessor_deliverKeyGen_normal(t *testing.T) {
 
 	p := &Processor{
 		keeper:       mockKeeper,
-		privateDb:    mockPrivateDb,
+		publicDb:     mockPrivateDb,
 		globalData:   mockGlobalData,
 		partyManager: mockPartyManager,
 		dheartClient: mockDheartClient,
@@ -88,7 +88,7 @@ func TestProcessor_deliverKeyGen_CatchingUp(t *testing.T) {
 
 	p := &Processor{
 		keeper:     mockKeeper,
-		privateDb:  mockPrivateDb,
+		publicDb:   mockPrivateDb,
 		globalData: mockGlobalData,
 	}
 
