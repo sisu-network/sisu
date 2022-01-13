@@ -5,13 +5,13 @@ import (
 	"errors"
 	"os"
 
-	ctypes "github.com/sisu-network/cosmos-sdk/crypto/types"
+	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/sisu-network/lib/log"
 
-	keyring "github.com/sisu-network/cosmos-sdk/crypto/keyring"
-	sdk "github.com/sisu-network/cosmos-sdk/types"
+	keyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/sisu-network/cosmos-sdk/crypto/keys/secp256k1"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 )

@@ -12,16 +12,17 @@ import (
 	"github.com/sisu-network/sisu/app/params"
 	"github.com/sisu-network/sisu/config"
 
-	"github.com/sisu-network/cosmos-sdk/client"
-	"github.com/sisu-network/cosmos-sdk/client/flags"
-	"github.com/sisu-network/cosmos-sdk/client/tx"
-	cryptocodec "github.com/sisu-network/cosmos-sdk/crypto/codec"
-	"github.com/sisu-network/cosmos-sdk/crypto/keyring"
-	sdk "github.com/sisu-network/cosmos-sdk/types"
-	"github.com/sisu-network/cosmos-sdk/types/tx/signing"
-	authtypes "github.com/sisu-network/cosmos-sdk/x/auth/types"
-	staking "github.com/sisu-network/cosmos-sdk/x/staking/types"
-	rpchttp "github.com/sisu-network/tendermint/rpc/client/http"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/client/tx"
+	cryptocodec "github.com/cosmos/cosmos-sdk/crypto/codec"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	staking "github.com/cosmos/cosmos-sdk/x/staking/types"
+	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
 )
 
 //go:generate mockgen -source=tx_submitter.go -destination=../tests/mock/tx_submitter.go -package=mock
@@ -30,6 +31,7 @@ const (
 	// TODO: put these values into config file.
 	defaultGasAdjustment = 1.0
 	defaultGasLimit      = 3_000_000
+	UnInitializedSeq     = 18446744073709551615 // Max of uint64. This means it's not initialized
 )
 
 var (
@@ -57,6 +59,14 @@ type TxSubmitter struct {
 	factory     tx.Factory
 	fromAccount sdk.AccAddress
 
+	// Sequence
+	sequenceLock *sync.RWMutex
+
+	// Current sequence is the current sequence that will be used for transaction. It's possible that
+	// multiple transactions could submitted within a block and account's sequence could be out
+	// of sync with account keeper.
+	curSequence uint64
+
 	// Tx queue
 	queue           []*QElementPair
 	queueLock       *sync.RWMutex
@@ -77,6 +87,8 @@ func NewTxSubmitter(cfg config.Config, appKeys *DefaultAppKeys) *TxSubmitter {
 		queue:           make([]*QElementPair, 0),
 		submitRequestCh: make(chan bool),
 		msgStatuses:     make(map[int64]error),
+		sequenceLock:    &sync.RWMutex{},
+		curSequence:     UnInitializedSeq,
 	}
 
 	var err error
@@ -164,6 +176,11 @@ func (t *TxSubmitter) Start() {
 
 			log.Info("Queue size = ", len(copy))
 
+			// 2. Get account sequence
+			seq := t.getSequence()
+			log.Info("Sequence = ", seq)
+			t.factory = t.factory.WithSequence(seq)
+
 			// 3. Send all messages
 			msgs := convert(copy)
 			if err := tx.BroadcastTx(t.clientCtx, t.factory, msgs...); err != nil {
@@ -172,9 +189,55 @@ func (t *TxSubmitter) Start() {
 			} else {
 				log.Debug("Tx submitted successfully")
 				t.updateStatus(copy, ErrNone)
+				t.incSequence()
 			}
 		}
 	}
+}
+
+func (t *TxSubmitter) SyncBlockSequence(ctx sdk.Context, ak authkeeper.AccountKeeper) {
+	t.sequenceLock.RLock()
+	seq := t.curSequence
+	t.sequenceLock.RUnlock()
+
+	if seq != UnInitializedSeq {
+		return
+	}
+
+	if t.fromAccount == nil {
+		log.Error("fromAccount is not set yet")
+		return
+	}
+
+	// We create a new context with a new gas meter since ak.GetAccount consumes different gas amount
+	// for different length of the t.fromAccount.
+	copyCtx := ctx.WithGasMeter(sdk.NewInfiniteGasMeter())
+	account := ak.GetAccount(copyCtx, t.fromAccount)
+
+	if account == nil {
+		log.Error("cannot find account in the keeper, account =", t.fromAccount)
+		return
+	}
+
+	seq = account.GetSequence()
+
+	t.sequenceLock.Lock()
+	t.curSequence = seq
+	t.sequenceLock.Unlock()
+}
+
+func (t *TxSubmitter) getSequence() uint64 {
+	t.sequenceLock.RLock()
+	defer t.sequenceLock.RUnlock()
+
+	return t.curSequence
+}
+
+func (t *TxSubmitter) incSequence() {
+	t.sequenceLock.Lock()
+	defer t.sequenceLock.Unlock()
+
+	t.curSequence++
 }
 
 func (t *TxSubmitter) updateStatus(list []*QElementPair, err error) {

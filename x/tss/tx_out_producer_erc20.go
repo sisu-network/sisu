@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"math/big"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
@@ -56,7 +56,7 @@ func (p *DefaultTxOutputProducer) processERC20TransferIn(ctx sdk.Context, ethTx 
 
 func (p *DefaultTxOutputProducer) callERC20TransferIn(ctx sdk.Context, tokenAddress, recipient ethcommon.Address, amount *big.Int, destChain string) (*types.TxResponse, error) {
 	targetContractName := ContractErc20Gateway
-	gw := p.keeper.GetLatestContractAddressByName(ctx, destChain, targetContractName)
+	gw := p.publicDb.GetLatestContractAddressByName(destChain, targetContractName)
 	if len(gw) == 0 {
 		err := fmt.Errorf("cannot find gw address for type: %s", targetContractName)
 		log.Error(err)

@@ -1,9 +1,9 @@
 package keeper
 
 import (
-	"github.com/sisu-network/cosmos-sdk/store/prefix"
-	cstypes "github.com/sisu-network/cosmos-sdk/store/types"
-	sdk "github.com/sisu-network/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
+	cstypes "github.com/cosmos/cosmos-sdk/store/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
@@ -15,6 +15,13 @@ type Keeper interface {
 	// Debug
 	PrintStore(ctx sdk.Context, name string)
 
+	// TxRecord
+	SaveTxRecord(ctx sdk.Context, hash []byte, val string) int
+
+	// TxRecordProcessed
+	ProcessTxRecord(ctx sdk.Context, hash []byte)
+	IsTxRecordProcessed(ctx sdk.Context, hash []byte) bool
+
 	// Keygen
 	SaveKeygen(ctx sdk.Context, msg *types.Keygen)
 	IsKeygenExisted(ctx sdk.Context, keyType string, index int) bool
@@ -22,7 +29,7 @@ type Keeper interface {
 
 	// Keygen Result
 	SaveKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner)
-	IsKeygenResultSuccess(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner, self string) bool
+	GetAllKeygenResult(ctx sdk.Context, keygenType string, index int32) []*types.KeygenResultWithSigner
 
 	// Contracts
 	SaveContract(ctx sdk.Context, msg *types.Contract, saveByteCode bool)
@@ -64,6 +71,22 @@ func NewKeeper(storeKey sdk.StoreKey) *DefaultKeeper {
 	return keeper
 }
 
+///// TxVote
+func (k *DefaultKeeper) SaveTxRecord(ctx sdk.Context, hash []byte, val string) int {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxRecord)
+	return saveTxRecord(store, hash, val)
+}
+
+func (k *DefaultKeeper) ProcessTxRecord(ctx sdk.Context, hash []byte) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxRecordProcessed)
+	processTxRecord(store, hash)
+}
+
+func (k *DefaultKeeper) IsTxRecordProcessed(ctx sdk.Context, hash []byte) bool {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxRecordProcessed)
+	return isTxRecordProcessed(store, hash)
+}
+
 ///// Keygen
 
 func (k *DefaultKeeper) SaveKeygen(ctx sdk.Context, msg *types.Keygen) {
@@ -84,15 +107,14 @@ func (k *DefaultKeeper) IsKeygenAddress(ctx sdk.Context, keyType string, address
 ///// Keygen Result
 
 func (k *DefaultKeeper) SaveKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenResult)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenResultWithSigner)
 	saveKeygenResult(store, signerMsg)
 }
 
-// Keygen is considered successful if at least there is at least 1 successful KeygenReslut in the
-// KVStore.
-func (k *DefaultKeeper) IsKeygenResultSuccess(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner, self string) bool {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenResult)
-	return isKeygenResultSuccess(store, signerMsg.Keygen.KeyType, signerMsg.Keygen.Index, self)
+func (k *DefaultKeeper) GetAllKeygenResult(ctx sdk.Context, keygenType string, index int32) []*types.KeygenResultWithSigner {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenResultWithSigner)
+
+	return getAllKeygenResult(store, keygenType, index)
 }
 
 ///// Contracts

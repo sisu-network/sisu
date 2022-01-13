@@ -1,10 +1,10 @@
 package tss
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	sdk "github.com/sisu-network/cosmos-sdk/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
@@ -20,7 +20,7 @@ func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 	// Create TxIn messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
 		// 1. Check if this tx is from one of our key. If it is, update the status of TxOut to confirmed.
-		if p.privateDb.IsKeygenAddress(libchain.KEY_TYPE_ECDSA, tx.From) {
+		if p.publicDb.IsKeygenAddress(libchain.KEY_TYPE_ECDSA, tx.From) {
 			return p.confirmTx(tx, txs.Chain, txs.Block)
 		} else if len(tx.To) > 0 {
 			// 2. This is a transaction to our key account or one of our contracts. Create a message to
@@ -34,9 +34,6 @@ func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 				txs.Block,
 				tx.Serialized,
 			)
-
-			// Save tx in into db
-			p.privateDb.SaveTxIn(signerMsg.Data)
 
 			go func(tx *types.TxInWithSigner) {
 				if err := p.txSubmit.SubmitMessage(tx); err != nil {
@@ -53,11 +50,17 @@ func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64) error {
 	log.Verbose("This is a transaction from us. We need to confirm it. Chain = ", chain)
 
-	p.privateDb.PrintStoreKeys("txOut")
-	txOut := p.privateDb.GetTxOutFromSigHash(chain, tx.Hash)
+	// The txOutSig is in private db while txOut should come from common db.
+	txOutSig := p.privateDb.GetTxOutSig(chain, tx.Hash)
+	if txOutSig == nil {
+		// TODO: Add this to pending tx to confirm.
+		log.Verbose("cannot find txOutSig with full signature hash: ", tx.Hash)
+		return nil
+	}
+
+	txOut := p.publicDb.GetTxOut(chain, txOutSig.HashNoSig)
 	if txOut == nil {
-		// TODO: Add unconfirmed tx model
-		log.Verbose("cannot find txOut with full signature hash: ", tx.Hash)
+		log.Verbose("cannot find txOut with hash (with no sig): ", txOutSig.HashNoSig)
 		return nil
 	}
 
@@ -85,9 +88,6 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 		contractAddress,
 	)
 
-	// Save this into db
-	p.privateDb.SaveTxOutConfirm(confirmMsg.Data)
-
 	go func() {
 		p.txSubmit.SubmitMessage(confirmMsg)
 	}()
@@ -95,34 +95,23 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 	return nil
 }
 
-func (p *Processor) checkTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner) error {
-	// Make sure we should have seen this TxIn in our table.
-	if !p.privateDb.IsTxInExisted(msgWithSigner.Data) {
-		return ErrCannotFindMessage
+func (p *Processor) deliverTxIn(ctx sdk.Context, signerMsg *types.TxInWithSigner) ([]byte, error) {
+	if process, hash := p.shouldProcessMsg(ctx, signerMsg); process {
+		p.doTxIn(ctx, signerMsg)
+		p.publicDb.ProcessTxRecord(hash)
 	}
 
-	// Make sure this message has been processed.
-	if p.keeper.IsTxInExisted(ctx, msgWithSigner.Data) {
-		return ErrMessageHasBeenProcessed
-	}
-
-	return nil
+	return nil, nil
 }
 
 // Delivers observed Txs.
-func (p *Processor) deliverTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner) ([]byte, error) {
+func (p *Processor) doTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner) ([]byte, error) {
 	msg := msgWithSigner.Data
-
-	if p.keeper.IsTxInExisted(ctx, msg) {
-		// The tx has been processed before.
-		return nil, nil
-	}
 
 	log.Info("Deliverying TxIn....")
 
 	// Save this to KVStore & private db.
-	p.keeper.SaveTxIn(ctx, msg)
-	p.privateDb.SaveTxIn(msg)
+	p.publicDb.SaveTxIn(msg)
 
 	// Creates and broadcast TxOuts. This has to be deterministic based on all the data that the
 	// processor has.
@@ -136,12 +125,9 @@ func (p *Processor) deliverTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSi
 			txOut := outWithSigner.Data
 			txOuts[i] = txOut
 
-			// We only save txOut to privateDb instead of keeper since it's not confirmed by everyone yet
-			p.privateDb.SaveTxOut(txOut)
-
 			// If this is a txOut deployment, mark the contract as being deployed.
 			if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
-				p.keeper.UpdateContractsStatus(ctx, txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
+				p.publicDb.UpdateContractsStatus(txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
 			}
 		}
 	}

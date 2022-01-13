@@ -1,7 +1,7 @@
 package dev
 
 import (
-	"github.com/sisu-network/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/spf13/cobra"
 )
 
