@@ -3,7 +3,7 @@ package app
 import (
 	"encoding/json"
 
-	"github.com/sisu-network/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/codec"
 )
 
 // The genesis state of the blockchain is represented here as a map of raw json

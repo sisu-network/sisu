@@ -7,14 +7,14 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/sisu-network/cosmos-sdk/client"
-	"github.com/sisu-network/cosmos-sdk/client/flags"
-	"github.com/sisu-network/cosmos-sdk/crypto/hd"
-	"github.com/sisu-network/cosmos-sdk/crypto/keyring"
-	"github.com/sisu-network/cosmos-sdk/server"
-	sdk "github.com/sisu-network/cosmos-sdk/types"
-	"github.com/sisu-network/cosmos-sdk/types/module"
-	banktypes "github.com/sisu-network/cosmos-sdk/x/bank/types"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/crypto/hd"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	"github.com/cosmos/cosmos-sdk/server"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/sisu-network/sisu/config"
 )
 
@@ -77,9 +77,10 @@ Example:
 					ApiPort:        25456,
 				},
 				Tss: config.TssConfig{
-					Enable:     enableTss,
-					DheartHost: "0.0.0.0",
-					DheartPort: 5678,
+					Enable:            enableTss,
+					MajorityThreshold: 1,
+					DheartHost:        "0.0.0.0",
+					DheartPort:        5678,
 					SupportedChains: map[string]config.TssChainConfig{
 						"ganache1": {
 							Symbol:   "ganache1",

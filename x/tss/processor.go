@@ -5,18 +5,15 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	"github.com/sisu-network/tendermint/crypto"
-	"github.com/sisu-network/tendermint/mempool"
-	ttypes "github.com/sisu-network/tendermint/types"
+	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/mempool"
 
-	sdk "github.com/sisu-network/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/tss/keeper"
 	"github.com/sisu-network/sisu/x/tss/tssclients"
-	"github.com/sisu-network/sisu/x/tss/types"
 )
 
 const (
@@ -57,21 +54,24 @@ type Processor struct {
 	keygenVoteResult map[string]map[string]bool
 	keygenBlockPairs []BlockSymbolPair
 
-	privateDb keeper.PrivateDb
+	publicDb  keeper.Storage
+	privateDb keeper.Storage
 }
 
 func NewProcessor(k keeper.DefaultKeeper,
+	publicDb keeper.Storage,
+	privateDb keeper.Storage,
 	config config.TssConfig,
 	tendermintPrivKey crypto.PrivKey,
 	appKeys *common.DefaultAppKeys,
-	dataDir string,
 	txDecoder sdk.TxDecoder,
 	txSubmit common.TxSubmit,
 	globalData common.GlobalData,
 ) *Processor {
 	p := &Processor{
 		keeper:            &k,
-		privateDb:         keeper.NewPrivateDb(dataDir),
+		publicDb:          publicDb,
+		privateDb:         privateDb,
 		txDecoder:         txDecoder,
 		appKeys:           appKeys,
 		config:            config,
@@ -96,7 +96,7 @@ func (p *Processor) Init() {
 		p.connectToDeyes()
 	}
 
-	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.keeper, p.appKeys, p.privateDb, p.config)
+	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.appKeys, p.publicDb, p.config)
 }
 
 // Connect to Dheart server and set private key for dheart. Note that this is the tendermint private
@@ -146,7 +146,7 @@ func (p *Processor) connectToDeyes() {
 		p.deyesClients[chain] = deyeClient
 	}
 
-	p.worldState = NewWorldState(p.config, p.privateDb, p.deyesClients)
+	p.worldState = NewWorldState(p.config, p.publicDb, p.deyesClients)
 }
 
 func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
@@ -182,151 +182,24 @@ func (p *Processor) EndBlock(ctx sdk.Context) {
 	}
 }
 
-func (p *Processor) CheckTx(ctx sdk.Context, msgs []sdk.Msg) error {
-	for _, msg := range msgs {
-		if msg.Route() != types.ModuleName {
-			return fmt.Errorf("Some message is not a TSS message")
-		}
-
-		log.Info("Checking tx: Msg type = ", msg.Type())
-
-		switch msg.(type) {
-		case *types.KeygenWithSigner:
-			return p.checkKeygen(ctx, msg.(*types.KeygenWithSigner))
-
-		case *types.KeygenResultWithSigner:
-			return p.checkKeygenResult(ctx, msg.(*types.KeygenResultWithSigner))
-
-		case *types.TxInWithSigner:
-			return p.checkTxIn(ctx, msg.(*types.TxInWithSigner))
-
-		case *types.TxOutWithSigner:
-			return p.checkTxOut(ctx, msg.(*types.TxOutWithSigner))
-
-		case *types.KeysignResult:
-			return p.checkKeysignResult(ctx, msg.(*types.KeysignResult))
-
-		case *types.ContractsWithSigner:
-			return p.checkContracts(ctx, msg.(*types.ContractsWithSigner))
-
-		case *types.TxOutConfirmWithSigner:
-			return p.checkTxOutConfirm(ctx, msg.(*types.TxOutConfirmWithSigner))
-		}
-	}
-
-	return nil
-}
-
 func (p *Processor) setContext(ctx sdk.Context) {
 	p.lastContext.Store(ctx)
 }
 
-// PreAddTxToMempoolFunc checks if a tx has been included in a block. The hash of the tx is used to
-// compare with other txs' hash. Only the first tx with such hash is included in the block. This is
-// to avoid wasting space on Sisu's block due to duplicated tx submitted by multiple users.
-func (p *Processor) PreAddTxToMempoolFunc(txBytes ttypes.Tx) error {
-	log.Verbose("checking new tx before adding into mempool....")
-
-	tx, err := p.txDecoder(txBytes)
+// shouldProcessMsg counts how many validators have posted the same transaction to blockchain before
+// processing.
+//
+// When adding new message type, remember to add its serialization in the GetTxRecodrdHash.
+func (p *Processor) shouldProcessMsg(ctx sdk.Context, msg sdk.Msg) (bool, []byte) {
+	hash, signer, err := keeper.GetTxRecodrdHash(msg)
 	if err != nil {
-		log.Error("Failed to decode tx")
-		return err
+		return false, hash
 	}
 
-	msgs := tx.GetMsgs()
-	log.Verbose("PreAddTxToMempoolFunc: msgs length = ", len(msgs))
-
-	for _, msg := range msgs {
-		if msg.Route() != types.RouterKey {
-			continue
-		}
-
-		log.Verbose("PreAddTxToMempoolFunc: Msg type = ", msg.Type())
-
-		switch msg.Type() {
-		case types.MsgTypeKeygenWithSigner:
-			keygenMsg := msg.(*types.KeygenWithSigner)
-
-			key := fmt.Sprintf("keygen__%s__%d", keygenMsg.Data.KeyType, keygenMsg.Data.Index)
-			if err := p.checkAndInsertMempoolTx(key, "keygen"); err != nil {
-				return err
-			}
-
-		case types.MsgTypeKeygenResultWithSigner:
-			resultMsg := msg.(*types.KeygenResultWithSigner)
-			// Only do for success case
-			if resultMsg.Data.Result == types.KeygenResult_SUCCESS {
-				bz, err := resultMsg.Data.Marshal()
-				if err != nil {
-					return err
-				}
-				hash := utils.KeccakHash32(string(bz))
-				key := fmt.Sprintf("keygenresult__%s__%d__%s", resultMsg.Keygen.KeyType, resultMsg.Keygen.Index, hash)
-				if err := p.checkAndInsertMempoolTx(key, "keygen result"); err != nil {
-					return err
-				}
-			}
-
-		case types.MsgTypeTxInWithSigner:
-			txIn := msg.(*types.TxInWithSigner).Data
-			bz, err := txIn.Marshal()
-			if err != nil {
-				return err
-			}
-
-			hash := utils.KeccakHash32(string(bz))
-			if err := p.checkAndInsertMempoolTx(hash, "tx in"); err != nil {
-				return err
-			}
-
-		case types.MsgTypeTxOutWithSigner:
-			txOut := msg.(*types.TxOutWithSigner).Data
-			bz, err := txOut.Marshal()
-			if err != nil {
-				return err
-			}
-
-			hash := utils.KeccakHash32(string(bz))
-			if err := p.checkAndInsertMempoolTx(hash, "tx out"); err != nil {
-				return err
-			}
-
-		case types.MsgTypeContractsWithSigner:
-			data := msg.(*types.ContractsWithSigner).Data
-
-			bz, err := data.Marshal()
-			if err == nil {
-				hash := utils.KeccakHash32(string(bz))
-				if err := p.checkAndInsertMempoolTx(hash, "contracts"); err != nil {
-					return err
-				}
-			}
-
-		case types.MsgTypeTxOutConfirmationWithSigner:
-			data := msg.(*types.TxOutConfirmWithSigner).Data
-			bz, err := data.Marshal()
-			if err == nil {
-				hash := utils.KeccakHash32(string(bz))
-				if err := p.checkAndInsertMempoolTx(hash, "tx out confirm"); err != nil {
-					return err
-				}
-			}
-		}
+	count := p.publicDb.SaveTxRecord(hash, signer)
+	if count >= p.config.MajorityThreshold && !p.publicDb.IsTxRecordProcessed(hash) {
+		return true, hash
 	}
 
-	return nil
-}
-
-func (p *Processor) checkAndInsertMempoolTx(hash, msgType string) error {
-	if p.privateDb.IsMempoolTxExisted(hash) {
-		err := fmt.Errorf("%s has been added into the mempool! hash = %s", msgType, hash)
-		log.Verbose(err)
-
-		return err
-	}
-
-	log.Verbose("Inserting ", msgType, " into the mempool table, hash = ", hash)
-	p.privateDb.SaveMempoolTx(hash)
-
-	return nil
+	return false, hash
 }

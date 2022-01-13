@@ -4,11 +4,11 @@ import (
 	"math/big"
 	"testing"
 
+	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/golang/mock/gomock"
-	ctypes "github.com/sisu-network/cosmos-sdk/crypto/types"
-	sdk "github.com/sisu-network/cosmos-sdk/types"
 	mockcommon "github.com/sisu-network/sisu/tests/mock/common"
 	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
 	mocktssclients "github.com/sisu-network/sisu/tests/mock/tss/tssclients"
@@ -44,26 +44,25 @@ func TestDeliverTxOut_Normal(t *testing.T) {
 
 	ctx := sdk.Context{}
 	txOutWithSigner := &types.TxOutWithSigner{
+		Signer: "signer",
 		Data: &types.TxOut{
 			OutChain: "eth",
 			OutBytes: binary,
 		},
 	}
 
-	mockKeeper := mocktss.NewMockKeeper(ctrl)
-	mockKeeper.EXPECT().IsTxOutExisted(gomock.Any(), gomock.Any()).Return(false).Times(1)
-	mockKeeper.EXPECT().SaveTxOut(gomock.Any(), gomock.Any()).Times(1)
+	mockPublicDb := mocktss.NewMockStorage(ctrl)
+	mockCheckTxRecord(mockPublicDb)
 
-	mockPrivateDb := mocktss.NewMockPrivateDb(ctrl)
-	mockPrivateDb.EXPECT().SaveTxOut(gomock.Any()).Times(1)
+	mockPublicDb.EXPECT().SaveTxOut(gomock.Any()).Times(1)
 
 	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
 	mockGlobalData.EXPECT().IsCatchingUp().Return(false).Times(1)
 
 	p := &Processor{
-		keeper:       mockKeeper,
-		privateDb:    mockPrivateDb,
+		publicDb:     mockPublicDb,
 		partyManager: mockPartyManager,
+		config:       mockTssConfig(),
 		dheartClient: mockDheartClient,
 		globalData:   mockGlobalData,
 	}
@@ -84,17 +83,16 @@ func TestDeliverTxOut_BlockCatchingUp(t *testing.T) {
 
 	ctx := sdk.Context{}
 	txOutWithSigner := &types.TxOutWithSigner{
+		Signer: "signer",
 		Data: &types.TxOut{
 			OutChain: "eth",
 		},
 	}
 
-	mockKeeper := mocktss.NewMockKeeper(ctrl)
-	mockKeeper.EXPECT().IsTxOutExisted(gomock.Any(), gomock.Any()).Return(false).Times(1)
-	mockKeeper.EXPECT().SaveTxOut(gomock.Any(), gomock.Any()).Times(1)
+	mockPublicDb := mocktss.NewMockStorage(ctrl)
+	mockCheckTxRecord(mockPublicDb)
 
-	mockPrivateDb := mocktss.NewMockPrivateDb(ctrl)
-	mockPrivateDb.EXPECT().SaveTxOut(gomock.Any()).Times(1)
+	mockPublicDb.EXPECT().SaveTxOut(gomock.Any()).Times(1)
 
 	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
 	mockGlobalData.EXPECT().IsCatchingUp().Return(true).Times(1) // block is catching up.
@@ -103,9 +101,9 @@ func TestDeliverTxOut_BlockCatchingUp(t *testing.T) {
 	mockDheartClient.EXPECT().KeySign(gomock.Any(), gomock.Any()).Return(nil).Times(0)
 
 	p := &Processor{
-		privateDb:  mockPrivateDb,
-		keeper:     mockKeeper,
+		publicDb:   mockPublicDb,
 		globalData: mockGlobalData,
+		config:     mockTssConfig(),
 	}
 
 	bytes, err := p.deliverTxOut(ctx, txOutWithSigner)

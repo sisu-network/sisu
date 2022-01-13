@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	memstore "github.com/sisu-network/cosmos-sdk/store/mem"
+	memstore "github.com/cosmos/cosmos-sdk/store/mem"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/x/tss/types"
 	"github.com/stretchr/testify/require"
@@ -78,5 +78,6 @@ func Test_saveKeygenResult(t *testing.T) {
 
 	saveKeygenResult(store, signer)
 
-	require.Equal(t, true, isKeygenResultSuccess(store, keyType, index, ""))
+	results := getAllKeygenResult(store, keyType, index)
+	require.Equal(t, 1, len(results))
 }

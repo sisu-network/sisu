@@ -7,8 +7,8 @@ package mock
 import (
 	reflect "reflect"
 
+	rpc "github.com/cosmos/cosmos-sdk/client/rpc"
 	gomock "github.com/golang/mock/gomock"
-	rpc "github.com/sisu-network/cosmos-sdk/client/rpc"
 )
 
 // MockGlobalData is a mock of GlobalData interface.
