@@ -66,6 +66,8 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 				log.Error("deployment error: ", err)
 				return
 			}
+
+			// TODO: Check if we have any pending confirm tx that is waiting for this tx.
 		} else {
 			// TODO: handle failure case here.
 		}
