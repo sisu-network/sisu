@@ -8,10 +8,10 @@ import (
 )
 
 type GrpcQuerier struct {
-	storage PrivateDb
+	storage Storage
 }
 
-func NewGrpcQuerier(storage PrivateDb) *GrpcQuerier {
+func NewGrpcQuerier(storage Storage) *GrpcQuerier {
 	return &GrpcQuerier{storage: storage}
 }
 

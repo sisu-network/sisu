@@ -53,6 +53,7 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 	// The txOutSig is in private db while txOut should come from common db.
 	txOutSig := p.privateDb.GetTxOutSig(chain, tx.Hash)
 	if txOutSig == nil {
+		// TODO: Add this to pending tx to confirm.
 		log.Verbose("cannot find txOutSig with full signature hash: ", tx.Hash)
 		return nil
 	}
