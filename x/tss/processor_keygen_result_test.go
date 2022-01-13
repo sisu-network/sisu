@@ -23,12 +23,14 @@ func TestProcessor_deliverKeyGen_normal(t *testing.T) {
 
 	ctx := sdk.Context{}
 
-	mockKeeper := mocktss.NewMockKeeper(ctrl)
-	mockKeeper.EXPECT().IsKeygenExisted(gomock.Any(), gomock.Any(), gomock.Any()).Return(false).Times(1)
-	mockKeeper.EXPECT().SaveKeygen(ctx, gomock.Any()).Times(1)
+	// mockKeeper := mocktss.NewMockKeeper(ctrl)
+	// mockKeeper.EXPECT().IsKeygenExisted(gomock.Any(), gomock.Any(), gomock.Any()).Return(false).Times(1)
+	// mockKeeper.EXPECT().SaveKeygen(ctx, gomock.Any()).Times(1)
 
-	mockPrivateDb := mocktss.NewMockPrivateDb(ctrl)
-	mockPrivateDb.EXPECT().SaveKeygen(gomock.Any()).Times(1)
+	mockPublicDb := mocktss.NewMockStorage(ctrl)
+	mockCheckTxRecord(mockPublicDb)
+
+	mockPublicDb.EXPECT().SaveKeygen(gomock.Any()).Times(1)
 
 	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
 	mockGlobalData.EXPECT().IsCatchingUp().Return(false).Times(1)
@@ -40,7 +42,7 @@ func TestProcessor_deliverKeyGen_normal(t *testing.T) {
 	mockPartyManager.EXPECT().GetActivePartyPubkeys().Return([]ctypes.PubKey{}).Times(1)
 
 	wrapper := &types.KeygenWithSigner{
-		Signer: "",
+		Signer: "signer",
 		Data: &types.Keygen{
 			KeyType: libchain.KEY_TYPE_ECDSA,
 			Index:   0,
@@ -48,8 +50,8 @@ func TestProcessor_deliverKeyGen_normal(t *testing.T) {
 	}
 
 	p := &Processor{
-		keeper:       mockKeeper,
-		publicDb:     mockPrivateDb,
+		config:       mockTssConfig(),
+		publicDb:     mockPublicDb,
 		globalData:   mockGlobalData,
 		partyManager: mockPartyManager,
 		dheartClient: mockDheartClient,
@@ -68,18 +70,15 @@ func TestProcessor_deliverKeyGen_CatchingUp(t *testing.T) {
 
 	ctx := sdk.Context{}
 
-	mockPrivateDb := mocktss.NewMockPrivateDb(ctrl)
-	mockPrivateDb.EXPECT().SaveKeygen(gomock.Any()).Times(1)
-
-	mockKeeper := mocktss.NewMockKeeper(ctrl)
-	mockKeeper.EXPECT().IsKeygenExisted(gomock.Any(), gomock.Any(), gomock.Any()).Return(false).Times(1)
-	mockKeeper.EXPECT().SaveKeygen(ctx, gomock.Any()).Times(1)
+	mockPublicDb := mocktss.NewMockStorage(ctrl)
+	mockCheckTxRecord(mockPublicDb)
+	mockPublicDb.EXPECT().SaveKeygen(gomock.Any()).Times(1)
 
 	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
 	mockGlobalData.EXPECT().IsCatchingUp().Return(true).Times(1) // block is catching up.
 
 	wrapper := &types.KeygenWithSigner{
-		Signer: "",
+		Signer: "signer",
 		Data: &types.Keygen{
 			KeyType: libchain.KEY_TYPE_ECDSA,
 			Index:   0,
@@ -87,8 +86,8 @@ func TestProcessor_deliverKeyGen_CatchingUp(t *testing.T) {
 	}
 
 	p := &Processor{
-		keeper:     mockKeeper,
-		publicDb:   mockPrivateDb,
+		config:     mockTssConfig(),
+		publicDb:   mockPublicDb,
 		globalData: mockGlobalData,
 	}
 

@@ -67,12 +67,10 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		require.NoError(t, err)
 
 		pubkeyBytes := crypto.FromECDSAPub(&privKey.PublicKey)
-		mockPrivateDb := mocktss.NewMockPrivateDb(ctrl)
-		mockPrivateDb.EXPECT().GetKeygenPubkey(libchain.KEY_TYPE_ECDSA).Return(pubkeyBytes).Times(1)
-
-		keeper := mocktss.NewMockKeeper(ctrl)
-		keeper.EXPECT().IsKeygenAddress(gomock.Any(), libchain.KEY_TYPE_ECDSA, gomock.Any()).Return(true).Times(1)
-		keeper.EXPECT().GetPendingContracts(gomock.Any(), "eth").Return([]*types.Contract{
+		mockPublicDb := mocktss.NewMockStorage(ctrl)
+		mockPublicDb.EXPECT().GetKeygenPubkey(libchain.KEY_TYPE_ECDSA).Return(pubkeyBytes).Times(1)
+		mockPublicDb.EXPECT().IsKeygenAddress(libchain.KEY_TYPE_ECDSA, gomock.Any()).Return(true).Times(1)
+		mockPublicDb.EXPECT().GetPendingContracts("eth").Return([]*types.Contract{
 			{
 				Chain: "eth",
 				Hash:  SupportedContracts[ContractErc20Gateway].AbiHash,
@@ -102,17 +100,16 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		}
 
 		worldState := DefaultWorldState{
-			privateDb: mockPrivateDb,
+			privateDb: mockPublicDb,
 			tssConfig: config.TssConfig{},
 			nonces: map[string]int64{
 				"eth": 100,
 			},
 			deyesClients: nil,
 		}
-		txOutProducer := DefaultTxOutputProducer{
-			worldState: &worldState,
-			keeper:     keeper,
-			tssConfig: config.TssConfig{
+
+		txOutProducer := NewTxOutputProducer(&worldState, mockAppKeys, mockPublicDb,
+			config.TssConfig{
 				Enable: true,
 				SupportedChains: map[string]config.TssChainConfig{
 					"ganache1": {
@@ -121,8 +118,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 					},
 				},
 			},
-			appKeys: mockAppKeys,
-		}
+		).(*DefaultTxOutputProducer)
 
 		ctx := sdk.Context{}
 		txOuts, err := txOutProducer.getEthResponse(ctx, 1, &observedTx)
@@ -144,13 +140,12 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		require.NoError(t, err)
 
 		pubkeyBytes := crypto.FromECDSAPub(&privKey.PublicKey)
-		mockPrivateDb := mocktss.NewMockPrivateDb(ctrl)
-		mockPrivateDb.EXPECT().GetKeygenPubkey(libchain.KEY_TYPE_ECDSA).Return(pubkeyBytes).Times(1)
+		mockPublicDb := mocktss.NewMockStorage(ctrl)
+		mockPublicDb.EXPECT().GetKeygenPubkey(libchain.KEY_TYPE_ECDSA).Return(pubkeyBytes).Times(1)
 
-		keeper := mocktss.NewMockKeeper(ctrl)
-		keeper.EXPECT().IsKeygenAddress(gomock.Any(), libchain.KEY_TYPE_ECDSA, gomock.Any()).Return(false).Times(1)
-		keeper.EXPECT().IsContractExistedAtAddress(gomock.Any(), "eth", gomock.Any()).Return(true).Times(1)
-		keeper.EXPECT().GetLatestContractAddressByName(gomock.Any(), gomock.Any(), ContractErc20Gateway).Return("0x12345").Times(1)
+		mockPublicDb.EXPECT().IsKeygenAddress(libchain.KEY_TYPE_ECDSA, gomock.Any()).Return(false).Times(1)
+		mockPublicDb.EXPECT().IsContractExistedAtAddress("eth", gomock.Any()).Return(true).Times(1)
+		mockPublicDb.EXPECT().GetLatestContractAddressByName(gomock.Any(), ContractErc20Gateway).Return("0x12345").Times(1)
 
 		mockAppKeys := mock.NewMockAppKeys(ctrl)
 		accAddress := []byte{1, 2, 3}
@@ -182,7 +177,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		}
 
 		worldState := DefaultWorldState{
-			privateDb: mockPrivateDb,
+			privateDb: mockPublicDb,
 			tssConfig: config.TssConfig{},
 			nonces: map[string]int64{
 				"eth": 100,
@@ -191,7 +186,6 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		}
 		txOutProducer := DefaultTxOutputProducer{
 			worldState: &worldState,
-			keeper:     keeper,
 			tssConfig: config.TssConfig{
 				Enable: true,
 				SupportedChains: map[string]config.TssChainConfig{
@@ -201,8 +195,8 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 					},
 				},
 			},
-			privateDb: mockPrivateDb,
-			appKeys:   mockAppKeys,
+			publicDb: mockPublicDb,
+			appKeys:  mockAppKeys,
 		}
 
 		ctx := sdk.Context{}

@@ -37,15 +37,26 @@ func TestProcessor_OnTxIns(t *testing.T) {
 		observedChain := "eth"
 		keygenAddress := utils.RandomHeximalString(64)
 
-		mockPrivateDb := mocktss.NewMockPrivateDb(ctrl)
-		mockPrivateDb.EXPECT().IsKeygenAddress(libchain.KEY_TYPE_ECDSA, keygenAddress).Return(true).Times(1)
-		mockPrivateDb.EXPECT().PrintStoreKeys(gomock.Any())
-		mockPrivateDb.EXPECT().GetTxOutSig(observedChain, gomock.Any()).Return(&types.TxOut{
-			TxType:   types.TxOutType_NORMAL, // non-deployment tx
-			OutChain: "eth2",
-			OutHash:  utils.RandomHeximalString(32),
+		hashWithSig := utils.RandomHeximalString(32)
+		hashNoSig := utils.RandomHeximalString(32)
+
+		mockPrivateDb := mocktss.NewMockStorage(ctrl)
+		mockPrivateDb.EXPECT().GetTxOutSig(observedChain, hashWithSig).Return(&types.TxOutSig{
+			Chain:       "eth",
+			HashWithSig: hashWithSig,
+			HashNoSig:   hashNoSig,
 		}).Times(1)
-		mockPrivateDb.EXPECT().SaveTxOutConfirm(gomock.Any()).Times(1)
+
+		mockPublicDb := mocktss.NewMockStorage(ctrl)
+		mockPublicDb.EXPECT().GetTxOut(observedChain, hashNoSig).Return(
+			&types.TxOut{
+				TxType:   types.TxOutType_NORMAL, // non-deployment tx
+				OutChain: observedChain,
+				OutHash:  hashNoSig,
+			},
+		).Times(1)
+
+		mockPublicDb.EXPECT().IsKeygenAddress(libchain.KEY_TYPE_ECDSA, keygenAddress).Return(true).Times(1)
 
 		priv := ed25519.GenPrivKey()
 		addr := sdk.AccAddress(priv.PubKey().Address())
@@ -62,15 +73,16 @@ func TestProcessor_OnTxIns(t *testing.T) {
 			Chain: observedChain,
 			Block: int64(utils.RandomNaturalNumber(1000)),
 			Arr: []*eyesTypes.Tx{{
-				Hash:       utils.RandomHeximalString(64),
+				Hash:       hashWithSig,
 				Serialized: []byte{},
 				From:       keygenAddress,
 			}},
 		}
 		processor := &Processor{
-			publicDb: mockPrivateDb,
-			appKeys:  appKeysMock,
-			txSubmit: mockTxSubmit,
+			publicDb:  mockPublicDb,
+			privateDb: mockPrivateDb,
+			appKeys:   appKeysMock,
+			txSubmit:  mockTxSubmit,
 		}
 
 		err := processor.OnTxIns(txs)
@@ -98,9 +110,8 @@ func TestProcessor_OnTxIns(t *testing.T) {
 		toAddress := utils.RandomHeximalString(64)
 		fromAddres := utils.RandomHeximalString(64)
 
-		mockPrivateDb := mocktss.NewMockPrivateDb(ctrl)
-		mockPrivateDb.EXPECT().IsKeygenAddress(libchain.KEY_TYPE_ECDSA, fromAddres).Return(false).Times(1)
-		mockPrivateDb.EXPECT().SaveTxIn(gomock.Any()).Times(1)
+		mockPublicDb := mocktss.NewMockStorage(ctrl)
+		mockPublicDb.EXPECT().IsKeygenAddress(libchain.KEY_TYPE_ECDSA, fromAddres).Return(false).Times(1)
 
 		priv := ed25519.GenPrivKey()
 		addr := sdk.AccAddress(priv.PubKey().Address())
@@ -120,7 +131,7 @@ func TestProcessor_OnTxIns(t *testing.T) {
 
 		// Init processor with mocks
 		processor := &Processor{
-			publicDb: mockPrivateDb,
+			publicDb: mockPublicDb,
 			appKeys:  appKeysMock,
 			txSubmit: mockTxSubmit,
 		}
