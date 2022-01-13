@@ -56,7 +56,7 @@ func (p *DefaultTxOutputProducer) processERC20TransferIn(ctx sdk.Context, ethTx 
 
 func (p *DefaultTxOutputProducer) callERC20TransferIn(ctx sdk.Context, tokenAddress, recipient ethcommon.Address, amount *big.Int, destChain string) (*types.TxResponse, error) {
 	targetContractName := ContractErc20Gateway
-	gw := p.privateDb.GetLatestContractAddressByName(destChain, targetContractName)
+	gw := p.publicDb.GetLatestContractAddressByName(destChain, targetContractName)
 	if len(gw) == 0 {
 		err := fmt.Errorf("cannot find gw address for type: %s", targetContractName)
 		log.Error(err)

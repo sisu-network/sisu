@@ -17,7 +17,7 @@ type Storage interface {
 	PrintStoreKeys(name string)
 
 	// TxRecord
-	SaveTxRecord(hash []byte, val string) int
+	SaveTxRecord(hash []byte, signer string) int
 
 	// TxRecordProcessed
 	ProcessTxRecord(hash []byte)
@@ -32,7 +32,6 @@ type Storage interface {
 
 	// Keygen Result
 	SaveKeygenResult(signerMsg *types.KeygenResultWithSigner)
-	IsKeygenResultSuccess(signerMsg *types.KeygenResultWithSigner, self string) bool
 	GetAllKeygenResult(keygenType string, index int32) []*types.KeygenResultWithSigner
 
 	// Contract
@@ -124,9 +123,9 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 }
 
 ///// TxRecord
-func (db *defaultPrivateDb) SaveTxRecord(hash []byte, val string) int {
+func (db *defaultPrivateDb) SaveTxRecord(hash []byte, signer string) int {
 	store := db.prefixes[string(prefixTxRecord)]
-	return saveTxRecord(store, hash, val)
+	return saveTxRecord(store, hash, signer)
 }
 
 ///// TxRecordProcessed
@@ -172,11 +171,6 @@ func (db *defaultPrivateDb) GetAllKeygenPubkeys() map[string][]byte {
 func (db *defaultPrivateDb) SaveKeygenResult(signerMsg *types.KeygenResultWithSigner) {
 	store := db.prefixes[string(prefixKeygenResultWithSigner)]
 	saveKeygenResult(store, signerMsg)
-}
-
-func (db *defaultPrivateDb) IsKeygenResultSuccess(signerMsg *types.KeygenResultWithSigner, self string) bool {
-	store := db.prefixes[string(prefixKeygenResultWithSigner)]
-	return isKeygenResultSuccess(store, signerMsg.Keygen.KeyType, signerMsg.Keygen.Index, self)
 }
 
 func (db *defaultPrivateDb) GetAllKeygenResult(keygenType string, index int32) []*types.KeygenResultWithSigner {

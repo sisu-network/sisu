@@ -207,32 +207,6 @@ func saveKeygenResult(store cstypes.KVStore, signerMsg *types.KeygenResultWithSi
 	store.Set(key, bz)
 }
 
-// Keygen is considered successful if at least there is at least 1 successful KeygenReslut in the
-// KVStore.
-func isKeygenResultSuccess(store cstypes.KVStore, keygenType string, index int32, self string) bool {
-	begin := []byte(fmt.Sprintf("%s__%06d__", keygenType, index))
-	end := []byte(fmt.Sprintf("%s__%06d__~", keygenType, index))
-
-	iter := store.Iterator(begin, end)
-	count := 0
-	for ; iter.Valid(); iter.Next() {
-		bz := iter.Value()
-		msg := &types.KeygenResult{}
-		err := msg.Unmarshal(bz)
-		if err != nil {
-			log.Error("isKeygenResultSuccess: cannot unmarshal keygen result")
-			continue
-		}
-		count += 1
-
-		if msg.Result == types.KeygenResult_SUCCESS {
-			return true
-		}
-	}
-
-	return false
-}
-
 func getAllKeygenResult(store cstypes.KVStore, keygenType string, index int32) []*types.KeygenResultWithSigner {
 	begin := []byte(fmt.Sprintf("%s__%06d__", keygenType, index))
 	end := []byte(fmt.Sprintf("%s__%06d__~", keygenType, index))
