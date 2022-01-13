@@ -54,13 +54,13 @@ type Processor struct {
 	keygenVoteResult map[string]map[string]bool
 	keygenBlockPairs []BlockSymbolPair
 
-	publicDb  keeper.PrivateDb
-	privateDb keeper.PrivateDb
+	publicDb  keeper.Storage
+	privateDb keeper.Storage
 }
 
 func NewProcessor(k keeper.DefaultKeeper,
-	publicDb keeper.PrivateDb,
-	privateDb keeper.PrivateDb,
+	publicDb keeper.Storage,
+	privateDb keeper.Storage,
 	config config.TssConfig,
 	tendermintPrivKey crypto.PrivKey,
 	appKeys *common.DefaultAppKeys,

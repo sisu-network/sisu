@@ -10,8 +10,8 @@ import (
 	dbm "github.com/tendermint/tm-db"
 )
 
-// go:generate mockgen -source x/tss/keeper/private_db.go -destination=tests/mock/tss/private_db.go -package=mock
-type PrivateDb interface {
+// go:generate mockgen -source x/tss/keeper/storage.go -destination=tests/mock/tss/storage.go -package=mock
+type Storage interface {
 	// Debug
 	PrintStore(name string)
 	PrintStoreKeys(name string)
@@ -75,7 +75,7 @@ type defaultPrivateDb struct {
 	prefixes map[string]prefix.Store
 }
 
-func NewPrivateDb(dbDir string) PrivateDb {
+func NewPrivateDb(dbDir string) Storage {
 	log.Info("Private db dir = ", dbDir)
 	db, err := dbm.NewDB("private", dbm.GoLevelDBBackend, dbDir)
 	if err != nil {

@@ -32,11 +32,11 @@ type DefaultTxOutputProducer struct {
 	worldState WorldState
 	keeper     keeper.Keeper
 	appKeys    common.AppKeys
-	privateDb  keeper.PrivateDb
+	privateDb  keeper.Storage
 	tssConfig  config.TssConfig
 }
 
-func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys common.AppKeys, privateDb keeper.PrivateDb, tssConfig config.TssConfig) TxOutputProducer {
+func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys common.AppKeys, privateDb keeper.Storage, tssConfig config.TssConfig) TxOutputProducer {
 	return &DefaultTxOutputProducer{
 		worldState: worldState,
 		keeper:     keeper,

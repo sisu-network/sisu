@@ -108,12 +108,12 @@ type AppModule struct {
 	appKeys    *common.DefaultAppKeys
 	txSubmit   common.TxSubmit
 	globalData common.GlobalData
-	storage    keeper.PrivateDb
+	storage    keeper.Storage
 }
 
 func NewAppModule(cdc codec.Marshaler,
 	keeper keeper.DefaultKeeper,
-	storage keeper.PrivateDb,
+	storage keeper.Storage,
 	appKeys *common.DefaultAppKeys,
 	txSubmit common.TxSubmit,
 	processor *Processor,
