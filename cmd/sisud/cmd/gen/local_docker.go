@@ -222,6 +222,8 @@ func getDockerConfig(ganacheIps []string, chainIds []*big.Int, mysqlIp string, i
 }
 
 func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, ips []string) config.Config {
+	majority := (len(ips) + 1) * 2 / 3
+
 	return config.Config{
 		Mode: "dev",
 		Sisu: config.SisuConfig{
@@ -231,10 +233,10 @@ func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, 
 			ApiPort:        25456,
 		},
 		Tss: config.TssConfig{
-			Enable: true,
-			// Enable:     false,
-			DheartHost: fmt.Sprintf("dheart%d", index),
-			DheartPort: 5678,
+			Enable:            true,
+			MajorityThreshold: majority,
+			DheartHost:        fmt.Sprintf("dheart%d", index),
+			DheartPort:        5678,
 			SupportedChains: map[string]config.TssChainConfig{
 				"ganache1": {
 					Symbol:   "ganache1",
