@@ -91,10 +91,8 @@ func NewProcessor(k keeper.DefaultKeeper,
 func (p *Processor) Init() {
 	log.Info("Initializing TSS Processor...")
 
-	if p.config.Enable {
-		p.connectToDheart()
-		p.connectToDeyes()
-	}
+	p.connectToDheart()
+	p.connectToDeyes()
 
 	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.appKeys, p.publicDb, p.config)
 }

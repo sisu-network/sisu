@@ -35,7 +35,6 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 	txOutProducer := DefaultTxOutputProducer{
 		worldState: worldState,
 		tssConfig: config.TssConfig{
-			Enable: true,
 			SupportedChains: map[string]config.TssChainConfig{
 				"ganache": {
 					Symbol:   "ganache",
@@ -110,7 +109,6 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 
 		txOutProducer := NewTxOutputProducer(&worldState, mockAppKeys, mockPublicDb,
 			config.TssConfig{
-				Enable: true,
 				SupportedChains: map[string]config.TssChainConfig{
 					"ganache1": {
 						Symbol:   "ganache",
@@ -187,7 +185,6 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		txOutProducer := DefaultTxOutputProducer{
 			worldState: &worldState,
 			tssConfig: config.TssConfig{
-				Enable: true,
 				SupportedChains: map[string]config.TssChainConfig{
 					"ganache": {
 						Symbol:   "ganache",
