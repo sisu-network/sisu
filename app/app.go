@@ -357,11 +357,8 @@ func New(
 
 	// Set module begin
 	beginBlockers := []string{upgradetypes.ModuleName, minttypes.ModuleName, distrtypes.ModuleName, slashingtypes.ModuleName,
-		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName}
+		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName, tsstypes.ModuleName}
 
-	if tssConfig.Enable {
-		beginBlockers = append(beginBlockers, tsstypes.ModuleName)
-	}
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
@@ -372,9 +369,8 @@ func New(
 	endBlockers := []string{
 		crisistypes.ModuleName,
 		govtypes.ModuleName,
-		stakingtypes.ModuleName}
-	if tssConfig.Enable {
-		endBlockers = append(endBlockers, tsstypes.ModuleName)
+		stakingtypes.ModuleName,
+		tsstypes.ModuleName,
 	}
 	app.mm.SetOrderEndBlockers(endBlockers...)
 
@@ -398,11 +394,9 @@ func New(
 		evidencetypes.ModuleName,
 		ibctransfertypes.ModuleName,
 		sisutypes.ModuleName,
+		tsstypes.ModuleName,
 	}
 
-	if tssConfig.Enable {
-		initGenesisModules = append(initGenesisModules, tsstypes.ModuleName)
-	}
 	app.mm.SetOrderInitGenesis(initGenesisModules...)
 
 	app.mm.RegisterInvariants(&app.CrisisKeeper)

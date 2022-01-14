@@ -24,7 +24,6 @@ var (
 	flagOutputDir         = "output-dir"
 	flagNodeDaemonHome    = "node-daemon-home"
 	flagStartingIPAddress = "starting-ip-address"
-	flagEnableTss         = "enable-tss"
 	flagTmpDir            = "tmp-dir"
 	flagChainId           = "chain-id"
 	flagRopstenUrl        = "ropsten-url"
@@ -62,7 +61,6 @@ Example:
 			startingIPAddress, _ := cmd.Flags().GetString(flagStartingIPAddress)
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
-			enableTss, _ := cmd.Flags().GetBool(flagEnableTss)
 
 			// Get Chain id and keyring backend from .env file.
 			chainID := "eth-sisu-local"
@@ -77,7 +75,6 @@ Example:
 					ApiPort:        25456,
 				},
 				Tss: config.TssConfig{
-					Enable:            enableTss,
 					MajorityThreshold: 1,
 					DheartHost:        "0.0.0.0",
 					DheartPort:        5678,
@@ -124,7 +121,6 @@ Example:
 	cmd.Flags().String(flagStartingIPAddress, "127.0.0.1", "Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
-	cmd.Flags().Bool(flagEnableTss, false, "Enable Tss. By default, this value is set to false.")
 
 	return cmd
 }
