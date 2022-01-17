@@ -16,9 +16,19 @@ type BlockSymbolPair struct {
 
 // Called after having key generation result from Sisu's api server.
 func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
-	resultEnum := types.KeygenResult_FAILURE
-	if result.Success {
+	var resultEnum types.KeygenResult_Result
+	switch result.Outcome {
+	case dhtypes.OutcomeSuccess:
 		resultEnum = types.KeygenResult_SUCCESS
+	case dhtypes.OutcomeFailure:
+		resultEnum = types.KeygenResult_FAILURE
+	case dhtypes.OutcometNotSelected:
+		resultEnum = types.KeygenResult_NOT_SELECTED
+	}
+
+	if resultEnum == types.KeygenResult_NOT_SELECTED {
+		// No need to send result when this node is not selected.
+		return
 	}
 
 	signerMsg := types.NewKeygenResultWithSigner(

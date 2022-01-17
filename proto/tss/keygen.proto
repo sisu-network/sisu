@@ -28,5 +28,6 @@ message KeygenResult {
   enum Result {
     SUCCESS = 0;
     FAILURE = 1;
+    NOT_SELECTED = 2;
   }
 }
