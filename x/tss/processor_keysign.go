@@ -13,15 +13,26 @@ import (
 
 // This function is called after dheart sends Sisu keysign result.
 func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
+	if result.Outcome == htypes.OutcometNotSelected {
+		// Do nothing here if this node is not selected.
+		return
+	}
+
 	// Post the keysign result to cosmos chain.
 	request := result.Request
 
 	for i, keysignMsg := range request.KeysignMessages {
-		msg := types.NewKeysignResult(p.appKeys.GetSignerAddress().String(), keysignMsg.OutChain, keysignMsg.OutHash, result.Success, result.Signatures[i])
+		msg := types.NewKeysignResult(
+			p.appKeys.GetSignerAddress().String(),
+			keysignMsg.OutChain,
+			keysignMsg.OutHash,
+			result.Outcome == htypes.OutcomeSuccess,
+			result.Signatures[i],
+		)
 		go p.txSubmit.SubmitMessage(msg)
 
 		// Sends it to deyes for deployment.
-		if result.Success {
+		if result.Outcome == htypes.OutcomeSuccess {
 			// Find the tx in txout table
 			txOut := p.publicDb.GetTxOut(keysignMsg.OutChain, keysignMsg.OutHash)
 			if txOut == nil {
