@@ -191,6 +191,7 @@ func (p *Processor) setContext(ctx sdk.Context) {
 func (p *Processor) shouldProcessMsg(ctx sdk.Context, msg sdk.Msg) (bool, []byte) {
 	hash, signer, err := keeper.GetTxRecodrdHash(msg)
 	if err != nil {
+		log.Error("failed to get tx hash, err = ", err)
 		return false, hash
 	}
 
