@@ -91,10 +91,8 @@ func NewProcessor(k keeper.DefaultKeeper,
 func (p *Processor) Init() {
 	log.Info("Initializing TSS Processor...")
 
-	if p.config.Enable {
-		p.connectToDheart()
-		p.connectToDeyes()
-	}
+	p.connectToDheart()
+	p.connectToDeyes()
 
 	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.appKeys, p.publicDb, p.config)
 }
@@ -193,6 +191,7 @@ func (p *Processor) setContext(ctx sdk.Context) {
 func (p *Processor) shouldProcessMsg(ctx sdk.Context, msg sdk.Msg) (bool, []byte) {
 	hash, signer, err := keeper.GetTxRecodrdHash(msg)
 	if err != nil {
+		log.Error("failed to get tx hash, err = ", err)
 		return false, hash
 	}
 
