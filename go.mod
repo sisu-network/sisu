@@ -19,7 +19,7 @@ require (
 	github.com/libp2p/go-libp2p-core v0.8.0
 	github.com/sisu-network/dcore v0.1.11
 	github.com/sisu-network/deyes v0.1.2
-	github.com/sisu-network/dheart v0.1.5-alpha1
+	github.com/sisu-network/dheart v0.1.5-alpha2
 	github.com/sisu-network/lib v0.0.1-alpha9
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.1

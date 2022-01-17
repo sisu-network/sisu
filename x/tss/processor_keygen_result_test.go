@@ -23,10 +23,6 @@ func TestProcessor_deliverKeyGen_normal(t *testing.T) {
 
 	ctx := sdk.Context{}
 
-	// mockKeeper := mocktss.NewMockKeeper(ctrl)
-	// mockKeeper.EXPECT().IsKeygenExisted(gomock.Any(), gomock.Any(), gomock.Any()).Return(false).Times(1)
-	// mockKeeper.EXPECT().SaveKeygen(ctx, gomock.Any()).Times(1)
-
 	mockPublicDb := mocktss.NewMockStorage(ctrl)
 	mockCheckTxRecord(mockPublicDb)
 
