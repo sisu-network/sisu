@@ -58,11 +58,9 @@ type Storage interface {
 	GetTxOut(outChain, hash string) *types.TxOut
 
 	// TxOutSig
-	GetTxOutSig(outChain, hashWithSig string) *types.TxOutSig
-
 	// TODO: Add unconfirmed tx store
-	// TxOutSig
 	SaveTxOutSig(msg *types.TxOutSig)
+	GetTxOutSig(outChain, hashWithSig string) *types.TxOutSig
 
 	// TxOutConfirm
 	SaveTxOutConfirm(msg *types.TxOutConfirm)
