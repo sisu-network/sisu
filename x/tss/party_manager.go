@@ -1,7 +1,7 @@
 package tss
 
 import (
-	ctypes "github.com/sisu-network/cosmos-sdk/crypto/types"
+	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/sisu-network/sisu/common"
 )
 

@@ -17,13 +17,13 @@ type WorldState interface {
 }
 
 type DefaultWorldState struct {
-	privateDb    keeper.PrivateDb
+	privateDb    keeper.Storage
 	tssConfig    config.TssConfig
 	nonces       map[string]int64
 	deyesClients map[string]*tssclients.DeyesClient
 }
 
-func NewWorldState(tssConfig config.TssConfig, privateDb keeper.PrivateDb, deyesClients map[string]*tssclients.DeyesClient) WorldState {
+func NewWorldState(tssConfig config.TssConfig, privateDb keeper.Storage, deyesClients map[string]*tssclients.DeyesClient) WorldState {
 	return &DefaultWorldState{
 		tssConfig:    tssConfig,
 		privateDb:    privateDb,

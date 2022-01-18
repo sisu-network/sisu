@@ -10,13 +10,13 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"github.com/spf13/cobra"
 
-	abci "github.com/sisu-network/tendermint/abci/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/sisu-network/cosmos-sdk/client"
-	"github.com/sisu-network/cosmos-sdk/codec"
-	cdctypes "github.com/sisu-network/cosmos-sdk/codec/types"
-	sdk "github.com/sisu-network/cosmos-sdk/types"
-	"github.com/sisu-network/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/codec"
+	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/tss/client/cli"
@@ -108,10 +108,12 @@ type AppModule struct {
 	appKeys    *common.DefaultAppKeys
 	txSubmit   common.TxSubmit
 	globalData common.GlobalData
+	storage    keeper.Storage
 }
 
 func NewAppModule(cdc codec.Marshaler,
 	keeper keeper.DefaultKeeper,
+	storage keeper.Storage,
 	appKeys *common.DefaultAppKeys,
 	txSubmit common.TxSubmit,
 	processor *Processor,
@@ -122,6 +124,7 @@ func NewAppModule(cdc codec.Marshaler,
 		txSubmit:       txSubmit,
 		processor:      processor,
 		keeper:         keeper,
+		storage:        storage,
 		appKeys:        appKeys,
 		globalData:     globalData,
 	}
@@ -148,7 +151,7 @@ func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sd
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterTssQueryServer(cfg.QueryServer(), &am.keeper)
+	types.RegisterTssQueryServer(cfg.QueryServer(), keeper.NewGrpcQuerier(am.storage))
 }
 
 // RegisterInvariants registers the capability module's invariants.

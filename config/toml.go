@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"text/template"
 
-	tmos "github.com/sisu-network/tendermint/libs/os"
+	tmos "github.com/tendermint/tendermint/libs/os"
 )
 
 const defaultConfigTemplate = `# This is a TOML config file.
@@ -25,9 +25,9 @@ api-port = {{ .Sisu.ApiPort }}
 ###                         Siu TSS Connfiguration                          ###
 ###############################################################################
 [tss]
-enable = {{ .Tss.Enable }}
 dheart-host = "{{ .Tss.DheartHost }}"
 dheart-port = {{ .Tss.DheartPort }}
+majority-threshold = {{ .Tss.MajorityThreshold}}
 [tss.supported-chains] {{ range $k, $v := .Tss.SupportedChains }}
 	[tss.supported-chains.{{ $v.Symbol }}]
 		symbol = "{{ $v.Symbol }}"

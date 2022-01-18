@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	ctypes "github.com/sisu-network/cosmos-sdk/crypto/types"
+	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 )
 
 func GetKeygenId(keyType string, block int64, pubKeys []ctypes.PubKey) string {
