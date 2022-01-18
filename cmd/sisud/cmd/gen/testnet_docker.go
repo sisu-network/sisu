@@ -15,18 +15,18 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
-	tmos "github.com/sisu-network/tendermint/libs/os"
 	"github.com/spf13/cobra"
+	tmos "github.com/tendermint/tendermint/libs/os"
 
-	"github.com/sisu-network/cosmos-sdk/client"
-	"github.com/sisu-network/cosmos-sdk/client/flags"
-	"github.com/sisu-network/cosmos-sdk/crypto/hd"
-	"github.com/sisu-network/cosmos-sdk/crypto/keyring"
-	cryptotypes "github.com/sisu-network/cosmos-sdk/crypto/types"
-	"github.com/sisu-network/cosmos-sdk/server"
-	sdk "github.com/sisu-network/cosmos-sdk/types"
-	"github.com/sisu-network/cosmos-sdk/types/module"
-	banktypes "github.com/sisu-network/cosmos-sdk/x/bank/types"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/crypto/hd"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/cosmos/cosmos-sdk/server"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
@@ -162,7 +162,6 @@ Example:
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
 	cmd.Flags().String(flagRopstenUrl, "", "RPC url for ropsten network")
-	cmd.Flags().Bool(flagEnableTss, false, "Enable Tss. By default, this value is set to false.")
 
 	return cmd
 }
@@ -245,8 +244,6 @@ func (exe *TestnetDockerExecutor) getNodeSettings(chainID, keyringBackend string
 			ApiPort:        25456,
 		},
 		Tss: config.TssConfig{
-			Enable: true,
-			// Enable:     false,
 			DheartHost: fmt.Sprintf("dheart%d", index),
 			DheartPort: 5678,
 			SupportedChains: map[string]config.TssChainConfig{

@@ -4,84 +4,83 @@ import (
 	"io"
 	"path/filepath"
 
-	tlog "github.com/sisu-network/tendermint/libs/log"
+	tlog "github.com/tendermint/tendermint/libs/log"
 
-	"github.com/sisu-network/cosmos-sdk/client"
-	"github.com/sisu-network/cosmos-sdk/codec/types"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/codec/types"
 	"github.com/spf13/cast"
 
 	"github.com/sisu-network/lib/log"
-	abci "github.com/sisu-network/tendermint/abci/types"
-	tmos "github.com/sisu-network/tendermint/libs/os"
-	"github.com/sisu-network/tendermint/node"
-	"github.com/sisu-network/tendermint/p2p"
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmos "github.com/tendermint/tendermint/libs/os"
+	"github.com/tendermint/tendermint/p2p"
 	dbm "github.com/tendermint/tm-db"
 
+	"github.com/cosmos/cosmos-sdk/baseapp"
+	"github.com/cosmos/cosmos-sdk/client/grpc/tmservice"
+	"github.com/cosmos/cosmos-sdk/client/rpc"
+	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/server/api"
+	cConfig "github.com/cosmos/cosmos-sdk/server/config"
+	servertypes "github.com/cosmos/cosmos-sdk/server/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/cosmos/cosmos-sdk/version"
 	ethRpc "github.com/ethereum/go-ethereum/rpc"
-	"github.com/sisu-network/cosmos-sdk/baseapp"
-	"github.com/sisu-network/cosmos-sdk/client/grpc/tmservice"
-	"github.com/sisu-network/cosmos-sdk/client/rpc"
-	"github.com/sisu-network/cosmos-sdk/codec"
-	"github.com/sisu-network/cosmos-sdk/server/api"
-	cConfig "github.com/sisu-network/cosmos-sdk/server/config"
-	servertypes "github.com/sisu-network/cosmos-sdk/server/types"
-	sdk "github.com/sisu-network/cosmos-sdk/types"
-	"github.com/sisu-network/cosmos-sdk/types/module"
-	"github.com/sisu-network/cosmos-sdk/version"
 
-	authrest "github.com/sisu-network/cosmos-sdk/x/auth/client/rest"
-	authkeeper "github.com/sisu-network/cosmos-sdk/x/auth/keeper"
-	authtx "github.com/sisu-network/cosmos-sdk/x/auth/tx"
-	authtypes "github.com/sisu-network/cosmos-sdk/x/auth/types"
-	"github.com/sisu-network/cosmos-sdk/x/auth/vesting"
-	"github.com/sisu-network/cosmos-sdk/x/bank"
-	bankkeeper "github.com/sisu-network/cosmos-sdk/x/bank/keeper"
-	banktypes "github.com/sisu-network/cosmos-sdk/x/bank/types"
-	"github.com/sisu-network/cosmos-sdk/x/capability"
-	capabilitykeeper "github.com/sisu-network/cosmos-sdk/x/capability/keeper"
-	capabilitytypes "github.com/sisu-network/cosmos-sdk/x/capability/types"
-	"github.com/sisu-network/cosmos-sdk/x/crisis"
-	crisiskeeper "github.com/sisu-network/cosmos-sdk/x/crisis/keeper"
-	crisistypes "github.com/sisu-network/cosmos-sdk/x/crisis/types"
-	distr "github.com/sisu-network/cosmos-sdk/x/distribution"
-	distrclient "github.com/sisu-network/cosmos-sdk/x/distribution/client"
-	distrkeeper "github.com/sisu-network/cosmos-sdk/x/distribution/keeper"
-	distrtypes "github.com/sisu-network/cosmos-sdk/x/distribution/types"
-	"github.com/sisu-network/cosmos-sdk/x/evidence"
-	evidencekeeper "github.com/sisu-network/cosmos-sdk/x/evidence/keeper"
-	evidencetypes "github.com/sisu-network/cosmos-sdk/x/evidence/types"
-	"github.com/sisu-network/cosmos-sdk/x/genutil"
-	genutiltypes "github.com/sisu-network/cosmos-sdk/x/genutil/types"
-	"github.com/sisu-network/cosmos-sdk/x/gov"
-	govclient "github.com/sisu-network/cosmos-sdk/x/gov/client"
-	govkeeper "github.com/sisu-network/cosmos-sdk/x/gov/keeper"
-	govtypes "github.com/sisu-network/cosmos-sdk/x/gov/types"
-	transfer "github.com/sisu-network/cosmos-sdk/x/ibc/applications/transfer"
-	ibctransferkeeper "github.com/sisu-network/cosmos-sdk/x/ibc/applications/transfer/keeper"
-	ibctransfertypes "github.com/sisu-network/cosmos-sdk/x/ibc/applications/transfer/types"
-	ibc "github.com/sisu-network/cosmos-sdk/x/ibc/core"
-	ibcclient "github.com/sisu-network/cosmos-sdk/x/ibc/core/02-client"
-	porttypes "github.com/sisu-network/cosmos-sdk/x/ibc/core/05-port/types"
-	ibchost "github.com/sisu-network/cosmos-sdk/x/ibc/core/24-host"
-	ibckeeper "github.com/sisu-network/cosmos-sdk/x/ibc/core/keeper"
-	"github.com/sisu-network/cosmos-sdk/x/mint"
-	mintkeeper "github.com/sisu-network/cosmos-sdk/x/mint/keeper"
-	minttypes "github.com/sisu-network/cosmos-sdk/x/mint/types"
-	"github.com/sisu-network/cosmos-sdk/x/params"
-	paramsclient "github.com/sisu-network/cosmos-sdk/x/params/client"
-	paramskeeper "github.com/sisu-network/cosmos-sdk/x/params/keeper"
-	paramstypes "github.com/sisu-network/cosmos-sdk/x/params/types"
-	paramproposal "github.com/sisu-network/cosmos-sdk/x/params/types/proposal"
-	"github.com/sisu-network/cosmos-sdk/x/slashing"
-	slashingkeeper "github.com/sisu-network/cosmos-sdk/x/slashing/keeper"
-	slashingtypes "github.com/sisu-network/cosmos-sdk/x/slashing/types"
-	"github.com/sisu-network/cosmos-sdk/x/staking"
-	stakingkeeper "github.com/sisu-network/cosmos-sdk/x/staking/keeper"
-	stakingtypes "github.com/sisu-network/cosmos-sdk/x/staking/types"
-	"github.com/sisu-network/cosmos-sdk/x/upgrade"
-	upgradeclient "github.com/sisu-network/cosmos-sdk/x/upgrade/client"
-	upgradekeeper "github.com/sisu-network/cosmos-sdk/x/upgrade/keeper"
-	upgradetypes "github.com/sisu-network/cosmos-sdk/x/upgrade/types"
+	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
+	authkeeper "github.com/cosmos/cosmos-sdk/x/auth/keeper"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/cosmos/cosmos-sdk/x/auth/vesting"
+	"github.com/cosmos/cosmos-sdk/x/bank"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	"github.com/cosmos/cosmos-sdk/x/capability"
+	capabilitykeeper "github.com/cosmos/cosmos-sdk/x/capability/keeper"
+	capabilitytypes "github.com/cosmos/cosmos-sdk/x/capability/types"
+	"github.com/cosmos/cosmos-sdk/x/crisis"
+	crisiskeeper "github.com/cosmos/cosmos-sdk/x/crisis/keeper"
+	crisistypes "github.com/cosmos/cosmos-sdk/x/crisis/types"
+	distr "github.com/cosmos/cosmos-sdk/x/distribution"
+	distrclient "github.com/cosmos/cosmos-sdk/x/distribution/client"
+	distrkeeper "github.com/cosmos/cosmos-sdk/x/distribution/keeper"
+	distrtypes "github.com/cosmos/cosmos-sdk/x/distribution/types"
+	"github.com/cosmos/cosmos-sdk/x/evidence"
+	evidencekeeper "github.com/cosmos/cosmos-sdk/x/evidence/keeper"
+	evidencetypes "github.com/cosmos/cosmos-sdk/x/evidence/types"
+	"github.com/cosmos/cosmos-sdk/x/genutil"
+	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+	"github.com/cosmos/cosmos-sdk/x/gov"
+	govclient "github.com/cosmos/cosmos-sdk/x/gov/client"
+	govkeeper "github.com/cosmos/cosmos-sdk/x/gov/keeper"
+	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	transfer "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer"
+	ibctransferkeeper "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/keeper"
+	ibctransfertypes "github.com/cosmos/cosmos-sdk/x/ibc/applications/transfer/types"
+	ibc "github.com/cosmos/cosmos-sdk/x/ibc/core"
+	ibcclient "github.com/cosmos/cosmos-sdk/x/ibc/core/02-client"
+	porttypes "github.com/cosmos/cosmos-sdk/x/ibc/core/05-port/types"
+	ibchost "github.com/cosmos/cosmos-sdk/x/ibc/core/24-host"
+	ibckeeper "github.com/cosmos/cosmos-sdk/x/ibc/core/keeper"
+	"github.com/cosmos/cosmos-sdk/x/mint"
+	mintkeeper "github.com/cosmos/cosmos-sdk/x/mint/keeper"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
+	"github.com/cosmos/cosmos-sdk/x/params"
+	paramsclient "github.com/cosmos/cosmos-sdk/x/params/client"
+	paramskeeper "github.com/cosmos/cosmos-sdk/x/params/keeper"
+	paramstypes "github.com/cosmos/cosmos-sdk/x/params/types"
+	paramproposal "github.com/cosmos/cosmos-sdk/x/params/types/proposal"
+	"github.com/cosmos/cosmos-sdk/x/slashing"
+	slashingkeeper "github.com/cosmos/cosmos-sdk/x/slashing/keeper"
+	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
+	"github.com/cosmos/cosmos-sdk/x/staking"
+	stakingkeeper "github.com/cosmos/cosmos-sdk/x/staking/keeper"
+	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/cosmos/cosmos-sdk/x/upgrade"
+	upgradeclient "github.com/cosmos/cosmos-sdk/x/upgrade/client"
+	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
+	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	appparams "github.com/sisu-network/sisu/app/params"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/server"
@@ -91,10 +90,11 @@ import (
 	sisukeeper "github.com/sisu-network/sisu/x/sisu/keeper"
 	sisutypes "github.com/sisu-network/sisu/x/sisu/types"
 	tss "github.com/sisu-network/sisu/x/tss"
+	"github.com/sisu-network/sisu/x/tss/keeper"
 	tssKeeper "github.com/sisu-network/sisu/x/tss/keeper"
 	tsstypes "github.com/sisu-network/sisu/x/tss/types"
-	tmjson "github.com/sisu-network/tendermint/libs/json"
-	tmproto "github.com/sisu-network/tendermint/proto/tendermint/types"
+	tmjson "github.com/tendermint/tendermint/libs/json"
+	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
 	"github.com/sisu-network/sisu/common"
 	sisuAuth "github.com/sisu-network/sisu/x/auth"
@@ -309,6 +309,20 @@ func New(
 	// we prefer to be more strict in what arguments the modules expect.
 	var skipGenesisInvariants = cast.ToBool(appOpts.Get(crisis.FlagSkipGenesisInvariants))
 
+	tendermintPrivKeyFile := filepath.Join(cfg.Sisu.Dir, "config/priv_validator_key.json")
+	nodeKey, err := p2p.LoadNodeKey(tendermintPrivKeyFile)
+	if err != nil {
+		panic(err)
+	}
+
+	// storage that contains common data for all the nodes
+	storage := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "data"))
+	privateDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "private"))
+
+	tssProcessor := tss.NewProcessor(app.tssKeeper, storage, privateDb, tssConfig, nodeKey.PrivKey,
+		app.appKeys, app.txDecoder, app.txSubmitter, app.globalData)
+	tssProcessor.Init()
+
 	// NOTE: Any module instantiated in the module manager that is later modified
 	// must be passed by reference here.
 
@@ -334,31 +348,17 @@ func New(
 		transferModule,
 
 		sisu.NewAppModule(appCodec, app.sisuKeeper),
+		tss.NewAppModule(appCodec, app.tssKeeper, storage, app.appKeys, app.txSubmitter, tssProcessor, app.globalData),
 	}
 
-	tendermintPrivKeyFile := filepath.Join(cfg.Sisu.Dir, "config/priv_validator_key.json")
-	nodeKey, err := p2p.LoadNodeKey(tendermintPrivKeyFile)
-	if err != nil {
-		panic(err)
-	}
-	privateDataDir := filepath.Join(cfg.Sisu.Dir, "data")
-	tssProcessor := tss.NewProcessor(app.tssKeeper, tssConfig, nodeKey.PrivKey, app.appKeys, privateDataDir, app.txDecoder, app.txSubmitter, app.globalData)
-	if tssConfig.Enable {
-		log.Info("TSS is enabled")
-		tssProcessor.Init()
-		modules = append(modules, tss.NewAppModule(appCodec, app.tssKeeper, app.appKeys, app.txSubmitter, tssProcessor, app.globalData))
-	}
 	app.tssProcessor = tssProcessor
 
 	app.mm = module.NewManager(modules...)
 
 	// Set module begin
 	beginBlockers := []string{upgradetypes.ModuleName, minttypes.ModuleName, distrtypes.ModuleName, slashingtypes.ModuleName,
-		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName}
+		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName, tsstypes.ModuleName}
 
-	if tssConfig.Enable {
-		beginBlockers = append(beginBlockers, tsstypes.ModuleName)
-	}
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
 	// CanWithdrawInvariant invariant.
@@ -369,9 +369,8 @@ func New(
 	endBlockers := []string{
 		crisistypes.ModuleName,
 		govtypes.ModuleName,
-		stakingtypes.ModuleName}
-	if tssConfig.Enable {
-		endBlockers = append(endBlockers, tsstypes.ModuleName)
+		stakingtypes.ModuleName,
+		tsstypes.ModuleName,
 	}
 	app.mm.SetOrderEndBlockers(endBlockers...)
 
@@ -395,11 +394,9 @@ func New(
 		evidencetypes.ModuleName,
 		ibctransfertypes.ModuleName,
 		sisutypes.ModuleName,
+		tsstypes.ModuleName,
 	}
 
-	if tssConfig.Enable {
-		initGenesisModules = append(initGenesisModules, tsstypes.ModuleName)
-	}
 	app.mm.SetOrderInitGenesis(initGenesisModules...)
 
 	app.mm.RegisterInvariants(&app.CrisisKeeper)
@@ -416,10 +413,10 @@ func New(
 	app.SetBeginBlocker(app.BeginBlocker)
 	app.SetAnteHandler(
 		ante.NewAnteHandler(
-			tssConfig,
-			app.AccountKeeper, app.BankKeeper,
-			ante.DefaultSigVerificationGasConsumer, encodingConfig.TxConfig.SignModeHandler(),
-			tssProcessor,
+			app.AccountKeeper,
+			app.BankKeeper,
+			ante.DefaultSigVerificationGasConsumer,
+			encodingConfig.TxConfig.SignModeHandler(),
 		),
 	)
 	app.SetEndBlocker(app.EndBlocker)
@@ -666,6 +663,8 @@ func initParamsKeeper(appCodec codec.BinaryMarshaler, legacyAmino *codec.LegacyA
 
 // BeginBlocker application updates every begin block
 func (app *App) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+	app.txSubmitter.SyncBlockSequence(ctx, app.AccountKeeper)
+
 	app.globalData.UpdateCatchingUp()
 	app.globalData.UpdateValidatorSets()
 
@@ -690,13 +689,4 @@ func (app *App) setupApiServer(c config.Config) {
 
 	log.Info("Starting Internal API server")
 	go s.Run()
-}
-
-func (app *App) GetTendermintOptions() []node.Option {
-	options := make([]node.Option, 0)
-	options = append(options, func(n *node.Node) {
-		n.SetPreAddTxFunc(app.tssProcessor.PreAddTxToMempoolFunc)
-	})
-
-	return options
 }

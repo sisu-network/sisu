@@ -3,13 +3,13 @@ package ante
 import (
 	"fmt"
 
-	sdk "github.com/sisu-network/cosmos-sdk/types"
-	sdkerrors "github.com/sisu-network/cosmos-sdk/types/errors"
-	"github.com/sisu-network/cosmos-sdk/types/tx/signing"
-	authsigning "github.com/sisu-network/cosmos-sdk/x/auth/signing"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	"github.com/cosmos/cosmos-sdk/types/tx/signing"
+	authsigning "github.com/cosmos/cosmos-sdk/x/auth/signing"
 )
 
-// This is a modified version of the file https://github.com/sisu-network/cosmos-sdk/blob/benja/fork/x/auth/ante/sigverify.go
+// This is a modified version of the file https://github.com/cosmos/cosmos-sdk/blob/benja/fork/x/auth/ante/sigverify.go
 // to disable Sequence checking of Cosmos.
 
 // Verify all signatures for a tx and return an error if any are invalid. Note,

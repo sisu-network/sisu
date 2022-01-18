@@ -1,42 +1,47 @@
 package keeper
 
 import (
-	adstore "github.com/sisu-network/cosmos-sdk/store/dbadapter"
-	"github.com/sisu-network/cosmos-sdk/store/prefix"
-	cosmostypes "github.com/sisu-network/cosmos-sdk/store/types"
-	cstypes "github.com/sisu-network/cosmos-sdk/store/types"
+	adstore "github.com/cosmos/cosmos-sdk/store/dbadapter"
+	"github.com/cosmos/cosmos-sdk/store/prefix"
+	cosmostypes "github.com/cosmos/cosmos-sdk/store/types"
+	cstypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
 	dbm "github.com/tendermint/tm-db"
 )
 
-// go:generate mockgen -source x/tss/keeper/private_db.go -destination=tests/mock/tss/private_db.go -package=mock
-type PrivateDb interface {
+// go:generate mockgen -source x/tss/keeper/storage.go -destination=tests/mock/tss/storage.go -package=mock
+type Storage interface {
 	// Debug
 	PrintStore(name string)
 	PrintStoreKeys(name string)
+
+	// TxRecord
+	SaveTxRecord(hash []byte, signer string) int
+
+	// TxRecordProcessed
+	ProcessTxRecord(hash []byte)
+	IsTxRecordProcessed(hash []byte) bool
 
 	// Keygen
 	SaveKeygen(msg *types.Keygen)
 	IsKeygenExisted(keyType string, index int) bool
 	IsKeygenAddress(keyType string, address string) bool
 	GetKeygenPubkey(keyType string) []byte
+	GetAllKeygenPubkeys() map[string][]byte
 
 	// Keygen Result
 	SaveKeygenResult(signerMsg *types.KeygenResultWithSigner)
-	IsKeygenResultSuccess(signerMsg *types.KeygenResultWithSigner, self string) bool
+	GetAllKeygenResult(keygenType string, index int32) []*types.KeygenResultWithSigner
 
 	// Contract
 	SaveContract(msg *types.Contract, saveByteCode bool)
 	SaveContracts(msgs []*types.Contract, saveByteCode bool)
 	IsContractExisted(msg *types.Contract) bool
 	GetContract(chain string, hash string, includeByteCode bool) *types.Contract
-
 	GetPendingContracts(chain string) []*types.Contract
 	UpdateContractAddress(chain string, hash string, address string)
-
 	UpdateContractsStatus(chain string, contractHash string, status string)
-
 	GetLatestContractAddressByName(chain, name string) string
 
 	// Contract Address
@@ -51,19 +56,15 @@ type PrivateDb interface {
 	SaveTxOut(msg *types.TxOut)
 	IsTxOutExisted(msg *types.TxOut) bool
 	GetTxOut(outChain, hash string) *types.TxOut
-	GetTxOutFromSigHash(outChain, hashWithSig string) *types.TxOut
 
-	// TODO: Add unconfirmed tx store
 	// TxOutSig
+	// TODO: Add unconfirmed tx store
 	SaveTxOutSig(msg *types.TxOutSig)
+	GetTxOutSig(outChain, hashWithSig string) *types.TxOutSig
 
 	// TxOutConfirm
 	SaveTxOutConfirm(msg *types.TxOutConfirm)
 	IsTxOutConfirmExisted(outChain, hash string) bool
-
-	// Mempool Tx (only for private db)
-	SaveMempoolTx(hash string)
-	IsMempoolTxExisted(hash string) bool
 }
 
 type defaultPrivateDb struct {
@@ -71,7 +72,7 @@ type defaultPrivateDb struct {
 	prefixes map[string]prefix.Store
 }
 
-func NewPrivateDb(dbDir string) PrivateDb {
+func NewPrivateDb(dbDir string) Storage {
 	log.Info("Private db dir = ", dbDir)
 	db, err := dbm.NewDB("private", dbm.GoLevelDBBackend, dbDir)
 	if err != nil {
@@ -91,10 +92,14 @@ func NewPrivateDb(dbDir string) PrivateDb {
 func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes := make(map[string]prefix.Store)
 
+	// prefixTxRecord
+	prefixes[string(prefixTxRecord)] = prefix.NewStore(parent, prefixTxRecord)
+	// prefixTxRecordProcessed
+	prefixes[string(prefixTxRecordProcessed)] = prefix.NewStore(parent, prefixTxRecordProcessed)
 	// prefixKeygen
 	prefixes[string(prefixKeygen)] = prefix.NewStore(parent, prefixKeygen)
 	// prefixKeygenResult
-	prefixes[string(prefixKeygenResult)] = prefix.NewStore(parent, prefixKeygenResult)
+	prefixes[string(prefixKeygenResultWithSigner)] = prefix.NewStore(parent, prefixKeygenResultWithSigner)
 	// prefixContract
 	prefixes[string(prefixContract)] = prefix.NewStore(parent, prefixContract)
 	// prefixContractByteCode
@@ -105,14 +110,31 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes[string(prefixTxIn)] = prefix.NewStore(parent, prefixTxIn)
 	// prefixTxOut
 	prefixes[string(prefixTxOut)] = prefix.NewStore(parent, prefixTxOut)
+	// prefixTxOutSig
+	prefixes[string(prefixTxOutSig)] = prefix.NewStore(parent, prefixTxOutSig)
 	// prefixTxOutConfirm
 	prefixes[string(prefixTxOutConfirm)] = prefix.NewStore(parent, prefixTxOutConfirm)
-	// prefixMempoolTx
-	prefixes[string(prefixMempoolTx)] = prefix.NewStore(parent, prefixMempoolTx)
 	// prefixContractName
 	prefixes[string(prefixContractName)] = prefix.NewStore(parent, prefixContractName)
 
 	return prefixes
+}
+
+///// TxRecord
+func (db *defaultPrivateDb) SaveTxRecord(hash []byte, signer string) int {
+	store := db.prefixes[string(prefixTxRecord)]
+	return saveTxRecord(store, hash, signer)
+}
+
+///// TxRecordProcessed
+func (db *defaultPrivateDb) ProcessTxRecord(hash []byte) {
+	store := db.prefixes[string(prefixTxRecordProcessed)]
+	processTxRecord(store, hash)
+}
+
+func (db *defaultPrivateDb) IsTxRecordProcessed(hash []byte) bool {
+	store := db.prefixes[string(prefixTxRecordProcessed)]
+	return isTxRecordProcessed(store, hash)
 }
 
 ///// Keygen
@@ -137,16 +159,21 @@ func (db *defaultPrivateDb) GetKeygenPubkey(keyType string) []byte {
 	return getKeygenPubkey(store, keyType)
 }
 
+func (db *defaultPrivateDb) GetAllKeygenPubkeys() map[string][]byte {
+	store := db.prefixes[string(prefixKeygen)]
+	return getAllKeygenPubkeys(store)
+}
+
 ///// Keygen Result
 
 func (db *defaultPrivateDb) SaveKeygenResult(signerMsg *types.KeygenResultWithSigner) {
-	store := db.prefixes[string(prefixKeygenResult)]
+	store := db.prefixes[string(prefixKeygenResultWithSigner)]
 	saveKeygenResult(store, signerMsg)
 }
 
-func (db *defaultPrivateDb) IsKeygenResultSuccess(signerMsg *types.KeygenResultWithSigner, self string) bool {
-	store := db.prefixes[string(prefixKeygenResult)]
-	return isKeygenResultSuccess(store, signerMsg, self)
+func (db *defaultPrivateDb) GetAllKeygenResult(keygenType string, index int32) []*types.KeygenResultWithSigner {
+	store := db.prefixes[string(prefixKeygenResultWithSigner)]
+	return getAllKeygenResult(store, keygenType, index)
 }
 
 ///// Contract
@@ -260,12 +287,11 @@ func (db *defaultPrivateDb) GetTxOut(outChain, hash string) *types.TxOut {
 	return getTxOut(store, outChain, hash)
 }
 
-func (db *defaultPrivateDb) GetTxOutFromSigHash(outChain, hashWithSig string) *types.TxOut {
+func (db *defaultPrivateDb) GetTxOutSig(outChain, hashWithSig string) *types.TxOutSig {
 	withSigStore := db.prefixes[string(prefixTxOutSig)]
 	txOutSig := getTxOutSig(withSigStore, outChain, hashWithSig)
 
-	noSigStore := db.prefixes[string(prefixTxOut)]
-	return getTxOut(noSigStore, outChain, txOutSig.HashNoSig)
+	return txOutSig
 }
 
 ///// TxOutSig
@@ -283,18 +309,6 @@ func (db *defaultPrivateDb) SaveTxOutConfirm(msg *types.TxOutConfirm) {
 func (db *defaultPrivateDb) IsTxOutConfirmExisted(chain, hash string) bool {
 	store := db.prefixes[string(prefixTxOutConfirm)]
 	return isTxOutConfirmExisted(store, chain, hash)
-}
-
-///// MempoolTx
-
-func (db *defaultPrivateDb) SaveMempoolTx(hash string) {
-	store := db.prefixes[string(prefixMempoolTx)]
-	store.Set([]byte(hash), []byte(""))
-}
-
-func (db *defaultPrivateDb) IsMempoolTxExisted(hash string) bool {
-	store := db.prefixes[string(prefixMempoolTx)]
-	return store.Has([]byte(hash))
 }
 
 ///// Debug

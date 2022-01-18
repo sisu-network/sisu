@@ -10,8 +10,8 @@ do
   do
     protoc  \
       -I $CUR_DIR \
-      -I $GOPATH/pkg/mod/github.com/sisu-network/cosmos-sdk@v$COSMOS_VERSION/proto \
-      -I $GOPATH/pkg/mod/github.com/sisu-network/cosmos-sdk@v$COSMOS_VERSION/third_party/proto \
+      -I $GOPATH/pkg/mod/github.com/cosmos/cosmos-sdk@v$COSMOS_VERSION/proto \
+      -I $GOPATH/pkg/mod/github.com/cosmos/cosmos-sdk@v$COSMOS_VERSION/third_party/proto \
         --gocosmos_out=plugins=interfacetype+grpc,Mgoogle/protobuf/any.proto=github.com/cosmos/cosmos-sdk/codec/types:./x/$dir/types \
         $file
 

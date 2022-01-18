@@ -1,7 +1,7 @@
 package tss
 
 import (
-	sdk "github.com/sisu-network/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	htypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
@@ -13,17 +13,28 @@ import (
 
 // This function is called after dheart sends Sisu keysign result.
 func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
+	if result.Outcome == htypes.OutcometNotSelected {
+		// Do nothing here if this node is not selected.
+		return
+	}
+
 	// Post the keysign result to cosmos chain.
 	request := result.Request
 
 	for i, keysignMsg := range request.KeysignMessages {
-		msg := types.NewKeysignResult(p.appKeys.GetSignerAddress().String(), keysignMsg.OutChain, keysignMsg.OutHash, result.Success, result.Signatures[i])
+		msg := types.NewKeysignResult(
+			p.appKeys.GetSignerAddress().String(),
+			keysignMsg.OutChain,
+			keysignMsg.OutHash,
+			result.Outcome == htypes.OutcomeSuccess,
+			result.Signatures[i],
+		)
 		go p.txSubmit.SubmitMessage(msg)
 
 		// Sends it to deyes for deployment.
-		if result.Success {
+		if result.Outcome == htypes.OutcomeSuccess {
 			// Find the tx in txout table
-			txOut := p.privateDb.GetTxOut(keysignMsg.OutChain, keysignMsg.OutHash)
+			txOut := p.publicDb.GetTxOut(keysignMsg.OutChain, keysignMsg.OutHash)
 			if txOut == nil {
 				log.Error("Cannot find tx out with hash", keysignMsg.OutHash)
 			}
@@ -48,8 +59,8 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 				return
 			}
 
-			// TODO: Broadcast the keysign result that includes this TxOutSig.
-			// Save this to TxOutSig
+			// // TODO: Broadcast the keysign result that includes this TxOutSig.
+			// // Save this to TxOutSig
 			p.privateDb.SaveTxOutSig(&types.TxOutSig{
 				Chain:       keysignMsg.OutChain,
 				HashWithSig: signedTx.Hash().String(),
@@ -66,14 +77,12 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 				log.Error("deployment error: ", err)
 				return
 			}
+
+			// TODO: Check if we have any pending confirm tx that is waiting for this tx.
 		} else {
 			// TODO: handle failure case here.
 		}
 	}
-}
-
-func (p *Processor) checkKeysignResult(ctx sdk.Context, msg *types.KeysignResult) error {
-	return nil
 }
 
 func (p *Processor) deliverKeysignResult(ctx sdk.Context, msg *types.KeysignResult) ([]byte, error) {

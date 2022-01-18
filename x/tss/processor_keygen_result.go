@@ -1,7 +1,7 @@
 package tss
 
 import (
-	sdk "github.com/sisu-network/cosmos-sdk/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	dhtypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
@@ -16,9 +16,19 @@ type BlockSymbolPair struct {
 
 // Called after having key generation result from Sisu's api server.
 func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
-	resultEnum := types.KeygenResult_FAILURE
-	if result.Success {
+	var resultEnum types.KeygenResult_Result
+	switch result.Outcome {
+	case dhtypes.OutcomeSuccess:
 		resultEnum = types.KeygenResult_SUCCESS
+	case dhtypes.OutcomeFailure:
+		resultEnum = types.KeygenResult_FAILURE
+	case dhtypes.OutcometNotSelected:
+		resultEnum = types.KeygenResult_NOT_SELECTED
+	}
+
+	if resultEnum == types.KeygenResult_NOT_SELECTED {
+		// No need to send result when this node is not selected.
+		return
 	}
 
 	signerMsg := types.NewKeygenResultWithSigner(
@@ -31,54 +41,35 @@ func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
 	)
 
 	// Save the result to private db
-	p.privateDb.SaveKeygenResult(signerMsg)
+	p.publicDb.SaveKeygenResult(signerMsg)
 
 	log.Info("There is keygen result from dheart, resultEnum = ", resultEnum)
 
 	p.txSubmit.SubmitMessage(signerMsg)
 }
 
-func (p *Processor) checkKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) error {
-	if signerMsg.Data.Result == types.KeygenResult_SUCCESS {
-		// Check if we have this data in our private db.
-		if !p.privateDb.IsKeygenResultSuccess(signerMsg, p.appKeys.GetSignerAddress().String()) {
-			log.Verbosef("Value does not match, data = %s %d %s", signerMsg.Keygen.KeyType, int(signerMsg.Keygen.Index), signerMsg.Data.From)
-			return ErrValueDoesNotMatch
-		}
-
-		// TODO: Check if we have processed this message before.
-
-		return nil
-	} else {
-		// TODO: Process failure case. For failure case, we allow multiple message as each node can have
-		// different blames.
+func (p *Processor) deliverKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) ([]byte, error) {
+	if process, hash := p.shouldProcessMsg(ctx, signerMsg); process {
+		p.doKeygenResult(ctx, signerMsg)
+		p.publicDb.ProcessTxRecord(hash)
 	}
 
-	return nil
+	return nil, nil
 }
 
-func (p *Processor) deliverKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) ([]byte, error) {
+func (p *Processor) doKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) ([]byte, error) {
 	msg := signerMsg.Data
 
 	log.Info("Delivering keygen result, result = ", msg.Result)
 
-	if msg.Result == types.KeygenResult_SUCCESS {
+	result := p.getKeygenResult(ctx, signerMsg)
+
+	// TODO: Get majority of the votes here.
+	if result == types.KeygenResult_SUCCESS {
 		log.Info("Keygen succeeded")
 
-		if p.keeper.IsKeygenResultSuccess(ctx, signerMsg, p.appKeys.GetSignerAddress().String()) {
-			// This has been processed before.
-			return nil, nil
-		}
-
-		log.Info("Saving keygen for ", signerMsg.Keygen.KeyType)
-
-		// Save keygen to KVStore & private db
-		p.keeper.SaveKeygen(ctx, signerMsg.Keygen)
-		p.privateDb.SaveKeygen(signerMsg.Keygen)
-
 		// Save result to KVStore & private db
-		p.keeper.SaveKeygenResult(ctx, signerMsg)
-		p.privateDb.SaveKeygenResult(signerMsg)
+		p.publicDb.SaveKeygenResult(signerMsg)
 
 		// Add list the public key address to watch.
 		p.addWatchAddress(signerMsg.Keygen)
@@ -91,6 +82,29 @@ func (p *Processor) deliverKeygenResult(ctx sdk.Context, signerMsg *types.Keygen
 	}
 
 	return nil, nil
+}
+
+func (p *Processor) getKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) types.KeygenResult_Result {
+	results := p.publicDb.GetAllKeygenResult(signerMsg.Keygen.KeyType, signerMsg.Keygen.Index)
+
+	// Check the majority of the results
+	successCount := 0
+	for _, result := range results {
+		if result.Data.Result == types.KeygenResult_SUCCESS {
+			successCount += 1
+		}
+	}
+
+	if successCount >= (len(results)+1)/2 {
+		// TODO: Choose the address with most vote.
+		// Save keygen Address
+		log.Info("Saving keygen...")
+		p.publicDb.SaveKeygen(signerMsg.Keygen)
+
+		return types.KeygenResult_SUCCESS
+	}
+
+	return types.KeygenResult_FAILURE
 }
 
 func (p *Processor) addWatchAddress(msg *types.Keygen) {

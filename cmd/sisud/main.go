@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	svrcmd "github.com/sisu-network/cosmos-sdk/server/cmd"
+	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/app"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd"

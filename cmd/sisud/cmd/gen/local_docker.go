@@ -13,18 +13,18 @@ import (
 
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
-	tmos "github.com/sisu-network/tendermint/libs/os"
 	"github.com/spf13/cobra"
+	tmos "github.com/tendermint/tendermint/libs/os"
 
-	"github.com/sisu-network/cosmos-sdk/client"
-	"github.com/sisu-network/cosmos-sdk/client/flags"
-	"github.com/sisu-network/cosmos-sdk/crypto/hd"
-	"github.com/sisu-network/cosmos-sdk/crypto/keyring"
-	cryptotypes "github.com/sisu-network/cosmos-sdk/crypto/types"
-	"github.com/sisu-network/cosmos-sdk/server"
-	sdk "github.com/sisu-network/cosmos-sdk/types"
-	"github.com/sisu-network/cosmos-sdk/types/module"
-	banktypes "github.com/sisu-network/cosmos-sdk/x/bank/types"
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
+	"github.com/cosmos/cosmos-sdk/crypto/hd"
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/cosmos/cosmos-sdk/server"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/types/module"
+	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
@@ -162,7 +162,6 @@ Example:
 	cmd.Flags().String(flagStartingIPAddress, "127.0.0.1", "Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
-	cmd.Flags().Bool(flagEnableTss, false, "Enable Tss. By default, this value is set to false.")
 
 	return cmd
 }
@@ -222,6 +221,8 @@ func getDockerConfig(ganacheIps []string, chainIds []*big.Int, mysqlIp string, i
 }
 
 func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, ips []string) config.Config {
+	majority := (len(ips) + 1) * 2 / 3
+
 	return config.Config{
 		Mode: "dev",
 		Sisu: config.SisuConfig{
@@ -231,10 +232,9 @@ func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, 
 			ApiPort:        25456,
 		},
 		Tss: config.TssConfig{
-			Enable: true,
-			// Enable:     false,
-			DheartHost: fmt.Sprintf("dheart%d", index),
-			DheartPort: 5678,
+			MajorityThreshold: majority,
+			DheartHost:        fmt.Sprintf("dheart%d", index),
+			DheartPort:        5678,
 			SupportedChains: map[string]config.TssChainConfig{
 				"ganache1": {
 					Symbol:   "ganache1",
@@ -257,19 +257,19 @@ func generateDockerCompose(outputPath string, ips []string, dockerConfig DockerN
 	const dockerComposeTemplate = `version: "3"
 services:
   ganache1:
-    image: ganache-cli
+    image: ganache
     environment:
       - port=7545
       - networkId=189985
     ports:
       - 7545:7545
   ganache2:
-    image: ganache-cli
+    image: ganache
     environment:
       - port=7545
       - networkId=189986
     ports:
-      - 7546:7545
+      - 8545:7545
   mysql:
     image: mysql:8.0.19
     command: "--default-authentication-plugin=mysql_native_password"

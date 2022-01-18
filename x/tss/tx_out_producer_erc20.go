@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"math/big"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
 )
@@ -56,7 +56,7 @@ func (p *DefaultTxOutputProducer) processERC20TransferIn(ctx sdk.Context, ethTx 
 
 func (p *DefaultTxOutputProducer) callERC20TransferIn(ctx sdk.Context, tokenAddress, recipient ethcommon.Address, amount *big.Int, destChain string) (*types.TxResponse, error) {
 	targetContractName := ContractErc20Gateway
-	gw := p.keeper.GetLatestContractAddressByName(ctx, destChain, targetContractName)
+	gw := p.publicDb.GetLatestContractAddressByName(destChain, targetContractName)
 	if len(gw) == 0 {
 		err := fmt.Errorf("cannot find gw address for type: %s", targetContractName)
 		log.Error(err)
@@ -79,15 +79,17 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(ctx sdk.Context, tokenAddr
 		return nil, err
 	}
 
-	log.Debugf("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, amount: %d", destChain, gatewayAddress.String(), tokenAddress, recipient, amount.Int64())
-	rawTx := ethTypes.NewTx(&ethTypes.AccessListTx{
-		Nonce:    uint64(nonce),
-		GasPrice: p.getGasPrice(destChain),
-		Gas:      p.getGasLimit(destChain),
-		To:       &gatewayAddress,
-		Value:    big.NewInt(0),
-		Data:     input,
-	})
+	log.Debugf("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, amount: %d",
+		destChain, gatewayAddress.String(), tokenAddress, recipient, amount.Int64(),
+	)
+	rawTx := ethTypes.NewTransaction(
+		uint64(nonce),
+		gatewayAddress,
+		big.NewInt(0),
+		p.getGasLimit(destChain),
+		p.getGasPrice(destChain),
+		input,
+	)
 
 	bz, err := rawTx.MarshalBinary()
 	if err != nil {

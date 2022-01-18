@@ -7,8 +7,8 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ecommon "github.com/ethereum/go-ethereum/common"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	sdk "github.com/sisu-network/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
@@ -30,19 +30,17 @@ type DefaultTxOutputProducer struct {
 	ethKeyAddrs map[string]map[string]bool
 
 	worldState WorldState
-	keeper     keeper.Keeper
 	appKeys    common.AppKeys
-	privateDb  keeper.PrivateDb
+	publicDb   keeper.Storage
 	tssConfig  config.TssConfig
 }
 
-func NewTxOutputProducer(worldState WorldState, keeper keeper.Keeper, appKeys common.AppKeys, privateDb keeper.PrivateDb, tssConfig config.TssConfig) TxOutputProducer {
+func NewTxOutputProducer(worldState WorldState, appKeys common.AppKeys, publicDb keeper.Storage, tssConfig config.TssConfig) TxOutputProducer {
 	return &DefaultTxOutputProducer{
 		worldState: worldState,
-		keeper:     keeper,
 		appKeys:    appKeys,
 		tssConfig:  tssConfig,
-		privateDb:  privateDb,
+		publicDb:   publicDb,
 	}
 }
 
@@ -78,8 +76,8 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 	// 1. Check if this is a transaction sent to our key address. If this is true, it's likely a tx
 	// that funds our account.
-	if ethTx.To() != nil && p.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
-		contracts := p.keeper.GetPendingContracts(ctx, tx.Chain)
+	if ethTx.To() != nil && p.publicDb.IsKeygenAddress(libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
+		contracts := p.publicDb.GetPendingContracts(tx.Chain)
 		log.Verbose("len(contracts) = ", len(contracts))
 
 		if len(contracts) > 0 {
@@ -119,7 +117,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 	// 2. Check if this is a tx sent to one of our contracts.
 	if ethTx.To() != nil &&
-		p.keeper.IsContractExistedAtAddress(ctx, tx.Chain, ethTx.To().String()) && // TODO: Use keeper instead
+		p.publicDb.IsContractExistedAtAddress(tx.Chain, ethTx.To().String()) && // TODO: Use keeper instead
 		len(ethTx.Data()) >= 4 {
 
 		// TODO: compare method name to trigger corresponding contract method
@@ -202,13 +200,14 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *types.Contract, nonce 
 		byteCode := ecommon.FromHex(erc20.Bin)
 		input = append(byteCode, input...)
 
-		rawTx := ethTypes.NewTx(&ethTypes.AccessListTx{
-			Nonce:    uint64(nonce),
-			GasPrice: p.getGasPrice(contract.Chain),
-			Gas:      p.getGasLimit(contract.Chain),
-			Value:    big.NewInt(0),
-			Data:     input,
-		})
+		rawTx := ethTypes.NewContractCreation(
+			uint64(nonce),
+			big.NewInt(0),
+			p.getGasLimit(contract.Chain),
+			p.getGasPrice(contract.Chain),
+			input,
+		)
+
 		return rawTx
 	}
 
@@ -223,10 +222,14 @@ func (p *DefaultTxOutputProducer) getGasLimit(chain string) uint64 {
 func (p *DefaultTxOutputProducer) getGasPrice(chain string) *big.Int {
 	// TODO: Make this dependent on different chains.
 	switch chain {
+	case "ganache1":
+		return big.NewInt(2_000_000_000) // 1 Gwei
+	case "ganache2":
+		return big.NewInt(2_000_000_000) // 1 Gwei
 	case "eth-ropsten":
-		return big.NewInt(1700000000)
+		return big.NewInt(1_700_000_000)
 	case "eth-binance-testnet":
-		return big.NewInt(10000000000) // 10 Gwei
+		return big.NewInt(10_000_000_000) // 10 Gwei
 	}
-	return big.NewInt(400000000000) // 10 Gwei
+	return big.NewInt(400_000_000_000) // 400 Gwei
 }
