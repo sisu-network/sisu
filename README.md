@@ -1,6 +1,6 @@
 # Installation
 
-- Install ganache-cli `npm install ganache-cli@latest --global`
+- Install ganache-cli `npm install -g ganache@v7.0.0-alpha.2`
 - Install Docker
 - Install Go 1.6. Make sure GOPATH, GOROOT are set and go module is turned on.
 
@@ -19,14 +19,6 @@ To confirm, do `more ~/.gitconfig` and make sure you see the following:
 	insteadOf = https://github.com/
 ```
 
-- In case the above does not work.
-  Clone the individual repos and add replace statements in the go.mod for each library that failed.
-  For Example
-  
-```
-replace github.com/sisu-network/deyes => ../deyes
-```
-
 # Generate Mock structs
 
 - Install mockgen to generate mock structs from interfaces:
@@ -36,19 +28,6 @@ go install github.com/golang/mock/mockgen@v1.6.0
 ```
 
 # From the sisu root folder
-
-## Run Mysql
-- Run Mysql - `make dev-mysql-up`
-In addition, you need to install mysql locally with the following config:
-
-```
-host: localhost
-port: 3306
-username: root
-password: password
-```
-
-You can run `make dev-mysql-up` (make sure you installed Docker) to initialize databases with default settings
 
 ## Create env file
 
@@ -77,27 +56,8 @@ To run the app on localhost:
 
 You can now deploy ETH transaction on ganache1 at port 7545.
 
----
-### For Running locally without TSS. (Keep it enabled though.)
----
-
-Disable the TSS component in the file `~/.sisu/main/config/sisu.toml` by changing the default tss settings to false.
-
-```
-[tss]
-enable = false
-```
-
----
 ### Running with TSS (single node) one command line
 ---
-
-You need to enable tss in `~/.sisu/main/config/sisu.toml` in order to run full Sisu node.
-
-```
-[tss]
-enable = true
-```
 
 You will need at least 5 different terminal tabs to run a full Sisu nodes: 2 tabs for ganache-cli, 1 for dheart, 1 for deyes, 1 for sisu.
 
@@ -119,7 +79,7 @@ These commands create a simulated blockchain on port 7545 and 8545.
 ## Run dheart and deyes
 ---
 
-Runs dheart and deyes using their instruction in the repos.
+Runs dheart and deyes in 2 separate tabs using their instruction in the repos.
 
 ## Run Sisu
 ---
@@ -151,31 +111,10 @@ This commands will fund Sisu's signing key account with 10 ethereum. The last nu
 
 Waits for 10 seconds for the transaction to finalized and for Sisu to deploy its gateway contract.
 
-Now you can start transferring ERC20 tokens out of a blockchain. You need a deployed ERC20 contract on one of the ganache chain. You can deploy using separate service or use Sisu command line:
+### Deploy ERC20 token and do token swapping
 
-```
-./sisu dev deploy-erc20 7545
-```
+You can now deploy ERC20 and do token swapping with the repo [smart-contract](https://github.com/sisu-network/smart-contracts).
 
-Waits for a few seconds and you will see the address the newly deploy ERC20 contract. You can transfer token to second dev chain using this command format:
-
-```
-./sisu dev transfer-out [ContractType] [FromChain] [TokenAddress] [ToChain] [RecipientAddress]
-```
-
-For example
-
-```
-./sisu dev transfer-out erc20 ganache1 7545 0xf0D676183dD5ae6b370adDdbE770235F23546f9d 8545 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
-```
-
-Waits a few seconds for the transaction to complete. Afterward, you can query the asset balance on the destination chain:
-
-```
-./sisu dev query [ContractType] [chain] [port] [AssetId] [AccountAddress]
-
-./sisu dev query erc20 ganache1 7545 ganache1__0x3DeaCe7E9C8b6ee632bb71663315d6330914f915 0xE8382821BD8a0F9380D88e2c5c33bc89Df17E466
-```
 
 ## Running with TSS (multi nodes) using docker
 
@@ -243,4 +182,3 @@ NOTE: if you get into bad data state or you want to reset the blockchain, simply
 ```
 ./sisu local-docker --v 2 --output-dir ./output
 ```
-
