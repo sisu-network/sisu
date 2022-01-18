@@ -91,18 +91,4 @@ func (p *Processor) deliverKeygen(ctx sdk.Context, wrapper *types.KeygenWithSign
 }
 
 func (p *Processor) doTss(msg *types.Keygen, blockHeight int64) {
-	log.Info("doing keygen tsss...")
-
-	// Send a signal to Dheart to start keygen process.
-	log.Info("Sending keygen request to Dheart. KeyType =", msg.KeyType)
-	pubKeys := p.partyManager.GetActivePartyPubkeys()
-	keygenId := GetKeygenId(msg.KeyType, blockHeight, pubKeys)
-
-	err := p.dheartClient.KeyGen(keygenId, msg.KeyType, pubKeys)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	log.Info("Keygen request is sent successfully.")
 }

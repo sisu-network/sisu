@@ -4,7 +4,6 @@ go 1.15
 
 require (
 	github.com/BurntSushi/toml v0.4.1
-	github.com/ethereum/go-ethereum v1.10.12
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gogo/protobuf v1.3.3
 	github.com/golang/mock v1.4.4
@@ -12,7 +11,6 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/go-retryablehttp v0.7.0
-	github.com/jackpal/go-nat-pmp v1.0.2 // indirect
 	github.com/joho/godotenv v1.3.0
 	github.com/libp2p/go-libp2p-core v0.8.0
 	github.com/multiformats/go-multiaddr v0.3.1 // indirect

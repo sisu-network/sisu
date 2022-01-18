@@ -7,7 +7,6 @@ import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	cosmosAnte "github.com/sisu-network/cosmos-sdk/x/auth/ante"
 	"github.com/sisu-network/cosmos-sdk/x/auth/signing"
-	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/tss"
 	tssTypes "github.com/sisu-network/sisu/x/tss/types"
@@ -26,28 +25,9 @@ func NewAnteHandler(
 	bankKeeper BankKeeper,
 	sigGasConsumer SignatureVerificationGasConsumer,
 	signModeHandler signing.SignModeHandler,
-	tssValidator tss.TssValidator,
 ) sdk.AnteHandler {
 	return func(ctx sdk.Context, tx sdk.Tx, sim bool) (sdk.Context, error) {
-		var anteHandler sdk.AnteHandler
-		txType, err := getTxType(tx)
-		if err != nil {
-			// TODO: Handle when there are errors here.
-			log.Warn("cannot get tx type, err = ", err)
-			return ctx, err
-		}
-
-		switch txType {
-		case TYPE_TX_TSS:
-			if tssConfig.Enable {
-				// Add TSS AnteHandler here.
-				anteHandler = TssAnteHandler(ctx, tx, ak, bankKeeper, sigGasConsumer, signModeHandler, tssValidator)
-			} else {
-				return ctx, fmt.Errorf("Tss is not enabled")
-			}
-		case TYPE_TX_COSMOS:
-			anteHandler = cosmosAnte.NewAnteHandler(ak, bankKeeper, sigGasConsumer, signModeHandler)
-		}
+		anteHandler := cosmosAnte.NewAnteHandler(ak, bankKeeper, sigGasConsumer, signModeHandler)
 
 		return anteHandler(ctx, tx, sim)
 	}
@@ -100,7 +80,7 @@ func TssAnteHandler(
 		NewValidateSigCountDecorator(ak),
 		NewSigVerificationDecorator(ak, signModeHandler),
 		NewTssDecorator(validator),
-		// NewIncrementSequenceDecorator(ak), // We dont use cosmos sequence number anymore
+		NewIncrementSequenceDecorator(ak), // We dont use cosmos sequence number anymore
 	}
 
 	return sdk.ChainAnteDecorators(

@@ -4,8 +4,6 @@ import (
 	sdk "github.com/sisu-network/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
-
-	libchain "github.com/sisu-network/lib/chain"
 )
 
 type BlockSymbolPair struct {
@@ -69,20 +67,4 @@ func (p *Processor) deliverKeygenResult(ctx sdk.Context, signerMsg *types.Keygen
 }
 
 func (p *Processor) addWatchAddress(msg *types.Keygen) {
-	// 2. Add the address to the watch list.
-	for _, chainConfig := range p.config.SupportedChains {
-		chain := chainConfig.Symbol
-		deyesClient := p.deyesClients[chain]
-
-		if libchain.GetKeyTypeForChain(chain) != msg.KeyType {
-			continue
-		}
-
-		if deyesClient == nil {
-			log.Critical("Cannot find deyes client for chain", chain)
-		} else {
-			log.Verbose("adding watcher address ", msg.Address, " for chain ", chain)
-			deyesClient.AddWatchAddresses(chain, []string{msg.Address})
-		}
-	}
 }

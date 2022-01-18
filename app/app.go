@@ -17,7 +17,6 @@ import (
 	"github.com/sisu-network/tendermint/p2p"
 	dbm "github.com/tendermint/tm-db"
 
-	ethRpc "github.com/ethereum/go-ethereum/rpc"
 	"github.com/sisu-network/cosmos-sdk/baseapp"
 	"github.com/sisu-network/cosmos-sdk/client/grpc/tmservice"
 	"github.com/sisu-network/cosmos-sdk/client/rpc"
@@ -419,7 +418,6 @@ func New(
 			tssConfig,
 			app.AccountKeeper, app.BankKeeper,
 			ante.DefaultSigVerificationGasConsumer, encodingConfig.TxConfig.SignModeHandler(),
-			tssProcessor,
 		),
 	)
 	app.SetEndBlocker(app.EndBlocker)
@@ -682,14 +680,6 @@ func (app *App) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.Respo
 // TODO: Make this separate from tssProcessor to avoid other components to invoke restricted functions
 // of the processor.
 func (app *App) setupApiServer(c config.Config) {
-	handler := ethRpc.NewServer()
-	handler.RegisterName("tss", tss.NewApi(app.tssProcessor, &app.tssKeeper))
-
-	appConfig := c.Sisu
-	s := server.NewServer(handler, appConfig.ApiHost, appConfig.ApiPort)
-
-	log.Info("Starting Internal API server")
-	go s.Run()
 }
 
 func (app *App) GetTendermintOptions() []node.Option {

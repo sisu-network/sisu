@@ -9,7 +9,7 @@ import (
 func (p *Processor) checkTxTestMessage(ctx sdk.Context, msg *types.TestMessage) error {
 	log.Info("Checking test message ....")
 
-	if p.config.Index == 0 {
+	if p.config.Index == 0 || p.config.Index == 1 || p.config.Index == 2 {
 		return nil
 	}
 
