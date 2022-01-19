@@ -15,11 +15,11 @@ import (
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil/hdkeychain"
 	ethereum "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/sisu-network/dcore/accounts"
-	"github.com/sisu-network/dcore/core/types"
 	"github.com/tyler-smith/go-bip39"
 )
 
@@ -254,7 +254,7 @@ func (w *Wallet) SignTxEIP155(account accounts.Account, tx *types.Transaction, c
 		return nil, err
 	}
 
-	msg, err := signedTx.AsMessage(types.NewEIP155Signer(chainID))
+	msg, err := signedTx.AsMessage(types.NewEIP155Signer(chainID), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -289,7 +289,7 @@ func (w *Wallet) SignTx(account accounts.Account, tx *types.Transaction, chainID
 		return nil, err
 	}
 
-	msg, err := signedTx.AsMessage(types.HomesteadSigner{})
+	msg, err := signedTx.AsMessage(types.HomesteadSigner{}, nil)
 	if err != nil {
 		return nil, err
 	}

@@ -7,9 +7,9 @@ import (
 	"strconv"
 
 	"github.com/ethereum/go-ethereum/common"
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
-	ethTypes "github.com/sisu-network/dcore/core/types"
-	"github.com/sisu-network/dcore/ethclient"
+	"github.com/ethereum/go-ethereum/ethclient"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
