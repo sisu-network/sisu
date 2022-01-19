@@ -8,6 +8,7 @@ require (
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-sdk v0.42.1
 	github.com/ethereum/go-ethereum v1.10.12
+	github.com/gballet/go-libpcsclite v0.0.0-20191108122812-4678299bea08 // indirect
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gogo/protobuf v1.3.3
 	github.com/golang/mock v1.4.4
@@ -17,13 +18,15 @@ require (
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
 	github.com/joho/godotenv v1.3.0
 	github.com/libp2p/go-libp2p-core v0.8.0
-	github.com/sisu-network/dcore v0.1.11
+	github.com/prometheus/tsdb v0.10.0 // indirect
+	github.com/rjeczalik/notify v0.9.2 // indirect
 	github.com/sisu-network/deyes v0.1.2
 	github.com/sisu-network/dheart v0.1.5-alpha2
 	github.com/sisu-network/lib v0.0.1-alpha9
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
+	github.com/status-im/keycard-go v0.0.0-20200402102358-957c09536969 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/tendermint/tendermint v0.34.13
 	github.com/tendermint/tm-db v0.6.4

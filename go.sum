@@ -1142,8 +1142,6 @@ github.com/sirupsen/logrus v1.6.0/go.mod h1:7uNnSEd1DgxDLC74fIahvMZmmYsHGZGEOFrf
 github.com/sirupsen/logrus v1.7.0/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
 github.com/sirupsen/logrus v1.8.1 h1:dJKuHgqk1NNQlqoA6BTlM1Wf9DOH3NBjQyu0h9+AZZE=
 github.com/sirupsen/logrus v1.8.1/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
-github.com/sisu-network/dcore v0.1.11 h1:nta+2Y27gbrvcKE7HsUtM0a3rVZOVUu7CGmF7zWWoSY=
-github.com/sisu-network/dcore v0.1.11/go.mod h1:EnivWcD5FiO8/ulKcCN1mWBfAaVbR8+ywbqmG+021YI=
 github.com/sisu-network/deyes v0.1.2 h1:ZAjFdJgKEkk8/bptCd55Fm4DIwGyIT2k1CJTVTUGeM4=
 github.com/sisu-network/deyes v0.1.2/go.mod h1:ISeHUdielLoufABK01i+HjFzhy0NudsfxcokNJ2Go1o=
 github.com/sisu-network/dheart v0.1.5-alpha2 h1:3YMu59wofga+Dampcr9hQByF/MTV+M8k2U8R4tcIdE4=
