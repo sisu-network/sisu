@@ -3,7 +3,7 @@ package utils
 import (
 	"fmt"
 
-	"github.com/sisu-network/dcore/accounts"
+	"github.com/ethereum/go-ethereum/accounts"
 	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
 )
 
