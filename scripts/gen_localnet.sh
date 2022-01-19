@@ -7,7 +7,7 @@ else
     exit 1
 fi
 
-./sisu localnet --enable-tss true
+./sisu localnet
 rm -rf ~/.sisu
 cp -rf ./output/node0/ ~/.sisu
 rm -rf ./output
