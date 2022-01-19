@@ -7,10 +7,10 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/sisu-network/dcore/accounts"
 	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
 )
 
