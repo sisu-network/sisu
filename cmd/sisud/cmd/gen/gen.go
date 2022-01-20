@@ -19,7 +19,9 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
+	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
+	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/spf13/cobra"
 
@@ -155,10 +157,9 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 		}
 
 		accTokens := sdk.TokensFromConsensusPower(1000)
-		sisuCoin := "sisu"
 
 		coins := sdk.Coins{
-			sdk.NewCoin(sisuCoin, accTokens),
+			sdk.NewCoin(common.SisuCoinName, accTokens),
 		}
 
 		genBalances = append(genBalances, banktypes.Balance{Address: addr.String(), Coins: coins.Sort()})
@@ -168,7 +169,7 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 		createValMsg, err := stakingtypes.NewMsgCreateValidator(
 			sdk.ValAddress(addr),
 			valPubKeys[i],
-			sdk.NewCoin(sisuCoin, valTokens),
+			sdk.NewCoin(common.SisuCoinName, valTokens),
 			stakingtypes.NewDescription(nodeDirName, "", "", "", ""),
 			stakingtypes.NewCommissionRates(sdk.OneDec(), sdk.OneDec(), sdk.OneDec()),
 			sdk.OneInt(),
@@ -251,6 +252,20 @@ func initGenFiles(
 
 	bankGenState.Balances = genBalances
 	appGenState[banktypes.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(&bankGenState)
+
+	// Set the staking denom
+	var stakingGenstate stakingtypes.GenesisState
+	clientCtx.JSONMarshaler.MustUnmarshalJSON(appGenState[stakingtypes.ModuleName], &stakingGenstate)
+
+	stakingGenstate.Params.BondDenom = common.SisuCoinName
+	appGenState[stakingtypes.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(&stakingGenstate)
+
+	// Set denom for mint module
+	var mintGenState minttypes.GenesisState
+	clientCtx.JSONMarshaler.MustUnmarshalJSON(appGenState[minttypes.ModuleName], &mintGenState)
+
+	mintGenState.Params.MintDenom = common.SisuCoinName
+	appGenState[minttypes.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(&mintGenState)
 
 	appGenStateJSON, err := json.MarshalIndent(appGenState, "", "  ")
 	if err != nil {
