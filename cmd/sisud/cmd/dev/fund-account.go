@@ -13,7 +13,7 @@ import (
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
-	tssTypes "github.com/sisu-network/sisu/x/tss/types"
+	tssTypes "github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 )
