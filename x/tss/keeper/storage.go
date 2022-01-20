@@ -8,6 +8,8 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/tss/types"
 	dbm "github.com/tendermint/tm-db"
+	"sort"
+	"strconv"
 )
 
 // go:generate mockgen -source x/tss/keeper/storage.go -destination=tests/mock/tss/storage.go -package=mock
@@ -65,6 +67,11 @@ type Storage interface {
 	// TxOutConfirm
 	SaveTxOutConfirm(msg *types.TxOutConfirm)
 	IsTxOutConfirmExisted(outChain, hash string) bool
+
+	// Gas Price
+	SetGasPrice(msg *types.GasPriceMsg, totalValidator int)
+	SaveNetworkGasPrice(chain string, gasPrice int64)
+	GetNetworkGasPrice(chain string) int64
 }
 
 type defaultPrivateDb struct {
@@ -116,6 +123,10 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes[string(prefixTxOutConfirm)] = prefix.NewStore(parent, prefixTxOutConfirm)
 	// prefixContractName
 	prefixes[string(prefixContractName)] = prefix.NewStore(parent, prefixContractName)
+	// prefixGasPrice
+	prefixes[string(prefixGasPrice)] = prefix.NewStore(parent, prefixGasPrice)
+	// prefixNetworkGasPrice
+	prefixes[string(prefixNetworkGasPrice)] = prefix.NewStore(parent, prefixNetworkGasPrice)
 
 	return prefixes
 }
@@ -309,6 +320,48 @@ func (db *defaultPrivateDb) SaveTxOutConfirm(msg *types.TxOutConfirm) {
 func (db *defaultPrivateDb) IsTxOutConfirmExisted(chain, hash string) bool {
 	store := db.prefixes[string(prefixTxOutConfirm)]
 	return isTxOutConfirmExisted(store, chain, hash)
+}
+
+func (db *defaultPrivateDb) SetGasPrice(msg *types.GasPriceMsg, totalValidator int) {
+	store := db.prefixes[string(prefixGasPrice)]
+	savedRecord := saveGasPrice(store, msg)
+	if savedRecord == nil || !savedRecord.ReachConsensus(totalValidator) {
+		return
+	}
+
+	// Only save network gas price if reached consensus
+	listGasPrices := make([]int64, 0)
+	for _, m := range savedRecord.Messages {
+		listGasPrices = append(listGasPrices, m.GasPrice)
+	}
+
+	sort.SliceStable(listGasPrices, func(i, j int) bool {
+		return listGasPrices[i] < listGasPrices[j]
+	})
+
+	median := listGasPrices[len(listGasPrices)/2]
+	db.SaveNetworkGasPrice(savedRecord.Chain, median)
+}
+
+func (db *defaultPrivateDb) SaveNetworkGasPrice(chain string, gasPrice int64) {
+	store := db.prefixes[string(prefixNetworkGasPrice)]
+	store.Set([]byte(chain), []byte(strconv.FormatInt(gasPrice, 10)))
+}
+
+func (db *defaultPrivateDb) GetNetworkGasPrice(chain string) int64 {
+	store := db.prefixes[string(prefixNetworkGasPrice)]
+	bz := store.Get([]byte(chain))
+	if bz == nil {
+		log.Warnf("Gas price for chain %s is not found", chain)
+		return -1
+	}
+
+	gas, err := strconv.ParseInt(string(bz), 10, 64)
+	if err != nil {
+		log.Error(err)
+		return -1
+	}
+	return gas
 }
 
 ///// Debug

@@ -5,15 +5,13 @@ import (
 	etypes "github.com/sisu-network/deyes/types"
 	htypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/x/tss/keeper"
 )
 
 type ApiHandler struct {
 	processor *Processor
-	keeper    *keeper.DefaultKeeper
 }
 
-func NewApi(processor *Processor, keeper *keeper.DefaultKeeper) *ApiHandler {
+func NewApi(processor *Processor) *ApiHandler {
 	return &ApiHandler{
 		processor: processor,
 	}
@@ -58,4 +56,9 @@ func (a *ApiHandler) KeysignResult(result *htypes.KeysignResult) {
 
 func (a *ApiHandler) PostDeploymentResult(result *etypes.DispatchedTxResult) {
 	go a.processor.OnTxDeploymentResult(result)
+}
+
+func (a *ApiHandler) UpdateGasPrice(request *etypes.GasPriceRequest) {
+	log.Info("Received update gas price request")
+	go a.processor.OnUpdateGasPriceRequest(request)
 }

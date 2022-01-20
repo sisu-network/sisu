@@ -57,6 +57,10 @@ type Keeper interface {
 	// TxOutConfirm
 	SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutConfirm)
 	IsTxOutConfirmExisted(ctx sdk.Context, outChain, hash string) bool
+
+	// GasPrice
+	SetGasPrice(ctx sdk.Context, msg *types.GasPriceMsg)
+	SaveNetworkGasPrice(ctx sdk.Context, chain string, gasPrice int64)
 }
 
 type DefaultKeeper struct {
@@ -238,6 +242,15 @@ func (k *DefaultKeeper) SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutConfir
 func (k *DefaultKeeper) IsTxOutConfirmExisted(ctx sdk.Context, outChain, hash string) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutConfirm)
 	return isTxOutConfirmExisted(store, outChain, hash)
+}
+
+func (k *DefaultKeeper) SetGasPrice(ctx sdk.Context, msg *types.GasPriceMsg) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGasPrice)
+	saveGasPrice(store, msg)
+}
+
+func (k *DefaultKeeper) SaveNetworkGasPrice(ctx sdk.Context, chain string, gasPrice int64) {
+
 }
 
 ///// Debug

@@ -12,7 +12,7 @@ var (
 	NotFound = errors.New("Not Found")
 )
 
-func GetTxRecodrdHash(msg sdk.Msg) ([]byte, string, error) {
+func GetTxRecordHash(msg sdk.Msg) ([]byte, string, error) {
 	switch msg := msg.(type) {
 	case *types.KeygenWithSigner:
 		serialized, err := msg.Data.Marshal()
