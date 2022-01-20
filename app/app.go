@@ -4,11 +4,11 @@ import (
 	"io"
 	"path/filepath"
 
+	"github.com/spf13/cast"
 	tlog "github.com/tendermint/tendermint/libs/log"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec/types"
-	"github.com/spf13/cast"
 
 	"github.com/sisu-network/lib/log"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -87,12 +87,10 @@ import (
 	"github.com/sisu-network/sisu/x/auth"
 	"github.com/sisu-network/sisu/x/auth/ante"
 	"github.com/sisu-network/sisu/x/sisu"
-	sisukeeper "github.com/sisu-network/sisu/x/sisu/keeper"
-	sisutypes "github.com/sisu-network/sisu/x/sisu/types"
-	tss "github.com/sisu-network/sisu/x/tss"
-	"github.com/sisu-network/sisu/x/tss/keeper"
-	tssKeeper "github.com/sisu-network/sisu/x/tss/keeper"
-	tsstypes "github.com/sisu-network/sisu/x/tss/types"
+	tss "github.com/sisu-network/sisu/x/sisu"
+	"github.com/sisu-network/sisu/x/sisu/keeper"
+	tssKeeper "github.com/sisu-network/sisu/x/sisu/keeper"
+	tsstypes "github.com/sisu-network/sisu/x/sisu/types"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
@@ -213,9 +211,6 @@ type App struct {
 	ScopedIBCKeeper      capabilitykeeper.ScopedKeeper
 	ScopedTransferKeeper capabilitykeeper.ScopedKeeper
 
-	sisuKeeper sisukeeper.Keeper
-	// this line is used by starport scaffolding # stargate/app/keeperDeclaration
-
 	tssKeeper tssKeeper.DefaultKeeper
 
 	// the module manager
@@ -247,7 +242,7 @@ func New(
 		minttypes.StoreKey, distrtypes.StoreKey, slashingtypes.StoreKey,
 		govtypes.StoreKey, paramstypes.StoreKey, ibchost.StoreKey, upgradetypes.StoreKey,
 		evidencetypes.StoreKey, ibctransfertypes.StoreKey, capabilitytypes.StoreKey,
-		sisutypes.StoreKey, tsstypes.StoreKey,
+		tsstypes.StoreKey,
 		// this line is used by starport scaffolding # stargate/app/storeKey
 	)
 	tkeys := sdk.NewTransientStoreKeys(paramstypes.TStoreKey)
@@ -274,10 +269,6 @@ func New(
 	if err != nil {
 		panic(err)
 	}
-
-	app.sisuKeeper = *sisukeeper.NewKeeper(
-		appCodec, keys[sisutypes.StoreKey], keys[sisutypes.MemStoreKey],
-	)
 
 	app.appKeys = common.NewAppKeys(cfg.Sisu)
 	app.appKeys.Init()
@@ -347,7 +338,6 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
 
-		sisu.NewAppModule(appCodec, app.sisuKeeper),
 		tss.NewAppModule(appCodec, app.tssKeeper, storage, app.appKeys, app.txSubmitter, tssProcessor, app.globalData),
 	}
 
@@ -356,8 +346,16 @@ func New(
 	app.mm = module.NewManager(modules...)
 
 	// Set module begin
-	beginBlockers := []string{upgradetypes.ModuleName, minttypes.ModuleName, distrtypes.ModuleName, slashingtypes.ModuleName,
-		evidencetypes.ModuleName, stakingtypes.ModuleName, ibchost.ModuleName, tsstypes.ModuleName}
+	beginBlockers := []string{
+		upgradetypes.ModuleName,
+		minttypes.ModuleName,
+		distrtypes.ModuleName,
+		slashingtypes.ModuleName,
+		evidencetypes.ModuleName,
+		stakingtypes.ModuleName,
+		ibchost.ModuleName,
+		tsstypes.ModuleName,
+	}
 
 	// During begin block slashing happens after distr.BeginBlocker so that
 	// there is nothing left over in the validator fee pool, so as to keep the
@@ -393,7 +391,6 @@ func New(
 		genutiltypes.ModuleName,
 		evidencetypes.ModuleName,
 		ibctransfertypes.ModuleName,
-		sisutypes.ModuleName,
 		tsstypes.ModuleName,
 	}
 
