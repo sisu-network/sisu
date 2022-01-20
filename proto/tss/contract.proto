@@ -1,6 +1,8 @@
 syntax = "proto3";
 package types;
 
+option go_package = "github.com/sisu-network/sisu/x/tss/types";
+
 message ContractsWithSigner {
   string signer = 1;
   Contracts data = 2;

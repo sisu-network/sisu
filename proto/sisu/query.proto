@@ -1,6 +1,9 @@
 syntax = "proto3";
 package types;
 
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
 // Query defines the gRPC querier service.
 service Query {
 

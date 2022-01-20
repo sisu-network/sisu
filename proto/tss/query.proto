@@ -1,9 +1,10 @@
 syntax = "proto3";
-
 package types;
 
-import "proto/tss/contract.proto";
+option go_package = "github.com/sisu-network/sisu/x/tss/types";
 
+// import "gogoproto/gogo.proto";
+import "tss/contract.proto";
 
 service TssQuery {
   rpc AllPubKeys(QueryAllPubKeysRequest) returns (QueryAllPubKeysResponse) {

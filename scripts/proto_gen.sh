@@ -1,24 +1,18 @@
 #!/bin/sh
 
-CUR_DIR=$(pwd)
-COSMOS_VERSION=0.42.1-fork005
+find ./x -name "*.pb.go" -delete
 
-for folder in $CUR_DIR/proto/**
-do
-  dir=$(basename $folder)
-  for file in $folder/*
-  do
-    protoc  \
-      -I $CUR_DIR \
-      -I $GOPATH/pkg/mod/github.com/cosmos/cosmos-sdk@v$COSMOS_VERSION/proto \
-      -I $GOPATH/pkg/mod/github.com/cosmos/cosmos-sdk@v$COSMOS_VERSION/third_party/proto \
-        --gocosmos_out=plugins=interfacetype+grpc,Mgoogle/protobuf/any.proto=github.com/cosmos/cosmos-sdk/codec/types:./x/$dir/types \
-        $file
+go get github.com/regen-network/cosmos-proto/protoc-gen-gocosmos 2>/dev/null
+go get -u github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc 2>/dev/null
 
-
-    cd ./x/$dir/types
-    mv proto/$dir/*.* .
-    rm -rf proto
-    cd ../../..
-  done
+dirs=$(find ./proto -path -prune -o -name '*.proto' -print0 | xargs -0 -n1 dirname | sort | uniq)
+for dir in $dirs; do
+  protoc \
+    -I "proto" \
+    -I "external/proto" \
+    --gocosmos_out=plugins=interfacetype+grpc,Mgoogle/protobuf/any.proto=github.com/cosmos/cosmos-sdk/codec/types:. \
+    $(find "${dir}" -maxdepth 1 -name '*.proto')
 done
+
+cp -r github.com/sisu-network/sisu/* ./
+rm -rf github.com
