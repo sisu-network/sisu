@@ -1,9 +1,0 @@
-syntax = "proto3";
-package types;
-
-option go_package = "github.com/sisu-network/sisu/x/tss/types";
-
-// GenesisState defines the capability module's genesis state.
-message GenesisState {
-    // this line is used by starport scaffolding # genesis/proto/state
-}
