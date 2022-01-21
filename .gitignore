@@ -1,7 +1,6 @@
 build/
 ./sisu
-sisu
-output
-tmp
+output/
+tmp/
 .env
 .idea/

@@ -17,6 +17,8 @@ import (
 	cdctypes "github.com/cosmos/cosmos-sdk/codec/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+
+	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/client/cli"
 	"github.com/sisu-network/sisu/x/sisu/client/rest"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -101,13 +103,30 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 
-	keeper keeper.Keeper
+	keeper     keeper.DefaultKeeper
+	processor  *Processor
+	appKeys    *common.DefaultAppKeys
+	txSubmit   common.TxSubmit
+	globalData common.GlobalData
+	storage    keeper.Storage
 }
 
-func NewAppModule(cdc codec.Marshaler, keeper keeper.Keeper) AppModule {
+func NewAppModule(cdc codec.Marshaler,
+	keeper keeper.DefaultKeeper,
+	storage keeper.Storage,
+	appKeys *common.DefaultAppKeys,
+	txSubmit common.TxSubmit,
+	processor *Processor,
+	globalData common.GlobalData,
+) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),
+		txSubmit:       txSubmit,
+		processor:      processor,
 		keeper:         keeper,
+		storage:        storage,
+		appKeys:        appKeys,
+		globalData:     globalData,
 	}
 }
 
@@ -118,7 +137,7 @@ func (am AppModule) Name() string {
 
 // Route returns the capability module's message routing key.
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.txSubmit, am.processor))
 }
 
 // QuerierRoute returns the capability module's query routing key.
@@ -132,7 +151,7 @@ func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sd
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterQueryServer(cfg.QueryServer(), am.keeper)
+	types.RegisterTssQueryServer(cfg.QueryServer(), keeper.NewGrpcQuerier(am.storage))
 }
 
 // RegisterInvariants registers the capability module's invariants.
@@ -157,10 +176,14 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json
 }
 
 // BeginBlock executes all ABCI BeginBlock logic respective to the capability module.
-func (am AppModule) BeginBlock(_ sdk.Context, _ abci.RequestBeginBlock) {}
+func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
+	am.processor.BeginBlock(ctx, req.Header.Height)
+}
 
 // EndBlock executes all ABCI EndBlock logic respective to the capability module. It
 // returns no validator updates.
-func (am AppModule) EndBlock(_ sdk.Context, _ abci.RequestEndBlock) []abci.ValidatorUpdate {
+func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
+	am.processor.EndBlock(ctx)
+
 	return []abci.ValidatorUpdate{}
 }
