@@ -94,7 +94,7 @@ func (p *Processor) Init() {
 	p.connectToDheart()
 	p.connectToDeyes()
 
-	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.appKeys, p.publicDb, p.config)
+	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.appKeys, p.publicDb, p.privateDb, p.config)
 }
 
 // Connect to Dheart server and set private key for dheart. Note that this is the tendermint private

@@ -511,7 +511,7 @@ func getTxOutSig(store cstypes.KVStore, chain string, hashWithSig string) *types
 	return tx
 }
 
-// Gas Price
+///// Gas Price
 func saveGasPrice(store cstypes.KVStore, msg *types.GasPriceMsg) *types.GasPriceRecord {
 	log.Debug("Saving gas price ...")
 	var (
@@ -533,6 +533,13 @@ func saveGasPrice(store cstypes.KVStore, msg *types.GasPriceMsg) *types.GasPrice
 			return nil
 		}
 	} else {
+		// Make sure no duplicated message from same signer
+		for _, m := range currentRecord.Messages {
+			if strings.EqualFold(strings.ToLower(m.Signer), strings.ToLower(msg.Signer)) {
+				return nil
+			}
+		}
+
 		record = &types.GasPriceRecord{
 			Chain:       msg.Chain,
 			BlockHeight: msg.BlockHeight,

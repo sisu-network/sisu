@@ -1,4 +1,4 @@
-package tss
+package sisu
 
 import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"

@@ -23,7 +23,7 @@ func (msg *GasPriceMsg) Route() string {
 
 // Type ...
 func (msg *GasPriceMsg) Type() string {
-	return MsgTypeContractsWithSigner
+	return MsgTypeGasPriceWithSigner
 }
 
 // GetSigners ...

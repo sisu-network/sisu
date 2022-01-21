@@ -8,7 +8,6 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	dbm "github.com/tendermint/tm-db"
-	"sort"
 	"strconv"
 )
 
@@ -69,7 +68,7 @@ type Storage interface {
 	IsTxOutConfirmExisted(outChain, hash string) bool
 
 	// Gas Price
-	SetGasPrice(msg *types.GasPriceMsg, totalValidator int)
+	SetGasPrice(msg *types.GasPriceMsg) *types.GasPriceRecord
 	SaveNetworkGasPrice(chain string, gasPrice int64)
 	GetNetworkGasPrice(chain string) int64
 }
@@ -322,25 +321,10 @@ func (db *defaultPrivateDb) IsTxOutConfirmExisted(chain, hash string) bool {
 	return isTxOutConfirmExisted(store, chain, hash)
 }
 
-func (db *defaultPrivateDb) SetGasPrice(msg *types.GasPriceMsg, totalValidator int) {
+func (db *defaultPrivateDb) SetGasPrice(msg *types.GasPriceMsg) *types.GasPriceRecord {
 	store := db.prefixes[string(prefixGasPrice)]
 	savedRecord := saveGasPrice(store, msg)
-	if savedRecord == nil || !savedRecord.ReachConsensus(totalValidator) {
-		return
-	}
-
-	// Only save network gas price if reached consensus
-	listGasPrices := make([]int64, 0)
-	for _, m := range savedRecord.Messages {
-		listGasPrices = append(listGasPrices, m.GasPrice)
-	}
-
-	sort.SliceStable(listGasPrices, func(i, j int) bool {
-		return listGasPrices[i] < listGasPrices[j]
-	})
-
-	median := listGasPrices[len(listGasPrices)/2]
-	db.SaveNetworkGasPrice(savedRecord.Chain, median)
+	return savedRecord
 }
 
 func (db *defaultPrivateDb) SaveNetworkGasPrice(chain string, gasPrice int64) {
