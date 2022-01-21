@@ -12,7 +12,7 @@ import (
 	dbm "github.com/tendermint/tm-db"
 )
 
-// go:generate mockgen -source x/tss/keeper/storage.go -destination=tests/mock/tss/storage.go -package=mock
+// go:generate mockgen -source x/sisu/keeper/storage.go -destination=tests/mock/tss/storage.go -package=mock
 type Storage interface {
 	// Debug
 	PrintStore(name string)
@@ -322,6 +322,7 @@ func (db *defaultPrivateDb) IsTxOutConfirmExisted(chain, hash string) bool {
 	return isTxOutConfirmExisted(store, chain, hash)
 }
 
+///// GasPrice
 func (db *defaultPrivateDb) SetGasPrice(msg *types.GasPriceMsg) *types.GasPriceRecord {
 	store := db.prefixes[string(prefixGasPrice)]
 	savedRecord := saveGasPrice(store, msg)
