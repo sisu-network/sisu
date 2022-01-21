@@ -32,12 +32,6 @@ func loadConfig() {
 
 	log.Info("Sisu home = ", app.SisuHome)
 	log.Info("Main App home = ", app.MainAppHome)
-
-	// Print IP address
-	// _, err = server.ExternalIP()
-	// if err != nil {
-	// 	panic(err)
-	// }
 }
 
 func main() {

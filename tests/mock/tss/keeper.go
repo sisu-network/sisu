@@ -9,7 +9,7 @@ import (
 
 	types "github.com/cosmos/cosmos-sdk/types"
 	gomock "github.com/golang/mock/gomock"
-	types0 "github.com/sisu-network/sisu/x/tss/types"
+	types0 "github.com/sisu-network/sisu/x/sisu/types"
 )
 
 // MockKeeper is a mock of Keeper interface.

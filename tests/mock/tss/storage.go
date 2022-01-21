@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	types "github.com/sisu-network/sisu/x/tss/types"
+	types "github.com/sisu-network/sisu/x/sisu/types"
 )
 
 // MockStorage is a mock of Storage interface.

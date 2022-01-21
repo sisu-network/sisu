@@ -1,9 +1,30 @@
 syntax = "proto3";
 package types;
 
-// Query defines the gRPC querier service.
-service Query {
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 
+// import "gogoproto/gogo.proto";
+import "sisu/contract.proto";
+
+service TssQuery {
+  rpc AllPubKeys(QueryAllPubKeysRequest) returns (QueryAllPubKeysResponse) {
+  }
+
+  rpc QueryContract(QueryContractRequest) returns (QueryContractResponse) {}
 }
 
-// this line is used by starport scaffolding # 3
+message QueryAllPubKeysRequest {
+}
+
+message QueryAllPubKeysResponse {
+  map<string, bytes> pubkeys = 1;
+}
+
+message QueryContractRequest {
+  string chain = 1;
+  string hash = 2;
+}
+
+message QueryContractResponse {
+  Contract contract = 1;
+}
