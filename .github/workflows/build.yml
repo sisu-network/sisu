@@ -32,7 +32,6 @@ jobs:
 
       - name: Compile
         run: |
-          cd cmd/sisud
-          go build .
+          go build cmd/sisud/main.go
       - name: Unit test
         run: make test
