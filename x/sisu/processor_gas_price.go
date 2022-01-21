@@ -1,11 +1,12 @@
 package sisu
 
 import (
+	"sort"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	etypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
-	"sort"
 )
 
 func (p *Processor) OnUpdateGasPriceRequest(request *etypes.GasPriceRequest) {

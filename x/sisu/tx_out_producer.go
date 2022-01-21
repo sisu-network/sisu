@@ -32,7 +32,7 @@ type DefaultTxOutputProducer struct {
 	worldState WorldState
 	appKeys    common.AppKeys
 	publicDb   keeper.Storage
-	privateDb keeper.Storage
+	privateDb  keeper.Storage
 	tssConfig  config.TssConfig
 }
 
@@ -42,7 +42,7 @@ func NewTxOutputProducer(worldState WorldState, appKeys common.AppKeys, publicDb
 		appKeys:    appKeys,
 		tssConfig:  tssConfig,
 		publicDb:   publicDb,
-		privateDb: privateDb,
+		privateDb:  privateDb,
 	}
 }
 

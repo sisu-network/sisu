@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"strconv"
+
 	adstore "github.com/cosmos/cosmos-sdk/store/dbadapter"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	cosmostypes "github.com/cosmos/cosmos-sdk/store/types"
@@ -8,7 +10,6 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	dbm "github.com/tendermint/tm-db"
-	"strconv"
 )
 
 // go:generate mockgen -source x/tss/keeper/storage.go -destination=tests/mock/tss/storage.go -package=mock
