@@ -1,5 +1,5 @@
 build/
-./sisu
+/sisu
 output/
 tmp/
 .env
