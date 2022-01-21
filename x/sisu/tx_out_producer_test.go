@@ -107,7 +107,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 			deyesClients: nil,
 		}
 
-		txOutProducer := NewTxOutputProducer(&worldState, mockAppKeys, mockPublicDb,
+		txOutProducer := NewTxOutputProducer(&worldState, mockAppKeys, mockPublicDb, mockPublicDb,
 			config.TssConfig{
 				SupportedChains: map[string]config.TssChainConfig{
 					"ganache1": {

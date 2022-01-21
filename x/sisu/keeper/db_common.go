@@ -512,7 +512,7 @@ func getTxOutSig(store cstypes.KVStore, chain string, hashWithSig string) *types
 }
 
 ///// Gas Price
-func saveGasPrice(store cstypes.KVStore, msg *types.GasPriceMsg) *types.GasPriceRecord {
+func saveGasPrice(store cstypes.KVStore, msg *types.GasPriceMsg) {
 	log.Debug("Saving gas price ...")
 	var (
 		record      *types.GasPriceRecord
@@ -523,42 +523,30 @@ func saveGasPrice(store cstypes.KVStore, msg *types.GasPriceMsg) *types.GasPrice
 	currentRecord := getGasPriceRecord(store, msg.Chain, msg.BlockHeight)
 	if currentRecord == nil {
 		record = &types.GasPriceRecord{
-			Chain:       msg.Chain,
-			BlockHeight: msg.BlockHeight,
-			Messages:    []*types.GasPriceMsg{msg},
+			Messages: []*types.GasPriceMsg{msg},
 		}
 		savedRecord, err = record.Marshal()
 		if err != nil {
 			log.Error(err)
-			return nil
+			return
 		}
 	} else {
-		// Make sure no duplicated message from same signer
-		for _, m := range currentRecord.Messages {
-			if strings.EqualFold(strings.ToLower(m.Signer), strings.ToLower(msg.Signer)) {
-				return nil
-			}
-		}
-
 		record = &types.GasPriceRecord{
-			Chain:       msg.Chain,
-			BlockHeight: msg.BlockHeight,
-			Messages:    append(currentRecord.Messages, msg),
+			Messages: append(currentRecord.Messages, msg),
 		}
 		savedRecord, err = record.Marshal()
 		if err != nil {
 			log.Error(err)
-			return nil
+			return
 		}
 	}
 
 	if savedRecord == nil {
-		return nil
+		return
 	}
 
 	store.Set(key, savedRecord)
 	log.Debug("Saved gas price successfully ...")
-	return record
 }
 
 func getGasPriceRecord(store cstypes.KVStore, chain string, height int64) *types.GasPriceRecord {

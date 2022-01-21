@@ -2,6 +2,7 @@ package sisu
 
 import (
 	"sort"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	etypes "github.com/sisu-network/deyes/types"
@@ -23,7 +24,17 @@ func (p *Processor) OnUpdateGasPriceRequest(request *etypes.GasPriceRequest) {
 
 func (p *Processor) deliverGasPriceMsg(ctx sdk.Context, msg *types.GasPriceMsg) ([]byte, error) {
 	log.Debug("Setting gas price ...")
-	savedRecord := p.privateDb.SetGasPrice(msg)
+	currentPriceRecord := p.privateDb.GetGasPriceRecord(msg.Chain, msg.BlockHeight)
+	if currentPriceRecord != nil {
+		for _, m := range currentPriceRecord.Messages {
+			if strings.EqualFold(strings.ToLower(m.Signer), strings.ToLower(msg.Signer)) {
+				return nil, nil
+			}
+		}
+	}
+
+	p.privateDb.SetGasPrice(msg)
+	savedRecord := p.privateDb.GetGasPriceRecord(msg.Chain, msg.BlockHeight)
 	totalValidator := len(p.globalData.GetValidatorSet())
 	if savedRecord == nil || !savedRecord.ReachConsensus(totalValidator) {
 		return nil, nil
@@ -40,6 +51,6 @@ func (p *Processor) deliverGasPriceMsg(ctx sdk.Context, msg *types.GasPriceMsg) 
 	})
 
 	median := listGasPrices[len(listGasPrices)/2]
-	p.privateDb.SaveNetworkGasPrice(savedRecord.Chain, median)
+	p.privateDb.SaveNetworkGasPrice(msg.Chain, median)
 	return nil, nil
 }

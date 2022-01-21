@@ -10,7 +10,7 @@ import (
 
 var _ Keeper = (*DefaultKeeper)(nil)
 
-// go:generate mockgen -source x/tss/keeper/keeper.go -destination=tests/mock/tss/keeper.go -package=mock
+// go:generate mockgen -source x/sisu/keeper/keeper.go -destination=tests/mock/tss/keeper.go -package=mock
 type Keeper interface {
 	// Debug
 	PrintStore(ctx sdk.Context, name string)

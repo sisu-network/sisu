@@ -69,7 +69,8 @@ type Storage interface {
 	IsTxOutConfirmExisted(outChain, hash string) bool
 
 	// Gas Price
-	SetGasPrice(msg *types.GasPriceMsg) *types.GasPriceRecord
+	SetGasPrice(msg *types.GasPriceMsg)
+	GetGasPriceRecord(chain string, height int64) *types.GasPriceRecord
 	SaveNetworkGasPrice(chain string, gasPrice int64)
 	GetNetworkGasPrice(chain string) int64
 }
@@ -323,10 +324,14 @@ func (db *defaultPrivateDb) IsTxOutConfirmExisted(chain, hash string) bool {
 }
 
 ///// GasPrice
-func (db *defaultPrivateDb) SetGasPrice(msg *types.GasPriceMsg) *types.GasPriceRecord {
+func (db *defaultPrivateDb) SetGasPrice(msg *types.GasPriceMsg) {
 	store := db.prefixes[string(prefixGasPrice)]
-	savedRecord := saveGasPrice(store, msg)
-	return savedRecord
+	saveGasPrice(store, msg)
+}
+
+func (db *defaultPrivateDb) GetGasPriceRecord(chain string, height int64) *types.GasPriceRecord {
+	store := db.prefixes[string(prefixGasPrice)]
+	return getGasPriceRecord(store, chain, height)
 }
 
 func (db *defaultPrivateDb) SaveNetworkGasPrice(chain string, gasPrice int64) {
