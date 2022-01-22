@@ -23,12 +23,13 @@ import (
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
 
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
-	"github.com/tendermint/tendermint/types"
+	ttypes "github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 )
 
@@ -94,6 +95,7 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 	)
 
 	inBuf := bufio.NewReader(cmd.InOrStdin())
+	valAddrs := make([]sdk.ValAddress, numValidators)
 	// generate private keys, node IDs, and initial transactions
 	for i := 0; i < numValidators; i++ {
 		nodeDirName := fmt.Sprintf("%s%d", nodeDirPrefix, i)
@@ -174,6 +176,7 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 			stakingtypes.NewCommissionRates(sdk.OneDec(), sdk.OneDec(), sdk.OneDec()),
 			sdk.OneInt(),
 		)
+		valAddrs[i] = sdk.ValAddress(addr)
 		if err != nil {
 			return nil, err
 		}
@@ -210,7 +213,7 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 		generateSisuToml(settings, i, nodeDir)
 	}
 
-	if err := initGenFiles(clientCtx, mbm, chainID, genAccounts, genBalances, genFiles, numValidators); err != nil {
+	if err := initGenFiles(clientCtx, mbm, chainID, genAccounts, genBalances, genFiles, valPubKeys, valAddrs, numValidators); err != nil {
 		return nil, err
 	}
 
@@ -229,7 +232,7 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 func initGenFiles(
 	clientCtx client.Context, mbm module.BasicManager, chainID string,
 	genAccounts []authtypes.GenesisAccount, genBalances []banktypes.Balance,
-	genFiles []string, numValidators int,
+	genFiles []string, valPubKeys []cryptotypes.PubKey, valAddrs []sdk.ValAddress, numValidators int,
 ) error {
 
 	appGenState := mbm.DefaultGenesis(clientCtx.JSONMarshaler)
@@ -267,12 +270,33 @@ func initGenFiles(
 	mintGenState.Params.MintDenom = common.SisuCoinName
 	appGenState[minttypes.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(&mintGenState)
 
+	// Genesis for the Sisu app
+	nodes := make([]*types.Node, len(genAccounts))
+	for i, key := range valPubKeys {
+		node := &types.Node{
+			Key: &types.Pubkey{
+				Type:  key.Type(),
+				Bytes: key.Bytes(),
+			},
+			ValAddress: valAddrs[i].String(),
+		}
+		nodes[i] = node
+		fmt.Println("key.Bytes() = ", key.Bytes())
+	}
+
+	sisuGenState := types.DefaultGenesis()
+	sisuGenState.Nodes = nodes
+
+	appGenState[types.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(sisuGenState)
+
+	/////////////
+
 	appGenStateJSON, err := json.MarshalIndent(appGenState, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	genDoc := types.GenesisDoc{
+	genDoc := ttypes.GenesisDoc{
 		ChainID:    chainID,
 		AppState:   appGenStateJSON,
 		Validators: nil,
@@ -307,7 +331,7 @@ func collectGenFiles(
 		nodeID, valPubKey := nodeIDs[i], valPubKeys[i]
 		initCfg := genutiltypes.NewInitConfig(chainID, gentxsDir, nodeID, valPubKey)
 
-		genDoc, err := types.GenesisDocFromFile(nodeConfig.GenesisFile())
+		genDoc, err := ttypes.GenesisDocFromFile(nodeConfig.GenesisFile())
 		if err != nil {
 			return err
 		}
