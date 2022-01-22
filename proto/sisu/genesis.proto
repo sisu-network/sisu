@@ -3,7 +3,8 @@ package types;
 
 option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 
-// GenesisState defines the capability module's genesis state.
+import "sisu/node.proto";
+
 message GenesisState {
-    // this line is used by starport scaffolding # genesis/proto/state
+  repeated Node nodes = 1;
 }

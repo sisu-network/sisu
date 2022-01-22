@@ -2,7 +2,7 @@ package types
 
 const (
 	// ModuleName defines the module name
-	ModuleName = "tss"
+	ModuleName = "sisu"
 
 	// StoreKey defines the primary module store key
 	StoreKey = ModuleName
