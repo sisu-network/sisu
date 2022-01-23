@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/tx"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -18,17 +18,15 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
-	genutiltypes "github.com/cosmos/cosmos-sdk/x/genutil/types"
-	minttypes "github.com/cosmos/cosmos-sdk/x/mint/types"
-	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
 
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	tmrand "github.com/tendermint/tendermint/libs/rand"
-	"github.com/tendermint/tendermint/types"
+	ttypes "github.com/tendermint/tendermint/types"
 	tmtime "github.com/tendermint/tendermint/types/time"
 )
 
@@ -60,7 +58,6 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 	cmd := settings.cmd
 	tmConfig := settings.tmConfig
 	mbm := settings.mbm
-	genBalIterator := settings.genBalIterator
 	outputDir := settings.outputDir
 	minGasPrices := settings.minGasPrices
 	nodeDirPrefix := settings.nodeDirPrefix
@@ -94,12 +91,13 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 	)
 
 	inBuf := bufio.NewReader(cmd.InOrStdin())
+	valAddrs := make([]sdk.ValAddress, numValidators)
+	memos := make([]string, numValidators)
 	// generate private keys, node IDs, and initial transactions
 	for i := 0; i < numValidators; i++ {
 		nodeDirName := fmt.Sprintf("%s%d", nodeDirPrefix, i)
 		nodeDir := filepath.Join(outputDir, nodeDirName)
 		mainAppDir := filepath.Join(nodeDir, nodeDaemonHome)
-		gentxsDir := filepath.Join(outputDir, "gentxs")
 
 		tmConfig.SetRoot(mainAppDir)
 		tmConfig.RPC.ListenAddress = "tcp://0.0.0.0:26657"
@@ -126,6 +124,7 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 
 		memo := fmt.Sprintf("%s@%s:26656", nodeIDs[i], ip)
 		genFiles = append(genFiles, tmConfig.GenesisFile())
+		memos[i] = memo
 
 		kb, err := keyring.New(sdk.KeyringServiceName(), keyringBackend, mainAppDir, inBuf)
 		if err != nil {
@@ -165,43 +164,8 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 		genBalances = append(genBalances, banktypes.Balance{Address: addr.String(), Coins: coins.Sort()})
 		genAccounts = append(genAccounts, authtypes.NewBaseAccount(addr, nil, 0, 0))
 
-		valTokens := sdk.TokensFromConsensusPower(100)
-		createValMsg, err := stakingtypes.NewMsgCreateValidator(
-			sdk.ValAddress(addr),
-			valPubKeys[i],
-			sdk.NewCoin(common.SisuCoinName, valTokens),
-			stakingtypes.NewDescription(nodeDirName, "", "", "", ""),
-			stakingtypes.NewCommissionRates(sdk.OneDec(), sdk.OneDec(), sdk.OneDec()),
-			sdk.OneInt(),
-		)
+		valAddrs[i] = sdk.ValAddress(addr)
 		if err != nil {
-			return nil, err
-		}
-
-		txBuilder := clientCtx.TxConfig.NewTxBuilder()
-		if err := txBuilder.SetMsgs(createValMsg); err != nil {
-			return nil, err
-		}
-
-		txBuilder.SetMemo(memo)
-
-		txFactory := tx.Factory{}
-		txFactory = txFactory.
-			WithChainID(chainID).
-			WithMemo(memo).
-			WithKeybase(kb).
-			WithTxConfig(clientCtx.TxConfig)
-
-		if err := tx.Sign(txFactory, nodeDirName, txBuilder, true); err != nil {
-			return nil, err
-		}
-
-		txBz, err := clientCtx.TxConfig.TxJSONEncoder()(txBuilder.GetTx())
-		if err != nil {
-			return nil, err
-		}
-
-		if err := writeFile(fmt.Sprintf("%v.json", nodeDirName), gentxsDir, txBz); err != nil {
 			return nil, err
 		}
 
@@ -210,13 +174,13 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 		generateSisuToml(settings, i, nodeDir)
 	}
 
-	if err := initGenFiles(clientCtx, mbm, chainID, genAccounts, genBalances, genFiles, numValidators); err != nil {
+	if err := initGenFiles(clientCtx, mbm, chainID, genAccounts, genBalances, genFiles, valPubKeys, valAddrs, numValidators); err != nil {
 		return nil, err
 	}
 
 	err := collectGenFiles(
-		clientCtx, tmConfig, chainID, nodeIDs, valPubKeys, numValidators,
-		outputDir, nodeDirPrefix, nodeDaemonHome, genBalIterator,
+		clientCtx, tmConfig, chainID, nodeIDs, numValidators,
+		outputDir, nodeDirPrefix, nodeDaemonHome, memos,
 	)
 	if err != nil {
 		return nil, err
@@ -229,7 +193,7 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 func initGenFiles(
 	clientCtx client.Context, mbm module.BasicManager, chainID string,
 	genAccounts []authtypes.GenesisAccount, genBalances []banktypes.Balance,
-	genFiles []string, numValidators int,
+	genFiles []string, valPubKeys []cryptotypes.PubKey, valAddrs []sdk.ValAddress, numValidators int,
 ) error {
 
 	appGenState := mbm.DefaultGenesis(clientCtx.JSONMarshaler)
@@ -253,26 +217,32 @@ func initGenFiles(
 	bankGenState.Balances = genBalances
 	appGenState[banktypes.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(&bankGenState)
 
-	// Set the staking denom
-	var stakingGenstate stakingtypes.GenesisState
-	clientCtx.JSONMarshaler.MustUnmarshalJSON(appGenState[stakingtypes.ModuleName], &stakingGenstate)
+	// Genesis for the Sisu app
+	nodes := make([]*types.Node, len(genAccounts))
+	for i, key := range valPubKeys {
+		node := &types.Node{
+			Key: &types.Pubkey{
+				Type:  key.Type(),
+				Bytes: key.Bytes(),
+			},
+			ValAddress: valAddrs[i].String(),
+		}
+		nodes[i] = node
+	}
 
-	stakingGenstate.Params.BondDenom = common.SisuCoinName
-	appGenState[stakingtypes.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(&stakingGenstate)
+	sisuGenState := types.DefaultGenesis()
+	sisuGenState.Nodes = nodes
 
-	// Set denom for mint module
-	var mintGenState minttypes.GenesisState
-	clientCtx.JSONMarshaler.MustUnmarshalJSON(appGenState[minttypes.ModuleName], &mintGenState)
+	appGenState[types.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(sisuGenState)
 
-	mintGenState.Params.MintDenom = common.SisuCoinName
-	appGenState[minttypes.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(&mintGenState)
+	/////////////
 
 	appGenStateJSON, err := json.MarshalIndent(appGenState, "", "  ")
 	if err != nil {
 		return err
 	}
 
-	genDoc := types.GenesisDoc{
+	genDoc := ttypes.GenesisDoc{
 		ChainID:    chainID,
 		AppState:   appGenStateJSON,
 		Validators: nil,
@@ -289,8 +259,9 @@ func initGenFiles(
 
 func collectGenFiles(
 	clientCtx client.Context, nodeConfig *tmconfig.Config, chainID string,
-	nodeIDs []string, valPubKeys []cryptotypes.PubKey, numValidators int,
-	outputDir, nodeDirPrefix, nodeDaemonHome string, genBalIterator banktypes.GenesisBalancesIterator,
+	nodeIDs []string, numValidators int,
+	outputDir, nodeDirPrefix, nodeDaemonHome string,
+	memos []string,
 ) error {
 
 	var appState json.RawMessage
@@ -299,21 +270,30 @@ func collectGenFiles(
 	for i := 0; i < numValidators; i++ {
 		nodeDirName := fmt.Sprintf("%s%d", nodeDirPrefix, i)
 		nodeDir := filepath.Join(outputDir, nodeDirName, nodeDaemonHome)
-		gentxsDir := filepath.Join(outputDir, "gentxs")
 		nodeConfig.Moniker = nodeDirName
 
 		nodeConfig.SetRoot(nodeDir)
 
-		nodeID, valPubKey := nodeIDs[i], valPubKeys[i]
-		initCfg := genutiltypes.NewInitConfig(chainID, gentxsDir, nodeID, valPubKey)
-
-		genDoc, err := types.GenesisDocFromFile(nodeConfig.GenesisFile())
+		genDoc, err := ttypes.GenesisDocFromFile(nodeConfig.GenesisFile())
 		if err != nil {
 			return err
 		}
 
-		nodeAppState, err := genutil.GenAppStateFromConfig(clientCtx.JSONMarshaler,
-			clientCtx.TxConfig, nodeConfig, initCfg, *genDoc, genBalIterator)
+		persistenPeers := make([]string, 0, numValidators-1)
+		for j, memo := range memos {
+			if i == j {
+				continue
+			}
+
+			persistenPeers = append(persistenPeers, memo)
+		}
+
+		nodeAppState, err := GenAppStateFromConfig(
+			clientCtx.JSONMarshaler,
+			nodeConfig,
+			*genDoc,
+			strings.Join(persistenPeers, ","),
+		)
 		if err != nil {
 			return err
 		}

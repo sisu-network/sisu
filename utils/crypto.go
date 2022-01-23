@@ -4,7 +4,12 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"fmt"
 	"io"
+
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
+	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 )
 
 func AESDEncrypt(message []byte, key []byte) ([]byte, error) {
@@ -37,4 +42,20 @@ func AESDEncrypt(message []byte, key []byte) ([]byte, error) {
 	// slice. The nonce must be NonceSize() bytes long and unique for all
 	// time, for a given key.
 	return gcm.Seal(nonce, nonce, message, nil), nil
+}
+
+func GetCosmosPubKey(keyType string, bz []byte) (cryptotypes.PubKey, error) {
+	switch keyType {
+	case "ed25519":
+		edKey := &ed25519.PubKey{}
+		err := edKey.UnmarshalAmino(bz)
+		return edKey, err
+
+	case "secp256k1":
+		secpKey := &secp256k1.PubKey{}
+		err := secpKey.UnmarshalAmino(bz)
+		return secpKey, err
+	}
+
+	return nil, fmt.Errorf("Cannot find public key")
 }
