@@ -73,7 +73,8 @@ func getContractAddressKey(chain string, address string) []byte {
 }
 
 func getGasPriceKey(chain string, height int64) []byte {
-	return []byte(fmt.Sprintf("%s__%s", chain, height))
+	// chain, height
+	return []byte(fmt.Sprintf("%s__%d", chain, height))
 }
 
 ///// TxREcord
