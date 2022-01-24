@@ -549,7 +549,7 @@ func (app *App) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.Respo
 // of the processor.
 func (app *App) setupApiServer(c config.Config) {
 	handler := ethRpc.NewServer()
-	handler.RegisterName("tss", tss.NewApi(app.tssProcessor, &app.tssKeeper))
+	handler.RegisterName("tss", tss.NewApi(app.tssProcessor))
 
 	appConfig := c.Sisu
 	s := server.NewServer(handler, appConfig.ApiHost, appConfig.ApiPort)

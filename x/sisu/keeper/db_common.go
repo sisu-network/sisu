@@ -23,6 +23,8 @@ var (
 	prefixTxOutSig               = []byte{0x0A}
 	prefixTxOutConfirm           = []byte{0x0B}
 	prefixContractName           = []byte{0x0C}
+	prefixGasPrice               = []byte{0x0D}
+	prefixNetworkGasPrice        = []byte{0x0E}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -68,6 +70,11 @@ func getTxOutConfirmKey(outChain string, outHash string) []byte {
 func getContractAddressKey(chain string, address string) []byte {
 	// chain, address
 	return []byte(fmt.Sprintf("%s__%s", chain, address))
+}
+
+func getGasPriceKey(chain string, height int64) []byte {
+	// chain, height
+	return []byte(fmt.Sprintf("%s__%d", chain, height))
 }
 
 ///// TxREcord
@@ -503,6 +510,56 @@ func getTxOutSig(store cstypes.KVStore, chain string, hashWithSig string) *types
 	}
 
 	return tx
+}
+
+///// Gas Price
+func saveGasPrice(store cstypes.KVStore, msg *types.GasPriceMsg) {
+	log.Debug("Saving gas price ...")
+	var (
+		record      *types.GasPriceRecord
+		savedRecord []byte
+		err         error
+	)
+	key := getGasPriceKey(msg.Chain, msg.BlockHeight)
+	currentRecord := getGasPriceRecord(store, msg.Chain, msg.BlockHeight)
+	if currentRecord == nil {
+		record = &types.GasPriceRecord{
+			Messages: []*types.GasPriceMsg{msg},
+		}
+		savedRecord, err = record.Marshal()
+		if err != nil {
+			log.Error(err)
+			return
+		}
+	} else {
+		record = &types.GasPriceRecord{
+			Messages: append(currentRecord.Messages, msg),
+		}
+		savedRecord, err = record.Marshal()
+		if err != nil {
+			log.Error(err)
+			return
+		}
+	}
+
+	if savedRecord == nil {
+		return
+	}
+
+	store.Set(key, savedRecord)
+	log.Debug("Saved gas price successfully ...")
+}
+
+func getGasPriceRecord(store cstypes.KVStore, chain string, height int64) *types.GasPriceRecord {
+	key := getGasPriceKey(chain, height)
+	bz := store.Get(key)
+	record := &types.GasPriceRecord{}
+	if err := record.Unmarshal(bz); err != nil {
+		log.Error(err)
+		return nil
+	}
+
+	return record
 }
 
 ///// TxOutConfirm

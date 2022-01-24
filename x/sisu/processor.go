@@ -94,7 +94,7 @@ func (p *Processor) Init() {
 	p.connectToDheart()
 	p.connectToDeyes()
 
-	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.appKeys, p.publicDb, p.config)
+	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.appKeys, p.publicDb, p.privateDb, p.config)
 }
 
 // Connect to Dheart server and set private key for dheart. Note that this is the tendermint private
@@ -187,9 +187,9 @@ func (p *Processor) setContext(ctx sdk.Context) {
 // shouldProcessMsg counts how many validators have posted the same transaction to blockchain before
 // processing.
 //
-// When adding new message type, remember to add its serialization in the GetTxRecodrdHash.
+// When adding new message type, remember to add its serialization in the GetTxRecordHash.
 func (p *Processor) shouldProcessMsg(ctx sdk.Context, msg sdk.Msg) (bool, []byte) {
-	hash, signer, err := keeper.GetTxRecodrdHash(msg)
+	hash, signer, err := keeper.GetTxRecordHash(msg)
 	if err != nil {
 		log.Error("failed to get tx hash, err = ", err)
 		return false, hash

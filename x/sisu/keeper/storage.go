@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"strconv"
+
 	adstore "github.com/cosmos/cosmos-sdk/store/dbadapter"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	cosmostypes "github.com/cosmos/cosmos-sdk/store/types"
@@ -10,7 +12,7 @@ import (
 	dbm "github.com/tendermint/tm-db"
 )
 
-// go:generate mockgen -source x/tss/keeper/storage.go -destination=tests/mock/tss/storage.go -package=mock
+// go:generate mockgen -source x/sisu/keeper/storage.go -destination=tests/mock/tss/storage.go -package=mock
 type Storage interface {
 	// Debug
 	PrintStore(name string)
@@ -65,6 +67,12 @@ type Storage interface {
 	// TxOutConfirm
 	SaveTxOutConfirm(msg *types.TxOutConfirm)
 	IsTxOutConfirmExisted(outChain, hash string) bool
+
+	// Gas Price
+	SetGasPrice(msg *types.GasPriceMsg)
+	GetGasPriceRecord(chain string, height int64) *types.GasPriceRecord
+	SaveNetworkGasPrice(chain string, gasPrice int64)
+	GetNetworkGasPrice(chain string) int64
 }
 
 type defaultPrivateDb struct {
@@ -116,6 +124,10 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes[string(prefixTxOutConfirm)] = prefix.NewStore(parent, prefixTxOutConfirm)
 	// prefixContractName
 	prefixes[string(prefixContractName)] = prefix.NewStore(parent, prefixContractName)
+	// prefixGasPrice
+	prefixes[string(prefixGasPrice)] = prefix.NewStore(parent, prefixGasPrice)
+	// prefixNetworkGasPrice
+	prefixes[string(prefixNetworkGasPrice)] = prefix.NewStore(parent, prefixNetworkGasPrice)
 
 	return prefixes
 }
@@ -309,6 +321,38 @@ func (db *defaultPrivateDb) SaveTxOutConfirm(msg *types.TxOutConfirm) {
 func (db *defaultPrivateDb) IsTxOutConfirmExisted(chain, hash string) bool {
 	store := db.prefixes[string(prefixTxOutConfirm)]
 	return isTxOutConfirmExisted(store, chain, hash)
+}
+
+///// GasPrice
+func (db *defaultPrivateDb) SetGasPrice(msg *types.GasPriceMsg) {
+	store := db.prefixes[string(prefixGasPrice)]
+	saveGasPrice(store, msg)
+}
+
+func (db *defaultPrivateDb) GetGasPriceRecord(chain string, height int64) *types.GasPriceRecord {
+	store := db.prefixes[string(prefixGasPrice)]
+	return getGasPriceRecord(store, chain, height)
+}
+
+func (db *defaultPrivateDb) SaveNetworkGasPrice(chain string, gasPrice int64) {
+	store := db.prefixes[string(prefixNetworkGasPrice)]
+	store.Set([]byte(chain), []byte(strconv.FormatInt(gasPrice, 10)))
+}
+
+func (db *defaultPrivateDb) GetNetworkGasPrice(chain string) int64 {
+	store := db.prefixes[string(prefixNetworkGasPrice)]
+	bz := store.Get([]byte(chain))
+	if bz == nil {
+		log.Warnf("Gas price for chain %s is not found", chain)
+		return -1
+	}
+
+	gas, err := strconv.ParseInt(string(bz), 10, 64)
+	if err != nil {
+		log.Error(err)
+		return -1
+	}
+	return gas
 }
 
 ///// Debug

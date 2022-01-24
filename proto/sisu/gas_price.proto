@@ -1,0 +1,15 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message GasPriceMsg {
+  string chain = 1;
+  int64 blockHeight = 2;
+  int64 gasPrice = 3;
+  string signer = 4;
+}
+
+message GasPriceRecord {
+  repeated GasPriceMsg messages = 3;
+}

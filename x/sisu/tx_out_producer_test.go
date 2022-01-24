@@ -31,6 +31,13 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 		Hash:  hash,
 	}
 
+	ctrl := gomock.NewController(t)
+	t.Cleanup(func() {
+		ctrl.Finish()
+	})
+	mockPrivateDb := mocktss.NewMockStorage(ctrl)
+	mockPrivateDb.EXPECT().GetNetworkGasPrice(gomock.Any()).Return(int64(400_000_000_000))
+
 	worldState := NewWorldState(config.TssConfig{}, nil, nil)
 	txOutProducer := DefaultTxOutputProducer{
 		worldState: worldState,
@@ -42,6 +49,7 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 				},
 			},
 		},
+		privateDb: mockPrivateDb,
 	}
 
 	tx := txOutProducer.getContractTx(contract, 100)
@@ -78,7 +86,10 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 
 		mockAppKeys := mock.NewMockAppKeys(ctrl)
 		accAddress := []byte{1, 2, 3}
-		mockAppKeys.EXPECT().GetSignerAddress().Return(accAddress).Times(1)
+		mockAppKeys.EXPECT().GetSignerAddress().Return(accAddress).AnyTimes()
+
+		mockPrivateDb := mocktss.NewMockStorage(ctrl)
+		mockPrivateDb.EXPECT().GetNetworkGasPrice(gomock.Any()).Return(int64(10_000_000)).Times(1)
 
 		amount := big.NewInt(100)
 		gasLimit := uint64(100)
@@ -107,7 +118,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 			deyesClients: nil,
 		}
 
-		txOutProducer := NewTxOutputProducer(&worldState, mockAppKeys, mockPublicDb,
+		txOutProducer := NewTxOutputProducer(&worldState, mockAppKeys, mockPublicDb, mockPrivateDb,
 			config.TssConfig{
 				SupportedChains: map[string]config.TssChainConfig{
 					"ganache1": {
@@ -145,9 +156,12 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		mockPublicDb.EXPECT().IsContractExistedAtAddress("eth", gomock.Any()).Return(true).Times(1)
 		mockPublicDb.EXPECT().GetLatestContractAddressByName(gomock.Any(), ContractErc20Gateway).Return("0x12345").Times(1)
 
+		mockPrivateDb := mocktss.NewMockStorage(ctrl)
+		mockPrivateDb.EXPECT().GetNetworkGasPrice(gomock.Any()).Return(int64(10_000_000)).Times(1)
+
 		mockAppKeys := mock.NewMockAppKeys(ctrl)
 		accAddress := []byte{1, 2, 3}
-		mockAppKeys.EXPECT().GetSignerAddress().Return(accAddress).Times(1)
+		mockAppKeys.EXPECT().GetSignerAddress().Return(accAddress).AnyTimes()
 
 		abi, err := abi.JSON(strings.NewReader(SupportedContracts[ContractErc20Gateway].AbiString))
 		require.NoError(t, err)
@@ -192,8 +206,9 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 					},
 				},
 			},
-			publicDb: mockPublicDb,
-			appKeys:  mockAppKeys,
+			publicDb:  mockPublicDb,
+			privateDb: mockPrivateDb,
+			appKeys:   mockAppKeys,
 		}
 
 		ctx := sdk.Context{}
