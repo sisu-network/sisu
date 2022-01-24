@@ -84,6 +84,9 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(ctx sdk.Context, tokenAddr
 	)
 
 	gasPrice := p.privateDb.GetNetworkGasPrice(destChain)
+	if gasPrice < 0 {
+		gasPrice = p.getDefaultGasPrice(destChain).Int64()
+	}
 	log.Debug("Network gas price got: ", gasPrice)
 	rawTx := ethTypes.NewTransaction(
 		uint64(nonce),

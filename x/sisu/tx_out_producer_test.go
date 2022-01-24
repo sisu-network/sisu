@@ -144,6 +144,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		mockPublicDb.EXPECT().IsKeygenAddress(libchain.KEY_TYPE_ECDSA, gomock.Any()).Return(false).Times(1)
 		mockPublicDb.EXPECT().IsContractExistedAtAddress("eth", gomock.Any()).Return(true).Times(1)
 		mockPublicDb.EXPECT().GetLatestContractAddressByName(gomock.Any(), ContractErc20Gateway).Return("0x12345").Times(1)
+		mockPublicDb.EXPECT().GetNetworkGasPrice("eth").Return(int64(10_000_000))
 
 		mockAppKeys := mock.NewMockAppKeys(ctrl)
 		accAddress := []byte{1, 2, 3}
@@ -192,8 +193,9 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 					},
 				},
 			},
-			publicDb: mockPublicDb,
-			appKeys:  mockAppKeys,
+			publicDb:  mockPublicDb,
+			privateDb: mockPublicDb,
+			appKeys:   mockAppKeys,
 		}
 
 		ctx := sdk.Context{}

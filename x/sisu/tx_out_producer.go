@@ -201,12 +201,16 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *types.Contract, nonce 
 
 		byteCode := ecommon.FromHex(erc20.Bin)
 		input = append(byteCode, input...)
+		gasPrice := p.privateDb.GetNetworkGasPrice(contract.Chain)
+		if gasPrice < 0 {
+			gasPrice = p.getDefaultGasPrice(contract.Chain).Int64()
+		}
 
 		rawTx := ethTypes.NewContractCreation(
 			uint64(nonce),
 			big.NewInt(0),
 			p.getGasLimit(contract.Chain),
-			p.getGasPrice(contract.Chain),
+			big.NewInt(gasPrice),
 			input,
 		)
 
@@ -221,7 +225,7 @@ func (p *DefaultTxOutputProducer) getGasLimit(chain string) uint64 {
 	return uint64(8_000_000)
 }
 
-func (p *DefaultTxOutputProducer) getGasPrice(chain string) *big.Int {
+func (p *DefaultTxOutputProducer) getDefaultGasPrice(chain string) *big.Int {
 	// TODO: Make this dependent on different chains.
 	switch chain {
 	case "ganache1":
