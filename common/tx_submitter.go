@@ -180,14 +180,14 @@ func (t *TxSubmitter) Start() {
 		case <-t.submitRequestCh:
 			// 1. Gets all pending messages in the queue.
 			// Use read lock since it's cheaper
-			t.queueLock.RLock()
+			t.queueLock.Lock()
 			if len(t.queue) == 0 {
-				t.queueLock.RUnlock()
+				t.queueLock.Unlock()
 				continue
 			}
 			copy := t.queue
 			t.queue = make([]*QElementPair, 0) // Clear the queue
-			t.queueLock.RUnlock()
+			t.queueLock.Unlock()
 
 			if len(copy) == 0 {
 				continue
