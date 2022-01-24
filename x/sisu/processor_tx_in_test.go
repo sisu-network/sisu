@@ -65,7 +65,7 @@ func TestProcessor_OnTxIns(t *testing.T) {
 
 		done := make(chan bool)
 		mockTxSubmit := mock.NewMockTxSubmit(ctrl)
-		mockTxSubmit.EXPECT().SubmitMessage(gomock.Any()).Return(nil).Do(func(id interface{}) {
+		mockTxSubmit.EXPECT().SubmitMessageAsync(gomock.Any()).Return(nil).Do(func(id interface{}) {
 			done <- true
 		}).Times(1)
 
@@ -102,7 +102,7 @@ func TestProcessor_OnTxIns(t *testing.T) {
 
 		done := make(chan bool)
 		mockTxSubmit := mock.NewMockTxSubmit(ctrl)
-		mockTxSubmit.EXPECT().SubmitMessage(gomock.Any()).Return(nil).Do(func(id interface{}) {
+		mockTxSubmit.EXPECT().SubmitMessageAsync(gomock.Any()).Return(nil).Do(func(id interface{}) {
 			done <- true
 		}).Times(1)
 

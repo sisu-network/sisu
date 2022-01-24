@@ -54,13 +54,10 @@ func (p *Processor) createPendingContracts(ctx sdk.Context, msg *types.Keygen) {
 		}
 	}
 
-	go func() {
-		signer := p.appKeys.GetSignerAddress()
-		p.txSubmit.SubmitMessage(types.NewContractsWithSigner(
-			signer.String(),
-			contracts,
-		))
-	}()
+	p.txSubmit.SubmitMessageAsync(types.NewContractsWithSigner(
+		p.appKeys.GetSignerAddress().String(),
+		contracts,
+	))
 }
 
 func (p *Processor) deliverContracts(ctx sdk.Context, signerMsg *types.ContractsWithSigner) ([]byte, error) {

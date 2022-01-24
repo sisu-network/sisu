@@ -29,7 +29,7 @@ func (p *Processor) OnKeysignResult(result *htypes.KeysignResult) {
 			result.Outcome == htypes.OutcomeSuccess,
 			result.Signatures[i],
 		)
-		go p.txSubmit.SubmitMessage(msg)
+		p.txSubmit.SubmitMessageAsync(msg)
 
 		// Sends it to deyes for deployment.
 		if result.Outcome == htypes.OutcomeSuccess {

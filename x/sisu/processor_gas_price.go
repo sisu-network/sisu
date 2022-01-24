@@ -12,14 +12,7 @@ import (
 
 func (p *Processor) OnUpdateGasPriceRequest(request *etypes.GasPriceRequest) {
 	gasPriceMsg := types.NewGasPriceMsg(p.appKeys.GetSignerAddress().String(), request.Chain, request.Height, request.GasPrice)
-	go func() {
-		if err := p.txSubmit.SubmitMessage(gasPriceMsg); err != nil {
-			log.Error(err)
-			return
-		}
-
-		log.Debug("Submit gas price msg successfully")
-	}()
+	p.txSubmit.SubmitMessageAsync(gasPriceMsg)
 }
 
 func (p *Processor) deliverGasPriceMsg(ctx sdk.Context, msg *types.GasPriceMsg) ([]byte, error) {

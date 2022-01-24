@@ -45,7 +45,7 @@ func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
 
 	log.Info("There is keygen result from dheart, resultEnum = ", resultEnum)
 
-	p.txSubmit.SubmitMessage(signerMsg)
+	p.txSubmit.SubmitMessageAsync(signerMsg)
 }
 
 func (p *Processor) deliverKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) ([]byte, error) {
