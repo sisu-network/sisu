@@ -196,20 +196,18 @@ func (t *TxSubmitter) Start() {
 				log.Errorf("Cannot broadcast transaction, code = %d and err = %v", res.Code, err)
 				t.updateStatus(copy, err)
 
-				if res.Code > 0 {
-					if res.Code == 32 {
-						newSequence, err := t.getLatestSequence()
-						if err == nil {
-							log.Info("New sequence = ", newSequence)
-							// Update the sequence.
-							t.updateSquence(newSequence)
+				if res.Code == 32 {
+					newSequence, err := t.getLatestSequence()
+					if err == nil {
+						log.Info("New sequence = ", newSequence)
+						// Update the sequence.
+						t.updateSquence(newSequence)
 
-							// Retry the second time
-							t.factory = t.factory.WithSequence(newSequence)
-							t.submitMsgs(msgs)
-						} else {
-							log.Error("cannot get sequence, err = ", err)
-						}
+						// Retry the second time
+						t.factory = t.factory.WithSequence(newSequence)
+						t.submitMsgs(msgs)
+					} else {
+						log.Error("cannot get sequence, err = ", err)
 					}
 				}
 			} else {
@@ -241,7 +239,7 @@ func (t *TxSubmitter) submitMsgs(msgs []sdk.Msg) (*sdk.TxResponse, error) {
 	return res, err
 }
 
-// getLatestSequence makes a request to tendermint and ge the correct sequence for the current account.
+// getLatestSequence makes a request to tendermint and get the correct sequence for the current account.
 func (t *TxSubmitter) getLatestSequence() (uint64, error) {
 	url := fmt.Sprintf("http://127.0.0.1:1317/auth/accounts/%s", t.fromAccount)
 
