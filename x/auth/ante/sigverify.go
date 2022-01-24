@@ -95,15 +95,14 @@ func (svd SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 
 		// MODIFIED: Don't check the account sequence. Each transaction will be checked against private database
 		// of Sisu instead.
-		// if !onlyAminoSigners {
-		// 	if sig.Sequence != acc.GetSequence() {
-		// 		debug.PrintStack()
-		// 		return ctx, sdkerrors.Wrapf(
-		// 			sdkerrors.ErrWrongSequence,
-		// 			"account sequence mismatch, expected %d, got %d", acc.GetSequence(), sig.Sequence,
-		// 		)
-		// 	}
-		// }
+		if !onlyAminoSigners {
+			if sig.Sequence != acc.GetSequence() {
+				return ctx, sdkerrors.Wrapf(
+					sdkerrors.ErrWrongSequence,
+					"account sequence mismatch, expected %d, got %d", acc.GetSequence(), sig.Sequence,
+				)
+			}
+		}
 
 		// retrieve signer data
 		genesis := ctx.BlockHeight() == 0

@@ -2,15 +2,19 @@ package common
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"sync"
 	"time"
 
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/app/params"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/utils"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -58,6 +62,7 @@ type TxSubmitter struct {
 	clientCtx   client.Context
 	factory     tx.Factory
 	fromAccount sdk.AccAddress
+	httpClient  *retryablehttp.Client
 
 	// Sequence
 	sequenceLock *sync.RWMutex
@@ -80,12 +85,16 @@ var (
 )
 
 func NewTxSubmitter(cfg config.Config, appKeys *DefaultAppKeys) *TxSubmitter {
+	httpClient := retryablehttp.NewClient()
+	httpClient.Logger = nil
+
 	t := &TxSubmitter{
 		appKeys:         appKeys,
 		cfg:             cfg,
+		httpClient:      httpClient,
 		queueLock:       &sync.RWMutex{},
 		queue:           make([]*QElementPair, 0),
-		submitRequestCh: make(chan bool),
+		submitRequestCh: make(chan bool, 20),
 		msgStatuses:     make(map[int64]error),
 		sequenceLock:    &sync.RWMutex{},
 		curSequence:     UnInitializedSeq,
@@ -180,12 +189,29 @@ func (t *TxSubmitter) Start() {
 			seq := t.getSequence()
 			log.Info("Sequence = ", seq)
 			t.factory = t.factory.WithSequence(seq)
+			msgs := convert(copy)
 
 			// 3. Send all messages
-			msgs := convert(copy)
-			if err := tx.BroadcastTx(t.clientCtx, t.factory, msgs...); err != nil {
-				log.Error("Cannot broadcast transaction, err = ", err)
+			if res, err := t.submitMsgs(msgs); err != nil || (res != nil && res.Code != 0) {
+				log.Errorf("Cannot broadcast transaction, code = %d and err = %v", res.Code, err)
 				t.updateStatus(copy, err)
+
+				if res.Code > 0 {
+					if res.Code == 32 {
+						newSequence, err := t.getLatestSequence()
+						if err == nil {
+							log.Info("New sequence = ", newSequence)
+							// Update the sequence.
+							t.updateSquence(newSequence)
+
+							// Retry the second time
+							t.factory = t.factory.WithSequence(newSequence)
+							t.submitMsgs(msgs)
+						} else {
+							log.Error("cannot get sequence, err = ", err)
+						}
+					}
+				}
 			} else {
 				log.Debug("Tx submitted successfully")
 				t.updateStatus(copy, ErrNone)
@@ -193,6 +219,52 @@ func (t *TxSubmitter) Start() {
 			}
 		}
 	}
+}
+
+func (t *TxSubmitter) submitMsgs(msgs []sdk.Msg) (*sdk.TxResponse, error) {
+	builder, err := tx.BuildUnsignedTx(t.factory, msgs...)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Sign(t.factory, t.clientCtx.GetFromName(), builder, true)
+	if err != nil {
+		return nil, err
+	}
+
+	txBytes, err := t.clientCtx.TxConfig.TxEncoder()(builder.GetTx())
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := t.clientCtx.BroadcastTx(txBytes)
+	return res, err
+}
+
+// getLatestSequence makes a request to tendermint and ge the correct sequence for the current account.
+func (t *TxSubmitter) getLatestSequence() (uint64, error) {
+	url := fmt.Sprintf("http://127.0.0.1:1317/auth/accounts/%s", t.fromAccount)
+
+	type AccountResp struct {
+		Height string `json:"height"`
+		Result struct {
+			Value struct {
+				AccountNumber uint64 `json:"account_number,string"`
+				Sequence      uint64 `json:"sequence,string"`
+			} `json:"value"`
+		} `json:"result"`
+	}
+	resp := &AccountResp{}
+	body, _, err := utils.HttpGet(t.httpClient, url)
+	if err != nil {
+		return 0, err
+	}
+
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return 0, err
+	}
+
+	return resp.Result.Value.Sequence, nil
 }
 
 func (t *TxSubmitter) SyncBlockSequence(ctx sdk.Context, ak authkeeper.AccountKeeper) {
@@ -238,6 +310,13 @@ func (t *TxSubmitter) incSequence() {
 	defer t.sequenceLock.Unlock()
 
 	t.curSequence++
+}
+
+func (t *TxSubmitter) updateSquence(newValue uint64) {
+	t.sequenceLock.Lock()
+	defer t.sequenceLock.Unlock()
+
+	t.curSequence = newValue
 }
 
 func (t *TxSubmitter) updateStatus(list []*QElementPair, err error) {
