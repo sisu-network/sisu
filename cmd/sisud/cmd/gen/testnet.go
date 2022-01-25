@@ -3,7 +3,6 @@ package gen
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -220,12 +219,12 @@ func (g *TestnetGenerator) generateHeartToml(index int, inputDir string, outputD
 
 func (g *TestnetGenerator) generateEyesToml(index int, inputDir string, outputDir string) {
 	// Simply copy the input file to the output file
-	data, err := ioutil.ReadFile(filepath.Join(inputDir, "deyes.toml"))
+	data, err := os.ReadFile(filepath.Join(inputDir, "deyes.toml"))
 	if err != nil {
 		panic(err)
 	}
 
-	err = ioutil.WriteFile(filepath.Join(outputDir, "deyes.toml"), data, 0644)
+	err = os.WriteFile(filepath.Join(outputDir, "deyes.toml"), data, 0644)
 	if err != nil {
 		panic(err)
 	}

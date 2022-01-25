@@ -3,7 +3,7 @@ package common
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"sync"
 
 	"github.com/cosmos/cosmos-sdk/client/rpc"
@@ -61,7 +61,7 @@ func (a *GlobalDataDefault) Init() {
 	sisuConfig := a.cfg.Sisu
 
 	defaultConfigTomlFile := sisuConfig.Dir + "/config/config.toml"
-	data, err := ioutil.ReadFile(defaultConfigTomlFile)
+	data, err := os.ReadFile(defaultConfigTomlFile)
 	if err != nil {
 		panic(err)
 	}
