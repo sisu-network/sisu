@@ -7,7 +7,4 @@
 cd "$PROJECT_DIR" || exit 1
 
 echo_info "Test all packages"
-go test -race $(go list ./...)
-
-EXIT_CODE=$?
-exit $EXIT_CODE
+go test -race ./...
