@@ -3,7 +3,6 @@ package cmd
 import (
 	"database/sql"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -119,7 +118,7 @@ func resetValidatorState() error {
 	}`
 
 	path := app.MainAppHome + "/data/priv_validator_state.json"
-	return ioutil.WriteFile(path, []byte(content), 0644)
+	return os.WriteFile(path, []byte(content), 0644)
 }
 
 func deleteSql() error {

@@ -3,7 +3,7 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/hashicorp/go-retryablehttp"
@@ -21,7 +21,7 @@ func HttpGet(httpClient *retryablehttp.Client, url string) ([]byte, int, error) 
 		}
 	}()
 
-	buf, err := ioutil.ReadAll(resp.Body)
+	buf, err := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK {
 		return buf, resp.StatusCode, errors.New("Http get status is not ok: " + resp.Status)
 	}

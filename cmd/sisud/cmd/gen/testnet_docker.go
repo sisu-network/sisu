@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -174,7 +173,7 @@ func (exe *TestnetDockerExecutor) cleanData(outputDir string) {
 		return
 	}
 
-	files, err := ioutil.ReadDir(outputDir)
+	files, err := os.ReadDir(outputDir)
 	if err != nil {
 		panic(err)
 	}
