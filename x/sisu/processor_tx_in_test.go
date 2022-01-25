@@ -63,11 +63,8 @@ func TestProcessor_OnTxIns(t *testing.T) {
 		appKeysMock := mock.NewMockAppKeys(ctrl)
 		appKeysMock.EXPECT().GetSignerAddress().Return(addr).MinTimes(1)
 
-		done := make(chan bool)
 		mockTxSubmit := mock.NewMockTxSubmit(ctrl)
-		mockTxSubmit.EXPECT().SubmitMessageAsync(gomock.Any()).Return(nil).Do(func(id interface{}) {
-			done <- true
-		}).Times(1)
+		mockTxSubmit.EXPECT().SubmitMessageAsync(gomock.Any()).Return(nil).Times(1)
 
 		txs := &eyesTypes.Txs{
 			Chain: observedChain,
@@ -87,8 +84,6 @@ func TestProcessor_OnTxIns(t *testing.T) {
 
 		err := processor.OnTxIns(txs)
 
-		<-done
-
 		require.NoError(t, err)
 	})
 
@@ -100,11 +95,8 @@ func TestProcessor_OnTxIns(t *testing.T) {
 			ctrl.Finish()
 		})
 
-		done := make(chan bool)
 		mockTxSubmit := mock.NewMockTxSubmit(ctrl)
-		mockTxSubmit.EXPECT().SubmitMessageAsync(gomock.Any()).Return(nil).Do(func(id interface{}) {
-			done <- true
-		}).Times(1)
+		mockTxSubmit.EXPECT().SubmitMessageAsync(gomock.Any()).Return(nil).Times(1)
 
 		observedChain := "eth"
 		toAddress := utils.RandomHeximalString(64)
@@ -137,7 +129,7 @@ func TestProcessor_OnTxIns(t *testing.T) {
 		}
 
 		err := processor.OnTxIns(txs)
-		<-done
+		// <-done
 
 		require.NoError(t, err)
 	})
