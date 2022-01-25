@@ -29,7 +29,7 @@ import (
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
 )
 
-//go:generate mockgen -source=tx_submitter.go -destination=../tests/mock/tx_submitter.go -package=mock
+//go:generate mockgen -source=common/tx_submitter.go -destination=tests/mock/tx_submitter.go -package=mock
 
 const (
 	// TODO: put these values into config file.
@@ -50,7 +50,8 @@ type QElementPair struct {
 
 // mockgen -source common/tx_submitter.go -destination=tests/mock/common/tx_submitter.go -package=mock
 type TxSubmit interface {
-	SubmitMessage(msg sdk.Msg) error
+	SubmitMessageAsync(msg sdk.Msg) error
+	SubmitMessageSync(msg sdk.Msg) error
 }
 
 type TxSubmitter struct {
@@ -112,7 +113,16 @@ func NewTxSubmitter(cfg config.Config, appKeys *DefaultAppKeys) *TxSubmitter {
 	return t
 }
 
-func (t *TxSubmitter) SubmitMessage(msg sdk.Msg) error {
+func (t *TxSubmitter) SubmitMessageAsync(msg sdk.Msg) error {
+	go t.submitMessage(msg)
+	return nil
+}
+
+func (t *TxSubmitter) SubmitMessageSync(msg sdk.Msg) error {
+	return t.submitMessage(msg)
+}
+
+func (t *TxSubmitter) submitMessage(msg sdk.Msg) error {
 	log.Debug("Submitting tx ....")
 
 	index := t.addMessage(msg)
@@ -170,14 +180,14 @@ func (t *TxSubmitter) Start() {
 		case <-t.submitRequestCh:
 			// 1. Gets all pending messages in the queue.
 			// Use read lock since it's cheaper
-			t.queueLock.RLock()
+			t.queueLock.Lock()
 			if len(t.queue) == 0 {
-				t.queueLock.RUnlock()
+				t.queueLock.Unlock()
 				continue
 			}
 			copy := t.queue
 			t.queue = make([]*QElementPair, 0) // Clear the queue
-			t.queueLock.RUnlock()
+			t.queueLock.Unlock()
 
 			if len(copy) == 0 {
 				continue

@@ -35,11 +35,7 @@ func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 				tx.Serialized,
 			)
 
-			go func(tx *types.TxInWithSigner) {
-				if err := p.txSubmit.SubmitMessage(tx); err != nil {
-					return
-				}
-			}(signerMsg)
+			p.txSubmit.SubmitMessageAsync(signerMsg)
 		}
 	}
 
@@ -88,9 +84,7 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 		contractAddress,
 	)
 
-	go func() {
-		p.txSubmit.SubmitMessage(confirmMsg)
-	}()
+	p.txSubmit.SubmitMessageAsync(confirmMsg)
 
 	return nil
 }
@@ -138,11 +132,7 @@ func (p *Processor) doTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner)
 
 		// Creates TxOut. TODO: Only do this for top validator nodes.
 		for _, msg := range txOutWithSigners {
-			go func(m *types.TxOutWithSigner) {
-				if err := p.txSubmit.SubmitMessage(m); err != nil {
-					return
-				}
-			}(msg)
+			p.txSubmit.SubmitMessageAsync(msg)
 		}
 	}
 

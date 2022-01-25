@@ -38,13 +38,7 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 		)
 
 		log.Info("Submitting proposal message for ", keyType)
-		go func() {
-			err := p.txSubmit.SubmitMessage(proposal)
-
-			if err != nil {
-				log.Error(err)
-			}
-		}()
+		p.txSubmit.SubmitMessageAsync(proposal)
 	}
 }
 
