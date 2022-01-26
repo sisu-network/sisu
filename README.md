@@ -115,13 +115,7 @@ Because of high number of services in the docker container (3 x n + 3 where n is
 You need to build sisu, dheart, deyes, ganache images in their corresponding repos. Assume that you save dheart, deyes in the same directory level with sisu.
 
 ```
-cd ../dheart
-docker build -t dheart .
-cd ../deyes
-docker build -t deyes .
-docker build -f Dockerfile-ganache -t ganache-cli .
-cd ../sisu
-docker build -t sisu .
+./scripts/docker_build_all.sh
 ```
 
 ## Generate data

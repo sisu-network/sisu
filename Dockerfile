@@ -1,27 +1,35 @@
 FROM golang:1.16-alpine as builder
 
+# This file is used in local dev with debugging purpose.
+
 ENV GO111MODULE=on \
     GOPRIVATE=github.com/sisu-network/*
 
 WORKDIR /tmp/go-app
 
 RUN apk add --no-cache make gcc musl-dev linux-headers git \
-    && apk add openssh 
+    && apk add openssh \
+    && git config --global url."git@github.com:".insteadOf "https://github.com/" \
+    && mkdir /root/.ssh && echo "StrictHostKeyChecking no " > /root/.ssh/config
 
-RUN mkdir -p -m 0600 /root/.ssh \
-    && ssh-keyscan github.com >> ~/.ssh/known_hosts \
-    && git config --global url."git@github.com:".insteadOf "https://github.com/" 
+# # Though the id_rsa file is removed at the end of this docker build, it's still dangerous to include
+# # id_rsa in the build file since docker build steps are cached. Only do this while our repos are in
+# # private mode.
+ADD /tmp/id_rsa /root/.ssh/id_rsa
 
-COPY go.mod go.sum ./
+COPY go.mod .
 
-RUN --mount=type=ssh go mod download
+COPY go.sum .
+
+RUN go mod download
 
 COPY . .
 
 RUN go build -o ./out/sisu ./cmd/sisud/main.go
 
-# second stage
+RUN rm /root/.ssh/id_rsa
 
+# Start fresh from a smaller image
 FROM alpine:3.9
 
 WORKDIR /app

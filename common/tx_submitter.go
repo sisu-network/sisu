@@ -71,7 +71,8 @@ type TxSubmitter struct {
 	// Current sequence is the current sequence that will be used for transaction. It's possible that
 	// multiple transactions could submitted within a block and account's sequence could be out
 	// of sync with account keeper.
-	curSequence uint64
+	curSequence   uint64
+	accountNumber uint64
 
 	// Tx queue
 	queue           []*QElementPair
@@ -199,33 +200,50 @@ func (t *TxSubmitter) Start() {
 			seq := t.getSequence()
 			log.Info("Sequence = ", seq)
 			t.factory = t.factory.WithSequence(seq)
-			msgs := convert(copy)
 
 			// 3. Send all messages
-			if res, err := t.submitMsgs(msgs); err != nil || (res != nil && res.Code != 0) {
+			res, err := t.trySubmitTx(copy)
+			if err != nil || (res != nil && res.Code != 0) {
 				log.Errorf("Cannot broadcast transaction, code = %d and err = %v", res.Code, err)
-				t.updateStatus(copy, err)
 
-				if res.Code == 32 {
-					newSequence, err := t.getLatestSequence()
+				// Do retry if the error we get is incorrect sequence number
+				// List of error code here: https://github.com/cosmos/cosmos-sdk/blob/v0.42.1/types/errors/errors.go
+				if res.Code == 32 { // incorrect sequence number
+					accNumber, newSequence, err := t.getLatestSequence()
 					if err == nil {
 						log.Info("New sequence = ", newSequence)
-						// Update the sequence.
-						t.updateSquence(newSequence)
+						// Update account number and the sequence.
+						t.updateAccNumberAndSquence(accNumber, newSequence)
 
 						// Retry the second time
-						t.factory = t.factory.WithSequence(newSequence)
-						t.submitMsgs(msgs)
+						res2, err2 := t.trySubmitTx(copy)
+						if err2 != nil || (res2 != nil && res2.Code != 0) {
+							log.Errorf("Retry failed, code = %d and err = %v", res2.Code, err2)
+							t.updateStatus(copy, err2)
+						} else {
+							log.Verbose("Retry succeeded")
+						}
 					} else {
 						log.Error("cannot get sequence, err = ", err)
+						t.updateStatus(copy, err)
 					}
 				}
-			} else {
-				log.Debug("Tx submitted successfully")
-				t.updateStatus(copy, ErrNone)
-				t.incSequence()
 			}
 		}
+	}
+}
+
+func (t *TxSubmitter) trySubmitTx(list []*QElementPair) (*sdk.TxResponse, error) {
+	msgs := convert(list)
+
+	if res, err := t.submitMsgs(msgs); err != nil || (res != nil && res.Code != 0) {
+		return res, err
+	} else {
+		log.Debug("Tx submitted successfully")
+		t.updateStatus(list, ErrNone)
+		t.incSequence()
+
+		return res, err
 	}
 }
 
@@ -250,7 +268,7 @@ func (t *TxSubmitter) submitMsgs(msgs []sdk.Msg) (*sdk.TxResponse, error) {
 }
 
 // getLatestSequence makes a request to tendermint and get the correct sequence for the current account.
-func (t *TxSubmitter) getLatestSequence() (uint64, error) {
+func (t *TxSubmitter) getLatestSequence() (uint64, uint64, error) {
 	url := fmt.Sprintf("http://127.0.0.1:1317/auth/accounts/%s", t.fromAccount)
 
 	type AccountResp struct {
@@ -265,14 +283,14 @@ func (t *TxSubmitter) getLatestSequence() (uint64, error) {
 	resp := &AccountResp{}
 	body, _, err := utils.HttpGet(t.httpClient, url)
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 
 	if err := json.Unmarshal(body, &resp); err != nil {
-		return 0, err
+		return 0, 0, err
 	}
 
-	return resp.Result.Value.Sequence, nil
+	return resp.Result.Value.AccountNumber, resp.Result.Value.Sequence, nil
 }
 
 func (t *TxSubmitter) SyncBlockSequence(ctx sdk.Context, ak authkeeper.AccountKeeper) {
@@ -299,11 +317,7 @@ func (t *TxSubmitter) SyncBlockSequence(ctx sdk.Context, ak authkeeper.AccountKe
 		return
 	}
 
-	seq = account.GetSequence()
-
-	t.sequenceLock.Lock()
-	t.curSequence = seq
-	t.sequenceLock.Unlock()
+	t.updateAccNumberAndSquence(account.GetAccountNumber(), account.GetSequence())
 }
 
 func (t *TxSubmitter) getSequence() uint64 {
@@ -320,11 +334,14 @@ func (t *TxSubmitter) incSequence() {
 	t.curSequence++
 }
 
-func (t *TxSubmitter) updateSquence(newValue uint64) {
+func (t *TxSubmitter) updateAccNumberAndSquence(newAccountNumber, newSeq uint64) {
 	t.sequenceLock.Lock()
 	defer t.sequenceLock.Unlock()
 
-	t.curSequence = newValue
+	t.curSequence = newSeq
+	t.accountNumber = newAccountNumber
+	t.factory = t.factory.WithAccountNumber(newAccountNumber)
+	t.factory = t.factory.WithSequence(newSeq)
 }
 
 func (t *TxSubmitter) updateStatus(list []*QElementPair, err error) {
