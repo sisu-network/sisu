@@ -43,6 +43,8 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 }
 
 func (p *Processor) deliverKeygen(ctx sdk.Context, signerMsg *types.KeygenWithSigner) ([]byte, error) {
+	log.Info("Delivering keygen, signer = ", signerMsg.Signer)
+
 	if process, hash := p.shouldProcessMsg(ctx, signerMsg); process {
 		p.doKeygen(ctx, signerMsg)
 		p.publicDb.ProcessTxRecord(hash)
@@ -52,9 +54,9 @@ func (p *Processor) deliverKeygen(ctx sdk.Context, signerMsg *types.KeygenWithSi
 }
 
 func (p *Processor) doKeygen(ctx sdk.Context, signerMsg *types.KeygenWithSigner) ([]byte, error) {
-	msg := signerMsg.Data
+	log.Info("Doing keygen....")
 
-	log.Info("Delivering keygen....")
+	msg := signerMsg.Data
 
 	// Save this into Keeper && private db.
 	p.publicDb.SaveKeygen(msg)
