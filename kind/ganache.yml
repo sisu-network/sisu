@@ -1,0 +1,59 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ganache
+  namespace: sisu
+spec:
+  ports:
+  - name: tcp-ganache
+    port: 7545
+    protocol: TCP
+    targetPort: 7545
+  selector:
+    app: ganache
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ganache
+  namespace: sisu
+  labels:
+    app: ganache
+spec:
+  replicas: 2
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: ganache
+  serviceName: ganache
+  template:
+    metadata:
+      labels:
+        app: ganache
+    spec:
+      containers:
+      - command:
+          - ganache-cli
+          - --accounts
+          - '10'
+          - --blockTime
+          - '3'
+          - --server.host
+          - '0.0.0.0'
+          - --port
+          - '7545'
+          - --defaultBalanceEther
+          - '100000'
+          - --chain.networkId
+          - '189985'
+          - --chain.chainId
+          - '189985'
+          - --mnemonic
+          - "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum"
+        image: sisu.test/ganache:latest
+        imagePullPolicy: IfNotPresent # Important for test with implicit latest tag
+        name: ganache
+        ports:
+        - containerPort: 7545
+          name: tcp-ganache

@@ -26,6 +26,16 @@ dev-mysql-down:
 		-f docker/docker-compose-mysql.dev.yml \
 		down -v --rmi local
 
+# Create a local kind cluster with everything needed for sisu.
+.PHONY: create-kind-cluster
+create-kind-cluster:
+	@cd ./kind && $(MAKE) -j create-cluster
+
+# Delete the cluster you made with create-kind-cluster.
+.PHONY: delete-kind-cluster
+delete-kind-cluster:
+	@cd ./kind && $(MAKE) -j delete-cluster
+
 # Set global git configuration to only replace our private dependencies with the SSH URL.
 .PHONY: configure-git
 configure-git:
