@@ -1,9 +1,12 @@
 # Use cluster name sisu by default, but accept overrides.
 CLUSTER_NAME ?= sisu
 
+# Allow overriding the version of go (for go mod vendor).
+GO ?= go
+
 # Create a kind cluster, and build, load, and deploy all required images.
 .PHONY: create-cluster
-create-cluster: create-kind-cluster load-docker-images
+create-cluster: create-kind-cluster deploy
 	$(info Access the cluster with:)
 	$(info $(SPACE) $(SPACE) kubectl --context "kind-$(CLUSTER_NAME)" -n sisu)
 
@@ -23,9 +26,13 @@ create-kind-cluster: require-kind
 require-kind:
 	kind --version
 
+.PHONY: go-mod-vendor
+go-mod-vendor:
+	$(GO) mod vendor
+
 # Load all the docker images into the kind cluster.
-.PHONY: load-docker-images
-load-docker-images: load-docker-ganache ;
+.PHONY: deploy
+deploy: deploy-ganache deploy-sisu deploy-mysql ;
 
 # Build the image for ganache (there wasn't an official image for ganache 7.0 alpha at time of writing).
 .PHONY: build-docker-ganache
@@ -33,9 +40,31 @@ build-docker-ganache:
 	docker build --quiet -t sisu.test/ganache:latest -f ./Dockerfile.ganache /dev/null
 
 # Load the ganache image into the kind cluster, after the cluster is ready and we have built the image.
-.PHONY: load-docker-ganache
-load-docker-ganache: create-kind-cluster build-docker-ganache
+.PHONY: deploy-ganache
+deploy-ganache: create-kind-cluster build-docker-ganache
 	kind load docker-image --name "$(CLUSTER_NAME)" sisu.test/ganache:latest
 	kubectl --context "kind-$(CLUSTER_NAME)" apply -f ./ganache.yml
 	@# Block until ganache statefulset is ready.
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu rollout status --timeout=30s statefulset/ganache
+
+# Build the all-in-one sisu docker image.
+# TODO: the "go install" step of this takes about two minutes on my machine.
+#       It should be possible to optimize that with a buildkit volume for a Go build cache.
+.PHONY: build-docker-sisu
+build-docker-sisu: go-mod-vendor
+	cd .. && docker build --quiet -t sisu.test/sisu-all:latest -f ./kind/Dockerfile.sisu-all .
+
+# Deploy sisu components after the cluster is ready and the sisu all-in-one image is built.
+.PHONY: deploy-sisu
+deploy-sisu: create-kind-cluster build-docker-sisu
+	kind load docker-image --name "$(CLUSTER_NAME)" sisu.test/sisu-all:latest
+
+# Deploy mysql once the cluster is ready.
+# The mysql image isn't small, so we pre-load it in to the cluster to save a large network transfer.
+# First we check if we have the image locally, and if not, attempt to pull it.
+.PHONY: deploy-mysql
+deploy-mysql: create-kind-cluster
+	test -n "$$(docker image ls --quiet mysql:8)" || docker image pull --quiet mysql:8
+	kind load docker-image --name "$(CLUSTER_NAME)" mysql:8
+	kubectl --context "kind-$(CLUSTER_NAME)" apply -f ./mysql.yml
+	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu rollout status --timeout=45s deployment/mysql

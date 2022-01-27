@@ -9,3 +9,5 @@ docs
 tests
 config.yml
 README.md
+/.git/
+/kind/

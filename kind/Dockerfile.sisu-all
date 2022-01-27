@@ -1,0 +1,11 @@
+FROM golang:1.17-bullseye as builder
+
+WORKDIR /sisu
+COPY . /sisu
+
+RUN go install ./cmd/sisud github.com/sisu-network/deyes github.com/sisu-network/dheart
+
+# This shouldn't run as root, but that should be fine for kind.
+FROM debian:bullseye-slim
+RUN touch /root/.env /root/dheart.toml /root/deyes.toml
+COPY --from=builder /go/bin/sisud /go/bin/deyes /go/bin/dheart /usr/local/bin/
