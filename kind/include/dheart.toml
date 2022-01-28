@@ -1,0 +1,10 @@
+port = 5678
+
+sisu-server-url = "http://sisud:25456"
+
+[db]
+host = "mysql"
+port = 3306
+username = "root"
+password = "password"
+schema = "deyes"

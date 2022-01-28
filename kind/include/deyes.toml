@@ -6,7 +6,7 @@ db_password = "password"
 db_schema = "deyes"
 
 server_port = 31001
-sisu_server_url = "http://sisu:25456"
+sisu_server_url = "http://sisud:25456"
 
 # Including this causes deyes to panic with a division by zero error.
 # TODO: debug and re-enable.

@@ -32,7 +32,7 @@ go-mod-vendor:
 
 # Load all the docker images into the kind cluster.
 .PHONY: deploy
-deploy: deploy-ganache deploy-mysql deploy-deyes ;
+deploy: deploy-ganache deploy-mysql deploy-deyes deploy-dheart ;
 
 # Build the image for ganache (there wasn't an official image for ganache 7.0 alpha at time of writing).
 .PHONY: build-docker-ganache
@@ -62,8 +62,12 @@ load-sisu: create-kind-cluster build-docker-sisu
 .PHONY: deploy-deyes
 deploy-deyes: load-sisu
 	kubectl --context "kind-$(CLUSTER_NAME)" apply -f ./deyes.yml
-	@# Block until ganache statefulset is ready.
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu rollout status --timeout=30s deployment/deyes
+
+.PHONY: deploy-dheart
+deploy-dheart: load-sisu
+	kubectl --context "kind-$(CLUSTER_NAME)" apply -f ./dheart.yml
+	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu rollout status --timeout=30s deployment/dheart
 
 # Ensure the docker image for mysql:8 is present on the host machine.
 .PHONY: prepare-mysql

@@ -9,5 +9,5 @@ RUN go install ./cmd/sisud github.com/sisu-network/deyes github.com/sisu-network
 FROM debian:bullseye-slim
 RUN echo 'AES_KEY_HEX=c787ef22ade5afc8a5e22041c17869e7e4714190d88ecec0a84e241c9431add0' > /root/.env && \
   touch /root/dheart.toml && mkdir /root/migrations
-COPY ./kind/include/deyes.toml /root/deyes.toml
+COPY ./kind/include/deyes.toml ./kind/include/dheart.toml /root/
 COPY --from=builder /go/bin/sisud /go/bin/deyes /go/bin/dheart /usr/local/bin/

@@ -1,0 +1,46 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dheart
+  namespace: sisu
+spec:
+  ports:
+  - name: tcp-dheart
+    port: 5678
+    protocol: TCP
+    targetPort: 5678
+  selector:
+    app: dheart
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dheart
+  namespace: sisu
+  labels:
+    app: dheart
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: dheart
+  template:
+    metadata:
+      labels:
+        app: dheart
+    spec:
+      containers:
+      - command:
+          - dheart
+        workingDir: /root
+        image: sisu.test/sisu-all:latest
+        imagePullPolicy: IfNotPresent
+        name: dheart
+        env:
+          - name: HOME_DIR
+            value: /root
+        ports:
+          - containerPort: 5678
+            name: tcp-dheart
