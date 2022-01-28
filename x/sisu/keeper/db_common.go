@@ -25,6 +25,8 @@ var (
 	prefixContractName           = []byte{0x0C}
 	prefixGasPrice               = []byte{0x0D}
 	prefixNetworkGasPrice        = []byte{0x0E}
+	prefixTokenPrices            = []byte{0x0F}
+	prefixCalculatedTokenPrice   = []byte{0x0F}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -577,6 +579,65 @@ func saveTxOutConfirm(store cstypes.KVStore, msg *types.TxOutConfirm) {
 func isTxOutConfirmExisted(store cstypes.KVStore, outChain, hash string) bool {
 	key := getTxOutConfirmKey(outChain, hash)
 	return store.Has(key)
+}
+
+///// Token Prices
+func setTokenPrices(store cstypes.KVStore, blockHeight uint64, msg *types.UpdateTokenPrice) {
+	key := []byte(msg.Signer)
+	value := store.Get(key)
+
+	var record *types.TokenPriceRecord
+	if value == nil {
+		record = new(types.TokenPriceRecord)
+	} else {
+		err := record.Unmarshal(value)
+		if err != nil {
+			log.Error("cannot unmarshal record for signer ", msg.Signer)
+			return
+		}
+	}
+
+	for _, tokenPrice := range msg.TokenPrices {
+		pair := record.Prices[tokenPrice.Id]
+		if pair == nil {
+			pair = new(types.BlockHeightPricePair)
+		}
+		pair.BlockHeight = blockHeight
+		pair.Price = tokenPrice.Price
+	}
+
+	bz, err := record.Marshal()
+	if err != nil {
+		log.Error("cannot unmarshal token price record for signer ", msg.Signer)
+		return
+	}
+
+	store.Set(key, bz)
+}
+
+// getAllTokenPrices gets all the token prices all of all signers.
+func getAllTokenPrices(store cstypes.KVStore, signerSet map[string]bool) map[string]*types.TokenPriceRecord {
+	result := make(map[string]*types.TokenPriceRecord)
+
+	for iter := store.Iterator(nil, nil); iter.Valid(); iter.Next() {
+		// Key is signer.
+		signer := string(iter.Key())
+		if !signerSet[signer] {
+			continue
+		}
+
+		bz := iter.Value()
+		record := new(types.TokenPriceRecord)
+		err := record.Unmarshal(bz)
+		if err != nil {
+			log.Error("cannot unmarshal token price record for signer ", signer, " err = ", err)
+			continue
+		}
+
+		result[signer] = record
+	}
+
+	return result
 }
 
 /// Debug functions

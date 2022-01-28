@@ -25,6 +25,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TxOutWithSigner{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TxOutConfirmWithSigner{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &GasPriceMsg{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &UpdateTokenPrice{})
 
 	registry.RegisterImplementations((*sdk.Msg)(nil), &KeysignResult{})
 
