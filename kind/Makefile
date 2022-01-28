@@ -32,7 +32,7 @@ go-mod-vendor:
 
 # Load all the docker images into the kind cluster.
 .PHONY: deploy
-deploy: deploy-ganache deploy-sisu deploy-mysql ;
+deploy: deploy-ganache deploy-mysql deploy-deyes ;
 
 # Build the image for ganache (there wasn't an official image for ganache 7.0 alpha at time of writing).
 .PHONY: build-docker-ganache
@@ -54,17 +54,26 @@ deploy-ganache: create-kind-cluster build-docker-ganache
 build-docker-sisu: go-mod-vendor
 	cd .. && docker build --quiet -t sisu.test/sisu-all:latest -f ./kind/Dockerfile.sisu-all .
 
-# Deploy sisu components after the cluster is ready and the sisu all-in-one image is built.
-.PHONY: deploy-sisu
-deploy-sisu: create-kind-cluster build-docker-sisu
+# Load sisu all-in-one image after the cluster is ready and the sisu all-in-one image is built.
+.PHONY: load-sisu
+load-sisu: create-kind-cluster build-docker-sisu
 	kind load docker-image --name "$(CLUSTER_NAME)" sisu.test/sisu-all:latest
+
+.PHONY: deploy-deyes
+deploy-deyes: load-sisu
+	kubectl --context "kind-$(CLUSTER_NAME)" apply -f ./deyes.yml
+	@# Block until ganache statefulset is ready.
+	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu rollout status --timeout=30s deployment/deyes
+
+# Ensure the docker image for mysql:8 is present on the host machine.
+.PHONY: prepare-mysql
+prepare-mysql:
+	test -n "$$(docker image ls --quiet mysql:8)" || docker image pull --quiet mysql:8
 
 # Deploy mysql once the cluster is ready.
 # The mysql image isn't small, so we pre-load it in to the cluster to save a large network transfer.
-# First we check if we have the image locally, and if not, attempt to pull it.
 .PHONY: deploy-mysql
-deploy-mysql: create-kind-cluster
-	test -n "$$(docker image ls --quiet mysql:8)" || docker image pull --quiet mysql:8
+deploy-mysql: create-kind-cluster prepare-mysql
 	kind load docker-image --name "$(CLUSTER_NAME)" mysql:8
 	kubectl --context "kind-$(CLUSTER_NAME)" apply -f ./mysql.yml
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu rollout status --timeout=45s deployment/mysql

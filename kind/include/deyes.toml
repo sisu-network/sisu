@@ -1,0 +1,18 @@
+# Bare minimum configuration for deyes inside kind.
+db_host = "mysql"
+db_port = 3306
+db_username = "root"
+db_password = "password"
+db_schema = "deyes"
+
+server_port = 31001
+sisu_server_url = "http://sisu:25456"
+
+# Including this causes deyes to panic with a division by zero error.
+# TODO: debug and re-enable.
+#[chains]
+#[chains.eth]
+#  chain = "eth"
+#  block_time = 1000
+#  starting_block = 0
+#  rpc_url = "http://ganache-0.ganache:7545"
