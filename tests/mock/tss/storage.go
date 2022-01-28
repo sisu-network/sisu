@@ -75,17 +75,17 @@ func (mr *MockStorageMockRecorder) GetAllKeygenResult(keygenType, index interfac
 }
 
 // GetAllTokenPricesRecord mocks base method.
-func (m *MockStorage) GetAllTokenPricesRecord(signerSet map[string]bool) map[string]*types.TokenPriceRecord {
+func (m *MockStorage) GetAllTokenPricesRecord() map[string]*types.TokenPriceRecord {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllTokenPricesRecord", signerSet)
+	ret := m.ctrl.Call(m, "GetAllTokenPricesRecord")
 	ret0, _ := ret[0].(map[string]*types.TokenPriceRecord)
 	return ret0
 }
 
 // GetAllTokenPricesRecord indicates an expected call of GetAllTokenPricesRecord.
-func (mr *MockStorageMockRecorder) GetAllTokenPricesRecord(signerSet interface{}) *gomock.Call {
+func (mr *MockStorageMockRecorder) GetAllTokenPricesRecord() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllTokenPricesRecord", reflect.TypeOf((*MockStorage)(nil).GetAllTokenPricesRecord), signerSet)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllTokenPricesRecord", reflect.TypeOf((*MockStorage)(nil).GetAllTokenPricesRecord))
 }
 
 // GetContract mocks base method.

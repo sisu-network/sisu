@@ -6,6 +6,7 @@ import (
 
 	cstypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
@@ -589,6 +590,7 @@ func setTokenPrices(store cstypes.KVStore, blockHeight uint64, msg *types.Update
 	var record *types.TokenPriceRecord
 	if value == nil {
 		record = new(types.TokenPriceRecord)
+		record.Prices = make(map[string]*types.BlockHeightPricePair)
 	} else {
 		err := record.Unmarshal(value)
 		if err != nil {
@@ -604,6 +606,8 @@ func setTokenPrices(store cstypes.KVStore, blockHeight uint64, msg *types.Update
 		}
 		pair.BlockHeight = blockHeight
 		pair.Price = tokenPrice.Price
+
+		record.Prices[tokenPrice.Id] = pair
 	}
 
 	bz, err := record.Marshal()
@@ -616,16 +620,12 @@ func setTokenPrices(store cstypes.KVStore, blockHeight uint64, msg *types.Update
 }
 
 // getAllTokenPrices gets all the token prices all of all signers.
-func getAllTokenPrices(store cstypes.KVStore, signerSet map[string]bool) map[string]*types.TokenPriceRecord {
+func getAllTokenPrices(store cstypes.KVStore) map[string]*types.TokenPriceRecord {
 	result := make(map[string]*types.TokenPriceRecord)
 
 	for iter := store.Iterator(nil, nil); iter.Valid(); iter.Next() {
 		// Key is signer.
 		signer := string(iter.Key())
-		if !signerSet[signer] {
-			continue
-		}
-
 		bz := iter.Value()
 		record := new(types.TokenPriceRecord)
 		err := record.Unmarshal(bz)
@@ -638,6 +638,12 @@ func getAllTokenPrices(store cstypes.KVStore, signerSet map[string]bool) map[str
 	}
 
 	return result
+}
+
+func setCalculatedTokenPrices(store cstypes.KVStore, tokenPrices map[string]float32) {
+	for token, price := range tokenPrices {
+		store.Set([]byte(token), utils.Float32ToByte(price))
+	}
 }
 
 /// Debug functions
