@@ -23,7 +23,7 @@ require (
 	github.com/prometheus/tsdb v0.10.0 // indirect
 	github.com/rjeczalik/notify v0.9.2 // indirect
 	github.com/sisu-network/deyes v0.1.3
-	github.com/sisu-network/dheart v0.1.5-alpha2.0.20220128035643-7754dd69661f
+	github.com/sisu-network/dheart v0.1.5-alpha2.0.20220128051105-c852859dacab
 	github.com/sisu-network/lib v0.0.1-alpha9
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.3.1

@@ -30,9 +30,9 @@ require-kind:
 go-mod-vendor:
 	$(GO) mod vendor
 
-# Load all the docker images into the kind cluster.
+# Meta-target to deploy all the individual services.
 .PHONY: deploy
-deploy: deploy-ganache deploy-mysql deploy-deyes deploy-dheart ;
+deploy: deploy-ganache deploy-mysql deploy-deyes deploy-dheart deploy-sisud ;
 
 # Build the image for ganache (there wasn't an official image for ganache 7.0 alpha at time of writing).
 .PHONY: build-docker-ganache
@@ -68,6 +68,12 @@ deploy-deyes: load-sisu
 deploy-dheart: load-sisu
 	kubectl --context "kind-$(CLUSTER_NAME)" apply -f ./dheart.yml
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu rollout status --timeout=30s deployment/dheart
+
+.PHONY: deploy-sisud
+deploy-sisud: load-sisu
+	kubectl --context "kind-$(CLUSTER_NAME)" apply -f ./sisud.yml
+	@# TODO: sisud will fail currently because it has incorrect configuration.
+	@#kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu rollout status --timeout=30s deployment/sisud
 
 # Ensure the docker image for mysql:8 is present on the host machine.
 .PHONY: prepare-mysql

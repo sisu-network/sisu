@@ -1,0 +1,47 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sisud
+  namespace: sisu
+spec:
+  ports:
+  - name: tcp-sisud
+    port: 25456
+    protocol: TCP
+    targetPort: 25456
+  selector:
+    app: sisud
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sisud
+  namespace: sisu
+  labels:
+    app: sisud
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: sisud
+  template:
+    metadata:
+      labels:
+        app: sisud
+    spec:
+      containers:
+      - command:
+          - sisud
+          - start
+        workingDir: /root
+        image: sisu.test/sisu-all:latest
+        imagePullPolicy: IfNotPresent
+        name: sisud
+        env:
+          - name: HOME_DIR
+            value: /root
+        ports:
+          - containerPort: 25456
+            name: tcp-sisud
