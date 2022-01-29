@@ -74,6 +74,20 @@ func (mr *MockStorageMockRecorder) GetAllKeygenResult(keygenType, index interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllKeygenResult", reflect.TypeOf((*MockStorage)(nil).GetAllKeygenResult), keygenType, index)
 }
 
+// GetAllTokenPricesRecord mocks base method.
+func (m *MockStorage) GetAllTokenPricesRecord() map[string]*types.TokenPriceRecord {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllTokenPricesRecord")
+	ret0, _ := ret[0].(map[string]*types.TokenPriceRecord)
+	return ret0
+}
+
+// GetAllTokenPricesRecord indicates an expected call of GetAllTokenPricesRecord.
+func (mr *MockStorageMockRecorder) GetAllTokenPricesRecord() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllTokenPricesRecord", reflect.TypeOf((*MockStorage)(nil).GetAllTokenPricesRecord))
+}
+
 // GetContract mocks base method.
 func (m *MockStorage) GetContract(chain, hash string, includeByteCode bool) *types.Contract {
 	m.ctrl.T.Helper()
@@ -456,6 +470,18 @@ func (mr *MockStorageMockRecorder) SaveTxRecord(hash, signer interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTxRecord", reflect.TypeOf((*MockStorage)(nil).SaveTxRecord), hash, signer)
 }
 
+// SetCalculatedTokenPrice mocks base method.
+func (m *MockStorage) SetCalculatedTokenPrice(arg0 map[string]float32) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetCalculatedTokenPrice", arg0)
+}
+
+// SetCalculatedTokenPrice indicates an expected call of SetCalculatedTokenPrice.
+func (mr *MockStorageMockRecorder) SetCalculatedTokenPrice(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCalculatedTokenPrice", reflect.TypeOf((*MockStorage)(nil).SetCalculatedTokenPrice), arg0)
+}
+
 // SetGasPrice mocks base method.
 func (m *MockStorage) SetGasPrice(msg *types.GasPriceMsg) {
 	m.ctrl.T.Helper()
@@ -466,6 +492,18 @@ func (m *MockStorage) SetGasPrice(msg *types.GasPriceMsg) {
 func (mr *MockStorageMockRecorder) SetGasPrice(msg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetGasPrice", reflect.TypeOf((*MockStorage)(nil).SetGasPrice), msg)
+}
+
+// SetTokenPrices mocks base method.
+func (m *MockStorage) SetTokenPrices(blockHeight uint64, msg *types.UpdateTokenPrice) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetTokenPrices", blockHeight, msg)
+}
+
+// SetTokenPrices indicates an expected call of SetTokenPrices.
+func (mr *MockStorageMockRecorder) SetTokenPrices(blockHeight, msg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTokenPrices", reflect.TypeOf((*MockStorage)(nil).SetTokenPrices), blockHeight, msg)
 }
 
 // UpdateContractAddress mocks base method.

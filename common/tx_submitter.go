@@ -204,7 +204,11 @@ func (t *TxSubmitter) Start() {
 			// 3. Send all messages
 			res, err := t.trySubmitTx(copy)
 			if err != nil || (res != nil && res.Code != 0) {
-				log.Errorf("Cannot broadcast transaction, code = %d and err = %v", res.Code, err)
+				code := -1
+				if res != nil {
+					code = int(res.Code)
+				}
+				log.Errorf("Cannot broadcast transaction, code = %d and err = %v", code, err)
 
 				// Do retry if the error we get is incorrect sequence number
 				// List of error code here: https://github.com/cosmos/cosmos-sdk/blob/v0.42.1/types/errors/errors.go

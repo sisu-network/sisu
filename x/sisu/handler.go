@@ -33,6 +33,8 @@ func NewHandler(k keeper.DefaultKeeper, txSubmit common.TxSubmit, processor *Pro
 			return handleTxOutConfirm(ctx, msg, processor)
 		case *types.GasPriceMsg:
 			return handleGasPriceMsg(ctx, msg, processor)
+		case *types.UpdateTokenPrice:
+			return handleUpdateTokenPrice(ctx, msg, processor)
 
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)
@@ -95,6 +97,13 @@ func handleContractWithSigner(ctx sdk.Context, msg *types.ContractsWithSigner, p
 
 func handleGasPriceMsg(ctx sdk.Context, msg *types.GasPriceMsg, processor *Processor) (*sdk.Result, error) {
 	data, err := processor.deliverGasPriceMsg(ctx, msg)
+	return &sdk.Result{
+		Data: data,
+	}, err
+}
+
+func handleUpdateTokenPrice(ctx sdk.Context, msg *types.UpdateTokenPrice, processor *Processor) (*sdk.Result, error) {
+	data, err := processor.deliverUpdateTokenPrice(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err

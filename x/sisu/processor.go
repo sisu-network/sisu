@@ -157,6 +157,7 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 		p.CheckTssKeygen(ctx, blockHeight)
 	}
 
+	// TODO: Make keygen to be command instead of embedding inside the code.
 	// Check Vote result.
 	for len(p.keygenBlockPairs) > 0 && !p.globalData.IsCatchingUp() {
 		log.Debug("blockHeight = ", blockHeight)
@@ -169,6 +170,9 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 			p.keygenBlockPairs = p.keygenBlockPairs[1:]
 		}
 	}
+
+	// Calculate all token prices.
+	p.calculateTokenPrices(ctx)
 }
 
 func (p *Processor) EndBlock(ctx sdk.Context) {

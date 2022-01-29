@@ -62,3 +62,8 @@ func (a *ApiHandler) UpdateGasPrice(request *etypes.GasPriceRequest) {
 	log.Info("Received update gas price request")
 	go a.processor.OnUpdateGasPriceRequest(request)
 }
+
+func (a *ApiHandler) UpdateTokenPrices(prices []*etypes.TokenPrice) {
+	log.Info("Received token prices update")
+	go a.processor.OnUpdateTokenPrice(prices)
+}
