@@ -21,7 +21,7 @@ require (
 	github.com/libp2p/go-libp2p-core v0.8.0
 	github.com/prometheus/tsdb v0.10.0 // indirect
 	github.com/rjeczalik/notify v0.9.2 // indirect
-	github.com/sisu-network/deyes v0.1.3
+	github.com/sisu-network/deyes v0.1.4
 	github.com/sisu-network/dheart v0.1.5-alpha2
 	github.com/sisu-network/lib v0.0.1-alpha9
 	github.com/spf13/afero v1.6.0 // indirect
@@ -45,5 +45,3 @@ require (
 replace google.golang.org/grpc => google.golang.org/grpc v1.33.2
 
 replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-
-replace github.com/sisu-network/deyes => ../deyes

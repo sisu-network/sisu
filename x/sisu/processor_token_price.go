@@ -17,7 +17,7 @@ const (
 // OnUpdateTokenPrice is called when there is a token price update from deyes. Post to the network
 // until we reach a consensus about token price. The token price is only used to calculate gas price
 // fee and not used for actual swapping calculation.
-func (p *Processor) OnUpdateTokenPrice(tokenPrices etypes.TokenPrices) {
+func (p *Processor) OnUpdateTokenPrice(tokenPrices []*etypes.TokenPrice) {
 	prices := make([]*types.TokenPrice, 0, len(tokenPrices))
 
 	// Convert from deyes type to msg type

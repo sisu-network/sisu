@@ -27,7 +27,7 @@ var (
 	prefixGasPrice               = []byte{0x0D}
 	prefixNetworkGasPrice        = []byte{0x0E}
 	prefixTokenPrices            = []byte{0x0F}
-	prefixCalculatedTokenPrice   = []byte{0x0F}
+	prefixCalculatedTokenPrice   = []byte{0x10}
 )
 
 func getKeygenKey(keyType string, index int) []byte {

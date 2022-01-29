@@ -470,6 +470,18 @@ func (mr *MockStorageMockRecorder) SaveTxRecord(hash, signer interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveTxRecord", reflect.TypeOf((*MockStorage)(nil).SaveTxRecord), hash, signer)
 }
 
+// SetCalculatedTokenPrice mocks base method.
+func (m *MockStorage) SetCalculatedTokenPrice(arg0 map[string]float32) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetCalculatedTokenPrice", arg0)
+}
+
+// SetCalculatedTokenPrice indicates an expected call of SetCalculatedTokenPrice.
+func (mr *MockStorageMockRecorder) SetCalculatedTokenPrice(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetCalculatedTokenPrice", reflect.TypeOf((*MockStorage)(nil).SetCalculatedTokenPrice), arg0)
+}
+
 // SetGasPrice mocks base method.
 func (m *MockStorage) SetGasPrice(msg *types.GasPriceMsg) {
 	m.ctrl.T.Helper()
