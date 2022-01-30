@@ -1,6 +1,6 @@
 # kind
 
-This directory contains a Makefile that is intended to be invoked via the top-level make target `create-kind-cluster`.
+This directory contains a Makefile that is intended to be invoked via the top-level make target `kind-init-cluster`.
 It creates a [kind](https://kind.sigs.k8s.io/) cluster and deploys into it:
 
 - one MySQL instance in a Deployment
@@ -8,6 +8,8 @@ It creates a [kind](https://kind.sigs.k8s.io/) cluster and deploys into it:
 - one dheart instance in a Deployment
 - one sisud instance in a Deployment
 - and two ganache instances into a StatefulSet, into a separate `ganache` namespace
+
+You can remove the cluster with `make kind-delete-cluster`.
 
 **NOTE**: currently sisud crashes at startup due to misconfiguration.
 Getting sisud to run properly is the next milestone for a local cluster.

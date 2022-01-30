@@ -27,14 +27,16 @@ dev-mysql-down:
 		down -v --rmi local
 
 # Create a local kind cluster with everything needed for sisu.
-.PHONY: create-kind-cluster
-create-kind-cluster:
-	@cd ./kind && $(MAKE) -j create-cluster
+.PHONY: kind-init-cluster
+kind-init-cluster:
+	@cd ./kind && $(MAKE) -j init-cluster
 
-# Delete the cluster you made with create-kind-cluster.
-.PHONY: delete-kind-cluster
-delete-kind-cluster:
+# Delete the cluster you made with kind-init-cluster.
+.PHONY: kind-delete-cluster
+kind-delete-cluster:
 	@cd ./kind && $(MAKE) -j delete-cluster
+
+# TODO: kind-add-sisu target to add a new sisu instance to the existing kind cluster
 
 # Set global git configuration to only replace our private dependencies with the SSH URL.
 .PHONY: configure-git
