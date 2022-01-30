@@ -17,6 +17,12 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
+// TODO: export a command line to set liquid pool address for the gateway
+var liquidPoolAddrs = map[string]ecommon.Address{
+	"ganache1": ecommon.HexToAddress("0x3BA075c583AA1A338e9D8929d034667b5E6BA9a0"),
+	"ganache2": ecommon.HexToAddress("0x13D474f19059896657A1633B8735108Ec1D8C32a"),
+}
+
 // This structs produces transaction output based on input. For a given tx input, this struct
 // produces a list (could contain only one element) of transaction output.
 type TxOutputProducer interface {
@@ -193,7 +199,9 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *types.Contract, nonce 
 
 		log.Info("Allowed chains for chain ", contract.Chain, " are: ", supportedChains)
 
-		input, err := parsedAbi.Pack("", supportedChains)
+		liquidPoolAddr := liquidPoolAddrs[contract.Chain]
+		log.Infof("Liquidity pool addr for chain %s is %s", contract.Chain, liquidPoolAddr)
+		input, err := parsedAbi.Pack("", supportedChains, liquidPoolAddr)
 		if err != nil {
 			log.Error("cannot pack supportedChains, err =", err)
 			return nil
@@ -222,7 +230,7 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *types.Contract, nonce 
 
 func (p *DefaultTxOutputProducer) getGasLimit(chain string) uint64 {
 	// TODO: Make this dependent on different chains.
-	return uint64(8_000_000)
+	return uint64(5_000_000)
 }
 
 func (p *DefaultTxOutputProducer) getDefaultGasPrice(chain string) *big.Int {

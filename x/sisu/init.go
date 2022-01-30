@@ -12,8 +12,8 @@ import (
 const (
 	ContractErc20Gateway = "erc20gateway"
 
-	MethodTransferIn  = "TransferIn"
-	MethodTransferOut = "TransferOut"
+	MethodTransferIn  = "transferIn"
+	MethodTransferOut = "transferOut"
 )
 
 var (
