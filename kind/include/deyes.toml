@@ -15,4 +15,4 @@ sisu_server_url = "http://sisud:25456"
 #  chain = "eth"
 #  block_time = 1000
 #  starting_block = 0
-#  rpc_url = "http://ganache-0.ganache:7545"
+#  rpc_url = "http://ganache-0.ganache.ganache:7545"

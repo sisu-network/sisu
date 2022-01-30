@@ -4,10 +4,10 @@ This directory contains a Makefile that is intended to be invoked via the top-le
 It creates a [kind](https://kind.sigs.k8s.io/) cluster and deploys into it:
 
 - one MySQL instance in a Deployment
-- two ganache instances in a StatefulSet
 - one deyes instance in a Deployment
 - one dheart instance in a Deployment
 - one sisud instance in a Deployment
+- and two ganache instances into a StatefulSet, into a separate `ganache` namespace
 
 **NOTE**: currently sisud crashes at startup due to misconfiguration.
 Getting sisud to run properly is the next milestone for a local cluster.
@@ -31,8 +31,6 @@ To see what is running in the cluster, you can run:
 NAME                     READY   STATUS             RESTARTS   AGE
 deyes-857c8b89b-6hc7f    1/1     Running            3          7m45s
 dheart-f75c87445-lp7kj   1/1     Running            3          7m45s
-ganache-0                1/1     Running            0          7m36s
-ganache-1                1/1     Running            0          7m35s
 mysql-545ccdb445-lb9hd   1/1     Running            0          7m34s
 sisud-6bdf6bb89c-86g79   0/1     CrashLoopBackOff   6          7m45s
 ```
@@ -73,7 +71,7 @@ a corresponding port on localhost.
 ### Reaching a pod from another pod
 
 Within any pod in the `sisu` namespace, you should be able to resolve `dheart`, `deyes`, `sisud`, or `mysql` simply through that name.
-Because ganache runs in a StatefulSet, you need to qualify `ganache-N.ganache`.
+Because ganache runs in a StatefulSet, in a separate namespace, you need to qualify `ganache-N.ganache.ganache` (that is `POD_NAME.SERVICE_NAME.NAMESPACE`).
 
 ```console
 % kubectl --context kind-sisu -n sisu exec -it dheart-f75c87445-lp7kj -- bash
@@ -106,11 +104,11 @@ root@dheart-f75c87445-lp7kj:~# curl -v mysql:3306 # expected to connect, not exp
 * Closing connection 0
 curl: (1) Received HTTP/0.9 when not allowed
 
-root@dheart-f75c87445-lp7kj:~# curl -v ganache-0.ganache:7545
+root@dheart-f75c87445-lp7kj:~# curl -v ganache-0.ganache.ganache:7545
 *   Trying 10.244.0.8:7545...
-* Connected to ganache-0.ganache (10.244.0.8) port 7545 (#0)
+* Connected to ganache-0.ganache.ganache (10.244.0.8) port 7545 (#0)
 > GET / HTTP/1.1
-> Host: ganache-0.ganache:7545
+> Host: ganache-0.ganache.ganache:7545
 > User-Agent: curl/7.74.0
 > Accept: */*
 >
@@ -119,13 +117,13 @@ root@dheart-f75c87445-lp7kj:~# curl -v ganache-0.ganache:7545
 < Content-Type: text/plain
 < Content-Length: 13
 <
-* Connection #0 to host ganache-0.ganache left intact
+* Connection #0 to host ganache-0.ganache.ganache left intact
 404 Not Found
-root@dheart-f75c87445-lp7kj:~# curl -v ganache-1.ganache:7545
+root@dheart-f75c87445-lp7kj:~# curl -v ganache-1.ganache.ganache:7545
 *   Trying 10.244.0.9:7545...
-* Connected to ganache-1.ganache (10.244.0.9) port 7545 (#0)
+* Connected to ganache-1.ganache.ganache (10.244.0.9) port 7545 (#0)
 > GET / HTTP/1.1
-> Host: ganache-1.ganache:7545
+> Host: ganache-1.ganache.ganache:7545
 > User-Agent: curl/7.74.0
 > Accept: */*
 >
@@ -134,7 +132,7 @@ root@dheart-f75c87445-lp7kj:~# curl -v ganache-1.ganache:7545
 < Content-Type: text/plain
 < Content-Length: 13
 <
-* Connection #0 to host ganache-1.ganache left intact
+* Connection #0 to host ganache-1.ganache.ganache left intact
 ```
 
 (If this approach is not desirable, it is trivial to change Deployments to StatefulSets or vice versa,

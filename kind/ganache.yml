@@ -3,7 +3,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: ganache
-  namespace: sisu
+  namespace: ganache
 spec:
   ports:
   - name: tcp-ganache
@@ -17,7 +17,7 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: ganache
-  namespace: sisu
+  namespace: ganache
   labels:
     app: ganache
 spec:

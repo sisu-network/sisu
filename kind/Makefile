@@ -20,6 +20,7 @@ delete-cluster: require-kind
 create-kind-cluster: require-kind
 	kind create cluster --name $(CLUSTER_NAME)
 	kubectl --context "kind-$(CLUSTER_NAME)" create namespace sisu
+	kubectl --context "kind-$(CLUSTER_NAME)" create namespace ganache
 
 # Ensure we have kind; if we don't, the error message should be clear enough.
 .PHONY: require-kind
@@ -45,7 +46,7 @@ deploy-ganache: create-kind-cluster build-docker-ganache
 	kind load docker-image --name "$(CLUSTER_NAME)" sisu.test/ganache:latest
 	kubectl --context "kind-$(CLUSTER_NAME)" apply -f ./ganache.yml
 	@# Block until ganache statefulset is ready.
-	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu rollout status --timeout=30s statefulset/ganache
+	kubectl --context "kind-$(CLUSTER_NAME)" --namespace ganache rollout status --timeout=30s statefulset/ganache
 
 # Build the all-in-one sisu docker image.
 # TODO: the "go install" step of this takes about two minutes on my machine.
