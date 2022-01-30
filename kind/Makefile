@@ -44,7 +44,7 @@ build-docker-ganache:
 .PHONY: deploy-ganache
 deploy-ganache: create-kind-cluster build-docker-ganache
 	kind load docker-image --name "$(CLUSTER_NAME)" sisu.test/ganache:latest
-	kubectl --context "kind-$(CLUSTER_NAME)" apply -f ./ganache.yml
+	kubectl --context "kind-$(CLUSTER_NAME)" --namespace ganache apply -f ./ganache.yml
 	@# Block until ganache statefulset is ready.
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace ganache rollout status --timeout=30s statefulset/ganache
 
@@ -62,17 +62,17 @@ load-sisu: create-kind-cluster build-docker-sisu
 
 .PHONY: deploy-deyes
 deploy-deyes: load-sisu
-	kubectl --context "kind-$(CLUSTER_NAME)" apply -f ./deyes.yml
+	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu apply -f ./deyes.yml
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu rollout status --timeout=30s deployment/deyes
 
 .PHONY: deploy-dheart
 deploy-dheart: load-sisu
-	kubectl --context "kind-$(CLUSTER_NAME)" apply -f ./dheart.yml
+	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu apply -f ./dheart.yml
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu rollout status --timeout=30s deployment/dheart
 
 .PHONY: deploy-sisud
 deploy-sisud: load-sisu
-	kubectl --context "kind-$(CLUSTER_NAME)" apply -f ./sisud.yml
+	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu apply -f ./sisud.yml
 	@# TODO: sisud will fail currently because it has incorrect configuration.
 	@#kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu rollout status --timeout=30s deployment/sisud
 
@@ -86,5 +86,5 @@ prepare-mysql:
 .PHONY: deploy-mysql
 deploy-mysql: create-kind-cluster prepare-mysql
 	kind load docker-image --name "$(CLUSTER_NAME)" mysql:8
-	kubectl --context "kind-$(CLUSTER_NAME)" apply -f ./mysql.yml
+	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu apply -f ./mysql.yml
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu rollout status --timeout=45s deployment/mysql

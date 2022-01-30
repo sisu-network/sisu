@@ -7,6 +7,7 @@ RUN go install ./cmd/sisud github.com/sisu-network/deyes github.com/sisu-network
 
 # This shouldn't run as root, but that should be fine for kind.
 FROM debian:bullseye-slim
+# TODO: dynamically set AES_HEX_KEY once per kind deployment.
 RUN echo 'AES_KEY_HEX=c787ef22ade5afc8a5e22041c17869e7e4714190d88ecec0a84e241c9431add0' > /root/.env && \
   touch /root/dheart.toml && mkdir /root/migrations && \
   mkdir -p /root/.sisu/main/config
