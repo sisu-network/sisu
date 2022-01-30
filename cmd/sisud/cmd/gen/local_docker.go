@@ -420,24 +420,31 @@ func generateHeartToml(index int, dir string, dockerConfig DockerNodeConfig, pee
 		peers = append(peers, fmt.Sprintf(`"/dns/dheart%d/tcp/28300/p2p/%s"`, i, peerIds[i]))
 	}
 
+	useOnMemory := "false"
+	if len(peerIds) == 1 {
+		useOnMemory = "true"
+	}
+
 	peerString := strings.Join(peers, ", ")
 	heartConfig := struct {
 		PeerString    string
 		SisuServerUrl string
 		SqlHost       string
 		Schema        string
+		UseOnMemory   string
 	}{
 		PeerString:    peerString,
 		SisuServerUrl: fmt.Sprintf("http://sisu%d:25456", index),
 		SqlHost:       "mysql",
 		Schema:        fmt.Sprintf("dheart%d", index),
+		UseOnMemory:   useOnMemory,
 	}
 
 	heartToml := `# This is a TOML config file.
 # For more information, see https://github.com/toml-lang/toml
 
 home-dir = "/root/"
-use-on-memory = false
+use-on-memory = {{ .UseOnMemory }}
 shortcut-preparams = true
 sisu-server-url = "{{ .SisuServerUrl }}"
 port = 5678
