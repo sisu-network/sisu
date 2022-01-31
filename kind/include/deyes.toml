@@ -1,5 +1,5 @@
 # Bare minimum configuration for deyes inside kind.
-db_host = "mysql"
+db_host = "mysql.mysql"
 db_port = 3306
 db_username = "root"
 db_password = "password"

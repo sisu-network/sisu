@@ -5,13 +5,31 @@ CLUSTER_NAME ?= sisu
 # for predictability, but subsequent instances should have a unique name.
 SISU_NAMESPACE ?= sisu
 
+ifneq ($(ASSUME_CLUSTER_EXISTS),)
+# Adjust the namespace for a secondary sisu instance.
+SISU_NAMESPACE := $(SISU_NAMESPACE)-$(shell openssl rand -hex 6)
+$(info will use sisu namespace $(SISU_NAMESPACE))
+
+# Assume the cluster is ready, so validate the exact cluster name is present in kind get clusters.
+.PHONY: kind-cluster-ready
+kind-cluster-ready:
+	kind get clusters | grep -qx "$(CLUSTER_NAME)"
+
+else
+
+# Not assuming the cluster exists, so it is ready after we create it.
+.PHONY: kind-cluster-ready
+kind-cluster-ready: create-kind-cluster ;
+
+endif
+
 # Allow overriding the version of go (for go mod vendor).
 GO ?= go
 
 # Create a kind cluster, and build, load, and deploy all required images.
 .PHONY: init-cluster
-init-cluster: create-kind-cluster deploy-ganache deploy-sisu
-	$(info Access the cluster with:)
+init-cluster: create-kind-cluster deploy-ganache deploy-mysql deploy-sisu
+	$(info Access the cluster's sisu instance with:)
 	$(info $(SPACE) $(SPACE) kubectl --context "kind-$(CLUSTER_NAME)" -n "$(SISU_NAMESPACE)")
 
 # Delete the cluster.
@@ -23,13 +41,6 @@ delete-cluster: require-kind
 .PHONY: create-kind-cluster
 create-kind-cluster: require-kind
 	kind create cluster --name $(CLUSTER_NAME)
-	kubectl --context "kind-$(CLUSTER_NAME)" create namespace "$(SISU_NAMESPACE)"
-
-# Phony target to ensure the target kind cluster is ready.
-# TODO: On init, this should depend on create-kind-cluster;
-# when adding a new sisu instance, this should just validate the cluster is reachable.
-.PHONY: kind-cluster-ready
-kind-cluster-ready: create-kind-cluster ;
 
 # Ensure we have the kind command; if we don't, the error message should be clear enough.
 .PHONY: require-kind
@@ -42,6 +53,7 @@ go-mod-vendor:
 
 ########### GANACHE ##########
 # There is only one ganache statefulset in a kind cluster, as it represents an external resource.
+# It is deployed into a fixed "ganache" namespace.
 
 # Build the image for ganache (there wasn't an official image for ganache 7.0 alpha at time of writing).
 .PHONY: build-docker-ganache
@@ -57,12 +69,30 @@ deploy-ganache: kind-cluster-ready build-docker-ganache
 	@# Block until ganache statefulset is ready.
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace ganache rollout status --timeout=30s statefulset/ganache
 
+########## MySQL ##########
+# There is a single MySQL instance in the kind cluster, to be shared by all sisu instances.
+# It is deployed into a fixed "mysql" namespace.
+
+# Ensure the docker image for mysql:8 is present on the host machine.
+.PHONY: prepare-mysql
+prepare-mysql:
+	test -n "$$(docker image ls --quiet mysql:8)" || docker image pull --quiet mysql:8
+
+# Deploy mysql once the cluster is ready.
+# The mysql image isn't small, so we pre-load it in to the cluster to save a large network transfer.
+.PHONY: deploy-mysql
+deploy-mysql: kind-cluster-ready prepare-mysql
+	kind load docker-image --name "$(CLUSTER_NAME)" mysql:8
+	kubectl --context "kind-$(CLUSTER_NAME)" create namespace mysql
+	kubectl --context "kind-$(CLUSTER_NAME)" --namespace mysql apply -f ./mysql.yml
+	kubectl --context "kind-$(CLUSTER_NAME)" --namespace mysql rollout status --timeout=45s deployment/mysql
+
 ########## SISU ##########
-# Deploying one "instance" of sisu deploys mysql, deyes, dheart, and sisud to its own namespace.
+# Deploying one "instance" of sisu deploys deyes, dheart, and sisud to its own namespace.
 
 # Meta-target to deploy all the individual services.
 .PHONY: deploy-sisu
-deploy-sisu: deploy-mysql deploy-deyes deploy-dheart deploy-sisud ;
+deploy-sisu: deploy-deyes deploy-dheart deploy-sisud ;
 
 # Build the all-in-one sisu docker image.
 # TODO: the "go install" step of this takes about two minutes on my machine.
@@ -75,6 +105,7 @@ build-docker-sisu: go-mod-vendor
 .PHONY: load-sisu
 load-sisu: kind-cluster-ready build-docker-sisu
 	kind load docker-image --name "$(CLUSTER_NAME)" sisu.test/sisu-all:latest
+	kubectl --context "kind-$(CLUSTER_NAME)" create namespace "$(SISU_NAMESPACE)"
 
 .PHONY: deploy-deyes
 deploy-deyes: load-sisu
@@ -91,16 +122,3 @@ deploy-sisud: load-sisu
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace "$(SISU_NAMESPACE)" apply -f ./sisud.yml
 	@# TODO: sisud will fail currently because it has incorrect configuration.
 	@#kubectl --context "kind-$(CLUSTER_NAME)" --namespace "$(SISU_NAMESPACE)" rollout status --timeout=30s deployment/sisud
-
-# Ensure the docker image for mysql:8 is present on the host machine.
-.PHONY: prepare-mysql
-prepare-mysql:
-	test -n "$$(docker image ls --quiet mysql:8)" || docker image pull --quiet mysql:8
-
-# Deploy mysql once the cluster is ready.
-# The mysql image isn't small, so we pre-load it in to the cluster to save a large network transfer.
-.PHONY: deploy-mysql
-deploy-mysql: kind-cluster-ready prepare-mysql
-	kind load docker-image --name "$(CLUSTER_NAME)" mysql:8
-	kubectl --context "kind-$(CLUSTER_NAME)" --namespace "$(SISU_NAMESPACE)" apply -f ./mysql.yml
-	kubectl --context "kind-$(CLUSTER_NAME)" --namespace "$(SISU_NAMESPACE)" rollout status --timeout=45s deployment/mysql

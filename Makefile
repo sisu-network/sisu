@@ -36,7 +36,9 @@ kind-init-cluster:
 kind-delete-cluster:
 	@cd ./kind && $(MAKE) -j delete-cluster
 
-# TODO: kind-add-sisu target to add a new sisu instance to the existing kind cluster
+.PHONY: kind-add-sisu
+kind-add-sisu:
+	@cd ./kind && $(MAKE) -j deploy-sisu ASSUME_CLUSTER_EXISTS=1
 
 # Set global git configuration to only replace our private dependencies with the SSH URL.
 .PHONY: configure-git
