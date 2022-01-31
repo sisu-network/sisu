@@ -20,10 +20,10 @@ type DefaultWorldState struct {
 	privateDb   keeper.Storage
 	tssConfig   config.TssConfig
 	nonces      map[string]int64
-	deyesClient *tssclients.DeyesClient
+	deyesClient tssclients.DeyesClient
 }
 
-func NewWorldState(tssConfig config.TssConfig, privateDb keeper.Storage, deyesClients *tssclients.DeyesClient) WorldState {
+func NewWorldState(tssConfig config.TssConfig, privateDb keeper.Storage, deyesClients tssclients.DeyesClient) WorldState {
 	return &DefaultWorldState{
 		tssConfig:   tssConfig,
 		privateDb:   privateDb,

@@ -1,8 +1,10 @@
 package app
 
 import (
+	"fmt"
 	"io"
 	"path/filepath"
+	"time"
 
 	tlog "github.com/tendermint/tendermint/libs/log"
 
@@ -65,6 +67,7 @@ import (
 	tss "github.com/sisu-network/sisu/x/sisu"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	tssKeeper "github.com/sisu-network/sisu/x/sisu/keeper"
+	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	sisutypes "github.com/sisu-network/sisu/x/sisu/types"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -73,7 +76,11 @@ import (
 	sisuAuth "github.com/sisu-network/sisu/x/auth"
 )
 
-const Name = "sisu"
+const (
+	Name = "sisu"
+
+	RETRY_TIMEOUT = time.Second * 3
+)
 
 var (
 	SisuHome string
@@ -245,8 +252,10 @@ func New(
 	storage := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "data"))
 	privateDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "private"))
 
+	dheartClient, deyesClient := app.connectToOtherComponents(tssConfig)
+
 	tssProcessor := tss.NewProcessor(app.tssKeeper, storage, privateDb, tssConfig, nodeKey.PrivKey,
-		app.appKeys, app.txDecoder, app.txSubmitter, app.globalData)
+		app.appKeys, app.txDecoder, app.txSubmitter, app.globalData, dheartClient, deyesClient)
 	tssProcessor.Init()
 
 	// NOTE: Any module instantiated in the module manager that is later modified
@@ -556,4 +565,55 @@ func (app *App) setupApiServer(c config.Config) {
 
 	log.Info("Starting Internal API server")
 	go s.Run()
+}
+
+// connectToOtherComponents establishes connections with dheart and deyes.
+func (app *App) connectToOtherComponents(tssConfig config.TssConfig) (tssclients.DheartClient, tssclients.DeyesClient) {
+	var dheartClient tssclients.DheartClient
+	var err error
+	for {
+		url := fmt.Sprintf("http://%s:%d", tssConfig.DheartHost, tssConfig.DheartPort)
+		log.Info("Connecting to Dheart server at", url)
+
+		dheartClient, err = tssclients.DialDheart(url)
+		if err != nil {
+			log.Infof("cannot dial dheart, err = %v, sleeping before retry...", err)
+			time.Sleep(RETRY_TIMEOUT)
+		} else {
+			break
+		}
+	}
+
+	for {
+		err := dheartClient.CheckHealth()
+		if err != nil {
+			log.Infof("cannot check dheart health, err = %v, sleeping before retry...", err)
+			time.Sleep(RETRY_TIMEOUT)
+		} else {
+			break
+		}
+	}
+
+	var deyesClient tssclients.DeyesClient
+	for {
+		deyesClient, err = tssclients.DialDeyes(tssConfig.DeyesUrl)
+		if err != nil {
+			log.Infof("cannot dial deyes, err = %v, sleeping before retry...", err)
+			time.Sleep(RETRY_TIMEOUT)
+		} else {
+			break
+		}
+	}
+
+	for {
+		err := deyesClient.CheckHealth()
+		if err != nil {
+			log.Infof("cannot check deyes health, err = %v, sleeping before retry...", err)
+			time.Sleep(RETRY_TIMEOUT)
+		} else {
+			break
+		}
+	}
+
+	return dheartClient, deyesClient
 }

@@ -47,7 +47,7 @@ type Processor struct {
 
 	// Dheart & Deyes client
 	dheartClient tssclients.DheartClient
-	deyesClient  *tssclients.DeyesClient // TODO: make this an interface
+	deyesClient  tssclients.DeyesClient
 
 	// A map of chain -> map ()
 	worldState       WorldState
@@ -67,6 +67,8 @@ func NewProcessor(k keeper.DefaultKeeper,
 	txDecoder sdk.TxDecoder,
 	txSubmit common.TxSubmit,
 	globalData common.GlobalData,
+	dheartClient tssclients.DheartClient,
+	deyesClient tssclients.DeyesClient,
 ) *Processor {
 	p := &Processor{
 		keeper:            &k,
@@ -82,6 +84,8 @@ func NewProcessor(k keeper.DefaultKeeper,
 		keygenVoteResult:  make(map[string]map[string]bool),
 		// And array that stores block numbers where we should do final vote count.
 		keygenBlockPairs: make([]BlockSymbolPair, 0),
+		dheartClient:     dheartClient,
+		deyesClient:      deyesClient,
 	}
 
 	return p
@@ -89,9 +93,6 @@ func NewProcessor(k keeper.DefaultKeeper,
 
 func (p *Processor) Init() {
 	log.Info("Initializing TSS Processor...")
-
-	p.connectToDheart()
-	p.connectToDeyes()
 
 	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.appKeys, p.publicDb, p.privateDb, p.config)
 }
@@ -123,22 +124,6 @@ func (p *Processor) connectToDheart() {
 	}
 
 	log.Info("Dheart server connected!")
-}
-
-// Connecto to all deyes.
-func (p *Processor) connectToDeyes() {
-	deyeClient, err := tssclients.DialDeyes(p.config.DeyesUrl)
-	if err != nil {
-		panic(err)
-	}
-
-	if err := deyeClient.CheckHealth(); err != nil {
-		panic(err)
-	}
-
-	p.deyesClient = deyeClient
-
-	p.worldState = NewWorldState(p.config, p.publicDb, p.deyesClient)
 }
 
 func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
