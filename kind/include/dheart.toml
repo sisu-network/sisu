@@ -7,4 +7,4 @@ host = "mysql.mysql"
 port = 3306
 username = "root"
 password = "password"
-schema = "dheart"
+schema = "dheart" # TODO: this should probably be dynamic per namespace?

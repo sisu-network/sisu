@@ -3,7 +3,7 @@ db_host = "mysql.mysql"
 db_port = 3306
 db_username = "root"
 db_password = "password"
-db_schema = "deyes"
+db_schema = "deyes" # TODO: this should probably be dynamic per namespace?
 
 server_port = 31001
 sisu_server_url = "http://sisud:25456"

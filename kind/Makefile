@@ -28,7 +28,7 @@ GO ?= go
 
 # Create a kind cluster, and build, load, and deploy all required images.
 .PHONY: init-cluster
-init-cluster: create-kind-cluster deploy-ganache deploy-mysql deploy-sisu
+init-cluster: create-kind-cluster create-clusterrole deploy-ganache deploy-mysql deploy-sisu
 	$(info Access the cluster's sisu instance with:)
 	$(info $(SPACE) $(SPACE) kubectl --context "kind-$(CLUSTER_NAME)" -n "$(SISU_NAMESPACE)")
 
@@ -50,6 +50,10 @@ require-kind:
 .PHONY: go-mod-vendor
 go-mod-vendor:
 	$(GO) mod vendor
+
+.PHONY: create-clusterrole
+create-clusterrole: create-kind-cluster
+	kubectl --context "kind-$(CLUSTER_NAME)" apply -f ./namespace-lister-clusterrole.yml
 
 ########### GANACHE ##########
 # There is only one ganache statefulset in a kind cluster, as it represents an external resource.
@@ -106,6 +110,8 @@ build-docker-sisu: go-mod-vendor
 load-sisu: kind-cluster-ready build-docker-sisu
 	kind load docker-image --name "$(CLUSTER_NAME)" sisu.test/sisu-all:latest
 	kubectl --context "kind-$(CLUSTER_NAME)" create namespace "$(SISU_NAMESPACE)"
+	@# Add arbitrary label so that sisu instances can discover other sisu instances in the same kind cluster.
+	kubectl --context "kind-$(CLUSTER_NAME)" label namespace  "$(SISU_NAMESPACE)" sisu.network/purpose=test
 
 .PHONY: deploy-deyes
 deploy-deyes: load-sisu
@@ -118,7 +124,19 @@ deploy-dheart: load-sisu
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace "$(SISU_NAMESPACE)" rollout status --timeout=30s deployment/dheart
 
 .PHONY: deploy-sisud
-deploy-sisud: load-sisu
+deploy-sisud: load-sisu load-bitnami-kubectl
+	@# Patch the clusterrolebinding so the init container can list namespaces.
+	@# TODO: this updates the subjects to just one entry, but it needs to map over all the existing sisu namespaces.
+	kubectl --context "kind-$(CLUSTER_NAME)" patch clusterrolebinding namespace-lister --patch '{"subjects":[{"kind":"ServiceAccount", "name":"namespace-lister", "namespace":"'"$(SISU_NAMESPACE)"'"}]}'
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace "$(SISU_NAMESPACE)" apply -f ./sisud.yml
 	@# TODO: sisud will fail currently because it has incorrect configuration.
 	@#kubectl --context "kind-$(CLUSTER_NAME)" --namespace "$(SISU_NAMESPACE)" rollout status --timeout=30s deployment/sisud
+
+# The bitnami/kubectl image is used for the init container on sisud to discover the other sisu instances in the kind cluster.
+.PHONY: prepare-bitnami-kubectl
+prepare-bitnami-kubectl:
+	test -n "$$(docker image ls --quiet bitnami/kubectl:1.22)" || docker image pull --quiet bitnami/kubectl:1.22
+
+.PHONY: load-bitnami-kubectl
+load-bitnami-kubectl: kind-cluster-ready prepare-bitnami-kubectl
+	kind load docker-image --name "$(CLUSTER_NAME)" bitnami/kubectl:1.22

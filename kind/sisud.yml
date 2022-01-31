@@ -1,5 +1,10 @@
 ---
 apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: namespace-lister
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: sisud
@@ -29,6 +34,18 @@ spec:
       labels:
         app: sisud
     spec:
+      serviceAccountName: namespace-lister
+      initContainers:
+      - name: kubectl-init
+        image: bitnami/kubectl:1.22
+        imagePullPolicy: IfNotPresent
+        command:
+          # TODO: the  RBAC for kubectl get ns isn't configured correctly yet.
+          # The intent is that this step will discover the other sisu instances to populate the peers listing.
+          - true
+          #- kubectl
+          #- get
+          #- ns
       containers:
       - command:
           - sisud
