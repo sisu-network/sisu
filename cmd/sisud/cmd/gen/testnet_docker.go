@@ -245,14 +245,13 @@ func (exe *TestnetDockerExecutor) getNodeSettings(chainID, keyringBackend string
 		Tss: config.TssConfig{
 			DheartHost: fmt.Sprintf("dheart%d", index),
 			DheartPort: 5678,
+			DeyesUrl:   fmt.Sprintf("http://deyes%d:31001", index),
 			SupportedChains: map[string]config.TssChainConfig{
 				"eth-sisu-local": {
-					Symbol:   "eth-sisu-local",
-					DeyesUrl: fmt.Sprintf("http://deyes%d:31001", index),
+					Symbol: "eth-sisu-local",
 				},
 				"eth-ropsten": {
-					Symbol:   "eth-ropsten",
-					DeyesUrl: fmt.Sprintf("http://deyes%d:31001", index),
+					Symbol: "eth-ropsten",
 				},
 			},
 		},

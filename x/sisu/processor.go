@@ -47,7 +47,7 @@ type Processor struct {
 
 	// Dheart & Deyes client
 	dheartClient tssclients.DheartClient
-	deyesClients map[string]*tssclients.DeyesClient
+	deyesClient  *tssclients.DeyesClient // TODO: make this an interface
 
 	// A map of chain -> map ()
 	worldState       WorldState
@@ -82,7 +82,6 @@ func NewProcessor(k keeper.DefaultKeeper,
 		keygenVoteResult:  make(map[string]map[string]bool),
 		// And array that stores block numbers where we should do final vote count.
 		keygenBlockPairs: make([]BlockSymbolPair, 0),
-		deyesClients:     make(map[string]*tssclients.DeyesClient),
 	}
 
 	return p
@@ -128,23 +127,18 @@ func (p *Processor) connectToDheart() {
 
 // Connecto to all deyes.
 func (p *Processor) connectToDeyes() {
-	for chain, chainConfig := range p.config.SupportedChains {
-		log.Info("Deyes url = ", chainConfig.DeyesUrl)
-
-		deyeClient, err := tssclients.DialDeyes(chainConfig.DeyesUrl)
-		if err != nil {
-			log.Error("Failed to connect to deyes", chain, ".Err =", err)
-			panic(err)
-		}
-
-		if err := deyeClient.CheckHealth(); err != nil {
-			panic(err)
-		}
-
-		p.deyesClients[chain] = deyeClient
+	deyeClient, err := tssclients.DialDeyes(p.config.DeyesUrl)
+	if err != nil {
+		panic(err)
 	}
 
-	p.worldState = NewWorldState(p.config, p.publicDb, p.deyesClients)
+	if err := deyeClient.CheckHealth(); err != nil {
+		panic(err)
+	}
+
+	p.deyesClient = deyeClient
+
+	p.worldState = NewWorldState(p.config, p.publicDb, p.deyesClient)
 }
 
 func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {

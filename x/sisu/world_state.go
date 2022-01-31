@@ -17,18 +17,18 @@ type WorldState interface {
 }
 
 type DefaultWorldState struct {
-	privateDb    keeper.Storage
-	tssConfig    config.TssConfig
-	nonces       map[string]int64
-	deyesClients map[string]*tssclients.DeyesClient
+	privateDb   keeper.Storage
+	tssConfig   config.TssConfig
+	nonces      map[string]int64
+	deyesClient *tssclients.DeyesClient
 }
 
-func NewWorldState(tssConfig config.TssConfig, privateDb keeper.Storage, deyesClients map[string]*tssclients.DeyesClient) WorldState {
+func NewWorldState(tssConfig config.TssConfig, privateDb keeper.Storage, deyesClients *tssclients.DeyesClient) WorldState {
 	return &DefaultWorldState{
-		tssConfig:    tssConfig,
-		privateDb:    privateDb,
-		nonces:       make(map[string]int64, 0),
-		deyesClients: deyesClients,
+		tssConfig:   tssConfig,
+		privateDb:   privateDb,
+		nonces:      make(map[string]int64, 0),
+		deyesClient: deyesClients,
 	}
 }
 
@@ -50,12 +50,7 @@ func (ws *DefaultWorldState) UseAndIncreaseNonce(chain string) int64 {
 	pubKeyAddress := crypto.PubkeyToAddress(*pubKey).Hex()
 
 	if ws.nonces[chain] == 0 {
-		eyeClient := ws.deyesClients[chain]
-		if eyeClient == nil {
-			return -1
-		}
-
-		nonce := eyeClient.GetNonce(chain, pubKeyAddress)
+		nonce := ws.deyesClient.GetNonce(chain, pubKeyAddress)
 
 		if nonce == -1 {
 			return -1
