@@ -47,6 +47,31 @@ spec:
           - "-l"
           - sisu.network/purpose=test
           - "-oname"
+      - name: populate-sisu-dir # Copy the files from /root/.sisu into the shared volume.
+        image: sisu.test/sisu-all:latest
+        imagePullPolicy: IfNotPresent
+        command:
+          - bash
+          - '-c'
+          - 'cp -R /root/.sisu/. /sisu/'
+        volumeMounts:
+          - name: sisudir
+            mountPath: /sisu
+      - name: create-keys # Create keys and init genesis.
+        image: sisu.test/sisu-all:latest
+        imagePullPolicy: IfNotPresent
+        command:
+          - bash
+          - '-eu'
+          - '-c'
+          - 'sisud keys add --keyring-backend=test k1 && sisud init --chain-id=tbd sisu-1 --overwrite'
+        workingDir: /root
+        env:
+          - name: HOME_DIR
+            value: /root
+        volumeMounts:
+          - name: sisudir
+            mountPath: /root/.sisu
       containers:
       - command:
           - sisud
@@ -61,3 +86,22 @@ spec:
         ports:
           - containerPort: 25456
             name: tcp-sisud
+        volumeMounts:
+          - name: sisudir
+            mountPath: /root/.sisu
+      - command: # Temporary container for debugging.
+          - sleep
+          - '999999'
+        workingDir: /root
+        image: sisu.test/sisu-all:latest
+        imagePullPolicy: IfNotPresent
+        name: sleep
+        env:
+          - name: HOME_DIR
+            value: /root
+        volumeMounts:
+          - name: sisudir
+            mountPath: /root/.sisu
+      volumes:
+        - name: sisudir
+          emptyDir: {}
