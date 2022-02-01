@@ -40,12 +40,13 @@ spec:
         image: bitnami/kubectl:1.22
         imagePullPolicy: IfNotPresent
         command:
-          # TODO: the  RBAC for kubectl get ns isn't configured correctly yet.
-          # The intent is that this step will discover the other sisu instances to populate the peers listing.
-          - true
-          #- kubectl
-          #- get
-          #- ns
+          # TODO: this should fill in the peers for sisud's configuration.
+          - kubectl
+          - get
+          - ns
+          - "-l"
+          - sisu.network/purpose=test
+          - "-oname"
       containers:
       - command:
           - sisud

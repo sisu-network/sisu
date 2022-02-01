@@ -47,6 +47,10 @@ create-kind-cluster: require-kind
 require-kind:
 	kind --version
 
+.PHONY: require-jq
+require-jq:
+	jq --version
+
 .PHONY: go-mod-vendor
 go-mod-vendor:
 	$(GO) mod vendor
@@ -96,7 +100,8 @@ deploy-mysql: kind-cluster-ready prepare-mysql
 
 # Meta-target to deploy all the individual services.
 .PHONY: deploy-sisu
-deploy-sisu: deploy-deyes deploy-dheart deploy-sisud ;
+deploy-sisu: deploy-deyes deploy-dheart deploy-sisud
+	$(info Added sisu instance into namespace $(SISU_NAMESPACE))
 
 # Build the all-in-one sisu docker image.
 # TODO: the "go install" step of this takes about two minutes on my machine.
@@ -124,10 +129,14 @@ deploy-dheart: load-sisu
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace "$(SISU_NAMESPACE)" rollout status --timeout=30s deployment/dheart
 
 .PHONY: deploy-sisud
-deploy-sisud: load-sisu load-bitnami-kubectl
+deploy-sisud: load-sisu load-bitnami-kubectl require-jq
 	@# Patch the clusterrolebinding so the init container can list namespaces.
-	@# TODO: this updates the subjects to just one entry, but it needs to map over all the existing sisu namespaces.
-	kubectl --context "kind-$(CLUSTER_NAME)" patch clusterrolebinding namespace-lister --patch '{"subjects":[{"kind":"ServiceAccount", "name":"namespace-lister", "namespace":"'"$(SISU_NAMESPACE)"'"}]}'
+	@# We have to include all the namespaces every time we patch it.
+	kubectl --context "kind-$(CLUSTER_NAME)" patch clusterrolebinding namespace-lister --patch "$$( \
+		kubectl --context "kind-$(CLUSTER_NAME)" get ns -l sisu.network/purpose=test -oname | \
+		jq -R '{kind: "ServiceAccount", name: "namespace-lister", namespace: (. | ltrimstr("namespace/"))}' | \
+		jq -c --slurp '{subjects: .}' \
+	)"
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace "$(SISU_NAMESPACE)" apply -f ./sisud.yml
 	@# TODO: sisud will fail currently because it has incorrect configuration.
 	@#kubectl --context "kind-$(CLUSTER_NAME)" --namespace "$(SISU_NAMESPACE)" rollout status --timeout=30s deployment/sisud
