@@ -6,10 +6,9 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
-	"github.com/BurntSushi/toml"
-	heartcfg "github.com/sisu-network/dheart/core/config"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
 	"github.com/spf13/cobra"
@@ -18,7 +17,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -29,10 +27,21 @@ type TestnetGenerator struct {
 	ropstenUrl string
 }
 
-type TestnetNodeConfig struct {
-	SisuIp  string `json:"sisu_ip"`
-	HeartIp string `json:"dheart_ip"`
-	EyesIp  string `json:"eyes_ip"`
+type TestnetNodes []TestnetNode
+
+type SqlConfig struct {
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	Schema   string `json:"schema"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type TestnetNode struct {
+	SisuIp  string    `json:"sisu_ip"`
+	HeartIp string    `json:"dheart_ip"`
+	EyesIp  string    `json:"eyes_ip"`
+	Sql     SqlConfig `json:"sql"`
 }
 
 // get cmd to initialize all files for tendermint localnet and application
@@ -44,7 +53,7 @@ func TestnetCmd(mbm module.BasicManager, genBalIterator banktypes.GenesisBalance
 		Long: `privatenet creates configuration for a network with N validators.
 Example:
 	For multiple nodes (running with docker):
-	  ./sisu testnet --v 2 --output-dir ./output --chain-id testnet --tmp-dir ../dev-ops/aws/tmp --ropsten-url https://ropsten.infura.io/v3/[YOUR_TOKEN]
+	  ./sisu testnet --v 2 --output-dir ./output --config-string '[{"sisu_ip":"192.168.0.1","dheart_ip":"192.168.0.2","deyes_ip":"192.168.0.3"},{"sisu_ip":"192.168.1.1","dheart_ip":"192.168.1.2","deyes_ip":"192.168.1.3"}]'
 	`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -63,11 +72,21 @@ Example:
 			minGasPrices, _ := cmd.Flags().GetString(server.FlagMinGasPrices)
 			nodeDirPrefix, _ := cmd.Flags().GetString(flagNodeDirPrefix)
 			nodeDaemonHome, _ := cmd.Flags().GetString(flagNodeDaemonHome)
-			tempDir, _ := cmd.Flags().GetString(flagTmpDir)
 			chainId, _ := cmd.Flags().GetString(flagChainId)
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
 			generator.ropstenUrl, _ = cmd.Flags().GetString(flagRopstenUrl)
+			configString, _ := cmd.Flags().GetString(flagConfigString)
+
+			fmt.Println("configString = ", configString)
+
+			testnetNodeData := TestnetNodes{}
+			err = json.Unmarshal([]byte(configString), &testnetNodeData)
+			if err != nil {
+				panic(err)
+			}
+
+			chainId = "testnet"
 
 			log.Info("testnet gen: chainId = ", chainId)
 
@@ -85,12 +104,13 @@ Example:
 
 			monikers := make([]string, numValidators)
 			for i := 0; i < numValidators; i++ {
-				monikers[i] = "node-talon-" + strconv.Itoa(i)
+				monikers[i] = "node" + strconv.Itoa(i)
 			}
+
+			nodes := testnetNodeData
 
 			sisuIps := make([]string, numValidators)
 			heartIps := make([]string, numValidators)
-			nodes := generator.readTestnetNodes(tempDir, numValidators)
 
 			for i := 0; i < numValidators; i++ {
 				sisuIps[i] = nodes[i].SisuIp
@@ -98,7 +118,18 @@ Example:
 			}
 			log.Info("ips = ", sisuIps)
 
-			nodeConfigs := generator.getTestnetNodeSettings(tempDir, numValidators)
+			// Create configuration
+			nodeConfigs := make([]config.Config, numValidators)
+			for i := range sisuIps {
+				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
+
+				if err := os.MkdirAll(dir, nodeDirPerm); err != nil {
+					panic(err)
+				}
+
+				nodeConfig := generator.getNodeSettings(chainId, keyringBackend, nodes[i], len(nodes))
+				nodeConfigs[i] = nodeConfig
+			}
 
 			settings := &Setting{
 				clientCtx:      clientCtx,
@@ -120,21 +151,19 @@ Example:
 			}
 
 			valPubKeys, err := InitNetwork(settings)
+			peerIds, err := getPeerIds(len(sisuIps), valPubKeys)
+			if err != nil {
+				panic(err)
+			}
 
-			for i := 0; i < numValidators; i++ {
-				inputDir := filepath.Join(tempDir, fmt.Sprintf("node%d", i))
-				outputDir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
+			for i := range heartIps {
+				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
 
-				generator.generateHeartToml(
-					i,
-					inputDir,
-					outputDir,
-					*nodes[i],
-					heartIps,
-					valPubKeys,
-				)
+				// Dheart configs
+				generator.generateHeartToml(i, dir, heartIps, peerIds, nodes[i].Sql)
 
-				generator.generateEyesToml(i, inputDir, outputDir)
+				// Deyes configs
+				generator.generateEyesToml(i, dir, sisuIps[i])
 			}
 
 			return err
@@ -150,82 +179,79 @@ Example:
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
 	cmd.Flags().String(flagRopstenUrl, "", "RPC url for ropsten network")
+	cmd.Flags().String(flagConfigString, "", "configuration string for all nodes")
 
 	return cmd
 }
 
-func (g *TestnetGenerator) readTestnetNodes(root string, numValidators int) []*TestnetNodeConfig {
-	nodeConfigs := make([]*TestnetNodeConfig, numValidators)
+func (g *TestnetGenerator) getNodeSettings(chainID string, keyringBackend string, testnetConfig TestnetNode, n int) config.Config {
+	majority := (n + 1) * 2 / 3
 
-	for i := 0; i < numValidators; i++ {
-		path := filepath.Join(root, fmt.Sprintf("node%d", i), "ips.json")
-		content, err := os.ReadFile(path)
-		if err != nil {
-			panic(err)
-		}
-
-		nodeConfig := new(TestnetNodeConfig)
-		err = json.Unmarshal([]byte(content), nodeConfig)
-		if err != nil {
-			panic(err)
-		}
-
-		nodeConfigs[i] = nodeConfig
+	return config.Config{
+		Mode: "testnet",
+		Sisu: config.SisuConfig{
+			ChainId:        chainID,
+			KeyringBackend: keyringBackend,
+			ApiHost:        "0.0.0.0",
+			ApiPort:        25456,
+		},
+		Tss: config.TssConfig{
+			MajorityThreshold: majority,
+			DheartHost:        testnetConfig.HeartIp,
+			DheartPort:        5678,
+			DeyesUrl:          fmt.Sprintf("http://%s:31001", testnetConfig.EyesIp),
+			SupportedChains: map[string]config.TssChainConfig{
+				"ganache1": {
+					Symbol: "ganache1",
+				},
+				"ganache2": {
+					Symbol: "ganache2",
+				},
+			},
+		},
 	}
-
-	return nodeConfigs
 }
 
-func (g *TestnetGenerator) getTestnetNodeSettings(root string, numValidators int) []config.Config {
-	nodeConfigs := make([]config.Config, numValidators)
-
-	for i := 0; i < numValidators; i++ {
-		cfg := config.Config{}
-		path := filepath.Join(root, fmt.Sprintf("node%d", i), "sisu.toml")
-		_, err := toml.DecodeFile(path, &cfg)
-		if err != nil {
-			panic(err)
-		}
-
-		nodeConfigs[i] = cfg
-	}
-
-	return nodeConfigs
-}
-
-func (g *TestnetGenerator) generateHeartToml(index int, inputDir string, outputDir string, testNodeConfig TestnetNodeConfig, heartIps []string, valPubKeys []cryptotypes.PubKey) {
-	peerIds, err := getPeerIds(len(heartIps), valPubKeys)
-	if err != nil {
-		panic(err)
-	}
-
+func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartIps []string, peerIds []string, sqlConfig SqlConfig) {
 	peers := make([]string, 0, len(peerIds)-1)
 	for i := range peerIds {
 		if i == index {
 			continue
 		}
 
-		peers = append(peers, fmt.Sprintf(`"/ip4/%s/tcp/28300/p2p/%s"`, heartIps[i], peerIds[i]))
+		peers = append(peers, fmt.Sprintf(`"/dns/%s/tcp/28300/p2p/%s"`, heartIps[i], peerIds[i]))
 	}
 
-	heartConfig, err := heartcfg.ReadConfig(filepath.Join(inputDir, "dheart.toml"))
-	if err != nil {
-		panic(err)
-	}
+	peerString := strings.Join(peers, ", ")
 
-	heartConfig.Connection.BootstrapPeers = peers
-	heartcfg.WriteConfigFile(filepath.Join(outputDir, "dheart.toml"), heartConfig)
+	sqlConfig.Schema = "dheart"
+
+	writeHeartConfig(index, outputDir, peerString, "false", sqlConfig)
 }
 
-func (g *TestnetGenerator) generateEyesToml(index int, inputDir string, outputDir string) {
-	// Simply copy the input file to the output file
-	data, err := os.ReadFile(filepath.Join(inputDir, "deyes.toml"))
-	if err != nil {
-		panic(err)
+func (g *TestnetGenerator) generateEyesToml(index int, dir string, sisuIp string) {
+	deyesConfig := DeyesConfiguration{
+		Ganaches: []GanacheConfig{
+			{
+				Ip:    "ganache1",
+				Index: 1,
+			},
+			{
+				Ip:    "ganache2",
+				Index: 2,
+			},
+		},
+
+		Sql: SqlConfig{
+			Host:     "mysql",
+			Port:     3306,
+			Schema:   fmt.Sprintf("deyes%d", index),
+			Username: "root",
+			Password: "password",
+		},
+
+		SisuServerUrl: sisuIp,
 	}
 
-	err = os.WriteFile(filepath.Join(outputDir, "deyes.toml"), data, 0644)
-	if err != nil {
-		panic(err)
-	}
+	writeDeyesConfig(deyesConfig, dir)
 }

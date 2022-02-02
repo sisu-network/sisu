@@ -26,6 +26,7 @@ var (
 	flagStartingIPAddress = "starting-ip-address"
 	flagTmpDir            = "tmp-dir"
 	flagChainId           = "chain-id"
+	flagConfigString      = "config-string"
 	flagRopstenUrl        = "ropsten-url"
 )
 
