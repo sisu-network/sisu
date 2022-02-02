@@ -22,8 +22,7 @@ type SisuConfig struct {
 }
 
 type TssChainConfig struct {
-	Symbol   string `toml:"symbol"`
-	DeyesUrl string `toml:"deyes-url"`
+	Symbol string `toml:"symbol"`
 }
 
 // Example of supported chains in the toml config file.
@@ -37,6 +36,8 @@ type TssConfig struct {
 	DheartPort        int                       `toml:"dheart-port"`
 	SupportedChains   map[string]TssChainConfig `toml:"supported-chains"`
 	MajorityThreshold int                       `toml:"majority-threshold"`
+
+	DeyesUrl string `toml:"deyes-url"`
 
 	Dir string
 }

@@ -78,14 +78,13 @@ Example:
 					MajorityThreshold: 1,
 					DheartHost:        "0.0.0.0",
 					DheartPort:        5678,
+					DeyesUrl:          "http://0.0.0.0:31001",
 					SupportedChains: map[string]config.TssChainConfig{
 						"ganache1": {
-							Symbol:   "ganache1",
-							DeyesUrl: "http://0.0.0.0:31001",
+							Symbol: "ganache1",
 						},
 						"ganache2": {
-							Symbol:   "ganache2",
-							DeyesUrl: "http://0.0.0.0:31001",
+							Symbol: "ganache2",
 						},
 					},
 				},

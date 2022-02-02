@@ -234,14 +234,13 @@ func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, 
 			MajorityThreshold: majority,
 			DheartHost:        fmt.Sprintf("dheart%d", index),
 			DheartPort:        5678,
+			DeyesUrl:          fmt.Sprintf("http://deyes%d:31001", index),
 			SupportedChains: map[string]config.TssChainConfig{
 				"ganache1": {
-					Symbol:   "ganache1",
-					DeyesUrl: fmt.Sprintf("http://deyes%d:31001", index),
+					Symbol: "ganache1",
 				},
 				"ganache2": {
-					Symbol:   "ganache2",
-					DeyesUrl: fmt.Sprintf("http://deyes%d:31001", index),
+					Symbol: "ganache2",
 				},
 			},
 		},

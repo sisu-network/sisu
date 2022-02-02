@@ -1,7 +1,6 @@
 package sisu
 
 import (
-	"encoding/hex"
 	"fmt"
 	"sync/atomic"
 
@@ -47,7 +46,7 @@ type Processor struct {
 
 	// Dheart & Deyes client
 	dheartClient tssclients.DheartClient
-	deyesClients map[string]*tssclients.DeyesClient
+	deyesClient  tssclients.DeyesClient
 
 	// A map of chain -> map ()
 	worldState       WorldState
@@ -67,6 +66,8 @@ func NewProcessor(k keeper.DefaultKeeper,
 	txDecoder sdk.TxDecoder,
 	txSubmit common.TxSubmit,
 	globalData common.GlobalData,
+	dheartClient tssclients.DheartClient,
+	deyesClient tssclients.DeyesClient,
 ) *Processor {
 	p := &Processor{
 		keeper:            &k,
@@ -82,7 +83,8 @@ func NewProcessor(k keeper.DefaultKeeper,
 		keygenVoteResult:  make(map[string]map[string]bool),
 		// And array that stores block numbers where we should do final vote count.
 		keygenBlockPairs: make([]BlockSymbolPair, 0),
-		deyesClients:     make(map[string]*tssclients.DeyesClient),
+		dheartClient:     dheartClient,
+		deyesClient:      deyesClient,
 	}
 
 	return p
@@ -91,60 +93,7 @@ func NewProcessor(k keeper.DefaultKeeper,
 func (p *Processor) Init() {
 	log.Info("Initializing TSS Processor...")
 
-	p.connectToDheart()
-	p.connectToDeyes()
-
 	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.appKeys, p.publicDb, p.privateDb, p.config)
-}
-
-// Connect to Dheart server and set private key for dheart. Note that this is the tendermint private
-// key, not signer key in the keyring.
-func (p *Processor) connectToDheart() {
-	var err error
-	url := fmt.Sprintf("http://%s:%d", p.config.DheartHost, p.config.DheartPort)
-	log.Info("Connecting to Dheart server at", url)
-
-	p.dheartClient, err = tssclients.DialDheart(url)
-	if err != nil {
-		log.Error("Failed to connect to Dheart. Err =", err)
-		panic(err)
-	}
-
-	encryptedKey, err := p.appKeys.GetAesEncrypted(p.tendermintPrivKey.Bytes())
-	if err != nil {
-		log.Error("Failed to get encrypted private key. Err =", err)
-		panic(err)
-	}
-
-	log.Info("p.tendermintPrivKey.Type() = ", p.tendermintPrivKey.Type())
-
-	// Pass encrypted private key to dheart
-	if err := p.dheartClient.SetPrivKey(hex.EncodeToString(encryptedKey), p.tendermintPrivKey.Type()); err != nil {
-		panic(err)
-	}
-
-	log.Info("Dheart server connected!")
-}
-
-// Connecto to all deyes.
-func (p *Processor) connectToDeyes() {
-	for chain, chainConfig := range p.config.SupportedChains {
-		log.Info("Deyes url = ", chainConfig.DeyesUrl)
-
-		deyeClient, err := tssclients.DialDeyes(chainConfig.DeyesUrl)
-		if err != nil {
-			log.Error("Failed to connect to deyes", chain, ".Err =", err)
-			panic(err)
-		}
-
-		if err := deyeClient.CheckHealth(); err != nil {
-			panic(err)
-		}
-
-		p.deyesClients[chain] = deyeClient
-	}
-
-	p.worldState = NewWorldState(p.config, p.publicDb, p.deyesClients)
 }
 
 func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
@@ -155,6 +104,15 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 		// We need to wait till block 2 for multistore of the app to be updated with latest account info
 		// for signing.
 		p.CheckTssKeygen(ctx, blockHeight)
+	}
+
+	if p.globalData.IsCatchingUp() {
+		newValue := p.globalData.UpdateCatchingUp()
+		if !newValue {
+			log.Info("Setting Sisu readiness for dheart.")
+			// This node has fully catched up with the blockchain, we need to inform dheart about this.
+			p.dheartClient.SetSisuReady(true)
+		}
 	}
 
 	// TODO: Make keygen to be command instead of embedding inside the code.
