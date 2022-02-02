@@ -104,8 +104,6 @@ deploy-sisu: deploy-deyes deploy-dheart deploy-sisud
 	$(info Added sisu instance into namespace $(SISU_NAMESPACE))
 
 # Build the all-in-one sisu docker image.
-# TODO: the "go install" step of this takes about two minutes on my machine.
-#       It should be possible to optimize that with a buildkit volume for a Go build cache.
 .PHONY: build-docker-sisu
 build-docker-sisu: go-mod-vendor
 	cd .. && docker build --quiet -t sisu.test/sisu-all:latest -f ./kind/Dockerfile.sisu-all .
