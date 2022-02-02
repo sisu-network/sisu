@@ -44,6 +44,26 @@ type DockerNodeConfig struct {
 	}
 }
 
+type HeartConfiguration struct {
+	PeerString    string
+	SisuServerUrl string
+	UseOnMemory   string
+	Sql           SqlConfig
+}
+
+type GanacheConfig struct {
+	Ip    string
+	Index int
+}
+
+type DeyesConfiguration struct {
+	Ganaches      []GanacheConfig
+	SisuServerUrl string
+
+	// sql
+	Sql SqlConfig
+}
+
 // get cmd to initialize all files for tendermint localnet and application
 func LocalDockerCmd(mbm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *cobra.Command {
 	cmd := &cobra.Command{
@@ -111,7 +131,7 @@ Example:
 				nodeConfig := getNodeSettings(chainID, keyringBackend, i, mysqlIp, ips)
 				nodeConfigs[i] = nodeConfig
 
-				generateEyesToml(i, dockerConfig, dir)
+				generateEyesToml(i, dir)
 			}
 
 			generateDockerCompose(filepath.Join(outputDir, "docker-compose.yml"), ips, dockerConfig)
@@ -337,43 +357,49 @@ services:
 	tmos.MustWriteFile(outputPath, buffer.Bytes(), 0644)
 }
 
-func generateEyesToml(index int, dockerConfig DockerNodeConfig, dir string) {
-	data := struct {
-		Index         int
-		Ganache1      string
-		SisuServerUrl string
-		SqlSchema     string
-		SqlHost       string
-	}{
-		Index:    index,
-		Ganache1: "ganache1",
+func generateEyesToml(index int, dir string) {
+	deyesConfig := DeyesConfiguration{
+		Ganaches: []GanacheConfig{
+			{
+				Ip:    "ganache1",
+				Index: 1,
+			},
+			{
+				Ip:    "ganache2",
+				Index: 2,
+			},
+		},
 
-		SqlHost:   "mysql",
-		SqlSchema: fmt.Sprintf("deyes%d", index),
+		Sql: SqlConfig{
+			Host:     "mysql",
+			Port:     3306,
+			Schema:   fmt.Sprintf("deyes%d", index),
+			Username: "root",
+			Password: "password",
+		},
 
 		SisuServerUrl: fmt.Sprintf("http://sisu%d:25456", index),
 	}
 
-	eyesToml := `db_host = "{{ .SqlHost }}"
-db_port = 3306
-db_username = "root"
-db_password = "password"
-db_schema = "{{ .SqlSchema }}"
+	writeDeyesConfig(deyesConfig, dir)
+}
+
+func writeDeyesConfig(deyesConfig DeyesConfiguration, dir string) {
+	eyesToml := `db_host = "{{ .Sql.Host }}"
+db_port = {{ .Sql.Port }}
+db_username = "{{ .Sql.Username }}"
+db_password = "{{ .Sql.Password }}"
+db_schema = "{{ .Sql.Schema }}"
 
 server_port = 31001
 sisu_server_url = "{{ .SisuServerUrl }}"
 
-[chains]
-[chains.ganache1]
-  chain = "ganache1"
+[chains]{{ range $k, $ganache := .Ganaches }}
+[chains.ganache{{ $ganache.Index }}]
+  chain = "ganache{{ $ganache.Index }}"
   block_time = 1000
   starting_block = 0
-  rpc_url = "http://ganache1:7545"
-[chains.ganache2]
-  chain = "ganache2"
-  block_time = 1000
-  starting_block = 0
-  rpc_url = "http://ganache2:7545"
+  rpc_url = "http://{{ $ganache.Ip }}:7545"{{ end }}
 `
 
 	tmpl := template.New("eyesToml")
@@ -384,7 +410,7 @@ sisu_server_url = "{{ .SisuServerUrl }}"
 	}
 
 	var buffer bytes.Buffer
-	err = configTemplate.Execute(&buffer, data)
+	err = configTemplate.Execute(&buffer, deyesConfig)
 
 	tmos.MustWriteFile(filepath.Join(dir, "deyes.toml"), buffer.Bytes(), 0644)
 }
@@ -425,17 +451,24 @@ func generateHeartToml(index int, dir string, dockerConfig DockerNodeConfig, pee
 	}
 
 	peerString := strings.Join(peers, ", ")
-	heartConfig := struct {
-		PeerString    string
-		SisuServerUrl string
-		SqlHost       string
-		Schema        string
-		UseOnMemory   string
-	}{
+
+	sqlConfig := SqlConfig{
+		Host:     "mysql",
+		Port:     3306,
+		Schema:   fmt.Sprintf("dheart%d", index),
+		Username: "root",
+		Password: "password",
+	}
+
+	writeHeartConfig(index, dir, peerString, useOnMemory, sqlConfig)
+
+}
+
+func writeHeartConfig(index int, dir string, peerString string, useOnMemory string, sqlConfig SqlConfig) {
+	heartConfig := HeartConfiguration{
 		PeerString:    peerString,
 		SisuServerUrl: fmt.Sprintf("http://sisu%d:25456", index),
-		SqlHost:       "mysql",
-		Schema:        fmt.Sprintf("dheart%d", index),
+		Sql:           sqlConfig,
 		UseOnMemory:   useOnMemory,
 	}
 
@@ -452,12 +485,11 @@ port = 5678
 ###                        Database Configuration                           ###
 ###############################################################################
 [db]
-  host = "{{ .SqlHost }}"
-  port = 3306
-  username = "root"
-  password = "password"
-  schema = "{{ .Schema }}"
-	migration-path = "file://db/migrations/"
+  host = "{{ .Sql.Host }}"
+  port = {{ .Sql.Port }}
+  username = "{{ .Sql.Username }}"
+  password = "{{ .Sql.Password }}"
+  schema = "{{ .Sql.Schema }}"
 [connection]
   host = "0.0.0.0"
   port = 28300
