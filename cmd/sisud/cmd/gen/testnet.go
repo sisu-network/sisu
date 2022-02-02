@@ -53,7 +53,7 @@ func TestnetCmd(mbm module.BasicManager, genBalIterator banktypes.GenesisBalance
 		Long: `privatenet creates configuration for a network with N validators.
 Example:
 	For multiple nodes (running with docker):
-	  ./sisu testnet --v 2 --output-dir ./output --config-string '[{"sisu_ip":"192.168.0.1","dheart_ip":"192.168.0.2","deyes_ip":"192.168.0.3"},{"sisu_ip":"192.168.1.1","dheart_ip":"192.168.1.2","deyes_ip":"192.168.1.3"}]'
+	  ./sisu testnet --v 2 --output-dir ./output --config-string '[{"sisu_ip":"192.168.0.1","dheart_ip":"192.168.0.2","deyes_ip":"192.168.0.3","sql":{"host":"192.168.0.4","port":3306,"username":"root","password":"pass"}},{"sisu_ip":"192.168.1.1","dheart_ip":"192.168.1.2","deyes_ip":"192.168.1.3","sql":{"host":"192.168.1.4","port":3306,"username":"root","password":"pass"}}]'
 	`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
