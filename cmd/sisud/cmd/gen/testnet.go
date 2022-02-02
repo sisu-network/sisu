@@ -245,7 +245,7 @@ func (g *TestnetGenerator) generateEyesToml(index int, dir string, sisuIp string
 		Sql: SqlConfig{
 			Host:     "mysql",
 			Port:     3306,
-			Schema:   fmt.Sprintf("deyes%d", index),
+			Schema:   "deyes",
 			Username: "root",
 			Password: "password",
 		},
