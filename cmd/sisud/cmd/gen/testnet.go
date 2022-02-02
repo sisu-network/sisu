@@ -163,7 +163,7 @@ Example:
 				generator.generateHeartToml(i, dir, heartIps, peerIds, nodes[i].Sql)
 
 				// Deyes configs
-				generator.generateEyesToml(i, dir, sisuIps[i])
+				generator.generateEyesToml(i, dir, sisuIps[i], nodes[i].Sql)
 			}
 
 			return err
@@ -229,7 +229,9 @@ func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartI
 	writeHeartConfig(index, outputDir, peerString, "false", sqlConfig)
 }
 
-func (g *TestnetGenerator) generateEyesToml(index int, dir string, sisuIp string) {
+func (g *TestnetGenerator) generateEyesToml(index int, dir string, sisuIp string, sqlConfig SqlConfig) {
+	sqlConfig.Schema = "deyes"
+
 	deyesConfig := DeyesConfiguration{
 		Ganaches: []GanacheConfig{
 			{
@@ -242,14 +244,7 @@ func (g *TestnetGenerator) generateEyesToml(index int, dir string, sisuIp string
 			},
 		},
 
-		Sql: SqlConfig{
-			Host:     "mysql",
-			Port:     3306,
-			Schema:   "deyes",
-			Username: "root",
-			Password: "password",
-		},
-
+		Sql:           sqlConfig,
 		SisuServerUrl: sisuIp,
 	}
 
