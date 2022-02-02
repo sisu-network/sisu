@@ -9,7 +9,7 @@ import (
 )
 
 type DeyesClient interface {
-	CheckHealth() error
+	Ping(source string) error
 	Dispatch(request *eTypes.DispatchedTxRequest) (*eTypes.DispatchedTxResult, error)
 	AddWatchAddresses(chain string, addrs []string) error
 	GetNonce(chain string, address string) int64
@@ -35,11 +35,11 @@ func newDeyesClient(c *rpc.Client) DeyesClient {
 	return &DefaultDeyesClient{c}
 }
 
-func (c *DefaultDeyesClient) CheckHealth() error {
+func (c *DefaultDeyesClient) Ping(source string) error {
 	var result interface{}
-	err := c.client.CallContext(context.Background(), &result, "deyes_checkHealth")
+	err := c.client.CallContext(context.Background(), &result, "deyes_ping", source)
 	if err != nil {
-		log.Error("Cannot check deyes health, err = ", err)
+		log.Error("Cannot ping deyes, err = ", err)
 		return err
 	}
 

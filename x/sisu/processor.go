@@ -136,6 +136,15 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 		p.CheckTssKeygen(ctx, blockHeight)
 	}
 
+	if p.globalData.IsCatchingUp() {
+		newValue := p.globalData.UpdateCatchingUp()
+		if !newValue {
+			log.Info("Setting Sisu readiness for dheart.")
+			// This node has fully catched up with the blockchain, we need to inform dheart about this.
+			p.dheartClient.SetSisuReady(true)
+		}
+	}
+
 	// TODO: Make keygen to be command instead of embedding inside the code.
 	// Check Vote result.
 	for len(p.keygenBlockPairs) > 0 && !p.globalData.IsCatchingUp() {

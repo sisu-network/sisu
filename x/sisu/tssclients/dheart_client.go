@@ -9,14 +9,15 @@ import (
 	"github.com/sisu-network/lib/log"
 )
 
-//go:generate mockgen -source=dheart_client.go -destination=../../../tests/mock/dheart_client.go -package=mock
+//go:generate mockgen -source=x/sisu/tssclients/dheart_client.go -destination=tests/mock/x/sisu/tssclients/dheart_client.go -package=mock
 
 type DheartClient interface {
 	SetPrivKey(encodedKey string, keyType string) error
-	CheckHealth() error
+	Ping(string) error
 	KeyGen(keygenId string, chain string, pubKeys []ctypes.PubKey) error
 	KeySign(req *htypes.KeysignRequest, pubKeys []ctypes.PubKey) error
 	BlockEnd(blockHeight int64) error
+	SetSisuReady(isReady bool) error
 }
 
 type DefaultDheartClient struct {
@@ -51,11 +52,11 @@ func (c *DefaultDheartClient) SetPrivKey(encodedKey string, keyType string) erro
 	return nil
 }
 
-func (c *DefaultDheartClient) CheckHealth() error {
+func (c *DefaultDheartClient) Ping(source string) error {
 	var result interface{}
-	err := c.client.CallContext(context.Background(), &result, "tss_checkHealth")
+	err := c.client.CallContext(context.Background(), &result, "tss_ping", source)
 	if err != nil {
-		log.Error("Cannot check Dheart health, err = ", err)
+		log.Error("Cannot ping dheart, err = ", err)
 		return err
 	}
 
@@ -118,6 +119,17 @@ func (c *DefaultDheartClient) BlockEnd(blockHeight int64) error {
 	err := c.client.CallContext(context.Background(), &r, "tss_blockEnd", blockHeight)
 	if err != nil {
 		log.Error("Cannot call block end, err = ", err)
+		return err
+	}
+
+	return nil
+}
+
+func (c *DefaultDheartClient) SetSisuReady(isReady bool) error {
+	var r interface{}
+	err := c.client.CallContext(context.Background(), &r, "tss_setSisuReady", isReady)
+	if err != nil {
+		log.Error("Cannot call SetSisuReady, err = ", err)
 		return err
 	}
 

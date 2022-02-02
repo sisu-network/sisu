@@ -20,9 +20,10 @@ import (
 	"github.com/sisu-network/sisu/utils"
 )
 
+// go:generate mockgen -source common/global_data.go -destination=tests/mock/common/global_data.go -package=mock
 type GlobalData interface {
 	Init()
-	UpdateCatchingUp()
+	UpdateCatchingUp() bool
 	UpdateValidatorSets()
 	IsCatchingUp() bool
 	GetValidatorSet() []rpc.ValidatorOutput
@@ -85,13 +86,14 @@ func (a *GlobalDataDefault) Init() {
 	log.Info("My tendermint address = ", a.myTmtConsAddr.String())
 }
 
-func (a *GlobalDataDefault) UpdateCatchingUp() {
-	url := "http://127.0.0.1:26657/status"
+func (a *GlobalDataDefault) UpdateCatchingUp() bool {
+	oldValue := a.IsCatchingUp()
 
+	url := "http://127.0.0.1:26657/status"
 	body, _, err := utils.HttpGet(a.httpClient, url)
 	if err != nil {
 		log.Error(fmt.Errorf("Cannot get status data: %w", err))
-		return
+		return oldValue
 	}
 
 	var resp struct {
@@ -111,12 +113,14 @@ func (a *GlobalDataDefault) UpdateCatchingUp() {
 
 	if err := json.Unmarshal(body, &resp); err != nil {
 		log.Error(fmt.Errorf("Cannot parse tendermint status: %w", err))
-		return
+		return oldValue
 	}
 
 	a.catchUpLock.Lock()
 	a.isCatchingUp = resp.Result.SyncInfo.CatchingUp
 	a.catchUpLock.Unlock()
+
+	return resp.Result.SyncInfo.CatchingUp
 }
 
 func (a *GlobalDataDefault) UpdateValidatorSets() {
