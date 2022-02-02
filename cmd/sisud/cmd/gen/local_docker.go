@@ -456,7 +456,7 @@ func generateHeartToml(index int, dir string, dockerConfig DockerNodeConfig, pee
 		Host:     "mysql",
 		Port:     3306,
 		Schema:   fmt.Sprintf("dheart%d", index),
-		Username: "username",
+		Username: "root",
 		Password: "password",
 	}
 
