@@ -1,7 +1,6 @@
 package sisu
 
 import (
-	"encoding/hex"
 	"fmt"
 	"sync/atomic"
 
@@ -95,35 +94,6 @@ func (p *Processor) Init() {
 	log.Info("Initializing TSS Processor...")
 
 	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.appKeys, p.publicDb, p.privateDb, p.config)
-}
-
-// Connect to Dheart server and set private key for dheart. Note that this is the tendermint private
-// key, not signer key in the keyring.
-func (p *Processor) connectToDheart() {
-	var err error
-	url := fmt.Sprintf("http://%s:%d", p.config.DheartHost, p.config.DheartPort)
-	log.Info("Connecting to Dheart server at", url)
-
-	p.dheartClient, err = tssclients.DialDheart(url)
-	if err != nil {
-		log.Error("Failed to connect to Dheart. Err =", err)
-		panic(err)
-	}
-
-	encryptedKey, err := p.appKeys.GetAesEncrypted(p.tendermintPrivKey.Bytes())
-	if err != nil {
-		log.Error("Failed to get encrypted private key. Err =", err)
-		panic(err)
-	}
-
-	log.Info("p.tendermintPrivKey.Type() = ", p.tendermintPrivKey.Type())
-
-	// Pass encrypted private key to dheart
-	if err := p.dheartClient.SetPrivKey(hex.EncodeToString(encryptedKey), p.tendermintPrivKey.Type()); err != nil {
-		panic(err)
-	}
-
-	log.Info("Dheart server connected!")
 }
 
 func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {

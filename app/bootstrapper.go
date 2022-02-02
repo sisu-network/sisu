@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/hex"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -16,7 +17,12 @@ const (
 )
 
 type Bootstrapper interface {
-	BootstrapInternalNetwork(tssConfig config.TssConfig, apiHandler *tss.ApiHandler) (tssclients.DheartClient, tssclients.DeyesClient)
+	BootstrapInternalNetwork(
+		tssConfig config.TssConfig,
+		apiHandler *tss.ApiHandler,
+		encryptedAes []byte,
+		tendermintKeyType string,
+	) (tssclients.DheartClient, tssclients.DeyesClient)
 }
 
 type DefaultBootstrapper struct {
@@ -28,7 +34,12 @@ func NewBootstrapper() Bootstrapper {
 	return &DefaultBootstrapper{}
 }
 
-func (b *DefaultBootstrapper) BootstrapInternalNetwork(tssConfig config.TssConfig, apiHandler *tss.ApiHandler) (tssclients.DheartClient, tssclients.DeyesClient) {
+func (b *DefaultBootstrapper) BootstrapInternalNetwork(
+	tssConfig config.TssConfig,
+	apiHandler *tss.ApiHandler,
+	encryptedAes []byte,
+	tendermintKeyType string,
+) (tssclients.DheartClient, tssclients.DeyesClient) {
 	apiHandler.SetNetworkHealthListener(b)
 	b.waitForPing()
 
@@ -56,6 +67,11 @@ func (b *DefaultBootstrapper) BootstrapInternalNetwork(tssConfig config.TssConfi
 		} else {
 			break
 		}
+	}
+
+	// Pass encrypted private key to dheart
+	if err := dheartClient.SetPrivKey(hex.EncodeToString(encryptedAes), tendermintKeyType); err != nil {
+		panic(err)
 	}
 
 	// Deyes

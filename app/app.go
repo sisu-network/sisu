@@ -244,9 +244,14 @@ func New(
 		panic(err)
 	}
 
+	encryptedKey, err := app.appKeys.GetAesEncrypted(nodeKey.PrivKey.Bytes())
+	if err != nil {
+		panic(err)
+	}
+
 	app.setupApiServer(cfg)
 	bootstrapper := NewBootstrapper()
-	dheartClient, deyesClient := bootstrapper.BootstrapInternalNetwork(tssConfig, app.apiHandler)
+	dheartClient, deyesClient := bootstrapper.BootstrapInternalNetwork(tssConfig, app.apiHandler, encryptedKey, nodeKey.PrivKey.Type())
 
 	// storage that contains common data for all the nodes
 	storage := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "data"))
