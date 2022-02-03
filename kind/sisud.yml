@@ -57,14 +57,18 @@ spec:
         volumeMounts:
           - name: sisudir
             mountPath: /sisu
-      - name: create-keys # Create keys and init genesis.
+      - name: init-sisu # Initial configuration for sisu
         image: sisu.test/sisu-all:latest
         imagePullPolicy: IfNotPresent
         command:
           - bash
           - '-eu'
           - '-c'
-          - 'sisud keys add --keyring-backend=test k1 && sisud init --chain-id=tbd sisu-1 --overwrite'
+          - |
+             # TODO: don't hardcode the config string.
+             sisud testnet --v 1 --output-dir ./output --config-string '[{"sisu_ip":"sisud.sisu","dheart_ip":"dheart.sisu","deyes_ip":"deyes.sisu","sql":{"host":"mysql.mysql","port":3306,"username":"root","password":"password"}}]' &&
+             sisud keys add --keyring-backend=test k1 &&
+             sisud init --chain-id=kind-chain sisu-1 # TODO: don't hardcode sisu-1
         workingDir: /root
         env:
           - name: HOME_DIR
