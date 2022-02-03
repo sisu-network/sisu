@@ -129,6 +129,7 @@ func (m *TokenPrice) GetPrice() float32 {
 
 // The record that is saved into db per token.
 type TokenPriceRecord struct {
+	// Key: token, Value: BlockHeightPricePair
 	Prices map[string]*BlockHeightPricePair `protobuf:"bytes,1,rep,name=prices,proto3" json:"prices,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
