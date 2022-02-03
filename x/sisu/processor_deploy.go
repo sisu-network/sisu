@@ -12,27 +12,21 @@ import (
 // deploySignedTx creates a deployment request and sends it to deyes.
 func (p *Processor) deploySignedTx(bz []byte, outChain string, outHash string, isContractDeployment bool) error {
 	log.Debug("Sending final tx to the deyes for deployment for chain ", outChain)
-	deyeClient := p.deyesClients[outChain]
 
 	pubkey := p.publicDb.GetKeygenPubkey(libchain.GetKeyTypeForChain(outChain))
 	if pubkey == nil {
 		return fmt.Errorf("Cannot get pubkey for chain %s", outChain)
 	}
 
-	if deyeClient != nil {
-		request := &etypes.DispatchedTxRequest{
-			Chain:                   outChain,
-			TxHash:                  outHash,
-			Tx:                      bz,
-			PubKey:                  pubkey,
-			IsEthContractDeployment: isContractDeployment,
-		}
-
-		go deyeClient.Dispatch(request)
-	} else {
-		err := fmt.Errorf("Cannot find deyes client for chain %s", outChain)
-		return err
+	request := &etypes.DispatchedTxRequest{
+		Chain:                   outChain,
+		TxHash:                  outHash,
+		Tx:                      bz,
+		PubKey:                  pubkey,
+		IsEthContractDeployment: isContractDeployment,
 	}
+
+	go p.deyesClient.Dispatch(request)
 
 	return nil
 }

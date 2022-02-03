@@ -42,10 +42,10 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 	txOutProducer := DefaultTxOutputProducer{
 		worldState: worldState,
 		tssConfig: config.TssConfig{
+			DeyesUrl: "http://0.0.0.0:1234",
 			SupportedChains: map[string]config.TssChainConfig{
 				"ganache": {
-					Symbol:   "ganache",
-					DeyesUrl: "http://0.0.0.0:1234",
+					Symbol: "ganache",
 				},
 			},
 		},
@@ -115,15 +115,15 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 			nonces: map[string]int64{
 				"eth": 100,
 			},
-			deyesClients: nil,
+			deyesClient: nil,
 		}
 
 		txOutProducer := NewTxOutputProducer(&worldState, mockAppKeys, mockPublicDb, mockPrivateDb,
 			config.TssConfig{
+				DeyesUrl: "http://0.0.0.0:1234",
 				SupportedChains: map[string]config.TssChainConfig{
 					"ganache1": {
-						Symbol:   "ganache",
-						DeyesUrl: "http://0.0.0.0:1234",
+						Symbol: "ganache",
 					},
 				},
 			},
@@ -194,15 +194,15 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 			nonces: map[string]int64{
 				"eth": 100,
 			},
-			deyesClients: nil,
+			deyesClient: nil,
 		}
 		txOutProducer := DefaultTxOutputProducer{
 			worldState: &worldState,
 			tssConfig: config.TssConfig{
+				DeyesUrl: "http://0.0.0.0:1234",
 				SupportedChains: map[string]config.TssChainConfig{
 					"ganache": {
-						Symbol:   "ganache",
-						DeyesUrl: "http://0.0.0.0:1234",
+						Symbol: "ganache",
 					},
 				},
 			},

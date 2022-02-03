@@ -1,34 +1,96 @@
 package sisu
 
 import (
-	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	"sync"
+
 	etypes "github.com/sisu-network/deyes/types"
+	eyesTypes "github.com/sisu-network/deyes/types"
+	dhtypes "github.com/sisu-network/dheart/types"
 	htypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/lib/log"
 )
 
-type ApiHandler struct {
-	processor *Processor
+type NetworkHealthListener interface {
+	OnPing(source string)
 }
 
-func NewApi(processor *Processor) *ApiHandler {
+type AppLogicListener interface {
+	OnKeygenResult(result dhtypes.KeygenResult)
+	OnTxIns(txs *eyesTypes.Txs) error
+	OnKeysignResult(result *htypes.KeysignResult)
+	OnTxDeploymentResult(result *etypes.DispatchedTxResult)
+	OnUpdateGasPriceRequest(request *etypes.GasPriceRequest)
+	OnUpdateTokenPrice(tokenPrices []*etypes.TokenPrice)
+}
+
+// TODO: Rename this to API endPoint.
+type ApiHandler struct {
+	lock                  *sync.RWMutex
+	networkHealthListener NetworkHealthListener
+	appLogicListener      AppLogicListener
+}
+
+func NewApi(appLogicHandler AppLogicListener) *ApiHandler {
 	return &ApiHandler{
-		processor: processor,
+		appLogicListener: appLogicHandler,
+		lock:             &sync.RWMutex{},
 	}
+}
+
+func (a *ApiHandler) getAppLogicListener() AppLogicListener {
+	a.lock.RLock()
+	defer a.lock.RUnlock()
+
+	return a.appLogicListener
+}
+
+func (a *ApiHandler) SetAppLogicListener(handler AppLogicListener) {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
+	a.appLogicListener = handler
+}
+
+func (a *ApiHandler) getNetworkHealthListener() NetworkHealthListener {
+	a.lock.RLock()
+	defer a.lock.RUnlock()
+
+	return a.networkHealthListener
+}
+
+func (a *ApiHandler) SetNetworkHealthListener(listener NetworkHealthListener) {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+
+	a.networkHealthListener = listener
 }
 
 func (a *ApiHandler) Version() string {
 	return "1.0"
 }
 
+///// Network health
+
 // Empty function for checking health only.
-func (a *ApiHandler) CheckHealth() {
+func (a *ApiHandler) Ping(source string) error {
+	listener := a.getNetworkHealthListener()
+	if listener != nil {
+		listener.OnPing(source)
+	}
+
+	return nil
 }
+
+///// Application logic
 
 func (a *ApiHandler) KeygenResult(result htypes.KeygenResult) bool {
 	log.Info("There is a Keygen Result")
 
-	a.processor.OnKeygenResult(result)
+	listener := a.getAppLogicListener()
+	if listener != nil {
+		listener.OnKeygenResult(result)
+	}
+
 	return true
 }
 
@@ -36,34 +98,42 @@ func (a *ApiHandler) KeygenResult(result htypes.KeygenResult) bool {
 func (a *ApiHandler) PostObservedTxs(txs *etypes.Txs) {
 	log.Debug("There is new list of transactions from deyes from chain ", txs.Chain)
 
-	for _, tx := range txs.Arr {
-		ethTx := &ethtypes.Transaction{}
-
-		err := ethTx.UnmarshalBinary(tx.Serialized)
-		if err != nil {
-			log.Error("Cannot unmarshall transaction ", err)
-		}
-	}
-
 	// There is a new transaction that we are interested in.
-	a.processor.OnTxIns(txs)
+	listener := a.getAppLogicListener()
+	if listener != nil {
+		listener.OnTxIns(txs)
+	}
 }
 
 func (a *ApiHandler) KeysignResult(result *htypes.KeysignResult) {
 	log.Info("There is keysign result")
-	go a.processor.OnKeysignResult(result)
+	handler := a.getAppLogicListener()
+	if handler != nil {
+		go handler.OnKeysignResult(result)
+	}
 }
 
 func (a *ApiHandler) PostDeploymentResult(result *etypes.DispatchedTxResult) {
-	go a.processor.OnTxDeploymentResult(result)
+	listener := a.getAppLogicListener()
+	if listener != nil {
+		go listener.OnTxDeploymentResult(result)
+	}
 }
 
 func (a *ApiHandler) UpdateGasPrice(request *etypes.GasPriceRequest) {
 	log.Info("Received update gas price request")
-	go a.processor.OnUpdateGasPriceRequest(request)
+
+	listener := a.getAppLogicListener()
+	if listener != nil {
+		go listener.OnUpdateGasPriceRequest(request)
+	}
 }
 
 func (a *ApiHandler) UpdateTokenPrices(prices []*etypes.TokenPrice) {
 	log.Info("Received token prices update")
-	go a.processor.OnUpdateTokenPrice(prices)
+
+	listener := a.getAppLogicListener()
+	if listener != nil {
+		go listener.OnUpdateTokenPrice(prices)
+	}
 }
