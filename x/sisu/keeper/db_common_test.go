@@ -125,3 +125,34 @@ func TestSaveTokenPrices(t *testing.T) {
 	sort.Strings(allSigners)
 	require.Equal(t, []string{signer1, signer2}, allSigners)
 }
+
+///// Node
+func Test_SaveNode(t *testing.T) {
+	store := memstore.NewStore()
+
+	node1 := &types.Node{
+		ConsensusKey: &types.Pubkey{
+			Type:  "ed",
+			Bytes: []byte("pubkey1"),
+		},
+		AccAddress:  "addr1",
+		IsValidator: true,
+	}
+	node2 := &types.Node{
+		ConsensusKey: &types.Pubkey{
+			Type:  "ed",
+			Bytes: []byte("pubkey2"),
+		},
+		AccAddress:  "addr2",
+		IsValidator: true,
+	}
+
+	saveNode(store, node1)
+	saveNode(store, node2)
+
+	vals := loadValidators(store)
+
+	require.Equal(t, 2, len(vals), "there should be 2 validators")
+	require.Equal(t, vals[0].AccAddress, "addr1")
+	require.Equal(t, vals[1].AccAddress, "addr2")
+}

@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -115,9 +114,7 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 
 		ip := ips[i]
 
-		kb, err := keyring.New(sdk.KeyringServiceName(), keyringBackend, mainAppDir, inBuf, func(options *keyring.Options) {
-			options.SupportedAlgos = keyring.SigningAlgoList{hd.Secp256k1}
-		})
+		kb, err := keyring.New(sdk.KeyringServiceName(), keyringBackend, mainAppDir, inBuf)
 		if err != nil {
 			return nil, err
 		}
