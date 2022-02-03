@@ -65,7 +65,6 @@ spec:
               echo ']'
               echo '}'
             )"
-          workingDir: /root
         workingDir: /root
         env:
           - name: HOME_DIR
