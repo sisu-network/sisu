@@ -191,8 +191,6 @@ func getNode(kb keyring.Keyring, algoStr string, nodeDirName string, outputDir s
 		panic(err)
 	}
 
-	fmt.Println("addr from kb: ", addr.String())
-
 	nodeId, tendermintPubKey, err := InitializeNodeValidatorFilesFromMnemonic(tmConfig, secret)
 	if err != nil {
 		_ = os.RemoveAll(outputDir)
@@ -205,7 +203,8 @@ func getNode(kb keyring.Keyring, algoStr string, nodeDirName string, outputDir s
 			Type:  tendermintPubKey.Type(),
 			Bytes: tendermintPubKey.Bytes(),
 		},
-		AccAddress: addr.String(),
+		AccAddress:  addr.String(),
+		IsValidator: true,
 	}, secret, tendermintPubKey
 }
 

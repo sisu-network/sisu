@@ -80,6 +80,10 @@ type Storage interface {
 
 	// Calculated Token Price
 	SetCalculatedTokenPrice(map[string]float32)
+
+	// Nodes
+	SaveNode(node *types.Node)
+	LoadValidators() []*types.Node
 }
 
 type defaultPrivateDb struct {
@@ -139,6 +143,8 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes[string(prefixTokenPrices)] = prefix.NewStore(parent, prefixTokenPrices)
 	// prefixCalculatedTokenPrice
 	prefixes[string(prefixCalculatedTokenPrice)] = prefix.NewStore(parent, prefixCalculatedTokenPrice)
+	// prefixNode
+	prefixes[string(prefixNode)] = prefix.NewStore(parent, prefixNode)
 
 	return prefixes
 }
@@ -383,6 +389,18 @@ func (db *defaultPrivateDb) GetAllTokenPricesRecord() map[string]*types.TokenPri
 func (db *defaultPrivateDb) SetCalculatedTokenPrice(prices map[string]float32) {
 	store := db.prefixes[string(prefixCalculatedTokenPrice)]
 	setCalculatedTokenPrices(store, prices)
+}
+
+///// Nodes
+
+func (db *defaultPrivateDb) SaveNode(node *types.Node) {
+	store := db.prefixes[string(prefixNode)]
+	saveNode(store, node)
+}
+
+func (db *defaultPrivateDb) LoadValidators() []*types.Node {
+	store := db.prefixes[string(prefixNode)]
+	return loadValidators(store)
 }
 
 ///// Debug

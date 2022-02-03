@@ -262,8 +262,8 @@ func New(
 	tssProcessor.Init()
 	app.apiHandler.SetAppLogicListener(tssProcessor)
 
-	// NOTE: Any module instantiated in the module manager that is later modified
-	// must be passed by reference here.
+	valsMgr := tss.NewValidatorManager(publicDb)
+	valsMgr.Init()
 
 	modules := []module.AppModule{
 		genutil.NewAppModule(
@@ -278,7 +278,7 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
 
-		tss.NewAppModule(appCodec, app.tssKeeper, publicDb, app.appKeys, app.txSubmitter, tssProcessor, app.globalData),
+		tss.NewAppModule(appCodec, app.tssKeeper, publicDb, app.appKeys, app.txSubmitter, tssProcessor, app.globalData, valsMgr),
 	}
 
 	app.tssProcessor = tssProcessor

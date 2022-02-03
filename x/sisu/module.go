@@ -103,12 +103,13 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 
-	keeper     keeper.DefaultKeeper
-	processor  *Processor
-	appKeys    *common.DefaultAppKeys
-	txSubmit   common.TxSubmit
-	globalData common.GlobalData
-	publicDb   keeper.Storage
+	keeper      keeper.DefaultKeeper
+	processor   *Processor
+	appKeys     *common.DefaultAppKeys
+	txSubmit    common.TxSubmit
+	globalData  common.GlobalData
+	publicDb    keeper.Storage
+	valsManager ValidatorManager
 }
 
 func NewAppModule(cdc codec.Marshaler,
@@ -118,6 +119,7 @@ func NewAppModule(cdc codec.Marshaler,
 	txSubmit common.TxSubmit,
 	processor *Processor,
 	globalData common.GlobalData,
+	valsManager ValidatorManager,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),
@@ -127,6 +129,7 @@ func NewAppModule(cdc codec.Marshaler,
 		publicDb:       publicDb,
 		appKeys:        appKeys,
 		globalData:     globalData,
+		valsManager:    valsManager,
 	}
 }
 
@@ -137,7 +140,7 @@ func (am AppModule) Name() string {
 
 // Route returns the capability module's message routing key.
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.txSubmit, am.processor))
+	return sdk.NewRoute(types.RouterKey, NewHandler(am.keeper, am.txSubmit, am.processor, am.valsManager))
 }
 
 // QuerierRoute returns the capability module's query routing key.
@@ -164,7 +167,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	// Initialize global index to index in genesis state
 	cdc.MustUnmarshalJSON(gs, &genState)
 
-	return InitGenesis(ctx, am.keeper, am.publicDb, genState)
+	return InitGenesis(ctx, am.keeper, am.valsManager, genState)
 }
 
 // ExportGenesis returns the capability module's exported genesis state as raw JSON bytes.
