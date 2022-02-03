@@ -116,8 +116,6 @@ func (svd SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 		}
 
 		if !simulate {
-			fmt.Println("VerifySignaturem, signerAddrs = ", signerAddrs[0])
-
 			err := authsigning.VerifySignature(pubKey, signerData, sig.Data, svd.signModeHandler, tx)
 			if err != nil {
 				var errMsg string

@@ -21,7 +21,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
 
@@ -75,9 +74,6 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 	}
 	chainID := settings.chainID
 
-	nodeIDs := make([]string, numValidators)
-	valPubKeys := make([]cryptotypes.PubKey, numValidators)
-
 	simappConfig := srvconfig.DefaultConfig()
 	simappConfig.MinGasPrices = minGasPrices
 	simappConfig.API.Enable = true
@@ -93,8 +89,10 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 	)
 
 	inBuf := bufio.NewReader(cmd.InOrStdin())
-	valAddrs := make([]sdk.ValAddress, numValidators)
 	memos := make([]string, numValidators)
+	nodes := make([]*types.Node, numValidators)
+	valPubKeys := make([]cryptotypes.PubKey, numValidators)
+
 	// generate private keys, node IDs, and initial transactions
 	for i := 0; i < numValidators; i++ {
 		nodeDirName := fmt.Sprintf("%s%d", nodeDirPrefix, i)
@@ -124,36 +122,11 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 			return nil, err
 		}
 
-		keyringAlgos, _ := kb.SupportedAlgorithms()
-		fmt.Println("keyringAlgos = ", keyringAlgos)
-		algo, err := keyring.NewSigningAlgoFromString(algoStr, keyringAlgos)
-		if err != nil {
-			return nil, err
-		}
+		node, secret, tendermintKey := getNode(kb, algoStr, nodeDirName, outputDir, tmConfig)
+		nodes[i] = node
+		valPubKeys[i] = tendermintKey
 
-		addr, secret, err := server.GenerateSaveCoinKey(kb, nodeDirName, true, algo)
-		if err != nil {
-			_ = os.RemoveAll(outputDir)
-			return nil, err
-		}
-
-		fmt.Println("addr from kb: ", addr.String())
-
-		nodeIDs[i], valPubKeys[i], err = InitializeNodeValidatorFilesFromMnemonic(tmConfig, secret)
-		if err != nil {
-			_ = os.RemoveAll(outputDir)
-			return nil, err
-		}
-
-		valPubKeys[i], err = utils.GetCosmosPubKey(valPubKeys[i].Type(), valPubKeys[i].Bytes())
-		if err != nil {
-			_ = os.RemoveAll(outputDir)
-			return nil, err
-		}
-
-		fmt.Println("valPubKeys = ", valPubKeys[i], valPubKeys[i].Address())
-
-		memo := fmt.Sprintf("%s@%s:26656", nodeIDs[i], ip)
+		memo := fmt.Sprintf("%s@%s:26656", node.Id, ip)
 		genFiles = append(genFiles, tmConfig.GenesisFile())
 		memos[i] = memo
 
@@ -175,27 +148,26 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 			sdk.NewCoin(common.SisuCoinName, accTokens),
 		}
 
-		genBalances = append(genBalances, banktypes.Balance{Address: addr.String(), Coins: coins.Sort()})
-		genAccounts = append(genAccounts, authtypes.NewBaseAccount(addr, nil, 0, 0))
-
-		valAddrs[i] = sdk.ValAddress(addr)
+		genBalances = append(genBalances, banktypes.Balance{Address: node.AccAddress, Coins: coins.Sort()})
+		acc, err := sdk.AccAddressFromBech32(node.AccAddress)
 		if err != nil {
-			return nil, err
+			panic(err)
 		}
+		genAccounts = append(genAccounts, authtypes.NewBaseAccount(acc, nil, 0, 0))
 
-		fmt.Println("valAddrs = ", addr.String())
-
+		// Write config/app.toml
 		srvconfig.WriteConfigFile(filepath.Join(mainAppDir, "config/app.toml"), simappConfig)
 
+		// Genreate sisu.toml
 		generateSisuToml(settings, i, nodeDir)
 	}
 
-	if err := initGenFiles(clientCtx, mbm, chainID, genAccounts, genBalances, genFiles, valPubKeys, valAddrs, numValidators); err != nil {
+	if err := initGenFiles(clientCtx, mbm, chainID, genAccounts, genBalances, genFiles, nodes); err != nil {
 		return nil, err
 	}
 
 	err := collectGenFiles(
-		clientCtx, tmConfig, chainID, nodeIDs, numValidators,
+		clientCtx, tmConfig, chainID, numValidators,
 		outputDir, nodeDirPrefix, nodeDaemonHome, memos,
 	)
 	if err != nil {
@@ -206,12 +178,42 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 	return valPubKeys, nil
 }
 
+func getNode(kb keyring.Keyring, algoStr string, nodeDirName string, outputDir string, tmConfig *tmconfig.Config) (*types.Node, string, cryptotypes.PubKey) {
+	keyringAlgos, _ := kb.SupportedAlgorithms()
+	algo, err := keyring.NewSigningAlgoFromString(algoStr, keyringAlgos)
+	if err != nil {
+		panic(err)
+	}
+
+	addr, secret, err := server.GenerateSaveCoinKey(kb, nodeDirName, true, algo)
+	if err != nil {
+		_ = os.RemoveAll(outputDir)
+		panic(err)
+	}
+
+	fmt.Println("addr from kb: ", addr.String())
+
+	nodeId, tendermintPubKey, err := InitializeNodeValidatorFilesFromMnemonic(tmConfig, secret)
+	if err != nil {
+		_ = os.RemoveAll(outputDir)
+		panic(err)
+	}
+
+	return &types.Node{
+		Id: nodeId,
+		ConsensusKey: &types.Pubkey{
+			Type:  tendermintPubKey.Type(),
+			Bytes: tendermintPubKey.Bytes(),
+		},
+		AccAddress: addr.String(),
+	}, secret, tendermintPubKey
+}
+
 func initGenFiles(
 	clientCtx client.Context, mbm module.BasicManager, chainID string,
 	genAccounts []authtypes.GenesisAccount, genBalances []banktypes.Balance,
-	genFiles []string, valPubKeys []cryptotypes.PubKey, valAddrs []sdk.ValAddress, numValidators int,
+	genFiles []string, nodes []*types.Node,
 ) error {
-
 	appGenState := mbm.DefaultGenesis(clientCtx.JSONMarshaler)
 
 	// set the accounts in the genesis state
@@ -233,19 +235,6 @@ func initGenFiles(
 	bankGenState.Balances = genBalances
 	appGenState[banktypes.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(&bankGenState)
 
-	// Genesis for the Sisu app
-	nodes := make([]*types.Node, len(genAccounts))
-	for i, key := range valPubKeys {
-		node := &types.Node{
-			ConsensusKey: &types.Pubkey{
-				Type:  key.Type(),
-				Bytes: key.Bytes(),
-			},
-			AccAddress: valAddrs[i].String(),
-		}
-		nodes[i] = node
-	}
-
 	sisuGenState := types.DefaultGenesis()
 	sisuGenState.Nodes = nodes
 
@@ -265,7 +254,7 @@ func initGenFiles(
 	}
 
 	// generate empty genesis files for each validator and save
-	for i := 0; i < numValidators; i++ {
+	for i := 0; i < len(nodes); i++ {
 		if err := genDoc.SaveAs(genFiles[i]); err != nil {
 			return err
 		}
@@ -275,9 +264,7 @@ func initGenFiles(
 
 func collectGenFiles(
 	clientCtx client.Context, nodeConfig *tmconfig.Config, chainID string,
-	nodeIDs []string, numValidators int,
-	outputDir, nodeDirPrefix, nodeDaemonHome string,
-	memos []string,
+	numValidators int, outputDir, nodeDirPrefix, nodeDaemonHome string, memos []string,
 ) error {
 
 	var appState json.RawMessage

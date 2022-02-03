@@ -1,9 +1,8 @@
 package sisu
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -15,10 +14,13 @@ func InitGenesis(ctx sdk.Context, k keeper.DefaultKeeper, publicDb keeper.Storag
 	validators := make([]abci.ValidatorUpdate, len(genState.Nodes))
 
 	for i, node := range genState.Nodes {
-		validators[i] = abci.Ed25519ValidatorUpdate(node.ConsensusKey.Bytes, 100)
-	}
+		pk, err := utils.GetCosmosPubKey(node.ConsensusKey.Type, node.ConsensusKey.Bytes)
+		if err != nil {
+			panic(err)
+		}
 
-	fmt.Println("End of genesis, validators size = ", len(validators))
+		validators[i] = abci.Ed25519ValidatorUpdate(pk.Bytes(), 100)
+	}
 
 	return validators
 }

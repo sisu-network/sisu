@@ -78,8 +78,6 @@ Example:
 			generator.ropstenUrl, _ = cmd.Flags().GetString(flagRopstenUrl)
 			configString, _ := cmd.Flags().GetString(flagConfigString)
 
-			fmt.Println("configString = ", configString)
-
 			testnetNodeData := TestnetNodes{}
 			err = json.Unmarshal([]byte(configString), &testnetNodeData)
 			if err != nil {
