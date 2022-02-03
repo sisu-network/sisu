@@ -86,7 +86,9 @@ Example:
 				panic(err)
 			}
 
-			chainId = "testnet"
+			if len(chainId) == 0 {
+				chainId = "testnet"
+			}
 
 			log.Info("testnet gen: chainId = ", chainId)
 
@@ -226,7 +228,12 @@ func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartI
 
 	sqlConfig.Schema = "dheart"
 
-	writeHeartConfig(index, outputDir, peerString, "false", sqlConfig)
+	useOnMemory := "false"
+	if len(peerIds) == 1 {
+		useOnMemory = "true"
+	}
+
+	writeHeartConfig(index, outputDir, peerString, useOnMemory, sqlConfig)
 }
 
 func (g *TestnetGenerator) generateEyesToml(index int, dir string, sisuIp string, sqlConfig SqlConfig) {
