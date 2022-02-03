@@ -254,10 +254,10 @@ func New(
 	dheartClient, deyesClient := bootstrapper.BootstrapInternalNetwork(tssConfig, app.apiHandler, encryptedKey, nodeKey.PrivKey.Type())
 
 	// storage that contains common data for all the nodes
-	storage := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "data"))
+	publicDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "data"))
 	privateDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "private"))
 
-	tssProcessor := tss.NewProcessor(app.tssKeeper, storage, privateDb, tssConfig, nodeKey.PrivKey,
+	tssProcessor := tss.NewProcessor(app.tssKeeper, publicDb, privateDb, tssConfig, nodeKey.PrivKey,
 		app.appKeys, app.txDecoder, app.txSubmitter, app.globalData, dheartClient, deyesClient)
 	tssProcessor.Init()
 	app.apiHandler.SetAppLogicListener(tssProcessor)
@@ -278,7 +278,7 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
 
-		tss.NewAppModule(appCodec, app.tssKeeper, storage, app.appKeys, app.txSubmitter, tssProcessor, app.globalData),
+		tss.NewAppModule(appCodec, app.tssKeeper, publicDb, app.appKeys, app.txSubmitter, tssProcessor, app.globalData),
 	}
 
 	app.tssProcessor = tssProcessor

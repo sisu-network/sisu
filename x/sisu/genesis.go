@@ -1,8 +1,9 @@
 package sisu
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -10,17 +11,14 @@ import (
 
 // InitGenesis initializes the capability module's state from a provided genesis
 // state.
-func InitGenesis(ctx sdk.Context, k keeper.DefaultKeeper, genState types.GenesisState) []abci.ValidatorUpdate {
+func InitGenesis(ctx sdk.Context, k keeper.DefaultKeeper, publicDb keeper.Storage, genState types.GenesisState) []abci.ValidatorUpdate {
 	validators := make([]abci.ValidatorUpdate, len(genState.Nodes))
 
 	for i, node := range genState.Nodes {
-		pk, err := utils.GetCosmosPubKey(node.Key.Type, node.Key.Bytes)
-		if err != nil {
-			panic(err)
-		}
-
-		validators[i] = abci.Ed25519ValidatorUpdate(pk.Bytes(), 100)
+		validators[i] = abci.Ed25519ValidatorUpdate(node.ConsensusKey.Bytes, 100)
 	}
+
+	fmt.Println("End of genesis, validators size = ", len(validators))
 
 	return validators
 }

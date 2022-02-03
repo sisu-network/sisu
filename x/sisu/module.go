@@ -108,12 +108,12 @@ type AppModule struct {
 	appKeys    *common.DefaultAppKeys
 	txSubmit   common.TxSubmit
 	globalData common.GlobalData
-	storage    keeper.Storage
+	publicDb   keeper.Storage
 }
 
 func NewAppModule(cdc codec.Marshaler,
 	keeper keeper.DefaultKeeper,
-	storage keeper.Storage,
+	publicDb keeper.Storage,
 	appKeys *common.DefaultAppKeys,
 	txSubmit common.TxSubmit,
 	processor *Processor,
@@ -124,7 +124,7 @@ func NewAppModule(cdc codec.Marshaler,
 		txSubmit:       txSubmit,
 		processor:      processor,
 		keeper:         keeper,
-		storage:        storage,
+		publicDb:       publicDb,
 		appKeys:        appKeys,
 		globalData:     globalData,
 	}
@@ -151,7 +151,7 @@ func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sd
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterTssQueryServer(cfg.QueryServer(), keeper.NewGrpcQuerier(am.storage))
+	types.RegisterTssQueryServer(cfg.QueryServer(), keeper.NewGrpcQuerier(am.publicDb))
 }
 
 // RegisterInvariants registers the capability module's invariants.
@@ -164,7 +164,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	// Initialize global index to index in genesis state
 	cdc.MustUnmarshalJSON(gs, &genState)
 
-	return InitGenesis(ctx, am.keeper, genState)
+	return InitGenesis(ctx, am.keeper, am.publicDb, genState)
 }
 
 // ExportGenesis returns the capability module's exported genesis state as raw JSON bytes.

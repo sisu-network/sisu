@@ -93,8 +93,6 @@ func (svd SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 		// verification (in the VerifySignature call below).
 		onlyAminoSigners := OnlyLegacyAminoSigners(sig.Data)
 
-		// MODIFIED: Don't check the account sequence. Each transaction will be checked against private database
-		// of Sisu instead.
 		if !onlyAminoSigners {
 			if sig.Sequence != acc.GetSequence() {
 				return ctx, sdkerrors.Wrapf(
@@ -118,6 +116,8 @@ func (svd SigVerificationDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simul
 		}
 
 		if !simulate {
+			fmt.Println("VerifySignaturem, signerAddrs = ", signerAddrs[0])
+
 			err := authsigning.VerifySignature(pubKey, signerData, sig.Data, svd.signModeHandler, tx)
 			if err != nil {
 				var errMsg string

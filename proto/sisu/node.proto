@@ -9,6 +9,8 @@ message Pubkey {
 }
 
 message Node {
-  Pubkey key = 1;
-  string valAddress = 2;
+  // consensusKey is the public key used by tendermint. This is different from the key in the keyring.
+  Pubkey consensusKey = 1;
+  string accAddress = 2;
+  bool isValidator = 3;
 }

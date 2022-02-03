@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -20,6 +21,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
 
@@ -115,23 +117,15 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 
 		ip := ips[i]
 
-		var err error
-		nodeIDs[i], valPubKeys[i], err = genutil.InitializeNodeValidatorFiles(tmConfig)
-		if err != nil {
-			_ = os.RemoveAll(outputDir)
-			return nil, err
-		}
-
-		memo := fmt.Sprintf("%s@%s:26656", nodeIDs[i], ip)
-		genFiles = append(genFiles, tmConfig.GenesisFile())
-		memos[i] = memo
-
-		kb, err := keyring.New(sdk.KeyringServiceName(), keyringBackend, mainAppDir, inBuf)
+		kb, err := keyring.New(sdk.KeyringServiceName(), keyringBackend, mainAppDir, inBuf, func(options *keyring.Options) {
+			options.SupportedAlgos = keyring.SigningAlgoList{hd.Secp256k1}
+		})
 		if err != nil {
 			return nil, err
 		}
 
 		keyringAlgos, _ := kb.SupportedAlgorithms()
+		fmt.Println("keyringAlgos = ", keyringAlgos)
 		algo, err := keyring.NewSigningAlgoFromString(algoStr, keyringAlgos)
 		if err != nil {
 			return nil, err
@@ -142,6 +136,26 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 			_ = os.RemoveAll(outputDir)
 			return nil, err
 		}
+
+		fmt.Println("addr from kb: ", addr.String())
+
+		nodeIDs[i], valPubKeys[i], err = InitializeNodeValidatorFilesFromMnemonic(tmConfig, secret)
+		if err != nil {
+			_ = os.RemoveAll(outputDir)
+			return nil, err
+		}
+
+		valPubKeys[i], err = utils.GetCosmosPubKey(valPubKeys[i].Type(), valPubKeys[i].Bytes())
+		if err != nil {
+			_ = os.RemoveAll(outputDir)
+			return nil, err
+		}
+
+		fmt.Println("valPubKeys = ", valPubKeys[i], valPubKeys[i].Address())
+
+		memo := fmt.Sprintf("%s@%s:26656", nodeIDs[i], ip)
+		genFiles = append(genFiles, tmConfig.GenesisFile())
+		memos[i] = memo
 
 		info := map[string]string{"secret": secret}
 
@@ -168,6 +182,8 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		fmt.Println("valAddrs = ", addr.String())
 
 		srvconfig.WriteConfigFile(filepath.Join(mainAppDir, "config/app.toml"), simappConfig)
 
@@ -221,11 +237,11 @@ func initGenFiles(
 	nodes := make([]*types.Node, len(genAccounts))
 	for i, key := range valPubKeys {
 		node := &types.Node{
-			Key: &types.Pubkey{
+			ConsensusKey: &types.Pubkey{
 				Type:  key.Type(),
 				Bytes: key.Bytes(),
 			},
-			ValAddress: valAddrs[i].String(),
+			AccAddress: valAddrs[i].String(),
 		}
 		nodes[i] = node
 	}
