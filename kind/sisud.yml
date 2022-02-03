@@ -36,17 +36,6 @@ spec:
     spec:
       serviceAccountName: namespace-lister
       initContainers:
-      - name: kubectl-init
-        image: bitnami/kubectl:1.22
-        imagePullPolicy: IfNotPresent
-        command:
-          # TODO: this should fill in the peers for sisud's configuration.
-          - kubectl
-          - get
-          - ns
-          - "-l"
-          - sisu.network/purpose=test
-          - "-oname"
       - name: populate-sisu-dir # Copy the files from /root/.sisu into the shared volume.
         image: sisu.test/sisu-all:latest
         imagePullPolicy: IfNotPresent
@@ -65,14 +54,30 @@ spec:
           - '-eu'
           - '-c'
           - |
-             # TODO: don't hardcode the config string.
-             sisud testnet --v 1 --output-dir ./output --config-string '[{"sisu_ip":"sisud.sisu","dheart_ip":"dheart.sisu","deyes_ip":"deyes.sisu","sql":{"host":"mysql.mysql","port":3306,"username":"root","password":"password"}}]' &&
+             sisud testnet --v 1 --output-dir ./output --config-string "$(
+               echo '['
+               for i in $(seq 1 $SISU_COUNT); do
+                 if [ "$i" != 1 ]; then echo ','; fi
+                 printf '{"sisu_ip": "sisud.sisu-%d", "dheart_ip":"dheart.sisu-%d","deyes_ip":"deyes.sisu-%d","sql":{"host":"mysql.mysql","port":3306,"username":"root","password":"password"}}' $i $i $i
+               done
+               echo ']'
+             )" &&
              sisud keys add --keyring-backend=test k1 &&
-             sisud init --chain-id=kind-chain sisu-1 # TODO: don't hardcode sisu-1
+             sisud init --chain-id=kind-chain sisu-$SISU_INDEX
         workingDir: /root
         env:
           - name: HOME_DIR
             value: /root
+          - name: SISU_COUNT
+            valueFrom:
+              configMapKeyRef:
+                name: sisu-cluster
+                key: node-count
+          - name: SISU_INDEX
+            valueFrom:
+              configMapKeyRef:
+                name: sisu-cluster
+                key: index
         volumeMounts:
           - name: sisudir
             mountPath: /root/.sisu
