@@ -160,6 +160,7 @@ func (p *DefaultTxOutputProducer) getEthContractDeploymentTx(ctx sdk.Context, he
 			log.Error("cannot get nonce for contract")
 			continue
 		}
+
 		rawTx := p.getContractTx(contract, nonce)
 		if rawTx == nil {
 			log.Warn("raw Tx is nil")

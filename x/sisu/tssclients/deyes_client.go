@@ -13,6 +13,7 @@ type DeyesClient interface {
 	Dispatch(request *eTypes.DispatchedTxRequest) (*eTypes.DispatchedTxResult, error)
 	AddWatchAddresses(chain string, addrs []string) error
 	GetNonce(chain string, address string) int64
+	SetSisuReady(isReady bool) error
 }
 
 type DefaultDeyesClient struct {
@@ -47,11 +48,11 @@ func (c *DefaultDeyesClient) Ping(source string) error {
 }
 
 // Informs the deyes that Sisu server is ready to accept transaction.
-func (c *DefaultDeyesClient) SetSisuReady(chain string) error {
+func (c *DefaultDeyesClient) SetSisuReady(isReady bool) error {
 	var result string
-	err := c.client.CallContext(context.Background(), &result, "deyes_setSisuReady", chain)
+	err := c.client.CallContext(context.Background(), &result, "deyes_setSisuReady", isReady)
 	if err != nil {
-		log.Error("Cannot Set readiness for deyes, chain = ", chain, "err = ", err)
+		log.Error("Cannot Set readiness for deyes, err = ", err)
 		return err
 	}
 
