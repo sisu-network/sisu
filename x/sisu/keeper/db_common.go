@@ -28,6 +28,7 @@ var (
 	prefixNetworkGasPrice        = []byte{0x0E}
 	prefixTokenPrices            = []byte{0x0F}
 	prefixCalculatedTokenPrice   = []byte{0x10}
+	prefixNode                   = []byte{0x11}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -646,7 +647,36 @@ func setCalculatedTokenPrices(store cstypes.KVStore, tokenPrices map[string]floa
 	}
 }
 
-/// Debug functions
+///// Node
+func saveNode(store cstypes.KVStore, node *types.Node) {
+	bz, err := node.Marshal()
+	if err != nil {
+		log.Error("cannot marshal node, err = ", err)
+	}
+	store.Set(node.ConsensusKey.Bytes, bz)
+}
+
+func loadValidators(store cstypes.KVStore) []*types.Node {
+	vals := make([]*types.Node, 0)
+
+	iter := store.Iterator(nil, nil)
+	for ; iter.Valid(); iter.Next() {
+		node := &types.Node{}
+		err := node.Unmarshal(iter.Value())
+		if err != nil {
+			log.Error("cannot unmarshal node, err = ", err)
+			continue
+		}
+
+		if node.IsValidator {
+			vals = append(vals, node)
+		}
+	}
+
+	return vals
+}
+
+///// Debug functions
 func printStore(store cstypes.KVStore) {
 	iter := store.Iterator(nil, nil)
 	count := 0

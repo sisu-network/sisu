@@ -84,10 +84,9 @@ Example:
 			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
 			configString, _ := cmd.Flags().GetString(flagConfigString)
 
-			fmt.Println("configString = ", configString)
-
 			testnetConfig := TestnetConfig{}
 			err = json.Unmarshal([]byte(configString), &testnetConfig)
+
 			if err != nil {
 				panic(err)
 			}

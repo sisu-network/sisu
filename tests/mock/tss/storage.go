@@ -312,6 +312,20 @@ func (mr *MockStorageMockRecorder) IsTxRecordProcessed(hash interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTxRecordProcessed", reflect.TypeOf((*MockStorage)(nil).IsTxRecordProcessed), hash)
 }
 
+// LoadValidators mocks base method.
+func (m *MockStorage) LoadValidators() []*types.Node {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "LoadValidators")
+	ret0, _ := ret[0].([]*types.Node)
+	return ret0
+}
+
+// LoadValidators indicates an expected call of LoadValidators.
+func (mr *MockStorageMockRecorder) LoadValidators() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadValidators", reflect.TypeOf((*MockStorage)(nil).LoadValidators))
+}
+
 // PrintStore mocks base method.
 func (m *MockStorage) PrintStore(name string) {
 	m.ctrl.T.Helper()
@@ -406,6 +420,18 @@ func (m *MockStorage) SaveNetworkGasPrice(chain string, gasPrice int64) {
 func (mr *MockStorageMockRecorder) SaveNetworkGasPrice(chain, gasPrice interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveNetworkGasPrice", reflect.TypeOf((*MockStorage)(nil).SaveNetworkGasPrice), chain, gasPrice)
+}
+
+// SaveNode mocks base method.
+func (m *MockStorage) SaveNode(node *types.Node) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SaveNode", node)
+}
+
+// SaveNode indicates an expected call of SaveNode.
+func (mr *MockStorageMockRecorder) SaveNode(node interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveNode", reflect.TypeOf((*MockStorage)(nil).SaveNode), node)
 }
 
 // SaveTxIn mocks base method.
