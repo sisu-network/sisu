@@ -40,9 +40,6 @@ func (b *DefaultBootstrapper) BootstrapInternalNetwork(
 	encryptedAes []byte,
 	tendermintKeyType string,
 ) (tssclients.DheartClient, tssclients.DeyesClient) {
-	apiHandler.SetNetworkHealthListener(b)
-	b.waitForPing()
-
 	// Dheart
 	var dheartClient tssclients.DheartClient
 	var err error
@@ -97,28 +94,4 @@ func (b *DefaultBootstrapper) BootstrapInternalNetwork(
 	}
 
 	return dheartClient, deyesClient
-}
-
-// waitForPing waits for ping from dheart and deyes.
-func (b *DefaultBootstrapper) waitForPing() {
-	for {
-		if b.dheartConnected.Load() == true && b.deyesConnected.Load() == true {
-			break
-		}
-		time.Sleep(RETRY_TIMEOUT)
-	}
-	log.Info("Received both pings from deyes and dheart")
-}
-
-func (b *DefaultBootstrapper) OnPing(source string) {
-	switch source {
-	case "dheart":
-		log.Info("Received ping from dheart")
-		b.dheartConnected.Store(true)
-	case "deyes":
-		log.Info("Received ping from deyes")
-		b.deyesConnected.Store(true)
-	default:
-		log.Error("unkonwn source: ", source)
-	}
 }
