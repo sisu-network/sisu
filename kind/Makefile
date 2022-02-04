@@ -40,6 +40,10 @@ endif
 # init-cluster depends on deploy-sisu-1 ... deploy-sisu-$(SISU_COUNT)
 init-cluster: $(foreach n,$(shell seq 1 $(SISU_COUNT)),deploy-sisu-$(n))
 
+.PHONY: gen-data
+gen-data: go-mod-vendor
+	./gen-data.sh $(SISU_COUNT)
+
 # Delete the cluster.
 .PHONY: delete-cluster
 delete-cluster: require-kind
@@ -119,7 +123,7 @@ preload-sisu-image: kind-cluster-ready build-docker-sisu
 # Load sisu all-in-one image after the cluster is ready and the sisu all-in-one image is built.
 .PHONY: load-sisu-%
 load-sisu-%: kind-cluster-ready preload-sisu-image
-	kubectl --context "kind-$(CLUSTER_NAME)" create namespace sisu-$(@:load-sisu-%=%) 
+	kubectl --context "kind-$(CLUSTER_NAME)" create namespace sisu-$(@:load-sisu-%=%)
 	@# Add arbitrary label so that sisu instances can discover other sisu instances in the same kind cluster.
 	kubectl --context "kind-$(CLUSTER_NAME)" label namespace sisu-$(@:load-sisu-%=%) sisu.network/purpose=test
 

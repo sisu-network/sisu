@@ -11,5 +11,5 @@ config.yml
 README.md
 /.git/
 /kind/
-# Allow the kind/include directory in Docker context.
-!/kind/include/*
+# Allow the kind/output directory in Docker context.
+!/kind/output/*
