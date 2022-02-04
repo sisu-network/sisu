@@ -93,6 +93,7 @@ func NewProcessor(k keeper.DefaultKeeper,
 func (p *Processor) Init() {
 	log.Info("Initializing TSS Processor...")
 
+	p.worldState = NewWorldState(p.config, p.publicDb, p.deyesClient)
 	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.appKeys, p.publicDb, p.privateDb, p.config)
 }
 
@@ -114,6 +115,7 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 		log.Info("Setting Sisu readiness for dheart.")
 		// This node has fully catched up with the blockchain, we need to inform dheart about this.
 		p.dheartClient.SetSisuReady(true)
+		p.deyesClient.SetSisuReady(true)
 	}
 
 	// TODO: Make keygen to be command instead of embedding inside the code.
