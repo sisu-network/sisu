@@ -9,3 +9,5 @@ api-port = 25456
 [tss]
 dheart-host = "dheart"
 dheart-port = 5678
+
+deyes-url = "http://deyes:31001"
