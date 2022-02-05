@@ -28,7 +28,7 @@ GO ?= go
 
 # Create a kind cluster, and build, load, and deploy all required images.
 .PHONY: init-cluster
-init-cluster: create-kind-cluster deploy-ganache deploy-mysql
+init-cluster: create-kind-cluster deploy-config-server deploy-ganache deploy-mysql
 	$(info Access the cluster's sisu instance with:)
 	$(info $(SPACE) $(SPACE) kubectl --context "kind-$(CLUSTER_NAME)" -n sisu-1)
 
@@ -161,3 +161,19 @@ sisu-config-volume: build-docker-sisu
 		  done; \
 		  echo ']}'; \
 		)"
+
+########## config-server ##########
+.PHONY: build-docker-config-server
+build-docker-config-server:
+	docker build --quiet -t sisu.test/config-server:latest -f ./Dockerfile.config-server /dev/null
+
+.PHONY: load-config-server
+load-config-server: kind-cluster-ready build-docker-config-server
+	kind load docker-image --name "$(CLUSTER_NAME)" sisu.test/config-server:latest
+
+.PHONY: deploy-config-server
+deploy-config-server: load-config-server preload-sisu-image
+	kubectl --context "kind-$(CLUSTER_NAME)" create namespace config-server
+	kubectl --context "kind-$(CLUSTER_NAME)" --namespace config-server create configmap sisu-cluster \
+		--from-literal node-count=$(SISU_COUNT)
+	kubectl --context "kind-$(CLUSTER_NAME)" --namespace config-server create -f ./config-server.yml

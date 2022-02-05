@@ -1,0 +1,7 @@
+FROM golang:1.17-alpine
+
+# See https://github.com/sgreben/http-file-server.
+# This is a convenient HTTP server can dynamically serve tarballs of file content.
+# We use this to serve a singly defined testnet configuration to other sisu services.
+# This is only appropriate for test; you would never serve this private information in a real instance.
+RUN go install github.com/sgreben/http-file-server@latest
