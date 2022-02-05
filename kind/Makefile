@@ -34,8 +34,11 @@ init-cluster: create-kind-cluster deploy-ganache deploy-mysql
 
 ifeq ($(SISU_COUNT),)
 $(warn $$SISU_COUNT not set; defaulting to 2 instances)
-SISU_COUNT := 2
+# SISU_COUNT := 2
+SISU_COUNT := 1
 endif
+
+init-cluster: gen-data
 
 # init-cluster depends on deploy-sisu-1 ... deploy-sisu-$(SISU_COUNT)
 init-cluster: $(foreach n,$(shell seq 1 $(SISU_COUNT)),deploy-sisu-$(n))
@@ -128,12 +131,12 @@ load-sisu-%: kind-cluster-ready preload-sisu-image
 	kubectl --context "kind-$(CLUSTER_NAME)" label namespace sisu-$(@:load-sisu-%=%) sisu.network/purpose=test
 
 .PHONY: deploy-deyes-%
-deploy-deyes-%: load-sisu-%
+deploy-deyes-%: load-sisu-% deyes-config-volume
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-deyes-%=%) apply -f ./deyes.yml
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-deyes-%=%) rollout status --timeout=30s deployment/deyes
 
 .PHONY: deploy-dheart-%
-deploy-dheart-%: load-sisu-%
+deploy-dheart-%: load-sisu-% dheart-config-volume
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-dheart-%=%) apply -f ./dheart.yml
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-dheart-%=%) rollout status --timeout=30s deployment/dheart
 
@@ -148,16 +151,18 @@ deploy-sisud-%: load-sisu-% sisu-config-volume
 # The kind cluster is configured to mount that into the node at /opt/sisu-config.
 .PHONY: sisu-config-volume
 sisu-config-volume: build-docker-sisu
-	rm -rf ./output && mkdir -p ./output
 	docker run --rm --workdir /root \
 		--mount type=bind,src=$$PWD/output,dst=/opt/sisu-config,consistency=delegated \
-		sisu.test/sisu-all:latest \
-		sisud testnet --v $(SISU_COUNT) --output-dir /opt/sisu-config --config-string "$$( \
-		  echo '{"chains":[{"name":"ganache1","rpc":"http://ganache1:7545"},{"name":"ganache2","rpc":"http://ganache2:7545"}],'; \
-		  echo '"nodes":['; \
-		  for i in $$(seq 1 $(SISU_COUNT)); do \
-		    if [ "$$i" != 1 ]; then echo ','; fi; \
-		    printf '{"sisu_ip": "sisud.sisu-%d", "dheart_ip":"dheart.sisu-%d","deyes_ip":"deyes.sisu-%d","sql":{"host":"mysql.mysql","port":3306,"username":"root","password":"password"}}' $$i $$i $$i ; \
-		  done; \
-		  echo ']}'; \
-		)"
+		sisu.test/sisu-all:latest
+
+.PHONY: dheart-config-volume
+dheart-config-volume: build-docker-sisu
+	docker run --rm --workdir /root \
+		--mount type=bind,src=$$PWD/output,dst=/opt/sisu-config,consistency=delegated \
+		sisu.test/sisu-all:latest
+
+.PHONY: deyes-config-volume
+deyes-config-volume: build-docker-sisu
+	docker run --rm --workdir /root \
+		--mount type=bind,src=$$PWD/output,dst=/opt/sisu-config,consistency=delegated \
+		sisu.test/sisu-all:latest
