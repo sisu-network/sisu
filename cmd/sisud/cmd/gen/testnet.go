@@ -47,7 +47,7 @@ type SqlConfig struct {
 type TestnetNode struct {
 	SisuIp  string    `json:"sisu_ip"`
 	HeartIp string    `json:"dheart_ip"`
-	EyesIp  string    `json:"eyes_ip"`
+	EyesIp  string    `json:"deyes_ip"`
 	Sql     SqlConfig `json:"sql"`
 }
 

@@ -125,7 +125,7 @@ create-sisu-ns-%: kind-cluster-ready preload-sisu-image
 .PHONY: deploy-deyes-%
 deploy-deyes-%: create-sisu-ns-% deploy-config-server deploy-mysql
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-deyes-%=%) apply -f ./deyes.yml
-	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-deyes-%=%) rollout status --timeout=45s deployment/deyes
+	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-deyes-%=%) rollout status --timeout=60s deployment/deyes
 
 .PHONY: deploy-dheart-%
 deploy-dheart-%: create-sisu-ns-% deploy-config-server
