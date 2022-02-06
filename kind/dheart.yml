@@ -9,6 +9,10 @@ spec:
     port: 5678
     protocol: TCP
     targetPort: 5678
+  - name: tcp-p2p
+    port: 28300
+    protocol: TCP
+    targetPort: 28300
   selector:
     app: dheart
 ---
@@ -62,6 +66,8 @@ spec:
         ports:
           - containerPort: 5678
             name: tcp-dheart
+          - containerPort: 28300
+            name: tcp-p2p
         volumeMounts:
           - name: configdir
             mountPath: /root/dheart.toml
