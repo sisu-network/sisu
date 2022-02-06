@@ -1,27 +1,9 @@
 # Use cluster name sisu by default, but accept overrides.
 CLUSTER_NAME ?= sisu
 
-# The first instance of sisu deployed into a kind cluster should just be named sisu
-# for predictability, but subsequent instances should have a unique name.
-SISU_NAMESPACE ?= sisu
-
-ifneq ($(ASSUME_CLUSTER_EXISTS),)
-# Adjust the namespace for a secondary sisu instance.
-SISU_NAMESPACE := $(SISU_NAMESPACE)-$(shell openssl rand -hex 6)
-$(info will use sisu namespace $(SISU_NAMESPACE))
-
-# Assume the cluster is ready, so validate the exact cluster name is present in kind get clusters.
-.PHONY: kind-cluster-ready
-kind-cluster-ready:
-	kind get clusters | grep -qx "$(CLUSTER_NAME)"
-
-else
-
 # Not assuming the cluster exists, so it is ready after we create it.
 .PHONY: kind-cluster-ready
 kind-cluster-ready: create-kind-cluster ;
-
-endif
 
 # Allow overriding the version of go (for go mod vendor).
 GO ?= go
@@ -30,19 +12,15 @@ GO ?= go
 .PHONY: init-cluster
 init-cluster: create-kind-cluster deploy-config-server deploy-ganache deploy-mysql
 	$(info Access the cluster's sisu instance with:)
-	$(info $(SPACE) $(SPACE) kubectl --context "kind-$(CLUSTER_NAME)" -n sisu-1)
+	$(info $(SPACE) $(SPACE) kubectl --context "kind-$(CLUSTER_NAME)" -n sisu-0)
 
 ifeq ($(SISU_COUNT),)
 $(warn $$SISU_COUNT not set; defaulting to 2 instances)
 SISU_COUNT := 2
 endif
 
-# init-cluster depends on deploy-sisu-1 ... deploy-sisu-$(SISU_COUNT)
-init-cluster: $(foreach n,$(shell seq 1 $(SISU_COUNT)),deploy-sisu-$(n))
-
-.PHONY: gen-data
-gen-data: go-mod-vendor
-	./gen-data.sh $(SISU_COUNT)
+# init-cluster depends on deploy-sisu-0 ... deploy-sisu-$(SISU_COUNT - 1)
+init-cluster: $(foreach n,$(shell seq 0 $$(( $(SISU_COUNT) - 1)) ),deploy-sisu-$(n))
 
 # Delete the cluster.
 .PHONY: delete-cluster
@@ -154,3 +132,4 @@ deploy-config-server: load-config-server preload-sisu-image
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace config-server create configmap sisu-cluster \
 		--from-literal node-count=$(SISU_COUNT)
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace config-server create -f ./config-server.yml
+	kubectl --context "kind-$(CLUSTER_NAME)" --namespace config-server rollout status --timeout=30s statefulset/config-server

@@ -39,7 +39,7 @@ spec:
           - '-c'
           - |
             wget --tries=0 --retry-connrefused -O /tmp/sisud.tar.gz \
-              http://config-server.config-server:8080/node$((SISU_INDEX - 1))/main?tar.gz=true && \
+              http://config-server.config-server:8080/node${SISU_INDEX}/main?tar.gz=true && \
             mkdir -p /sisu/main && cd /sisu/main && \
             tar xzvf /tmp/sisud.tar.gz
         env:

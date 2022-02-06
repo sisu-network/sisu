@@ -39,7 +39,7 @@ spec:
           - '-c'
           - |
             wget --tries=0 --retry-connrefused -O /opt/sisu-config/deyes.toml \
-              http://config-server.config-server:8080/node$((SISU_INDEX - 1))/deyes.toml
+              http://config-server.config-server:8080/node${SISU_INDEX}/deyes.toml
         env:
           - name: SISU_INDEX
             valueFrom:

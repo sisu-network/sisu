@@ -51,8 +51,8 @@ spec:
               sisud testnet --v ${SISU_COUNT} --output-dir /opt/sisu-config --config-string "$(
                 echo '{"chains":[{"name":"ganache1","rpc":"http://ganache-0.ganache.ganache:7545"},{"name":"ganache2","rpc":"http://ganache-1.ganache.ganache:7545"}],'
                 echo '"nodes":['
-                for i in $(seq 1 ${SISU_COUNT}); do
-                  if [ "$i" != 1 ]; then echo ','; fi;
+                for i in $(seq 0 $((SISU_COUNT - 1))); do
+                  if [ "$i" != 0 ]; then echo ','; fi;
                   printf '{"sisu_ip": "sisud.sisu-%d", "dheart_ip":"dheart.sisu-%d","deyes_ip":"deyes.sisu-%d","sql":{"host":"mysql.mysql","port":3306,"username":"root","password":"password"}}' $i $i $i ;
                 done
                 echo ']}'

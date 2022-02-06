@@ -39,7 +39,7 @@ spec:
           - '-c'
           - |
             wget --tries=0 --retry-connrefused -O /opt/sisu-config/dheart.toml \
-              http://config-server.config-server:8080/node$((SISU_INDEX - 1))/dheart.toml
+              http://config-server.config-server:8080/node${SISU_INDEX}/dheart.toml
         env:
           - name: SISU_INDEX
             valueFrom:
