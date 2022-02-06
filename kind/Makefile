@@ -10,7 +10,7 @@ GO ?= go
 
 # Create a kind cluster, and build, load, and deploy all required images.
 .PHONY: init-cluster
-init-cluster: create-kind-cluster deploy-config-server deploy-ganache deploy-mysql
+init-cluster: create-kind-cluster ready-config-server ready-ganache ready-mysql
 	$(info Access the cluster's sisu instance with:)
 	$(info $(SPACE) $(SPACE) kubectl --context "kind-$(CLUSTER_NAME)" -n sisu-0)
 
@@ -20,7 +20,7 @@ SISU_COUNT := 2
 endif
 
 # init-cluster depends on deploy-sisu-0 ... deploy-sisu-$(SISU_COUNT - 1)
-init-cluster: $(foreach n,$(shell seq 0 $$(( $(SISU_COUNT) - 1)) ),deploy-sisu-$(n))
+init-cluster: $(foreach n,$(shell seq 0 $$(( $(SISU_COUNT) - 1)) ),ready-sisu-$(n))
 
 # Delete the cluster.
 .PHONY: delete-cluster
@@ -56,6 +56,9 @@ deploy-ganache: kind-cluster-ready build-docker-ganache
 	kind load docker-image --name "$(CLUSTER_NAME)" sisu.test/ganache:latest
 	kubectl --context "kind-$(CLUSTER_NAME)" create namespace ganache
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace ganache apply -f ./ganache.yml
+
+.PHONY: ready-ganache
+ready-ganache: deploy-ganache
 	@# Block until ganache statefulset is ready.
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace ganache rollout status --timeout=30s statefulset/ganache
 
@@ -75,15 +78,18 @@ deploy-mysql: kind-cluster-ready prepare-mysql
 	kind load docker-image --name "$(CLUSTER_NAME)" mysql:8
 	kubectl --context "kind-$(CLUSTER_NAME)" create namespace mysql
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace mysql apply -f ./mysql.yml
+
+.PHONY: ready-mysql
+ready-mysql: deploy-mysql
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace mysql rollout status --timeout=45s deployment/mysql
 
 ########## SISU ##########
 # Deploying one "instance" of sisu deploys deyes, dheart, and sisud to its own namespace.
 
 # Meta-target to deploy all the individual services, using pattern matching.
-.PHONY: deploy-sisu-%
-deploy-sisu-%: deploy-deyes-% deploy-dheart-% deploy-sisud-%
-	$(info Deployed sisu instance into namespace $(@:deploy-%=%))
+.PHONY: ready-sisu-%
+ready-sisu-%: ready-deyes-% ready-dheart-% ready-sisud-%
+	$(info Deployed sisu instance into namespace $(@:ready-%=%))
 
 # Build the all-in-one sisu docker image.
 .PHONY: build-docker-sisu
@@ -95,27 +101,37 @@ build-docker-sisu: go-mod-vendor
 preload-sisu-image: kind-cluster-ready build-docker-sisu
 	kind load docker-image --name "$(CLUSTER_NAME)" sisu.test/sisu-all:latest
 
-# Create the namespace for the sisu instance.
+# Create the namespace for the sisu instance,
+# and create the configmap that reports the total node count and the index of this namespace.
 .PHONY: create-sisu-ns-%
 create-sisu-ns-%: kind-cluster-ready preload-sisu-image
 	kubectl --context "kind-$(CLUSTER_NAME)" create namespace sisu-$(@:create-sisu-ns-%=%)
+	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:create-sisu-ns-%=%) create configmap sisu-cluster \
+		--from-literal node-count=$(SISU_COUNT) --from-literal index=$(@:create-sisu-ns-%=%)
 
 .PHONY: deploy-deyes-%
 deploy-deyes-%: create-sisu-ns-% deploy-config-server deploy-mysql
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-deyes-%=%) apply -f ./deyes.yml
-	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-deyes-%=%) rollout status --timeout=60s deployment/deyes
+
+.PHONY: ready-deyes-%
+ready-deyes-%: deploy-deyes-% ready-mysql ready-config-server
+	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:ready-deyes-%=%) rollout status --timeout=60s deployment/deyes
 
 .PHONY: deploy-dheart-%
-deploy-dheart-%: create-sisu-ns-% deploy-config-server
+deploy-dheart-%: create-sisu-ns-%
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-dheart-%=%) apply -f ./dheart.yml
-	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-dheart-%=%) rollout status --timeout=30s deployment/dheart
+
+.PHONY: ready-dheart-%
+ready-dheart-%: deploy-dheart-% ready-config-server
+	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:ready-dheart-%=%) rollout status --timeout=30s deployment/dheart
 
 .PHONY: deploy-sisud-%
-deploy-sisud-%: create-sisu-ns-% deploy-config-server
-	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-sisud-%=%) create configmap sisu-cluster \
-		--from-literal node-count=$(SISU_COUNT) --from-literal index=$(@:deploy-sisud-%=%)
+deploy-sisud-%: create-sisu-ns-%
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-sisud-%=%) apply -f ./sisud.yml
-	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-sisud-%=%) rollout status --timeout=30s deployment/sisud
+
+.PHONY: ready-sisud-%
+ready-sisud-%: deploy-sisud-% ready-config-server
+	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:ready-sisud-%=%) rollout status --timeout=30s deployment/sisud
 
 ########## config-server ##########
 .PHONY: build-docker-config-server
@@ -132,4 +148,7 @@ deploy-config-server: load-config-server preload-sisu-image
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace config-server create configmap sisu-cluster \
 		--from-literal node-count=$(SISU_COUNT)
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace config-server create -f ./config-server.yml
+
+.PHONY: ready-config-server
+ready-config-server: deploy-config-server
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace config-server rollout status --timeout=30s statefulset/config-server
