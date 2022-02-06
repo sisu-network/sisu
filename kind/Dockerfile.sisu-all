@@ -10,6 +10,9 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 # This shouldn't run as root, but that should be fine for kind.
 FROM debian:bullseye-slim
+# Normally would clear the apt cache for this, but this image is only used for development,
+# and it is convenient to be able to simply apt install without apt update.
+RUN apt-get update && apt-get install -y --no-install-recommends wget
 # TODO: dynamically set AES_HEX_KEY once per kind deployment.
 RUN echo 'AES_KEY_HEX=c787ef22ade5afc8a5e22041c17869e7e4714190d88ecec0a84e241c9431add0' > /root/.env && \
   mkdir /root/migrations && \

@@ -1,10 +1,5 @@
 ---
 apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: namespace-lister
----
-apiVersion: v1
 kind: Service
 metadata:
   name: sisud
@@ -34,46 +29,20 @@ spec:
       labels:
         app: sisud
     spec:
-      serviceAccountName: namespace-lister
       initContainers:
-      - name: populate-sisu-dir # Copy the files from /root/.sisu into the shared volume.
+      - name: copy-node-config
         image: sisu.test/sisu-all:latest
         imagePullPolicy: IfNotPresent
         command:
-          - bash
-          - '-c'
-          - 'cp -R /root/.sisu/. /sisu/'
-        volumeMounts:
-          - name: sisudir
-            mountPath: /sisu
-      - name: init-sisu # Initial configuration for sisu
-        image: sisu.test/sisu-all:latest
-        imagePullPolicy: IfNotPresent
-        command:
-          - bash
-          - '-eu'
+          - sh
+          - '-x'
           - '-c'
           - |
-            sisud testnet --v $SISU_COUNT --output-dir ./output --config-string "$(
-              echo '{'
-              echo '"chains":[{"name":"ganache1","rpc":"http://ganache1:7545"},{"name":"ganache2","rpc":"http://ganache2:7545"}],'
-              echo '"nodes":['
-              for i in $(seq 1 $SISU_COUNT); do
-                if [ "$i" != 1 ]; then echo ','; fi
-                printf '{"sisu_ip": "sisud.sisu-%d", "dheart_ip":"dheart.sisu-%d","deyes_ip":"deyes.sisu-%d","sql":{"host":"mysql.mysql","port":3306,"username":"root","password":"password"}}' $i $i $i
-              done
-              echo ']'
-              echo '}'
-            )"
-        workingDir: /root
+            wget --tries=0 --retry-connrefused -O /tmp/sisud.tar.gz \
+              http://config-server.config-server:8080/node$((SISU_INDEX - 1))/main?tar.gz=true && \
+            mkdir -p /sisu/main && cd /sisu/main && \
+            tar xzvf /tmp/sisud.tar.gz
         env:
-          - name: HOME_DIR
-            value: /root
-          - name: SISU_COUNT
-            valueFrom:
-              configMapKeyRef:
-                name: sisu-cluster
-                key: node-count
           - name: SISU_INDEX
             valueFrom:
               configMapKeyRef:
@@ -81,7 +50,7 @@ spec:
                 key: index
         volumeMounts:
           - name: sisudir
-            mountPath: /root/.sisu
+            mountPath: /sisu
       containers:
       - command:
           - sisud

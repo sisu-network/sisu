@@ -29,6 +29,26 @@ spec:
       labels:
         app: deyes
     spec:
+      initContainers:
+      - name: copy-node-config
+        image: sisu.test/sisu-all:latest
+        imagePullPolicy: IfNotPresent
+        command:
+          - sh
+          - '-x'
+          - '-c'
+          - |
+            wget --tries=0 --retry-connrefused -O /opt/sisu-config/deyes.toml \
+              http://config-server.config-server:8080/node$((SISU_INDEX - 1))/deyes.toml
+        env:
+          - name: SISU_INDEX
+            valueFrom:
+              configMapKeyRef:
+                name: sisu-cluster
+                key: index
+        volumeMounts:
+          - name: configdir
+            mountPath: /opt/sisu-config
       containers:
       - command:
           - deyes
@@ -42,3 +62,10 @@ spec:
         ports:
           - containerPort: 31001
             name: tcp-deyes
+        volumeMounts:
+          - name: configdir
+            mountPath: /root/deyes.toml
+            subPath: deyes.toml
+      volumes:
+        - name: configdir
+          emptyDir: {}

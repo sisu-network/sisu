@@ -138,29 +138,11 @@ deploy-dheart-%: load-sisu-%
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-dheart-%=%) rollout status --timeout=30s deployment/dheart
 
 .PHONY: deploy-sisud-%
-deploy-sisud-%: load-sisu-% sisu-config-volume
+deploy-sisud-%: load-sisu-%
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-sisud-%=%) create configmap sisu-cluster \
 		--from-literal node-count=$(SISU_COUNT) --from-literal index=$(@:deploy-sisud-%=%)
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-sisud-%=%) apply -f ./sisud.yml
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-sisud-%=%) rollout status --timeout=30s deployment/sisud
-
-# Use the docker image we've built, to run sisud testnet and store output in ./output.
-# The kind cluster is configured to mount that into the node at /opt/sisu-config.
-.PHONY: sisu-config-volume
-sisu-config-volume: build-docker-sisu
-	rm -rf ./output && mkdir -p ./output
-	docker run --rm --workdir /root \
-		--mount type=bind,src=$$PWD/output,dst=/opt/sisu-config,consistency=delegated \
-		sisu.test/sisu-all:latest \
-		sisud testnet --v $(SISU_COUNT) --output-dir /opt/sisu-config --config-string "$$( \
-		  echo '{"chains":[{"name":"ganache1","rpc":"http://ganache1:7545"},{"name":"ganache2","rpc":"http://ganache2:7545"}],'; \
-		  echo '"nodes":['; \
-		  for i in $$(seq 1 $(SISU_COUNT)); do \
-		    if [ "$$i" != 1 ]; then echo ','; fi; \
-		    printf '{"sisu_ip": "sisud.sisu-%d", "dheart_ip":"dheart.sisu-%d","deyes_ip":"deyes.sisu-%d","sql":{"host":"mysql.mysql","port":3306,"username":"root","password":"password"}}' $$i $$i $$i ; \
-		  done; \
-		  echo ']}'; \
-		)"
 
 ########## config-server ##########
 .PHONY: build-docker-config-server

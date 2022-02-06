@@ -29,6 +29,26 @@ spec:
       labels:
         app: dheart
     spec:
+      initContainers:
+      - name: copy-node-config
+        image: sisu.test/sisu-all:latest
+        imagePullPolicy: IfNotPresent
+        command:
+          - sh
+          - '-x'
+          - '-c'
+          - |
+            wget --tries=0 --retry-connrefused -O /opt/sisu-config/dheart.toml \
+              http://config-server.config-server:8080/node$((SISU_INDEX - 1))/dheart.toml
+        env:
+          - name: SISU_INDEX
+            valueFrom:
+              configMapKeyRef:
+                name: sisu-cluster
+                key: index
+        volumeMounts:
+          - name: configdir
+            mountPath: /opt/sisu-config
       containers:
       - command:
           - dheart
@@ -42,3 +62,10 @@ spec:
         ports:
           - containerPort: 5678
             name: tcp-dheart
+        volumeMounts:
+          - name: configdir
+            mountPath: /root/dheart.toml
+            subPath: dheart.toml
+      volumes:
+        - name: configdir
+          emptyDir: {}

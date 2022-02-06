@@ -63,7 +63,7 @@ spec:
       containers:
       - command:
           - http-file-server
-          - /opt/sisu-config
+          - /=/opt/sisu-config
         image: sisu.test/config-server:latest
         imagePullPolicy: IfNotPresent # Important for test with implicit latest tag
         name: config-server
