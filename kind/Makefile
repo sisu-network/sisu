@@ -59,10 +59,6 @@ create-kind-cluster: require-kind
 require-kind:
 	kind --version
 
-.PHONY: require-jq
-require-jq:
-	jq --version
-
 .PHONY: go-mod-vendor
 go-mod-vendor:
 	$(GO) mod vendor
@@ -125,13 +121,11 @@ preload-sisu-image: kind-cluster-ready build-docker-sisu
 .PHONY: create-sisu-ns-%
 create-sisu-ns-%: kind-cluster-ready preload-sisu-image
 	kubectl --context "kind-$(CLUSTER_NAME)" create namespace sisu-$(@:create-sisu-ns-%=%)
-	@# Add arbitrary label so that sisu instances can discover other sisu instances in the same kind cluster.
-	kubectl --context "kind-$(CLUSTER_NAME)" label namespace sisu-$(@:create-sisu-ns-%=%) sisu.network/purpose=test
 
 .PHONY: deploy-deyes-%
 deploy-deyes-%: create-sisu-ns-% deploy-config-server deploy-mysql
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-deyes-%=%) apply -f ./deyes.yml
-	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-deyes-%=%) rollout status --timeout=30s deployment/deyes
+	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-deyes-%=%) rollout status --timeout=45s deployment/deyes
 
 .PHONY: deploy-dheart-%
 deploy-dheart-%: create-sisu-ns-% deploy-config-server
