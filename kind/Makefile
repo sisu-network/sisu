@@ -116,29 +116,30 @@ deploy-sisu-%: deploy-deyes-% deploy-dheart-% deploy-sisud-%
 build-docker-sisu: go-mod-vendor
 	cd .. && docker build --quiet -t sisu.test/sisu-all:latest -f ./kind/Dockerfile.sisu-all .
 
+# Load the sisu image into the kind cluster, after it has been built and after the kind cluster is ready.
 .PHONY: preload-sisu-image
 preload-sisu-image: kind-cluster-ready build-docker-sisu
 	kind load docker-image --name "$(CLUSTER_NAME)" sisu.test/sisu-all:latest
 
-# Load sisu all-in-one image after the cluster is ready and the sisu all-in-one image is built.
-.PHONY: load-sisu-%
-load-sisu-%: kind-cluster-ready preload-sisu-image
-	kubectl --context "kind-$(CLUSTER_NAME)" create namespace sisu-$(@:load-sisu-%=%)
+# Create the namespace for the sisu instance.
+.PHONY: create-sisu-ns-%
+create-sisu-ns-%: kind-cluster-ready preload-sisu-image
+	kubectl --context "kind-$(CLUSTER_NAME)" create namespace sisu-$(@:create-sisu-ns-%=%)
 	@# Add arbitrary label so that sisu instances can discover other sisu instances in the same kind cluster.
-	kubectl --context "kind-$(CLUSTER_NAME)" label namespace sisu-$(@:load-sisu-%=%) sisu.network/purpose=test
+	kubectl --context "kind-$(CLUSTER_NAME)" label namespace sisu-$(@:create-sisu-ns-%=%) sisu.network/purpose=test
 
 .PHONY: deploy-deyes-%
-deploy-deyes-%: load-sisu-%
+deploy-deyes-%: create-sisu-ns-% deploy-config-server deploy-mysql
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-deyes-%=%) apply -f ./deyes.yml
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-deyes-%=%) rollout status --timeout=30s deployment/deyes
 
 .PHONY: deploy-dheart-%
-deploy-dheart-%: load-sisu-%
+deploy-dheart-%: create-sisu-ns-% deploy-config-server
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-dheart-%=%) apply -f ./dheart.yml
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-dheart-%=%) rollout status --timeout=30s deployment/dheart
 
 .PHONY: deploy-sisud-%
-deploy-sisud-%: load-sisu-%
+deploy-sisud-%: create-sisu-ns-% deploy-config-server
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-sisud-%=%) create configmap sisu-cluster \
 		--from-literal node-count=$(SISU_COUNT) --from-literal index=$(@:deploy-sisud-%=%)
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-sisud-%=%) apply -f ./sisud.yml
