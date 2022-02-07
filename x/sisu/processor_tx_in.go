@@ -75,16 +75,20 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 		log.Info("contractAddress = ", contractAddress)
 	}
 
-	confirmMsg := types.NewTxOutConfirmWithSigner(
-		p.appKeys.GetSignerAddress().String(),
-		txOut.TxType,
-		txOut.OutChain,
-		txOut.OutHash,
-		blockHeight,
-		contractAddress,
-	)
+	txConfirm := &types.TxOutConfirm{
+		TxType:          txOut.TxType,
+		OutChain:        txOut.OutChain,
+		OutHash:         txOut.OutHash,
+		ContractAddress: contractAddress,
+	}
 
-	p.txSubmit.SubmitMessageAsync(confirmMsg)
+	p.privateDb.SaveTxOutConfirm(txConfirm)
+
+	// We can assume that tx transaction will succeed in majority of the time. Instead
+	// broadcasting the tx confirmation to Sisu blockchain, we should only record missing or failed
+	// transaction.
+	// TODO: Implement missing/ failed message and broadcast that to everyone after we have not seen
+	// a tx for some blocks.
 
 	return nil
 }

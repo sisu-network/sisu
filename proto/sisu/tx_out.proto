@@ -27,11 +27,6 @@ message TxOut {
   string contractHash = 8;
 }
 
-message TxOutConfirmWithSigner {
-  string signer = 1;
-  TxOutConfirm data = 2;
-}
-
 message TxOutConfirm {
   TxOutType txType = 1;
   string outChain = 2;
