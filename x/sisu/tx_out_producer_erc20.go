@@ -83,7 +83,7 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(ctx sdk.Context, tokenAddr
 		destChain, gatewayAddress.String(), tokenAddress, recipient, amount.Int64(),
 	)
 
-	gasPrice := p.privateDb.GetNetworkGasPrice(destChain)
+	gasPrice := p.publicDb.GetNetworkGasPrice(destChain)
 	if gasPrice < 0 {
 		gasPrice = p.getDefaultGasPrice(destChain).Int64()
 	}

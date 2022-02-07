@@ -202,7 +202,7 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *types.Contract, nonce 
 
 		byteCode := ecommon.FromHex(erc20.Bin)
 		input = append(byteCode, input...)
-		gasPrice := p.privateDb.GetNetworkGasPrice(contract.Chain)
+		gasPrice := p.publicDb.GetNetworkGasPrice(contract.Chain)
 		if gasPrice < 0 {
 			gasPrice = p.getDefaultGasPrice(contract.Chain).Int64()
 		}
@@ -223,7 +223,7 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *types.Contract, nonce 
 
 func (p *DefaultTxOutputProducer) getGasLimit(chain string) uint64 {
 	// TODO: Make this dependent on different chains.
-	return uint64(8_000_000)
+	return uint64(5_000_000)
 }
 
 func (p *DefaultTxOutputProducer) getDefaultGasPrice(chain string) *big.Int {
