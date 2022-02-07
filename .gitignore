@@ -4,3 +4,5 @@ output/
 tmp/
 .env
 .idea/
+
+/vendor/

@@ -9,3 +9,7 @@ docs
 tests
 config.yml
 README.md
+/.git/
+/kind/
+# Allow the kind/output directory in Docker context.
+!/kind/output/*
