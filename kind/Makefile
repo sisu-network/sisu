@@ -28,14 +28,34 @@ delete-cluster: require-kind
 	kind delete cluster --name "$(CLUSTER_NAME)"
 
 # Just create the cluster without loading anything.
+# This configures the single kind node to expose 7545 and 7546 as node ports for the two ganache instances,
+# and 25456+ as node ports for sisu-0 and up.
 .PHONY: create-kind-cluster
-create-kind-cluster: require-kind
-	kind create cluster --name $(CLUSTER_NAME)
+create-kind-cluster: require-kind require-jq
+	jq -n '{ \
+	  kind: "Cluster", \
+	  apiVersion: "kind.x-k8s.io/v1alpha4", \
+	  nodes: [ \
+	    { \
+	      role: "control-plane", \
+	      extraPortMappings: ( \
+	        [range(2) | {listenAddress: "127.0.0.1", containerPort:(32000+.), hostPort:(7545+.)}] + \
+	        [range($(SISU_COUNT)) | {listenAddress: "127.0.0.1", containerPort:(30000+.), hostPort:(25456+.)}] \
+	      ) \
+	    } \
+	  ] \
+	}' | \
+	    kind create cluster --name $(CLUSTER_NAME) --config -
+
 
 # Ensure we have the kind command; if we don't, the error message should be clear enough.
 .PHONY: require-kind
 require-kind:
 	kind --version
+
+.PHONY: require-jq
+require-jq:
+	jq --version
 
 .PHONY: go-mod-vendor
 go-mod-vendor:
@@ -52,10 +72,15 @@ build-docker-ganache:
 
 # Load the ganache image into the kind cluster, after the cluster is ready and we have built the image.
 .PHONY: deploy-ganache
-deploy-ganache: kind-cluster-ready build-docker-ganache
+deploy-ganache: kind-cluster-ready build-docker-ganache require-jq
 	kind load docker-image --name "$(CLUSTER_NAME)" sisu.test/ganache:latest
 	kubectl --context "kind-$(CLUSTER_NAME)" create namespace ganache
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace ganache apply -f ./ganache.yml
+	@# There is no obvious way to kubectl apply a multidocument JSON, so this is two separate calls.
+	GANACHE_INDEX=0 ./ganache-nodeport-service.bash | \
+		    kubectl --context "kind-$(CLUSTER_NAME)" --namespace ganache apply -f -
+	GANACHE_INDEX=1 ./ganache-nodeport-service.bash | \
+		    kubectl --context "kind-$(CLUSTER_NAME)" --namespace ganache apply -f -
 
 .PHONY: ready-ganache
 ready-ganache: deploy-ganache
@@ -126,8 +151,10 @@ ready-dheart-%: deploy-dheart-% ready-config-server
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:ready-dheart-%=%) rollout status --timeout=30s deployment/dheart
 
 .PHONY: deploy-sisud-%
-deploy-sisud-%: create-sisu-ns-%
+deploy-sisud-%: create-sisu-ns-% require-jq
 	kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-sisud-%=%) apply -f ./sisud.yml
+	SISU_INDEX=$(@:deploy-sisud-%=%) ./sisud-nodeport-service.bash | \
+		    kubectl --context "kind-$(CLUSTER_NAME)" --namespace sisu-$(@:deploy-sisud-%=%) apply -f -
 
 .PHONY: ready-sisud-%
 ready-sisud-%: deploy-sisud-% ready-config-server

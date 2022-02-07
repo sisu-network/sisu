@@ -5,12 +5,15 @@ It creates a [kind](https://kind.sigs.k8s.io/) cluster and deploys into it:
 
 - one MySQL instance in a Deployment, in the `mysql` namespace
 - two ganache instances into a StatefulSet, into the `ganache` namespace
-- and then into `SISU_COUNT` (defaults to 2) namespaces starting at `sisud-1`, `sisud-2`, ...:
+- and then into `SISU_COUNT` (defaults to 2) namespaces starting at `sisud-0`, `sisud-1`, ...:
     - one deyes instance in a Deployment
     - one dheart instance in a Deployment
     - one sisud instance in a Deployment
 
 If you want a different number of sisu instances, you can run as e.g. `make kind-init-cluster SISU_COUNT=3`.
+
+`ganache-0` and `ganache-1` can respectively be accessed from the host machine via `http://localhost:7545` and `http://localhost:7546`.
+Likewise, `sisud-0` is available at `http://localhost:25456`, `sisud-1` is available at `http://localhost:25457`, and so on.
 
 You can remove the cluster with `make kind-delete-cluster`.
 
