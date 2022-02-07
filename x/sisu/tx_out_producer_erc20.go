@@ -54,7 +54,7 @@ func (p *DefaultTxOutputProducer) processERC20TransferIn(ctx sdk.Context, ethTx 
 	return p.callERC20TransferIn(ctx, tokenAddr, recipient, amount, destChain)
 }
 
-func (p *DefaultTxOutputProducer) callERC20TransferIn(ctx sdk.Context, tokenAddress, recipient ethcommon.Address, amount *big.Int, destChain string) (*types.TxResponse, error) {
+func (p *DefaultTxOutputProducer) callERC20TransferIn(ctx sdk.Context, tokenAddress, recipient ethcommon.Address, amountIn *big.Int, destChain string) (*types.TxResponse, error) {
 	targetContractName := ContractErc20Gateway
 	gw := p.publicDb.GetLatestContractAddressByName(destChain, targetContractName)
 	if len(gw) == 0 {
@@ -66,7 +66,19 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(ctx sdk.Context, tokenAddr
 	gatewayAddress := ethcommon.HexToAddress(gw)
 	erc20GatewayContract := SupportedContracts[targetContractName]
 
-	input, err := erc20GatewayContract.Abi.Pack(MethodTransferIn, tokenAddress, recipient, amount)
+	// Calculate the output amount
+	amountOut := new(big.Int).Set(amountIn)
+
+	// 1. Subtract the commission fee.
+
+	// 2. Subtract the network gas fee on destination chain.
+	// 2.a Get the gas price
+	gasPrice, err := p.worldState.GetGasPrice(destChain)
+	if err != nil {
+		return nil, err
+	}
+
+	input, err := erc20GatewayContract.Abi.Pack(MethodTransferIn, tokenAddress, recipient, amountOut)
 	if err != nil {
 		log.Error(err)
 		return nil, err
@@ -80,20 +92,15 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(ctx sdk.Context, tokenAddr
 	}
 
 	log.Debugf("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, amount: %d",
-		destChain, gatewayAddress.String(), tokenAddress, recipient, amount.Int64(),
+		destChain, gatewayAddress.String(), tokenAddress, recipient, amountOut.Int64(),
 	)
 
-	gasPrice := p.publicDb.GetNetworkGasPrice(destChain)
-	if gasPrice < 0 {
-		gasPrice = p.getDefaultGasPrice(destChain).Int64()
-	}
-	log.Debug("Network gas price got: ", gasPrice)
 	rawTx := ethTypes.NewTransaction(
 		uint64(nonce),
 		gatewayAddress,
 		big.NewInt(0),
 		p.getGasLimit(destChain),
-		big.NewInt(gasPrice),
+		gasPrice,
 		input,
 	)
 
@@ -108,6 +115,12 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(ctx sdk.Context, tokenAddr
 		EthTx:    rawTx,
 		RawBytes: bz,
 	}, nil
+}
+
+// getGasCost returns the amount of gas used for txOut in the destination chain. Both the gas and
+// the token are converted into USD values.
+func (p *DefaultTxOutputProducer) getGasCost(chain string, token string) {
+
 }
 
 func decodeTxParams(abi abi.ABI, callData []byte) (map[string]interface{}, error) {

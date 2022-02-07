@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	"math/big"
 	"sort"
 	"strings"
 
@@ -45,5 +46,9 @@ func (p *Processor) deliverGasPriceMsg(ctx sdk.Context, msg *types.GasPriceMsg) 
 
 	median := listGasPrices[len(listGasPrices)/2]
 	p.publicDb.SaveNetworkGasPrice(msg.Chain, median)
+
+	// Save to the world state
+	p.worldState.SetGasPrice(msg.Chain, big.NewInt(median))
+
 	return nil, nil
 }

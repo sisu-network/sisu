@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	"fmt"
 	"math/big"
 	"strings"
 
@@ -32,17 +33,15 @@ type DefaultTxOutputProducer struct {
 	worldState WorldState
 	appKeys    common.AppKeys
 	publicDb   keeper.Storage
-	privateDb  keeper.Storage
 	tssConfig  config.TssConfig
 }
 
-func NewTxOutputProducer(worldState WorldState, appKeys common.AppKeys, publicDb keeper.Storage, privateDb keeper.Storage, tssConfig config.TssConfig) TxOutputProducer {
+func NewTxOutputProducer(worldState WorldState, appKeys common.AppKeys, publicDb keeper.Storage, tssConfig config.TssConfig) TxOutputProducer {
 	return &DefaultTxOutputProducer{
 		worldState: worldState,
 		appKeys:    appKeys,
 		tssConfig:  tssConfig,
 		publicDb:   publicDb,
-		privateDb:  privateDb,
 	}
 }
 
@@ -117,9 +116,12 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 		}
 	}
 
+	fmt.Println("p.publicDb.IsContractExistedAtAddress(tx.Chain, ethTx.To().String()) = ", p.publicDb.IsContractExistedAtAddress(tx.Chain, ethTx.To().String()))
+	log.Verbose("len(ethTx.Data()) ", len(ethTx.Data()))
+
 	// 2. Check if this is a tx sent to one of our contracts.
 	if ethTx.To() != nil &&
-		p.publicDb.IsContractExistedAtAddress(tx.Chain, ethTx.To().String()) && // TODO: Use keeper instead
+		p.publicDb.IsContractExistedAtAddress(tx.Chain, ethTx.To().String()) &&
 		len(ethTx.Data()) >= 4 {
 
 		// TODO: compare method name to trigger corresponding contract method
@@ -202,7 +204,7 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *types.Contract, nonce 
 
 		byteCode := ecommon.FromHex(erc20.Bin)
 		input = append(byteCode, input...)
-		gasPrice := p.privateDb.GetNetworkGasPrice(contract.Chain)
+		gasPrice := p.publicDb.GetNetworkGasPrice(contract.Chain)
 		if gasPrice < 0 {
 			gasPrice = p.getDefaultGasPrice(contract.Chain).Int64()
 		}

@@ -94,7 +94,7 @@ func (p *Processor) Init() {
 	log.Info("Initializing TSS Processor...")
 
 	p.worldState = NewWorldState(p.config, p.publicDb, p.deyesClient)
-	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.appKeys, p.publicDb, p.privateDb, p.config)
+	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.appKeys, p.publicDb, p.config)
 }
 
 func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {

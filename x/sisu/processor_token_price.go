@@ -90,4 +90,7 @@ func (p *Processor) calculateTokenPrices(ctx sdk.Context) {
 	log.Verbose("Calculated prices = ", medians)
 
 	p.publicDb.SetCalculatedTokenPrice(medians)
+
+	// Update the world state
+	p.worldState.SetTokenPrices(medians)
 }

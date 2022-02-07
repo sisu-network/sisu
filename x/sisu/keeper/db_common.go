@@ -518,7 +518,6 @@ func getTxOutSig(store cstypes.KVStore, chain string, hashWithSig string) *types
 
 ///// Gas Price
 func saveGasPrice(store cstypes.KVStore, msg *types.GasPriceMsg) {
-	log.Debug("Saving gas price ...")
 	var (
 		record      *types.GasPriceRecord
 		savedRecord []byte
@@ -551,7 +550,6 @@ func saveGasPrice(store cstypes.KVStore, msg *types.GasPriceMsg) {
 	}
 
 	store.Set(key, savedRecord)
-	log.Debug("Saved gas price successfully ...")
 }
 
 func getGasPriceRecord(store cstypes.KVStore, chain string, height int64) *types.GasPriceRecord {

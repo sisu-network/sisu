@@ -84,6 +84,11 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 
 	p.privateDb.SaveTxOutConfirm(txConfirm)
 
+	if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
+		// If this is a contract deployment, add the contract adress to the watch list
+		p.addWatchAddress(txOut.OutChain, contractAddress)
+	}
+
 	// We can assume that tx transaction will succeed in majority of the time. Instead
 	// broadcasting the tx confirmation to Sisu blockchain, we should only record missing or failed
 	// transaction.

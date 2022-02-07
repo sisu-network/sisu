@@ -35,8 +35,8 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 	t.Cleanup(func() {
 		ctrl.Finish()
 	})
-	mockPrivateDb := mocktss.NewMockStorage(ctrl)
-	mockPrivateDb.EXPECT().GetNetworkGasPrice(gomock.Any()).Return(int64(400_000_000_000))
+	mockPublicDb := mocktss.NewMockStorage(ctrl)
+	mockPublicDb.EXPECT().GetNetworkGasPrice(gomock.Any()).Return(int64(400_000_000_000))
 
 	worldState := NewWorldState(config.TssConfig{}, nil, nil)
 	txOutProducer := DefaultTxOutputProducer{
@@ -49,7 +49,7 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 				},
 			},
 		},
-		privateDb: mockPrivateDb,
+		publicDb: mockPublicDb,
 	}
 
 	tx := txOutProducer.getContractTx(contract, 100)
@@ -110,7 +110,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		}
 
 		worldState := DefaultWorldState{
-			privateDb: mockPublicDb,
+			publicDb:  mockPublicDb,
 			tssConfig: config.TssConfig{},
 			nonces: map[string]int64{
 				"eth": 100,
@@ -118,7 +118,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 			deyesClient: nil,
 		}
 
-		txOutProducer := NewTxOutputProducer(&worldState, mockAppKeys, mockPublicDb, mockPrivateDb,
+		txOutProducer := NewTxOutputProducer(&worldState, mockAppKeys, mockPublicDb,
 			config.TssConfig{
 				DeyesUrl: "http://0.0.0.0:1234",
 				SupportedChains: map[string]config.TssChainConfig{
@@ -189,7 +189,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		}
 
 		worldState := DefaultWorldState{
-			privateDb: mockPublicDb,
+			publicDb:  mockPublicDb,
 			tssConfig: config.TssConfig{},
 			nonces: map[string]int64{
 				"eth": 100,
@@ -206,9 +206,8 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 					},
 				},
 			},
-			publicDb:  mockPublicDb,
-			privateDb: mockPrivateDb,
-			appKeys:   mockAppKeys,
+			publicDb: mockPublicDb,
+			appKeys:  mockAppKeys,
 		}
 
 		ctx := sdk.Context{}
