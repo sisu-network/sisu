@@ -27,20 +27,22 @@ message TxOut {
   string contractHash = 8;
 }
 
-message TxOutConfirm {
-  TxOutType txType = 1;
-  string outChain = 2;
-  string outHash = 3;
-  int64 blockHeight = 4;
-
-  // optional contract address
-  string contractAddress = 5;
-}
-
 // TxOut with and full transaction hash (including signature) to look up TxOut when a new tx comes in.
 message TxOutSig {
   string chain = 1;
   string hashWithSig = 2;
 
   string hashNoSig = 3;
+}
+
+message TxOutContractConfirmWithSigner {
+  string signer = 1;
+  TxOutContractConfirm data = 2;
+}
+
+message TxOutContractConfirm {
+  string outChain = 1;
+  string outHash = 2;
+  int64 blockHeight = 3;
+  string contractAddress = 4;
 }

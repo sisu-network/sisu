@@ -65,7 +65,7 @@ type Storage interface {
 	GetTxOutSig(outChain, hashWithSig string) *types.TxOutSig
 
 	// TxOutConfirm
-	SaveTxOutConfirm(msg *types.TxOutConfirm)
+	SaveTxOutConfirm(msg *types.TxOutContractConfirm)
 	IsTxOutConfirmExisted(outChain, hash string) bool
 
 	// Gas Price
@@ -131,8 +131,8 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes[string(prefixTxOut)] = prefix.NewStore(parent, prefixTxOut)
 	// prefixTxOutSig
 	prefixes[string(prefixTxOutSig)] = prefix.NewStore(parent, prefixTxOutSig)
-	// prefixTxOutConfirm
-	prefixes[string(prefixTxOutConfirm)] = prefix.NewStore(parent, prefixTxOutConfirm)
+	// prefixTxOutContractConfirm
+	prefixes[string(prefixTxOutContractConfirm)] = prefix.NewStore(parent, prefixTxOutContractConfirm)
 	// prefixContractName
 	prefixes[string(prefixContractName)] = prefix.NewStore(parent, prefixContractName)
 	// prefixGasPrice
@@ -330,13 +330,13 @@ func (db *defaultPrivateDb) SaveTxOutSig(msg *types.TxOutSig) {
 }
 
 ///// TxOutConfirm
-func (db *defaultPrivateDb) SaveTxOutConfirm(msg *types.TxOutConfirm) {
-	store := db.prefixes[string(prefixTxOutConfirm)]
+func (db *defaultPrivateDb) SaveTxOutConfirm(msg *types.TxOutContractConfirm) {
+	store := db.prefixes[string(prefixTxOutContractConfirm)]
 	saveTxOutConfirm(store, msg)
 }
 
 func (db *defaultPrivateDb) IsTxOutConfirmExisted(chain, hash string) bool {
-	store := db.prefixes[string(prefixTxOutConfirm)]
+	store := db.prefixes[string(prefixTxOutContractConfirm)]
 	return isTxOutConfirmExisted(store, chain, hash)
 }
 

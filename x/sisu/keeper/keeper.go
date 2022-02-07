@@ -55,7 +55,7 @@ type Keeper interface {
 	GetTxOut(ctx sdk.Context, chain, hash string) *types.TxOut
 
 	// TxOutConfirm
-	SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutConfirm)
+	SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutContractConfirm)
 	IsTxOutConfirmExisted(ctx sdk.Context, outChain, hash string) bool
 }
 
@@ -230,13 +230,13 @@ func (k *DefaultKeeper) GetTxOut(ctx sdk.Context, chain, hash string) *types.TxO
 }
 
 ///// TxOutConfirm
-func (k *DefaultKeeper) SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutConfirm) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutConfirm)
+func (k *DefaultKeeper) SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutContractConfirm) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutContractConfirm)
 	saveTxOutConfirm(store, msg)
 }
 
 func (k *DefaultKeeper) IsTxOutConfirmExisted(ctx sdk.Context, outChain, hash string) bool {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutConfirm)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutContractConfirm)
 	return isTxOutConfirmExisted(store, outChain, hash)
 }
 

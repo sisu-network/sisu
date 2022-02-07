@@ -22,7 +22,7 @@ var (
 	prefixTxIn                   = []byte{0x08}
 	prefixTxOut                  = []byte{0x09}
 	prefixTxOutSig               = []byte{0x0A}
-	prefixTxOutConfirm           = []byte{0x0B}
+	prefixTxOutContractConfirm   = []byte{0x0B}
 	prefixContractName           = []byte{0x0C}
 	prefixGasPrice               = []byte{0x0D}
 	prefixNetworkGasPrice        = []byte{0x0E}
@@ -565,7 +565,7 @@ func getGasPriceRecord(store cstypes.KVStore, chain string, height int64) *types
 }
 
 ///// TxOutConfirm
-func saveTxOutConfirm(store cstypes.KVStore, msg *types.TxOutConfirm) {
+func saveTxOutConfirm(store cstypes.KVStore, msg *types.TxOutContractConfirm) {
 	key := getTxOutConfirmKey(msg.OutChain, msg.OutHash)
 	bz, err := msg.Marshal()
 	if err != nil {

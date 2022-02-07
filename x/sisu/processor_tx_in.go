@@ -73,25 +73,25 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 
 		contractAddress = crypto.CreateAddress(common.HexToAddress(tx.From), ethTx.Nonce()).String()
 		log.Info("contractAddress = ", contractAddress)
+
+		txConfirm := &types.TxOutContractConfirm{
+			OutChain:        txOut.OutChain,
+			OutHash:         txOut.OutHash,
+			BlockHeight:     blockHeight,
+			ContractAddress: contractAddress,
+		}
+
+		msg := types.NewTxOutContractConfirmWithSigner(
+			p.appKeys.GetSignerAddress().String(),
+			txConfirm,
+		)
+		p.txSubmit.SubmitMessageAsync(msg)
 	}
 
-	txConfirm := &types.TxOutConfirm{
-		TxType:          txOut.TxType,
-		OutChain:        txOut.OutChain,
-		OutHash:         txOut.OutHash,
-		ContractAddress: contractAddress,
-	}
-
-	p.privateDb.SaveTxOutConfirm(txConfirm)
-
-	if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
-		// If this is a contract deployment, add the contract adress to the watch list
-		p.addWatchAddress(txOut.OutChain, contractAddress)
-	}
-
-	// We can assume that tx transaction will succeed in majority of the time. Instead
+	// We can assume that other tx transactions will succeed in majority of the time. Instead
 	// broadcasting the tx confirmation to Sisu blockchain, we should only record missing or failed
 	// transaction.
+	// We only confirm if the tx out is a contract deployment to save the smart contract address.
 	// TODO: Implement missing/ failed message and broadcast that to everyone after we have not seen
 	// a tx for some blocks.
 
