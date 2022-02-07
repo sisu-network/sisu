@@ -11,6 +11,22 @@ import (
 	tmos "github.com/tendermint/tendermint/libs/os"
 )
 
+type HeartConfiguration struct {
+	PeerString        string
+	SisuServerUrl     string
+	UseOnMemory       string
+	ShortcutPreparams bool
+	Sql               SqlConfig
+}
+
+type DeyesConfiguration struct {
+	Chains        []ChainConfig
+	SisuServerUrl string
+
+	// sql
+	Sql SqlConfig
+}
+
 func getPeerIds(n int, pubKeys []cryptotypes.PubKey) ([]string, error) {
 	ids := make([]string, n)
 
@@ -62,12 +78,13 @@ sisu_server_url = "{{ .SisuServerUrl }}"
 	tmos.MustWriteFile(filepath.Join(dir, "deyes.toml"), buffer.Bytes(), 0644)
 }
 
-func writeHeartConfig(index int, dir string, peerString string, useOnMemory string, sisuUrl string, sqlConfig SqlConfig) {
+func writeHeartConfig(index int, dir string, peerString string, useOnMemory string, shortcutPreparams bool, sisuUrl string, sqlConfig SqlConfig) {
 	heartConfig := HeartConfiguration{
-		PeerString:    peerString,
-		SisuServerUrl: sisuUrl,
-		Sql:           sqlConfig,
-		UseOnMemory:   useOnMemory,
+		PeerString:        peerString,
+		SisuServerUrl:     sisuUrl,
+		Sql:               sqlConfig,
+		UseOnMemory:       useOnMemory,
+		ShortcutPreparams: shortcutPreparams,
 	}
 
 	heartToml := `# This is a TOML config file.
@@ -75,7 +92,7 @@ func writeHeartConfig(index int, dir string, peerString string, useOnMemory stri
 
 home-dir = "/root/"
 use-on-memory = {{ .UseOnMemory }}
-shortcut-preparams = true
+shortcut-preparams = {{ .ShortcutPreparams }}
 sisu-server-url = "{{ .SisuServerUrl }}"
 port = 5678
 

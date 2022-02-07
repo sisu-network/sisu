@@ -41,21 +41,6 @@ type DockerNodeConfig struct {
 	}
 }
 
-type HeartConfiguration struct {
-	PeerString    string
-	SisuServerUrl string
-	UseOnMemory   string
-	Sql           SqlConfig
-}
-
-type DeyesConfiguration struct {
-	Chains        []ChainConfig
-	SisuServerUrl string
-
-	// sql
-	Sql SqlConfig
-}
-
 // get cmd to initialize all files for tendermint localnet and application
 func LocalDockerCmd(mbm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *cobra.Command {
 	cmd := &cobra.Command{
@@ -399,5 +384,5 @@ func generateHeartToml(index int, dir string, dockerConfig DockerNodeConfig, pee
 
 	sisuUrl := fmt.Sprintf("http://sisu%d:25456", index)
 
-	writeHeartConfig(index, dir, peerString, useOnMemory, sisuUrl, sqlConfig)
+	writeHeartConfig(index, dir, peerString, useOnMemory, true, sisuUrl, sqlConfig)
 }

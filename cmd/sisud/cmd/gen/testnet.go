@@ -242,7 +242,7 @@ func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartI
 
 	sisuUrl := fmt.Sprintf("http://%s:25456", sisuIp)
 
-	writeHeartConfig(index, outputDir, peerString, useOnMemory, sisuUrl, sqlConfig)
+	writeHeartConfig(index, outputDir, peerString, useOnMemory, false, sisuUrl, sqlConfig)
 }
 
 func (g *TestnetGenerator) generateEyesToml(index int, dir string, sisuIp string, sqlConfig SqlConfig, chainConfigs []ChainConfig) {
