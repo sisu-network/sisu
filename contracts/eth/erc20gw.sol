@@ -1300,7 +1300,7 @@ contract ERC20Gateway is Ownable {
     // Anyone can call TransferOut
     function transferOut(string memory _destChain, address _recipient, address _tokenOut, address _tokenIn, uint256 _amount) public isNotPaused {
         require(supportedChains[_destChain] == true, "destChain is not supported");
-        TransferHelper.safeTransferFrom(_tokenOut, msg.sender, address(this), _amount);
+        TransferHelper.safeTransferFrom(_tokenOut, msg.sender, lpPool, _amount);
 
         emit TransferOutEvent(_destChain, _recipient, _tokenOut, _tokenIn, msg.sender, _amount);
     }

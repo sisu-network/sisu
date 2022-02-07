@@ -15,7 +15,7 @@ Process for generating a new key:
 - After M blocks (M is a constant) since a proposal is sent, count the number of yes vote. If there
 are enough validator supporting the new chain, send a message to TSS engine to do keygen.
 */
-func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
+func (p *Processor) CheckTssKeygen(ctx sdk.Context) {
 	// TODO: We can replace this by sending command from client instead of running at the beginning
 	// of each block.
 	if p.globalData.IsCatchingUp() || ctx.BlockHeight()%50 != 2 {

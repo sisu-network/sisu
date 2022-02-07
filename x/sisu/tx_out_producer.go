@@ -19,8 +19,12 @@ import (
 
 // TODO: export a command line to set liquid pool address for the gateway
 var liquidPoolAddrs = map[string]ecommon.Address{
-	"ganache1": ecommon.HexToAddress("0x3BA075c583AA1A338e9D8929d034667b5E6BA9a0"),
-	"ganache2": ecommon.HexToAddress("0x13D474f19059896657A1633B8735108Ec1D8C32a"),
+	"ganache1":            ecommon.HexToAddress("0x3BA075c583AA1A338e9D8929d034667b5E6BA9a0"),
+	"ganache2":            ecommon.HexToAddress("0x13D474f19059896657A1633B8735108Ec1D8C32a"),
+	"eth-binance-testnet": ecommon.HexToAddress("0xAEC1F46f52Ef17f5561787AddE48d8edDa6612fD"),
+	"eth-ropsten":         ecommon.HexToAddress("0xC3803f12067134164BFCa0A63F43443a35bAb5aB"),
+	"fantom-testnet":      ecommon.HexToAddress("0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"),
+	"polygon-testnet":     ecommon.HexToAddress("0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"),
 }
 
 // This structs produces transaction output based on input. For a given tx input, this struct

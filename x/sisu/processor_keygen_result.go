@@ -109,11 +109,13 @@ func (p *Processor) getKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResu
 
 func (p *Processor) addWatchAddress(msg *types.Keygen) {
 	// 2. Add the address to the watch list.
+	log.Info(p.config.SupportedChains)
 	for _, chainConfig := range p.config.SupportedChains {
 		chain := chainConfig.Symbol
 		deyesClient := p.deyesClients[chain]
 
 		if libchain.GetKeyTypeForChain(chain) != msg.KeyType {
+			log.Info("!= msg.Keytype", chain, " ", msg.KeyType)
 			continue
 		}
 
