@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	types "github.com/sisu-network/sisu/x/sisu/types"
 )
 
 // MockWorldState is a mock of WorldState interface.
@@ -91,16 +92,16 @@ func (mr *MockWorldStateMockRecorder) SetGasPrice(chain, price interface{}) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetGasPrice", reflect.TypeOf((*MockWorldState)(nil).SetGasPrice), chain, price)
 }
 
-// SetTokenPrices mocks base method.
-func (m *MockWorldState) SetTokenPrices(tokenPrices map[string]int64) {
+// SetTokens mocks base method.
+func (m *MockWorldState) SetTokens(tokenPrices map[string]*types.Token) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetTokenPrices", tokenPrices)
+	m.ctrl.Call(m, "SetTokens", tokenPrices)
 }
 
-// SetTokenPrices indicates an expected call of SetTokenPrices.
-func (mr *MockWorldStateMockRecorder) SetTokenPrices(tokenPrices interface{}) *gomock.Call {
+// SetTokens indicates an expected call of SetTokens.
+func (mr *MockWorldStateMockRecorder) SetTokens(tokenPrices interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTokenPrices", reflect.TypeOf((*MockWorldState)(nil).SetTokenPrices), tokenPrices)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTokens", reflect.TypeOf((*MockWorldState)(nil).SetTokens), tokenPrices)
 }
 
 // UseAndIncreaseNonce mocks base method.

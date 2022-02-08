@@ -90,8 +90,20 @@ func (p *Processor) calculateTokenPrices(ctx sdk.Context) {
 
 	log.Verbose("Calculated prices = ", medians)
 
-	p.publicDb.SetCalculatedTokenPrice(medians)
+	// Update all the token data.
+	arr := make([]string, 0, len(medians))
+	for token, _ := range medians {
+		arr = append(arr, token)
+	}
+
+	savedTokens := p.publicDb.GetTokens(arr)
+
+	for tokenId, price := range medians {
+		savedTokens[tokenId].Price = price
+	}
+
+	p.publicDb.SetTokens(savedTokens)
 
 	// Update the world state
-	p.worldState.SetTokenPrices(medians)
+	p.worldState.SetTokens(savedTokens)
 }

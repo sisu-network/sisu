@@ -6,7 +6,6 @@ import (
 
 	cstypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
@@ -26,8 +25,8 @@ var (
 	prefixContractName           = []byte{0x0C}
 	prefixGasPrice               = []byte{0x0D}
 	prefixNetworkGasPrice        = []byte{0x0E}
-	prefixTokenPrices            = []byte{0x0F}
-	prefixCalculatedTokenPrice   = []byte{0x10}
+	prefixToken                  = []byte{0x0F}
+	prefixTokenPrices            = []byte{0x10}
 	prefixNode                   = []byte{0x11}
 )
 
@@ -639,10 +638,36 @@ func getAllTokenPrices(store cstypes.KVStore) map[string]*types.TokenPriceRecord
 	return result
 }
 
-func setCalculatedTokenPrices(store cstypes.KVStore, tokenPrices map[string]int64) {
-	for token, price := range tokenPrices {
-		store.Set([]byte(token), utils.ToByte(price))
+///// Tokens
+
+func setTokens(store cstypes.KVStore, tokens map[string]*types.Token) {
+	for id, token := range tokens {
+		bz, err := token.Marshal()
+		if err != nil {
+			log.Error("cannot marshal token ", id)
+			continue
+		}
+
+		store.Set([]byte(id), bz)
 	}
+}
+
+func getTokens(store cstypes.KVStore, tokenIds []string) map[string]*types.Token {
+	tokens := make(map[string]*types.Token)
+	for _, id := range tokenIds {
+		bz := store.Get([]byte(id))
+
+		token := &types.Token{}
+		err := token.Unmarshal(bz)
+		if err != nil {
+			log.Error("getTokens: cannot unmarhsla token ", id)
+			continue
+		}
+
+		tokens[id] = token
+	}
+
+	return tokens
 }
 
 ///// Node

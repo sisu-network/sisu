@@ -78,8 +78,9 @@ type Storage interface {
 	SetTokenPrices(blockHeight uint64, msg *types.UpdateTokenPrice)
 	GetAllTokenPricesRecord() map[string]*types.TokenPriceRecord
 
-	// Calculated Token Price
-	SetCalculatedTokenPrice(map[string]int64)
+	// Set Tokens
+	SetTokens(map[string]*types.Token)
+	GetTokens([]string) map[string]*types.Token
 
 	// Nodes
 	SaveNode(node *types.Node)
@@ -141,8 +142,8 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes[string(prefixNetworkGasPrice)] = prefix.NewStore(parent, prefixNetworkGasPrice)
 	// prefixTokenPrices
 	prefixes[string(prefixTokenPrices)] = prefix.NewStore(parent, prefixTokenPrices)
-	// prefixCalculatedTokenPrice
-	prefixes[string(prefixCalculatedTokenPrice)] = prefix.NewStore(parent, prefixCalculatedTokenPrice)
+	// prefixToken
+	prefixes[string(prefixToken)] = prefix.NewStore(parent, prefixToken)
 	// prefixNode
 	prefixes[string(prefixNode)] = prefix.NewStore(parent, prefixNode)
 
@@ -386,9 +387,14 @@ func (db *defaultPrivateDb) GetAllTokenPricesRecord() map[string]*types.TokenPri
 
 ///// Calculated token prices
 
-func (db *defaultPrivateDb) SetCalculatedTokenPrice(prices map[string]int64) {
-	store := db.prefixes[string(prefixCalculatedTokenPrice)]
-	setCalculatedTokenPrices(store, prices)
+func (db *defaultPrivateDb) SetTokens(prices map[string]*types.Token) {
+	store := db.prefixes[string(prefixToken)]
+	setTokens(store, prices)
+}
+
+func (db *defaultPrivateDb) GetTokens(tokenIds []string) map[string]*types.Token {
+	store := db.prefixes[string(prefixToken)]
+	return getTokens(store, tokenIds)
 }
 
 ///// Nodes

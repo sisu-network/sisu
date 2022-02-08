@@ -167,7 +167,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	// Initialize global index to index in genesis state
 	cdc.MustUnmarshalJSON(gs, &genState)
 
-	return InitGenesis(ctx, am.keeper, am.valsManager, genState)
+	return InitGenesis(ctx, am.publicDb, am.valsManager, genState)
 }
 
 // ExportGenesis returns the capability module's exported genesis state as raw JSON bytes.

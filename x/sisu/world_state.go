@@ -11,6 +11,7 @@ import (
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
+	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 var (
@@ -45,7 +46,7 @@ type WorldState interface {
 	SetGasPrice(chain string, price *big.Int)
 	GetGasPrice(chain string) (*big.Int, error)
 
-	SetTokenPrices(tokenPrices map[string]int64)
+	SetTokens(tokenPrices map[string]*types.Token)
 	GetTokenPrice(token string) (int64, error)
 	GetNativeTokenPriceForChain(chain string) (int64, error)
 }
@@ -124,32 +125,26 @@ func (ws *DefaultWorldState) getCommissionFee(amount *big.Int) *big.Int {
 	return big.NewInt(0)
 }
 
-func (ws *DefaultWorldState) SetTokenPrices(tokenPrices map[string]int64) {
-	for token, price := range tokenPrices {
-		ws.tokenPrices.Store(token, price)
+func (ws *DefaultWorldState) SetTokens(tokens map[string]*types.Token) {
+	for tokenId, token := range tokens {
+		ws.tokenPrices.Store(tokenId, token)
 	}
 }
 
 func (ws *DefaultWorldState) GetNativeTokenPriceForChain(chain string) (int64, error) {
-	token := chainToTokens[chain]
-	if len(token) == 0 {
+	tokenId := chainToTokens[chain]
+	if len(tokenId) == 0 {
 		return 0, ErrChainNotFound
 	}
 
-	val, ok := ws.tokenPrices.Load(token)
-	if ok {
-		price := val.(int64)
-		return price, nil
-	}
-
-	return 0, ErrTokenPriceNotFound
+	return ws.GetTokenPrice(tokenId)
 }
 
-func (ws *DefaultWorldState) GetTokenPrice(token string) (int64, error) {
-	val, ok := ws.tokenPrices.Load(token)
+func (ws *DefaultWorldState) GetTokenPrice(tokenId string) (int64, error) {
+	val, ok := ws.tokenPrices.Load(tokenId)
 	if ok {
-		price := val.(int64)
-		return price, nil
+		token := val.(*types.Token)
+		return token.Price, nil
 	}
 
 	return 0, ErrTokenPriceNotFound
