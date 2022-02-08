@@ -79,7 +79,7 @@ type Storage interface {
 	GetAllTokenPricesRecord() map[string]*types.TokenPriceRecord
 
 	// Calculated Token Price
-	SetCalculatedTokenPrice(map[string]float32)
+	SetCalculatedTokenPrice(map[string]int64)
 
 	// Nodes
 	SaveNode(node *types.Node)
@@ -386,7 +386,7 @@ func (db *defaultPrivateDb) GetAllTokenPricesRecord() map[string]*types.TokenPri
 
 ///// Calculated token prices
 
-func (db *defaultPrivateDb) SetCalculatedTokenPrice(prices map[string]float32) {
+func (db *defaultPrivateDb) SetCalculatedTokenPrice(prices map[string]int64) {
 	store := db.prefixes[string(prefixCalculatedTokenPrice)]
 	setCalculatedTokenPrices(store, prices)
 }

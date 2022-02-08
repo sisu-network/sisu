@@ -497,7 +497,7 @@ func (mr *MockStorageMockRecorder) SaveTxRecord(hash, signer interface{}) *gomoc
 }
 
 // SetCalculatedTokenPrice mocks base method.
-func (m *MockStorage) SetCalculatedTokenPrice(arg0 map[string]float32) {
+func (m *MockStorage) SetCalculatedTokenPrice(arg0 map[string]int64) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetCalculatedTokenPrice", arg0)
 }

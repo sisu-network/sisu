@@ -38,14 +38,16 @@ var (
 
 // This is an interface of a struct that stores all data of the world data. Examples of world state
 // data are token price, nonce of addresses, etc.
+// go:generate mockgen -source x/sisu/world_state.go -destination=tests/mock/x/sisu/world_state.go -package=mock
 type WorldState interface {
 	UseAndIncreaseNonce(chain string) int64
 
 	SetGasPrice(chain string, price *big.Int)
 	GetGasPrice(chain string) (*big.Int, error)
 
-	SetTokenPrices(tokenPrices map[string]float32)
-	GetNativeTokenPriceForChain(chain string) (float32, error)
+	SetTokenPrices(tokenPrices map[string]int64)
+	GetTokenPrice(token string) (int64, error)
+	GetNativeTokenPriceForChain(chain string) (int64, error)
 }
 
 type DefaultWorldState struct {
@@ -122,13 +124,13 @@ func (ws *DefaultWorldState) getCommissionFee(amount *big.Int) *big.Int {
 	return big.NewInt(0)
 }
 
-func (ws *DefaultWorldState) SetTokenPrices(tokenPrices map[string]float32) {
+func (ws *DefaultWorldState) SetTokenPrices(tokenPrices map[string]int64) {
 	for token, price := range tokenPrices {
 		ws.tokenPrices.Store(token, price)
 	}
 }
 
-func (ws *DefaultWorldState) GetNativeTokenPriceForChain(chain string) (float32, error) {
+func (ws *DefaultWorldState) GetNativeTokenPriceForChain(chain string) (int64, error) {
 	token := chainToTokens[chain]
 	if len(token) == 0 {
 		return 0, ErrChainNotFound
@@ -136,7 +138,17 @@ func (ws *DefaultWorldState) GetNativeTokenPriceForChain(chain string) (float32,
 
 	val, ok := ws.tokenPrices.Load(token)
 	if ok {
-		price := val.(float32)
+		price := val.(int64)
+		return price, nil
+	}
+
+	return 0, ErrTokenPriceNotFound
+}
+
+func (ws *DefaultWorldState) GetTokenPrice(token string) (int64, error) {
+	val, ok := ws.tokenPrices.Load(token)
+	if ok {
+		price := val.(int64)
 		return price, nil
 	}
 

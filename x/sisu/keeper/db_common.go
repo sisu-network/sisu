@@ -639,9 +639,9 @@ func getAllTokenPrices(store cstypes.KVStore) map[string]*types.TokenPriceRecord
 	return result
 }
 
-func setCalculatedTokenPrices(store cstypes.KVStore, tokenPrices map[string]float32) {
+func setCalculatedTokenPrices(store cstypes.KVStore, tokenPrices map[string]int64) {
 	for token, price := range tokenPrices {
-		store.Set([]byte(token), utils.Float32ToByte(price))
+		store.Set([]byte(token), utils.ToByte(price))
 	}
 }
 
