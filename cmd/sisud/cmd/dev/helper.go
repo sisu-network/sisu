@@ -3,6 +3,7 @@ package dev
 import (
 	"context"
 	"crypto/ecdsa"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"time"
@@ -10,6 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
 )
@@ -43,6 +45,9 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
+	bz := crypto.FromECDSA(privateKey0)
+	fmt.Println("bz hex = ", hex.EncodeToString(bz))
 
 	nonceMap = make(map[string]*big.Int)
 }

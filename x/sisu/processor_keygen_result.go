@@ -48,7 +48,7 @@ func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
 
 	// Add list the public key address to watch.
 	for _, chainConfig := range p.config.SupportedChains {
-		chain := chainConfig.Symbol
+		chain := chainConfig.Id
 
 		if libchain.GetKeyTypeForChain(chain) != result.KeyType {
 			continue

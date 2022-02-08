@@ -22,7 +22,8 @@ type SisuConfig struct {
 }
 
 type TssChainConfig struct {
-	Symbol string `toml:"symbol"`
+	Id    string `toml:"chain"`
+	Token string `toml:"token"`
 }
 
 // Example of supported chains in the toml config file.

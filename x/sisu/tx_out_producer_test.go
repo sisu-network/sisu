@@ -45,7 +45,7 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 			DeyesUrl: "http://0.0.0.0:1234",
 			SupportedChains: map[string]config.TssChainConfig{
 				"ganache": {
-					Symbol: "ganache",
+					Id: "ganache",
 				},
 			},
 		},
@@ -123,7 +123,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 				DeyesUrl: "http://0.0.0.0:1234",
 				SupportedChains: map[string]config.TssChainConfig{
 					"ganache1": {
-						Symbol: "ganache",
+						Id: "ganache",
 					},
 				},
 			},
@@ -202,7 +202,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 				DeyesUrl: "http://0.0.0.0:1234",
 				SupportedChains: map[string]config.TssChainConfig{
 					"ganache": {
-						Symbol: "ganache",
+						Id: "ganache",
 					},
 				},
 			},

@@ -257,10 +257,10 @@ func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, 
 			DeyesUrl:          fmt.Sprintf("http://deyes%d:31001", index),
 			SupportedChains: map[string]config.TssChainConfig{
 				"ganache1": {
-					Symbol: "ganache1",
+					Id: "ganache1",
 				},
 				"ganache2": {
-					Symbol: "ganache2",
+					Id: "ganache2",
 				},
 			},
 		},

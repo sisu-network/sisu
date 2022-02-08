@@ -200,10 +200,10 @@ func (g *TestnetGenerator) getNodeSettings(chainID string, keyringBackend string
 			DeyesUrl:          fmt.Sprintf("http://%s:31001", testnetConfig.EyesIp),
 			SupportedChains: map[string]config.TssChainConfig{
 				"ganache1": {
-					Symbol: "ganache1",
+					Id: "ganache1",
 				},
 				"ganache2": {
-					Symbol: "ganache2",
+					Id: "ganache2",
 				},
 			},
 		},

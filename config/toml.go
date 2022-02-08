@@ -30,9 +30,12 @@ dheart-port = {{ .Tss.DheartPort }}
 majority-threshold = {{ .Tss.MajorityThreshold}}
 deyes-url = "{{ .Tss.DeyesUrl }}"
 [tss.supported-chains] {{ range $k, $v := .Tss.SupportedChains }}
-	[tss.supported-chains.{{ $v.Symbol }}]
-		symbol = "{{ $v.Symbol }}"
+	[tss.supported-chains.{{ $v.Id }}]
+		id = "{{ $v.Id }}"
 {{ end }}
+tokens = [{{ range $k, $token := .Tss.Tokens }}
+ {{ $token.Id }}
+{{ end }}]
 `
 
 var configTemplate *template.Template

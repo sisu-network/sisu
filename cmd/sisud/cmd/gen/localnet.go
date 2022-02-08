@@ -1,11 +1,20 @@
 package gen
 
 import (
+	"context"
+	"encoding/hex"
 	"fmt"
+	"math/big"
 	"net"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/spf13/cobra"
+
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -16,6 +25,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/contracts/eth/erc20"
+	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 var (
@@ -30,6 +41,8 @@ var (
 	flagRopstenUrl        = "ropsten-url"
 )
 
+type localnetGenerator struct{}
+
 // get cmd to initialize all files for tendermint localnet and application
 func LocalnetCmd(mbm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *cobra.Command {
 	cmd := &cobra.Command{
@@ -40,9 +53,7 @@ necessary files (private validator, genesis, config, etc.).
 Note, strict routability for addresses is turned off in the config file.
 Example:
 	For running single instance:
-		sisu localnet --v 1 --output-dir ./output --starting-ip-address 127.0.0.1
-	For multiple nodes (running with docker):
-	  sisu localnet --v 4 --output-dir ./output --starting-ip-address 192.168.10.2
+		./sisu localnet
 	`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -54,6 +65,8 @@ Example:
 			tmConfig := serverCtx.Config
 			tmConfig.LogLevel = ""
 			tmConfig.Consensus.TimeoutCommit = time.Second * 3
+
+			generator := &localnetGenerator{}
 
 			outputDir, _ := cmd.Flags().GetString(flagOutputDir)
 			minGasPrices, _ := cmd.Flags().GetString(server.FlagMinGasPrices)
@@ -82,10 +95,10 @@ Example:
 					DeyesUrl:          "http://0.0.0.0:31001",
 					SupportedChains: map[string]config.TssChainConfig{
 						"ganache1": {
-							Symbol: "ganache1",
+							Id: "ganache1",
 						},
 						"ganache2": {
-							Symbol: "ganache2",
+							Id: "ganache2",
 						},
 					},
 				},
@@ -102,11 +115,12 @@ Example:
 				minGasPrices:   minGasPrices,
 				nodeDirPrefix:  nodeDirPrefix,
 				nodeDaemonHome: nodeDaemonHome,
-				ips:            getLocalIps(startingIPAddress, numValidators),
+				ips:            generator.getLocalIps(startingIPAddress, numValidators),
 				keyringBackend: keyringBackend,
 				algoStr:        algo,
 				numValidators:  numValidators,
 				nodeConfigs:    []config.Config{nodeConfig},
+				tokens:         generator.getTokens(),
 			}
 
 			_, err = InitNetwork(settings)
@@ -125,10 +139,10 @@ Example:
 	return cmd
 }
 
-func getLocalIps(startingIPAddress string, count int) []string {
+func (g *localnetGenerator) getLocalIps(startingIPAddress string, count int) []string {
 	ips := make([]string, count)
 	for i := 0; i < count; i++ {
-		ip, err := getIP(i, startingIPAddress)
+		ip, err := g.getIP(i, startingIPAddress)
 		if err != nil {
 			panic(err)
 		}
@@ -138,7 +152,7 @@ func getLocalIps(startingIPAddress string, count int) []string {
 	return ips
 }
 
-func getIP(i int, startingIPAddr string) (ip string, err error) {
+func (g *localnetGenerator) getIP(i int, startingIPAddr string) (ip string, err error) {
 	if len(startingIPAddr) == 0 {
 		ip, err = server.ExternalIP()
 		if err != nil {
@@ -146,10 +160,10 @@ func getIP(i int, startingIPAddr string) (ip string, err error) {
 		}
 		return ip, nil
 	}
-	return calculateIP(startingIPAddr, i)
+	return g.calculateIP(startingIPAddr, i)
 }
 
-func calculateIP(ip string, i int) (string, error) {
+func (g *localnetGenerator) calculateIP(ip string, i int) (string, error) {
 	ipv4 := net.ParseIP(ip).To4()
 	if ipv4 == nil {
 		return "", fmt.Errorf("%v: non ipv4 address", ip)
@@ -160,4 +174,84 @@ func calculateIP(ip string, i int) (string, error) {
 	}
 
 	return ipv4.String(), nil
+}
+
+func (g *localnetGenerator) getTokens() []*types.Token {
+	tokens := []*types.Token{
+		{
+			Id:    "NATIVE_GANACHE1",
+			Price: 2_000_000_000,
+		},
+		{
+			Id:    "NATIVE_GANACHE2",
+			Price: 3_000_000_000,
+		},
+		{
+			Id:    "SISU",
+			Price: 4_000_000_000,
+			Addresses: map[string]string{
+				"ganache1": "0x1111",
+				"ganache2": "0x2222",
+			},
+		},
+	}
+
+	return tokens
+}
+
+func (g *localnetGenerator) deployErc20(url string, tokenName string, tokenSymbol string) string {
+	client, err := ethclient.Dial(url)
+	if err != nil {
+		log.Error("please check the ganache is up and running, url = ", url)
+		panic(err)
+	}
+
+	auth, err := g.getAuthTransactor(client, common.HexToAddress("0xbeF23B2AC7857748fEA1f499BE8227c5fD07E70c"))
+	if err != nil {
+		panic(err)
+	}
+
+	address, tx, instance, err := erc20.DeployErc20(auth, client, "sisu", "SISU")
+	_ = instance
+	if err != nil {
+		panic(err)
+	}
+
+	log.Info("Deploying erc20....")
+	bind.WaitDeployed(context.Background(), client, tx)
+	time.Sleep(time.Second * 2)
+	log.Info("Deployment done! Contract address: ", address.String())
+
+	return address.String()
+}
+
+func (g *localnetGenerator) getAuthTransactor(client *ethclient.Client, address common.Address) (*bind.TransactOpts, error) {
+	nonce, err := client.PendingNonceAt(context.Background(), address)
+	if err != nil {
+		return nil, err
+	}
+
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	bz, err := hex.DecodeString("9f575b88940d452da46a6ceec06a108fcd5863885524aec7fb0bc4906eb63ab1")
+	if err != nil {
+		panic(err)
+	}
+
+	privateKey, err := ethcrypto.ToECDSA(bz)
+	if err != nil {
+		panic(err)
+	}
+
+	auth := bind.NewKeyedTransactor(privateKey)
+	auth.Nonce = big.NewInt(int64(nonce))
+	auth.Value = big.NewInt(0)
+	auth.GasPrice = gasPrice
+
+	auth.GasLimit = uint64(10_000_000)
+
+	return auth, nil
 }
