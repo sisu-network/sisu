@@ -9,6 +9,7 @@ import (
 
 	mocksisu "github.com/sisu-network/sisu/tests/mock/x/sisu"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 func TestTxOutProducerErc20_getGasCostInToken(t *testing.T) {
@@ -21,7 +22,10 @@ func TestTxOutProducerErc20_getGasCostInToken(t *testing.T) {
 	}
 
 	chain := "ganache1"
-	token := "sisu"
+	token := &types.Token{
+		Id:    "SISU",
+		Price: int64(4 * utils.DecinmalUnit),
+	}
 	mockWorldState.EXPECT().GetNativeTokenPriceForChain(chain).Return(int64(2*utils.DecinmalUnit), nil).Times(1)
 	mockWorldState.EXPECT().GetTokenPrice(token).Return(int64(4*utils.DecinmalUnit), nil).Times(1)
 

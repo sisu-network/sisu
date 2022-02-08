@@ -50,6 +50,18 @@ func (p *DefaultTxOutputProducer) processERC20TransferIn(ctx sdk.Context, ethTx 
 		return nil, err
 	}
 
+	destChain, ok := txParams["_destChain"].(string)
+	if !ok {
+		err := fmt.Errorf("cannot convert _destChain to type string: %v", txParams)
+		log.Error(err)
+		return nil, err
+	}
+
+	token := p.worldState.GetTokenFromAddress(destChain, tokenAddr.String())
+	if token == nil {
+		return nil, fmt.Errorf("Invalid address %s on chain %s", tokenAddr, destChain)
+	}
+
 	recipient, ok := txParams["_recipient"].(ethcommon.Address)
 	if !ok {
 		err := fmt.Errorf("cannot convert _recipient to type ethcommon.Address: %v", txParams)
@@ -64,17 +76,17 @@ func (p *DefaultTxOutputProducer) processERC20TransferIn(ctx sdk.Context, ethTx 
 		return nil, err
 	}
 
-	destChain, ok := txParams["_destChain"].(string)
-	if !ok {
-		err := fmt.Errorf("cannot convert _destChain to type string: %v", txParams)
-		log.Error(err)
-		return nil, err
-	}
-
-	return p.callERC20TransferIn(ctx, tokenAddr, recipient, amount, destChain)
+	return p.callERC20TransferIn(ctx, token, tokenAddr, recipient, amount, destChain)
 }
 
-func (p *DefaultTxOutputProducer) callERC20TransferIn(ctx sdk.Context, tokenAddress, recipient ethcommon.Address, amountIn *big.Int, destChain string) (*types.TxResponse, error) {
+func (p *DefaultTxOutputProducer) callERC20TransferIn(
+	ctx sdk.Context,
+	token *types.Token,
+	tokenAddress,
+	recipient ethcommon.Address,
+	amountIn *big.Int,
+	destChain string,
+) (*types.TxResponse, error) {
 	targetContractName := ContractErc20Gateway
 	gw := p.publicDb.GetLatestContractAddressByName(destChain, targetContractName)
 	if len(gw) == 0 {
@@ -104,11 +116,16 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(ctx sdk.Context, tokenAddr
 	// 1. TODO: Subtract the commission fee.
 
 	// 2. Subtract the network gas fee on destination chain.
-	// gas := big.NewInt(8_000_000)
-	// gasPriceInToken := p.getGasCostInToken(gas, gasPrice, destChain, token)
+	gas := big.NewInt(8_000_000)
+	gasPriceInToken, err := p.getGasCostInToken(gas, gasPrice, destChain, token)
+	if err != nil {
+		return nil, err
+	}
 
-	log.Debugf("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, amount: %d",
-		destChain, gatewayAddress.String(), tokenAddress, recipient, amountOut.Int64(),
+	amountOut.Sub(amountOut, gasPriceInToken)
+
+	log.Debugf("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, gasPriceInToken: %s, amount: %d",
+		destChain, gatewayAddress.String(), tokenAddress, recipient, gasPriceInToken.String(), amountOut.Int64(),
 	)
 
 	input, err := erc20GatewayContract.Abi.Pack(MethodTransferIn, tokenAddress, recipient, amountOut)
@@ -139,7 +156,7 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(ctx sdk.Context, tokenAddr
 	}, nil
 }
 
-func (p *DefaultTxOutputProducer) getGasCostInToken(gas *big.Int, gasPrice *big.Int, chain string, token string) (*big.Int, error) {
+func (p *DefaultTxOutputProducer) getGasCostInToken(gas *big.Int, gasPrice *big.Int, chain string, token *types.Token) (*big.Int, error) {
 	// Get total gas cost
 	gasCost := new(big.Int).Mul(gas, gasPrice)
 
@@ -148,14 +165,9 @@ func (p *DefaultTxOutputProducer) getGasCostInToken(gas *big.Int, gasPrice *big.
 		return nil, err
 	}
 
-	tokenPrice, err := p.worldState.GetTokenPrice(token)
-	if err != nil {
-		return nil, err
-	}
-
 	// amount := gasCoset * chainTokenPrice / tokenPrice
 	gasInToken := new(big.Int).Mul(gasCost, big.NewInt(chainTokenPrice))
-	gasInToken = new(big.Int).Div(gasInToken, big.NewInt(tokenPrice))
+	gasInToken = new(big.Int).Div(gasInToken, big.NewInt(token.Price))
 
 	return gasInToken, nil
 }

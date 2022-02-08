@@ -49,6 +49,8 @@ type WorldState interface {
 	SetTokens(tokenPrices map[string]*types.Token)
 	GetTokenPrice(token string) (int64, error)
 	GetNativeTokenPriceForChain(chain string) (int64, error)
+
+	GetTokenFromAddress(chain string, tokenAddr string) *types.Token
 }
 
 type DefaultWorldState struct {
@@ -58,7 +60,8 @@ type DefaultWorldState struct {
 	deyesClient tssclients.DeyesClient
 
 	gasPrices   *sync.Map
-	tokenPrices *sync.Map
+	tokens      *sync.Map
+	addrToToken *sync.Map
 }
 
 func NewWorldState(tssConfig config.TssConfig, publicDb keeper.Storage, deyesClients tssclients.DeyesClient) WorldState {
@@ -67,8 +70,9 @@ func NewWorldState(tssConfig config.TssConfig, publicDb keeper.Storage, deyesCli
 		publicDb:    publicDb,
 		nonces:      make(map[string]int64, 0),
 		deyesClient: deyesClients,
-		tokenPrices: &sync.Map{},
+		tokens:      &sync.Map{},
 		gasPrices:   &sync.Map{},
+		addrToToken: &sync.Map{},
 	}
 }
 
@@ -127,7 +131,15 @@ func (ws *DefaultWorldState) getCommissionFee(amount *big.Int) *big.Int {
 
 func (ws *DefaultWorldState) SetTokens(tokens map[string]*types.Token) {
 	for tokenId, token := range tokens {
-		ws.tokenPrices.Store(tokenId, token)
+		ws.tokens.Store(tokenId, token)
+
+		// Save the mapping of token address on each chain to token for later retrieval.
+		if token.Addresses != nil {
+			for chain, addr := range token.Addresses {
+				key := fmt.Sprintf("%s__%s", chain, addr)
+				ws.addrToToken.Store(key, token)
+			}
+		}
 	}
 }
 
@@ -141,11 +153,21 @@ func (ws *DefaultWorldState) GetNativeTokenPriceForChain(chain string) (int64, e
 }
 
 func (ws *DefaultWorldState) GetTokenPrice(tokenId string) (int64, error) {
-	val, ok := ws.tokenPrices.Load(tokenId)
+	val, ok := ws.tokens.Load(tokenId)
 	if ok {
 		token := val.(*types.Token)
 		return token.Price, nil
 	}
 
 	return 0, ErrTokenPriceNotFound
+}
+
+func (ws *DefaultWorldState) GetTokenFromAddress(chain string, tokenAddr string) *types.Token {
+	key := fmt.Sprintf("%s__%s", chain, tokenAddr)
+	val, ok := ws.addrToToken.Load(key)
+	if !ok {
+		return nil
+	}
+
+	return val.(*types.Token)
 }

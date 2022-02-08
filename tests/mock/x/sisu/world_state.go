@@ -65,6 +65,20 @@ func (mr *MockWorldStateMockRecorder) GetNativeTokenPriceForChain(chain interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNativeTokenPriceForChain", reflect.TypeOf((*MockWorldState)(nil).GetNativeTokenPriceForChain), chain)
 }
 
+// GetTokenFromAddress mocks base method.
+func (m *MockWorldState) GetTokenFromAddress(chain, tokenAddr string) *types.Token {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTokenFromAddress", chain, tokenAddr)
+	ret0, _ := ret[0].(*types.Token)
+	return ret0
+}
+
+// GetTokenFromAddress indicates an expected call of GetTokenFromAddress.
+func (mr *MockWorldStateMockRecorder) GetTokenFromAddress(chain, tokenAddr interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTokenFromAddress", reflect.TypeOf((*MockWorldState)(nil).GetTokenFromAddress), chain, tokenAddr)
+}
+
 // GetTokenPrice mocks base method.
 func (m *MockWorldState) GetTokenPrice(token string) (int64, error) {
 	m.ctrl.T.Helper()
