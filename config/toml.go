@@ -33,9 +33,6 @@ deyes-url = "{{ .Tss.DeyesUrl }}"
 	[tss.supported-chains.{{ $v.Id }}]
 		id = "{{ $v.Id }}"
 {{ end }}
-tokens = [{{ range $k, $token := .Tss.Tokens }}
- {{ $token.Id }}
-{{ end }}]
 `
 
 var configTemplate *template.Template

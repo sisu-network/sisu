@@ -3,15 +3,17 @@ package gen
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"net"
+	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/log"
+	"github.com/sisu-network/lib/log"
 	"github.com/spf13/cobra"
 
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
@@ -177,24 +179,14 @@ func (g *localnetGenerator) calculateIP(ip string, i int) (string, error) {
 }
 
 func (g *localnetGenerator) getTokens() []*types.Token {
-	tokens := []*types.Token{
-		{
-			Id:    "NATIVE_GANACHE1",
-			Price: 2_000_000_000,
-		},
-		{
-			Id:    "NATIVE_GANACHE2",
-			Price: 3_000_000_000,
-		},
-		{
-			Id:    "SISU",
-			Price: 4_000_000_000,
-			Addresses: map[string]string{
-				"ganache1": "0x1111",
-				"ganache2": "0x2222",
-			},
-		},
+	tokens := []*types.Token{}
+
+	dat, err := os.ReadFile("./tokens_dev.json")
+	if err != nil {
+		panic(err)
 	}
+
+	json.Unmarshal(dat, &tokens)
 
 	return tokens
 }
@@ -236,6 +228,7 @@ func (g *localnetGenerator) getAuthTransactor(client *ethclient.Client, address 
 		return nil, err
 	}
 
+	// This is the private key of the accounts0
 	bz, err := hex.DecodeString("9f575b88940d452da46a6ceec06a108fcd5863885524aec7fb0bc4906eb63ab1")
 	if err != nil {
 		panic(err)
