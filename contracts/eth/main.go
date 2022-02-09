@@ -9,8 +9,6 @@ import (
 )
 
 func compileContract(name string) {
-	fmt.Println("name = ", name)
-
 	// solc --abi name.sol --overwrite -o name
 	_, err := exec.Command(
 		"solc",

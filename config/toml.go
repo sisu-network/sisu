@@ -32,6 +32,7 @@ deyes-url = "{{ .Tss.DeyesUrl }}"
 [tss.supported-chains] {{ range $k, $v := .Tss.SupportedChains }}
 	[tss.supported-chains.{{ $v.Id }}]
 		id = "{{ $v.Id }}"
+		token = "{{ $v.Token }}"
 {{ end }}
 `
 

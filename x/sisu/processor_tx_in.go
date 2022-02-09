@@ -60,7 +60,7 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 		return nil
 	}
 
-	log.Info("confirming tx: chain, hash, type = ", chain, tx.Hash, txOut.TxType)
+	log.Info("confirming tx: chain, hash, type = ", chain, " ", tx.Hash, " ", txOut.TxType)
 
 	contractAddress := ""
 	if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT && libchain.IsETHBasedChain(chain) {

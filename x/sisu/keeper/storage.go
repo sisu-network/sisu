@@ -208,17 +208,7 @@ func (db *defaultPrivateDb) GetAllKeygenResult(keygenType string, index int32) [
 
 ///// Contract
 func (db *defaultPrivateDb) SaveContract(msg *types.Contract, saveByteCode bool) {
-	contractStore := db.prefixes[string(prefixContract)]
-	var byteCodeStore cstypes.KVStore
-	byteCodeStore = nil
-	if saveByteCode {
-		byteCodeStore = db.prefixes[string(prefixContractByteCode)]
-	}
-
-	saveContract(contractStore, byteCodeStore, msg)
-
-	contractNameStore := db.prefixes[string(prefixContractName)]
-	saveContractAddressForName(contractNameStore, msg)
+	db.SaveContracts([]*types.Contract{msg}, saveByteCode)
 }
 
 func (db *defaultPrivateDb) SaveContracts(msgs []*types.Contract, saveByteCode bool) {

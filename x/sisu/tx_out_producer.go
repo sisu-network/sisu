@@ -1,7 +1,6 @@
 package sisu
 
 import (
-	"fmt"
 	"math/big"
 	"strings"
 
@@ -116,7 +115,6 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 		}
 	}
 
-	fmt.Println("p.publicDb.IsContractExistedAtAddress(tx.Chain, ethTx.To().String()) = ", p.publicDb.IsContractExistedAtAddress(tx.Chain, ethTx.To().String()))
 	log.Verbose("len(ethTx.Data()) ", len(ethTx.Data()))
 
 	// 2. Check if this is a tx sent to one of our contracts.

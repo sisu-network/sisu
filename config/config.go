@@ -22,7 +22,7 @@ type SisuConfig struct {
 }
 
 type TssChainConfig struct {
-	Id    string `toml:"chain"`
+	Id    string `toml:"id"`
 	Token string `toml:"token"`
 }
 
