@@ -9,16 +9,18 @@ import (
 	"strconv"
 	"time"
 
+	libchain "github.com/sisu-network/lib/chain"
+
+	"github.com/ethereum/go-ethereum/crypto"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu"
 	tssTypes "github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
@@ -27,6 +29,7 @@ import (
 
 const (
 	ExpectedErc20Address = "0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"
+	Erc20MethodTransfer  = "transfer"
 )
 
 type fundAccountCmd struct{}
@@ -43,54 +46,82 @@ fund-account ganache1 7545 ganache2 8545 10
 			if err != nil {
 				panic(err)
 			}
+			fmt.Println("Amount = ", amount)
 
-			// Deploy ERC20
 			c := &fundAccountCmd{}
-			for i := 0; i < len(args); i += 2 {
-				if i == len(args)-1 {
-					break
-				}
-
+			chains := make([]string, 0)
+			clients := make([]*ethclient.Client, 0)
+			// Get all urls from command arguments.
+			urls := make([]string, 0)
+			for i := 0; i < len(args)-1; i += 2 {
+				chains = append(chains, args[i])
 				port, err := strconv.Atoi(args[i+1])
 				if err != nil {
 					return err
 				}
 				url := "http://0.0.0.0:" + strconv.Itoa(port)
-				c.deployErc20(url, "sisu", "SISU")
+				urls = append(urls, url)
+				client, err := ethclient.Dial(url)
+				if err != nil {
+					log.Error("please check the ganache is up and running, url = ", url)
+					panic(err)
+				}
+				clients = append(clients, client)
+			}
+			defer func() {
+				for _, client := range clients {
+					client.Close()
+				}
+			}()
+
+			// Deploy ERC20 contract
+			tokenAddrs := make([]common.Address, len(urls))
+			for i, client := range clients {
+				tokenAddrs[i] = c.deployErc20(client, "sisu", "SISU")
 			}
 
 			// Fund the accounts
 			allPubKeys := queryPubKeys(cmd)
-			for i := 0; i < len(args); i += 2 {
-				if i == len(args)-1 {
-					break
-				}
-
+			for _, url := range urls {
 				// Get chain and local chain URL
-				chain := args[i]
 				pubKeyBytes := allPubKeys[libchain.KEY_TYPE_ECDSA]
-
-				if pubKeyBytes == nil {
-					return fmt.Errorf("cannot find pubkey for chain %s", chain)
-				}
-
 				pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
+				if err != nil {
+					panic(err)
+				}
 				addr := crypto.PubkeyToAddress(*pubKey).Hex()
 
-				port, err := strconv.Atoi(args[i+1])
-				if err != nil {
-					return err
-				}
-				url := "http://0.0.0.0:" + strconv.Itoa(port)
-
-				log.Info("Sending ETH To address ", addr, " of chain", chain)
+				log.Info("Sending ETH To address ", addr, " of chain url ", url)
 
 				c.transferEth(url, addr, amount)
 			}
 
-			// Now we wait until all gateway contracts have been deployed.
+			// Waits until all gateway contracts are deployed.
 			log.Info("Now we wait until gateway contracts are deployed on all chains.")
-			c.waitForGatewayContract(cmd.Context())
+			gateways := c.waitForGatewayContract(cmd.Context(), chains)
+			for _, gateway := range gateways {
+				fmt.Println("gateway = ", gateway.String())
+			}
+
+			// Transfer ERC20 tokens
+			erc20Amount := big.NewInt(500)
+			for i, client := range clients {
+				c.transferErc20Tokens(client, tokenAddrs[i], gateways[i], erc20Amount)
+			}
+
+			time.Sleep(3 * time.Second)
+
+			// Query balance
+			for i, client := range clients {
+				balance, err := c.queryErc20Balance(client, tokenAddrs[i], gateways[i])
+				if err != nil {
+					panic(err)
+				}
+
+				if balance.Cmp(erc20Amount) != 0 {
+					panic(fmt.Sprintf("balance does not match: expected %s, actual %s", erc20Amount.String(), balance.String()))
+				}
+			}
 
 			return nil
 		},
@@ -100,14 +131,8 @@ fund-account ganache1 7545 ganache2 8545 10
 }
 
 // deployErc20 deploys ERC20 contracts to dev chains
-func (c *fundAccountCmd) deployErc20(url string, tokenName string, tokenSymbol string) string {
-	client, err := ethclient.Dial(url)
-	if err != nil {
-		log.Error("please check the ganache is up and running, url = ", url)
-		panic(err)
-	}
-
-	auth, err := c.getAuthTransactor(client, common.HexToAddress("0xbeF23B2AC7857748fEA1f499BE8227c5fD07E70c"))
+func (c *fundAccountCmd) deployErc20(client *ethclient.Client, tokenName string, tokenSymbol string) common.Address {
+	auth, err := c.getAuthTransactor(client, account0.Address)
 	if err != nil {
 		panic(err)
 	}
@@ -128,10 +153,10 @@ func (c *fundAccountCmd) deployErc20(url string, tokenName string, tokenSymbol s
 
 	log.Info("Deploying erc20....")
 	bind.WaitDeployed(context.Background(), client, tx)
-	time.Sleep(time.Second * 2)
+	time.Sleep(time.Second * 3)
 	log.Info("Deployment done! Contract address: ", address.String())
 
-	return address.String()
+	return address
 }
 
 // getAuthTransactor returns transaction opts for creating transaction object.
@@ -168,15 +193,15 @@ func (c *fundAccountCmd) transferEth(url, recipient string, amount int) {
 
 	account := c.getAccountAddress()
 
-	log.Info("from Account.Address = ", account.String(), " recipient = ", recipient)
+	log.Info("from address = ", account.String(), " to Address = ", recipient)
 
 	nonce, err := client.PendingNonceAt(context.Background(), account)
 	if err != nil {
 		panic(err)
 	}
 
-	value := new(big.Int).Mul(big.NewInt(1000000000000000000), big.NewInt(int64(amount))) // in wei (10 eth)
-	gasLimit := uint64(21000)                                                             // in units
+	value := new(big.Int).Mul(utils.EthToWei, big.NewInt(int64(amount)))
+	gasLimit := uint64(21000) // in units
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
 		panic(err)
@@ -193,6 +218,9 @@ func (c *fundAccountCmd) transferEth(url, recipient string, amount int) {
 	if err != nil {
 		panic(err)
 	}
+
+	bind.WaitDeployed(context.Background(), client, signedTx)
+	time.Sleep(time.Second * 3)
 }
 
 func queryPubKeys(cmd *cobra.Command) map[string][]byte {
@@ -241,8 +269,8 @@ func (c *fundAccountCmd) getAccountAddress() common.Address {
 	return ethcrypto.PubkeyToAddress(*publicKeyECDSA)
 }
 
-func (c *fundAccountCmd) waitForGatewayContract(context context.Context) []string {
-	var gateway1, gateway2 string
+func (c *fundAccountCmd) waitForGatewayContract(context context.Context, chains []string) []common.Address {
+	addrs := make([]string, len(chains))
 
 	for {
 		grpcConn, err := grpc.Dial(
@@ -256,36 +284,95 @@ func (c *fundAccountCmd) waitForGatewayContract(context context.Context) []strin
 
 		queryClient := tssTypes.NewTssQueryClient(grpcConn)
 
-		if len(gateway1) == 0 {
-			res, err := queryClient.QueryContract(context, &tssTypes.QueryContractRequest{
-				Chain: "ganache1",
-				Hash:  sisu.SupportedContracts[sisu.ContractErc20Gateway].AbiHash,
-			})
-			if err != nil || len(res.Contract.Address) == 0 {
-				log.Verbose("we have not found contract address for gateway 1 yet. Keep sleeping...")
-				time.Sleep(time.Second * 3)
+		done := true
+		for i, chain := range chains {
+			if len(addrs[i]) > 0 {
 				continue
 			}
-			gateway1 = res.Contract.Address
-		}
 
-		if len(gateway2) == 0 {
 			res, err := queryClient.QueryContract(context, &tssTypes.QueryContractRequest{
-				Chain: "ganache2",
+				Chain: chain,
 				Hash:  sisu.SupportedContracts[sisu.ContractErc20Gateway].AbiHash,
 			})
+
 			if err != nil || len(res.Contract.Address) == 0 {
-				log.Verbose("we have not found contract address for gateway 2 yet. Keep sleeping...")
+				log.Verbose("we have not found contract address for gateway ", i, " yet. Keep sleeping...")
 				time.Sleep(time.Second * 3)
-				continue
+				done = false
+				break
 			}
-			gateway2 = res.Contract.Address
+
+			fmt.Println("res.Contract.Address = ", res.Contract.Address)
+			addrs[i] = res.Contract.Address
 		}
 
-		break
+		if done {
+			break
+		}
 	}
 
-	log.Info("Gateway contract addresses = ", gateway1, " ", gateway2)
+	gateways := make([]common.Address, len(addrs))
+	for i, addr := range addrs {
+		gateways[i] = common.HexToAddress(addr)
+	}
 
-	return []string{gateway1, gateway2}
+	return gateways
+}
+
+func (c *fundAccountCmd) getNonceAndGas(client *ethclient.Client, addr common.Address) (uint64, uint64, *big.Int, error) {
+	nonce, err := client.PendingNonceAt(context.Background(), account0.Address)
+	if err != nil {
+		log.Error("failed to get nonce, err = ", err)
+		return 0, 0, nil, err
+	}
+
+	gasLimit := uint64(100000) // in units
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		log.Error("failed to get gas price, err = ", err)
+		return 0, 0, nil, err
+	}
+
+	return nonce, gasLimit, gasPrice, nil
+}
+
+// transferErc20Tokens transfer ERC20 from account0 to gateway address.
+func (c *fundAccountCmd) transferErc20Tokens(
+	client *ethclient.Client,
+	tokenAddress common.Address,
+	gatewateAddr common.Address,
+	amount *big.Int,
+) {
+	opts, err := c.getAuthTransactor(client, account0.Address)
+	if err != nil {
+		panic(err)
+	}
+
+	store, err := erc20.NewErc20(tokenAddress, client)
+	if err != nil {
+		panic(err)
+	}
+
+	tx, err := store.Transfer(opts, gatewateAddr, amount)
+	if err != nil {
+		panic(err)
+	}
+
+	bind.WaitDeployed(context.Background(), client, tx)
+	time.Sleep(time.Second * 3)
+}
+
+func (c *fundAccountCmd) queryErc20Balance(
+	client *ethclient.Client,
+	tokenAddr common.Address,
+	target common.Address,
+) (*big.Int, error) {
+	store, err := erc20.NewErc20(tokenAddr, client)
+	if err != nil {
+		return nil, err
+	}
+
+	balance, err := store.BalanceOf(nil, target)
+
+	return balance, err
 }

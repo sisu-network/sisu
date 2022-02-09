@@ -13,10 +13,6 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-var (
-	EthToWei = new(big.Float).SetInt(big.NewInt(1_000_000_000_000_000_000)) // 10 ^ 18
-)
-
 func decodeTxParams(abi abi.ABI, callData []byte) (map[string]interface{}, error) {
 	txParams := map[string]interface{}{}
 	m, err := abi.MethodById(callData[:4])
