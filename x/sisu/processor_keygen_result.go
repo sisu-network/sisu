@@ -84,7 +84,7 @@ func (p *Processor) doKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResul
 		p.publicDb.SaveKeygenResult(signerMsg)
 
 		if !p.globalData.IsCatchingUp() {
-			p.createPendingContracts(ctx, signerMsg.Keygen)
+			p.createContracts(ctx, signerMsg.Keygen)
 		}
 	} else {
 		// TODO: handle failure case

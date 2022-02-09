@@ -80,9 +80,13 @@ fund-account ganache1 7545 ganache2 8545 10
 				tokenAddrs[i] = c.deployErc20(client, "sisu", "SISU")
 			}
 
+			// Waits for Sisu to create contract instance in its database. At this stage, the contract is
+			// not deployed yet.
+			c.waitForContractCreation(cmd.Context(), chains)
+
 			// Fund the accounts
 			allPubKeys := queryPubKeys(cmd)
-			for _, url := range urls {
+			for _, client := range clients {
 				// Get chain and local chain URL
 				pubKeyBytes := allPubKeys[libchain.KEY_TYPE_ECDSA]
 				pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
@@ -91,14 +95,12 @@ fund-account ganache1 7545 ganache2 8545 10
 				}
 				addr := crypto.PubkeyToAddress(*pubKey).Hex()
 
-				log.Info("Sending ETH To address ", addr, " of chain url ", url)
-
-				c.transferEth(url, addr, amount)
+				c.transferEth(client, addr, amount)
 			}
 
 			// Waits until all gateway contracts are deployed.
 			log.Info("Now we wait until gateway contracts are deployed on all chains.")
-			gateways := c.waitForGatewayContract(cmd.Context(), chains)
+			gateways := c.waitForGatewayDeployed(cmd.Context(), chains)
 			for _, gateway := range gateways {
 				fmt.Println("gateway = ", gateway.String())
 			}
@@ -128,6 +130,44 @@ fund-account ganache1 7545 ganache2 8545 10
 	}
 
 	return cmd
+}
+
+func (c *fundAccountCmd) waitForContractCreation(context context.Context, chains []string) {
+	log.Info("Waiting for all contract created in Sisu's db")
+
+	for {
+		grpcConn, err := grpc.Dial(
+			"0.0.0.0:9090",
+			grpc.WithInsecure(),
+		)
+		defer grpcConn.Close()
+		if err != nil {
+			panic(err)
+		}
+
+		queryClient := tssTypes.NewTssQueryClient(grpcConn)
+
+		done := true
+		for i, chain := range chains {
+			_, err := queryClient.QueryContract(context, &tssTypes.QueryContractRequest{
+				Chain: chain,
+				Hash:  sisu.SupportedContracts[sisu.ContractErc20Gateway].AbiHash,
+			})
+
+			if err != nil {
+				log.Verbose("Contract has not been created yet ", i, " yet. Keep sleeping...")
+				time.Sleep(time.Second * 3)
+				done = false
+				break
+			}
+		}
+
+		if done {
+			break
+		}
+	}
+
+	log.Info("All contracts have been created in Sisu db.")
 }
 
 // deployErc20 deploys ERC20 contracts to dev chains
@@ -185,12 +225,7 @@ func (c *fundAccountCmd) getAuthTransactor(client *ethclient.Client, address com
 }
 
 // transferEth transfers a specific ETH amount to an address.
-func (c *fundAccountCmd) transferEth(url, recipient string, amount int) {
-	client, err := ethclient.Dial(url)
-	if err != nil {
-		panic(err)
-	}
-
+func (c *fundAccountCmd) transferEth(client *ethclient.Client, recipient string, amount int) {
 	account := c.getAccountAddress()
 
 	log.Info("from address = ", account.String(), " to Address = ", recipient)
@@ -269,7 +304,7 @@ func (c *fundAccountCmd) getAccountAddress() common.Address {
 	return ethcrypto.PubkeyToAddress(*publicKeyECDSA)
 }
 
-func (c *fundAccountCmd) waitForGatewayContract(context context.Context, chains []string) []common.Address {
+func (c *fundAccountCmd) waitForGatewayDeployed(context context.Context, chains []string) []common.Address {
 	addrs := make([]string, len(chains))
 
 	for {
