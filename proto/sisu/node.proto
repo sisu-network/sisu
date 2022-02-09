@@ -9,6 +9,10 @@ message Pubkey {
 }
 
 message Node {
-  Pubkey key = 1;
-  string valAddress = 2;
+  // This id field is not used to identify a node. Use the consensusKey to identify a node.
+  string id = 1;
+  // consensusKey is the public key used by tendermint. This is different from the key in the keyring.
+  Pubkey consensusKey = 2;
+  string accAddress = 3;
+  bool isValidator = 4;
 }

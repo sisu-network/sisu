@@ -111,18 +111,13 @@ func (p *Processor) addWatchAddress(msg *types.Keygen) {
 	// 2. Add the address to the watch list.
 	for _, chainConfig := range p.config.SupportedChains {
 		chain := chainConfig.Symbol
-		deyesClient := p.deyesClients[chain]
 
 		if libchain.GetKeyTypeForChain(chain) != msg.KeyType {
 			log.Info("!= msg.Keytype", chain, " ", msg.KeyType)
 			continue
 		}
 
-		if deyesClient == nil {
-			log.Critical("Cannot find deyes client for chain", chain)
-		} else {
-			log.Verbose("adding watcher address ", msg.Address, " for chain ", chain)
-			deyesClient.AddWatchAddresses(chain, []string{msg.Address})
-		}
+		log.Verbose("adding watcher address ", msg.Address, " for chain ", chain)
+		p.deyesClient.AddWatchAddresses(chain, []string{msg.Address})
 	}
 }

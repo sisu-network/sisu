@@ -1,9 +1,9 @@
 #!/bin/sh
 
-find ./x -name "*.pb.go" -delete
-
 go get github.com/regen-network/cosmos-proto/protoc-gen-gocosmos 2>/dev/null
 go get -u github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc 2>/dev/null
+
+find ./x -name "*.pb.go" -delete
 
 dirs=$(find ./proto -path -prune -o -name '*.proto' -print0 | xargs -0 -n1 dirname | sort | uniq)
 for dir in $dirs; do

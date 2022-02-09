@@ -26,7 +26,7 @@ var (
 	flagStartingIPAddress = "starting-ip-address"
 	flagTmpDir            = "tmp-dir"
 	flagChainId           = "chain-id"
-	flagRopstenUrl        = "ropsten-url"
+	flagConfigString      = "config-string"
 )
 
 // get cmd to initialize all files for tendermint localnet and application
@@ -78,14 +78,13 @@ Example:
 					MajorityThreshold: 1,
 					DheartHost:        "0.0.0.0",
 					DheartPort:        5678,
+					DeyesUrl:          "http://0.0.0.0:31001",
 					SupportedChains: map[string]config.TssChainConfig{
 						"ganache1": {
-							Symbol:   "ganache1",
-							DeyesUrl: "http://0.0.0.0:31001",
+							Symbol: "ganache1",
 						},
 						"ganache2": {
-							Symbol:   "ganache2",
-							DeyesUrl: "http://0.0.0.0:31001",
+							Symbol: "ganache2",
 						},
 					},
 				},

@@ -28,10 +28,10 @@ api-port = {{ .Sisu.ApiPort }}
 dheart-host = "{{ .Tss.DheartHost }}"
 dheart-port = {{ .Tss.DheartPort }}
 majority-threshold = {{ .Tss.MajorityThreshold}}
+deyes-url = "{{ .Tss.DeyesUrl }}"
 [tss.supported-chains] {{ range $k, $v := .Tss.SupportedChains }}
 	[tss.supported-chains.{{ $v.Symbol }}]
 		symbol = "{{ $v.Symbol }}"
-		deyes-url = "{{ $v.DeyesUrl }}"
 {{ end }}
 `
 

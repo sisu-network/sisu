@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"sort"
 	"testing"
 
 	memstore "github.com/cosmos/cosmos-sdk/store/mem"
@@ -80,4 +81,78 @@ func Test_saveKeygenResult(t *testing.T) {
 
 	results := getAllKeygenResult(store, keyType, index)
 	require.Equal(t, 1, len(results))
+}
+
+///// Token Prices
+func TestSaveTokenPrices(t *testing.T) {
+	store := memstore.NewStore()
+
+	signer1 := "signer1"
+	msg1 := &types.UpdateTokenPrice{
+		Signer: signer1,
+		TokenPrices: []*types.TokenPrice{
+			{
+				Id:    "ETH",
+				Price: 5.0,
+			},
+		},
+	}
+
+	signer2 := "signer2"
+	msg2 := &types.UpdateTokenPrice{
+		Signer: signer2,
+		TokenPrices: []*types.TokenPrice{
+			{
+				Id:    "ETH",
+				Price: 10.0,
+			},
+		},
+	}
+
+	setTokenPrices(store, 1, msg1)
+	setTokenPrices(store, 1, msg2)
+
+	allPrices := getAllTokenPrices(store)
+
+	require.Equal(t, 2, len(allPrices))
+
+	allSigners := make([]string, 0)
+	for savedSigner, record := range allPrices {
+		allSigners = append(allSigners, savedSigner)
+		require.Equal(t, 1, len(record.Prices))
+	}
+
+	sort.Strings(allSigners)
+	require.Equal(t, []string{signer1, signer2}, allSigners)
+}
+
+///// Node
+func Test_SaveNode(t *testing.T) {
+	store := memstore.NewStore()
+
+	node1 := &types.Node{
+		ConsensusKey: &types.Pubkey{
+			Type:  "ed",
+			Bytes: []byte("pubkey1"),
+		},
+		AccAddress:  "addr1",
+		IsValidator: true,
+	}
+	node2 := &types.Node{
+		ConsensusKey: &types.Pubkey{
+			Type:  "ed",
+			Bytes: []byte("pubkey2"),
+		},
+		AccAddress:  "addr2",
+		IsValidator: true,
+	}
+
+	saveNode(store, node1)
+	saveNode(store, node2)
+
+	vals := loadValidators(store)
+
+	require.Equal(t, 2, len(vals), "there should be 2 validators")
+	require.Equal(t, vals[0].AccAddress, "addr1")
+	require.Equal(t, vals[1].AccAddress, "addr2")
 }

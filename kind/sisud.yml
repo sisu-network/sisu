@@ -1,0 +1,92 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sisud
+spec:
+  ports:
+  - name: tcp-sisud
+    port: 25456
+    protocol: TCP
+    targetPort: 25456
+  - name: tcp-p2p
+    port: 26656
+    protocol: TCP
+    targetPort: 26656
+  selector:
+    app: sisud
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sisud
+  labels:
+    app: sisud
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: sisud
+  template:
+    metadata:
+      labels:
+        app: sisud
+    spec:
+      initContainers:
+      - name: copy-node-config
+        image: sisu.test/sisu-all:latest
+        imagePullPolicy: IfNotPresent
+        command:
+          - sh
+          - '-x'
+          - '-c'
+          - |
+            wget --tries=0 --retry-connrefused -O /tmp/sisud.tar.gz \
+              http://config-server.config-server:8080/node${SISU_INDEX}/main?tar.gz=true && \
+            mkdir -p /sisu/main && cd /sisu/main && \
+            tar xzvf /tmp/sisud.tar.gz
+        env:
+          - name: SISU_INDEX
+            valueFrom:
+              configMapKeyRef:
+                name: sisu-cluster
+                key: index
+        volumeMounts:
+          - name: sisudir
+            mountPath: /sisu
+      containers:
+      - command:
+          - sisud
+          - start
+        workingDir: /root
+        image: sisu.test/sisu-all:latest
+        imagePullPolicy: IfNotPresent
+        name: sisud
+        env:
+          - name: HOME_DIR
+            value: /root
+        ports:
+          - containerPort: 25456
+            name: tcp-sisud
+          - containerPort: 26656
+            name: tcp-p2p
+        volumeMounts:
+          - name: sisudir
+            mountPath: /root/.sisu
+      - command: # Temporary container for debugging.
+          - sleep
+          - '999999'
+        workingDir: /root
+        image: sisu.test/sisu-all:latest
+        imagePullPolicy: IfNotPresent
+        name: sleep
+        env:
+          - name: HOME_DIR
+            value: /root
+        volumeMounts:
+          - name: sisudir
+            mountPath: /root/.sisu
+      volumes:
+        - name: sisudir
+          emptyDir: {}

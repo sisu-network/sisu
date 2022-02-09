@@ -73,7 +73,9 @@ import (
 	sisuAuth "github.com/sisu-network/sisu/x/auth"
 )
 
-const Name = "sisu"
+const (
+	Name = "sisu"
+)
 
 var (
 	SisuHome string
@@ -122,6 +124,7 @@ type App struct {
 	internalApiServer server.Server
 	tssProcessor      *tss.Processor
 	txDecoder         sdk.TxDecoder
+	apiHandler        *tss.ApiHandler
 
 	///////////////////////////////////////////////////////////////
 
@@ -241,16 +244,26 @@ func New(
 		panic(err)
 	}
 
+	encryptedKey, err := app.appKeys.GetAesEncrypted(nodeKey.PrivKey.Bytes())
+	if err != nil {
+		panic(err)
+	}
+
+	app.setupApiServer(cfg)
+	bootstrapper := NewBootstrapper()
+	dheartClient, deyesClient := bootstrapper.BootstrapInternalNetwork(tssConfig, app.apiHandler, encryptedKey, nodeKey.PrivKey.Type())
+
 	// storage that contains common data for all the nodes
-	storage := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "data"))
+	publicDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "data"))
 	privateDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "private"))
 
-	tssProcessor := tss.NewProcessor(app.tssKeeper, storage, privateDb, tssConfig, nodeKey.PrivKey,
-		app.appKeys, app.txDecoder, app.txSubmitter, app.globalData)
+	tssProcessor := tss.NewProcessor(app.tssKeeper, publicDb, privateDb, tssConfig, nodeKey.PrivKey,
+		app.appKeys, app.txDecoder, app.txSubmitter, app.globalData, dheartClient, deyesClient)
 	tssProcessor.Init()
+	app.apiHandler.SetAppLogicListener(tssProcessor)
 
-	// NOTE: Any module instantiated in the module manager that is later modified
-	// must be passed by reference here.
+	valsMgr := tss.NewValidatorManager(publicDb)
+	valsMgr.Init()
 
 	modules := []module.AppModule{
 		genutil.NewAppModule(
@@ -265,7 +278,7 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
 
-		tss.NewAppModule(appCodec, app.tssKeeper, storage, app.appKeys, app.txSubmitter, tssProcessor, app.globalData),
+		tss.NewAppModule(appCodec, app.tssKeeper, publicDb, app.appKeys, app.txSubmitter, tssProcessor, app.globalData, valsMgr),
 	}
 
 	app.tssProcessor = tssProcessor
@@ -342,8 +355,6 @@ func New(
 		ctx := app.BaseApp.NewUncachedContext(true, tmproto.Header{})
 		app.CapabilityKeeper.InitializeAndSeal(ctx)
 	}
-
-	app.setupApiServer(cfg)
 
 	return app
 }
@@ -532,7 +543,6 @@ func initParamsKeeper(appCodec codec.BinaryMarshaler, legacyAmino *codec.LegacyA
 func (app *App) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	app.txSubmitter.SyncBlockSequence(ctx, app.AccountKeeper)
 
-	app.globalData.UpdateCatchingUp()
 	app.globalData.UpdateValidatorSets()
 
 	return app.mm.BeginBlock(ctx, req)
@@ -549,7 +559,8 @@ func (app *App) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.Respo
 // of the processor.
 func (app *App) setupApiServer(c config.Config) {
 	handler := ethRpc.NewServer()
-	handler.RegisterName("tss", tss.NewApi(app.tssProcessor))
+	app.apiHandler = tss.NewApi(app.tssProcessor)
+	handler.RegisterName("tss", app.apiHandler)
 
 	appConfig := c.Sisu
 	s := server.NewServer(handler, appConfig.ApiHost, appConfig.ApiPort)

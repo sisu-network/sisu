@@ -6,6 +6,7 @@ import (
 
 	cstypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
@@ -25,6 +26,9 @@ var (
 	prefixContractName           = []byte{0x0C}
 	prefixGasPrice               = []byte{0x0D}
 	prefixNetworkGasPrice        = []byte{0x0E}
+	prefixTokenPrices            = []byte{0x0F}
+	prefixCalculatedTokenPrice   = []byte{0x10}
+	prefixNode                   = []byte{0x11}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -579,7 +583,100 @@ func isTxOutConfirmExisted(store cstypes.KVStore, outChain, hash string) bool {
 	return store.Has(key)
 }
 
-/// Debug functions
+///// Token Prices
+func setTokenPrices(store cstypes.KVStore, blockHeight uint64, msg *types.UpdateTokenPrice) {
+	key := []byte(msg.Signer)
+	value := store.Get(key)
+
+	var record *types.TokenPriceRecord
+	if value == nil {
+		record = new(types.TokenPriceRecord)
+		record.Prices = make(map[string]*types.BlockHeightPricePair)
+	} else {
+		err := record.Unmarshal(value)
+		if err != nil {
+			log.Error("cannot unmarshal record for signer ", msg.Signer)
+			return
+		}
+	}
+
+	for _, tokenPrice := range msg.TokenPrices {
+		pair := record.Prices[tokenPrice.Id]
+		if pair == nil {
+			pair = new(types.BlockHeightPricePair)
+		}
+		pair.BlockHeight = blockHeight
+		pair.Price = tokenPrice.Price
+
+		record.Prices[tokenPrice.Id] = pair
+	}
+
+	bz, err := record.Marshal()
+	if err != nil {
+		log.Error("cannot unmarshal token price record for signer ", msg.Signer)
+		return
+	}
+
+	store.Set(key, bz)
+}
+
+// getAllTokenPrices gets all the token prices all of all signers.
+func getAllTokenPrices(store cstypes.KVStore) map[string]*types.TokenPriceRecord {
+	result := make(map[string]*types.TokenPriceRecord)
+
+	for iter := store.Iterator(nil, nil); iter.Valid(); iter.Next() {
+		// Key is signer.
+		signer := string(iter.Key())
+		bz := iter.Value()
+		record := new(types.TokenPriceRecord)
+		err := record.Unmarshal(bz)
+		if err != nil {
+			log.Error("cannot unmarshal token price record for signer ", signer, " err = ", err)
+			continue
+		}
+
+		result[signer] = record
+	}
+
+	return result
+}
+
+func setCalculatedTokenPrices(store cstypes.KVStore, tokenPrices map[string]float32) {
+	for token, price := range tokenPrices {
+		store.Set([]byte(token), utils.Float32ToByte(price))
+	}
+}
+
+///// Node
+func saveNode(store cstypes.KVStore, node *types.Node) {
+	bz, err := node.Marshal()
+	if err != nil {
+		log.Error("cannot marshal node, err = ", err)
+	}
+	store.Set(node.ConsensusKey.Bytes, bz)
+}
+
+func loadValidators(store cstypes.KVStore) []*types.Node {
+	vals := make([]*types.Node, 0)
+
+	iter := store.Iterator(nil, nil)
+	for ; iter.Valid(); iter.Next() {
+		node := &types.Node{}
+		err := node.Unmarshal(iter.Value())
+		if err != nil {
+			log.Error("cannot unmarshal node, err = ", err)
+			continue
+		}
+
+		if node.IsValidator {
+			vals = append(vals, node)
+		}
+	}
+
+	return vals
+}
+
+///// Debug functions
 func printStore(store cstypes.KVStore) {
 	iter := store.Iterator(nil, nil)
 	count := 0

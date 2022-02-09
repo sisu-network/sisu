@@ -1,0 +1,77 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dheart
+spec:
+  ports:
+  - name: tcp-dheart
+    port: 5678
+    protocol: TCP
+    targetPort: 5678
+  - name: tcp-p2p
+    port: 28300
+    protocol: TCP
+    targetPort: 28300
+  selector:
+    app: dheart
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dheart
+  labels:
+    app: dheart
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: dheart
+  template:
+    metadata:
+      labels:
+        app: dheart
+    spec:
+      initContainers:
+      - name: copy-node-config
+        image: sisu.test/sisu-all:latest
+        imagePullPolicy: IfNotPresent
+        command:
+          - sh
+          - '-x'
+          - '-c'
+          - |
+            wget --tries=0 --retry-connrefused -O /opt/sisu-config/dheart.toml \
+              http://config-server.config-server:8080/node${SISU_INDEX}/dheart.toml
+        env:
+          - name: SISU_INDEX
+            valueFrom:
+              configMapKeyRef:
+                name: sisu-cluster
+                key: index
+        volumeMounts:
+          - name: configdir
+            mountPath: /opt/sisu-config
+      containers:
+      - command:
+          - dheart
+        workingDir: /root
+        image: sisu.test/sisu-all:latest
+        imagePullPolicy: IfNotPresent
+        name: dheart
+        env:
+          - name: HOME_DIR
+            value: /root
+        ports:
+          - containerPort: 5678
+            name: tcp-dheart
+          - containerPort: 28300
+            name: tcp-p2p
+        volumeMounts:
+          - name: configdir
+            mountPath: /root/dheart.toml
+            subPath: dheart.toml
+      volumes:
+        - name: configdir
+          emptyDir: {}

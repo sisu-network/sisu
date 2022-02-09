@@ -11,7 +11,7 @@ import (
 	"github.com/golang/mock/gomock"
 	mockcommon "github.com/sisu-network/sisu/tests/mock/common"
 	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
-	mocktssclients "github.com/sisu-network/sisu/tests/mock/tss/tssclients"
+	mocktssclients "github.com/sisu-network/sisu/tests/mock/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )

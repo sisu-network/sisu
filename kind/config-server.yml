@@ -1,0 +1,78 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: config-server
+spec:
+  ports:
+  - name: http-cfgsrv
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: config-server
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: config-server
+  labels:
+    app: config-server
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: config-server
+  serviceName: config-server
+  template:
+    metadata:
+      labels:
+        app: config-server
+    spec:
+      initContainers:
+      - name: gen-config
+        workingDir: /root
+        image: sisu.test/sisu-all:latest
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: HOME_DIR
+            value: /root
+          - name: SISU_COUNT
+            valueFrom:
+              configMapKeyRef:
+                name: sisu-cluster
+                key: node-count
+        command:
+          - bash
+          - '-eu'
+          - '-c'
+          - |
+              sisud testnet --v ${SISU_COUNT} --output-dir /opt/sisu-config --config-string "$(
+                echo '{"chains":[{"name":"ganache1","rpc":"http://ganache-0.ganache.ganache:7545"},{"name":"ganache2","rpc":"http://ganache-1.ganache.ganache:7545"}],'
+                echo '"nodes":['
+                for i in $(seq 0 $((SISU_COUNT - 1))); do
+                  if [ "$i" != 0 ]; then echo ','; fi;
+                  printf '{"sisu_ip": "sisud.sisu-%d", "dheart_ip":"dheart.sisu-%d","deyes_ip":"deyes.sisu-%d","sql":{"host":"mysql.mysql","port":3306,"username":"root","password":"password"}}' $i $i $i ;
+                done
+                echo ']}'
+              )"
+        volumeMounts:
+          - name: sisudir
+            mountPath: /opt/sisu-config
+      containers:
+      - command:
+          - http-file-server
+          - /=/opt/sisu-config
+        image: sisu.test/config-server:latest
+        imagePullPolicy: IfNotPresent # Important for test with implicit latest tag
+        name: config-server
+        ports:
+        - containerPort: 8080
+          name: http-cfgsrv
+        volumeMounts:
+          - name: sisudir
+            mountPath: /opt/sisu-config
+      volumes:
+        - name: sisudir
+          emptyDir: {}

@@ -67,6 +67,5 @@ func (p *Processor) doTxOutConfirm(ctx sdk.Context, msgWithSigner *types.TxOutCo
 }
 
 func (p *Processor) AddWatchAddresses(chain, address string) {
-	deyeClient := p.deyesClients[chain]
-	deyeClient.AddWatchAddresses(chain, []string{address})
+	p.deyesClient.AddWatchAddresses(chain, []string{address})
 }

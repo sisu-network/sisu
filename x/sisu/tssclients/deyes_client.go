@@ -8,15 +8,23 @@ import (
 	"github.com/sisu-network/lib/log"
 )
 
-type DeyesClient struct {
+type DeyesClient interface {
+	Ping(source string) error
+	Dispatch(request *eTypes.DispatchedTxRequest) (*eTypes.DispatchedTxResult, error)
+	AddWatchAddresses(chain string, addrs []string) error
+	GetNonce(chain string, address string) int64
+	SetSisuReady(isReady bool) error
+}
+
+type DefaultDeyesClient struct {
 	client *rpc.Client
 }
 
-func DialDeyes(rawurl string) (*DeyesClient, error) {
+func DialDeyes(rawurl string) (DeyesClient, error) {
 	return dialDeyesContext(context.Background(), rawurl)
 }
 
-func dialDeyesContext(ctx context.Context, rawurl string) (*DeyesClient, error) {
+func dialDeyesContext(ctx context.Context, rawurl string) (DeyesClient, error) {
 	c, err := rpc.DialContext(ctx, rawurl)
 	if err != nil {
 		return nil, err
@@ -24,15 +32,15 @@ func dialDeyesContext(ctx context.Context, rawurl string) (*DeyesClient, error) 
 	return newDeyesClient(c), nil
 }
 
-func newDeyesClient(c *rpc.Client) *DeyesClient {
-	return &DeyesClient{c}
+func newDeyesClient(c *rpc.Client) DeyesClient {
+	return &DefaultDeyesClient{c}
 }
 
-func (c *DeyesClient) CheckHealth() error {
+func (c *DefaultDeyesClient) Ping(source string) error {
 	var result interface{}
-	err := c.client.CallContext(context.Background(), &result, "deyes_checkHealth")
+	err := c.client.CallContext(context.Background(), &result, "deyes_ping", source)
 	if err != nil {
-		log.Error("Cannot check deyes health, err = ", err)
+		log.Error("Cannot ping deyes, err = ", err)
 		return err
 	}
 
@@ -40,11 +48,11 @@ func (c *DeyesClient) CheckHealth() error {
 }
 
 // Informs the deyes that Sisu server is ready to accept transaction.
-func (c *DeyesClient) SetSisuReady(chain string) error {
+func (c *DefaultDeyesClient) SetSisuReady(isReady bool) error {
 	var result string
-	err := c.client.CallContext(context.Background(), &result, "deyes_setSisuReady", chain)
+	err := c.client.CallContext(context.Background(), &result, "deyes_setSisuReady", isReady)
 	if err != nil {
-		log.Error("Cannot Set readiness for deyes, chain = ", chain, "err = ", err)
+		log.Error("Cannot Set readiness for deyes, err = ", err)
 		return err
 	}
 
@@ -52,7 +60,7 @@ func (c *DeyesClient) SetSisuReady(chain string) error {
 }
 
 // Adds a list of addresses to watch on a specific chain
-func (c *DeyesClient) AddWatchAddresses(chain string, addrs []string) error {
+func (c *DefaultDeyesClient) AddWatchAddresses(chain string, addrs []string) error {
 	var result string
 	err := c.client.CallContext(context.Background(), &result, "deyes_addWatchAddresses", chain, addrs)
 	if err != nil {
@@ -63,7 +71,7 @@ func (c *DeyesClient) AddWatchAddresses(chain string, addrs []string) error {
 	return nil
 }
 
-func (c *DeyesClient) Dispatch(request *eTypes.DispatchedTxRequest) (*eTypes.DispatchedTxResult, error) {
+func (c *DefaultDeyesClient) Dispatch(request *eTypes.DispatchedTxRequest) (*eTypes.DispatchedTxResult, error) {
 	var result = &eTypes.DispatchedTxResult{}
 	err := c.client.CallContext(context.Background(), &result, "deyes_dispatchTx", request)
 	if err != nil {
@@ -76,7 +84,7 @@ func (c *DeyesClient) Dispatch(request *eTypes.DispatchedTxRequest) (*eTypes.Dis
 	return result, nil
 }
 
-func (c *DeyesClient) GetNonce(chain string, address string) int64 {
+func (c *DefaultDeyesClient) GetNonce(chain string, address string) int64 {
 	var result int64
 	err := c.client.CallContext(context.Background(), &result, "deyes_getNonce", chain, address)
 	if err != nil {

@@ -10,8 +10,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/spf13/cobra"
 	tmos "github.com/tendermint/tendermint/libs/os"
 
@@ -19,7 +17,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -111,7 +108,7 @@ Example:
 				nodeConfig := getNodeSettings(chainID, keyringBackend, i, mysqlIp, ips)
 				nodeConfigs[i] = nodeConfig
 
-				generateEyesToml(i, dockerConfig, dir)
+				generateEyesToml(i, dir)
 			}
 
 			generateDockerCompose(filepath.Join(outputDir, "docker-compose.yml"), ips, dockerConfig)
@@ -234,24 +231,19 @@ func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, 
 			MajorityThreshold: majority,
 			DheartHost:        fmt.Sprintf("dheart%d", index),
 			DheartPort:        5678,
+			DeyesUrl:          fmt.Sprintf("http://deyes%d:31001", index),
 			SupportedChains: map[string]config.TssChainConfig{
 				"ganache1": {
-					Symbol:   "ganache1",
-					DeyesUrl: fmt.Sprintf("http://deyes%d:31001", index),
+					Symbol: "ganache1",
 				},
 				"ganache2": {
-					Symbol:   "ganache2",
-					DeyesUrl: fmt.Sprintf("http://deyes%d:31001", index),
+					Symbol: "ganache2",
 				},
 			},
 		},
 	}
 }
 
-// Ip assignments:
-// - 192.168.10.2, .3: ganache(s)
-// - 192.168.10.4: mysql
-// - 192.168.10.5 onward: for Sisu and others
 func generateDockerCompose(outputPath string, ips []string, dockerConfig DockerNodeConfig) {
 	const dockerComposeTemplate = `version: "3"
 services:
@@ -338,76 +330,31 @@ services:
 	tmos.MustWriteFile(outputPath, buffer.Bytes(), 0644)
 }
 
-func generateEyesToml(index int, dockerConfig DockerNodeConfig, dir string) {
-	data := struct {
-		Index         int
-		Ganache1      string
-		SisuServerUrl string
-		SqlSchema     string
-		SqlHost       string
-	}{
-		Index:    index,
-		Ganache1: "ganache1",
+func generateEyesToml(index int, dir string) {
+	deyesConfig := DeyesConfiguration{
+		Chains: []ChainConfig{
+			{
+				Name: "ganache1",
+				Rpc:  "http://ganache1:7545",
+			},
+			{
+				Name: "ganache2",
+				Rpc:  "http://ganache2:7545",
+			},
+		},
 
-		SqlHost:   "mysql",
-		SqlSchema: fmt.Sprintf("deyes%d", index),
+		Sql: SqlConfig{
+			Host:     "mysql",
+			Port:     3306,
+			Schema:   fmt.Sprintf("deyes%d", index),
+			Username: "root",
+			Password: "password",
+		},
 
 		SisuServerUrl: fmt.Sprintf("http://sisu%d:25456", index),
 	}
 
-	eyesToml := `db_host = "{{ .SqlHost }}"
-db_port = 3306
-db_username = "root"
-db_password = "password"
-db_schema = "{{ .SqlSchema }}"
-
-server_port = 31001
-sisu_server_url = "{{ .SisuServerUrl }}"
-
-[chains]
-[chains.ganache1]
-  chain = "ganache1"
-  block_time = 1000
-  starting_block = 0
-  rpc_url = "http://ganache1:7545"
-[chains.ganache2]
-  chain = "ganache2"
-  block_time = 1000
-  starting_block = 0
-  rpc_url = "http://ganache2:7545"
-`
-
-	tmpl := template.New("eyesToml")
-
-	configTemplate, err := tmpl.Parse(eyesToml)
-	if err != nil {
-		panic(err)
-	}
-
-	var buffer bytes.Buffer
-	err = configTemplate.Execute(&buffer, data)
-
-	tmos.MustWriteFile(filepath.Join(dir, "deyes.toml"), buffer.Bytes(), 0644)
-}
-
-func getPeerIds(n int, pubKeys []cryptotypes.PubKey) ([]string, error) {
-	ids := make([]string, n)
-
-	for i := 0; i < n; i++ {
-		p2pPubKey, err := crypto.UnmarshalEd25519PublicKey(pubKeys[i].Bytes())
-		if err != nil {
-			panic(err)
-		}
-
-		id, err := peer.IDFromPublicKey(p2pPubKey)
-		if err != nil {
-			panic(err)
-		}
-
-		ids[i] = id.String()
-	}
-
-	return ids, nil
+	writeDeyesConfig(deyesConfig, dir)
 }
 
 func generateHeartToml(index int, dir string, dockerConfig DockerNodeConfig, peerIds []string) {
@@ -426,55 +373,16 @@ func generateHeartToml(index int, dir string, dockerConfig DockerNodeConfig, pee
 	}
 
 	peerString := strings.Join(peers, ", ")
-	heartConfig := struct {
-		PeerString    string
-		SisuServerUrl string
-		SqlHost       string
-		Schema        string
-		UseOnMemory   string
-	}{
-		PeerString:    peerString,
-		SisuServerUrl: fmt.Sprintf("http://sisu%d:25456", index),
-		SqlHost:       "mysql",
-		Schema:        fmt.Sprintf("dheart%d", index),
-		UseOnMemory:   useOnMemory,
+
+	sqlConfig := SqlConfig{
+		Host:     "mysql",
+		Port:     3306,
+		Schema:   fmt.Sprintf("dheart%d", index),
+		Username: "root",
+		Password: "password",
 	}
 
-	heartToml := `# This is a TOML config file.
-# For more information, see https://github.com/toml-lang/toml
+	sisuUrl := fmt.Sprintf("http://sisu%d:25456", index)
 
-home-dir = "/root/"
-use-on-memory = {{ .UseOnMemory }}
-shortcut-preparams = true
-sisu-server-url = "{{ .SisuServerUrl }}"
-port = 5678
-
-###############################################################################
-###                        Database Configuration                           ###
-###############################################################################
-[db]
-  host = "{{ .SqlHost }}"
-  port = 3306
-  username = "root"
-  password = "password"
-  schema = "{{ .Schema }}"
-	migration-path = "file://db/migrations/"
-[connection]
-  host = "0.0.0.0"
-  port = 28300
-  rendezvous = "rendezvous"
-  peers = [{{ .PeerString }}]
-`
-
-	tmpl := template.New("heartToml")
-
-	configTemplate, err := tmpl.Parse(heartToml)
-	if err != nil {
-		panic(err)
-	}
-
-	var buffer bytes.Buffer
-	err = configTemplate.Execute(&buffer, heartConfig)
-
-	tmos.MustWriteFile(filepath.Join(dir, "dheart.toml"), buffer.Bytes(), 0644)
+	writeHeartConfig(index, dir, peerString, useOnMemory, true, sisuUrl, sqlConfig)
 }
