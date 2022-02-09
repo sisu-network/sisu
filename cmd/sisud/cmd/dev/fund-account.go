@@ -52,13 +52,11 @@ fund-account ganache1 7545 ganache2 8545 10
 				pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
 				addr := crypto.PubkeyToAddress(*pubKey).Hex()
 
-				fmt.Println("addr: ", addr)
-
 				port, err := strconv.Atoi(args[i+1])
 				if err != nil {
 					return err
 				}
-				url := "https://data-seed-prebsc-1-s1.binance.org:" + strconv.Itoa(port)
+				url := "http://0.0.0.0:" + strconv.Itoa(port)
 
 				log.Info("Sending ETH To address", addr, "of chain", chain)
 
@@ -91,7 +89,7 @@ func transferEth(url, recipient string, wallet *hdwallet.Wallet, amount int) {
 		panic(err)
 	}
 
-	value := new(big.Int).Mul(big.NewInt(10000000000000000), big.NewInt(int64(amount))) // in wei (10 eth)
+	value := new(big.Int).Mul(big.NewInt(1000000000000000000), big.NewInt(int64(amount))) // in wei (10 eth)
 	gasLimit := uint64(21000)                                                             // in units
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {

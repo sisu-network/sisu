@@ -54,7 +54,6 @@ func (c *DeyesClient) SetSisuReady(chain string) error {
 // Adds a list of addresses to watch on a specific chain
 func (c *DeyesClient) AddWatchAddresses(chain string, addrs []string) error {
 	var result string
-	log.Info("Calling add watcher addr for chain: ", chain)
 	err := c.client.CallContext(context.Background(), &result, "deyes_addWatchAddresses", chain, addrs)
 	if err != nil {
 		log.Error("Cannot Set readiness for deyes, chain = ", chain, "err = ", err)
