@@ -24,10 +24,17 @@ import (
 )
 
 type TestnetGenerator struct {
-	ropstenUrl string
 }
 
-type TestnetNodes []TestnetNode
+type TestnetConfig struct {
+	Chains []ChainConfig `json:"chains"`
+	Nodes  []TestnetNode `json:"nodes"`
+}
+
+type ChainConfig struct {
+	Name string `json:"name"`
+	Rpc  string `json:"rpc"`
+}
 
 type SqlConfig struct {
 	Host     string `json:"host"`
@@ -40,7 +47,7 @@ type SqlConfig struct {
 type TestnetNode struct {
 	SisuIp  string    `json:"sisu_ip"`
 	HeartIp string    `json:"dheart_ip"`
-	EyesIp  string    `json:"eyes_ip"`
+	EyesIp  string    `json:"deyes_ip"`
 	Sql     SqlConfig `json:"sql"`
 }
 
@@ -53,7 +60,7 @@ func TestnetCmd(mbm module.BasicManager, genBalIterator banktypes.GenesisBalance
 		Long: `privatenet creates configuration for a network with N validators.
 Example:
 	For multiple nodes (running with docker):
-	  ./sisu testnet --v 2 --output-dir ./output --config-string '[{"sisu_ip":"192.168.0.1","dheart_ip":"192.168.0.2","deyes_ip":"192.168.0.3","sql":{"host":"192.168.0.4","port":3306,"username":"root","password":"password"}},{"sisu_ip":"192.168.1.1","dheart_ip":"192.168.1.2","deyes_ip":"192.168.1.3","sql":{"host":"192.168.1.4","port":3306,"username":"root","password":"password"}}]'
+	  ./sisu testnet --v 2 --output-dir ./output --config-string '{"chains":[{"name":"ganache1","rpc":"http://ganache1:7545"},{"name":"ganache2","rpc":"http://ganache2:7545"}],"nodes":[{"sisu_ip":"192.168.0.1","dheart_ip":"192.168.0.2","deyes_ip":"192.168.0.3","sql":{"host":"192.168.0.4","port":3306,"username":"root","password":"password"}},{"sisu_ip":"192.168.1.1","dheart_ip":"192.168.1.2","deyes_ip":"192.168.1.3","sql":{"host":"192.168.1.4","port":3306,"username":"root","password":"password"}}]}'
 	`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -75,23 +82,27 @@ Example:
 			chainId, _ := cmd.Flags().GetString(flagChainId)
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
-			generator.ropstenUrl, _ = cmd.Flags().GetString(flagRopstenUrl)
 			configString, _ := cmd.Flags().GetString(flagConfigString)
 
-			testnetNodeData := TestnetNodes{}
-			err = json.Unmarshal([]byte(configString), &testnetNodeData)
+			testnetConfig := TestnetConfig{}
+			err = json.Unmarshal([]byte(configString), &testnetConfig)
+
 			if err != nil {
 				panic(err)
 			}
 
-			chainId = "testnet"
+			if len(chainId) == 0 {
+				chainId = "testnet"
+			}
 
-			log.Info("testnet gen: chainId = ", chainId)
+			log.Info("testnet chainId = ", chainId)
 
 			err = os.MkdirAll(outputDir, os.ModePerm)
 			if err != nil {
 				panic(err)
 			}
+
+			fmt.Println("Chains = ", len(testnetConfig.Chains), testnetConfig.Chains)
 
 			// Clean data
 			cleanData(outputDir)
@@ -105,7 +116,7 @@ Example:
 				monikers[i] = "node" + strconv.Itoa(i)
 			}
 
-			nodes := testnetNodeData
+			nodes := testnetConfig.Nodes
 
 			sisuIps := make([]string, numValidators)
 			heartIps := make([]string, numValidators)
@@ -125,7 +136,7 @@ Example:
 					panic(err)
 				}
 
-				nodeConfig := generator.getNodeSettings(chainId, keyringBackend, nodes[i], len(nodes))
+				nodeConfig := generator.getNodeSettings(chainId, keyringBackend, nodes[i], len(nodes), testnetConfig.Chains)
 				nodeConfigs[i] = nodeConfig
 			}
 
@@ -154,14 +165,15 @@ Example:
 				panic(err)
 			}
 
+			// Create config files for dheart and deyes.
 			for i := range heartIps {
 				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
 
 				// Dheart configs
-				generator.generateHeartToml(i, dir, heartIps, peerIds, nodes[i].Sql)
+				generator.generateHeartToml(i, dir, heartIps, peerIds, sisuIps[i], nodes[i].Sql)
 
 				// Deyes configs
-				generator.generateEyesToml(i, dir, sisuIps[i], nodes[i].Sql)
+				generator.generateEyesToml(i, dir, sisuIps[i], nodes[i].Sql, testnetConfig.Chains)
 			}
 
 			return err
@@ -176,14 +188,20 @@ Example:
 	cmd.Flags().String(flagChainId, "sisu-talon-01", "Name of the chain")
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
-	cmd.Flags().String(flagRopstenUrl, "", "RPC url for ropsten network")
 	cmd.Flags().String(flagConfigString, "", "configuration string for all nodes")
 
 	return cmd
 }
 
-func (g *TestnetGenerator) getNodeSettings(chainID string, keyringBackend string, testnetConfig TestnetNode, n int) config.Config {
+func (g *TestnetGenerator) getNodeSettings(chainID string, keyringBackend string, testnetConfig TestnetNode, n int, chainConfigs []ChainConfig) config.Config {
 	majority := (n + 1) * 2 / 3
+
+	supportedChains := make(map[string]config.TssChainConfig)
+	for _, chainConfig := range chainConfigs {
+		supportedChains[chainConfig.Name] = config.TssChainConfig{
+			Id: chainConfig.Name,
+		}
+	}
 
 	return config.Config{
 		Mode: "testnet",
@@ -198,19 +216,12 @@ func (g *TestnetGenerator) getNodeSettings(chainID string, keyringBackend string
 			DheartHost:        testnetConfig.HeartIp,
 			DheartPort:        5678,
 			DeyesUrl:          fmt.Sprintf("http://%s:31001", testnetConfig.EyesIp),
-			SupportedChains: map[string]config.TssChainConfig{
-				"ganache1": {
-					Id: "ganache1",
-				},
-				"ganache2": {
-					Id: "ganache2",
-				},
-			},
+			SupportedChains:   supportedChains,
 		},
 	}
 }
 
-func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartIps []string, peerIds []string, sqlConfig SqlConfig) {
+func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartIps []string, peerIds []string, sisuIp string, sqlConfig SqlConfig) {
 	peers := make([]string, 0, len(peerIds)-1)
 	for i := range peerIds {
 		if i == index {
@@ -224,26 +235,24 @@ func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartI
 
 	sqlConfig.Schema = "dheart"
 
-	writeHeartConfig(index, outputDir, peerString, "false", sqlConfig)
+	useOnMemory := "false"
+	if len(peerIds) == 1 {
+		useOnMemory = "true"
+	}
+
+	sisuUrl := fmt.Sprintf("http://%s:25456", sisuIp)
+
+	writeHeartConfig(index, outputDir, peerString, useOnMemory, false, sisuUrl, sqlConfig)
 }
 
-func (g *TestnetGenerator) generateEyesToml(index int, dir string, sisuIp string, sqlConfig SqlConfig) {
+func (g *TestnetGenerator) generateEyesToml(index int, dir string, sisuIp string, sqlConfig SqlConfig, chainConfigs []ChainConfig) {
 	sqlConfig.Schema = "deyes"
 
 	deyesConfig := DeyesConfiguration{
-		Ganaches: []GanacheConfig{
-			{
-				Ip:    "ganache1",
-				Index: 1,
-			},
-			{
-				Ip:    "ganache2",
-				Index: 2,
-			},
-		},
+		Chains: chainConfigs,
 
 		Sql:           sqlConfig,
-		SisuServerUrl: sisuIp,
+		SisuServerUrl: fmt.Sprintf("http://%s:25456", sisuIp),
 	}
 
 	writeDeyesConfig(deyesConfig, dir)

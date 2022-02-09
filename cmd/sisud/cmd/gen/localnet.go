@@ -40,7 +40,6 @@ var (
 	flagTmpDir            = "tmp-dir"
 	flagChainId           = "chain-id"
 	flagConfigString      = "config-string"
-	flagRopstenUrl        = "ropsten-url"
 )
 
 type localnetGenerator struct{}

@@ -1,0 +1,71 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: deyes
+spec:
+  ports:
+  - name: tcp-deyes
+    port: 31001
+    protocol: TCP
+    targetPort: 31001
+  selector:
+    app: deyes
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: deyes
+  labels:
+    app: deyes
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: deyes
+  template:
+    metadata:
+      labels:
+        app: deyes
+    spec:
+      initContainers:
+      - name: copy-node-config
+        image: sisu.test/sisu-all:latest
+        imagePullPolicy: IfNotPresent
+        command:
+          - sh
+          - '-x'
+          - '-c'
+          - |
+            wget --tries=0 --retry-connrefused -O /opt/sisu-config/deyes.toml \
+              http://config-server.config-server:8080/node${SISU_INDEX}/deyes.toml
+        env:
+          - name: SISU_INDEX
+            valueFrom:
+              configMapKeyRef:
+                name: sisu-cluster
+                key: index
+        volumeMounts:
+          - name: configdir
+            mountPath: /opt/sisu-config
+      containers:
+      - command:
+          - deyes
+        workingDir: /root
+        image: sisu.test/sisu-all:latest
+        imagePullPolicy: IfNotPresent
+        name: deyes
+        env:
+          - name: HOME_DIR
+            value: /root
+        ports:
+          - containerPort: 31001
+            name: tcp-deyes
+        volumeMounts:
+          - name: configdir
+            mountPath: /root/deyes.toml
+            subPath: deyes.toml
+      volumes:
+        - name: configdir
+          emptyDir: {}
