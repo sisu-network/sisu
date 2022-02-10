@@ -104,9 +104,6 @@ Example:
 
 			fmt.Println("Chains = ", len(testnetConfig.Chains), testnetConfig.Chains)
 
-			// Clean data
-			cleanData(outputDir)
-
 			// TODO: Use backend file for keyring
 			// keyringBackend := keyring.BackendFile
 			keyringBackend := keyring.BackendTest

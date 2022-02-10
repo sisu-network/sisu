@@ -1154,6 +1154,8 @@ github.com/sirupsen/logrus v1.6.0/go.mod h1:7uNnSEd1DgxDLC74fIahvMZmmYsHGZGEOFrf
 github.com/sirupsen/logrus v1.7.0/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
 github.com/sirupsen/logrus v1.8.1 h1:dJKuHgqk1NNQlqoA6BTlM1Wf9DOH3NBjQyu0h9+AZZE=
 github.com/sirupsen/logrus v1.8.1/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
+github.com/sisu-network/deyes v0.1.5-0.20220204014141-a6bf20880c7e h1:kOWOk4/lVb7Uv8BBcT7HJpya1a+8quwnYlH0LvEsms8=
+github.com/sisu-network/deyes v0.1.5-0.20220204014141-a6bf20880c7e/go.mod h1:uPIOxeb/QvuJspxevITuK/AV3eaaxjFLaVadbGR+dBs=
 github.com/sisu-network/dheart v0.1.5-alpha2.0.20220202064051-8e06c3d248c2 h1:9gB6NnqcHLF8B+NxKBXUi+95o2/HpsXzdLCYNE4rBEs=
 github.com/sisu-network/dheart v0.1.5-alpha2.0.20220202064051-8e06c3d248c2/go.mod h1:z0pRrY61PApX939XmwA7AjWtDEvLcOcpYz8RUHqLVK4=
 github.com/sisu-network/lib v0.0.1-alpha10/go.mod h1:IVs0irBgW1BkGlJ83XTOwWbNxuYHon+xv7m2sdNDss4=

@@ -31,8 +31,8 @@ func decodeTxParams(abi abi.ABI, callData []byte) (map[string]interface{}, error
 
 func (p *DefaultTxOutputProducer) processERC20TransferIn(ctx sdk.Context, ethTx *ethTypes.Transaction) (*types.TxResponse, error) {
 	log.Debug("Processing ERC20 transfer In")
-	erc20GatewayContract := SupportedContracts[ContractErc20Gateway]
-	gwAbi := erc20GatewayContract.Abi
+	erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
+	gwAbi := erc20gatewayContract.Abi
 	callData := ethTx.Data()
 	txParams, err := decodeTxParams(gwAbi, callData)
 	if err != nil {
@@ -92,7 +92,7 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(
 	}
 
 	gatewayAddress := ethcommon.HexToAddress(gw)
-	erc20GatewayContract := SupportedContracts[targetContractName]
+	erc20gatewayContract := SupportedContracts[targetContractName]
 
 	nonce := p.worldState.UseAndIncreaseNonce(destChain)
 	if nonce < 0 {
@@ -124,7 +124,7 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(
 		destChain, gatewayAddress.String(), tokenAddress, recipient, gasPriceInToken.String(), amountOut.Int64(),
 	)
 
-	input, err := erc20GatewayContract.Abi.Pack(MethodTransferIn, tokenAddress, recipient, amountOut)
+	input, err := erc20gatewayContract.Abi.Pack(MethodTransferIn, tokenAddress, recipient, amountOut)
 	if err != nil {
 		log.Error(err)
 		return nil, err

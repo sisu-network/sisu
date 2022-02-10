@@ -16,7 +16,7 @@ import (
 	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
 
 	"github.com/sisu-network/sisu/config"
-	erc20Gateway "github.com/sisu-network/sisu/contracts/eth/erc20gateway"
+	"github.com/sisu-network/sisu/contracts/eth/erc20gateway"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
@@ -25,7 +25,7 @@ import (
 func TestTxOutProducer_getContractTx(t *testing.T) {
 	t.Parallel()
 
-	hash := utils.KeccakHash32(erc20Gateway.Erc20GatewayBin)
+	hash := utils.KeccakHash32(erc20gateway.Erc20gatewayBin)
 	contract := &types.Contract{
 		Chain: "eth",
 		Hash:  hash,
