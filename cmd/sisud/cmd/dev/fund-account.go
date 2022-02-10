@@ -188,7 +188,9 @@ func (c *fundAccountCmd) deployErc20(client *ethclient.Client, tokenName string,
 	}
 
 	if address.String() != ExpectedErc20Address {
-		panic(fmt.Errorf("Invalid ERC20 address. You need to update the expected address (both in this file and the tokens_dev.json."))
+		panic(fmt.Errorf(`Unmatched ERC20 address. We expect address %s but get %s.
+You need to update the expected address (both in this file and the tokens_dev.json.`,
+			ExpectedErc20Address, address.String()))
 	}
 
 	log.Info("Deploying erc20....")

@@ -36,3 +36,14 @@ func (k *GrpcQuerier) QueryContract(ctx context.Context, req *types.QueryContrac
 		Contract: contract,
 	}, nil
 }
+
+func (k *GrpcQuerier) QueryToken(ctx context.Context, req *types.QueryTokenRequest) (*types.QueryTokenResponse, error) {
+	m := k.storage.GetTokens([]string{req.Id})
+	if m[req.Id] == nil {
+		return nil, fmt.Errorf("cannot find token %s", req.Id)
+	}
+
+	return &types.QueryTokenResponse{
+		Token: m[req.Id],
+	}, nil
+}

@@ -37,7 +37,7 @@ deploy-erc20 7545
 				panic(err)
 			}
 
-			address, tx, instance, err := erc20.DeployErc20(auth, client, "name", "sisu-token")
+			address, tx, instance, err := erc20.DeployErc20(auth, client, "sisu", "SISU")
 			_ = instance
 			if err != nil {
 				panic(err)

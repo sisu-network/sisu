@@ -94,6 +94,8 @@ func (p *Processor) Init() {
 	log.Info("Initializing TSS Processor...")
 
 	p.worldState = NewWorldState(p.config, p.publicDb, p.deyesClient)
+	p.worldState.Init()
+
 	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.appKeys, p.publicDb, p.config)
 }
 

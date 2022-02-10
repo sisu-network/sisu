@@ -94,6 +94,18 @@ func (mr *MockWorldStateMockRecorder) GetTokenPrice(token interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTokenPrice", reflect.TypeOf((*MockWorldState)(nil).GetTokenPrice), token)
 }
 
+// Init mocks base method.
+func (m *MockWorldState) Init() {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "Init")
+}
+
+// Init indicates an expected call of Init.
+func (mr *MockWorldStateMockRecorder) Init() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockWorldState)(nil).Init))
+}
+
 // SetGasPrice mocks base method.
 func (m *MockWorldState) SetGasPrice(chain string, price *big.Int) {
 	m.ctrl.T.Helper()

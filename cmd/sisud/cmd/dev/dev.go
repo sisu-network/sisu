@@ -16,6 +16,7 @@ func DevCmd() *cobra.Command {
 
 	cmd.AddCommand(FundAccount())
 	cmd.AddCommand(DeployErc20())
+	cmd.AddCommand(Swap())
 
 	return cmd
 }

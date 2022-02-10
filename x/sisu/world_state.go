@@ -41,6 +41,8 @@ var (
 // data are token price, nonce of addresses, etc.
 // go:generate mockgen -source x/sisu/world_state.go -destination=tests/mock/x/sisu/world_state.go -package=mock
 type WorldState interface {
+	Init()
+
 	UseAndIncreaseNonce(chain string) int64
 
 	SetGasPrice(chain string, price *big.Int)
@@ -61,7 +63,7 @@ type DefaultWorldState struct {
 
 	gasPrices   *sync.Map
 	tokens      *sync.Map
-	addrToToken *sync.Map
+	addrToToken *sync.Map // chain__addr => *types.Token
 }
 
 func NewWorldState(tssConfig config.TssConfig, publicDb keeper.Storage, deyesClients tssclients.DeyesClient) WorldState {
@@ -73,6 +75,26 @@ func NewWorldState(tssConfig config.TssConfig, publicDb keeper.Storage, deyesCli
 		tokens:      &sync.Map{},
 		gasPrices:   &sync.Map{},
 		addrToToken: &sync.Map{},
+	}
+}
+
+func (ws *DefaultWorldState) Init() {
+	// Get saved tokens
+	tokens := ws.publicDb.GetAllTokens()
+	ws.SetTokens(tokens)
+
+	// Map between address and tokens
+	for _, token := range tokens {
+		for chain, addr := range token.Addresses {
+			key := ws.getChainAddrKey(chain, addr)
+			ws.addrToToken.Store(key, token)
+		}
+	}
+
+	// Get saved network gas
+	networkGas := ws.publicDb.GetAllNetworkGasPrices()
+	for chain, price := range networkGas {
+		ws.SetGasPrice(chain, big.NewInt(price))
 	}
 }
 
@@ -123,12 +145,6 @@ func (ws *DefaultWorldState) GetGasPrice(chain string) (*big.Int, error) {
 	return nil, ErrChainNotFound
 }
 
-// getCommissionFee returns the amount of fee user needs to pay the Sisu network (often a percentage
-// of the transaction amount).
-func (ws *DefaultWorldState) getCommissionFee(amount *big.Int) *big.Int {
-	return big.NewInt(0)
-}
-
 func (ws *DefaultWorldState) SetTokens(tokens map[string]*types.Token) {
 	for tokenId, token := range tokens {
 		ws.tokens.Store(tokenId, token)
@@ -162,8 +178,12 @@ func (ws *DefaultWorldState) GetTokenPrice(tokenId string) (int64, error) {
 	return 0, ErrTokenPriceNotFound
 }
 
+func (ws *DefaultWorldState) getChainAddrKey(chain, addr string) string {
+	return fmt.Sprintf("%s__%s", chain, addr)
+}
+
 func (ws *DefaultWorldState) GetTokenFromAddress(chain string, tokenAddr string) *types.Token {
-	key := fmt.Sprintf("%s__%s", chain, tokenAddr)
+	key := ws.getChainAddrKey(chain, tokenAddr)
 	val, ok := ws.addrToToken.Load(key)
 	if !ok {
 		return nil

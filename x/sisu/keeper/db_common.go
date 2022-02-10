@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	cstypes "github.com/cosmos/cosmos-sdk/store/types"
@@ -563,6 +564,42 @@ func getGasPriceRecord(store cstypes.KVStore, chain string, height int64) *types
 	return record
 }
 
+///// Network gas price
+func saveNetworkGasPrice(store cstypes.KVStore, chain string, gasPrice int64) {
+	store.Set([]byte(chain), []byte(strconv.FormatInt(gasPrice, 10)))
+}
+
+func getNetworkGasPrice(store cstypes.KVStore, chain string) int64 {
+	bz := store.Get([]byte(chain))
+	if bz == nil {
+		log.Warnf("Gas price for chain %s is not found", chain)
+		return -1
+	}
+
+	gas, err := strconv.ParseInt(string(bz), 10, 64)
+	if err != nil {
+		log.Error("cannot parse network gas price, err = ", err)
+		return -1
+	}
+	return gas
+}
+
+func getAllNetworkGasPrices(store cstypes.KVStore) map[string]int64 {
+	m := make(map[string]int64)
+
+	for iter := store.Iterator(nil, nil); iter.Valid(); iter.Next() {
+		gas, err := strconv.ParseInt(string(iter.Value()), 10, 64)
+		if err != nil {
+			log.Error("cannot parse network gas price, err = ", err)
+			continue
+		}
+
+		m[string(iter.Key())] = gas
+	}
+
+	return m
+}
+
 ///// TxOutConfirm
 func saveTxOutConfirm(store cstypes.KVStore, msg *types.TxOutContractConfirm) {
 	key := getTxOutConfirmKey(msg.OutChain, msg.OutHash)
@@ -665,6 +702,25 @@ func getTokens(store cstypes.KVStore, tokenIds []string) map[string]*types.Token
 		}
 
 		tokens[id] = token
+	}
+
+	return tokens
+}
+
+func getAllTokens(store cstypes.KVStore) map[string]*types.Token {
+	tokens := make(map[string]*types.Token)
+
+	iter := store.Iterator(nil, nil)
+
+	for ; iter.Valid(); iter.Next() {
+		token := &types.Token{}
+		err := token.Unmarshal(iter.Value())
+		if err != nil {
+			log.Error("cannot unmarshal token ", string(iter.Key()))
+			continue
+		}
+
+		tokens[string(iter.Key())] = token
 	}
 
 	return tokens

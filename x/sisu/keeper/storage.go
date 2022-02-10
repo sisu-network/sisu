@@ -1,8 +1,6 @@
 package keeper
 
 import (
-	"strconv"
-
 	adstore "github.com/cosmos/cosmos-sdk/store/dbadapter"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	cosmostypes "github.com/cosmos/cosmos-sdk/store/types"
@@ -68,11 +66,14 @@ type Storage interface {
 	SaveTxOutConfirm(msg *types.TxOutContractConfirm)
 	IsTxOutConfirmExisted(outChain, hash string) bool
 
-	// Gas Price
+	// Gas Price Record
 	SetGasPrice(msg *types.GasPriceMsg)
 	GetGasPriceRecord(chain string, height int64) *types.GasPriceRecord
+
+	// Network Gas Price
 	SaveNetworkGasPrice(chain string, gasPrice int64)
 	GetNetworkGasPrice(chain string) int64
+	GetAllNetworkGasPrices() map[string]int64
 
 	// Token Price
 	SetTokenPrices(blockHeight uint64, msg *types.UpdateTokenPrice)
@@ -81,6 +82,7 @@ type Storage interface {
 	// Set Tokens
 	SetTokens(map[string]*types.Token)
 	GetTokens([]string) map[string]*types.Token
+	GetAllTokens() map[string]*types.Token
 
 	// Nodes
 	SaveNode(node *types.Node)
@@ -342,25 +344,21 @@ func (db *defaultPrivateDb) GetGasPriceRecord(chain string, height int64) *types
 	return getGasPriceRecord(store, chain, height)
 }
 
+///// Network gas price
+
 func (db *defaultPrivateDb) SaveNetworkGasPrice(chain string, gasPrice int64) {
 	store := db.prefixes[string(prefixNetworkGasPrice)]
-	store.Set([]byte(chain), []byte(strconv.FormatInt(gasPrice, 10)))
+	saveNetworkGasPrice(store, chain, gasPrice)
 }
 
 func (db *defaultPrivateDb) GetNetworkGasPrice(chain string) int64 {
 	store := db.prefixes[string(prefixNetworkGasPrice)]
-	bz := store.Get([]byte(chain))
-	if bz == nil {
-		log.Warnf("Gas price for chain %s is not found", chain)
-		return -1
-	}
+	return getNetworkGasPrice(store, chain)
+}
 
-	gas, err := strconv.ParseInt(string(bz), 10, 64)
-	if err != nil {
-		log.Error(err)
-		return -1
-	}
-	return gas
+func (db *defaultPrivateDb) GetAllNetworkGasPrices() map[string]int64 {
+	store := db.prefixes[string(prefixNetworkGasPrice)]
+	return getAllNetworkGasPrices(store)
 }
 
 ///// Token Prices
@@ -385,6 +383,11 @@ func (db *defaultPrivateDb) SetTokens(prices map[string]*types.Token) {
 func (db *defaultPrivateDb) GetTokens(tokenIds []string) map[string]*types.Token {
 	store := db.prefixes[string(prefixToken)]
 	return getTokens(store, tokenIds)
+}
+
+func (db *defaultPrivateDb) GetAllTokens() map[string]*types.Token {
+	store := db.prefixes[string(prefixToken)]
+	return getAllTokens(store)
 }
 
 ///// Nodes
