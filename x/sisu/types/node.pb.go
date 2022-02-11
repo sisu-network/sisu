@@ -75,8 +75,9 @@ func (m *Pubkey) GetBytes() []byte {
 }
 
 type Node struct {
+	// This id field is not used to identify a node. Use the consensusKey to identify a node.
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// consensusKey is the public key used by tendermint. This is different from the key in the keyring.
-	Id           string  `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	ConsensusKey *Pubkey `protobuf:"bytes,2,opt,name=consensusKey,proto3" json:"consensusKey,omitempty"`
 	AccAddress   string  `protobuf:"bytes,3,opt,name=accAddress,proto3" json:"accAddress,omitempty"`
 	IsValidator  bool    `protobuf:"varint,4,opt,name=isValidator,proto3" json:"isValidator,omitempty"`

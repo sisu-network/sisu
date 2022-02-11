@@ -35,13 +35,13 @@ require (
 	github.com/tendermint/tendermint v0.34.13
 	github.com/tendermint/tm-db v0.6.4
 	github.com/tyler-smith/go-bip39 v1.0.2
-	golang.org/x/crypto v0.0.0-20220131195533-30dcbda58838
+	golang.org/x/crypto v0.0.0-20220210151621-f4118a5b28e2
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.5.0 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.5 // indirect
-	google.golang.org/genproto v0.0.0-20220203182621-f4ae394cde3f // indirect
-	google.golang.org/grpc v1.40.0
+	google.golang.org/genproto v0.0.0-20220210181026-6fee9acbd336 // indirect
+	google.golang.org/grpc v1.44.0
 )
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.33.2

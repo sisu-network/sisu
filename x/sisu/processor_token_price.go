@@ -55,7 +55,7 @@ func (p *Processor) calculateTokenPrices(ctx sdk.Context) {
 	// TODO: Fix the signer set.
 	records := p.publicDb.GetAllTokenPricesRecord()
 
-	tokenPrices := make(map[string][]float32)
+	tokenPrices := make(map[string][]float64)
 	for _, record := range records {
 		for token, pair := range record.Prices {
 			// Only calculate token prices that has been updated recently.
@@ -65,7 +65,7 @@ func (p *Processor) calculateTokenPrices(ctx sdk.Context) {
 
 			m := tokenPrices[token]
 			if m == nil {
-				m = make([]float32, 0)
+				m = make([]float64, 0)
 			}
 
 			m = append(m, pair.Price)
@@ -75,7 +75,7 @@ func (p *Processor) calculateTokenPrices(ctx sdk.Context) {
 	}
 
 	// Now sort all the array and get the median
-	medians := make(map[string]float32)
+	medians := make(map[string]float64)
 	for token, list := range tokenPrices {
 		if len(list) == 0 {
 			log.Error("cannot find price list for token ", token)
