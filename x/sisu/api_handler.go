@@ -4,8 +4,6 @@ import (
 	"sync"
 
 	etypes "github.com/sisu-network/deyes/types"
-	eyesTypes "github.com/sisu-network/deyes/types"
-	dhtypes "github.com/sisu-network/dheart/types"
 	htypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/lib/log"
 )
@@ -15,8 +13,8 @@ type NetworkHealthListener interface {
 }
 
 type AppLogicListener interface {
-	OnKeygenResult(result dhtypes.KeygenResult)
-	OnTxIns(txs *eyesTypes.Txs) error
+	OnKeygenResult(result htypes.KeygenResult)
+	OnTxIns(txs *etypes.Txs) error
 	OnKeysignResult(result *htypes.KeysignResult)
 	OnTxDeploymentResult(result *etypes.DispatchedTxResult)
 	OnUpdateGasPriceRequest(request *etypes.GasPriceRequest)

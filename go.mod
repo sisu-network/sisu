@@ -23,7 +23,7 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/prometheus/tsdb v0.10.0 // indirect
 	github.com/rjeczalik/notify v0.9.2 // indirect
-	github.com/sisu-network/deyes v0.1.3
+	github.com/sisu-network/deyes v0.1.5
 	github.com/sisu-network/dheart v0.1.5-alpha2
 	github.com/sisu-network/lib v0.0.1-alpha11
 	github.com/spf13/afero v1.6.0 // indirect
