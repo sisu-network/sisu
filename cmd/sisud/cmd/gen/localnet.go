@@ -124,6 +124,7 @@ Example:
 				numValidators:  numValidators,
 				nodeConfigs:    []config.Config{nodeConfig},
 				tokens:         generator.getTokens(),
+				chains:         generator.getChains(),
 			}
 
 			_, err = InitNetwork(settings)
@@ -190,6 +191,19 @@ func (g *localnetGenerator) getTokens() []*types.Token {
 	json.Unmarshal(dat, &tokens)
 
 	return tokens
+}
+
+func (g *localnetGenerator) getChains() []*types.Chain {
+	chains := []*types.Chain{}
+
+	dat, err := os.ReadFile("./chains.json")
+	if err != nil {
+		panic(err)
+	}
+
+	json.Unmarshal(dat, &chains)
+
+	return chains
 }
 
 func (g *localnetGenerator) deployErc20(url string, tokenName string, tokenSymbol string) string {

@@ -120,8 +120,12 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(
 
 	amountOut.Sub(amountOut, gasPriceInToken)
 
-	log.Debugf("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, gasPriceInToken: %s, amount: %d",
-		destChain, gatewayAddress.String(), tokenAddress, recipient, gasPriceInToken.String(), amountOut.Int64(),
+	if amountOut.Cmp(big.NewInt(0)) < 0 {
+		return nil, ErrInsufficientFund
+	}
+
+	log.Debugf("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, gasPriceInToken: %s, amountIn: %s, amountOut: %s",
+		destChain, gatewayAddress.String(), tokenAddress, recipient, gasPriceInToken.String(), amountIn.String(), amountOut.String(),
 	)
 
 	input, err := erc20gatewayContract.Abi.Pack(MethodTransferIn, tokenAddress, recipient, amountOut)
@@ -161,7 +165,7 @@ func (p *DefaultTxOutputProducer) getGasCostInToken(gas *big.Int, gasPrice *big.
 		return nil, err
 	}
 
-	// amount := gasCoset * chainTokenPrice / tokenPrice
+	// amount := gasCost * chainTokenPrice / tokenPrice
 	gasInToken := new(big.Int).Mul(gasCost, big.NewInt(chainTokenPrice))
 	gasInToken = new(big.Int).Div(gasInToken, big.NewInt(token.Price))
 

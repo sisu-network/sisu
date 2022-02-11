@@ -46,7 +46,7 @@ fund-account ganache1 7545 ganache2 8545 10
 			if err != nil {
 				panic(err)
 			}
-			fmt.Println("Amount = ", amount)
+			log.Verbose("Amount = ", amount)
 
 			c := &fundAccountCmd{}
 			chains := make([]string, 0)
@@ -102,7 +102,7 @@ fund-account ganache1 7545 ganache2 8545 10
 			log.Info("Now we wait until gateway contracts are deployed on all chains.")
 			gateways := c.waitForGatewayDeployed(cmd.Context(), chains)
 			for _, gateway := range gateways {
-				fmt.Println("gateway = ", gateway.String())
+				log.Verbose("gateway = ", gateway.String())
 			}
 
 			// Transfer ERC20 tokens
@@ -333,13 +333,13 @@ func (c *fundAccountCmd) waitForGatewayDeployed(context context.Context, chains 
 			})
 
 			if err != nil || len(res.Contract.Address) == 0 {
-				log.Verbose("we have not found contract address for gateway ", i, " yet. Keep sleeping...")
+				log.Verbose("we have not found gateway contract address for chain ", chain, " yet. Keep sleeping...")
 				time.Sleep(time.Second * 3)
 				done = false
 				break
 			}
 
-			fmt.Println("res.Contract.Address = ", res.Contract.Address)
+			log.Info("Contract Address = ", res.Contract.Address)
 			addrs[i] = res.Contract.Address
 		}
 

@@ -26,7 +26,10 @@ func Swap() *cobra.Command {
 		Use: "swap",
 		Long: `Swap ERC20 token.
 Usage:
-./sisu dev swap --token SISU --amount 10
+./sisu dev swap --token SISU --amount 10 --recipient 0x2d532C099CA476780c7703610D807948ae47856A
+
+Please note that the amount is the number of whole unit. amount 1 is equivalent to 10^18 in the
+transfer params.
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			src, _ := cmd.Flags().GetString(flagSrc)
@@ -34,7 +37,7 @@ Usage:
 			dst, _ := cmd.Flags().GetString(flagDst)
 			token, _ := cmd.Flags().GetString(flagToken)
 			recipient, _ := cmd.Flags().GetString(flagRecipient)
-			amount, _ := cmd.Flags().GetInt(flagAmount)
+			unit, _ := cmd.Flags().GetInt(flagAmount)
 
 			c := &swapCommand{}
 
@@ -57,10 +60,11 @@ Usage:
 
 			srcToken, dstToken := c.getTokenAddrs(token, src, dst)
 
-			fmt.Println(srcToken, " ", dstToken)
+			amount := big.NewInt(int64(unit))
+			amount = amount.Exp(amount, big.NewInt(18), nil)
 
 			gateway := c.getGatewayAddresses(cmd.Context(), src)
-			c.swap(client, gateway, dst, srcToken, dstToken, recipient, int64(amount))
+			c.swap(client, gateway, dst, srcToken, dstToken, recipient, amount)
 
 			return nil
 		},
@@ -70,6 +74,7 @@ Usage:
 	cmd.Flags().String(flagSrcUrl, "", "Source chain url")
 	cmd.Flags().String(flagDst, "ganache2", "Destination chain where the token is transferred to")
 	cmd.Flags().String(flagToken, "SISU", "ID of the ERC20 to transferred")
+	cmd.Flags().String(flagRecipient, "", "Recipient address in the destination chain")
 	cmd.Flags().Int(flagAmount, 1, "The amount of token to be transferred")
 
 	return cmd
@@ -165,7 +170,7 @@ func (c *swapCommand) getGatewayAddresses(context context.Context, chain string)
 }
 
 func (c *swapCommand) swap(client *ethclient.Client, gateay string, destination string,
-	srcToken string, dstToken string, recipient string, amount int64) {
+	srcToken string, dstToken string, recipient string, amount *big.Int) {
 	gatewayAddr := common.HexToAddress(gateay)
 	contract, err := erc20gateway.NewErc20gateway(gatewayAddr, client)
 	if err != nil {
@@ -181,7 +186,10 @@ func (c *swapCommand) swap(client *ethclient.Client, gateay string, destination 
 	srcTokenAddr := common.HexToAddress(srcToken)
 	dstTokenAddr := common.HexToAddress(dstToken)
 
-	tx, err := contract.TransferOut(opts, destination, recipientAddr, srcTokenAddr, dstTokenAddr, big.NewInt(amount))
+	log.Verbose("destination, recipientAddr, srcTokenAddr, dstTokenAddr, big.NewInt(amount) = ",
+		destination, recipientAddr, srcTokenAddr, dstTokenAddr, amount)
+
+	tx, err := contract.TransferOut(opts, destination, recipientAddr, srcTokenAddr, dstTokenAddr, amount)
 	bind.WaitDeployed(context.Background(), client, tx)
 
 	time.Sleep(time.Second * 3)

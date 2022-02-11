@@ -94,28 +94,28 @@ func (mr *MockWorldStateMockRecorder) GetTokenPrice(token interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTokenPrice", reflect.TypeOf((*MockWorldState)(nil).GetTokenPrice), token)
 }
 
-// Init mocks base method.
-func (m *MockWorldState) Init() {
+// LoadData mocks base method.
+func (m *MockWorldState) LoadData() {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Init")
+	m.ctrl.Call(m, "LoadData")
 }
 
-// Init indicates an expected call of Init.
-func (mr *MockWorldStateMockRecorder) Init() *gomock.Call {
+// LoadData indicates an expected call of LoadData.
+func (mr *MockWorldStateMockRecorder) LoadData() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Init", reflect.TypeOf((*MockWorldState)(nil).Init))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadData", reflect.TypeOf((*MockWorldState)(nil).LoadData))
 }
 
-// SetGasPrice mocks base method.
-func (m *MockWorldState) SetGasPrice(chain string, price *big.Int) {
+// SetChain mocks base method.
+func (m *MockWorldState) SetChain(chain *types.Chain) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SetGasPrice", chain, price)
+	m.ctrl.Call(m, "SetChain", chain)
 }
 
-// SetGasPrice indicates an expected call of SetGasPrice.
-func (mr *MockWorldStateMockRecorder) SetGasPrice(chain, price interface{}) *gomock.Call {
+// SetChain indicates an expected call of SetChain.
+func (mr *MockWorldStateMockRecorder) SetChain(chain interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetGasPrice", reflect.TypeOf((*MockWorldState)(nil).SetGasPrice), chain, price)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetChain", reflect.TypeOf((*MockWorldState)(nil).SetChain), chain)
 }
 
 // SetTokens mocks base method.

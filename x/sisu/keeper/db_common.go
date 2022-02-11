@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	cstypes "github.com/cosmos/cosmos-sdk/store/types"
@@ -25,7 +24,7 @@ var (
 	prefixTxOutContractConfirm   = []byte{0x0B}
 	prefixContractName           = []byte{0x0C}
 	prefixGasPrice               = []byte{0x0D}
-	prefixNetworkGasPrice        = []byte{0x0E}
+	prefixChain                  = []byte{0x0E}
 	prefixToken                  = []byte{0x0F}
 	prefixTokenPrices            = []byte{0x10}
 	prefixNode                   = []byte{0x11}
@@ -564,37 +563,44 @@ func getGasPriceRecord(store cstypes.KVStore, chain string, height int64) *types
 	return record
 }
 
-///// Network gas price
-func saveNetworkGasPrice(store cstypes.KVStore, chain string, gasPrice int64) {
-	store.Set([]byte(chain), []byte(strconv.FormatInt(gasPrice, 10)))
-}
-
-func getNetworkGasPrice(store cstypes.KVStore, chain string) int64 {
-	bz := store.Get([]byte(chain))
-	if bz == nil {
-		log.Warnf("Gas price for chain %s is not found", chain)
-		return -1
-	}
-
-	gas, err := strconv.ParseInt(string(bz), 10, 64)
+///// Chain
+func saveChain(store cstypes.KVStore, chain *types.Chain) {
+	bz, err := chain.Marshal()
 	if err != nil {
-		log.Error("cannot parse network gas price, err = ", err)
-		return -1
+		log.Error("saveChain: failed to save chain, chaain = ", chain.Id)
+		return
 	}
-	return gas
+
+	store.Set([]byte(chain.Id), bz)
 }
 
-func getAllNetworkGasPrices(store cstypes.KVStore) map[string]int64 {
-	m := make(map[string]int64)
+func getChain(store cstypes.KVStore, chainId string) *types.Chain {
+	chain := &types.Chain{}
+	bz := store.Get([]byte(chainId))
+	if bz == nil {
+		return nil
+	}
+
+	if err := chain.Unmarshal(bz); err != nil {
+		log.Error("getChain: failed to unmarshal bytes for chain ", chainId)
+		return nil
+	}
+
+	return chain
+}
+
+func getAllChains(store cstypes.KVStore) map[string]*types.Chain {
+	m := make(map[string]*types.Chain)
 
 	for iter := store.Iterator(nil, nil); iter.Valid(); iter.Next() {
-		gas, err := strconv.ParseInt(string(iter.Value()), 10, 64)
-		if err != nil {
-			log.Error("cannot parse network gas price, err = ", err)
-			continue
+		chain := &types.Chain{}
+
+		if err := chain.Unmarshal(iter.Value()); err != nil {
+			log.Error("getAllChains: failed to unmarshal bytes for chain ", string(iter.Key()))
+			return nil
 		}
 
-		m[string(iter.Key())] = gas
+		m[string(iter.Key())] = chain
 	}
 
 	return m

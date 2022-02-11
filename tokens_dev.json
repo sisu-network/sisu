@@ -1,15 +1,18 @@
 [
   {
   "id": "NATIVE_GANACHE1",
-  "price": 2000000000
+  "price": 2000000000,
+  "decimals": 18
   },
   {
     "id": "NATIVE_GANACHE2",
-    "price": 3000000000
+    "price": 3000000000,
+    "decimals": 18
   },
   {
     "id": "SISU",
     "price": 4000000000,
+    "decimals": 18,
     "addresses": {
       "ganache1": "0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C",
       "ganache2": "0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"

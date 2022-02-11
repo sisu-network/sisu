@@ -46,6 +46,20 @@ func (mr *MockStorageMockRecorder) CreateContractAddress(chain, txOutHash, addre
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateContractAddress", reflect.TypeOf((*MockStorage)(nil).CreateContractAddress), chain, txOutHash, address)
 }
 
+// GetAllChains mocks base method.
+func (m *MockStorage) GetAllChains() map[string]*types.Chain {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllChains")
+	ret0, _ := ret[0].(map[string]*types.Chain)
+	return ret0
+}
+
+// GetAllChains indicates an expected call of GetAllChains.
+func (mr *MockStorageMockRecorder) GetAllChains() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllChains", reflect.TypeOf((*MockStorage)(nil).GetAllChains))
+}
+
 // GetAllKeygenPubkeys mocks base method.
 func (m *MockStorage) GetAllKeygenPubkeys() map[string][]byte {
 	m.ctrl.T.Helper()
@@ -74,20 +88,6 @@ func (mr *MockStorageMockRecorder) GetAllKeygenResult(keygenType, index interfac
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllKeygenResult", reflect.TypeOf((*MockStorage)(nil).GetAllKeygenResult), keygenType, index)
 }
 
-// GetAllNetworkGasPrices mocks base method.
-func (m *MockStorage) GetAllNetworkGasPrices() map[string]int64 {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAllNetworkGasPrices")
-	ret0, _ := ret[0].(map[string]int64)
-	return ret0
-}
-
-// GetAllNetworkGasPrices indicates an expected call of GetAllNetworkGasPrices.
-func (mr *MockStorageMockRecorder) GetAllNetworkGasPrices() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllNetworkGasPrices", reflect.TypeOf((*MockStorage)(nil).GetAllNetworkGasPrices))
-}
-
 // GetAllTokenPricesRecord mocks base method.
 func (m *MockStorage) GetAllTokenPricesRecord() map[string]*types.TokenPriceRecord {
 	m.ctrl.T.Helper()
@@ -114,6 +114,20 @@ func (m *MockStorage) GetAllTokens() map[string]*types.Token {
 func (mr *MockStorageMockRecorder) GetAllTokens() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllTokens", reflect.TypeOf((*MockStorage)(nil).GetAllTokens))
+}
+
+// GetChain mocks base method.
+func (m *MockStorage) GetChain(chain string) *types.Chain {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetChain", chain)
+	ret0, _ := ret[0].(*types.Chain)
+	return ret0
+}
+
+// GetChain indicates an expected call of GetChain.
+func (mr *MockStorageMockRecorder) GetChain(chain interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetChain", reflect.TypeOf((*MockStorage)(nil).GetChain), chain)
 }
 
 // GetContract mocks base method.
@@ -170,20 +184,6 @@ func (m *MockStorage) GetLatestContractAddressByName(chain, name string) string 
 func (mr *MockStorageMockRecorder) GetLatestContractAddressByName(chain, name interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLatestContractAddressByName", reflect.TypeOf((*MockStorage)(nil).GetLatestContractAddressByName), chain, name)
-}
-
-// GetNetworkGasPrice mocks base method.
-func (m *MockStorage) GetNetworkGasPrice(chain string) int64 {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetNetworkGasPrice", chain)
-	ret0, _ := ret[0].(int64)
-	return ret0
-}
-
-// GetNetworkGasPrice indicates an expected call of GetNetworkGasPrice.
-func (mr *MockStorageMockRecorder) GetNetworkGasPrice(chain interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetNetworkGasPrice", reflect.TypeOf((*MockStorage)(nil).GetNetworkGasPrice), chain)
 }
 
 // GetPendingContracts mocks base method.
@@ -404,6 +404,18 @@ func (mr *MockStorageMockRecorder) ProcessTxRecord(hash interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProcessTxRecord", reflect.TypeOf((*MockStorage)(nil).ProcessTxRecord), hash)
 }
 
+// SaveChain mocks base method.
+func (m *MockStorage) SaveChain(chain *types.Chain) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SaveChain", chain)
+}
+
+// SaveChain indicates an expected call of SaveChain.
+func (mr *MockStorageMockRecorder) SaveChain(chain interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveChain", reflect.TypeOf((*MockStorage)(nil).SaveChain), chain)
+}
+
 // SaveContract mocks base method.
 func (m *MockStorage) SaveContract(msg *types.Contract, saveByteCode bool) {
 	m.ctrl.T.Helper()
@@ -450,18 +462,6 @@ func (m *MockStorage) SaveKeygenResult(signerMsg *types.KeygenResultWithSigner) 
 func (mr *MockStorageMockRecorder) SaveKeygenResult(signerMsg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveKeygenResult", reflect.TypeOf((*MockStorage)(nil).SaveKeygenResult), signerMsg)
-}
-
-// SaveNetworkGasPrice mocks base method.
-func (m *MockStorage) SaveNetworkGasPrice(chain string, gasPrice int64) {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "SaveNetworkGasPrice", chain, gasPrice)
-}
-
-// SaveNetworkGasPrice indicates an expected call of SaveNetworkGasPrice.
-func (mr *MockStorageMockRecorder) SaveNetworkGasPrice(chain, gasPrice interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveNetworkGasPrice", reflect.TypeOf((*MockStorage)(nil).SaveNetworkGasPrice), chain, gasPrice)
 }
 
 // SaveNode mocks base method.

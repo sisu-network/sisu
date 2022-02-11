@@ -70,10 +70,10 @@ type Storage interface {
 	SetGasPrice(msg *types.GasPriceMsg)
 	GetGasPriceRecord(chain string, height int64) *types.GasPriceRecord
 
-	// Network Gas Price
-	SaveNetworkGasPrice(chain string, gasPrice int64)
-	GetNetworkGasPrice(chain string) int64
-	GetAllNetworkGasPrices() map[string]int64
+	// Chain
+	SaveChain(chain *types.Chain)
+	GetChain(chain string) *types.Chain
+	GetAllChains() map[string]*types.Chain
 
 	// Token Price
 	SetTokenPrices(blockHeight uint64, msg *types.UpdateTokenPrice)
@@ -140,8 +140,8 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes[string(prefixContractName)] = prefix.NewStore(parent, prefixContractName)
 	// prefixGasPrice
 	prefixes[string(prefixGasPrice)] = prefix.NewStore(parent, prefixGasPrice)
-	// prefixNetworkGasPrice
-	prefixes[string(prefixNetworkGasPrice)] = prefix.NewStore(parent, prefixNetworkGasPrice)
+	// prefixChain
+	prefixes[string(prefixChain)] = prefix.NewStore(parent, prefixChain)
 	// prefixTokenPrices
 	prefixes[string(prefixTokenPrices)] = prefix.NewStore(parent, prefixTokenPrices)
 	// prefixToken
@@ -346,19 +346,20 @@ func (db *defaultPrivateDb) GetGasPriceRecord(chain string, height int64) *types
 
 ///// Network gas price
 
-func (db *defaultPrivateDb) SaveNetworkGasPrice(chain string, gasPrice int64) {
-	store := db.prefixes[string(prefixNetworkGasPrice)]
-	saveNetworkGasPrice(store, chain, gasPrice)
+func (db *defaultPrivateDb) SaveChain(chain *types.Chain) {
+	store := db.prefixes[string(prefixChain)]
+
+	saveChain(store, chain)
 }
 
-func (db *defaultPrivateDb) GetNetworkGasPrice(chain string) int64 {
-	store := db.prefixes[string(prefixNetworkGasPrice)]
-	return getNetworkGasPrice(store, chain)
+func (db *defaultPrivateDb) GetChain(chain string) *types.Chain {
+	store := db.prefixes[string(prefixChain)]
+	return getChain(store, chain)
 }
 
-func (db *defaultPrivateDb) GetAllNetworkGasPrices() map[string]int64 {
-	store := db.prefixes[string(prefixNetworkGasPrice)]
-	return getAllNetworkGasPrices(store)
+func (db *defaultPrivateDb) GetAllChains() map[string]*types.Chain {
+	store := db.prefixes[string(prefixChain)]
+	return getAllChains(store)
 }
 
 ///// Token Prices

@@ -10,7 +10,6 @@ import (
 
 func compileContract(name string) {
 	name = strings.ToLower(name)
-	fmt.Println("name = ", name)
 
 	// solc --abi name.sol --overwrite -o name
 	_, err := exec.Command(

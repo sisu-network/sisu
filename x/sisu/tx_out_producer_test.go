@@ -36,7 +36,10 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 		ctrl.Finish()
 	})
 	mockPublicDb := mocktss.NewMockStorage(ctrl)
-	mockPublicDb.EXPECT().GetNetworkGasPrice(gomock.Any()).Return(int64(400_000_000_000))
+	mockPublicDb.EXPECT().GetChain("eth").Return(&types.Chain{
+		Id:       "eth",
+		GasPrice: int64(400_000_000_000),
+	})
 
 	worldState := NewWorldState(config.TssConfig{}, nil, nil)
 	txOutProducer := DefaultTxOutputProducer{
@@ -55,8 +58,8 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 	tx := txOutProducer.getContractTx(contract, 100)
 	require.NotNil(t, tx)
 	require.EqualValues(t, 100, tx.Nonce())
-	require.EqualValues(t, *big.NewInt(400000000000), *tx.GasPrice())
-	require.EqualValues(t, *big.NewInt(400000000000), *tx.GasFeeCap())
+	require.EqualValues(t, *big.NewInt(400_000_000_000), *tx.GasPrice())
+	require.EqualValues(t, *big.NewInt(400_000_000_000), *tx.GasFeeCap())
 }
 
 func TestTxOutProducer_getEthResponse(t *testing.T) {
@@ -89,7 +92,10 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		mockAppKeys.EXPECT().GetSignerAddress().Return(accAddress).AnyTimes()
 
 		mockPrivateDb := mocktss.NewMockStorage(ctrl)
-		mockPrivateDb.EXPECT().GetNetworkGasPrice(gomock.Any()).Return(int64(10_000_000)).Times(1)
+		mockPrivateDb.EXPECT().GetChain("eth").Return(&types.Chain{
+			Id:       "eth",
+			GasPrice: 10_000_000,
+		}).Times(1)
 
 		amount := big.NewInt(100)
 		gasLimit := uint64(100)
@@ -157,7 +163,10 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		mockPublicDb.EXPECT().GetLatestContractAddressByName(gomock.Any(), ContractErc20Gateway).Return("0x12345").Times(1)
 
 		mockPrivateDb := mocktss.NewMockStorage(ctrl)
-		mockPrivateDb.EXPECT().GetNetworkGasPrice(gomock.Any()).Return(int64(10_000_000)).Times(1)
+		mockPrivateDb.EXPECT().GetChain("eth").Return(&types.Chain{
+			Id:       "eth",
+			GasPrice: int64(10_000_000),
+		}).Times(1)
 
 		mockAppKeys := mock.NewMockAppKeys(ctrl)
 		accAddress := []byte{1, 2, 3}

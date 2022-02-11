@@ -15,10 +15,13 @@ import (
 )
 
 var (
+	// This is a mapping between chain name and the native token that it uses.
 	chainToTokens = map[string]string{
-		"bsc":     "BNB",
-		"eth":     "ETH",
-		"ropsten": "ETH",
+		"bsc":      "BNB",
+		"eth":      "ETH",
+		"ropsten":  "ETH",
+		"ganache1": "NATIVE_GANACHE1",
+		"ganache2": "NATIVE_GANACHE2",
 	}
 
 	defaultTokenPrices = map[string]float32{
@@ -32,20 +35,17 @@ var (
 		"eth-ropsten":         big.NewInt(4_000_000_000),
 		"eth-binance-testnet": big.NewInt(10_000_000_000),
 	}
-
-	ErrChainNotFound      = fmt.Errorf("chain not found")
-	ErrTokenPriceNotFound = fmt.Errorf("token price not found")
 )
 
 // This is an interface of a struct that stores all data of the world data. Examples of world state
-// data are token price, nonce of addresses, etc.
+// data are token price, nonce of addresses, network gas fee, etc.
 // go:generate mockgen -source x/sisu/world_state.go -destination=tests/mock/x/sisu/world_state.go -package=mock
 type WorldState interface {
-	Init()
+	LoadData()
 
 	UseAndIncreaseNonce(chain string) int64
 
-	SetGasPrice(chain string, price *big.Int)
+	SetChain(chain *types.Chain)
 	GetGasPrice(chain string) (*big.Int, error)
 
 	SetTokens(tokenPrices map[string]*types.Token)
@@ -61,7 +61,7 @@ type DefaultWorldState struct {
 	nonces      map[string]int64
 	deyesClient tssclients.DeyesClient
 
-	gasPrices   *sync.Map
+	chains      *sync.Map
 	tokens      *sync.Map
 	addrToToken *sync.Map // chain__addr => *types.Token
 }
@@ -73,12 +73,12 @@ func NewWorldState(tssConfig config.TssConfig, publicDb keeper.Storage, deyesCli
 		nonces:      make(map[string]int64, 0),
 		deyesClient: deyesClients,
 		tokens:      &sync.Map{},
-		gasPrices:   &sync.Map{},
+		chains:      &sync.Map{},
 		addrToToken: &sync.Map{},
 	}
 }
 
-func (ws *DefaultWorldState) Init() {
+func (ws *DefaultWorldState) LoadData() {
 	// Get saved tokens
 	tokens := ws.publicDb.GetAllTokens()
 	ws.SetTokens(tokens)
@@ -92,9 +92,9 @@ func (ws *DefaultWorldState) Init() {
 	}
 
 	// Get saved network gas
-	networkGas := ws.publicDb.GetAllNetworkGasPrices()
-	for chain, price := range networkGas {
-		ws.SetGasPrice(chain, big.NewInt(price))
+	chains := ws.publicDb.GetAllChains()
+	for _, chain := range chains {
+		ws.SetChain(chain)
 	}
 }
 
@@ -127,22 +127,24 @@ func (ws *DefaultWorldState) UseAndIncreaseNonce(chain string) int64 {
 	nonce := ws.nonces[chain]
 	ws.nonces[chain] = ws.nonces[chain] + 1
 
-	log.Verbose("World state, nonce for chain ", chain, " is ", nonce)
+	log.Verbose("World state, nonce for address ", pubKeyAddress, " on chain ", chain, " is ", nonce)
 
 	return nonce
 }
 
-func (ws *DefaultWorldState) SetGasPrice(chain string, price *big.Int) {
-	ws.gasPrices.Store(chain, price)
+func (ws *DefaultWorldState) SetChain(chain *types.Chain) {
+	ws.chains.Store(chain.Id, chain)
 }
 
-func (ws *DefaultWorldState) GetGasPrice(chain string) (*big.Int, error) {
-	val, ok := ws.gasPrices.Load(chain)
-	if ok {
-		return val.(*big.Int), nil
+func (ws *DefaultWorldState) GetGasPrice(chainId string) (*big.Int, error) {
+	val, ok := ws.chains.Load(chainId)
+	if !ok {
+		return nil, NewErrChainNotFound(chainId)
 	}
 
-	return nil, ErrChainNotFound
+	chain := val.(*types.Chain)
+
+	return big.NewInt(chain.GasPrice), nil
 }
 
 func (ws *DefaultWorldState) SetTokens(tokens map[string]*types.Token) {
@@ -162,7 +164,7 @@ func (ws *DefaultWorldState) SetTokens(tokens map[string]*types.Token) {
 func (ws *DefaultWorldState) GetNativeTokenPriceForChain(chain string) (int64, error) {
 	tokenId := chainToTokens[chain]
 	if len(tokenId) == 0 {
-		return 0, ErrChainNotFound
+		return 0, NewErrTokenNotFound(tokenId)
 	}
 
 	return ws.GetTokenPrice(tokenId)
@@ -175,7 +177,7 @@ func (ws *DefaultWorldState) GetTokenPrice(tokenId string) (int64, error) {
 		return token.Price, nil
 	}
 
-	return 0, ErrTokenPriceNotFound
+	return 0, NewErrTokenNotFound(tokenId)
 }
 
 func (ws *DefaultWorldState) getChainAddrKey(chain, addr string) string {

@@ -140,7 +140,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 			outMsgs = append(outMsgs, outMsg)
 		} else {
-			log.Error("cannot get response for erc20 tx, err =", err)
+			log.Error("cannot get response for erc20 tx, err = ", err)
 		}
 	}
 
@@ -202,7 +202,13 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *types.Contract, nonce 
 
 		byteCode := ecommon.FromHex(erc20.Bin)
 		input = append(byteCode, input...)
-		gasPrice := p.publicDb.GetNetworkGasPrice(contract.Chain)
+		chain := p.publicDb.GetChain(contract.Chain)
+		if chain == nil {
+			log.Error("getContractTx: chain is nil with id ", contract.Chain)
+			return nil
+		}
+
+		gasPrice := chain.GasPrice
 		if gasPrice < 0 {
 			gasPrice = p.getDefaultGasPrice(contract.Chain).Int64()
 		}
