@@ -356,7 +356,7 @@ func getContract(contractStore cstypes.KVStore, byteCodeStore cstypes.KVStore, c
 	bz := contractStore.Get(key)
 
 	if bz == nil {
-		log.Error("getContract: serialized contract is nil")
+		log.Errorf("getContract: serialized contract is nil, chain = %s, contract hash = %s", chain, contractHash)
 		return nil
 	}
 

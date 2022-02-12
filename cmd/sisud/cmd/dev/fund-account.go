@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
+	"sync"
 	"time"
 
 	libchain "github.com/sisu-network/lib/chain"
@@ -49,8 +50,10 @@ fund-account ganache1 7545 ganache2 8545 10
 			log.Verbose("Amount = ", amount)
 
 			c := &fundAccountCmd{}
+			wg := &sync.WaitGroup{}
 			chains := make([]string, 0)
 			clients := make([]*ethclient.Client, 0)
+
 			// Get all urls from command arguments.
 			urls := make([]string, 0)
 			for i := 0; i < len(args)-1; i += 2 {
@@ -76,9 +79,14 @@ fund-account ganache1 7545 ganache2 8545 10
 
 			// Deploy ERC20 contract
 			tokenAddrs := make([]common.Address, len(urls))
+			wg.Add(len(clients))
 			for i, client := range clients {
-				tokenAddrs[i] = c.deployErc20(client, "sisu", "SISU")
+				go func(i int, client *ethclient.Client) {
+					tokenAddrs[i] = c.deployErc20(client, "sisu", "SISU")
+					wg.Done()
+				}(i, client)
 			}
+			wg.Wait()
 
 			// Waits for Sisu to create contract instance in its database. At this stage, the contract is
 			// not deployed yet.
@@ -101,17 +109,29 @@ fund-account ganache1 7545 ganache2 8545 10
 			// Waits until all gateway contracts are deployed.
 			log.Info("Now we wait until gateway contracts are deployed on all chains.")
 			gateways := c.waitForGatewayDeployed(cmd.Context(), chains)
-			for _, gateway := range gateways {
-				log.Verbose("gateway = ", gateway.String())
+
+			// Approve the contract with some preallocated token
+			wg.Add(len(gateways))
+			for i, client := range clients {
+				log.Verbose("gateway = ", gateways[i])
+				go func(i int, client *ethclient.Client) {
+					c.approveGateway(client, tokenAddrs[i], gateways[i])
+					// c.approveGateway(client, common.HexToAddress("0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"), gateways[i])
+					wg.Done()
+				}(i, client)
 			}
+			wg.Wait()
+			log.Info("Gateway approval done!")
 
 			// Transfer ERC20 tokens
-			erc20Amount := big.NewInt(500)
+			erc20Amount := new(big.Int).Mul(big.NewInt(500), utils.EthToWei)
 			for i, client := range clients {
 				c.transferErc20Tokens(client, tokenAddrs[i], gateways[i], erc20Amount)
 			}
 
 			time.Sleep(3 * time.Second)
+
+			log.Info("Transfer token done")
 
 			// Query balance
 			for i, client := range clients {
@@ -132,9 +152,10 @@ fund-account ganache1 7545 ganache2 8545 10
 	return cmd
 }
 
-func (c *fundAccountCmd) waitForContractCreation(context context.Context, chains []string) {
+func (c *fundAccountCmd) waitForContractCreation(context context.Context, chains []string) []string {
 	log.Info("Waiting for all contract created in Sisu's db")
 
+	contractAddrs := make([]string, len(chains))
 	for {
 		grpcConn, err := grpc.Dial(
 			"0.0.0.0:9090",
@@ -149,7 +170,7 @@ func (c *fundAccountCmd) waitForContractCreation(context context.Context, chains
 
 		done := true
 		for i, chain := range chains {
-			_, err := queryClient.QueryContract(context, &tssTypes.QueryContractRequest{
+			res, err := queryClient.QueryContract(context, &tssTypes.QueryContractRequest{
 				Chain: chain,
 				Hash:  sisu.SupportedContracts[sisu.ContractErc20Gateway].AbiHash,
 			})
@@ -160,6 +181,8 @@ func (c *fundAccountCmd) waitForContractCreation(context context.Context, chains
 				done = false
 				break
 			}
+
+			contractAddrs[i] = res.Contract.Address
 		}
 
 		if done {
@@ -168,6 +191,26 @@ func (c *fundAccountCmd) waitForContractCreation(context context.Context, chains
 	}
 
 	log.Info("All contracts have been created in Sisu db.")
+	return contractAddrs
+}
+
+func (c *fundAccountCmd) approveGateway(client *ethclient.Client, erc20Addr common.Address, addr common.Address) {
+	log.Info("Approving gateway: ", addr)
+
+	contract, err := erc20.NewErc20(erc20Addr, client)
+	if err != nil {
+		panic(err)
+	}
+
+	opts, err := c.getAuthTransactor(client, account0.Address)
+	if err != nil {
+		panic(err)
+	}
+
+	amount := new(big.Int).Mul(big.NewInt(500), utils.EthToWei)
+	tx, err := contract.Approve(opts, addr, amount)
+	bind.WaitDeployed(context.Background(), client, tx)
+	time.Sleep(time.Second * 3)
 }
 
 // deployErc20 deploys ERC20 contracts to dev chains

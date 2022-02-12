@@ -104,8 +104,6 @@ Example:
 				panic(err)
 			}
 
-			fmt.Println("Chains = ", len(testnetConfig.Chains), testnetConfig.Chains)
-
 			// TODO: Use backend file for keyring
 			// keyringBackend := keyring.BackendFile
 			keyringBackend := keyring.BackendTest

@@ -68,7 +68,7 @@ contract ERC20 {
         _name = name_;
         _symbol = symbol_;
 
-        _balances[msg.sender] = 10000;
+        _balances[msg.sender] = 10000 * 1000000000000000000;
     }
 
     /**

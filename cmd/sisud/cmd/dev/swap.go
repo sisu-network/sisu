@@ -28,6 +28,10 @@ func Swap() *cobra.Command {
 Usage:
 ./sisu dev swap --token SISU --amount 10 --recipient 0x2d532C099CA476780c7703610D807948ae47856A
 
+for swapping token from chain ganache1 to ganache2. To swap tokens between 2 chains:
+
+./sisu dev swap --src ganache2 --src-url http://0.0.0.0:8545 --dst ganache1 --token SISU --amount 10 --recipient 0x2d532C099CA476780c7703610D807948ae47856A
+
 Please note that the amount is the number of whole unit. amount 1 is equivalent to 10^18 in the
 transfer params.
 `,
@@ -46,7 +50,7 @@ transfer params.
 			}
 
 			if len(srcUrl) == 0 {
-				srcUrl = c.getChainUrl(src)
+				srcUrl = getDefaultChainUrl(src)
 			}
 
 			log.Info("srcUrl = ", srcUrl)
@@ -78,17 +82,6 @@ transfer params.
 	cmd.Flags().Int(flagAmount, 1, "The amount of token to be transferred")
 
 	return cmd
-}
-
-func (c *swapCommand) getChainUrl(chain string) string {
-	switch chain {
-	case "ganache1":
-		return "http://0.0.0.0:7545"
-	case "ganache2":
-		return "http://0.0.0.0:8545"
-	default:
-		panic(fmt.Errorf("unknown chain %s", chain))
-	}
 }
 
 func (c *swapCommand) getTokenAddrs(tokenId string, srcChain string, dstChain string) (string, string) {
@@ -169,7 +162,7 @@ func (c *swapCommand) getGatewayAddresses(context context.Context, chain string)
 	return res.Contract.Address
 }
 
-func (c *swapCommand) swap(client *ethclient.Client, gateay string, destination string,
+func (c *swapCommand) swap(client *ethclient.Client, gateay string, dstChain string,
 	srcToken string, dstToken string, recipient string, amount *big.Int) {
 	gatewayAddr := common.HexToAddress(gateay)
 	contract, err := erc20gateway.NewErc20gateway(gatewayAddr, client)
@@ -186,10 +179,10 @@ func (c *swapCommand) swap(client *ethclient.Client, gateay string, destination 
 	srcTokenAddr := common.HexToAddress(srcToken)
 	dstTokenAddr := common.HexToAddress(dstToken)
 
-	log.Verbose("destination, recipientAddr, srcTokenAddr, dstTokenAddr, big.NewInt(amount) = ",
-		destination, recipientAddr, srcTokenAddr, dstTokenAddr, amount)
+	log.Verbose("destination, recipientAddr, srcTokenAddr, dstTokenAddr, amount = %s %s %s %s %s",
+		dstChain, recipientAddr.String(), srcTokenAddr.String(), dstTokenAddr.String(), amount)
 
-	tx, err := contract.TransferOut(opts, destination, recipientAddr, srcTokenAddr, dstTokenAddr, amount)
+	tx, err := contract.TransferOut(opts, dstChain, recipientAddr, srcTokenAddr, dstTokenAddr, amount)
 	bind.WaitDeployed(context.Background(), client, tx)
 
 	time.Sleep(time.Second * 3)

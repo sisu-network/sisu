@@ -79,3 +79,14 @@ func getAuthTransactor(client *ethclient.Client, address common.Address) (*bind.
 
 	return auth, nil
 }
+
+func getDefaultChainUrl(chain string) string {
+	switch chain {
+	case "ganache1":
+		return "http://0.0.0.0:7545"
+	case "ganache2":
+		return "http://0.0.0.0:8545"
+	default:
+		panic(fmt.Errorf("unknown chain %s", chain))
+	}
+}
