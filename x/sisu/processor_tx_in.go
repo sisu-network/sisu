@@ -60,7 +60,7 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 		return nil
 	}
 
-	log.Info("confirming tx: chain, hash, type = ", chain, tx.Hash, txOut.TxType)
+	log.Info("confirming tx: chain, hash, type = ", chain, " ", tx.Hash, " ", txOut.TxType)
 
 	contractAddress := ""
 	if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT && libchain.IsETHBasedChain(chain) {
@@ -73,18 +73,27 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 
 		contractAddress = crypto.CreateAddress(common.HexToAddress(tx.From), ethTx.Nonce()).String()
 		log.Info("contractAddress = ", contractAddress)
+
+		txConfirm := &types.TxOutContractConfirm{
+			OutChain:        txOut.OutChain,
+			OutHash:         txOut.OutHash,
+			BlockHeight:     blockHeight,
+			ContractAddress: contractAddress,
+		}
+
+		msg := types.NewTxOutContractConfirmWithSigner(
+			p.appKeys.GetSignerAddress().String(),
+			txConfirm,
+		)
+		p.txSubmit.SubmitMessageAsync(msg)
 	}
 
-	confirmMsg := types.NewTxOutConfirmWithSigner(
-		p.appKeys.GetSignerAddress().String(),
-		txOut.TxType,
-		txOut.OutChain,
-		txOut.OutHash,
-		blockHeight,
-		contractAddress,
-	)
-
-	p.txSubmit.SubmitMessageAsync(confirmMsg)
+	// We can assume that other tx transactions will succeed in majority of the time. Instead
+	// broadcasting the tx confirmation to Sisu blockchain, we should only record missing or failed
+	// transaction.
+	// We only confirm if the tx out is a contract deployment to save the smart contract address.
+	// TODO: Implement missing/ failed message and broadcast that to everyone after we have not seen
+	// a tx for some blocks.
 
 	return nil
 }

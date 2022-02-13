@@ -3,10 +3,9 @@ package sisu
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	dhtypes "github.com/sisu-network/dheart/types"
+	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
-
-	libchain "github.com/sisu-network/lib/chain"
 )
 
 type BlockSymbolPair struct {
@@ -46,6 +45,19 @@ func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
 	log.Info("There is keygen result from dheart, resultEnum = ", resultEnum)
 
 	p.txSubmit.SubmitMessageAsync(signerMsg)
+
+	// Add list the public key address to watch.
+	for _, chainConfig := range p.config.SupportedChains {
+		chain := chainConfig.Id
+
+		if libchain.GetKeyTypeForChain(chain) != result.KeyType {
+			continue
+		}
+
+		log.Verbose("adding watcher address ", result.Address, " for chain ", chain)
+
+		p.addWatchAddress(chain, result.Address)
+	}
 }
 
 func (p *Processor) deliverKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) ([]byte, error) {
@@ -71,11 +83,8 @@ func (p *Processor) doKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResul
 		// Save result to KVStore & private db
 		p.publicDb.SaveKeygenResult(signerMsg)
 
-		// Add list the public key address to watch.
-		p.addWatchAddress(signerMsg.Keygen)
-
 		if !p.globalData.IsCatchingUp() {
-			p.createPendingContracts(ctx, signerMsg.Keygen)
+			p.createContracts(ctx, signerMsg.Keygen)
 		}
 	} else {
 		// TODO: handle failure case
@@ -107,16 +116,6 @@ func (p *Processor) getKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResu
 	return types.KeygenResult_FAILURE
 }
 
-func (p *Processor) addWatchAddress(msg *types.Keygen) {
-	// 2. Add the address to the watch list.
-	for _, chainConfig := range p.config.SupportedChains {
-		chain := chainConfig.Symbol
-
-		if libchain.GetKeyTypeForChain(chain) != msg.KeyType {
-			continue
-		}
-
-		log.Verbose("adding watcher address ", msg.Address, " for chain ", chain)
-		p.deyesClient.AddWatchAddresses(chain, []string{msg.Address})
-	}
+func (p *Processor) addWatchAddress(chain string, address string) {
+	p.deyesClient.AddWatchAddresses(chain, []string{address})
 }

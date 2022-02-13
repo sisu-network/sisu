@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	etypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
@@ -24,7 +25,7 @@ func (p *Processor) OnUpdateTokenPrice(tokenPrices []*etypes.TokenPrice) {
 	for _, token := range tokenPrices {
 		prices = append(prices, &types.TokenPrice{
 			Id:    token.Id,
-			Price: token.Price,
+			Price: int64(token.Price * utils.DecinmalUnit),
 		})
 	}
 
@@ -55,7 +56,7 @@ func (p *Processor) calculateTokenPrices(ctx sdk.Context) {
 	// TODO: Fix the signer set.
 	records := p.publicDb.GetAllTokenPricesRecord()
 
-	tokenPrices := make(map[string][]float32)
+	tokenPrices := make(map[string][]int64)
 	for _, record := range records {
 		for token, pair := range record.Prices {
 			// Only calculate token prices that has been updated recently.
@@ -65,7 +66,7 @@ func (p *Processor) calculateTokenPrices(ctx sdk.Context) {
 
 			m := tokenPrices[token]
 			if m == nil {
-				m = make([]float32, 0)
+				m = make([]int64, 0)
 			}
 
 			m = append(m, pair.Price)
@@ -75,7 +76,7 @@ func (p *Processor) calculateTokenPrices(ctx sdk.Context) {
 	}
 
 	// Now sort all the array and get the median
-	medians := make(map[string]float32)
+	medians := make(map[string]int64)
 	for token, list := range tokenPrices {
 		if len(list) == 0 {
 			log.Error("cannot find price list for token ", token)
@@ -89,5 +90,20 @@ func (p *Processor) calculateTokenPrices(ctx sdk.Context) {
 
 	log.Verbose("Calculated prices = ", medians)
 
-	p.publicDb.SetCalculatedTokenPrice(medians)
+	// Update all the token data.
+	arr := make([]string, 0, len(medians))
+	for token, _ := range medians {
+		arr = append(arr, token)
+	}
+
+	savedTokens := p.publicDb.GetTokens(arr)
+
+	for tokenId, price := range medians {
+		savedTokens[tokenId].Price = price
+	}
+
+	p.publicDb.SetTokens(savedTokens)
+
+	// Update the world state
+	p.worldState.SetTokens(savedTokens)
 }

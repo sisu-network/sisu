@@ -48,7 +48,6 @@ type Processor struct {
 	dheartClient tssclients.DheartClient
 	deyesClient  tssclients.DeyesClient
 
-	// A map of chain -> map ()
 	worldState       WorldState
 	keygenVoteResult map[string]map[string]bool
 	keygenBlockPairs []BlockSymbolPair
@@ -68,6 +67,7 @@ func NewProcessor(k keeper.DefaultKeeper,
 	globalData common.GlobalData,
 	dheartClient tssclients.DheartClient,
 	deyesClient tssclients.DeyesClient,
+	worldState WorldState,
 ) *Processor {
 	p := &Processor{
 		keeper:            &k,
@@ -85,6 +85,7 @@ func NewProcessor(k keeper.DefaultKeeper,
 		keygenBlockPairs: make([]BlockSymbolPair, 0),
 		dheartClient:     dheartClient,
 		deyesClient:      deyesClient,
+		worldState:       worldState,
 	}
 
 	return p
@@ -93,8 +94,7 @@ func NewProcessor(k keeper.DefaultKeeper,
 func (p *Processor) Init() {
 	log.Info("Initializing TSS Processor...")
 
-	p.worldState = NewWorldState(p.config, p.publicDb, p.deyesClient)
-	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.appKeys, p.publicDb, p.privateDb, p.config)
+	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.appKeys, p.publicDb, p.config)
 }
 
 func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {

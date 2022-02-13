@@ -1,8 +1,6 @@
 package keeper
 
 import (
-	"strconv"
-
 	adstore "github.com/cosmos/cosmos-sdk/store/dbadapter"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	cosmostypes "github.com/cosmos/cosmos-sdk/store/types"
@@ -65,21 +63,26 @@ type Storage interface {
 	GetTxOutSig(outChain, hashWithSig string) *types.TxOutSig
 
 	// TxOutConfirm
-	SaveTxOutConfirm(msg *types.TxOutConfirm)
+	SaveTxOutConfirm(msg *types.TxOutContractConfirm)
 	IsTxOutConfirmExisted(outChain, hash string) bool
 
-	// Gas Price
+	// Gas Price Record
 	SetGasPrice(msg *types.GasPriceMsg)
 	GetGasPriceRecord(chain string, height int64) *types.GasPriceRecord
-	SaveNetworkGasPrice(chain string, gasPrice int64)
-	GetNetworkGasPrice(chain string) int64
+
+	// Chain
+	SaveChain(chain *types.Chain)
+	GetChain(chain string) *types.Chain
+	GetAllChains() map[string]*types.Chain
 
 	// Token Price
 	SetTokenPrices(blockHeight uint64, msg *types.UpdateTokenPrice)
 	GetAllTokenPricesRecord() map[string]*types.TokenPriceRecord
 
-	// Calculated Token Price
-	SetCalculatedTokenPrice(map[string]float32)
+	// Set Tokens
+	SetTokens(map[string]*types.Token)
+	GetTokens([]string) map[string]*types.Token
+	GetAllTokens() map[string]*types.Token
 
 	// Nodes
 	SaveNode(node *types.Node)
@@ -131,18 +134,18 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes[string(prefixTxOut)] = prefix.NewStore(parent, prefixTxOut)
 	// prefixTxOutSig
 	prefixes[string(prefixTxOutSig)] = prefix.NewStore(parent, prefixTxOutSig)
-	// prefixTxOutConfirm
-	prefixes[string(prefixTxOutConfirm)] = prefix.NewStore(parent, prefixTxOutConfirm)
+	// prefixTxOutContractConfirm
+	prefixes[string(prefixTxOutContractConfirm)] = prefix.NewStore(parent, prefixTxOutContractConfirm)
 	// prefixContractName
 	prefixes[string(prefixContractName)] = prefix.NewStore(parent, prefixContractName)
 	// prefixGasPrice
 	prefixes[string(prefixGasPrice)] = prefix.NewStore(parent, prefixGasPrice)
-	// prefixNetworkGasPrice
-	prefixes[string(prefixNetworkGasPrice)] = prefix.NewStore(parent, prefixNetworkGasPrice)
+	// prefixChain
+	prefixes[string(prefixChain)] = prefix.NewStore(parent, prefixChain)
 	// prefixTokenPrices
 	prefixes[string(prefixTokenPrices)] = prefix.NewStore(parent, prefixTokenPrices)
-	// prefixCalculatedTokenPrice
-	prefixes[string(prefixCalculatedTokenPrice)] = prefix.NewStore(parent, prefixCalculatedTokenPrice)
+	// prefixToken
+	prefixes[string(prefixToken)] = prefix.NewStore(parent, prefixToken)
 	// prefixNode
 	prefixes[string(prefixNode)] = prefix.NewStore(parent, prefixNode)
 
@@ -207,17 +210,7 @@ func (db *defaultPrivateDb) GetAllKeygenResult(keygenType string, index int32) [
 
 ///// Contract
 func (db *defaultPrivateDb) SaveContract(msg *types.Contract, saveByteCode bool) {
-	contractStore := db.prefixes[string(prefixContract)]
-	var byteCodeStore cstypes.KVStore
-	byteCodeStore = nil
-	if saveByteCode {
-		byteCodeStore = db.prefixes[string(prefixContractByteCode)]
-	}
-
-	saveContract(contractStore, byteCodeStore, msg)
-
-	contractNameStore := db.prefixes[string(prefixContractName)]
-	saveContractAddressForName(contractNameStore, msg)
+	db.SaveContracts([]*types.Contract{msg}, saveByteCode)
 }
 
 func (db *defaultPrivateDb) SaveContracts(msgs []*types.Contract, saveByteCode bool) {
@@ -330,13 +323,13 @@ func (db *defaultPrivateDb) SaveTxOutSig(msg *types.TxOutSig) {
 }
 
 ///// TxOutConfirm
-func (db *defaultPrivateDb) SaveTxOutConfirm(msg *types.TxOutConfirm) {
-	store := db.prefixes[string(prefixTxOutConfirm)]
+func (db *defaultPrivateDb) SaveTxOutConfirm(msg *types.TxOutContractConfirm) {
+	store := db.prefixes[string(prefixTxOutContractConfirm)]
 	saveTxOutConfirm(store, msg)
 }
 
 func (db *defaultPrivateDb) IsTxOutConfirmExisted(chain, hash string) bool {
-	store := db.prefixes[string(prefixTxOutConfirm)]
+	store := db.prefixes[string(prefixTxOutContractConfirm)]
 	return isTxOutConfirmExisted(store, chain, hash)
 }
 
@@ -351,25 +344,22 @@ func (db *defaultPrivateDb) GetGasPriceRecord(chain string, height int64) *types
 	return getGasPriceRecord(store, chain, height)
 }
 
-func (db *defaultPrivateDb) SaveNetworkGasPrice(chain string, gasPrice int64) {
-	store := db.prefixes[string(prefixNetworkGasPrice)]
-	store.Set([]byte(chain), []byte(strconv.FormatInt(gasPrice, 10)))
+///// Network gas price
+
+func (db *defaultPrivateDb) SaveChain(chain *types.Chain) {
+	store := db.prefixes[string(prefixChain)]
+
+	saveChain(store, chain)
 }
 
-func (db *defaultPrivateDb) GetNetworkGasPrice(chain string) int64 {
-	store := db.prefixes[string(prefixNetworkGasPrice)]
-	bz := store.Get([]byte(chain))
-	if bz == nil {
-		log.Warnf("Gas price for chain %s is not found", chain)
-		return -1
-	}
+func (db *defaultPrivateDb) GetChain(chain string) *types.Chain {
+	store := db.prefixes[string(prefixChain)]
+	return getChain(store, chain)
+}
 
-	gas, err := strconv.ParseInt(string(bz), 10, 64)
-	if err != nil {
-		log.Error(err)
-		return -1
-	}
-	return gas
+func (db *defaultPrivateDb) GetAllChains() map[string]*types.Chain {
+	store := db.prefixes[string(prefixChain)]
+	return getAllChains(store)
 }
 
 ///// Token Prices
@@ -386,9 +376,19 @@ func (db *defaultPrivateDb) GetAllTokenPricesRecord() map[string]*types.TokenPri
 
 ///// Calculated token prices
 
-func (db *defaultPrivateDb) SetCalculatedTokenPrice(prices map[string]float32) {
-	store := db.prefixes[string(prefixCalculatedTokenPrice)]
-	setCalculatedTokenPrices(store, prices)
+func (db *defaultPrivateDb) SetTokens(prices map[string]*types.Token) {
+	store := db.prefixes[string(prefixToken)]
+	setTokens(store, prices)
+}
+
+func (db *defaultPrivateDb) GetTokens(tokenIds []string) map[string]*types.Token {
+	store := db.prefixes[string(prefixToken)]
+	return getTokens(store, tokenIds)
+}
+
+func (db *defaultPrivateDb) GetAllTokens() map[string]*types.Token {
+	store := db.prefixes[string(prefixToken)]
+	return getAllTokens(store)
 }
 
 ///// Nodes

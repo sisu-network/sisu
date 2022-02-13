@@ -2,12 +2,15 @@ package gen
 
 import (
 	"bytes"
+	"encoding/json"
+	"os"
 	"path/filepath"
 	"text/template"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/sisu-network/sisu/x/sisu/types"
 	tmos "github.com/tendermint/tendermint/libs/os"
 )
 
@@ -123,4 +126,30 @@ port = 5678
 	err = configTemplate.Execute(&buffer, heartConfig)
 
 	tmos.MustWriteFile(filepath.Join(dir, "dheart.toml"), buffer.Bytes(), 0644)
+}
+
+func getChains(file string) []*types.Chain {
+	chains := []*types.Chain{}
+
+	dat, err := os.ReadFile(file)
+	if err != nil {
+		panic(err)
+	}
+
+	json.Unmarshal(dat, &chains)
+
+	return chains
+}
+
+func getTokens(file string) []*types.Token {
+	tokens := []*types.Token{}
+
+	dat, err := os.ReadFile(file)
+	if err != nil {
+		panic(err)
+	}
+
+	json.Unmarshal(dat, &tokens)
+
+	return tokens
 }

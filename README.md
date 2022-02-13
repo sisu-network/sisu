@@ -68,6 +68,15 @@ Follow the instruction on dheart and deyes to run these 2 components in 2 separa
 
 ### Build and run Sisu
 
+Generate config file and genesis for local sisu app. You need to generate this while ganache instances are running.
+
+```
+./scripts/gen_localnet.sh
+```
+
+Create `.env` file
+
+
 ```
 cp .env.dev .env
 ```
@@ -76,12 +85,6 @@ Build Sisu binary file:
 
 ```
 go build -o ./sisu cmd/sisud/main.go
-```
-
-Generate config file and genesis for local sisu app:
-
-```
-./scripts/gen_localnet.sh
 ```
 
 To run the app on localhost:
@@ -94,26 +97,16 @@ You can now deploy ETH transaction on ganache1 at port 7545.
 
 # Interact with Sisu
 
-Sisu has a number of commands for you to interact with the network. At the root folder, type `./sisu` to see a list of command options. Most of them are default commands from Cosmos SDK. We are only interested in `./sisu dev` command for local dev.
-
-After the start of Sisu, wait until the sisu log has the following message similar to the following:
-
-```
-adding watcher address 0x1D156a3e1356b58733305e670D61018001997f6E
-```
-
-Please note that `0x1D156a3e1356b58733305e670D61018001997f6E` could be replaced by another address. It's the address of the signing key that Sisu network controls. We need to fund that address with some ETH so that Sisu can have balance to deploy contracts and invoke function calls.
-
 Run this command to fund 2 gateway smart contract on 2 different chains ganache1 and ganache2:
 
 ```
 ./sisu dev fund-account ganache1 7545 ganache2 8545 10
 ```
 
-This commands will fund Sisu's signing key account with 10 ethereum. The last number in the command is the amount you want to fund.
+This command does a number of things:
+- Deploy ERC20 contracts in 2 ganache blockchains.
+- Fund the Sisu's network public key with some ETH (the last argument from command line)
+- Wait for Sisu to finish deploying gateway contracts
+- Transfer ERC20 to gateway contracts (about 500 tokens)
 
-Waits for 10 seconds for the transaction to finalized and for Sisu to deploy its gateway contract.
-
-## Deploy ERC20 token and do token swapping
-
-You can now deploy ERC20 and do token swapping with the repo [smart-contract](https://github.com/sisu-network/smart-contracts).
+After this command finishes running, you can start swapping token through both chains.

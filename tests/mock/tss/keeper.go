@@ -326,7 +326,7 @@ func (mr *MockKeeperMockRecorder) SaveTxOut(ctx, msg interface{}) *gomock.Call {
 }
 
 // SaveTxOutConfirm mocks base method.
-func (m *MockKeeper) SaveTxOutConfirm(ctx types.Context, msg *types0.TxOutConfirm) {
+func (m *MockKeeper) SaveTxOutConfirm(ctx types.Context, msg *types0.TxOutContractConfirm) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SaveTxOutConfirm", ctx, msg)
 }

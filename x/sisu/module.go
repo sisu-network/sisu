@@ -3,6 +3,7 @@ package sisu
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	// this line is used by starport scaffolding # 1
 
@@ -18,7 +19,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/client/cli"
 	"github.com/sisu-network/sisu/x/sisu/client/rest"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -110,6 +113,7 @@ type AppModule struct {
 	globalData  common.GlobalData
 	publicDb    keeper.Storage
 	valsManager ValidatorManager
+	worldState  WorldState
 }
 
 func NewAppModule(cdc codec.Marshaler,
@@ -120,6 +124,7 @@ func NewAppModule(cdc codec.Marshaler,
 	processor *Processor,
 	globalData common.GlobalData,
 	valsManager ValidatorManager,
+	worldState WorldState,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),
@@ -130,6 +135,7 @@ func NewAppModule(cdc codec.Marshaler,
 		appKeys:        appKeys,
 		globalData:     globalData,
 		valsManager:    valsManager,
+		worldState:     worldState,
 	}
 }
 
@@ -160,14 +166,53 @@ func (am AppModule) RegisterServices(cfg module.Configurator) {
 // RegisterInvariants registers the capability module's invariants.
 func (am AppModule) RegisterInvariants(_ sdk.InvariantRegistry) {}
 
-// InitGenesis performs the capability module's genesis initialization It returns
-// no validator updates.
+// InitGenesis performs the capability module's genesis initialization.
 func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs json.RawMessage) []abci.ValidatorUpdate {
 	var genState types.GenesisState
 	// Initialize global index to index in genesis state
 	cdc.MustUnmarshalJSON(gs, &genState)
 
-	return InitGenesis(ctx, am.keeper, am.valsManager, genState)
+	publicDb := am.publicDb
+	valsMgr := am.valsManager
+
+	// Saves initial token configs from genesis file.
+	tokenIds := make([]string, 0)
+	m := make(map[string]*types.Token)
+	for _, token := range genState.Tokens {
+		m[token.Id] = token
+		tokenIds = append(tokenIds, token.Id)
+	}
+	publicDb.SetTokens(m)
+	log.Info("Tokens in the genesis file: ", strings.Join(tokenIds, ", "))
+
+	// Save initial chain data
+	chains := make([]string, 0)
+	for _, chain := range genState.Chains {
+		publicDb.SaveChain(chain)
+		chains = append(chains, chain.Id)
+	}
+	log.Info("Chains in the genesis file: ", strings.Join(chains, ", "))
+
+	// Create validator nodes
+	validators := make([]abci.ValidatorUpdate, len(genState.Nodes))
+	for i, node := range genState.Nodes {
+		if !node.IsValidator {
+			continue
+		}
+
+		pk, err := utils.GetCosmosPubKey(node.ConsensusKey.Type, node.ConsensusKey.Bytes)
+		if err != nil {
+			panic(err)
+		}
+
+		validators[i] = abci.Ed25519ValidatorUpdate(pk.Bytes(), 100)
+		valsMgr.AddValidator(node)
+	}
+
+	// Reload data after reading the genesis
+	am.worldState.LoadData()
+
+	return validators
 }
 
 // ExportGenesis returns the capability module's exported genesis state as raw JSON bytes.

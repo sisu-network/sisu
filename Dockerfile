@@ -39,6 +39,8 @@ WORKDIR /app
 #     && touch /app/.env && echo "SAMPLE_KEY:SAMPLE_VALUE" > /app/.env
 
 COPY .env.dev /app/.env
+COPY tokens_dev.json /app/tokens_dev.json
+COPY chains.json /app/chains.json
 COPY --from=builder /tmp/go-app/out/sisu /app/sisu
 
 RUN ./sisu localnet
