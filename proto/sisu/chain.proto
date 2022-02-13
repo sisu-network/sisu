@@ -5,5 +5,5 @@ option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 
 message Chain {
   string id = 1;
-  int64 gasPrice = 2;
+  int64 gas_price = 2;
 }

@@ -2,7 +2,6 @@ package gen
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"os"
@@ -26,7 +25,6 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
-	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type localDockerGenerator struct{}
@@ -119,8 +117,6 @@ Example:
 
 			g.generateDockerCompose(filepath.Join(outputDir, "docker-compose.yml"), ips, dockerConfig)
 
-			tokens := g.getTokens()
-
 			settings := &Setting{
 				clientCtx:      clientCtx,
 				cmd:            cmd,
@@ -138,7 +134,8 @@ Example:
 
 				ips:         ips,
 				nodeConfigs: nodeConfigs,
-				tokens:      tokens,
+				tokens:      getTokens("./tokens_dev.json"),
+				chains:      getChains("./chains.json"),
 			}
 
 			valPubKeys, err := InitNetwork(settings)
@@ -394,17 +391,4 @@ func (g *localDockerGenerator) generateHeartToml(index int, dir string, dockerCo
 	sisuUrl := fmt.Sprintf("http://sisu%d:25456", index)
 
 	writeHeartConfig(index, dir, peerString, useOnMemory, true, sisuUrl, sqlConfig)
-}
-
-func (g *localDockerGenerator) getTokens() []*types.Token {
-	tokens := []*types.Token{}
-
-	dat, err := os.ReadFile("./tokens_dev.json")
-	if err != nil {
-		panic(err)
-	}
-
-	json.Unmarshal(dat, &tokens)
-
-	return tokens
 }

@@ -28,14 +28,16 @@ type TestnetGenerator struct {
 }
 
 type TestnetConfig struct {
-	Chains []ChainConfig  `json:"chains"`
 	Tokens []*types.Token `json:"tokens"`
 	Nodes  []TestnetNode  `json:"nodes"`
+	Chains []ChainConfig  `json:"chains"`
 }
 
+// TODO: merge this field with the chain type in the proto file
 type ChainConfig struct {
-	Name string `json:"name"`
-	Rpc  string `json:"rpc"`
+	Name     string `json:"name"`
+	GasPrice int64  `json:"gas_price"`
+	Rpc      string `json:"rpc"`
 }
 
 type SqlConfig struct {
@@ -62,7 +64,7 @@ func TestnetCmd(mbm module.BasicManager, genBalIterator banktypes.GenesisBalance
 		Long: `privatenet creates configuration for a network with N validators.
 Example:
 	For multiple nodes (running with docker):
-	  ./sisu testnet --v 2 --output-dir ./output --config-string '{"chains":[{"name":"ganache1","rpc":"http://ganache-0.ganache.ganache:7545"},{"name":"ganache2","rpc":"http://ganache-1.ganache.ganache:7545"}],"tokens":[{"id":"NATIVE_GANACHE1","price":2000000000},{"id":"NATIVE_GANACHE2","price":3000000000},{"id":"SISU","price":4000000000,"addresses":{"ganache1":"0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C","ganache2":"0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"}}],"nodes":[{"sisu_ip":"sisud.sisu-0","dheart_ip":"dheart.sisu-0","deyes_ip":"deyes.sisu-0","sql":{"host":"mysql.mysql","port":3306,"username":"root","password":"password"}},{"sisu_ip":"sisud.sisu--1","dheart_ip":"dheart.sisu--1","deyes_ip":"deyes.sisu--1","sql":{"host":"mysql.mysql","port":3306,"username":"root","password":"password"}}]}'
+	  ./sisu testnet --v 2 --output-dir ./output --config-string '{"chains":[{"id":"ganache1","rpc":"http://ganache-0.ganache.ganache:7545","gas_price":5000000000},{"id":"ganache2","rpc":"http://ganache-1.ganache.ganache:7545","gas_price":10000000000}],"tokens":[{"id":"NATIVE_GANACHE1","price":2000000000},{"id":"NATIVE_GANACHE2","price":3000000000},{"id":"SISU","price":4000000000,"addresses":{"ganache1":"0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C","ganache2":"0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"}}],"nodes":[{"sisu_ip":"sisud.sisu-0","dheart_ip":"dheart.sisu-0","deyes_ip":"deyes.sisu-0","sql":{"host":"mysql.mysql","port":3306,"username":"root","password":"password"}},{"sisu_ip":"sisud.sisu--1","dheart_ip":"dheart.sisu--1","deyes_ip":"deyes.sisu--1","sql":{"host":"mysql.mysql","port":3306,"username":"root","password":"password"}}]}'
 	`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -137,6 +139,14 @@ Example:
 				nodeConfigs[i] = nodeConfig
 			}
 
+			chains := make([]*types.Chain, len(testnetConfig.Chains))
+			for _, c := range testnetConfig.Chains {
+				chains = append(chains, &types.Chain{
+					Id:       c.Name,
+					GasPrice: c.GasPrice,
+				})
+			}
+
 			settings := &Setting{
 				clientCtx:      clientCtx,
 				cmd:            cmd,
@@ -155,6 +165,7 @@ Example:
 				ips:         sisuIps,
 				nodeConfigs: nodeConfigs,
 				tokens:      testnetConfig.Tokens,
+				chains:      chains,
 			}
 
 			valPubKeys, err := InitNetwork(settings)

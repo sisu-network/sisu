@@ -3,11 +3,9 @@ package gen
 import (
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"net"
-	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -28,7 +26,6 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
-	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 var (
@@ -123,8 +120,8 @@ Example:
 				algoStr:        algo,
 				numValidators:  numValidators,
 				nodeConfigs:    []config.Config{nodeConfig},
-				tokens:         generator.getTokens(),
-				chains:         generator.getChains(),
+				tokens:         getTokens("./tokens_dev.json"),
+				chains:         getChains("./chains.json"),
 			}
 
 			_, err = InitNetwork(settings)
@@ -178,32 +175,6 @@ func (g *localnetGenerator) calculateIP(ip string, i int) (string, error) {
 	}
 
 	return ipv4.String(), nil
-}
-
-func (g *localnetGenerator) getTokens() []*types.Token {
-	tokens := []*types.Token{}
-
-	dat, err := os.ReadFile("./tokens_dev.json")
-	if err != nil {
-		panic(err)
-	}
-
-	json.Unmarshal(dat, &tokens)
-
-	return tokens
-}
-
-func (g *localnetGenerator) getChains() []*types.Chain {
-	chains := []*types.Chain{}
-
-	dat, err := os.ReadFile("./chains.json")
-	if err != nil {
-		panic(err)
-	}
-
-	json.Unmarshal(dat, &chains)
-
-	return chains
 }
 
 func (g *localnetGenerator) deployErc20(url string, tokenName string, tokenSymbol string) string {
