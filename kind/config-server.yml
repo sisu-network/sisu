@@ -49,7 +49,7 @@ spec:
           - '-c'
           - |
               sisud testnet --v ${SISU_COUNT} --output-dir /opt/sisu-config --config-string "$(
-                echo '{"chains":[{"name":"ganache1","rpc":"http://ganache-0.ganache.ganache:7545"},{"name":"ganache2","rpc":"http://ganache-1.ganache.ganache:7545"}],'
+                echo '"chains":[{"id":"ganache1","rpc":"http://ganache-0.ganache.ganache:7545","gasPrice":5000000000},{"id":"ganache2","rpc":"http://ganache-1.ganache.ganache:7545","gasPrice":10000000000}],'
                 echo '"tokens":[{"id":"NATIVE_GANACHE1","price":2000000000},{"id":"NATIVE_GANACHE2","price":3000000000},{"id":"SISU","price":4000000000,"addresses":{"ganache1":"0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C","ganache2":"0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"}}],'
                 echo '"nodes":['
                 for i in $(seq 0 $((SISU_COUNT - 1))); do
