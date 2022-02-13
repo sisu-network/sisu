@@ -95,7 +95,7 @@ func TestSaveTokenPrices(t *testing.T) {
 		TokenPrices: []*types.TokenPrice{
 			{
 				Id:    token,
-				Price: 5.0,
+				Price: 5_000_000_000,
 			},
 		},
 	}
@@ -106,7 +106,7 @@ func TestSaveTokenPrices(t *testing.T) {
 		TokenPrices: []*types.TokenPrice{
 			{
 				Id:    token,
-				Price: 10.0,
+				Price: 10_000_000_000,
 			},
 		},
 	}
@@ -128,9 +128,9 @@ func TestSaveTokenPrices(t *testing.T) {
 	require.Equal(t, []string{signer1, signer2}, allSigners)
 
 	record := allPrices[signer1]
-	require.Equal(t, 0, record.Prices[token].Price == 5.0)
+	require.Equal(t, int64(5_000_000_000), record.Prices[token].Price)
 	record = allPrices[signer2]
-	require.Equal(t, 0, record.Prices[token].Price == 10.0)
+	require.Equal(t, int64(10_000_000_000), record.Prices[token].Price)
 }
 
 ///// Node

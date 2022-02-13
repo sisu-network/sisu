@@ -111,8 +111,12 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(
 
 	// 1. TODO: Subtract the commission fee.
 
+	if token.Price == 0 {
+		return nil, fmt.Errorf("token %s has price 0", token.Id)
+	}
+
 	// 2. Subtract the network gas fee on destination chain.
-	gas := big.NewInt(8_000_000)
+	gas := big.NewInt(8_000_000) // TODO: Show the correct gas cost here.
 	gasPriceInToken, err := p.getGasCostInToken(gas, gasPrice, destChain, token)
 	if err != nil {
 		return nil, err
