@@ -110,3 +110,15 @@ This command does a number of things:
 - Transfer ERC20 to gateway contracts (about 500 tokens)
 
 After this command finishes running, you can start swapping token through both chains.
+
+```
+./sisu dev swap --token SISU --amount 10 --recipient 0x2d532C099CA476780c7703610D807948ae47856A
+```
+
+Wait for few seconds for Sisu to pick up and execute the swap. Afterward, you can query to verify that the recipient does have some ERC20 token in the destination chain (ganache2).
+
+```
+./sisu dev query --token SISU --src ganache2 --account 0x2d532C099CA476780c7703610D807948ae47856A
+```
+
+Note: the token the recipient receives will not exactly the amount user swaps because there is some fee taken away from the swap amount.
