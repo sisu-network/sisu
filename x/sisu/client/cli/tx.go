@@ -6,6 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
 )
@@ -15,7 +16,6 @@ func GetTxCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:                        types.ModuleName,
 		Short:                      fmt.Sprintf("%s transactions subcommands", types.ModuleName),
-		DisableFlagParsing:         true,
 		SuggestionsMinimumDistance: 2,
 		RunE:                       client.ValidateCmd,
 	}
@@ -30,19 +30,23 @@ func GetTxCmd() *cobra.Command {
 
 func GetCmdPauseGw() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   types.ModuleName,
-		Short: "Pause all gateways",
-		Args:  cobra.ExactArgs(0),
+		Use:   "pause [chain]",
+		Short: "Pause gateway for a single chain",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewMsgPauseGw(clientCtx.GetFromAddress())
+			chain := args[0]
+
+			msg := types.NewMsgPauseGw(clientCtx.GetFromAddress(), chain)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
+
+			log.Debugf("Pausing gateway for chain: %s ", chain)
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},

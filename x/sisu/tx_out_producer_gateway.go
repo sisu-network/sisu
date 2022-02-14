@@ -35,9 +35,10 @@ func (p *DefaultTxOutputProducer) processPauseGw(chain string) (*types.TxRespons
 		return nil, err
 	}
 
-	gasPrice := p.privateDb.GetNetworkGasPrice(chain)
-	if gasPrice < 0 {
-		gasPrice = p.getDefaultGasPrice(chain).Int64()
+	gasPrice, err := p.worldState.GetGasPrice(chain)
+	if err != nil {
+		log.Error("error when get gas price: ", err)
+		return nil, err
 	}
 
 	log.Debug("Network gas price got: ", gasPrice)
@@ -46,7 +47,7 @@ func (p *DefaultTxOutputProducer) processPauseGw(chain string) (*types.TxRespons
 		gwAddr,
 		big.NewInt(0),
 		p.getGasLimit(chain),
-		big.NewInt(gasPrice),
+		gasPrice,
 		input,
 	)
 

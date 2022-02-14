@@ -1,16 +1,18 @@
 package types
 
 import (
+	"strings"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"strings"
 )
 
 var _ sdk.Msg = &MsgPauseGw{}
 
-func NewMsgPauseGw(signer sdk.AccAddress) *MsgPauseGw {
+func NewMsgPauseGw(signer sdk.AccAddress, chain string) *MsgPauseGw {
 	return &MsgPauseGw{
 		Signer: signer.String(),
+		Chain:  chain,
 	}
 }
 
