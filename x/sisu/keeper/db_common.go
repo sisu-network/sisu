@@ -82,7 +82,7 @@ func getGasPriceKey(chain string, height int64) []byte {
 }
 
 func getPauseGwKey(chain string) []byte {
-	// chain, gw address
+	// chain
 	return []byte(chain)
 }
 
