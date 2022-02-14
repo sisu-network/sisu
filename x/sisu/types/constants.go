@@ -9,6 +9,7 @@ const (
 	MsgTypeTxInWithSigner              = "TxInWithSigner"
 	MsgTypeGasPriceWithSigner          = "GasPriceWithSigner"
 	MsgTypeUpdateTokenPrice            = "UpdateTokenPrice"
+	MsgTypePauseGwWithSigner           = "PauseGwWithSigner"
 
 	MsgTypeTxOut         = "TxOut"
 	MsgTypeKeysignResult = "KeysignResult"

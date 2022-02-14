@@ -14,6 +14,7 @@ const (
 
 	MethodTransferIn  = "TransferIn"
 	MethodTransferOut = "TransferOut"
+	MethodPauseGw     = "PauseGateway"
 )
 
 var (

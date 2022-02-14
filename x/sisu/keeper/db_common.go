@@ -29,6 +29,7 @@ var (
 	prefixTokenPrices            = []byte{0x0F}
 	prefixCalculatedTokenPrice   = []byte{0x10}
 	prefixNode                   = []byte{0x11}
+	prefixPauseGw                = []byte{0x12}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -79,6 +80,11 @@ func getContractAddressKey(chain string, address string) []byte {
 func getGasPriceKey(chain string, height int64) []byte {
 	// chain, height
 	return []byte(fmt.Sprintf("%s__%d", chain, height))
+}
+
+func getPauseGwKey(chain, gwAddress string) []byte {
+	// chain, gw address
+	return []byte(fmt.Sprintf("%s__%s", chain, gwAddress))
 }
 
 ///// TxREcord
@@ -566,6 +572,17 @@ func getGasPriceRecord(store cstypes.KVStore, chain string, height int64) *types
 	return record
 }
 
+func getPauseGwRecord(store cstypes.KVStore, key []byte) *types.PauseGwRecord {
+	bz := store.Get(key)
+	record := &types.PauseGwRecord{}
+	if err := record.Unmarshal(bz); err != nil {
+		log.Error("error when unmarshal pause gw record: ", err)
+		return nil
+	}
+
+	return record
+}
+
 ///// TxOutConfirm
 func saveTxOutConfirm(store cstypes.KVStore, msg *types.TxOutConfirm) {
 	key := getTxOutConfirmKey(msg.OutChain, msg.OutHash)
@@ -674,6 +691,33 @@ func loadValidators(store cstypes.KVStore) []*types.Node {
 	}
 
 	return vals
+}
+
+func savePauseGwMsg(store cstypes.KVStore, msg *types.MsgPauseGw) {
+	var record *types.PauseGwRecord
+
+	key := getPauseGwKey(msg.Chain, msg.Address)
+	currentRecord := getPauseGwRecord(store, key)
+
+	// if this is the first msg, init record
+	if currentRecord == nil {
+		record = &types.PauseGwRecord{
+			Messages: []*types.MsgPauseGw{msg},
+		}
+	} else {
+		record = &types.PauseGwRecord{
+			Messages: append(currentRecord.Messages, msg),
+		}
+	}
+
+	savedRecord, err := record.Marshal()
+	if err != nil {
+		log.Error("error when marshal save pause gw record: ", err)
+		return
+	}
+
+	store.Set(key, savedRecord)
+	log.Debug("saved pause gw msg successfully")
 }
 
 ///// Debug functions

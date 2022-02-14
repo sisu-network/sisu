@@ -81,6 +81,10 @@ type Storage interface {
 	// Calculated Token Price
 	SetCalculatedTokenPrice(map[string]float64)
 
+	// Smart contract
+	SavePauseGwMsg(msg *types.MsgPauseGw)
+	GetPauseGwRecord(chain, gwAddress string) *types.PauseGwRecord
+
 	// Nodes
 	SaveNode(node *types.Node)
 	LoadValidators() []*types.Node
@@ -145,6 +149,8 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes[string(prefixCalculatedTokenPrice)] = prefix.NewStore(parent, prefixCalculatedTokenPrice)
 	// prefixNode
 	prefixes[string(prefixNode)] = prefix.NewStore(parent, prefixNode)
+	// prefixPauseGw
+	prefixes[string(prefixPauseGw)] = prefix.NewStore(parent, prefixPauseGw)
 
 	return prefixes
 }
@@ -401,6 +407,19 @@ func (db *defaultPrivateDb) SaveNode(node *types.Node) {
 func (db *defaultPrivateDb) LoadValidators() []*types.Node {
 	store := db.prefixes[string(prefixNode)]
 	return loadValidators(store)
+}
+
+///// Smart contract
+
+func (db *defaultPrivateDb) SavePauseGwMsg(msg *types.MsgPauseGw) {
+	store := db.prefixes[string(prefixPauseGw)]
+	savePauseGwMsg(store, msg)
+}
+
+func (db *defaultPrivateDb) GetPauseGwRecord(chain, gwAddress string) *types.PauseGwRecord {
+	store := db.prefixes[string(prefixPauseGw)]
+	key := getPauseGwKey(chain, gwAddress)
+	return getPauseGwRecord(store, key)
 }
 
 ///// Debug

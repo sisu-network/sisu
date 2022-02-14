@@ -45,6 +45,8 @@ func NewHandler(k keeper.DefaultKeeper, txSubmit common.TxSubmit, processor *Pro
 			return handleGasPriceMsg(ctx, msg, processor)
 		case *types.UpdateTokenPrice:
 			return handleUpdateTokenPrice(ctx, msg, processor)
+		case *types.MsgPauseGw:
+			return handleMsgPauseGw(ctx, msg, processor)
 
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)
@@ -114,6 +116,13 @@ func handleGasPriceMsg(ctx sdk.Context, msg *types.GasPriceMsg, processor *Proce
 
 func handleUpdateTokenPrice(ctx sdk.Context, msg *types.UpdateTokenPrice, processor *Processor) (*sdk.Result, error) {
 	data, err := processor.deliverUpdateTokenPrice(ctx, msg)
+	return &sdk.Result{
+		Data: data,
+	}, err
+}
+
+func handleMsgPauseGw(ctx sdk.Context, msg *types.MsgPauseGw, processor *Processor) (*sdk.Result, error) {
+	data, err := processor.deliverMsgPauseGw(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err
