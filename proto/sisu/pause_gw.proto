@@ -7,7 +7,6 @@ option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 message MsgPauseGw {
   string signer = 1;
   string chain = 2;
-  string address = 3;
 }
 
 // list of all pausing gateway messages

@@ -83,7 +83,7 @@ type Storage interface {
 
 	// Smart contract
 	SavePauseGwMsg(msg *types.MsgPauseGw)
-	GetPauseGwRecord(chain, gwAddress string) *types.PauseGwRecord
+	GetPauseGwRecord(chain string) *types.PauseGwRecord
 
 	// Nodes
 	SaveNode(node *types.Node)
@@ -416,9 +416,9 @@ func (db *defaultPrivateDb) SavePauseGwMsg(msg *types.MsgPauseGw) {
 	savePauseGwMsg(store, msg)
 }
 
-func (db *defaultPrivateDb) GetPauseGwRecord(chain, gwAddress string) *types.PauseGwRecord {
+func (db *defaultPrivateDb) GetPauseGwRecord(chain string) *types.PauseGwRecord {
 	store := db.prefixes[string(prefixPauseGw)]
-	key := getPauseGwKey(chain, gwAddress)
+	key := getPauseGwKey(chain)
 	return getPauseGwRecord(store, key)
 }
 

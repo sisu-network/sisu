@@ -82,9 +82,9 @@ func getGasPriceKey(chain string, height int64) []byte {
 	return []byte(fmt.Sprintf("%s__%d", chain, height))
 }
 
-func getPauseGwKey(chain, gwAddress string) []byte {
+func getPauseGwKey(chain string) []byte {
 	// chain, gw address
-	return []byte(fmt.Sprintf("%s__%s", chain, gwAddress))
+	return []byte(chain)
 }
 
 ///// TxREcord
@@ -696,7 +696,7 @@ func loadValidators(store cstypes.KVStore) []*types.Node {
 func savePauseGwMsg(store cstypes.KVStore, msg *types.MsgPauseGw) {
 	var record *types.PauseGwRecord
 
-	key := getPauseGwKey(msg.Chain, msg.Address)
+	key := getPauseGwKey(msg.Chain)
 	currentRecord := getPauseGwRecord(store, key)
 
 	// if this is the first msg, init record

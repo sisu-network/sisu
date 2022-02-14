@@ -22,6 +22,7 @@ import (
 type TxOutputProducer interface {
 	// AddKeyAddress(ctx sdk.Context, chain, addr string) error
 	GetTxOuts(ctx sdk.Context, height int64, tx *types.TxIn) []*types.TxOutWithSigner
+	GetPauseGwTxOut(chain string) *types.TxOutWithSigner
 }
 
 type DefaultTxOutputProducer struct {
@@ -60,6 +61,27 @@ func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *t
 	}
 
 	return outMsgs
+}
+
+func (p *DefaultTxOutputProducer) GetPauseGwTxOut(chain string) *types.TxOutWithSigner {
+	outEthTx, err := p.processPauseGw(chain)
+	if err != nil || outEthTx == nil {
+		return nil
+	}
+
+	txOut := types.NewMsgTxOutWithSigner(
+		p.appKeys.GetSignerAddress().String(),
+		types.TxOutType_NORMAL,
+		0,
+		"",
+		"",
+		chain,
+		outEthTx.EthTx.Hash().String(),
+		outEthTx.RawBytes,
+		"",
+	)
+
+	return txOut
 }
 
 // Get ETH out from an observed tx. Only do this if this is a validator node.
