@@ -27,6 +27,8 @@ import (
 	"github.com/sisu-network/sisu/utils"
 )
 
+type localDockerGenerator struct{}
+
 type DockerNodeConfig struct {
 	Ganaches []struct {
 		Ip       string
@@ -73,8 +75,10 @@ Example:
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
 
+			g := &localDockerGenerator{}
+
 			// Clean up
-			cleanData(outputDir)
+			g.cleanData(outputDir)
 
 			// Make dir folder for mysql docker
 			err = os.MkdirAll(filepath.Join(outputDir, "db"), 0755)
@@ -95,7 +99,7 @@ Example:
 
 			mysqlIp := "192.168.10.4"
 			chainIds := []*big.Int{libchain.GetChainIntFromId("eth-sisu-local"), libchain.GetChainIntFromId("ganache1")}
-			dockerConfig := getDockerConfig([]string{"192.168.10.2", "192.168.10.3"}, chainIds, "192.168.10.4", ips)
+			dockerConfig := g.getDockerConfig([]string{"192.168.10.2", "192.168.10.3"}, chainIds, "192.168.10.4", ips)
 
 			nodeConfigs := make([]config.Config, numValidators)
 			for i := range ips {
@@ -105,13 +109,13 @@ Example:
 					panic(err)
 				}
 
-				nodeConfig := getNodeSettings(chainID, keyringBackend, i, mysqlIp, ips)
+				nodeConfig := g.getNodeSettings(chainID, keyringBackend, i, mysqlIp, ips)
 				nodeConfigs[i] = nodeConfig
 
-				generateEyesToml(i, dir)
+				g.generateEyesToml(i, dir)
 			}
 
-			generateDockerCompose(filepath.Join(outputDir, "docker-compose.yml"), ips, dockerConfig)
+			g.generateDockerCompose(filepath.Join(outputDir, "docker-compose.yml"), ips, dockerConfig)
 
 			settings := &Setting{
 				clientCtx:      clientCtx,
@@ -130,6 +134,8 @@ Example:
 
 				ips:         ips,
 				nodeConfigs: nodeConfigs,
+				tokens:      getTokens("./tokens_dev.json"),
+				chains:      getChains("./chains.json"),
 			}
 
 			valPubKeys, err := InitNetwork(settings)
@@ -144,7 +150,7 @@ Example:
 
 			for i := range ips {
 				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
-				generateHeartToml(i, dir, dockerConfig, peerIds)
+				g.generateHeartToml(i, dir, dockerConfig, peerIds)
 			}
 
 			return err
@@ -162,7 +168,7 @@ Example:
 	return cmd
 }
 
-func cleanData(outputDir string) {
+func (g *localDockerGenerator) cleanData(outputDir string) {
 	if !utils.IsFileExisted(outputDir) {
 		log.Info("Creating output dir...")
 		// Create the folder
@@ -186,7 +192,7 @@ func cleanData(outputDir string) {
 	}
 }
 
-func getDockerConfig(ganacheIps []string, chainIds []*big.Int, mysqlIp string, ips []string) DockerNodeConfig {
+func (g *localDockerGenerator) getDockerConfig(ganacheIps []string, chainIds []*big.Int, mysqlIp string, ips []string) DockerNodeConfig {
 	docker := DockerNodeConfig{
 		MysqlIp: mysqlIp,
 	}
@@ -216,7 +222,7 @@ func getDockerConfig(ganacheIps []string, chainIds []*big.Int, mysqlIp string, i
 	return docker
 }
 
-func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, ips []string) config.Config {
+func (g *localDockerGenerator) getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, ips []string) config.Config {
 	majority := (len(ips) + 1) * 2 / 3
 
 	return config.Config{
@@ -234,17 +240,17 @@ func getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, 
 			DeyesUrl:          fmt.Sprintf("http://deyes%d:31001", index),
 			SupportedChains: map[string]config.TssChainConfig{
 				"ganache1": {
-					Symbol: "ganache1",
+					Id: "ganache1",
 				},
 				"ganache2": {
-					Symbol: "ganache2",
+					Id: "ganache2",
 				},
 			},
 		},
 	}
 }
 
-func generateDockerCompose(outputPath string, ips []string, dockerConfig DockerNodeConfig) {
+func (g *localDockerGenerator) generateDockerCompose(outputPath string, ips []string, dockerConfig DockerNodeConfig) {
 	const dockerComposeTemplate = `version: "3"
 services:
   ganache1:
@@ -330,7 +336,7 @@ services:
 	tmos.MustWriteFile(outputPath, buffer.Bytes(), 0644)
 }
 
-func generateEyesToml(index int, dir string) {
+func (g *localDockerGenerator) generateEyesToml(index int, dir string) {
 	deyesConfig := DeyesConfiguration{
 		Chains: []ChainConfig{
 			{
@@ -357,7 +363,7 @@ func generateEyesToml(index int, dir string) {
 	writeDeyesConfig(deyesConfig, dir)
 }
 
-func generateHeartToml(index int, dir string, dockerConfig DockerNodeConfig, peerIds []string) {
+func (g *localDockerGenerator) generateHeartToml(index int, dir string, dockerConfig DockerNodeConfig, peerIds []string) {
 	peers := make([]string, 0, len(peerIds)-1)
 	for i := range peerIds {
 		if i == index {

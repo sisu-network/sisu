@@ -16,9 +16,9 @@ func Float32ToByte(f float32) []byte {
 	return buf.Bytes()
 }
 
-func Float64ToByte(f float64) []byte {
+func ToByte(i interface{}) []byte {
 	var buf bytes.Buffer
-	err := binary.Write(&buf, binary.BigEndian, f)
+	err := binary.Write(&buf, binary.BigEndian, i)
 	if err != nil {
 		log.Error("Failed to write binary float, err =", err)
 	}

@@ -9,6 +9,8 @@ import (
 )
 
 func compileContract(name string) {
+	name = strings.ToLower(name)
+
 	// solc --abi name.sol --overwrite -o name
 	_, err := exec.Command(
 		"solc",

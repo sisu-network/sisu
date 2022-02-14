@@ -87,13 +87,15 @@ func Test_saveKeygenResult(t *testing.T) {
 func TestSaveTokenPrices(t *testing.T) {
 	store := memstore.NewStore()
 
+	token := "ETH"
+
 	signer1 := "signer1"
 	msg1 := &types.UpdateTokenPrice{
 		Signer: signer1,
 		TokenPrices: []*types.TokenPrice{
 			{
-				Id:    "ETH",
-				Price: 5.0,
+				Id:    token,
+				Price: 5_000_000_000,
 			},
 		},
 	}
@@ -103,8 +105,8 @@ func TestSaveTokenPrices(t *testing.T) {
 		Signer: signer2,
 		TokenPrices: []*types.TokenPrice{
 			{
-				Id:    "ETH",
-				Price: 10.0,
+				Id:    token,
+				Price: 10_000_000_000,
 			},
 		},
 	}
@@ -124,6 +126,11 @@ func TestSaveTokenPrices(t *testing.T) {
 
 	sort.Strings(allSigners)
 	require.Equal(t, []string{signer1, signer2}, allSigners)
+
+	record := allPrices[signer1]
+	require.Equal(t, int64(5_000_000_000), record.Prices[token].Price)
+	record = allPrices[signer2]
+	require.Equal(t, int64(10_000_000_000), record.Prices[token].Price)
 }
 
 ///// Node

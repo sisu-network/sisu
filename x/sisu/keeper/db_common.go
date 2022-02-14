@@ -6,7 +6,6 @@ import (
 
 	cstypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
@@ -22,12 +21,12 @@ var (
 	prefixTxIn                   = []byte{0x08}
 	prefixTxOut                  = []byte{0x09}
 	prefixTxOutSig               = []byte{0x0A}
-	prefixTxOutConfirm           = []byte{0x0B}
+	prefixTxOutContractConfirm   = []byte{0x0B}
 	prefixContractName           = []byte{0x0C}
 	prefixGasPrice               = []byte{0x0D}
-	prefixNetworkGasPrice        = []byte{0x0E}
-	prefixTokenPrices            = []byte{0x0F}
-	prefixCalculatedTokenPrice   = []byte{0x10}
+	prefixChain                  = []byte{0x0E}
+	prefixToken                  = []byte{0x0F}
+	prefixTokenPrices            = []byte{0x10}
 	prefixNode                   = []byte{0x11}
 	prefixPauseGw                = []byte{0x12}
 )
@@ -363,7 +362,7 @@ func getContract(contractStore cstypes.KVStore, byteCodeStore cstypes.KVStore, c
 	bz := contractStore.Get(key)
 
 	if bz == nil {
-		log.Error("getContract: serialized contract is nil")
+		log.Errorf("getContract: serialized contract is nil, chain = %s, contract hash = %s", chain, contractHash)
 		return nil
 	}
 
@@ -524,7 +523,6 @@ func getTxOutSig(store cstypes.KVStore, chain string, hashWithSig string) *types
 
 ///// Gas Price
 func saveGasPrice(store cstypes.KVStore, msg *types.GasPriceMsg) {
-	log.Debug("Saving gas price ...")
 	var (
 		record      *types.GasPriceRecord
 		savedRecord []byte
@@ -557,7 +555,6 @@ func saveGasPrice(store cstypes.KVStore, msg *types.GasPriceMsg) {
 	}
 
 	store.Set(key, savedRecord)
-	log.Debug("Saved gas price successfully ...")
 }
 
 func getGasPriceRecord(store cstypes.KVStore, chain string, height int64) *types.GasPriceRecord {
@@ -572,6 +569,49 @@ func getGasPriceRecord(store cstypes.KVStore, chain string, height int64) *types
 	return record
 }
 
+///// Chain
+func saveChain(store cstypes.KVStore, chain *types.Chain) {
+	bz, err := chain.Marshal()
+	if err != nil {
+		log.Error("saveChain: failed to save chain, chaain = ", chain.Id)
+		return
+	}
+
+	store.Set([]byte(chain.Id), bz)
+}
+
+func getChain(store cstypes.KVStore, chainId string) *types.Chain {
+	chain := &types.Chain{}
+	bz := store.Get([]byte(chainId))
+	if bz == nil {
+		return nil
+	}
+
+	if err := chain.Unmarshal(bz); err != nil {
+		log.Error("getChain: failed to unmarshal bytes for chain ", chainId)
+		return nil
+	}
+
+	return chain
+}
+
+func getAllChains(store cstypes.KVStore) map[string]*types.Chain {
+	m := make(map[string]*types.Chain)
+
+	for iter := store.Iterator(nil, nil); iter.Valid(); iter.Next() {
+		chain := &types.Chain{}
+
+		if err := chain.Unmarshal(iter.Value()); err != nil {
+			log.Error("getAllChains: failed to unmarshal bytes for chain ", string(iter.Key()))
+			return nil
+		}
+
+		m[string(iter.Key())] = chain
+	}
+
+	return m
+}
+
 func getPauseGwRecord(store cstypes.KVStore, key []byte) *types.PauseGwRecord {
 	bz := store.Get(key)
 	record := &types.PauseGwRecord{}
@@ -584,7 +624,7 @@ func getPauseGwRecord(store cstypes.KVStore, key []byte) *types.PauseGwRecord {
 }
 
 ///// TxOutConfirm
-func saveTxOutConfirm(store cstypes.KVStore, msg *types.TxOutConfirm) {
+func saveTxOutConfirm(store cstypes.KVStore, msg *types.TxOutContractConfirm) {
 	key := getTxOutConfirmKey(msg.OutChain, msg.OutHash)
 	bz, err := msg.Marshal()
 	if err != nil {
@@ -658,10 +698,55 @@ func getAllTokenPrices(store cstypes.KVStore) map[string]*types.TokenPriceRecord
 	return result
 }
 
-func setCalculatedTokenPrices(store cstypes.KVStore, tokenPrices map[string]float64) {
-	for token, price := range tokenPrices {
-		store.Set([]byte(token), utils.Float64ToByte(price))
+///// Tokens
+
+func setTokens(store cstypes.KVStore, tokens map[string]*types.Token) {
+	for id, token := range tokens {
+		bz, err := token.Marshal()
+		if err != nil {
+			log.Error("cannot marshal token ", id)
+			continue
+		}
+
+		store.Set([]byte(id), bz)
 	}
+}
+
+func getTokens(store cstypes.KVStore, tokenIds []string) map[string]*types.Token {
+	tokens := make(map[string]*types.Token)
+	for _, id := range tokenIds {
+		bz := store.Get([]byte(id))
+
+		token := &types.Token{}
+		err := token.Unmarshal(bz)
+		if err != nil {
+			log.Error("getTokens: cannot unmarhsla token ", id)
+			continue
+		}
+
+		tokens[id] = token
+	}
+
+	return tokens
+}
+
+func getAllTokens(store cstypes.KVStore) map[string]*types.Token {
+	tokens := make(map[string]*types.Token)
+
+	iter := store.Iterator(nil, nil)
+
+	for ; iter.Valid(); iter.Next() {
+		token := &types.Token{}
+		err := token.Unmarshal(iter.Value())
+		if err != nil {
+			log.Error("cannot unmarshal token ", string(iter.Key()))
+			continue
+		}
+
+		tokens[string(iter.Key())] = token
+	}
+
+	return tokens
 }
 
 ///// Node

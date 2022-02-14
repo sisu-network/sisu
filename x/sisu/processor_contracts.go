@@ -9,9 +9,9 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-// createPendingContracts creates and broadcast pending contracts. All nodes need to agree what
+// createContracts creates and broadcast pending contracts. All nodes need to agree what
 // contracts to deploy on what chains.
-func (p *Processor) createPendingContracts(ctx sdk.Context, msg *types.Keygen) {
+func (p *Processor) createContracts(ctx sdk.Context, msg *types.Keygen) {
 	log.Info("Create and broadcast contracts...")
 
 	// We want the final contracts array to be deterministic. We need to sort the list of chains

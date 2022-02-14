@@ -257,8 +257,11 @@ func New(
 	publicDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "data"))
 	privateDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "private"))
 
+	worldState := tss.NewWorldState(tssConfig, publicDb, deyesClient)
+	worldState.LoadData()
+
 	tssProcessor := tss.NewProcessor(app.tssKeeper, publicDb, privateDb, tssConfig, nodeKey.PrivKey,
-		app.appKeys, app.txDecoder, app.txSubmitter, app.globalData, dheartClient, deyesClient)
+		app.appKeys, app.txDecoder, app.txSubmitter, app.globalData, dheartClient, deyesClient, worldState)
 	tssProcessor.Init()
 	app.apiHandler.SetAppLogicListener(tssProcessor)
 
@@ -278,7 +281,8 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
 
-		tss.NewAppModule(appCodec, app.tssKeeper, publicDb, app.appKeys, app.txSubmitter, tssProcessor, app.globalData, valsMgr),
+		tss.NewAppModule(appCodec, app.tssKeeper, publicDb, app.appKeys, app.txSubmitter,
+			tssProcessor, app.globalData, valsMgr, worldState),
 	}
 
 	app.tssProcessor = tssProcessor

@@ -23,7 +23,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil), &ContractsWithSigner{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TxInWithSigner{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TxOutWithSigner{})
-	registry.RegisterImplementations((*sdk.Msg)(nil), &TxOutConfirmWithSigner{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &TxOutContractConfirmWithSigner{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &GasPriceMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &UpdateTokenPrice{})
 

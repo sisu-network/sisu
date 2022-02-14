@@ -33,17 +33,15 @@ type DefaultTxOutputProducer struct {
 	worldState WorldState
 	appKeys    common.AppKeys
 	publicDb   keeper.Storage
-	privateDb  keeper.Storage
 	tssConfig  config.TssConfig
 }
 
-func NewTxOutputProducer(worldState WorldState, appKeys common.AppKeys, publicDb keeper.Storage, privateDb keeper.Storage, tssConfig config.TssConfig) TxOutputProducer {
+func NewTxOutputProducer(worldState WorldState, appKeys common.AppKeys, publicDb keeper.Storage, tssConfig config.TssConfig) TxOutputProducer {
 	return &DefaultTxOutputProducer{
 		worldState: worldState,
 		appKeys:    appKeys,
 		tssConfig:  tssConfig,
 		publicDb:   publicDb,
-		privateDb:  privateDb,
 	}
 }
 
@@ -139,9 +137,11 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 		}
 	}
 
+	log.Verbose("len(ethTx.Data()) ", len(ethTx.Data()))
+
 	// 2. Check if this is a tx sent to one of our contracts.
 	if ethTx.To() != nil &&
-		p.publicDb.IsContractExistedAtAddress(tx.Chain, ethTx.To().String()) && // TODO: Use keeper instead
+		p.publicDb.IsContractExistedAtAddress(tx.Chain, ethTx.To().String()) &&
 		len(ethTx.Data()) >= 4 {
 
 		// TODO: compare method name to trigger corresponding contract method
@@ -162,7 +162,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 			outMsgs = append(outMsgs, outMsg)
 		} else {
-			log.Error("cannot get response for erc20 tx, err =", err)
+			log.Error("cannot get response for erc20 tx, err = ", err)
 		}
 	}
 
@@ -224,7 +224,13 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *types.Contract, nonce 
 
 		byteCode := ecommon.FromHex(erc20.Bin)
 		input = append(byteCode, input...)
-		gasPrice := p.privateDb.GetNetworkGasPrice(contract.Chain)
+		chain := p.publicDb.GetChain(contract.Chain)
+		if chain == nil {
+			log.Error("getContractTx: chain is nil with id ", contract.Chain)
+			return nil
+		}
+
+		gasPrice := chain.GasPrice
 		if gasPrice < 0 {
 			gasPrice = p.getDefaultGasPrice(contract.Chain).Int64()
 		}

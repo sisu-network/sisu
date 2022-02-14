@@ -1,0 +1,13 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message Token {
+  string id = 1;
+  // This is the price in USD. The smallest unit is 10^-9. This token with value 1 USD will have
+  // price 10^9.
+  int64 price = 2;
+  int32 decimals = 3;
+  map<string, string> addresses = 4;
+}

@@ -35,12 +35,12 @@ func NewHandler(k keeper.DefaultKeeper, txSubmit common.TxSubmit, processor *Pro
 			return handleTxIn(ctx, msg, processor)
 		case *types.TxOutWithSigner:
 			return handleTxOut(ctx, msg, processor)
+		case *types.TxOutContractConfirmWithSigner:
+			return handleTxOutContractConfirm(ctx, msg, processor)
 		case *types.KeysignResult:
 			return handleKeysignResult(ctx, msg, processor)
 		case *types.ContractsWithSigner:
 			return handleContractWithSigner(ctx, msg, processor)
-		case *types.TxOutConfirmWithSigner:
-			return handleTxOutConfirm(ctx, msg, processor)
 		case *types.GasPriceMsg:
 			return handleGasPriceMsg(ctx, msg, processor)
 		case *types.UpdateTokenPrice:
@@ -63,7 +63,6 @@ func handleKeygenProposal(ctx sdk.Context, msg *types.KeygenWithSigner, processo
 }
 
 func handleKeygenResult(ctx sdk.Context, msg *types.KeygenResultWithSigner, processor *Processor) (*sdk.Result, error) {
-	log.Verbose("Handling TSS Keygen result")
 	data, err := processor.deliverKeygenResult(ctx, msg)
 	return &sdk.Result{
 		Data: data,
@@ -72,7 +71,6 @@ func handleKeygenResult(ctx sdk.Context, msg *types.KeygenResultWithSigner, proc
 
 func handleTxIn(ctx sdk.Context, msg *types.TxInWithSigner, processor *Processor) (*sdk.Result, error) {
 	// Update the count for all txs.
-	log.Verbose("Handling TxIn for chain", msg.Data.Chain)
 	data, err := processor.deliverTxIn(ctx, msg)
 	return &sdk.Result{
 		Data: data,
@@ -86,8 +84,8 @@ func handleTxOut(ctx sdk.Context, msg *types.TxOutWithSigner, processor *Process
 	}, err
 }
 
-func handleTxOutConfirm(ctx sdk.Context, msg *types.TxOutConfirmWithSigner, processor *Processor) (*sdk.Result, error) {
-	data, err := processor.deliverTxOutConfirm(ctx, msg)
+func handleTxOutContractConfirm(ctx sdk.Context, msg *types.TxOutContractConfirmWithSigner, processor *Processor) (*sdk.Result, error) {
+	data, err := processor.deliverTxOutContractConfirm(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err
