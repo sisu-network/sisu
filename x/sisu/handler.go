@@ -6,13 +6,20 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/common"
-	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
+// Handler is an interface that all handlers in this app should implement.
+type Handler interface {
+	// Deliver and execute a transaction message.
+	DeliverMsg(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error)
+}
+
+type SisuHandler struct {
+}
+
 // NewHandler ...
-func NewHandler(k keeper.DefaultKeeper, txSubmit common.TxSubmit, processor *Processor, valsManager ValidatorManager) sdk.Handler {
+func NewHandler(processor *Processor, valsManager ValidatorManager) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		signers := msg.GetSigners()
 		if len(signers) != 1 {
@@ -29,6 +36,7 @@ func NewHandler(k keeper.DefaultKeeper, txSubmit common.TxSubmit, processor *Pro
 		switch msg := msg.(type) {
 		case *types.KeygenWithSigner:
 			return handleKeygenProposal(ctx, msg, processor)
+
 		case *types.KeygenResultWithSigner:
 			return handleKeygenResult(ctx, msg, processor)
 		case *types.TxInWithSigner:

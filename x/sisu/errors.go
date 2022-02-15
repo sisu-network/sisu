@@ -2,9 +2,14 @@ package sisu
 
 import "fmt"
 
+/////
+
 var (
 	ErrInsufficientFund = fmt.Errorf("insufficient fund")
+	ErrInvalidMessage   = fmt.Errorf("invalid message")
 )
+
+///// Chain not found
 
 type ErrChainNotFound struct {
 	chain string
