@@ -6,12 +6,12 @@ import (
 )
 
 func (p *Processor) deliverMsgPauseGw(msg *types.MsgPauseGw) ([]byte, error) {
-	currentPauseGwRecord := p.publicDb.GetPauseGwRecord(msg.Chain)
-
-	// check duplicate, if this validator processed this msg then ignore
-	if currentPauseGwRecord.HasSigned(msg.Signer) {
-		return nil, nil
-	}
+	//currentPauseGwRecord := p.publicDb.GetPauseGwRecord(msg.Chain)
+	//
+	//// check duplicate, if this validator processed this msg then ignore
+	//if currentPauseGwRecord.HasSigned(msg.Signer) {
+	//	return nil, nil
+	//}
 
 	// Check reach consensus
 	savedRecord := p.publicDb.GetPauseGwRecord(msg.Chain)
