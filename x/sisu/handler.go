@@ -14,6 +14,9 @@ import (
 // NewHandler ...
 func NewHandler(k keeper.DefaultKeeper, txSubmit common.TxSubmit, processor *Processor, valsManager ValidatorManager) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
+		t := msg.Type()
+		log.Debug("type of message: ", t)
+
 		signers := msg.GetSigners()
 		if len(signers) != 1 {
 			return nil, fmt.Errorf("incorrect signers length: %d", len(signers))
@@ -78,6 +81,7 @@ func handleTxIn(ctx sdk.Context, msg *types.TxInWithSigner, processor *Processor
 }
 
 func handleTxOut(ctx sdk.Context, msg *types.TxOutWithSigner, processor *Processor) (*sdk.Result, error) {
+	log.Debug("received tx out msg, delivering...")
 	data, err := processor.deliverTxOut(ctx, msg)
 	return &sdk.Result{
 		Data: data,

@@ -13,8 +13,6 @@ func (p *Processor) deliverMsgPauseGw(msg *types.MsgPauseGw) ([]byte, error) {
 		return nil, nil
 	}
 
-	p.publicDb.SavePauseGwMsg(msg)
-
 	// Check reach consensus
 	savedRecord := p.publicDb.GetPauseGwRecord(msg.Chain)
 	totalValidator := len(p.globalData.GetValidatorSet())
@@ -23,12 +21,17 @@ func (p *Processor) deliverMsgPauseGw(msg *types.MsgPauseGw) ([]byte, error) {
 	}
 
 	txOut := p.txOutputProducer.GetPauseGwTxOut(msg.Chain)
-	go func() {
-		if err := p.txSubmit.SubmitMessageAsync(txOut); err != nil {
-			log.Error("error when submit async tx out: ", err)
-		}
+	if txOut == nil {
+		log.Warn("txOut for pause gw is nil")
+		return nil, nil
+	}
 
-		log.Debug("Submitted tx out of pausing gateway successfully")
-	}()
+	if err := p.txSubmit.SubmitMessageAsync(txOut); err != nil {
+		log.Error("error when submit async tx out: ", err)
+	}
+
+	p.publicDb.SavePauseGwMsg(msg)
+
+	log.Debug("Submitted tx out of pausing gateway successfully")
 	return nil, nil
 }
