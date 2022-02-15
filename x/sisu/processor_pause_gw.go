@@ -26,12 +26,11 @@ func (p *Processor) deliverMsgPauseGw(msg *types.MsgPauseGw) ([]byte, error) {
 		return nil, nil
 	}
 
+	log.Debug("Come here ----------- ")
 	if err := p.txSubmit.SubmitMessageAsync(txOut); err != nil {
 		log.Error("error when submit async tx out: ", err)
 	}
 
 	p.publicDb.SavePauseGwMsg(msg)
-
-	log.Debug("Submitted tx out of pausing gateway successfully")
 	return nil, nil
 }
