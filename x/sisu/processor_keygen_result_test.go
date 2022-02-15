@@ -1,91 +1,78 @@
 package sisu
 
-import (
-	"testing"
+// // Test happy case for keygen proposal.
+// func TestProcessor_deliverKeyGen_normal(t *testing.T) {
+// 	t.Parallel()
+// 	ctrl := gomock.NewController(t)
+// 	t.Cleanup(func() {
+// 		ctrl.Finish()
+// 	})
 
-	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/golang/mock/gomock"
-	libchain "github.com/sisu-network/lib/chain"
-	mockcommon "github.com/sisu-network/sisu/tests/mock/common"
-	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
-	mocktssclients "github.com/sisu-network/sisu/tests/mock/x/sisu/tssclients"
-	"github.com/sisu-network/sisu/x/sisu/types"
-)
+// 	ctx := sdk.Context{}
 
-// Test happy case for keygen proposal.
-func TestProcessor_deliverKeyGen_normal(t *testing.T) {
-	t.Parallel()
-	ctrl := gomock.NewController(t)
-	t.Cleanup(func() {
-		ctrl.Finish()
-	})
+// 	mockPublicDb := mocktss.NewMockStorage(ctrl)
+// 	mockCheckTxRecord(mockPublicDb)
 
-	ctx := sdk.Context{}
+// 	mockPublicDb.EXPECT().SaveKeygen(gomock.Any()).Times(1)
 
-	mockPublicDb := mocktss.NewMockStorage(ctrl)
-	mockCheckTxRecord(mockPublicDb)
+// 	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
+// 	mockGlobalData.EXPECT().IsCatchingUp().Return(false).Times(1)
 
-	mockPublicDb.EXPECT().SaveKeygen(gomock.Any()).Times(1)
+// 	mockDheartClient := mocktssclients.NewMockDheartClient(ctrl)
+// 	mockDheartClient.EXPECT().KeyGen(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
-	mockGlobalData.EXPECT().IsCatchingUp().Return(false).Times(1)
+// 	mockPartyManager := mocktss.NewMockPartyManager(ctrl)
+// 	mockPartyManager.EXPECT().GetActivePartyPubkeys().Return([]ctypes.PubKey{}).Times(1)
 
-	mockDheartClient := mocktssclients.NewMockDheartClient(ctrl)
-	mockDheartClient.EXPECT().KeyGen(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+// 	wrapper := &types.KeygenWithSigner{
+// 		Signer: "signer",
+// 		Data: &types.Keygen{
+// 			KeyType: libchain.KEY_TYPE_ECDSA,
+// 			Index:   0,
+// 		},
+// 	}
 
-	mockPartyManager := mocktss.NewMockPartyManager(ctrl)
-	mockPartyManager.EXPECT().GetActivePartyPubkeys().Return([]ctypes.PubKey{}).Times(1)
+// 	p := &Processor{
+// 		config:       mockTssConfig(),
+// 		publicDb:     mockPublicDb,
+// 		globalData:   mockGlobalData,
+// 		partyManager: mockPartyManager,
+// 		dheartClient: mockDheartClient,
+// 	}
 
-	wrapper := &types.KeygenWithSigner{
-		Signer: "signer",
-		Data: &types.Keygen{
-			KeyType: libchain.KEY_TYPE_ECDSA,
-			Index:   0,
-		},
-	}
+// 	p.deliverKeygen(ctx, wrapper)
+// }
 
-	p := &Processor{
-		config:       mockTssConfig(),
-		publicDb:     mockPublicDb,
-		globalData:   mockGlobalData,
-		partyManager: mockPartyManager,
-		dheartClient: mockDheartClient,
-	}
+// // Test Deliver KeygenProposal while the node is catching up.
+// func TestProcessor_deliverKeyGen_CatchingUp(t *testing.T) {
+// 	t.Parallel()
+// 	ctrl := gomock.NewController(t)
+// 	t.Cleanup(func() {
+// 		ctrl.Finish()
+// 	})
 
-	p.deliverKeygen(ctx, wrapper)
-}
+// 	ctx := sdk.Context{}
 
-// Test Deliver KeygenProposal while the node is catching up.
-func TestProcessor_deliverKeyGen_CatchingUp(t *testing.T) {
-	t.Parallel()
-	ctrl := gomock.NewController(t)
-	t.Cleanup(func() {
-		ctrl.Finish()
-	})
+// 	mockPublicDb := mocktss.NewMockStorage(ctrl)
+// 	mockCheckTxRecord(mockPublicDb)
+// 	mockPublicDb.EXPECT().SaveKeygen(gomock.Any()).Times(1)
 
-	ctx := sdk.Context{}
+// 	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
+// 	mockGlobalData.EXPECT().IsCatchingUp().Return(true).Times(1) // block is catching up.
 
-	mockPublicDb := mocktss.NewMockStorage(ctrl)
-	mockCheckTxRecord(mockPublicDb)
-	mockPublicDb.EXPECT().SaveKeygen(gomock.Any()).Times(1)
+// 	wrapper := &types.KeygenWithSigner{
+// 		Signer: "signer",
+// 		Data: &types.Keygen{
+// 			KeyType: libchain.KEY_TYPE_ECDSA,
+// 			Index:   0,
+// 		},
+// 	}
 
-	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
-	mockGlobalData.EXPECT().IsCatchingUp().Return(true).Times(1) // block is catching up.
+// 	p := &Processor{
+// 		config:     mockTssConfig(),
+// 		publicDb:   mockPublicDb,
+// 		globalData: mockGlobalData,
+// 	}
 
-	wrapper := &types.KeygenWithSigner{
-		Signer: "signer",
-		Data: &types.Keygen{
-			KeyType: libchain.KEY_TYPE_ECDSA,
-			Index:   0,
-		},
-	}
-
-	p := &Processor{
-		config:     mockTssConfig(),
-		publicDb:   mockPublicDb,
-		globalData: mockGlobalData,
-	}
-
-	p.deliverKeygen(ctx, wrapper)
-}
+// 	p.deliverKeygen(ctx, wrapper)
+// }

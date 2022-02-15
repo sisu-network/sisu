@@ -9,17 +9,17 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-// Handler is an interface that all handlers in this app should implement.
-type Handler interface {
-	// Deliver and execute a transaction message.
-	DeliverMsg(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error)
-}
-
 type SisuHandler struct {
+	mc ManagerContainer
 }
 
-// NewHandler ...
-func NewHandler(processor *Processor, valsManager ValidatorManager) sdk.Handler {
+func NewSisuHandler(mc ManagerContainer) *SisuHandler {
+	return &SisuHandler{
+		mc: mc,
+	}
+}
+
+func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorManager) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		signers := msg.GetSigners()
 		if len(signers) != 1 {
@@ -35,7 +35,7 @@ func NewHandler(processor *Processor, valsManager ValidatorManager) sdk.Handler 
 
 		switch msg := msg.(type) {
 		case *types.KeygenWithSigner:
-			return handleKeygenProposal(ctx, msg, processor)
+			return NewHandlerKeygen(sh.mc).DeliverMsg(ctx, msg)
 
 		case *types.KeygenResultWithSigner:
 			return handleKeygenResult(ctx, msg, processor)
@@ -59,13 +59,6 @@ func NewHandler(processor *Processor, valsManager ValidatorManager) sdk.Handler 
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
 		}
 	}
-}
-
-func handleKeygenProposal(ctx sdk.Context, msg *types.KeygenWithSigner, processor *Processor) (*sdk.Result, error) {
-	data, err := processor.deliverKeygen(ctx, msg)
-	return &sdk.Result{
-		Data: data,
-	}, err
 }
 
 func handleKeygenResult(ctx sdk.Context, msg *types.KeygenResultWithSigner, processor *Processor) (*sdk.Result, error) {

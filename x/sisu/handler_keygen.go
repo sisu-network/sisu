@@ -17,12 +17,7 @@ func NewHandlerKeygen(mc ManagerContainer) *HandlerKeygen {
 	}
 }
 
-func (h *HandlerKeygen) DeliverMsg(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
-	signerMsg, ok := msg.(*types.KeygenWithSigner)
-	if !ok {
-		return nil, ErrInvalidMessage
-	}
-
+func (h *HandlerKeygen) DeliverMsg(ctx sdk.Context, signerMsg *types.KeygenWithSigner) (*sdk.Result, error) {
 	log.Info("Delivering keygen, signer = ", signerMsg.Signer)
 	pmm := h.mc.PostedMessageManager()
 	publicDb := h.mc.PublicDb()

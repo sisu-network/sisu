@@ -106,6 +106,7 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 
+	sisuHandler *SisuHandler
 	keeper      keeper.DefaultKeeper
 	processor   *Processor
 	appKeys     *common.DefaultAppKeys
@@ -117,6 +118,7 @@ type AppModule struct {
 }
 
 func NewAppModule(cdc codec.Marshaler,
+	sisuHandler *SisuHandler,
 	keeper keeper.DefaultKeeper,
 	publicDb keeper.Storage,
 	appKeys *common.DefaultAppKeys,
@@ -128,6 +130,7 @@ func NewAppModule(cdc codec.Marshaler,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),
+		sisuHandler:    sisuHandler,
 		txSubmit:       txSubmit,
 		processor:      processor,
 		keeper:         keeper,
@@ -146,7 +149,8 @@ func (am AppModule) Name() string {
 
 // Route returns the capability module's message routing key.
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, NewHandler(am.processor, am.valsManager))
+	// return sdk.NewRoute(types.RouterKey, NewHandler(am.processor, am.valsManager))
+	return sdk.NewRoute(types.RouterKey, am.sisuHandler.NewHandler(am.processor, am.valsManager))
 }
 
 // QuerierRoute returns the capability module's query routing key.

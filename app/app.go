@@ -268,6 +268,9 @@ func New(
 	valsMgr := tss.NewValidatorManager(publicDb)
 	valsMgr.Init()
 
+	mc := tss.NewManagerContainer(publicDb, tssConfig.MajorityThreshold, tss.NewPartyManager(app.globalData), dheartClient, app.globalData)
+	sisuHandler := tss.NewSisuHandler(mc)
+
 	modules := []module.AppModule{
 		genutil.NewAppModule(
 			app.AccountKeeper, app.StakingKeeper, app.BaseApp.DeliverTx,
@@ -281,7 +284,7 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
 
-		tss.NewAppModule(appCodec, app.tssKeeper, publicDb, app.appKeys, app.txSubmitter,
+		tss.NewAppModule(appCodec, sisuHandler, app.tssKeeper, publicDb, app.appKeys, app.txSubmitter,
 			tssProcessor, app.globalData, valsMgr, worldState),
 	}
 
