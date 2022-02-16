@@ -270,7 +270,7 @@ func New(
 
 	mc := tss.NewManagerContainer(publicDb, tssConfig.MajorityThreshold,
 		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
-		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, publicDb, cfg.Tss))
+		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, publicDb, cfg.Tss), worldState)
 	sisuHandler := tss.NewSisuHandler(mc)
 
 	modules := []module.AppModule{
