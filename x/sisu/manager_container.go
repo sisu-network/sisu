@@ -22,6 +22,7 @@ type ManagerContainer interface {
 }
 
 type DefaultManagerContainer struct {
+	pmm               PostedMessageManager
 	publicDb          keeper.Storage
 	majorityThreshold int
 	partyManager      PartyManager
@@ -35,11 +36,12 @@ type DefaultManagerContainer struct {
 	worldState        WorldState
 }
 
-func NewManagerContainer(publicDb keeper.Storage, majorityThreshold int, partyManager PartyManager,
+func NewManagerContainer(pmm PostedMessageManager, publicDb keeper.Storage, majorityThreshold int, partyManager PartyManager,
 	dheartClient tssclients.DheartClient, deyesClient tssclients.DeyesClient,
 	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.TssConfig,
 	appKeys common.AppKeys, txOutProducer TxOutputProducer, worldState WorldState) ManagerContainer {
 	return &DefaultManagerContainer{
+		pmm:               pmm,
 		publicDb:          publicDb,
 		majorityThreshold: majorityThreshold,
 		partyManager:      partyManager,
@@ -55,7 +57,7 @@ func NewManagerContainer(publicDb keeper.Storage, majorityThreshold int, partyMa
 }
 
 func (mc *DefaultManagerContainer) PostedMessageManager() PostedMessageManager {
-	return NewPostedMessageManager(mc.publicDb, mc.majorityThreshold)
+	return mc.pmm
 }
 
 func (mc *DefaultManagerContainer) PublicDb() keeper.Storage {

@@ -14,8 +14,6 @@ import (
 )
 
 type HandlerKeygenResult struct {
-	mc ManagerContainer
-
 	publicDb    keeper.Storage
 	pmm         PostedMessageManager
 	globalData  common.GlobalData
@@ -27,7 +25,6 @@ type HandlerKeygenResult struct {
 
 func NewHandlerKeygenResult(mc ManagerContainer) *HandlerKeygenResult {
 	return &HandlerKeygenResult{
-		mc:         mc,
 		publicDb:   mc.PublicDb(),
 		pmm:        mc.PostedMessageManager(),
 		globalData: mc.GlobalData(),

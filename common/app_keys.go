@@ -16,7 +16,7 @@ import (
 	"github.com/sisu-network/sisu/utils"
 )
 
-//go:generate mockgen -source=app_keys.go -destination=../tests/mock/app_keys.go -package=mock
+//go:generate mockgen -source=common/app_keys.go -destination=./tests/mock/common/app_keys.go -package=mock
 
 // Make sure struct implement interface at compile-time
 var _ AppKeys = (*DefaultAppKeys)(nil)
