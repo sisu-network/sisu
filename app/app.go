@@ -269,7 +269,7 @@ func New(
 	valsMgr.Init()
 
 	mc := tss.NewManagerContainer(publicDb, tssConfig.MajorityThreshold,
-		tss.NewPartyManager(app.globalData), dheartClient, app.globalData, app.txSubmitter, cfg.Tss,
+		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
 		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, publicDb, cfg.Tss))
 	sisuHandler := tss.NewSisuHandler(mc)
 

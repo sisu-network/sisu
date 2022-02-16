@@ -12,6 +12,7 @@ type ManagerContainer interface {
 	PublicDb() keeper.Storage
 	PartyManager() PartyManager
 	DheartClient() tssclients.DheartClient
+	DeyesClient() tssclients.DeyesClient
 	GlobalData() common.GlobalData
 	TxSubmit() common.TxSubmit
 	Config() config.TssConfig
@@ -24,6 +25,7 @@ type DefaultManagerContainer struct {
 	majorityThreshold int
 	partyManager      PartyManager
 	dheartClient      tssclients.DheartClient
+	deyesClient       tssclients.DeyesClient
 	globalData        common.GlobalData
 	txSubmit          common.TxSubmit
 	config            config.TssConfig
@@ -32,13 +34,15 @@ type DefaultManagerContainer struct {
 }
 
 func NewManagerContainer(publicDb keeper.Storage, majorityThreshold int, partyManager PartyManager,
-	dheartClient tssclients.DheartClient, globalData common.GlobalData, txSubmit common.TxSubmit,
-	cfg config.TssConfig, appKeys common.AppKeys, txOutProducer TxOutputProducer) ManagerContainer {
+	dheartClient tssclients.DheartClient, deyesClient tssclients.DeyesClient,
+	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.TssConfig,
+	appKeys common.AppKeys, txOutProducer TxOutputProducer) ManagerContainer {
 	return &DefaultManagerContainer{
 		publicDb:          publicDb,
 		majorityThreshold: majorityThreshold,
 		partyManager:      partyManager,
 		dheartClient:      dheartClient,
+		deyesClient:       deyesClient,
 		globalData:        globalData,
 		txSubmit:          txSubmit,
 		config:            cfg,
@@ -81,4 +85,8 @@ func (mc *DefaultManagerContainer) AppKeys() common.AppKeys {
 
 func (mc *DefaultManagerContainer) TxOutProducer() TxOutputProducer {
 	return mc.txOutProducer
+}
+
+func (mc *DefaultManagerContainer) DeyesClient() tssclients.DeyesClient {
+	return mc.deyesClient
 }

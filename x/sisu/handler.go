@@ -51,7 +51,8 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 			return NewHandlerTxOut(mc).DeliverMsg(ctx, msg)
 
 		case *types.TxOutContractConfirmWithSigner:
-			return handleTxOutContractConfirm(ctx, msg, processor)
+			return NewHandlerTxOutContractConfirmation(mc).DeliverMsg(ctx, msg)
+
 		case *types.KeysignResult:
 			return NewHandlerKeysignResult(mc).DeliverMsg(ctx, msg)
 
@@ -65,13 +66,6 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
 		}
 	}
-}
-
-func handleTxOutContractConfirm(ctx sdk.Context, msg *types.TxOutContractConfirmWithSigner, processor *Processor) (*sdk.Result, error) {
-	data, err := processor.deliverTxOutContractConfirm(ctx, msg)
-	return &sdk.Result{
-		Data: data,
-	}, err
 }
 
 func handleGasPriceMsg(ctx sdk.Context, msg *types.GasPriceMsg, processor *Processor) (*sdk.Result, error) {
