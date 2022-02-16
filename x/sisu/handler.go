@@ -51,7 +51,7 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 		case *types.TxOutContractConfirmWithSigner:
 			return handleTxOutContractConfirm(ctx, msg, processor)
 		case *types.KeysignResult:
-			return handleKeysignResult(ctx, msg, processor)
+			return NewHandlerKeysignResult(mc).DeliverMsg(ctx, msg)
 
 		case *types.GasPriceMsg:
 			return handleGasPriceMsg(ctx, msg, processor)
@@ -82,13 +82,6 @@ func handleTxOut(ctx sdk.Context, msg *types.TxOutWithSigner, processor *Process
 
 func handleTxOutContractConfirm(ctx sdk.Context, msg *types.TxOutContractConfirmWithSigner, processor *Processor) (*sdk.Result, error) {
 	data, err := processor.deliverTxOutContractConfirm(ctx, msg)
-	return &sdk.Result{
-		Data: data,
-	}, err
-}
-
-func handleKeysignResult(ctx sdk.Context, msg *types.KeysignResult, processor *Processor) (*sdk.Result, error) {
-	data, err := processor.deliverKeysignResult(ctx, msg)
 	return &sdk.Result{
 		Data: data,
 	}, err

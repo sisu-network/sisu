@@ -8,7 +8,10 @@ import (
 	"github.com/tendermint/tendermint/mempool"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	etypes "github.com/sisu-network/deyes/types"
 	dhtypes "github.com/sisu-network/dheart/types"
+	"github.com/sisu-network/lib/chain"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
@@ -262,4 +265,106 @@ func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
 
 func (p *Processor) addWatchAddress(chain string, address string) {
 	p.deyesClient.AddWatchAddresses(chain, []string{address})
+}
+
+// OnTxDeploymentResult is a callback after there is a deployment result from deyes.
+func (p *Processor) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
+	log.Info("The transaction has been sent to blockchain (but not included in a block yet). chain = ",
+		result.Chain, ", address = ", result.DeployedAddr)
+}
+
+// This function is called after dheart sends Sisu keysign result.
+func (p *Processor) OnKeysignResult(result *dhtypes.KeysignResult) {
+	if result.Outcome == dhtypes.OutcometNotSelected {
+		// Do nothing here if this node is not selected.
+		return
+	}
+
+	// Post the keysign result to cosmos chain.
+	request := result.Request
+
+	for i, keysignMsg := range request.KeysignMessages {
+		msg := types.NewKeysignResult(
+			p.appKeys.GetSignerAddress().String(),
+			keysignMsg.OutChain,
+			keysignMsg.OutHash,
+			result.Outcome == dhtypes.OutcomeSuccess,
+			result.Signatures[i],
+		)
+		p.txSubmit.SubmitMessageAsync(msg)
+
+		// Sends it to deyes for deployment.
+		if result.Outcome == dhtypes.OutcomeSuccess {
+			// Find the tx in txout table
+			txOut := p.publicDb.GetTxOut(keysignMsg.OutChain, keysignMsg.OutHash)
+			if txOut == nil {
+				log.Error("Cannot find tx out with hash", keysignMsg.OutHash)
+			}
+
+			tx := &ethtypes.Transaction{}
+			if err := tx.UnmarshalBinary(txOut.OutBytes); err != nil {
+				log.Error("cannot unmarshal tx, err =", err)
+				return
+			}
+
+			// Create full tx with signature.
+			chainId := libchain.GetChainIntFromId(keysignMsg.OutChain)
+			signedTx, err := tx.WithSignature(ethtypes.NewEIP2930Signer(chainId), result.Signatures[i])
+			if err != nil {
+				log.Error("cannot set signatuer for tx, err =", err)
+				return
+			}
+
+			bz, err := signedTx.MarshalBinary()
+			if err != nil {
+				log.Error("cannot marshal tx")
+				return
+			}
+
+			// // TODO: Broadcast the keysign result that includes this TxOutSig.
+			// // Save this to TxOutSig
+			p.privateDb.SaveTxOutSig(&types.TxOutSig{
+				Chain:       keysignMsg.OutChain,
+				HashWithSig: signedTx.Hash().String(),
+				HashNoSig:   keysignMsg.OutHash,
+			})
+
+			log.Info("signedTx hash = ", signedTx.Hash().String())
+
+			// If this is a contract deployment transaction, update the contract table with the hash of the
+			// deployment tx bytes.
+			isContractDeployment := chain.IsETHBasedChain(keysignMsg.OutChain) && txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT
+			err = p.deploySignedTx(bz, keysignMsg.OutChain, result.Request.KeysignMessages[i].OutHash, isContractDeployment)
+			if err != nil {
+				log.Error("deployment error: ", err)
+				return
+			}
+
+			// TODO: Check if we have any pending confirm tx that is waiting for this tx.
+		} else {
+			// TODO: handle failure case here.
+		}
+	}
+}
+
+// deploySignedTx creates a deployment request and sends it to deyes.
+func (p *Processor) deploySignedTx(bz []byte, outChain string, outHash string, isContractDeployment bool) error {
+	log.Debug("Sending final tx to the deyes for deployment for chain ", outChain)
+
+	pubkey := p.publicDb.GetKeygenPubkey(libchain.GetKeyTypeForChain(outChain))
+	if pubkey == nil {
+		return fmt.Errorf("Cannot get pubkey for chain %s", outChain)
+	}
+
+	request := &etypes.DispatchedTxRequest{
+		Chain:                   outChain,
+		TxHash:                  outHash,
+		Tx:                      bz,
+		PubKey:                  pubkey,
+		IsEthContractDeployment: isContractDeployment,
+	}
+
+	go p.deyesClient.Dispatch(request)
+
+	return nil
 }
