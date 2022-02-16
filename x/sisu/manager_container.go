@@ -16,6 +16,7 @@ type ManagerContainer interface {
 	TxSubmit() common.TxSubmit
 	Config() config.TssConfig
 	AppKeys() common.AppKeys
+	TxOutProducer() TxOutputProducer
 }
 
 type DefaultManagerContainer struct {
@@ -27,11 +28,12 @@ type DefaultManagerContainer struct {
 	txSubmit          common.TxSubmit
 	config            config.TssConfig
 	appKeys           common.AppKeys
+	txOutProducer     TxOutputProducer
 }
 
 func NewManagerContainer(publicDb keeper.Storage, majorityThreshold int, partyManager PartyManager,
 	dheartClient tssclients.DheartClient, globalData common.GlobalData, txSubmit common.TxSubmit,
-	cfg config.TssConfig, appKeys common.AppKeys) ManagerContainer {
+	cfg config.TssConfig, appKeys common.AppKeys, txOutProducer TxOutputProducer) ManagerContainer {
 	return &DefaultManagerContainer{
 		publicDb:          publicDb,
 		majorityThreshold: majorityThreshold,
@@ -41,6 +43,7 @@ func NewManagerContainer(publicDb keeper.Storage, majorityThreshold int, partyMa
 		txSubmit:          txSubmit,
 		config:            cfg,
 		appKeys:           appKeys,
+		txOutProducer:     txOutProducer,
 	}
 }
 
@@ -74,4 +77,8 @@ func (mc *DefaultManagerContainer) Config() config.TssConfig {
 
 func (mc *DefaultManagerContainer) AppKeys() common.AppKeys {
 	return mc.appKeys
+}
+
+func (mc *DefaultManagerContainer) TxOutProducer() TxOutputProducer {
+	return mc.txOutProducer
 }

@@ -1,74 +1,59 @@
 package sisu
 
-import (
-	"testing"
+// func TestProcessor_OnTxIns(t *testing.T) {
+// 	t.Parallel()
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+// 	t.Run("empty_tx", func(t *testing.T) {
+// 		t.Parallel()
 
-	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
-	"github.com/golang/mock/gomock"
-	eyesTypes "github.com/sisu-network/deyes/types"
-	libchain "github.com/sisu-network/lib/chain"
-	"github.com/sisu-network/sisu/tests/mock"
-	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
-	"github.com/sisu-network/sisu/utils"
-	"github.com/stretchr/testify/require"
-)
+// 		processor := &Processor{}
+// 		require.NoError(t, processor.OnTxIns(&eyesTypes.Txs{}))
+// 	})
 
-func TestProcessor_OnTxIns(t *testing.T) {
-	t.Parallel()
+// 	t.Run("success_to_our_key", func(t *testing.T) {
+// 		t.Parallel()
 
-	t.Run("empty_tx", func(t *testing.T) {
-		t.Parallel()
+// 		ctrl := gomock.NewController(t)
+// 		t.Cleanup(func() {
+// 			ctrl.Finish()
+// 		})
 
-		processor := &Processor{}
-		require.NoError(t, processor.OnTxIns(&eyesTypes.Txs{}))
-	})
+// 		mockTxSubmit := mock.NewMockTxSubmit(ctrl)
+// 		mockTxSubmit.EXPECT().SubmitMessageAsync(gomock.Any()).Return(nil).Times(1)
 
-	t.Run("success_to_our_key", func(t *testing.T) {
-		t.Parallel()
+// 		observedChain := "eth"
+// 		toAddress := utils.RandomHeximalString(64)
+// 		fromAddres := utils.RandomHeximalString(64)
 
-		ctrl := gomock.NewController(t)
-		t.Cleanup(func() {
-			ctrl.Finish()
-		})
+// 		mockPublicDb := mocktss.NewMockStorage(ctrl)
+// 		mockPublicDb.EXPECT().IsKeygenAddress(libchain.KEY_TYPE_ECDSA, fromAddres).Return(false).Times(1)
 
-		mockTxSubmit := mock.NewMockTxSubmit(ctrl)
-		mockTxSubmit.EXPECT().SubmitMessageAsync(gomock.Any()).Return(nil).Times(1)
+// 		priv := ed25519.GenPrivKey()
+// 		addr := sdk.AccAddress(priv.PubKey().Address())
+// 		appKeysMock := mock.NewMockAppKeys(ctrl)
+// 		appKeysMock.EXPECT().GetSignerAddress().Return(addr).MinTimes(1)
 
-		observedChain := "eth"
-		toAddress := utils.RandomHeximalString(64)
-		fromAddres := utils.RandomHeximalString(64)
+// 		txs := &eyesTypes.Txs{
+// 			Chain: observedChain,
+// 			Block: int64(utils.RandomNaturalNumber(1000)),
+// 			Arr: []*eyesTypes.Tx{{
+// 				Hash:       utils.RandomHeximalString(64),
+// 				Serialized: []byte{},
+// 				To:         toAddress,
+// 				From:       fromAddres,
+// 			}},
+// 		}
 
-		mockPublicDb := mocktss.NewMockStorage(ctrl)
-		mockPublicDb.EXPECT().IsKeygenAddress(libchain.KEY_TYPE_ECDSA, fromAddres).Return(false).Times(1)
+// 		// Init processor with mocks
+// 		processor := &Processor{
+// 			publicDb: mockPublicDb,
+// 			appKeys:  appKeysMock,
+// 			txSubmit: mockTxSubmit,
+// 		}
 
-		priv := ed25519.GenPrivKey()
-		addr := sdk.AccAddress(priv.PubKey().Address())
-		appKeysMock := mock.NewMockAppKeys(ctrl)
-		appKeysMock.EXPECT().GetSignerAddress().Return(addr).MinTimes(1)
+// 		err := processor.OnTxIns(txs)
+// 		// <-done
 
-		txs := &eyesTypes.Txs{
-			Chain: observedChain,
-			Block: int64(utils.RandomNaturalNumber(1000)),
-			Arr: []*eyesTypes.Tx{{
-				Hash:       utils.RandomHeximalString(64),
-				Serialized: []byte{},
-				To:         toAddress,
-				From:       fromAddres,
-			}},
-		}
-
-		// Init processor with mocks
-		processor := &Processor{
-			publicDb: mockPublicDb,
-			appKeys:  appKeysMock,
-			txSubmit: mockTxSubmit,
-		}
-
-		err := processor.OnTxIns(txs)
-		// <-done
-
-		require.NoError(t, err)
-	})
-}
+// 		require.NoError(t, err)
+// 	})
+// }

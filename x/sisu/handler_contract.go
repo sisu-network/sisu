@@ -15,6 +15,7 @@ type HandlerContract struct {
 func NewHandlerContract(mc ManagerContainer) *HandlerContract {
 	return &HandlerContract{
 		publicDb: mc.PublicDb(),
+		pmm:      mc.PostedMessageManager(),
 	}
 }
 
