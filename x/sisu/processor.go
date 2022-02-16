@@ -460,3 +460,8 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 
 	return nil
 }
+
+func (p *Processor) OnUpdateGasPriceRequest(request *etypes.GasPriceRequest) {
+	gasPriceMsg := types.NewGasPriceMsg(p.appKeys.GetSignerAddress().String(), request.Chain, request.Height, request.GasPrice)
+	p.txSubmit.SubmitMessageAsync(gasPriceMsg)
+}

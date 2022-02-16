@@ -57,7 +57,8 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 			return NewHandlerKeysignResult(mc).DeliverMsg(ctx, msg)
 
 		case *types.GasPriceMsg:
-			return handleGasPriceMsg(ctx, msg, processor)
+			return NewHandlerGasPrice(mc).DeliverMsg(ctx, msg)
+
 		case *types.UpdateTokenPrice:
 			return handleUpdateTokenPrice(ctx, msg, processor)
 
@@ -66,13 +67,6 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
 		}
 	}
-}
-
-func handleGasPriceMsg(ctx sdk.Context, msg *types.GasPriceMsg, processor *Processor) (*sdk.Result, error) {
-	data, err := processor.deliverGasPriceMsg(ctx, msg)
-	return &sdk.Result{
-		Data: data,
-	}, err
 }
 
 func handleUpdateTokenPrice(ctx sdk.Context, msg *types.UpdateTokenPrice, processor *Processor) (*sdk.Result, error) {
