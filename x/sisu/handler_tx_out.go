@@ -4,20 +4,39 @@ import (
 	"fmt"
 	"strconv"
 
-	hTypes "github.com/sisu-network/dheart/types"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/sisu-network/sisu/x/sisu/types"
-
 	etypes "github.com/ethereum/go-ethereum/core/types"
+	hTypes "github.com/sisu-network/dheart/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/keeper"
+	"github.com/sisu-network/sisu/x/sisu/tssclients"
+	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-func (p *Processor) deliverTxOut(ctx sdk.Context, signerMsg *types.TxOutWithSigner) ([]byte, error) {
-	if process, hash := p.shouldProcessMsg(ctx, signerMsg); process {
-		p.doTxOut(ctx, signerMsg)
-		p.publicDb.ProcessTxRecord(hash)
+type HandlerTxOut struct {
+	pmm          PostedMessageManager
+	publicDb     keeper.Storage
+	globalData   common.GlobalData
+	partyManager PartyManager
+	dheartClient tssclients.DheartClient
+}
+
+func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
+	return &HandlerTxOut{
+		publicDb:     mc.PublicDb(),
+		pmm:          mc.PostedMessageManager(),
+		globalData:   mc.GlobalData(),
+		partyManager: mc.PartyManager(),
+		dheartClient: mc.DheartClient(),
+	}
+}
+
+func (h *HandlerTxOut) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutWithSigner) (*sdk.Result, error) {
+	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
+		h.doTxOut(ctx, signerMsg)
+		h.publicDb.ProcessTxRecord(hash)
 	}
 
 	return nil, nil
@@ -25,21 +44,21 @@ func (p *Processor) deliverTxOut(ctx sdk.Context, signerMsg *types.TxOutWithSign
 
 // deliverTxOut executes a TxOut transaction after it's included in Sisu block. If this node is
 // catching up with the network, we would not send the tx to TSS for signing.
-func (p *Processor) doTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWithSigner) ([]byte, error) {
+func (h *HandlerTxOut) doTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWithSigner) ([]byte, error) {
 	txOut := msgWithSigner.Data
 
 	log.Info("Delivering TxOut")
 
 	// Save this to KVStore
-	p.publicDb.SaveTxOut(txOut)
+	h.publicDb.SaveTxOut(txOut)
 
 	// If this is a txout deployment,
 
 	// Do key signing if this node is not catching up.
-	if !p.globalData.IsCatchingUp() {
+	if !h.globalData.IsCatchingUp() {
 		// Only Deliver TxOut if the chain has been up to date.
 		if libchain.IsETHBasedChain(txOut.OutChain) {
-			p.signTx(ctx, txOut)
+			h.signTx(ctx, txOut)
 		}
 	}
 
@@ -47,7 +66,7 @@ func (p *Processor) doTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWithSigne
 }
 
 // signTx sends a TxOut to dheart for TSS signing.
-func (p *Processor) signTx(ctx sdk.Context, tx *types.TxOut) {
+func (h *HandlerTxOut) signTx(ctx sdk.Context, tx *types.TxOut) {
 	log.Info("Delivering TXOUT for chain", tx.OutChain, " tx hash = ", tx.OutHash)
 	if tx.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
 		log.Info("This TxOut is a contract deployment")
@@ -71,7 +90,7 @@ func (p *Processor) signTx(ctx sdk.Context, tx *types.TxOut) {
 		KeyType: libchain.KEY_TYPE_ECDSA,
 		KeysignMessages: []*hTypes.KeysignMessage{
 			{
-				Id:          p.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), tx.OutHash),
+				Id:          h.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), tx.OutHash),
 				InChain:     tx.InChain,
 				OutChain:    tx.OutChain,
 				OutHash:     tx.OutHash,
@@ -80,15 +99,15 @@ func (p *Processor) signTx(ctx sdk.Context, tx *types.TxOut) {
 		},
 	}
 
-	pubKeys := p.partyManager.GetActivePartyPubkeys()
+	pubKeys := h.partyManager.GetActivePartyPubkeys()
 
-	err := p.dheartClient.KeySign(keysignReq, pubKeys)
+	err := h.dheartClient.KeySign(keysignReq, pubKeys)
 
 	if err != nil {
 		log.Error("Keysign: err =", err)
 	}
 }
 
-func (p *Processor) getKeysignRequestId(chain string, blockHeight int64, txHash string) string {
+func (h *HandlerTxOut) getKeysignRequestId(chain string, blockHeight int64, txHash string) string {
 	return chain + "_" + strconv.Itoa(int(blockHeight)) + "_" + txHash
 }

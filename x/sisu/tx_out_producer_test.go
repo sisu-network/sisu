@@ -11,7 +11,7 @@ import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/golang/mock/gomock"
 	libchain "github.com/sisu-network/lib/chain"
-	"github.com/sisu-network/sisu/tests/mock"
+	mock "github.com/sisu-network/sisu/tests/mock/common"
 	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
 	mocksisu "github.com/sisu-network/sisu/tests/mock/x/sisu"
 

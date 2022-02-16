@@ -1,4 +1,4 @@
-package sisu
+package sisu_test
 
 import (
 	"math/big"
@@ -11,18 +11,23 @@ import (
 	"github.com/golang/mock/gomock"
 	mockcommon "github.com/sisu-network/sisu/tests/mock/common"
 	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
+	mock "github.com/sisu-network/sisu/tests/mock/x/sisu"
 	mocktssclients "github.com/sisu-network/sisu/tests/mock/x/sisu/tssclients"
+	"github.com/sisu-network/sisu/x/sisu"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
 
-func TestDeliverTxOut_Normal(t *testing.T) {
+func TestHandlerTxOut_Normal(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
 	t.Cleanup(func() {
 		ctrl.Finish()
 	})
+
+	mockPmm := mock.NewMockPostedMessageManager(ctrl)
+	mockPmm.EXPECT().ShouldProcessMsg(gomock.Any(), gomock.Any()).Return(true, []byte("")).Times(1)
 
 	mockPartyManager := mocktss.NewMockPartyManager(ctrl)
 	mockPartyManager.EXPECT().GetActivePartyPubkeys().Return([]ctypes.PubKey{}).Times(1)
@@ -42,7 +47,6 @@ func TestDeliverTxOut_Normal(t *testing.T) {
 	binary, err := ethTransaction.MarshalBinary()
 	require.NoError(t, err)
 
-	ctx := sdk.Context{}
 	txOutWithSigner := &types.TxOutWithSigner{
 		Signer: "signer",
 		Data: &types.TxOut{
@@ -52,61 +56,15 @@ func TestDeliverTxOut_Normal(t *testing.T) {
 	}
 
 	mockPublicDb := mocktss.NewMockStorage(ctrl)
-	mockCheckTxRecord(mockPublicDb)
-
 	mockPublicDb.EXPECT().SaveTxOut(gomock.Any()).Times(1)
+	mockPublicDb.EXPECT().ProcessTxRecord(gomock.Any()).Times(1)
 
 	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
 	mockGlobalData.EXPECT().IsCatchingUp().Return(false).Times(1)
 
-	p := &Processor{
-		publicDb:     mockPublicDb,
-		partyManager: mockPartyManager,
-		config:       mockTssConfig(),
-		dheartClient: mockDheartClient,
-		globalData:   mockGlobalData,
-	}
+	mc := sisu.MockManagerContainer(mockPmm, mockGlobalData, mockDheartClient, mockPartyManager, mockPublicDb)
 
-	bytes, err := p.deliverTxOut(ctx, txOutWithSigner)
-
+	handler := sisu.NewHandlerTxOut(mc)
+	_, err = handler.DeliverMsg(sdk.Context{}, txOutWithSigner)
 	require.NoError(t, err)
-	require.Empty(t, bytes)
-}
-
-func TestDeliverTxOut_BlockCatchingUp(t *testing.T) {
-	t.Parallel()
-
-	ctrl := gomock.NewController(t)
-	t.Cleanup(func() {
-		ctrl.Finish()
-	})
-
-	ctx := sdk.Context{}
-	txOutWithSigner := &types.TxOutWithSigner{
-		Signer: "signer",
-		Data: &types.TxOut{
-			OutChain: "eth",
-		},
-	}
-
-	mockPublicDb := mocktss.NewMockStorage(ctrl)
-	mockCheckTxRecord(mockPublicDb)
-
-	mockPublicDb.EXPECT().SaveTxOut(gomock.Any()).Times(1)
-
-	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
-	mockGlobalData.EXPECT().IsCatchingUp().Return(true).Times(1) // block is catching up.
-
-	mockDheartClient := mocktssclients.NewMockDheartClient(ctrl)
-	mockDheartClient.EXPECT().KeySign(gomock.Any(), gomock.Any()).Return(nil).Times(0)
-
-	p := &Processor{
-		publicDb:   mockPublicDb,
-		globalData: mockGlobalData,
-		config:     mockTssConfig(),
-	}
-
-	bytes, err := p.deliverTxOut(ctx, txOutWithSigner)
-	require.NoError(t, err)
-	require.Empty(t, bytes)
 }

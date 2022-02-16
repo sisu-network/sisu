@@ -29,8 +29,6 @@ import (
 	rpchttp "github.com/tendermint/tendermint/rpc/client/http"
 )
 
-//go:generate mockgen -source=common/tx_submitter.go -destination=tests/mock/tx_submitter.go -package=mock
-
 const (
 	// TODO: put these values into config file.
 	defaultGasAdjustment = 1.0
@@ -48,7 +46,7 @@ type QElementPair struct {
 	index int64
 }
 
-// mockgen -source common/tx_submitter.go -destination=tests/mock/common/tx_submitter.go -package=mock
+//go:generate mockgen -source=common/tx_submit.go -destination=tests/mock/common/tx_submit.go -package=mock
 type TxSubmit interface {
 	SubmitMessageAsync(msg sdk.Msg) error
 	SubmitMessageSync(msg sdk.Msg) error
