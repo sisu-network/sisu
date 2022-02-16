@@ -1,64 +1,10 @@
 package sisu
 
 import (
-	"sort"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
-
-// createContracts creates and broadcast pending contracts. All nodes need to agree what
-// contracts to deploy on what chains.
-func (p *Processor) createContracts(ctx sdk.Context, msg *types.Keygen) {
-	log.Info("Create and broadcast contracts...")
-
-	// We want the final contracts array to be deterministic. We need to sort the list of chains
-	// and list of contracts alphabetically.
-	// Sort all chains alphabetically.
-	chains := make([]string, len(p.config.SupportedChains))
-	i := 0
-	for chain := range p.config.SupportedChains {
-		chains[i] = chain
-		i += 1
-	}
-	sort.Strings(chains)
-
-	// Sort all contracts name alphabetically
-	names := make([]string, len(SupportedContracts))
-	i = 0
-	for contract := range SupportedContracts {
-		names[i] = contract
-		i += 1
-	}
-	sort.Strings(names)
-
-	// Create contracts
-	contracts := make([]*types.Contract, 0)
-	for _, chain := range chains {
-		if libchain.GetKeyTypeForChain(chain) == msg.KeyType {
-			log.Info("Saving contracts for chain ", chain)
-
-			for _, name := range names {
-				c := SupportedContracts[name]
-				contract := &types.Contract{
-					Chain:     chain,
-					Hash:      c.AbiHash,
-					Name:      name,
-					ByteCodes: []byte(c.Bin),
-				}
-
-				contracts = append(contracts, contract)
-			}
-		}
-	}
-
-	p.txSubmit.SubmitMessageAsync(types.NewContractsWithSigner(
-		p.appKeys.GetSignerAddress().String(),
-		contracts,
-	))
-}
 
 func (p *Processor) deliverContracts(ctx sdk.Context, signerMsg *types.ContractsWithSigner) ([]byte, error) {
 	if process, hash := p.shouldProcessMsg(ctx, signerMsg); process {

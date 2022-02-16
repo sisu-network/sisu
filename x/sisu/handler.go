@@ -32,13 +32,15 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 		}
 
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
+		mc := sh.mc
 
 		switch msg := msg.(type) {
 		case *types.KeygenWithSigner:
-			return NewHandlerKeygen(sh.mc).DeliverMsg(ctx, msg)
+			return NewHandlerKeygen(mc).DeliverMsg(ctx, msg)
 
 		case *types.KeygenResultWithSigner:
-			return handleKeygenResult(ctx, msg, processor)
+			return NewHandlerKeygenResult(mc).DeliverMsg(ctx, msg)
+
 		case *types.TxInWithSigner:
 			return handleTxIn(ctx, msg, processor)
 		case *types.TxOutWithSigner:
@@ -59,13 +61,6 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
 		}
 	}
-}
-
-func handleKeygenResult(ctx sdk.Context, msg *types.KeygenResultWithSigner, processor *Processor) (*sdk.Result, error) {
-	data, err := processor.deliverKeygenResult(ctx, msg)
-	return &sdk.Result{
-		Data: data,
-	}, err
 }
 
 func handleTxIn(ctx sdk.Context, msg *types.TxInWithSigner, processor *Processor) (*sdk.Result, error) {

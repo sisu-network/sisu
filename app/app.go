@@ -268,7 +268,9 @@ func New(
 	valsMgr := tss.NewValidatorManager(publicDb)
 	valsMgr.Init()
 
-	mc := tss.NewManagerContainer(publicDb, tssConfig.MajorityThreshold, tss.NewPartyManager(app.globalData), dheartClient, app.globalData)
+	mc := tss.NewManagerContainer(publicDb, tssConfig.MajorityThreshold,
+		tss.NewPartyManager(app.globalData), dheartClient, app.globalData, app.txSubmitter, cfg.Tss,
+		app.appKeys)
 	sisuHandler := tss.NewSisuHandler(mc)
 
 	modules := []module.AppModule{

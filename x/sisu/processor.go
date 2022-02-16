@@ -8,6 +8,7 @@ import (
 	"github.com/tendermint/tendermint/mempool"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	dhtypes "github.com/sisu-network/dheart/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
@@ -27,6 +28,11 @@ var (
 	ErrCannotFindMessage       = fmt.Errorf("Cannot find the message in node's private db")
 	ErrValueDoesNotMatch       = fmt.Errorf("Value does not match")
 )
+
+type BlockSymbolPair struct {
+	blockHeight int64
+	chain       string
+}
 
 // A major struct that processes complicated logic of TSS keysign and keygen. Read the documentation
 // of keygen and keysign's flow before working on this.
@@ -205,4 +211,55 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 		log.Info("Submitting proposal message for ", keyType)
 		p.txSubmit.SubmitMessageAsync(proposal)
 	}
+}
+
+// Called after having key generation result from Sisu's api server.
+func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
+	var resultEnum types.KeygenResult_Result
+	switch result.Outcome {
+	case dhtypes.OutcomeSuccess:
+		resultEnum = types.KeygenResult_SUCCESS
+	case dhtypes.OutcomeFailure:
+		resultEnum = types.KeygenResult_FAILURE
+	case dhtypes.OutcometNotSelected:
+		resultEnum = types.KeygenResult_NOT_SELECTED
+	}
+
+	if resultEnum == types.KeygenResult_NOT_SELECTED {
+		// No need to send result when this node is not selected.
+		return
+	}
+
+	signerMsg := types.NewKeygenResultWithSigner(
+		p.appKeys.GetSignerAddress().String(),
+		result.KeyType,
+		result.KeygenIndex,
+		resultEnum,
+		result.PubKeyBytes,
+		result.Address,
+	)
+
+	// Save the result to private db
+	p.publicDb.SaveKeygenResult(signerMsg)
+
+	log.Info("There is keygen result from dheart, resultEnum = ", resultEnum)
+
+	p.txSubmit.SubmitMessageAsync(signerMsg)
+
+	// Add list the public key address to watch.
+	for _, chainConfig := range p.config.SupportedChains {
+		chain := chainConfig.Id
+
+		if libchain.GetKeyTypeForChain(chain) != result.KeyType {
+			continue
+		}
+
+		log.Verbose("adding watcher address ", result.Address, " for chain ", chain)
+
+		p.addWatchAddress(chain, result.Address)
+	}
+}
+
+func (p *Processor) addWatchAddress(chain string, address string) {
+	p.deyesClient.AddWatchAddresses(chain, []string{address})
 }
