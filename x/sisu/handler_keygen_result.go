@@ -26,26 +26,18 @@ type HandlerKeygenResult struct {
 }
 
 func NewHandlerKeygenResult(mc ManagerContainer) *HandlerKeygenResult {
-	publicDb := mc.PublicDb()
-	pmm := mc.PostedMessageManager()
-	globalData := mc.GlobalData()
-	config := mc.Config()
-	txSubmit := mc.TxSubmit()
-	appKeys := mc.AppKeys()
-
 	return &HandlerKeygenResult{
 		mc:         mc,
-		publicDb:   publicDb,
-		pmm:        pmm,
-		globalData: globalData,
-		config:     config,
-		txSubmit:   txSubmit,
-		appKeys:    appKeys,
+		publicDb:   mc.PublicDb(),
+		pmm:        mc.PostedMessageManager(),
+		globalData: mc.GlobalData(),
+		config:     mc.Config(),
+		txSubmit:   mc.TxSubmit(),
+		appKeys:    mc.AppKeys(),
 	}
 }
 
 func (h *HandlerKeygenResult) DeliverMsg(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) (*sdk.Result, error) {
-
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
 		h.doKeygenResult(ctx, signerMsg)
 		h.publicDb.ProcessTxRecord(hash)
