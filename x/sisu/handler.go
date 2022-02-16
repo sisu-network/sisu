@@ -37,41 +37,26 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 		switch msg := msg.(type) {
 		case *types.KeygenWithSigner:
 			return NewHandlerKeygen(mc).DeliverMsg(ctx, msg)
-
 		case *types.KeygenResultWithSigner:
 			return NewHandlerKeygenResult(mc).DeliverMsg(ctx, msg)
-
 		case *types.ContractsWithSigner:
 			return NewHandlerContract(mc).DeliverMsg(ctx, msg)
-
 		case *types.TxInWithSigner:
 			return NewHandlerTxIn(mc).DeliverMsg(ctx, msg)
-
 		case *types.TxOutWithSigner:
 			return NewHandlerTxOut(mc).DeliverMsg(ctx, msg)
-
 		case *types.TxOutContractConfirmWithSigner:
 			return NewHandlerTxOutContractConfirmation(mc).DeliverMsg(ctx, msg)
-
 		case *types.KeysignResult:
 			return NewHandlerKeysignResult(mc).DeliverMsg(ctx, msg)
-
 		case *types.GasPriceMsg:
 			return NewHandlerGasPrice(mc).DeliverMsg(ctx, msg)
-
 		case *types.UpdateTokenPrice:
-			return handleUpdateTokenPrice(ctx, msg, processor)
+			return NewHandlerTokenPrice(mc).DeliverMsg(ctx, msg)
 
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
 		}
 	}
-}
-
-func handleUpdateTokenPrice(ctx sdk.Context, msg *types.UpdateTokenPrice, processor *Processor) (*sdk.Result, error) {
-	data, err := processor.deliverUpdateTokenPrice(ctx, msg)
-	return &sdk.Result{
-		Data: data,
-	}, err
 }

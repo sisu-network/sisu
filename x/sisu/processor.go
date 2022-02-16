@@ -2,6 +2,7 @@ package sisu
 
 import (
 	"fmt"
+	"sort"
 	"sync/atomic"
 
 	"github.com/tendermint/tendermint/crypto"
@@ -28,7 +29,8 @@ import (
 )
 
 const (
-	ProposeBlockInterval = 1000
+	// The number of block interval that we should update all token prices.
+	TokenPriceUpdateInterval = 600 // About 30 mins for 3s block.
 )
 
 var (
@@ -151,6 +153,73 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 
 	// Calculate all token prices.
 	p.calculateTokenPrices(ctx)
+}
+
+// calculateTokenPrices gets all token prices posted from all validators and calculate the median.
+func (p *Processor) calculateTokenPrices(ctx sdk.Context) {
+	curBlock := ctx.BlockHeight()
+
+	// We wait for 5 more blocks after we get prices from deyes so that any record can be posted
+	// onto the blockchain.
+	if curBlock%TokenPriceUpdateInterval != 5 {
+		return
+	}
+
+	log.Info("Calcuating token prices....")
+
+	// TODO: Fix the signer set.
+	records := p.publicDb.GetAllTokenPricesRecord()
+
+	tokenPrices := make(map[string][]int64)
+	for _, record := range records {
+		for token, pair := range record.Prices {
+			// Only calculate token prices that has been updated recently.
+			if curBlock-int64(pair.BlockHeight) > TokenPriceUpdateInterval {
+				continue
+			}
+
+			m := tokenPrices[token]
+			if m == nil {
+				m = make([]int64, 0)
+			}
+
+			m = append(m, pair.Price)
+
+			tokenPrices[token] = m
+		}
+	}
+
+	// Now sort all the array and get the median
+	medians := make(map[string]int64)
+	for token, list := range tokenPrices {
+		if len(list) == 0 {
+			log.Error("cannot find price list for token ", token)
+			continue
+		}
+
+		sort.Slice(list, func(i, j int) bool { return list[i] < list[j] })
+		median := list[len(list)/2]
+		medians[token] = median
+	}
+
+	log.Verbose("Calculated prices = ", medians)
+
+	// Update all the token data.
+	arr := make([]string, 0, len(medians))
+	for token, _ := range medians {
+		arr = append(arr, token)
+	}
+
+	savedTokens := p.publicDb.GetTokens(arr)
+
+	for tokenId, price := range medians {
+		savedTokens[tokenId].Price = price
+	}
+
+	p.publicDb.SetTokens(savedTokens)
+
+	// Update the world state
+	p.worldState.SetTokens(savedTokens)
 }
 
 func (p *Processor) EndBlock(ctx sdk.Context) {
@@ -464,4 +533,22 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 func (p *Processor) OnUpdateGasPriceRequest(request *etypes.GasPriceRequest) {
 	gasPriceMsg := types.NewGasPriceMsg(p.appKeys.GetSignerAddress().String(), request.Chain, request.Height, request.GasPrice)
 	p.txSubmit.SubmitMessageAsync(gasPriceMsg)
+}
+
+// OnUpdateTokenPrice is called when there is a token price update from deyes. Post to the network
+// until we reach a consensus about token price. The token price is only used to calculate gas price
+// fee and not used for actual swapping calculation.
+func (p *Processor) OnUpdateTokenPrice(tokenPrices []*etypes.TokenPrice) {
+	prices := make([]*types.TokenPrice, 0, len(tokenPrices))
+
+	// Convert from deyes type to msg type
+	for _, token := range tokenPrices {
+		prices = append(prices, &types.TokenPrice{
+			Id:    token.Id,
+			Price: int64(token.Price * utils.DecinmalUnit),
+		})
+	}
+
+	msg := types.NewUpdateTokenPrice(p.appKeys.GetSignerAddress().String(), prices)
+	p.txSubmit.SubmitMessageAsync(msg)
 }
