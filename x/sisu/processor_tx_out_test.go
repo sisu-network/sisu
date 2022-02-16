@@ -1,112 +1,96 @@
 package sisu
 
-import (
-	"math/big"
-	"testing"
+// func TestDeliverTxOut_Normal(t *testing.T) {
+// 	t.Parallel()
 
-	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/ethereum/go-ethereum/common"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/golang/mock/gomock"
-	mockcommon "github.com/sisu-network/sisu/tests/mock/common"
-	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
-	mocktssclients "github.com/sisu-network/sisu/tests/mock/x/sisu/tssclients"
-	"github.com/sisu-network/sisu/x/sisu/types"
-	"github.com/stretchr/testify/require"
-)
+// 	ctrl := gomock.NewController(t)
+// 	t.Cleanup(func() {
+// 		ctrl.Finish()
+// 	})
 
-func TestDeliverTxOut_Normal(t *testing.T) {
-	t.Parallel()
+// 	mockPartyManager := mocktss.NewMockPartyManager(ctrl)
+// 	mockPartyManager.EXPECT().GetActivePartyPubkeys().Return([]ctypes.PubKey{}).Times(1)
 
-	ctrl := gomock.NewController(t)
-	t.Cleanup(func() {
-		ctrl.Finish()
-	})
+// 	mockDheartClient := mocktssclients.NewMockDheartClient(ctrl)
+// 	mockDheartClient.EXPECT().KeySign(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-	mockPartyManager := mocktss.NewMockPartyManager(ctrl)
-	mockPartyManager.EXPECT().GetActivePartyPubkeys().Return([]ctypes.PubKey{}).Times(1)
+// 	amount := big.NewInt(100)
+// 	gasLimit := uint64(100)
+// 	gasPrice := big.NewInt(100)
+// 	ethTransaction := ethTypes.NewTx(&ethTypes.LegacyTx{
+// 		GasPrice: gasPrice,
+// 		Gas:      gasLimit,
+// 		To:       &common.Address{},
+// 		Value:    amount,
+// 	})
+// 	binary, err := ethTransaction.MarshalBinary()
+// 	require.NoError(t, err)
 
-	mockDheartClient := mocktssclients.NewMockDheartClient(ctrl)
-	mockDheartClient.EXPECT().KeySign(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+// 	ctx := sdk.Context{}
+// 	txOutWithSigner := &types.TxOutWithSigner{
+// 		Signer: "signer",
+// 		Data: &types.TxOut{
+// 			OutChain: "eth",
+// 			OutBytes: binary,
+// 		},
+// 	}
 
-	amount := big.NewInt(100)
-	gasLimit := uint64(100)
-	gasPrice := big.NewInt(100)
-	ethTransaction := ethTypes.NewTx(&ethTypes.LegacyTx{
-		GasPrice: gasPrice,
-		Gas:      gasLimit,
-		To:       &common.Address{},
-		Value:    amount,
-	})
-	binary, err := ethTransaction.MarshalBinary()
-	require.NoError(t, err)
+// 	mockPublicDb := mocktss.NewMockStorage(ctrl)
+// 	mockCheckTxRecord(mockPublicDb)
 
-	ctx := sdk.Context{}
-	txOutWithSigner := &types.TxOutWithSigner{
-		Signer: "signer",
-		Data: &types.TxOut{
-			OutChain: "eth",
-			OutBytes: binary,
-		},
-	}
+// 	mockPublicDb.EXPECT().SaveTxOut(gomock.Any()).Times(1)
 
-	mockPublicDb := mocktss.NewMockStorage(ctrl)
-	mockCheckTxRecord(mockPublicDb)
+// 	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
+// 	mockGlobalData.EXPECT().IsCatchingUp().Return(false).Times(1)
 
-	mockPublicDb.EXPECT().SaveTxOut(gomock.Any()).Times(1)
+// 	p := &Processor{
+// 		publicDb:     mockPublicDb,
+// 		partyManager: mockPartyManager,
+// 		config:       mockTssConfig(),
+// 		dheartClient: mockDheartClient,
+// 		globalData:   mockGlobalData,
+// 	}
 
-	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
-	mockGlobalData.EXPECT().IsCatchingUp().Return(false).Times(1)
+// 	bytes, err := p.deliverTxOut(ctx, txOutWithSigner)
 
-	p := &Processor{
-		publicDb:     mockPublicDb,
-		partyManager: mockPartyManager,
-		config:       mockTssConfig(),
-		dheartClient: mockDheartClient,
-		globalData:   mockGlobalData,
-	}
+// 	require.NoError(t, err)
+// 	require.Empty(t, bytes)
+// }
 
-	bytes, err := p.deliverTxOut(ctx, txOutWithSigner)
+// func TestDeliverTxOut_BlockCatchingUp(t *testing.T) {
+// 	t.Parallel()
 
-	require.NoError(t, err)
-	require.Empty(t, bytes)
-}
+// 	ctrl := gomock.NewController(t)
+// 	t.Cleanup(func() {
+// 		ctrl.Finish()
+// 	})
 
-func TestDeliverTxOut_BlockCatchingUp(t *testing.T) {
-	t.Parallel()
+// 	ctx := sdk.Context{}
+// 	txOutWithSigner := &types.TxOutWithSigner{
+// 		Signer: "signer",
+// 		Data: &types.TxOut{
+// 			OutChain: "eth",
+// 		},
+// 	}
 
-	ctrl := gomock.NewController(t)
-	t.Cleanup(func() {
-		ctrl.Finish()
-	})
+// 	mockPublicDb := mocktss.NewMockStorage(ctrl)
+// 	mockCheckTxRecord(mockPublicDb)
 
-	ctx := sdk.Context{}
-	txOutWithSigner := &types.TxOutWithSigner{
-		Signer: "signer",
-		Data: &types.TxOut{
-			OutChain: "eth",
-		},
-	}
+// 	mockPublicDb.EXPECT().SaveTxOut(gomock.Any()).Times(1)
 
-	mockPublicDb := mocktss.NewMockStorage(ctrl)
-	mockCheckTxRecord(mockPublicDb)
+// 	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
+// 	mockGlobalData.EXPECT().IsCatchingUp().Return(true).Times(1) // block is catching up.
 
-	mockPublicDb.EXPECT().SaveTxOut(gomock.Any()).Times(1)
+// 	mockDheartClient := mocktssclients.NewMockDheartClient(ctrl)
+// 	mockDheartClient.EXPECT().KeySign(gomock.Any(), gomock.Any()).Return(nil).Times(0)
 
-	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
-	mockGlobalData.EXPECT().IsCatchingUp().Return(true).Times(1) // block is catching up.
+// 	p := &Processor{
+// 		publicDb:   mockPublicDb,
+// 		globalData: mockGlobalData,
+// 		config:     mockTssConfig(),
+// 	}
 
-	mockDheartClient := mocktssclients.NewMockDheartClient(ctrl)
-	mockDheartClient.EXPECT().KeySign(gomock.Any(), gomock.Any()).Return(nil).Times(0)
-
-	p := &Processor{
-		publicDb:   mockPublicDb,
-		globalData: mockGlobalData,
-		config:     mockTssConfig(),
-	}
-
-	bytes, err := p.deliverTxOut(ctx, txOutWithSigner)
-	require.NoError(t, err)
-	require.Empty(t, bytes)
-}
+// 	bytes, err := p.deliverTxOut(ctx, txOutWithSigner)
+// 	require.NoError(t, err)
+// 	require.Empty(t, bytes)
+// }

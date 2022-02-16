@@ -48,7 +48,8 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 			return NewHandlerTxIn(mc).DeliverMsg(ctx, msg)
 
 		case *types.TxOutWithSigner:
-			return handleTxOut(ctx, msg, processor)
+			return NewHandlerTxOut(mc).DeliverMsg(ctx, msg)
+
 		case *types.TxOutContractConfirmWithSigner:
 			return handleTxOutContractConfirm(ctx, msg, processor)
 		case *types.KeysignResult:
@@ -64,13 +65,6 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
 		}
 	}
-}
-
-func handleTxOut(ctx sdk.Context, msg *types.TxOutWithSigner, processor *Processor) (*sdk.Result, error) {
-	data, err := processor.deliverTxOut(ctx, msg)
-	return &sdk.Result{
-		Data: data,
-	}, err
 }
 
 func handleTxOutContractConfirm(ctx sdk.Context, msg *types.TxOutContractConfirmWithSigner, processor *Processor) (*sdk.Result, error) {
