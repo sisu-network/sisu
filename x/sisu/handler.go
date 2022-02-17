@@ -23,6 +23,7 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		signers := msg.GetSigners()
 		if len(signers) != 1 {
+			log.Error("Signers length must be 1. Actual length = ", len(signers))
 			return nil, fmt.Errorf("incorrect signers length: %d", len(signers))
 		}
 

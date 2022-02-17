@@ -81,8 +81,9 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		AddGenesisAccountCmd(app.MainAppHome),
 		tmcli.NewCompletionCmd(rootCmd, true),
 		debug.Cmd(),
+
 		dev.DevCmd(),
-		// this line is used by starport scaffolding # stargate/root/commands
+		PauseContractCmd(),
 	)
 
 	a := appCreator{

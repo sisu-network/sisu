@@ -39,9 +39,11 @@ func (h *HandlerPause) DeliverMsg(ctx sdk.Context, msg *types.PauseContractMsg) 
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
 		h.doPause(ctx, msg.Data)
 		h.publicDb.ProcessTxRecord(hash)
+	} else {
+		log.Verbose("HandlerPause: transaction has been processed")
 	}
 
-	return nil, nil
+	return &sdk.Result{}, nil
 }
 
 func (h *HandlerPause) doPause(ctx sdk.Context, pauseContract *types.PauseContract) ([]byte, error) {
@@ -51,13 +53,21 @@ func (h *HandlerPause) doPause(ctx sdk.Context, pauseContract *types.PauseContra
 		return nil, nil
 	}
 
-	log.Info("Pausing contract...")
+	found := false
+	for _, contract := range SupportedContracts {
+		if contract.AbiHash == pauseContract.Hash {
+			found = true
+			break
+		}
+	}
 
-	if len(SupportedContracts[pauseContract.Hash].AbiHash) == 0 {
+	if !found {
 		err := fmt.Errorf("doPause: contarct with hash %s is not supported", pauseContract.Hash)
 		log.Error(err)
 		return nil, err
 	}
+
+	log.Info("Creating pause transaction...")
 
 	txOutMsg, err := h.txOutputProducer.PauseContract(ctx, pauseContract.Chain, pauseContract.Hash)
 	if err != nil {
@@ -65,6 +75,10 @@ func (h *HandlerPause) doPause(ctx sdk.Context, pauseContract *types.PauseContra
 		return nil, nil
 	}
 
+	// Save this to KVStore
+	h.publicDb.SaveTxOut(txOutMsg.Data)
+
+	// Sends to dheart for signing.
 	h.signTx(ctx, txOutMsg.Data)
 
 	return nil, nil
@@ -72,11 +86,6 @@ func (h *HandlerPause) doPause(ctx sdk.Context, pauseContract *types.PauseContra
 
 // signTx sends a TxOut to dheart for TSS signing.
 func (h *HandlerPause) signTx(ctx sdk.Context, tx *types.TxOut) {
-	log.Info("Delivering TXOUT for chain", tx.OutChain, " tx hash = ", tx.OutHash)
-	if tx.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
-		log.Info("This TxOut is a contract deployment")
-	}
-
 	ethTx := &etypes.Transaction{}
 	if err := ethTx.UnmarshalBinary(tx.OutBytes); err != nil {
 		log.Error("cannot unmarshal tx, err =", err)
@@ -90,7 +99,7 @@ func (h *HandlerPause) signTx(ctx sdk.Context, tx *types.TxOut) {
 
 	hash := signer.Hash(ethTx)
 
-	// 4. Send it to Dheart for signing.
+	// Send it to Dheart for signing.
 	keysignReq := &hTypes.KeysignRequest{
 		KeyType: libchain.KEY_TYPE_ECDSA,
 		KeysignMessages: []*hTypes.KeysignMessage{
