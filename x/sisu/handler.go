@@ -56,6 +56,8 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 			return NewHandlerTokenPrice(mc).DeliverMsg(ctx, msg)
 		case *types.PauseContractMsg:
 			return NewHandlerPauseContract(mc).DeliverMsg(ctx, msg)
+		case *types.ResumeContractMsg:
+			return NewHandlerResumeContract(mc).DeliverMsg(ctx, msg)
 
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)

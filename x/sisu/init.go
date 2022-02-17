@@ -12,9 +12,10 @@ import (
 const (
 	ContractErc20Gateway = "erc20gateway"
 
-	MethodTransferIn   = "TransferIn"
-	MethodTransferOut  = "TransferOut"
-	MethodPauseGateway = "PauseGateway"
+	MethodTransferIn    = "TransferIn"
+	MethodTransferOut   = "TransferOut"
+	MethodPauseGateway  = "PauseGateway"
+	MethodResumeGateway = "ResumeGateway"
 )
 
 var (

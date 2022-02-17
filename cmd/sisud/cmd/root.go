@@ -84,6 +84,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 
 		dev.DevCmd(),
 		PauseContractCmd(),
+		ResumeContractCmd(),
 	)
 
 	a := appCreator{
