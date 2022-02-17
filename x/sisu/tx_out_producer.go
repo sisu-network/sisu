@@ -20,8 +20,11 @@ import (
 // This structs produces transaction output based on input. For a given tx input, this struct
 // produces a list (could contain only one element) of transaction output.
 type TxOutputProducer interface {
-	// AddKeyAddress(ctx sdk.Context, chain, addr string) error
 	GetTxOuts(ctx sdk.Context, height int64, tx *types.TxIn) []*types.TxOutWithSigner
+
+	PauseContract(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
+
+	ResumeContract(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
 }
 
 type DefaultTxOutputProducer struct {
@@ -232,6 +235,7 @@ func (p *DefaultTxOutputProducer) getGasLimit(chain string) uint64 {
 	return uint64(8_000_000)
 }
 
+// @Deprecated
 func (p *DefaultTxOutputProducer) getDefaultGasPrice(chain string) *big.Int {
 	// TODO: Make this dependent on different chains.
 	switch chain {

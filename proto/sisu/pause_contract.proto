@@ -1,0 +1,15 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message PauseContractMsg {
+  string signer = 1;
+  PauseContract data = 2;
+}
+
+message PauseContract {
+  string chain = 1;
+  string hash = 2;
+  int32  index = 3;
+}

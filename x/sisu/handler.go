@@ -23,6 +23,7 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		signers := msg.GetSigners()
 		if len(signers) != 1 {
+			log.Error("Signers length must be 1. Actual length = ", len(signers))
 			return nil, fmt.Errorf("incorrect signers length: %d", len(signers))
 		}
 
@@ -53,6 +54,10 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 			return NewHandlerGasPrice(mc).DeliverMsg(ctx, msg)
 		case *types.UpdateTokenPrice:
 			return NewHandlerTokenPrice(mc).DeliverMsg(ctx, msg)
+		case *types.PauseContractMsg:
+			return NewHandlerPauseContract(mc).DeliverMsg(ctx, msg)
+		case *types.ResumeContractMsg:
+			return NewHandlerResumeContract(mc).DeliverMsg(ctx, msg)
 
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)

@@ -26,8 +26,9 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TxOutContractConfirmWithSigner{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &GasPriceMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &UpdateTokenPrice{})
-
 	registry.RegisterImplementations((*sdk.Msg)(nil), &KeysignResult{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &PauseContractMsg{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &ResumeContractMsg{})
 
 	registry.RegisterInterface("cosmos.crypto.PubKey", (*ctypes.PubKey)(nil))
 	registry.RegisterImplementations((*ctypes.PubKey)(nil), &ed25519.PubKey{})
