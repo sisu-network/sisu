@@ -61,8 +61,8 @@ server_port = 31001
 sisu_server_url = "{{ .SisuServerUrl }}"
 
 [chains]{{ range $k, $chain := .Chains }}
-[chains.{{ $chain.Name }}]
-  chain = "{{ $chain.Name }}"
+[chains.{{ $chain.Id }}]
+  chain = "{{ $chain.Id }}"
   block_time = 1000
   starting_block = 0
   rpc_url = "{{ $chain.Rpc }}"{{ end }}
