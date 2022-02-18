@@ -197,7 +197,9 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *types.Contract, nonce 
 
 		log.Info("Allowed chains for chain ", contract.Chain, " are: ", supportedChains)
 
-		input, err := parsedAbi.Pack("", supportedChains)
+		liquidPoolAddr := liquidPoolAddrs[contract.Chain]
+		log.Infof("Liquidity pool addr for chain %s is %s", contract.Chain, liquidPoolAddr)
+		input, err := parsedAbi.Pack("", supportedChains, liquidPoolAddr)
 		if err != nil {
 			log.Error("cannot pack supportedChains, err =", err)
 			return nil
