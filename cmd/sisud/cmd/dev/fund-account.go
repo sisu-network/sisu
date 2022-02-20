@@ -30,9 +30,8 @@ import (
 )
 
 const (
-	ExpectedErc20Address = "0xf0D676183dD5ae6b370adDdbE770235F23546f9d"
+	ExpectedErc20Address      = "0xf0D676183dD5ae6b370adDdbE770235F23546f9d"
 	ExpectedLiquidPoolAddress = "0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"
-	Erc20MethodTransfer  = "transfer"
 )
 
 type fundAccountCmd struct{}
@@ -291,7 +290,6 @@ func (c *fundAccountCmd) deployLiquid(client *ethclient.Client) common.Address {
 You need to update the expected address (both in this file and the tokens_dev.json).`,
 			ExpectedLiquidPoolAddress, addr.String()))
 	}
-
 
 	log.Info("Deployed liquidity successfully, addr: ", addr.String())
 
