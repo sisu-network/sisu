@@ -134,8 +134,9 @@ Example:
 
 				ips:         ips,
 				nodeConfigs: nodeConfigs,
-				tokens:      getTokens("./tokens_dev.json"),
-				chains:      getChains("./chains.json"),
+				tokens:      getTokens("./misc/tokens_dev.json"),
+				chains:      getChains("./misc/chains.json"),
+				liquidities: getLiquidity("./misc/liquid_dev.json"),
 			}
 
 			valPubKeys, err := InitNetwork(settings)

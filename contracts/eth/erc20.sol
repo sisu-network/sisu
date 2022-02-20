@@ -502,9 +502,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
 // File contracts/SampleERC20.sol
 
 contract SampleERC20 is ERC20 {
-    constructor(address[] memory _seedAddrs, uint256 _initialEach) ERC20("Sisu token", "SISU") {
-        for (uint i = 0; i < _seedAddrs.length; i++) {
-            _mint(_seedAddrs[i], _initialEach);
-        }
+    constructor() ERC20("Sisu token", "SISU") {
+        _mint(msg.sender, 1000 * 10**18);
     }
 }

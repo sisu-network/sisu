@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/sisu-network/lib/log"
 	"github.com/spf13/cobra"
 
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
@@ -25,7 +24,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/contracts/eth/erc20"
 )
 
 var (
@@ -120,8 +118,9 @@ Example:
 				algoStr:        algo,
 				numValidators:  numValidators,
 				nodeConfigs:    []config.Config{nodeConfig},
-				tokens:         getTokens("./tokens_dev.json"),
-				chains:         getChains("./chains.json"),
+				tokens:         getTokens("./misc/tokens_dev.json"),
+				chains:         getChains("./misc/chains.json"),
+				liquidities:    getLiquidity("./misc/liquid_dev.json"),
 			}
 
 			_, err = InitNetwork(settings)
@@ -175,32 +174,6 @@ func (g *localnetGenerator) calculateIP(ip string, i int) (string, error) {
 	}
 
 	return ipv4.String(), nil
-}
-
-func (g *localnetGenerator) deployErc20(url string, tokenName string, tokenSymbol string) string {
-	client, err := ethclient.Dial(url)
-	if err != nil {
-		log.Error("please check the ganache is up and running, url = ", url)
-		panic(err)
-	}
-
-	auth, err := g.getAuthTransactor(client, common.HexToAddress("0xbeF23B2AC7857748fEA1f499BE8227c5fD07E70c"))
-	if err != nil {
-		panic(err)
-	}
-
-	address, tx, instance, err := erc20.DeployErc20(auth, client, "sisu", "SISU")
-	_ = instance
-	if err != nil {
-		panic(err)
-	}
-
-	log.Info("Deploying erc20....")
-	bind.WaitDeployed(context.Background(), client, tx)
-	time.Sleep(time.Second * 2)
-	log.Info("Deployment done! Contract address: ", address.String())
-
-	return address.String()
 }
 
 func (g *localnetGenerator) getAuthTransactor(client *ethclient.Client, address common.Address) (*bind.TransactOpts, error) {

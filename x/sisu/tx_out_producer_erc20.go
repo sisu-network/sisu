@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/big"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -29,7 +28,7 @@ func decodeTxParams(abi abi.ABI, callData []byte) (map[string]interface{}, error
 	return txParams, nil
 }
 
-func (p *DefaultTxOutputProducer) processERC20TransferIn(ctx sdk.Context, ethTx *ethTypes.Transaction) (*types.TxResponse, error) {
+func (p *DefaultTxOutputProducer) processERC20TransferIn(ethTx *ethTypes.Transaction) (*types.TxResponse, error) {
 	log.Debug("Processing ERC20 transfer In")
 	erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
 	gwAbi := erc20gatewayContract.Abi
@@ -55,7 +54,7 @@ func (p *DefaultTxOutputProducer) processERC20TransferIn(ctx sdk.Context, ethTx 
 
 	token := p.worldState.GetTokenFromAddress(destChain, tokenAddr.String())
 	if token == nil {
-		return nil, fmt.Errorf("Invalid address %s on chain %s", tokenAddr, destChain)
+		return nil, fmt.Errorf("invalid address %s on chain %s", tokenAddr, destChain)
 	}
 
 	recipient, ok := txParams["_recipient"].(ethcommon.Address)
@@ -72,11 +71,10 @@ func (p *DefaultTxOutputProducer) processERC20TransferIn(ctx sdk.Context, ethTx 
 		return nil, err
 	}
 
-	return p.callERC20TransferIn(ctx, token, tokenAddr, recipient, amount, destChain)
+	return p.callERC20TransferIn(token, tokenAddr, recipient, amount, destChain)
 }
 
 func (p *DefaultTxOutputProducer) callERC20TransferIn(
-	ctx sdk.Context,
 	token *types.Token,
 	tokenAddress,
 	recipient ethcommon.Address,

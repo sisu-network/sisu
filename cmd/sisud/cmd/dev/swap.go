@@ -3,6 +3,7 @@ package dev
 import (
 	"context"
 	"fmt"
+	"github.com/sisu-network/sisu/utils"
 	"math/big"
 	"time"
 
@@ -65,7 +66,7 @@ transfer params.
 			srcToken, dstToken := c.getTokenAddrs(token, src, dst)
 
 			amount := big.NewInt(int64(unit))
-			amount = amount.Exp(amount, big.NewInt(18), nil)
+			amount = new(big.Int).Mul(amount, utils.EthToWei)
 
 			gateway := c.getGatewayAddresses(cmd.Context(), src)
 			c.swap(client, gateway, dst, srcToken, dstToken, recipient, amount)
@@ -162,9 +163,9 @@ func (c *swapCommand) getGatewayAddresses(context context.Context, chain string)
 	return res.Contract.Address
 }
 
-func (c *swapCommand) swap(client *ethclient.Client, gateay string, dstChain string,
+func (c *swapCommand) swap(client *ethclient.Client, gateway string, dstChain string,
 	srcToken string, dstToken string, recipient string, amount *big.Int) {
-	gatewayAddr := common.HexToAddress(gateay)
+	gatewayAddr := common.HexToAddress(gateway)
 	contract, err := erc20gateway.NewErc20gateway(gatewayAddr, client)
 	if err != nil {
 		panic(err)
@@ -179,7 +180,7 @@ func (c *swapCommand) swap(client *ethclient.Client, gateay string, dstChain str
 	srcTokenAddr := common.HexToAddress(srcToken)
 	dstTokenAddr := common.HexToAddress(dstToken)
 
-	log.Verbose("destination, recipientAddr, srcTokenAddr, dstTokenAddr, amount = %s %s %s %s %s",
+	log.Verbosef("destination = %s, recipientAddr %s, srcTokenAddr = %s, dstTokenAddr = %s, amount = %s",
 		dstChain, recipientAddr.String(), srcTokenAddr.String(), dstTokenAddr.String(), amount)
 
 	tx, err := contract.TransferOut(opts, dstChain, recipientAddr, srcTokenAddr, dstTokenAddr, amount)

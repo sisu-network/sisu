@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	ecommon "github.com/ethereum/go-ethereum/common"
 	"github.com/sisu-network/sisu/contracts/eth/erc20gateway"
 	"github.com/sisu-network/sisu/utils"
 )
@@ -18,16 +17,6 @@ const (
 	MethodPauseGateway  = "pauseGateway"
 	MethodResumeGateway = "resumeGateway"
 )
-
-// TODO: export a command line to set liquid pool address for the gateway
-var liquidPoolAddrs = map[string]ecommon.Address{
-	"ganache1":            ecommon.HexToAddress("0x18eD078Bf666049f02FF8193e0d6B4D45B50329f"),
-	"ganache2":            ecommon.HexToAddress("0x18eD078Bf666049f02FF8193e0d6B4D45B50329f"),
-	"eth-ropsten":         ecommon.HexToAddress("0xbc77D44223a75194eab5006De96cd1EBa95dA374"),
-	"eth-binance-testnet": ecommon.HexToAddress("0xAF234785e8c283129968a3D0219aEDe7E9B83953"),
-	"fantom-testnet":      ecommon.HexToAddress("0x1a6766342142A9BCa7151b7714f811999B7CfeCA"),
-	"polygon-testnet":     ecommon.HexToAddress("0xbc77D44223a75194eab5006De96cd1EBa95dA374"),
-}
 
 var (
 	SupportedContracts = map[string]struct {

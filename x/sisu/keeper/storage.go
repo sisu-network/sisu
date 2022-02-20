@@ -87,6 +87,11 @@ type Storage interface {
 	// Nodes
 	SaveNode(node *types.Node)
 	LoadValidators() []*types.Node
+
+	// Liquidities
+	SetLiquidities(map[string]*types.Liquidity)
+	GetLiquidity(chain string) *types.Liquidity
+	GetAllLiquidities() map[string]*types.Liquidity
 }
 
 type defaultPrivateDb struct {
@@ -148,6 +153,8 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes[string(prefixToken)] = prefix.NewStore(parent, prefixToken)
 	// prefixNode
 	prefixes[string(prefixNode)] = prefix.NewStore(parent, prefixNode)
+	// prefixLiquidity
+	prefixes[string(prefixLiquidity)] = prefix.NewStore(parent, prefixLiquidity)
 
 	return prefixes
 }
@@ -401,6 +408,23 @@ func (db *defaultPrivateDb) SaveNode(node *types.Node) {
 func (db *defaultPrivateDb) LoadValidators() []*types.Node {
 	store := db.prefixes[string(prefixNode)]
 	return loadValidators(store)
+}
+
+///// Liquidities
+
+func (db *defaultPrivateDb) SetLiquidities(liquids map[string]*types.Liquidity) {
+	store := db.prefixes[string(prefixLiquidity)]
+	setLiquidities(store, liquids)
+}
+
+func (db *defaultPrivateDb) GetLiquidity(chain string) *types.Liquidity {
+	store := db.prefixes[string(prefixLiquidity)]
+	return getLiquidity(store, chain)
+}
+
+func (db *defaultPrivateDb) GetAllLiquidities() map[string]*types.Liquidity {
+	store := db.prefixes[string(prefixLiquidity)]
+	return getAllLiquidities(store)
 }
 
 ///// Debug
