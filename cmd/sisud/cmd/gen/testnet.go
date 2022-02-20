@@ -35,7 +35,7 @@ type TestnetConfig struct {
 
 // TODO: merge this field with the chain type in the proto file
 type ChainConfig struct {
-	Name     string `json:"name"`
+	Id       string `json:"id"`
 	GasPrice int64  `json:"gas_price"`
 	Rpc      string `json:"rpc"`
 }
@@ -140,11 +140,11 @@ Example:
 			}
 
 			chains := make([]*types.Chain, len(testnetConfig.Chains))
-			for _, c := range testnetConfig.Chains {
-				chains = append(chains, &types.Chain{
-					Id:       c.Name,
+			for i, c := range testnetConfig.Chains {
+				chains[i] = &types.Chain{
+					Id:       c.Id,
 					GasPrice: c.GasPrice,
-				})
+				}
 			}
 
 			settings := &Setting{
@@ -207,8 +207,8 @@ func (g *TestnetGenerator) getNodeSettings(chainID string, keyringBackend string
 
 	supportedChains := make(map[string]config.TssChainConfig)
 	for _, chainConfig := range chainConfigs {
-		supportedChains[chainConfig.Name] = config.TssChainConfig{
-			Id: chainConfig.Name,
+		supportedChains[chainConfig.Id] = config.TssChainConfig{
+			Id: chainConfig.Id,
 		}
 	}
 
@@ -256,6 +256,8 @@ func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartI
 
 func (g *TestnetGenerator) generateEyesToml(index int, dir string, sisuIp string, sqlConfig SqlConfig, chainConfigs []ChainConfig) {
 	sqlConfig.Schema = "deyes"
+
+	fmt.Println("chainConfigs = ", chainConfigs)
 
 	deyesConfig := DeyesConfiguration{
 		Chains: chainConfigs,
