@@ -30,9 +30,6 @@ abstract contract Context {
 
 // File @openzeppelin/contracts/access/Ownable.sol@v4.4.2
 
-// OpenZeppelin Contracts v4.4.1 (access/Ownable.sol)
-
-pragma solidity ^0.8.0;
 
 /**
  * @dev Contract module which provides a basic access control mechanism, where
@@ -106,6 +103,7 @@ abstract contract Ownable is Context {
 
 
 // File @openzeppelin/contracts/token/ERC20/IERC20.sol@v4.4.2
+
 
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.
@@ -188,7 +186,6 @@ interface IERC20 {
 
 // File @openzeppelin/contracts/utils/Address.sol@v4.4.2
 
-// OpenZeppelin Contracts v4.4.1 (utils/Address.sol)
 
 /**
  * @dev Collection of functions related to the address type
@@ -405,6 +402,7 @@ library Address {
 
 
 // File @openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol@v4.4.2
+
 
 
 /**
@@ -729,6 +727,7 @@ library SafeMath {
 
 // File @openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol@v4.4.2
 
+
 /**
  * @dev Interface for the optional metadata functions from the ERC20 standard.
  *
@@ -753,6 +752,7 @@ interface IERC20Metadata is IERC20 {
 
 
 // File @openzeppelin/contracts/token/ERC20/ERC20.sol@v4.4.2
+
 
 
 
@@ -1105,12 +1105,20 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
 }
 
 
-// File contracts/LPToken.sol
 
-pragma solidity >=0.8.10;
+interface ILiquidityPool {
+    function transfer(address _token, address _recipient, uint256 _amount) external;
+}
+
+interface ILPToken {
+    function mint(address _recipient, uint256 _amount) external;
+    function burn(address _from, uint256 _amount) external;
+}
 
 
-contract LPToken is ERC20, Ownable {
+
+
+contract LPToken is ERC20, Ownable, ILPToken {
     address public gateway;
 
     modifier onlyManager() {
@@ -1138,7 +1146,7 @@ contract LPToken is ERC20, Ownable {
 
 // File contracts/Liquidity.sol
 
-contract LiquidityPool is Ownable {
+contract LiquidityPool is Ownable, ILiquidityPool  {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
