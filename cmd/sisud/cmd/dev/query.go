@@ -91,7 +91,7 @@ Usage:
 func (c *queryCommand) getTokens() []*types.Token {
 	tokens := []*types.Token{}
 
-	dat, err := os.ReadFile("./tokens_dev.json")
+	dat, err := os.ReadFile("./misc/tokens_dev.json")
 	if err != nil {
 		panic(err)
 	}

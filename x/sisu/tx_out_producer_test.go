@@ -41,6 +41,10 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 		Id:       "eth",
 		GasPrice: int64(400_000_000_000),
 	})
+	mockPublicDb.EXPECT().GetLiquidity("eth").Return(&types.Liquidity{
+		Id:      "eth",
+		Address: "0x1234",
+	})
 
 	txOutProducer := DefaultTxOutputProducer{
 		publicDb: mockPublicDb,
@@ -83,6 +87,10 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		mockPublicDb.EXPECT().GetChain("eth").Return(&types.Chain{
 			Id:       "eth",
 			GasPrice: int64(400_000_000_000),
+		})
+		mockPublicDb.EXPECT().GetLiquidity("eth").Return(&types.Liquidity{
+			Id:      "eth",
+			Address: "0x1234",
 		})
 
 		mockAppKeys := mock.NewMockAppKeys(ctrl)

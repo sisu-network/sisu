@@ -6,9 +6,11 @@ option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 import "sisu/node.proto";
 import "sisu/token.proto";
 import "sisu/chain.proto";
+import "sisu/liquidity.proto";
 
 message GenesisState {
   repeated Node nodes = 1;
   repeated Token tokens = 2;
   repeated Chain chains = 3;
+  repeated Liquidity liquids = 4;
 }

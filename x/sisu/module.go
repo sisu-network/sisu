@@ -197,6 +197,18 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	}
 	log.Info("Chains in the genesis file: ", strings.Join(chains, ", "))
 
+	liquids := make(map[string]*types.Liquidity)
+	for _, liq := range genState.Liquids {
+		liquids[liq.Id] = liq
+	}
+	publicDb.SetLiquidities(liquids)
+	savedLiqs := publicDb.GetAllLiquidities()
+	liqIds := make([]string, 0, len(savedLiqs))
+	for _, liq := range savedLiqs {
+		liqIds = append(liqIds, liq.Id)
+	}
+	log.Info("Liquidities in the genesis file: ", strings.Join(liqIds, ", "))
+
 	// Create validator nodes
 	validators := make([]abci.ValidatorUpdate, len(genState.Nodes))
 	for i, node := range genState.Nodes {

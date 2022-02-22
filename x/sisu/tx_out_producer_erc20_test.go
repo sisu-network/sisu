@@ -27,7 +27,6 @@ func TestTxOutProducerErc20_getGasCostInToken(t *testing.T) {
 		Price: int64(4 * utils.DecinmalUnit),
 	}
 	mockWorldState.EXPECT().GetNativeTokenPriceForChain(chain).Return(int64(2*utils.DecinmalUnit), nil).Times(1)
-	mockWorldState.EXPECT().GetTokenPrice(token).Return(int64(4*utils.DecinmalUnit), nil).Times(1)
 
 	gas := big.NewInt(8_000_000)
 	gasPrice := big.NewInt(10 * 1_000_000_000) // 10 gwei

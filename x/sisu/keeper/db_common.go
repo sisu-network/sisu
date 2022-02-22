@@ -28,6 +28,7 @@ var (
 	prefixToken                  = []byte{0x0F}
 	prefixTokenPrices            = []byte{0x10}
 	prefixNode                   = []byte{0x11}
+	prefixLiquidity              = []byte{0x12}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -78,6 +79,11 @@ func getContractAddressKey(chain string, address string) []byte {
 func getGasPriceKey(chain string, height int64) []byte {
 	// chain, height
 	return []byte(fmt.Sprintf("%s__%d", chain, height))
+}
+
+func getLiquidityKey(chain string) []byte {
+	// chain
+	return []byte(chain)
 }
 
 ///// TxREcord
@@ -703,7 +709,7 @@ func getTokens(store cstypes.KVStore, tokenIds []string) map[string]*types.Token
 		token := &types.Token{}
 		err := token.Unmarshal(bz)
 		if err != nil {
-			log.Error("getTokens: cannot unmarhsla token ", id)
+			log.Error("getTokens: cannot unmarshal token ", id)
 			continue
 		}
 
@@ -759,6 +765,55 @@ func loadValidators(store cstypes.KVStore) []*types.Node {
 	}
 
 	return vals
+}
+
+///// Liquidity
+func setLiquidities(store cstypes.KVStore, liquidities map[string]*types.Liquidity) {
+	for id, liquid := range liquidities {
+		bz, err := liquid.Marshal()
+		if err != nil {
+			log.Error("cannot marshal liquidity ", id)
+			continue
+		}
+
+		store.Set([]byte(id), bz)
+	}
+}
+
+func getLiquidity(store cstypes.KVStore, chain string) *types.Liquidity {
+	bz := store.Get([]byte(chain))
+	if bz == nil {
+		return nil
+	}
+
+	liquid := &types.Liquidity{}
+	if err := liquid.Unmarshal(bz); err != nil {
+		log.Errorf("getLiquidity: error when unmarshal liquid for chain: %s", chain)
+		return nil
+	}
+
+	return liquid
+}
+
+func getAllLiquidities(store cstypes.KVStore) map[string]*types.Liquidity {
+	liquids := make(map[string]*types.Liquidity)
+
+	iter := store.Iterator(nil, nil)
+
+	for ; iter.Valid(); iter.Next() {
+		liq := &types.Liquidity{}
+		err := liq.Unmarshal(iter.Value())
+		if err != nil {
+			log.Error("cannot unmarshal liquidity ", string(iter.Key()))
+			continue
+		}
+
+		liquids[string(iter.Key())] = liq
+	}
+
+	_ = iter.Close()
+
+	return liquids
 }
 
 ///// Debug functions

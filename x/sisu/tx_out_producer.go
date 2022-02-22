@@ -122,29 +122,28 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 	// 2. Check if this is a tx sent to one of our contracts.
 	if ethTx.To() != nil &&
-		p.publicDb.IsContractExistedAtAddress(tx.Chain, ethTx.To().String()) &&
-		len(ethTx.Data()) >= 4 {
+		p.publicDb.IsContractExistedAtAddress(tx.Chain, ethTx.To().String()) && len(ethTx.Data()) >= 4 {
 
 		// TODO: compare method name to trigger corresponding contract method
-		responseTx, err := p.processERC20TransferIn(ctx, ethTx)
-
-		if err == nil {
-			outMsg := types.NewMsgTxOutWithSigner(
-				p.appKeys.GetSignerAddress().String(),
-				types.TxOutType_NORMAL,
-				tx.BlockHeight,
-				tx.Chain,
-				tx.TxHash,
-				responseTx.OutChain, // Could be different chain
-				responseTx.EthTx.Hash().String(),
-				responseTx.RawBytes,
-				"",
-			)
-
-			outMsgs = append(outMsgs, outMsg)
-		} else {
+		responseTx, err := p.processERC20TransferIn(ethTx)
+		if err != nil {
 			log.Error("cannot get response for erc20 tx, err = ", err)
+			return nil, err
 		}
+
+		outMsg := types.NewMsgTxOutWithSigner(
+			p.appKeys.GetSignerAddress().String(),
+			types.TxOutType_NORMAL,
+			tx.BlockHeight,
+			tx.Chain,
+			tx.TxHash,
+			responseTx.OutChain, // Could be different chain
+			responseTx.EthTx.Hash().String(),
+			responseTx.RawBytes,
+			"",
+		)
+
+		outMsgs = append(outMsgs, outMsg)
 	}
 
 	// 3. Check other types of transaction.
@@ -197,7 +196,13 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *types.Contract, nonce 
 
 		log.Info("Allowed chains for chain ", contract.Chain, " are: ", supportedChains)
 
-		input, err := parsedAbi.Pack("", supportedChains)
+		lp := p.publicDb.GetLiquidity(contract.Chain)
+		if lp == nil {
+			return nil
+		}
+
+		log.Infof("Liquidity pool addr for chain %s is %s", contract.Chain, lp.Address)
+		input, err := parsedAbi.Pack("", supportedChains, ecommon.HexToAddress(lp.Address))
 		if err != nil {
 			log.Error("cannot pack supportedChains, err =", err)
 			return nil

@@ -21,6 +21,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
+	"github.com/sisu-network/sisu/contracts/eth/liquidity"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu"
 	tssTypes "github.com/sisu-network/sisu/x/sisu/types"
@@ -29,8 +30,8 @@ import (
 )
 
 const (
-	ExpectedErc20Address = "0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"
-	Erc20MethodTransfer  = "transfer"
+	ExpectedErc20Address      = "0xf0D676183dD5ae6b370adDdbE770235F23546f9d"
+	ExpectedLiquidPoolAddress = "0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"
 )
 
 type fundAccountCmd struct{}
@@ -77,12 +78,23 @@ fund-account ganache1 7545 ganache2 8545 10
 				}
 			}()
 
+			// Deploy liquidity contract
+			liquidityAddrs := make([]common.Address, len(urls))
+			wg.Add(len(clients))
+			for i, client := range clients {
+				go func(i int, client *ethclient.Client) {
+					liquidityAddrs[i] = c.deployLiquid(client)
+					wg.Done()
+				}(i, client)
+			}
+			wg.Wait()
+
 			// Deploy ERC20 contract
 			tokenAddrs := make([]common.Address, len(urls))
 			wg.Add(len(clients))
 			for i, client := range clients {
 				go func(i int, client *ethclient.Client) {
-					tokenAddrs[i] = c.deployErc20(client, "sisu", "SISU")
+					tokenAddrs[i] = c.deployErc20(client)
 					wg.Done()
 				}(i, client)
 			}
@@ -110,6 +122,16 @@ fund-account ganache1 7545 ganache2 8545 10
 			log.Info("Now we wait until gateway contracts are deployed on all chains.")
 			gateways := c.waitForGatewayDeployed(cmd.Context(), chains)
 
+			// Grant permission for gateway to use liquidity pool' funds
+			wg.Add(len(gateways))
+			for i, client := range clients {
+				go func(i int, client *ethclient.Client) {
+					c.grantLiquidityPoolAccess(client, liquidityAddrs[i], gateways[i])
+					wg.Done()
+				}(i, client)
+			}
+			wg.Wait()
+
 			// Approve the contract with some preallocated token
 			wg.Add(len(gateways))
 			for i, client := range clients {
@@ -126,16 +148,16 @@ fund-account ganache1 7545 ganache2 8545 10
 			// Transfer ERC20 tokens
 			erc20Amount := new(big.Int).Mul(big.NewInt(500), utils.EthToWei)
 			for i, client := range clients {
-				c.transferErc20Tokens(client, tokenAddrs[i], gateways[i], erc20Amount)
+				c.transferErc20Tokens(client, tokenAddrs[i], liquidityAddrs[i], erc20Amount)
 			}
 
 			time.Sleep(3 * time.Second)
 
-			log.Info("Transfer token done")
+			log.Info("Transfer ERC20 token done")
 
 			// Query balance
 			for i, client := range clients {
-				balance, err := c.queryErc20Balance(client, tokenAddrs[i], gateways[i])
+				balance, err := c.queryErc20Balance(client, tokenAddrs[i], liquidityAddrs[i])
 				if err != nil {
 					panic(err)
 				}
@@ -213,18 +235,80 @@ func (c *fundAccountCmd) approveGateway(client *ethclient.Client, erc20Addr comm
 	time.Sleep(time.Second * 3)
 }
 
-// deployErc20 deploys ERC20 contracts to dev chains
-func (c *fundAccountCmd) deployErc20(client *ethclient.Client, tokenName string, tokenSymbol string) common.Address {
+func (c *fundAccountCmd) grantLiquidityPoolAccess(client *ethclient.Client, liquidityAddr, gatewayAddr common.Address) {
+	log.Infof("Granting access for gatewayAddr to call liquidity pool, gateway address: %s\n", gatewayAddr.String())
+
+	contract, err := liquidity.NewLiquidity(liquidityAddr, client)
+	if err != nil {
+		panic(err)
+	}
+
+	opts, err := c.getAuthTransactor(client, account0.Address)
+	if err != nil {
+		panic(err)
+	}
+
+	tx, err := contract.SetGateway(opts, gatewayAddr)
+	if err != nil {
+		panic(err)
+	}
+	txReceipt, err := bind.WaitMined(context.Background(), client, tx)
+	if err != nil {
+		panic(err)
+	}
+
+	if txReceipt.Status != ethtypes.ReceiptStatusSuccessful {
+		panic("tx grant liquidity pool access failed")
+	}
+
+	log.Info("Grant access for gateway successfully")
+}
+
+func (c *fundAccountCmd) deployLiquid(client *ethclient.Client) common.Address {
 	auth, err := c.getAuthTransactor(client, account0.Address)
 	if err != nil {
 		panic(err)
 	}
 
 	if auth.Nonce.Cmp(big.NewInt(0)) != 0 {
-		panic(fmt.Errorf("valid nonce, the account0 nonce should be zero. Please restart your ganache and try again."))
+		panic("valid nonce, the account0 nonce should be zero. Please restart your ganache and try again.")
 	}
 
-	address, tx, instance, err := erc20.DeployErc20(auth, client, "sisu", "SISU")
+	_, tx, _, err := liquidity.DeployLiquidity(auth, client, []common.Address{}, []common.Address{})
+	if err != nil {
+		panic(err)
+	}
+
+	log.Info("Deploying liquidity ... ")
+	addr, err := bind.WaitDeployed(context.Background(), client, tx)
+	if err != nil {
+		panic(err)
+	}
+
+	if addr.String() != ExpectedLiquidPoolAddress {
+		panic(fmt.Errorf(`Unmatched Liquid pool address. We expect address %s but get %s.
+You need to update the expected address (both in this file and the tokens_dev.json).`,
+			ExpectedLiquidPoolAddress, addr.String()))
+	}
+
+	log.Info("Deployed liquidity successfully, addr: ", addr.String())
+
+	return addr
+}
+
+// deployErc20 deploys ERC20 contracts to dev chains
+func (c *fundAccountCmd) deployErc20(client *ethclient.Client) common.Address {
+	auth, err := c.getAuthTransactor(client, account0.Address)
+	if err != nil {
+		panic(err)
+	}
+
+	if auth.Nonce.Cmp(big.NewInt(1)) != 0 {
+		panic("valid nonce, the account0 nonce should be 1. Please restart your ganache and try again.")
+	}
+
+	// seed 1000 * 10^18 for msg.sender
+	address, tx, instance, err := erc20.DeployErc20(auth, client)
 	_ = instance
 	if err != nil {
 		panic(err)
@@ -239,7 +323,7 @@ You need to update the expected address (both in this file and the tokens_dev.js
 	log.Info("Deploying erc20....")
 	bind.WaitDeployed(context.Background(), client, tx)
 	time.Sleep(time.Second * 3)
-	log.Info("Deployment done! Contract address: ", address.String())
+	log.Info("Deployment done! ERC20 Contract address: ", address.String())
 
 	return address
 }
@@ -382,7 +466,7 @@ func (c *fundAccountCmd) waitForGatewayDeployed(context context.Context, chains 
 				break
 			}
 
-			log.Info("Contract Address = ", res.Contract.Address)
+			log.Info("GatewayContract Address = ", res.Contract.Address)
 			addrs[i] = res.Contract.Address
 		}
 

@@ -136,7 +136,9 @@ func getChains(file string) []*types.Chain {
 		panic(err)
 	}
 
-	json.Unmarshal(dat, &chains)
+	if err := json.Unmarshal(dat, &chains); err != nil {
+		panic(err)
+	}
 
 	return chains
 }
@@ -149,7 +151,23 @@ func getTokens(file string) []*types.Token {
 		panic(err)
 	}
 
-	json.Unmarshal(dat, &tokens)
+	if err := json.Unmarshal(dat, &tokens); err != nil {
+		panic(err)
+	}
 
 	return tokens
+}
+
+func getLiquidity(file string) []*types.Liquidity {
+	liquids := []*types.Liquidity{}
+	bz, err := os.ReadFile(file)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := json.Unmarshal(bz, &liquids); err != nil {
+		panic(err)
+	}
+
+	return liquids
 }
