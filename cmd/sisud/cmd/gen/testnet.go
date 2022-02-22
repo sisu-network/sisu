@@ -3,6 +3,7 @@ package gen
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -237,7 +238,12 @@ func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartI
 			continue
 		}
 
-		peers = append(peers, fmt.Sprintf(`"/dns/%s/tcp/28300/p2p/%s"`, heartIps[i], peerIds[i]))
+		ipOrDns := "ip4"
+		if net.ParseIP(heartIps[i]) == nil {
+			ipOrDns = "dns"
+		}
+
+		peers = append(peers, fmt.Sprintf(`"/%s/%s/tcp/28300/p2p/%s"`, ipOrDns, heartIps[i], peerIds[i]))
 	}
 
 	peerString := strings.Join(peers, ", ")
@@ -256,8 +262,6 @@ func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartI
 
 func (g *TestnetGenerator) generateEyesToml(index int, dir string, sisuIp string, sqlConfig SqlConfig, chainConfigs []ChainConfig) {
 	sqlConfig.Schema = "deyes"
-
-	fmt.Println("chainConfigs = ", chainConfigs)
 
 	deyesConfig := DeyesConfiguration{
 		Chains: chainConfigs,
