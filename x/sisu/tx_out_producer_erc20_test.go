@@ -30,7 +30,7 @@ func TestTxOutProducerErc20_getGasCostInToken(t *testing.T) {
 
 	gas := big.NewInt(8_000_000)
 	gasPrice := big.NewInt(10 * 1_000_000_000) // 10 gwei
-	amount, err := p.getGasCostInToken(gas, gasPrice, chain, token)
+	amount, err := p.GetGasCostInToken(gas, gasPrice, big.NewInt(token.Price), chain)
 
 	require.Equal(t, nil, err)
 

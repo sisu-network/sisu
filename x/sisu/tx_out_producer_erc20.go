@@ -115,7 +115,12 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(
 
 	// 2. Subtract the network gas fee on destination chain.
 	gas := big.NewInt(8_000_000) // TODO: Show the correct gas cost here.
-	gasPriceInToken, err := p.getGasCostInToken(gas, gasPrice, destChain, token)
+	nativeTokenPrice, err := p.worldState.GetNativeTokenPriceForChain(destChain)
+	if err != nil {
+		return nil, err
+	}
+
+	gasPriceInToken, err := p.GetGasCostInToken(gas, gasPrice, big.NewInt(token.Price), big.NewInt(nativeTokenPrice))
 	if err != nil {
 		return nil, err
 	}
@@ -158,18 +163,13 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(
 	}, nil
 }
 
-func (p *DefaultTxOutputProducer) getGasCostInToken(gas *big.Int, gasPrice *big.Int, chain string, token *types.Token) (*big.Int, error) {
+func (p *DefaultTxOutputProducer) GetGasCostInToken(gas, gasPrice, tokenPrice, nativeTokenPrice *big.Int) (*big.Int, error) {
 	// Get total gas cost
 	gasCost := new(big.Int).Mul(gas, gasPrice)
 
-	chainTokenPrice, err := p.worldState.GetNativeTokenPriceForChain(chain)
-	if err != nil {
-		return nil, err
-	}
-
-	// amount := gasCost * chainTokenPrice / tokenPrice
-	gasInToken := new(big.Int).Mul(gasCost, big.NewInt(chainTokenPrice))
-	gasInToken = new(big.Int).Div(gasInToken, big.NewInt(token.Price))
+	// amount := gasCost * nativeTokenPrice / tokenPrice
+	gasInToken := new(big.Int).Mul(gasCost, nativeTokenPrice)
+	gasInToken = new(big.Int).Div(gasInToken, tokenPrice)
 
 	return gasInToken, nil
 }

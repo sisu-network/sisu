@@ -106,19 +106,21 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 
-	sisuHandler *SisuHandler
-	keeper      keeper.DefaultKeeper
-	processor   *Processor
-	appKeys     *common.DefaultAppKeys
-	txSubmit    common.TxSubmit
-	globalData  common.GlobalData
-	publicDb    keeper.Storage
-	valsManager ValidatorManager
-	worldState  WorldState
+	sisuHandler        *SisuHandler
+	applicationHandler *rest.ApplicationHandler
+	keeper             keeper.DefaultKeeper
+	processor          *Processor
+	appKeys            *common.DefaultAppKeys
+	txSubmit           common.TxSubmit
+	globalData         common.GlobalData
+	publicDb           keeper.Storage
+	valsManager        ValidatorManager
+	worldState         WorldState
 }
 
 func NewAppModule(cdc codec.Marshaler,
 	sisuHandler *SisuHandler,
+	applicationHandler *rest.ApplicationHandler,
 	keeper keeper.DefaultKeeper,
 	publicDb keeper.Storage,
 	appKeys *common.DefaultAppKeys,
@@ -129,16 +131,17 @@ func NewAppModule(cdc codec.Marshaler,
 	worldState WorldState,
 ) AppModule {
 	return AppModule{
-		AppModuleBasic: NewAppModuleBasic(cdc),
-		sisuHandler:    sisuHandler,
-		txSubmit:       txSubmit,
-		processor:      processor,
-		keeper:         keeper,
-		publicDb:       publicDb,
-		appKeys:        appKeys,
-		globalData:     globalData,
-		valsManager:    valsManager,
-		worldState:     worldState,
+		AppModuleBasic:     NewAppModuleBasic(cdc),
+		sisuHandler:        sisuHandler,
+		applicationHandler: applicationHandler,
+		txSubmit:           txSubmit,
+		processor:          processor,
+		keeper:             keeper,
+		publicDb:           publicDb,
+		appKeys:            appKeys,
+		globalData:         globalData,
+		valsManager:        valsManager,
+		worldState:         worldState,
 	}
 }
 
