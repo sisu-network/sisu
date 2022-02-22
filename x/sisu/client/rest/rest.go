@@ -9,7 +9,6 @@ import (
 )
 
 type ApplicationHandler struct {
-	r          *mux.Router
 	worldState sisu.WorldState
 }
 
