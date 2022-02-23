@@ -100,7 +100,7 @@ You can now deploy ETH transaction on ganache1 at port 7545.
 Run this command to fund 2 gateway smart contract on 2 different chains ganache1 and ganache2:
 
 ```
-./sisu dev fund-account ganache1 7545 ganache2 8545 10
+./sisu dev fund-account
 ```
 
 This command does a number of things:

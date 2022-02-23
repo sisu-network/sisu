@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"math/big"
-	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,6 +20,7 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
 	"github.com/sisu-network/sisu/contracts/eth/liquidity"
 	"github.com/sisu-network/sisu/utils"
@@ -39,35 +40,27 @@ type fundAccountCmd struct{}
 func FundAccount() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "fund-account",
-		Short: `Fund localhost accounts. Example:
-fund-account ganache1 7545 ganache2 8545 10
+		Short: `Fund accounts with on a list of chains. Example:
+./sisu dev fund-account
 `,
 
 		RunE: func(cmd *cobra.Command, args []string) error {
-			amount, err := strconv.Atoi(args[len(args)-1])
-			if err != nil {
-				panic(err)
-			}
+			chainString, _ := cmd.Flags().GetString(flags.Chains)
+			chains := strings.Split(chainString, ",")
+			urlString, _ := cmd.Flags().GetString(flags.ChainUrls)
+			urls := strings.Split(urlString, ",")
+			amount, _ := cmd.Flags().GetInt(flags.Amount)
 			log.Verbose("Amount = ", amount)
 
 			c := &fundAccountCmd{}
 			wg := &sync.WaitGroup{}
-			chains := make([]string, 0)
 			clients := make([]*ethclient.Client, 0)
 
 			// Get all urls from command arguments.
-			urls := make([]string, 0)
-			for i := 0; i < len(args)-1; i += 2 {
-				chains = append(chains, args[i])
-				port, err := strconv.Atoi(args[i+1])
+			for i := 0; i < len(urls); i++ {
+				client, err := ethclient.Dial(urls[i])
 				if err != nil {
-					return err
-				}
-				url := "http://0.0.0.0:" + strconv.Itoa(port)
-				urls = append(urls, url)
-				client, err := ethclient.Dial(url)
-				if err != nil {
-					log.Error("please check the ganache is up and running, url = ", url)
+					log.Error("please check chain is up and running, url = ", urls[i])
 					panic(err)
 				}
 				clients = append(clients, client)
@@ -78,10 +71,19 @@ fund-account ganache1 7545 ganache2 8545 10
 				}
 			}()
 
+			fmt.Println(urls, len(clients))
+
 			// Deploy liquidity contract
 			liquidityAddrs := make([]common.Address, len(urls))
 			wg.Add(len(clients))
 			for i, client := range clients {
+				// If liquidity contract has been deployed, do nothing.
+				if c.isContractDeployed(client, common.HexToAddress(ExpectedLiquidPoolAddress)) {
+					liquidityAddrs[i] = common.HexToAddress(ExpectedLiquidPoolAddress)
+					wg.Done()
+					continue
+				}
+
 				go func(i int, client *ethclient.Client) {
 					liquidityAddrs[i] = c.deployLiquid(client)
 					wg.Done()
@@ -93,6 +95,13 @@ fund-account ganache1 7545 ganache2 8545 10
 			tokenAddrs := make([]common.Address, len(urls))
 			wg.Add(len(clients))
 			for i, client := range clients {
+				// If ERC20 contract has been deployed, do nothing.
+				if c.isContractDeployed(client, common.HexToAddress(ExpectedErc20Address)) {
+					tokenAddrs[i] = common.HexToAddress(ExpectedErc20Address)
+					wg.Done()
+					continue
+				}
+
 				go func(i int, client *ethclient.Client) {
 					tokenAddrs[i] = c.deployErc20(client)
 					wg.Done()
@@ -138,7 +147,6 @@ fund-account ganache1 7545 ganache2 8545 10
 				log.Verbose("gateway = ", gateways[i])
 				go func(i int, client *ethclient.Client) {
 					c.approveGateway(client, tokenAddrs[i], gateways[i])
-					// c.approveGateway(client, common.HexToAddress("0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"), gateways[i])
 					wg.Done()
 				}(i, client)
 			}
@@ -148,7 +156,15 @@ fund-account ganache1 7545 ganache2 8545 10
 			// Transfer ERC20 tokens
 			erc20Amount := new(big.Int).Mul(big.NewInt(500), utils.EthToWei)
 			for i, client := range clients {
-				c.transferErc20Tokens(client, tokenAddrs[i], liquidityAddrs[i], erc20Amount)
+				// Check if we need to transfer to liquidityAddrs
+				balance, err := c.queryErc20Balance(client, tokenAddrs[i], liquidityAddrs[i])
+				if err != nil {
+					panic(err)
+				}
+				// Only transfer if the liquidityAddrs has 0 balance
+				if balance.Cmp(big.NewInt(0)) == 0 {
+					c.transferErc20Tokens(client, tokenAddrs[i], liquidityAddrs[i], erc20Amount)
+				}
 			}
 
 			time.Sleep(3 * time.Second)
@@ -157,6 +173,7 @@ fund-account ganache1 7545 ganache2 8545 10
 
 			// Query balance
 			for i, client := range clients {
+				fmt.Println("Querying token address ", tokenAddrs[i])
 				balance, err := c.queryErc20Balance(client, tokenAddrs[i], liquidityAddrs[i])
 				if err != nil {
 					panic(err)
@@ -170,6 +187,10 @@ fund-account ganache1 7545 ganache2 8545 10
 			return nil
 		},
 	}
+
+	cmd.Flags().String(flags.Chains, "ganache1,ganache2", "Names of all chains we want to fund.")
+	cmd.Flags().String(flags.ChainUrls, "http://0.0.0.0:7545,http://0.0.0.0:8545", "RPCs of all the chains we want to fund.")
+	cmd.Flags().Int(flags.Amount, 100, "The amount that gateway addresses will receive")
 
 	return cmd
 }
@@ -294,6 +315,18 @@ You need to update the expected address (both in this file and the tokens_dev.js
 	log.Info("Deployed liquidity successfully, addr: ", addr.String())
 
 	return addr
+}
+
+// isContractDeployed checks if a contract has been deployed at a specific address so that
+// we do not have to deploy again.
+func (c *fundAccountCmd) isContractDeployed(client *ethclient.Client, tokenAddress common.Address) bool {
+	bz, err := client.CodeAt(context.Background(), tokenAddress, nil)
+	if err != nil {
+		log.Error("Cannot get code at ", tokenAddress.String(), " err = ", err)
+		return false
+	}
+
+	return len(bz) > 10
 }
 
 // deployErc20 deploys ERC20 contracts to dev chains
