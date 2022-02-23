@@ -3,6 +3,7 @@ package sisu
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/x/sisu/helper"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -58,7 +59,7 @@ func (h *HandlerKeygen) doTss(msg *types.Keygen, blockHeight int64) {
 	// Send a signal to Dheart to start keygen process.
 	log.Info("Sending keygen request to Dheart. KeyType =", msg.KeyType)
 	pubKeys := partyManager.GetActivePartyPubkeys()
-	keygenId := GetKeygenId(msg.KeyType, blockHeight, pubKeys)
+	keygenId := helper.GetKeygenId(msg.KeyType, blockHeight, pubKeys)
 
 	err := dheartClient.KeyGen(keygenId, msg.KeyType, pubKeys)
 	if err != nil {

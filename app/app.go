@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/sisu-network/sisu/x/sisu/client/rest"
+	"github.com/sisu-network/sisu/x/sisu/world"
 	"io"
 	"path/filepath"
 
@@ -119,14 +120,14 @@ var (
 // They are exported for convenience in creating helper functions, as object
 // capabilities aren't needed for testing.
 type App struct {
-	txSubmitter        *common.TxSubmitter
-	appKeys            *common.DefaultAppKeys
-	globalData         common.GlobalData
-	internalApiServer  server.Server
-	tssProcessor       *tss.Processor
-	txDecoder          sdk.TxDecoder
-	apiHandler         *tss.ApiHandler
-	applicationHandler *rest.ApplicationHandler
+	txSubmitter       *common.TxSubmitter
+	appKeys           *common.DefaultAppKeys
+	globalData        common.GlobalData
+	internalApiServer server.Server
+	tssProcessor      *tss.Processor
+	txDecoder         sdk.TxDecoder
+	apiHandler        *tss.ApiHandler
+	externalHandler   *rest.ExternalHandler
 
 	///////////////////////////////////////////////////////////////
 
@@ -259,7 +260,7 @@ func New(
 	publicDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "data"))
 	privateDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "private"))
 
-	worldState := tss.NewWorldState(tssConfig, publicDb, deyesClient)
+	worldState := world.NewWorldState(tssConfig, publicDb, deyesClient)
 	worldState.LoadData()
 
 	tssProcessor := tss.NewProcessor(app.tssKeeper, publicDb, privateDb, tssConfig, nodeKey.PrivKey,
@@ -275,7 +276,8 @@ func New(
 		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
 		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, publicDb, cfg.Tss), worldState)
 	sisuHandler := tss.NewSisuHandler(mc)
-	applicationHandler := rest.NewApplicationHandler(worldState)
+	externalHandler := rest.NewExternalHandler(worldState)
+	app.externalHandler = externalHandler
 
 	modules := []module.AppModule{
 		genutil.NewAppModule(
@@ -290,7 +292,7 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
 
-		tss.NewAppModule(appCodec, sisuHandler, applicationHandler, app.tssKeeper, publicDb, app.appKeys, app.txSubmitter,
+		tss.NewAppModule(appCodec, sisuHandler, app.tssKeeper, publicDb, app.appKeys, app.txSubmitter,
 			tssProcessor, app.globalData, valsMgr, worldState),
 	}
 
@@ -514,13 +516,12 @@ func (app *App) RegisterAPIRoutes(apiSvr *api.Server, apiConfig cConfig.APIConfi
 	// Register new tendermint queries routes from grpc-gateway.
 	tmservice.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
-
 	// Register legacy and grpc-gateway routes for all modules.
 	ModuleBasics.RegisterRESTRoutes(clientCtx, apiSvr.Router)
 	ModuleBasics.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
 
 	// Register customize routes
-	app.applicationHandler.RegisterRoutes(clientCtx, apiSvr.Router)
+	app.externalHandler.RegisterRoutes(clientCtx, apiSvr.Router)
 }
 
 // RegisterTxService implements the Application.RegisterTxService method.

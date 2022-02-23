@@ -9,12 +9,13 @@ import (
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
+	"github.com/sisu-network/sisu/x/sisu/world"
 )
 
 type HandlerGasPrice struct {
 	publicDb   keeper.Storage
 	globalData common.GlobalData
-	worldState WorldState
+	worldState world.WorldState
 }
 
 func NewHandlerGasPrice(mc ManagerContainer) *HandlerGasPrice {
@@ -64,7 +65,7 @@ func (h *HandlerGasPrice) DeliverMsg(ctx sdk.Context, msg *types.GasPriceMsg) (*
 	h.publicDb.SaveChain(chain)
 
 	// Save to the world state
-	h.worldState.SetChain(chain)
+	h.worldState.	SetChain(chain)
 
 	return nil, nil
 }

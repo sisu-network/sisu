@@ -9,7 +9,9 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/x/sisu/helper"
 	"github.com/sisu-network/sisu/x/sisu/types"
+	"github.com/sisu-network/sisu/x/sisu/world"
 )
 
 func decodeTxParams(abi abi.ABI, callData []byte) (map[string]interface{}, error) {
@@ -120,7 +122,7 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(
 		return nil, err
 	}
 
-	gasPriceInToken, err := p.GetGasCostInToken(gas, gasPrice, big.NewInt(token.Price), big.NewInt(nativeTokenPrice))
+	gasPriceInToken, err := helper.GetGasCostInToken(gas, gasPrice, big.NewInt(token.Price), big.NewInt(nativeTokenPrice))
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +130,7 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(
 	amountOut.Sub(amountOut, gasPriceInToken)
 
 	if amountOut.Cmp(big.NewInt(0)) < 0 {
-		return nil, ErrInsufficientFund
+		return nil, world.ErrInsufficientFund
 	}
 
 	log.Debugf("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, gasPriceInToken: %s, amountIn: %s, amountOut: %s",
@@ -161,15 +163,4 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(
 		EthTx:    rawTx,
 		RawBytes: bz,
 	}, nil
-}
-
-func (p *DefaultTxOutputProducer) GetGasCostInToken(gas, gasPrice, tokenPrice, nativeTokenPrice *big.Int) (*big.Int, error) {
-	// Get total gas cost
-	gasCost := new(big.Int).Mul(gas, gasPrice)
-
-	// amount := gasCost * nativeTokenPrice / tokenPrice
-	gasInToken := new(big.Int).Mul(gasCost, nativeTokenPrice)
-	gasInToken = new(big.Int).Div(gasInToken, tokenPrice)
-
-	return gasInToken, nil
 }

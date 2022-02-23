@@ -15,6 +15,7 @@ import (
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
+	"github.com/sisu-network/sisu/x/sisu/world"
 )
 
 // This structs produces transaction output based on input. For a given tx input, this struct
@@ -32,13 +33,13 @@ type DefaultTxOutputProducer struct {
 	// Map from: chain -> address -> bool.
 	ethKeyAddrs map[string]map[string]bool
 
-	worldState WorldState
+	worldState world.WorldState
 	appKeys    common.AppKeys
 	publicDb   keeper.Storage
 	tssConfig  config.TssConfig
 }
 
-func NewTxOutputProducer(worldState WorldState, appKeys common.AppKeys, publicDb keeper.Storage, tssConfig config.TssConfig) TxOutputProducer {
+func NewTxOutputProducer(worldState world.WorldState, appKeys common.AppKeys, publicDb keeper.Storage, tssConfig config.TssConfig) TxOutputProducer {
 	return &DefaultTxOutputProducer{
 		worldState: worldState,
 		appKeys:    appKeys,

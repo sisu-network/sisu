@@ -1,4 +1,4 @@
-package sisu
+package world
 
 import "fmt"
 
@@ -6,7 +6,6 @@ import "fmt"
 
 var (
 	ErrInsufficientFund = fmt.Errorf("insufficient fund")
-	ErrInvalidMessage   = fmt.Errorf("invalid message")
 )
 
 ///// Chain not found

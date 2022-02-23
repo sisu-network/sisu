@@ -1,4 +1,4 @@
-package sisu
+package world
 
 import (
 	"fmt"
@@ -180,10 +180,6 @@ func (ws *DefaultWorldState) GetTokenPrice(tokenId string) (int64, error) {
 	return 0, NewErrTokenNotFound(tokenId)
 }
 
-func (ws *DefaultWorldState) getChainAddrKey(chain, addr string) string {
-	return fmt.Sprintf("%s__%s", chain, addr)
-}
-
 func (ws *DefaultWorldState) GetTokenFromAddress(chain string, tokenAddr string) *types.Token {
 	key := ws.getChainAddrKey(chain, tokenAddr)
 	val, ok := ws.addrToToken.Load(key)
@@ -192,4 +188,8 @@ func (ws *DefaultWorldState) GetTokenFromAddress(chain string, tokenAddr string)
 	}
 
 	return val.(*types.Token)
+}
+
+func (ws *DefaultWorldState) getChainAddrKey(chain, addr string) string {
+	return fmt.Sprintf("%s__%s", chain, addr)
 }

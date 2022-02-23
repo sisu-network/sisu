@@ -9,6 +9,7 @@ import (
 
 	mocksisu "github.com/sisu-network/sisu/tests/mock/x/sisu"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/helper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
@@ -16,10 +17,6 @@ func TestTxOutProducerErc20_getGasCostInToken(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	mockWorldState := mocksisu.NewMockWorldState(ctrl)
-
-	p := &DefaultTxOutputProducer{
-		worldState: mockWorldState,
-	}
 
 	chain := "ganache1"
 	token := &types.Token{
@@ -30,7 +27,9 @@ func TestTxOutProducerErc20_getGasCostInToken(t *testing.T) {
 
 	gas := big.NewInt(8_000_000)
 	gasPrice := big.NewInt(10 * 1_000_000_000) // 10 gwei
-	amount, err := p.GetGasCostInToken(gas, gasPrice, big.NewInt(token.Price), chain)
+	nativeTokenPrice, err := mockWorldState.GetNativeTokenPriceForChain(chain)
+	require.NoError(t, err)
+	amount, err := helper.GetGasCostInToken(gas, gasPrice, big.NewInt(token.Price), big.NewInt(nativeTokenPrice))
 
 	require.Equal(t, nil, err)
 

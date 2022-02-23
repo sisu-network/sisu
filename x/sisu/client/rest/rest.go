@@ -5,21 +5,21 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/gorilla/mux"
-	"github.com/sisu-network/sisu/x/sisu"
+	"github.com/sisu-network/sisu/x/sisu/world"
 )
 
-type ApplicationHandler struct {
-	worldState sisu.WorldState
+type ExternalHandler struct {
+	worldState world.WorldState
 }
 
-func NewApplicationHandler(worldState sisu.WorldState) *ApplicationHandler {
-	return &ApplicationHandler{
+func NewExternalHandler(worldState world.WorldState) *ExternalHandler {
+	return &ExternalHandler{
 		worldState: worldState,
 	}
 }
 
-func (a *ApplicationHandler) RegisterRoutes(clientCtx client.Context, r *mux.Router) {
-	r.HandleFunc("/getGasFeeInToken", a.newGasCostHandler()).Methods(http.MethodGet)
+func (e *ExternalHandler) RegisterRoutes(_ client.Context, r *mux.Router) {
+	r.HandleFunc("/getGasFeeInToken", e.newGasCostHandler()).Methods(http.MethodGet)
 }
 
 // RegisterRoutes registers sisu-related REST handlers to a router

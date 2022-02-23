@@ -23,6 +23,7 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
+	"github.com/sisu-network/sisu/x/sisu/world"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
@@ -67,7 +68,7 @@ type Processor struct {
 	dheartClient tssclients.DheartClient
 	deyesClient  tssclients.DeyesClient
 
-	worldState       WorldState
+	worldState       world.WorldState
 	keygenVoteResult map[string]map[string]bool
 	keygenBlockPairs []BlockSymbolPair
 
@@ -86,7 +87,7 @@ func NewProcessor(k keeper.DefaultKeeper,
 	globalData common.GlobalData,
 	dheartClient tssclients.DheartClient,
 	deyesClient tssclients.DeyesClient,
-	worldState WorldState,
+	worldState world.WorldState,
 ) *Processor {
 	p := &Processor{
 		keeper:            &k,
