@@ -1,4 +1,4 @@
-package sisu
+package world
 
 import (
 	"fmt"
@@ -9,6 +9,7 @@ import (
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/x/sisu/helper"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -39,7 +40,7 @@ var (
 
 // This is an interface of a struct that stores all data of the world data. Examples of world state
 // data are token price, nonce of addresses, network gas fee, etc.
-// go:generate mockgen -source x/sisu/world_state.go -destination=tests/mock/x/sisu/world_state.go -package=mock
+// go:generate mockgen -source x/sisu/world/world_state.go -destination=tests/mock/x/sisu/world_state.go -package=mock
 type WorldState interface {
 	LoadData()
 
@@ -51,6 +52,7 @@ type WorldState interface {
 	SetTokens(tokenPrices map[string]*types.Token)
 	GetTokenPrice(token string) (int64, error)
 	GetNativeTokenPriceForChain(chain string) (int64, error)
+	GetGasCostInToken(tokenId, chainId string) (int64, error)
 
 	GetTokenFromAddress(chain string, tokenAddr string) *types.Token
 }
@@ -180,10 +182,6 @@ func (ws *DefaultWorldState) GetTokenPrice(tokenId string) (int64, error) {
 	return 0, NewErrTokenNotFound(tokenId)
 }
 
-func (ws *DefaultWorldState) getChainAddrKey(chain, addr string) string {
-	return fmt.Sprintf("%s__%s", chain, addr)
-}
-
 func (ws *DefaultWorldState) GetTokenFromAddress(chain string, tokenAddr string) *types.Token {
 	key := ws.getChainAddrKey(chain, tokenAddr)
 	val, ok := ws.addrToToken.Load(key)
@@ -192,4 +190,37 @@ func (ws *DefaultWorldState) GetTokenFromAddress(chain string, tokenAddr string)
 	}
 
 	return val.(*types.Token)
+}
+
+func (ws *DefaultWorldState) GetGasCostInToken(tokenId, chainId string) (int64, error) {
+	gasPrice, err := ws.GetGasPrice(chainId)
+	if err != nil {
+		log.Error(err)
+		return -1, err
+	}
+
+	// TODO: correct gasUnit here
+	gasUnit := big.NewInt(8_000_000)
+	tokenPrice, err := ws.GetTokenPrice(tokenId)
+	if err != nil {
+		log.Error(err)
+		return -1, err
+	}
+
+	nativeTokenPrice, err := ws.GetNativeTokenPriceForChain(chainId)
+	if err != nil {
+		log.Error(err)
+		return -1, err
+	}
+	gasCost, err := helper.GetGasCostInToken(gasUnit, gasPrice, big.NewInt(tokenPrice), big.NewInt(nativeTokenPrice))
+	if err != nil {
+		log.Error(err)
+		return -1, err
+	}
+
+	return gasCost.Int64(), nil
+}
+
+func (ws *DefaultWorldState) getChainAddrKey(chain, addr string) string {
+	return fmt.Sprintf("%s__%s", chain, addr)
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
+	"github.com/sisu-network/sisu/x/sisu/world"
 )
 
 type ManagerContainer interface {
@@ -18,7 +19,7 @@ type ManagerContainer interface {
 	Config() config.TssConfig
 	AppKeys() common.AppKeys
 	TxOutProducer() TxOutputProducer
-	WorldState() WorldState
+	WorldState() world.WorldState
 }
 
 type DefaultManagerContainer struct {
@@ -32,14 +33,14 @@ type DefaultManagerContainer struct {
 	txSubmit          common.TxSubmit
 	config            config.TssConfig
 	appKeys           common.AppKeys
-	txOutProducer     TxOutputProducer
-	worldState        WorldState
+	txOutProducer TxOutputProducer
+	worldState    world.WorldState
 }
 
 func NewManagerContainer(pmm PostedMessageManager, publicDb keeper.Storage, majorityThreshold int, partyManager PartyManager,
 	dheartClient tssclients.DheartClient, deyesClient tssclients.DeyesClient,
 	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.TssConfig,
-	appKeys common.AppKeys, txOutProducer TxOutputProducer, worldState WorldState) ManagerContainer {
+	appKeys common.AppKeys, txOutProducer TxOutputProducer, worldState world.WorldState) ManagerContainer {
 	return &DefaultManagerContainer{
 		pmm:               pmm,
 		publicDb:          publicDb,
@@ -96,6 +97,6 @@ func (mc *DefaultManagerContainer) DeyesClient() tssclients.DeyesClient {
 	return mc.deyesClient
 }
 
-func (mc *DefaultManagerContainer) WorldState() WorldState {
+func (mc *DefaultManagerContainer) WorldState() world.WorldState {
 	return mc.worldState
 }

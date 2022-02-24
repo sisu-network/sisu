@@ -9,12 +9,13 @@ import (
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
+	"github.com/sisu-network/sisu/x/sisu/world"
 )
 
 type HandlerGasPrice struct {
 	publicDb   keeper.Storage
 	globalData common.GlobalData
-	worldState WorldState
+	worldState world.WorldState
 }
 
 func NewHandlerGasPrice(mc ManagerContainer) *HandlerGasPrice {

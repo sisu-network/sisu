@@ -10,6 +10,7 @@ import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
+	"github.com/sisu-network/sisu/x/sisu/world"
 )
 
 func decodeTxParams(abi abi.ABI, callData []byte) (map[string]interface{}, error) {
@@ -113,21 +114,19 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(
 		return nil, fmt.Errorf("token %s has price 0", token.Id)
 	}
 
-	// 2. Subtract the network gas fee on destination chain.
-	gas := big.NewInt(8_000_000) // TODO: Show the correct gas cost here.
-	gasPriceInToken, err := p.getGasCostInToken(gas, gasPrice, destChain, token)
+	gasPriceInToken, err := p.worldState.GetGasCostInToken(token.Id, destChain)
 	if err != nil {
 		return nil, err
 	}
 
-	amountOut.Sub(amountOut, gasPriceInToken)
+	amountOut.Sub(amountOut, big.NewInt(gasPriceInToken))
 
 	if amountOut.Cmp(big.NewInt(0)) < 0 {
-		return nil, ErrInsufficientFund
+		return nil, world.ErrInsufficientFund
 	}
 
-	log.Debugf("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, gasPriceInToken: %s, amountIn: %s, amountOut: %s",
-		destChain, gatewayAddress.String(), tokenAddress, recipient, gasPriceInToken.String(), amountIn.String(), amountOut.String(),
+	log.Debugf("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, gasPriceInToken: %d, amountIn: %s, amountOut: %s",
+		destChain, gatewayAddress.String(), tokenAddress, recipient, gasPriceInToken, amountIn.String(), amountOut.String(),
 	)
 
 	input, err := erc20gatewayContract.Abi.Pack(MethodTransferIn, tokenAddress, recipient, amountOut)
@@ -156,20 +155,4 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(
 		EthTx:    rawTx,
 		RawBytes: bz,
 	}, nil
-}
-
-func (p *DefaultTxOutputProducer) getGasCostInToken(gas *big.Int, gasPrice *big.Int, chain string, token *types.Token) (*big.Int, error) {
-	// Get total gas cost
-	gasCost := new(big.Int).Mul(gas, gasPrice)
-
-	chainTokenPrice, err := p.worldState.GetNativeTokenPriceForChain(chain)
-	if err != nil {
-		return nil, err
-	}
-
-	// amount := gasCost * chainTokenPrice / tokenPrice
-	gasInToken := new(big.Int).Mul(gasCost, big.NewInt(chainTokenPrice))
-	gasInToken = new(big.Int).Div(gasInToken, big.NewInt(token.Price))
-
-	return gasInToken, nil
 }

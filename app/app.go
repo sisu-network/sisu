@@ -63,9 +63,11 @@ import (
 	"github.com/sisu-network/sisu/x/auth/ante"
 	"github.com/sisu-network/sisu/x/sisu"
 	tss "github.com/sisu-network/sisu/x/sisu"
+	"github.com/sisu-network/sisu/x/sisu/client/rest"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	tssKeeper "github.com/sisu-network/sisu/x/sisu/keeper"
 	sisutypes "github.com/sisu-network/sisu/x/sisu/types"
+	"github.com/sisu-network/sisu/x/sisu/world"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
@@ -125,6 +127,7 @@ type App struct {
 	tssProcessor      *tss.Processor
 	txDecoder         sdk.TxDecoder
 	apiHandler        *tss.ApiHandler
+	externalHandler   *rest.ExternalHandler
 
 	///////////////////////////////////////////////////////////////
 
@@ -257,7 +260,7 @@ func New(
 	publicDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "data"))
 	privateDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "private"))
 
-	worldState := tss.NewWorldState(tssConfig, publicDb, deyesClient)
+	worldState := world.NewWorldState(tssConfig, publicDb, deyesClient)
 	worldState.LoadData()
 
 	tssProcessor := tss.NewProcessor(app.tssKeeper, publicDb, privateDb, tssConfig, nodeKey.PrivKey,
@@ -273,6 +276,8 @@ func New(
 		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
 		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, publicDb, cfg.Tss), worldState)
 	sisuHandler := tss.NewSisuHandler(mc)
+	externalHandler := rest.NewExternalHandler(worldState)
+	app.externalHandler = externalHandler
 
 	modules := []module.AppModule{
 		genutil.NewAppModule(
@@ -514,6 +519,9 @@ func (app *App) RegisterAPIRoutes(apiSvr *api.Server, apiConfig cConfig.APIConfi
 	// Register legacy and grpc-gateway routes for all modules.
 	ModuleBasics.RegisterRESTRoutes(clientCtx, apiSvr.Router)
 	ModuleBasics.RegisterGRPCGatewayRoutes(clientCtx, apiSvr.GRPCGatewayRouter)
+
+	// Register customize routes
+	app.externalHandler.RegisterRoutes(clientCtx, apiSvr.Router)
 }
 
 // RegisterTxService implements the Application.RegisterTxService method.

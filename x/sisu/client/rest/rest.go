@@ -1,15 +1,36 @@
 package rest
 
 import (
-	"github.com/gorilla/mux"
+	"net/http"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	// this line is used by starport scaffolding # 1
+	"github.com/gorilla/mux"
+	"github.com/sisu-network/sisu/x/sisu/world"
 )
 
-const (
-	MethodGet = "GET"
-)
+type ExternalHandler struct {
+	worldState world.WorldState
+}
+
+func NewExternalHandler(worldState world.WorldState) *ExternalHandler {
+	return &ExternalHandler{
+		worldState: worldState,
+	}
+}
+
+func (e *ExternalHandler) RegisterRoutes(_ client.Context, r *mux.Router) {
+	r.HandleFunc("/getGasFeeInToken", e.newGasCostHandler()).Methods(http.MethodGet)
+	r.Use(customCORSHeader())
+}
+
+func customCORSHeader() mux.MiddlewareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			next.ServeHTTP(w, req)
+		})
+	}
+}
 
 // RegisterRoutes registers sisu-related REST handlers to a router
 func RegisterRoutes(clientCtx client.Context, r *mux.Router) {

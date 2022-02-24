@@ -26,6 +26,7 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/client/rest"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
+	"github.com/sisu-network/sisu/x/sisu/world"
 )
 
 var (
@@ -80,7 +81,6 @@ func (AppModuleBasic) ValidateGenesis(cdc codec.JSONMarshaler, config client.TxE
 
 // RegisterRESTRoutes registers the capability module's REST service handlers.
 func (AppModuleBasic) RegisterRESTRoutes(clientCtx client.Context, rtr *mux.Router) {
-	rest.RegisterRoutes(clientCtx, rtr)
 }
 
 // RegisterGRPCGatewayRoutes registers the gRPC Gateway routes for the module.
@@ -106,15 +106,16 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 
-	sisuHandler *SisuHandler
-	keeper      keeper.DefaultKeeper
-	processor   *Processor
-	appKeys     *common.DefaultAppKeys
-	txSubmit    common.TxSubmit
-	globalData  common.GlobalData
-	publicDb    keeper.Storage
-	valsManager ValidatorManager
-	worldState  WorldState
+	sisuHandler     *SisuHandler
+	externalHandler *rest.ExternalHandler
+	keeper          keeper.DefaultKeeper
+	processor       *Processor
+	appKeys         *common.DefaultAppKeys
+	txSubmit        common.TxSubmit
+	globalData      common.GlobalData
+	publicDb        keeper.Storage
+	valsManager     ValidatorManager
+	worldState      world.WorldState
 }
 
 func NewAppModule(cdc codec.Marshaler,
@@ -126,7 +127,7 @@ func NewAppModule(cdc codec.Marshaler,
 	processor *Processor,
 	globalData common.GlobalData,
 	valsManager ValidatorManager,
-	worldState WorldState,
+	worldState world.WorldState,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),
@@ -149,7 +150,6 @@ func (am AppModule) Name() string {
 
 // Route returns the capability module's message routing key.
 func (am AppModule) Route() sdk.Route {
-	// return sdk.NewRoute(types.RouterKey, NewHandler(am.processor, am.valsManager))
 	return sdk.NewRoute(types.RouterKey, am.sisuHandler.NewHandler(am.processor, am.valsManager))
 }
 
