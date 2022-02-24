@@ -9,7 +9,6 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/x/sisu/helper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/sisu-network/sisu/x/sisu/world"
 )
@@ -115,26 +114,19 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(
 		return nil, fmt.Errorf("token %s has price 0", token.Id)
 	}
 
-	// 2. Subtract the network gas fee on destination chain.
-	gas := big.NewInt(8_000_000) // TODO: Show the correct gas cost here.
-	nativeTokenPrice, err := p.worldState.GetNativeTokenPriceForChain(destChain)
+	gasPriceInToken, err := p.worldState.GetGasCostInToken(token.Id, destChain)
 	if err != nil {
 		return nil, err
 	}
 
-	gasPriceInToken, err := helper.GetGasCostInToken(gas, gasPrice, big.NewInt(token.Price), big.NewInt(nativeTokenPrice))
-	if err != nil {
-		return nil, err
-	}
-
-	amountOut.Sub(amountOut, gasPriceInToken)
+	amountOut.Sub(amountOut, big.NewInt(gasPriceInToken))
 
 	if amountOut.Cmp(big.NewInt(0)) < 0 {
 		return nil, world.ErrInsufficientFund
 	}
 
-	log.Debugf("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, gasPriceInToken: %s, amountIn: %s, amountOut: %s",
-		destChain, gatewayAddress.String(), tokenAddress, recipient, gasPriceInToken.String(), amountIn.String(), amountOut.String(),
+	log.Debugf("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, gasPriceInToken: %d, amountIn: %s, amountOut: %s",
+		destChain, gatewayAddress.String(), tokenAddress, recipient, gasPriceInToken, amountIn.String(), amountOut.String(),
 	)
 
 	input, err := erc20gatewayContract.Abi.Pack(MethodTransferIn, tokenAddress, recipient, amountOut)

@@ -161,7 +161,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		}).Times(1)
 		mockWorldState.EXPECT().UseAndIncreaseNonce("eth").Return(int64(0)).Times(1)
 		mockWorldState.EXPECT().GetGasPrice("eth").Return(big.NewInt(1_000_000_000), nil).Times(1)
-		mockWorldState.EXPECT().GetNativeTokenPriceForChain("eth").Return(int64(1_000_000_000), nil).Times(1)
+		mockWorldState.EXPECT().GetGasCostInToken("SISU", "eth").Return(int64(1234), nil).Times(1)
 
 		mockAppKeys := mock.NewMockAppKeys(ctrl)
 		accAddress := []byte{1, 2, 3}
