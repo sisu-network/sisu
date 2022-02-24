@@ -199,8 +199,8 @@ func (ws *DefaultWorldState) GetGasCostInToken(tokenId, chainId string) (int64, 
 		return -1, err
 	}
 
-	// TODO: correct gasLimit here
-	gasLimit := big.NewInt(8_000_000)
+	// TODO: correct gasUnit here
+	gasUnit := big.NewInt(8_000_000)
 	tokenPrice, err := ws.GetTokenPrice(tokenId)
 	if err != nil {
 		log.Error(err)
@@ -212,7 +212,7 @@ func (ws *DefaultWorldState) GetGasCostInToken(tokenId, chainId string) (int64, 
 		log.Error(err)
 		return -1, err
 	}
-	gasCost, err := helper.GetGasCostInToken(gasLimit, gasPrice, big.NewInt(tokenPrice), big.NewInt(nativeTokenPrice))
+	gasCost, err := helper.GetGasCostInToken(gasUnit, gasPrice, big.NewInt(tokenPrice), big.NewInt(nativeTokenPrice))
 	if err != nil {
 		log.Error(err)
 		return -1, err
