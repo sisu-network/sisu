@@ -1,15 +1,17 @@
 package gen
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net"
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
+	heartconfig "github.com/sisu-network/dheart/core/config"
+	p2ptypes "github.com/sisu-network/dheart/p2p/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -19,6 +21,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
@@ -180,7 +183,7 @@ Example:
 				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
 
 				// Dheart configs
-				generator.generateHeartToml(i, dir, heartIps, peerIds, sisuIps[i], nodes[i].Sql)
+				generator.generateHeartToml(i, dir, heartIps, peerIds, sisuIps[i], nodes[i].Sql, valPubKeys)
 
 				// Deyes configs
 				generator.generateEyesToml(i, dir, sisuIps[i], nodes[i].Sql, testnetConfig.Chains)
@@ -231,8 +234,9 @@ func (g *TestnetGenerator) getNodeSettings(chainID string, keyringBackend string
 	}
 }
 
-func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartIps []string, peerIds []string, sisuIp string, sqlConfig SqlConfig) {
-	peers := make([]string, 0, len(peerIds)-1)
+func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartIps []string,
+	peerIds []string, sisuIp string, sqlConfig SqlConfig, valPubKeys []cryptotypes.PubKey) {
+	peers := make([]*p2ptypes.Peer, 0, len(peerIds)-1)
 	for i := range peerIds {
 		if i == index {
 			continue
@@ -243,21 +247,32 @@ func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartI
 			ipOrDns = "dns"
 		}
 
-		peers = append(peers, fmt.Sprintf(`"/%s/%s/tcp/28300/p2p/%s"`, ipOrDns, heartIps[i], peerIds[i]))
-	}
+		address := fmt.Sprintf(`"/%s/%s/tcp/28300/p2p/%s"`, ipOrDns, heartIps[i], peerIds[i])
+		peer := &p2ptypes.Peer{
+			Address:    address,
+			PubKey:     hex.EncodeToString(valPubKeys[i].Bytes()),
+			PubKeyType: valPubKeys[i].Type(),
+		}
 
-	peerString := strings.Join(peers, ", ")
-
-	sqlConfig.Schema = "dheart"
-
-	useOnMemory := "false"
-	if len(peerIds) == 1 {
-		useOnMemory = "true"
+		peers = append(peers, peer)
 	}
 
 	sisuUrl := fmt.Sprintf("http://%s:25456", sisuIp)
 
-	writeHeartConfig(index, outputDir, peerString, useOnMemory, false, sisuUrl, sqlConfig)
+	hConfig := heartconfig.HeartConfig{
+		UseOnMemory:       false,
+		ShortcutPreparams: false,
+		SisuServerUrl:     sisuUrl,
+		Db: heartconfig.DbConfig{
+			Host:     sqlConfig.Host,
+			Port:     sqlConfig.Port,
+			Username: sqlConfig.Username,
+			Password: sqlConfig.Password,
+			Schema:   "dheart",
+		},
+	}
+
+	writeHeartConfig(outputDir, hConfig)
 }
 
 func (g *TestnetGenerator) generateEyesToml(index int, dir string, sisuIp string, sqlConfig SqlConfig, chainConfigs []ChainConfig) {
