@@ -1,8 +1,6 @@
 package app
 
 import (
-	"github.com/sisu-network/sisu/x/sisu/client/rest"
-	"github.com/sisu-network/sisu/x/sisu/world"
 	"io"
 	"path/filepath"
 
@@ -65,9 +63,11 @@ import (
 	"github.com/sisu-network/sisu/x/auth/ante"
 	"github.com/sisu-network/sisu/x/sisu"
 	tss "github.com/sisu-network/sisu/x/sisu"
+	"github.com/sisu-network/sisu/x/sisu/client/rest"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	tssKeeper "github.com/sisu-network/sisu/x/sisu/keeper"
 	sisutypes "github.com/sisu-network/sisu/x/sisu/types"
+	"github.com/sisu-network/sisu/x/sisu/world"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 

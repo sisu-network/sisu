@@ -65,7 +65,7 @@ func (h *HandlerGasPrice) DeliverMsg(ctx sdk.Context, msg *types.GasPriceMsg) (*
 	h.publicDb.SaveChain(chain)
 
 	// Save to the world state
-	h.worldState.	SetChain(chain)
+	h.worldState.SetChain(chain)
 
 	return nil, nil
 }
