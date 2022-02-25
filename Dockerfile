@@ -2,8 +2,7 @@ FROM golang:1.16-alpine as builder
 
 # This file is used in local dev with debugging purpose.
 
-ENV GO111MODULE=on \
-    GOPRIVATE=github.com/sisu-network/*
+ENV GO111MODULE=on
 
 WORKDIR /tmp/go-app
 
@@ -26,17 +25,12 @@ FROM alpine:3.9
 
 WORKDIR /app
 
-#Workaround: We shouldn't make .env mandatory, and the environment variables can be loaded from multiple places.
-# RUN apk add ca-certificates \
-#     && touch /app/.env && echo "SAMPLE_KEY:SAMPLE_VALUE" > /app/.env
-
 COPY .env.dev /app/.env
-COPY misc/tokens_dev.json /app/tokens_dev.json
-COPY misc/chains.json /app/chains.json
+COPY ./misc /app/misc
 COPY --from=builder /tmp/go-app/out/sisu /app/sisu
 
+RUN mkdir -p ~/.sisu
 RUN ./sisu localnet
-RUN rm -rf ~/.sisu/main
 RUN mv ./output/node0/main ~/.sisu/main
 
 # Copy config into the container.
