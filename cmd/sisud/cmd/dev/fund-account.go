@@ -190,7 +190,7 @@ func FundAccount() *cobra.Command {
 
 	cmd.Flags().String(flags.Chains, "ganache1,ganache2", "Names of all chains we want to fund.")
 	cmd.Flags().String(flags.ChainUrls, "http://0.0.0.0:7545,http://0.0.0.0:8545", "RPCs of all the chains we want to fund.")
-	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu.")
+	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
 	cmd.Flags().Int(flags.Amount, 100, "The amount that gateway addresses will receive")
 
 	return cmd
