@@ -32,9 +32,10 @@ type TestnetGenerator struct {
 }
 
 type TestnetConfig struct {
-	Tokens []*types.Token `json:"tokens"`
-	Nodes  []TestnetNode  `json:"nodes"`
-	Chains []ChainConfig  `json:"chains"`
+	Tokens      []*types.Token     `json:"tokens"`
+	Nodes       []TestnetNode      `json:"nodes"`
+	Chains      []ChainConfig      `json:"chains"`
+	Liquidities []*types.Liquidity `json:"liquidity"`
 }
 
 // TODO: merge this field with the chain type in the proto file
@@ -80,7 +81,7 @@ Example:
 
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			tmConfig := serverCtx.Config
-			tmConfig.LogLevel = "info"
+			// tmConfig.LogLevel = "info"
 			tmConfig.Consensus.TimeoutCommit = 5 * time.Second
 
 			outputDir, _ := cmd.Flags().GetString(flagOutputDir)
@@ -170,6 +171,7 @@ Example:
 				nodeConfigs: nodeConfigs,
 				tokens:      testnetConfig.Tokens,
 				chains:      chains,
+				liquidities: testnetConfig.Liquidities,
 			}
 
 			valPubKeys, err := InitNetwork(settings)

@@ -3,9 +3,10 @@ package dev
 import (
 	"context"
 	"fmt"
-	"github.com/sisu-network/sisu/utils"
 	"math/big"
 	"time"
+
+	"github.com/sisu-network/sisu/utils"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -17,6 +18,7 @@ import (
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 
+	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
 )
 
@@ -31,7 +33,7 @@ Usage:
 
 for swapping token from chain ganache1 to ganache2. To swap tokens between 2 chains:
 
-./sisu dev swap --src ganache2 --src-url http://0.0.0.0:8545 --dst ganache1 --token SISU --amount 10 --recipient 0x2d532C099CA476780c7703610D807948ae47856A
+./sisu dev swap --src ganache1 --src-url http://0.0.0.0:7545 --dst ganache2 --token SISU --amount 10 --recipient 0x2d532C099CA476780c7703610D807948ae47856A
 
 Please note that the amount is the number of whole unit. amount 1 is equivalent to 10^18 in the
 transfer params.
@@ -43,6 +45,7 @@ transfer params.
 			token, _ := cmd.Flags().GetString(flagToken)
 			recipient, _ := cmd.Flags().GetString(flagRecipient)
 			unit, _ := cmd.Flags().GetInt(flagAmount)
+			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 
 			c := &swapCommand{}
 
@@ -63,12 +66,12 @@ transfer params.
 			}
 			defer client.Close()
 
-			srcToken, dstToken := c.getTokenAddrs(token, src, dst)
+			srcToken, dstToken := c.getTokenAddrs(token, src, dst, sisuRpc)
 
 			amount := big.NewInt(int64(unit))
 			amount = new(big.Int).Mul(amount, utils.EthToWei)
 
-			gateway := c.getGatewayAddresses(cmd.Context(), src)
+			gateway := c.getGatewayAddresses(cmd.Context(), src, sisuRpc)
 			c.swap(client, gateway, dst, srcToken, dstToken, recipient, amount)
 
 			return nil
@@ -77,6 +80,7 @@ transfer params.
 
 	cmd.Flags().String(flagSrc, "ganache1", "Source chain where the token is transferred from")
 	cmd.Flags().String(flagSrcUrl, "", "Source chain url")
+	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
 	cmd.Flags().String(flagDst, "ganache2", "Destination chain where the token is transferred to")
 	cmd.Flags().String(flagToken, "SISU", "ID of the ERC20 to transferred")
 	cmd.Flags().String(flagRecipient, "", "Recipient address in the destination chain")
@@ -85,9 +89,9 @@ transfer params.
 	return cmd
 }
 
-func (c *swapCommand) getTokenAddrs(tokenId string, srcChain string, dstChain string) (string, string) {
+func (c *swapCommand) getTokenAddrs(tokenId string, srcChain string, dstChain string, sisuRpc string) (string, string) {
 	grpcConn, err := grpc.Dial(
-		"0.0.0.0:9090",
+		sisuRpc,
 		grpc.WithInsecure(),
 	)
 	defer grpcConn.Close()
@@ -105,6 +109,7 @@ func (c *swapCommand) getTokenAddrs(tokenId string, srcChain string, dstChain st
 
 	token := res.Token
 	if len(token.Addresses[srcChain]) == 0 || len(token.Addresses[dstChain]) == 0 {
+		log.Info("source chain = ", srcChain, " dest chain = ", dstChain)
 		panic(fmt.Errorf("cannot find token address, available token addresses = %v", token.Addresses))
 	}
 
@@ -135,9 +140,9 @@ func (c *swapCommand) getAuthTransactor(client *ethclient.Client, address common
 	return auth, nil
 }
 
-func (c *swapCommand) getGatewayAddresses(context context.Context, chain string) string {
+func (c *swapCommand) getGatewayAddresses(context context.Context, chain string, sisuRpc string) string {
 	grpcConn, err := grpc.Dial(
-		"0.0.0.0:9090",
+		sisuRpc,
 		grpc.WithInsecure(),
 	)
 	defer grpcConn.Close()

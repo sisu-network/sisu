@@ -46,11 +46,13 @@ func FundAccount() *cobra.Command {
 
 		RunE: func(cmd *cobra.Command, args []string) error {
 			chainString, _ := cmd.Flags().GetString(flags.Chains)
-			chains := strings.Split(chainString, ",")
 			urlString, _ := cmd.Flags().GetString(flags.ChainUrls)
-			urls := strings.Split(urlString, ",")
 			amount, _ := cmd.Flags().GetInt(flags.Amount)
+			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 			log.Verbose("Amount = ", amount)
+
+			chains := strings.Split(chainString, ",")
+			urls := strings.Split(urlString, ",")
 
 			c := &fundAccountCmd{}
 			wg := &sync.WaitGroup{}
@@ -78,6 +80,7 @@ func FundAccount() *cobra.Command {
 				// If liquidity contract has been deployed, do nothing.
 				if c.isContractDeployed(client, common.HexToAddress(ExpectedLiquidPoolAddress)) {
 					liquidityAddrs[i] = common.HexToAddress(ExpectedLiquidPoolAddress)
+					log.Verbose("Liquidity ", i, " has been deployed")
 					wg.Done()
 					continue
 				}
@@ -109,10 +112,10 @@ func FundAccount() *cobra.Command {
 
 			// Waits for Sisu to create contract instance in its database. At this stage, the contract is
 			// not deployed yet.
-			c.waitForContractCreation(cmd.Context(), chains)
+			c.waitForContractCreation(cmd.Context(), chains, sisuRpc)
 
 			// Fund the accounts
-			allPubKeys := queryPubKeys(cmd)
+			allPubKeys := queryPubKeys(cmd, sisuRpc)
 			for _, client := range clients {
 				// Get chain and local chain URL
 				pubKeyBytes := allPubKeys[libchain.KEY_TYPE_ECDSA]
@@ -127,7 +130,7 @@ func FundAccount() *cobra.Command {
 
 			// Waits until all gateway contracts are deployed.
 			log.Info("Now we wait until gateway contracts are deployed on all chains.")
-			gateways := c.waitForGatewayDeployed(cmd.Context(), chains)
+			gateways := c.waitForGatewayDeployed(cmd.Context(), chains, sisuRpc)
 
 			// Grant permission for gateway to use liquidity pool' funds
 			wg.Add(len(gateways))
@@ -187,18 +190,19 @@ func FundAccount() *cobra.Command {
 
 	cmd.Flags().String(flags.Chains, "ganache1,ganache2", "Names of all chains we want to fund.")
 	cmd.Flags().String(flags.ChainUrls, "http://0.0.0.0:7545,http://0.0.0.0:8545", "RPCs of all the chains we want to fund.")
+	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
 	cmd.Flags().Int(flags.Amount, 100, "The amount that gateway addresses will receive")
 
 	return cmd
 }
 
-func (c *fundAccountCmd) waitForContractCreation(context context.Context, chains []string) []string {
+func (c *fundAccountCmd) waitForContractCreation(context context.Context, chains []string, sisuRpc string) []string {
 	log.Info("Waiting for all contract created in Sisu's db")
 
 	contractAddrs := make([]string, len(chains))
 	for {
 		grpcConn, err := grpc.Dial(
-			"0.0.0.0:9090",
+			sisuRpc,
 			grpc.WithInsecure(),
 		)
 		defer grpcConn.Close()
@@ -216,6 +220,7 @@ func (c *fundAccountCmd) waitForContractCreation(context context.Context, chains
 			})
 
 			if err != nil {
+				log.Error("err = ", err)
 				log.Verbose("Contract has not been created yet ", i, " yet. Keep sleeping...")
 				time.Sleep(time.Second * 3)
 				done = false
@@ -289,7 +294,7 @@ func (c *fundAccountCmd) deployLiquid(client *ethclient.Client) common.Address {
 	}
 
 	if auth.Nonce.Cmp(big.NewInt(0)) != 0 {
-		panic("valid nonce, the account0 nonce should be zero. Please restart your ganache and try again.")
+		panic("invalid nonce, the account0 nonce should be zero. Please restart your ganache and try again.")
 	}
 
 	_, tx, _, err := liquidity.DeployLiquidity(auth, client, []common.Address{}, []common.Address{})
@@ -334,7 +339,7 @@ func (c *fundAccountCmd) deployErc20(client *ethclient.Client) common.Address {
 	}
 
 	if auth.Nonce.Cmp(big.NewInt(1)) != 0 {
-		panic("valid nonce, the account0 nonce should be 1. Please restart your ganache and try again.")
+		panic("invalid nonce, the account0 nonce should be 1. Please restart your ganache and try again.")
 	}
 
 	// seed 1000 * 10^18 for msg.sender
@@ -417,9 +422,9 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, recipient string,
 	time.Sleep(time.Second * 3)
 }
 
-func queryPubKeys(cmd *cobra.Command) map[string][]byte {
+func queryPubKeys(cmd *cobra.Command, sisuRpc string) map[string][]byte {
 	grpcConn, err := grpc.Dial(
-		"0.0.0.0:9090",
+		sisuRpc,
 		grpc.WithInsecure(),
 	)
 	defer grpcConn.Close()
@@ -463,12 +468,12 @@ func (c *fundAccountCmd) getAccountAddress() common.Address {
 	return ethcrypto.PubkeyToAddress(*publicKeyECDSA)
 }
 
-func (c *fundAccountCmd) waitForGatewayDeployed(context context.Context, chains []string) []common.Address {
+func (c *fundAccountCmd) waitForGatewayDeployed(context context.Context, chains []string, sisuRpc string) []common.Address {
 	addrs := make([]string, len(chains))
 
 	for {
 		grpcConn, err := grpc.Dial(
-			"0.0.0.0:9090",
+			sisuRpc,
 			grpc.WithInsecure(),
 		)
 		defer grpcConn.Close()
