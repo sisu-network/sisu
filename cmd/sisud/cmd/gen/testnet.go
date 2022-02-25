@@ -270,6 +270,12 @@ func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartI
 			Password: sqlConfig.Password,
 			Schema:   "dheart",
 		},
+		Connection: p2ptypes.ConnectionsConfig{
+			Peers:      peers,
+			Host:       "0.0.0.0",
+			Port:       28300,
+			Rendezvous: "rendezvous",
+		},
 	}
 
 	writeHeartConfig(outputDir, hConfig)
