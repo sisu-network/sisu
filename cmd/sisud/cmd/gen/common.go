@@ -10,17 +10,10 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
+	heartconfig "github.com/sisu-network/dheart/core/config"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	tmos "github.com/tendermint/tendermint/libs/os"
 )
-
-type HeartConfiguration struct {
-	PeerString        string
-	SisuServerUrl     string
-	UseOnMemory       string
-	ShortcutPreparams bool
-	Sql               SqlConfig
-}
 
 type DeyesConfiguration struct {
 	Chains        []ChainConfig
@@ -81,14 +74,7 @@ sisu_server_url = "{{ .SisuServerUrl }}"
 	tmos.MustWriteFile(filepath.Join(dir, "deyes.toml"), buffer.Bytes(), 0644)
 }
 
-func writeHeartConfig(index int, dir string, peerString string, useOnMemory string, shortcutPreparams bool, sisuUrl string, sqlConfig SqlConfig) {
-	heartConfig := HeartConfiguration{
-		PeerString:        peerString,
-		SisuServerUrl:     sisuUrl,
-		Sql:               sqlConfig,
-		UseOnMemory:       useOnMemory,
-		ShortcutPreparams: shortcutPreparams,
-	}
+func writeHeartConfig(dir string, heartConfig heartconfig.HeartConfig) {
 
 	heartToml := `# This is a TOML config file.
 # For more information, see https://github.com/toml-lang/toml
@@ -103,16 +89,21 @@ port = 5678
 ###                        Database Configuration                           ###
 ###############################################################################
 [db]
-  host = "{{ .Sql.Host }}"
-  port = {{ .Sql.Port }}
-  username = "{{ .Sql.Username }}"
-  password = "{{ .Sql.Password }}"
-  schema = "{{ .Sql.Schema }}"
+  host = "{{ .Db.Host }}"
+  port = {{ .Db.Port }}
+  username = "{{ .Db.Username }}"
+  password = "{{ .Db.Password }}"
+  schema = "{{ .Db.Schema }}"
 [connection]
-  host = "0.0.0.0"
-  port = 28300
-  rendezvous = "rendezvous"
-  peers = [{{ .PeerString }}]
+  host = "{{ .Connection.Host }}"
+  port = {{ .Connection.Port }}
+  rendezvous = "{{ .Connection.Rendezvous }}"
+{{ range $k, $v := .Connection.Peers }}
+[[connection.peers]]
+	address = {{ $v.Address }}
+	pubkey = "{{ $v.PubKey }}"
+	pubkey_type = "{{ $v.PubKeyType }}"
+{{ end }}
 `
 
 	tmpl := template.New("heartToml")

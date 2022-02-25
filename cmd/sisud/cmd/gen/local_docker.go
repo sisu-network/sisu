@@ -2,11 +2,11 @@ package gen
 
 import (
 	"bytes"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"os"
 	"path/filepath"
-	"strings"
 	"text/template"
 	"time"
 
@@ -25,6 +25,10 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
+
+	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	heartconfig "github.com/sisu-network/dheart/core/config"
+	p2ptypes "github.com/sisu-network/dheart/p2p/types"
 )
 
 type localDockerGenerator struct{}
@@ -151,7 +155,7 @@ Example:
 
 			for i := range ips {
 				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
-				g.generateHeartToml(i, dir, dockerConfig, peerIds)
+				g.generateHeartToml(i, dir, dockerConfig, peerIds, valPubKeys)
 			}
 
 			return err
@@ -364,32 +368,43 @@ func (g *localDockerGenerator) generateEyesToml(index int, dir string) {
 	writeDeyesConfig(deyesConfig, dir)
 }
 
-func (g *localDockerGenerator) generateHeartToml(index int, dir string, dockerConfig DockerNodeConfig, peerIds []string) {
-	peers := make([]string, 0, len(peerIds)-1)
+func (g *localDockerGenerator) generateHeartToml(index int, dir string, dockerConfig DockerNodeConfig,
+	peerIds []string, valPubKeys []cryptotypes.PubKey) {
+	peers := make([]*p2ptypes.Peer, 0, len(peerIds)-1)
 	for i := range peerIds {
 		if i == index {
 			continue
 		}
 
-		peers = append(peers, fmt.Sprintf(`"/dns/dheart%d/tcp/28300/p2p/%s"`, i, peerIds[i]))
-	}
+		peer := &p2ptypes.Peer{
+			Address:    fmt.Sprintf(`"/dns/dheart%d/tcp/28300/p2p/%s"`, i, peerIds[i]),
+			PubKey:     hex.EncodeToString(valPubKeys[i].Bytes()),
+			PubKeyType: valPubKeys[i].Type(),
+		}
 
-	useOnMemory := "false"
-	if len(peerIds) == 1 {
-		useOnMemory = "true"
-	}
-
-	peerString := strings.Join(peers, ", ")
-
-	sqlConfig := SqlConfig{
-		Host:     "mysql",
-		Port:     3306,
-		Schema:   fmt.Sprintf("dheart%d", index),
-		Username: "root",
-		Password: "password",
+		peers = append(peers, peer)
 	}
 
 	sisuUrl := fmt.Sprintf("http://sisu%d:25456", index)
 
-	writeHeartConfig(index, dir, peerString, useOnMemory, true, sisuUrl, sqlConfig)
+	hConfig := heartconfig.HeartConfig{
+		UseOnMemory:       len(peerIds) == 1,
+		ShortcutPreparams: true,
+		SisuServerUrl:     sisuUrl,
+		Db: heartconfig.DbConfig{
+			Host:     "mysql",
+			Port:     3306,
+			Username: "root",
+			Password: "password",
+			Schema:   fmt.Sprintf("dheart%d", index),
+		},
+		Connection: p2ptypes.ConnectionsConfig{
+			Peers:      peers,
+			Host:       "0.0.0.0",
+			Port:       28300,
+			Rendezvous: "rendezvous",
+		},
+	}
+
+	writeHeartConfig(dir, hConfig)
 }

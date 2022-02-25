@@ -71,8 +71,6 @@ func FundAccount() *cobra.Command {
 				}
 			}()
 
-			fmt.Println(urls, len(clients))
-
 			// Deploy liquidity contract
 			liquidityAddrs := make([]common.Address, len(urls))
 			wg.Add(len(clients))
@@ -173,7 +171,6 @@ func FundAccount() *cobra.Command {
 
 			// Query balance
 			for i, client := range clients {
-				fmt.Println("Querying token address ", tokenAddrs[i])
 				balance, err := c.queryErc20Balance(client, tokenAddrs[i], liquidityAddrs[i])
 				if err != nil {
 					panic(err)
