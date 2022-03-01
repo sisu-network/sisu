@@ -1,6 +1,8 @@
 package app
 
 import (
+	"fmt"
+	"github.com/logdna/logdna-go/logger"
 	"io"
 	"path/filepath"
 
@@ -168,7 +170,7 @@ type App struct {
 // New returns a reference to an initialized Gaia.
 // NewSimApp returns a reference to an initialized SimApp.
 func New(
-	logger tlog.Logger, tdb dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
+	tLogger tlog.Logger, tdb dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
 	homePath string, invCheckPeriod uint, encodingConfig appparams.EncodingConfig,
 	// this line is used by starport scaffolding # stargate/app/newArgument
 	appOpts servertypes.AppOptions, baseAppOptions ...func(*baseapp.BaseApp),
@@ -179,8 +181,30 @@ func New(
 	cdc := encodingConfig.Amino
 	interfaceRegistry := encodingConfig.InterfaceRegistry
 
+	cfg, err := config.ReadConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	if len(cfg.LogDNA.Secret) > 0 {
+		opts := logger.Options{
+			App:           cfg.LogDNA.AppName,
+			FlushInterval: cfg.LogDNA.FlushInterval.Duration,
+			Hostname:      cfg.LogDNA.HostName,
+			MaxBufferLen:  cfg.LogDNA.MaxBufferLen,
+		}
+		logDNA := log.NewDNALogger(cfg.LogDNA.Secret, opts)
+
+		// Set SISU app's logger
+		log.SetLogger(logDNA)
+
+		// Reassign Tendermint's logger
+		tLogger = NewTendermintLogger(logDNA)
+		fmt.Println("come here")
+	}
+
 	txDecoder := encodingConfig.TxConfig.TxDecoder()
-	bApp := baseapp.NewBaseApp(Name, logger, tdb, txDecoder, baseAppOptions...)
+	bApp := baseapp.NewBaseApp(Name, tLogger, tdb, txDecoder, baseAppOptions...)
 	bApp.SetCommitMultiStoreTracer(traceStore)
 	bApp.SetAppVersion(version.Version)
 	bApp.SetInterfaceRegistry(interfaceRegistry)
@@ -209,11 +233,6 @@ func New(
 
 	app.setupDefaultKeepers(homePath, bApp, skipUpgradeHeights)
 	////////////// Sisu related keeper //////////////
-
-	cfg, err := config.ReadConfig()
-	if err != nil {
-		panic(err)
-	}
 
 	app.appKeys = common.NewAppKeys(cfg.Sisu)
 	app.appKeys.Init()

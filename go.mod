@@ -21,11 +21,12 @@ require (
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
 	github.com/joho/godotenv v1.3.0
 	github.com/libp2p/go-libp2p-core v0.8.0
+	github.com/logdna/logdna-go v1.0.2 // indirect
 	github.com/prometheus/tsdb v0.10.0 // indirect
 	github.com/rjeczalik/notify v0.9.2 // indirect
 	github.com/sisu-network/deyes v0.1.5
 	github.com/sisu-network/dheart v0.1.5-alpha2.0.20220225075041-412eb585fef0
-	github.com/sisu-network/lib v0.0.1-alpha9
+	github.com/sisu-network/lib v0.0.1-alpha13
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.1
