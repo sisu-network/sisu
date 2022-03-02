@@ -37,10 +37,22 @@ jobs:
           ./scripts/docker_build_all.sh
           docker images
 
+      - name: Setup go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.16
+        env:
+          GOOS: ${{ matrix.targetos }}
+          GOARCH: ${{ matrix.arch }}
+
       - name: Build sisu and generate  test data for local docker
         working-directory: ./sisu
         run: |
-          go build -o ./sisu cmd/sisud/main.go && ./sisu local-docker --v 2 --output-dir ./output
+          go build -o ./sisu cmd/sisud/main.go
+          ./sisu local-docker --v 2 --output-dir ./output
+        env:
+          GO111MODULE: on
+          GOSUMDB: off
 
       - name: Start docker-compose stack
         working-directory: ./sisu/output
