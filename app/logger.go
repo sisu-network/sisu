@@ -19,21 +19,17 @@ func NewTendermintLogger(dna *log.DNALogger) *Logger {
 }
 
 func (l *Logger) Debug(msg string, keyvals ...interface{}) {
-	fmt.Println("come here debug")
 	l.dna.Verbose(msg, fmt.Sprintf("%v", keyvals))
 }
 
 func (l *Logger) Info(msg string, keyvals ...interface{}) {
-	fmt.Println("come here info")
 	l.dna.Verbose(msg, fmt.Sprintf("%v", keyvals))
 }
 
 func (l *Logger) Error(msg string, keyvals ...interface{}) {
-	fmt.Println("come here error")
 	l.dna.Verbose(msg, fmt.Sprintf("%v", keyvals))
 }
 
 func (l *Logger) With(keyvals ...interface{}) tlog.Logger {
-	fmt.Println("come here")
 	return l
 }

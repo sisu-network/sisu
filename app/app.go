@@ -1,8 +1,6 @@
 package app
 
 import (
-	"fmt"
-	"github.com/logdna/logdna-go/logger"
 	"io"
 	"path/filepath"
 
@@ -10,8 +8,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/logdna/logdna-go/logger"
 
-	"github.com/sisu-network/lib/log"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/p2p"
@@ -58,6 +56,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	"github.com/sisu-network/lib/log"
 	appparams "github.com/sisu-network/sisu/app/params"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/server"
@@ -200,7 +199,6 @@ func New(
 
 		// Reassign Tendermint's logger
 		tLogger = NewTendermintLogger(logDNA)
-		fmt.Println("come here")
 	}
 
 	txDecoder := encodingConfig.TxConfig.TxDecoder()

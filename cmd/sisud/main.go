@@ -5,11 +5,10 @@ import (
 	"path/filepath"
 
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
+	"github.com/joho/godotenv"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/app"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd"
-
-	"github.com/joho/godotenv"
 )
 
 func loadConfig() {

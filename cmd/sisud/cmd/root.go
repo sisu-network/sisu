@@ -23,9 +23,12 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
+	"github.com/logdna/logdna-go/logger"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/app"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/dev"
 	gen "github.com/sisu-network/sisu/cmd/sisud/cmd/gen"
+	"github.com/sisu-network/sisu/config"
 )
 
 var ChainID string
@@ -55,7 +58,11 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 				return err
 			}
 
-			return server.InterceptConfigsPreRunHandler(cmd)
+			if err := server.InterceptConfigsPreRunHandler(cmd); err != nil {
+				return err
+			}
+
+			return setLogDNAForTendermintIfNeeded(cmd)
 		},
 	}
 
@@ -192,4 +199,26 @@ func changeDescription(command *cobra.Command) {
 
 		changeDescription(childCommand)
 	}
+}
+
+func setLogDNAForTendermintIfNeeded(cmd *cobra.Command) error {
+	cfg, err := config.ReadConfig()
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	opts := logger.Options{
+		App:           cfg.LogDNA.AppName,
+		FlushInterval: cfg.LogDNA.FlushInterval.Duration,
+		Hostname:      cfg.LogDNA.HostName,
+		MaxBufferLen:  cfg.LogDNA.MaxBufferLen,
+	}
+	logDNA := log.NewDNALogger(cfg.LogDNA.Secret, opts)
+
+	// Re-assign log DNA as Tendermint's logger
+	srvCtx := server.GetServerContextFromCmd(cmd)
+	tmLogger := app.NewTendermintLogger(logDNA)
+	srvCtx.Logger = tmLogger
+	return server.SetCmdServerContext(cmd, srvCtx)
 }

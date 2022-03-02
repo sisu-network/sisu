@@ -2,10 +2,8 @@ package config
 
 import (
 	"bytes"
-	"text/template"
-	"time"
-
 	tmos "github.com/tendermint/tendermint/libs/os"
+	"text/template"
 )
 
 const defaultConfigTemplate = `# This is a TOML config file.
@@ -57,14 +55,4 @@ func WriteConfigFile(configFilePath string, config *Config) {
 	}
 
 	tmos.MustWriteFile(configFilePath, buffer.Bytes(), 0644)
-}
-
-type duration struct {
-	time.Duration
-}
-
-func (d *duration) UnmarshalText(text []byte) error {
-	var err error
-	d.Duration, err = time.ParseDuration(string(text))
-	return err
 }
