@@ -6,9 +6,7 @@ ENV GO111MODULE=on
 
 WORKDIR /tmp/go-app
 
-RUN apk add --no-cache make gcc musl-dev linux-headers git \
-    && apk add openssh \
-    && mkdir /root/.ssh && echo "StrictHostKeyChecking no " > /root/.ssh/config
+RUN apk add --no-cache make gcc musl-dev linux-headers git
 
 COPY go.mod .
 
