@@ -8,8 +8,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec/types"
-	"github.com/logdna/logdna-go/logger"
-
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/p2p"
@@ -185,20 +183,10 @@ func New(
 		panic(err)
 	}
 
-	if len(cfg.LogDNA.Secret) > 0 {
-		opts := logger.Options{
-			App:           cfg.LogDNA.AppName,
-			FlushInterval: cfg.LogDNA.FlushInterval.Duration,
-			Hostname:      cfg.LogDNA.HostName,
-			MaxBufferLen:  cfg.LogDNA.MaxBufferLen,
-		}
-		logDNA := log.NewDNALogger(cfg.LogDNA.Secret, opts)
-
-		// Set SISU app's logger
-		log.SetLogger(logDNA)
-
-		// Reassign Tendermint's logger
-		tLogger = NewTendermintLogger(logDNA)
+	// Switch to use DNA logger is has secret
+	if dnaLog := NewTendermintLoggerIfHasSecret(cfg); dnaLog != nil {
+		log.SetLogger(dnaLog.Inner)
+		tLogger = dnaLog
 	}
 
 	txDecoder := encodingConfig.TxConfig.TxDecoder()

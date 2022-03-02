@@ -2,8 +2,9 @@ package config
 
 import (
 	"bytes"
-	tmos "github.com/tendermint/tendermint/libs/os"
 	"text/template"
+
+	tmos "github.com/tendermint/tendermint/libs/os"
 )
 
 const defaultConfigTemplate = `# This is a TOML config file.
