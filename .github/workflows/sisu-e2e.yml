@@ -48,6 +48,7 @@ jobs:
       - name: Build sisu and generate  test data for local docker
         working-directory: ./sisu
         run: |
+          cp .env.dev .env
           go build -o ./sisu cmd/sisud/main.go
           ./sisu local-docker --v 2 --output-dir ./output
         env:
