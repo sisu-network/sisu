@@ -21,6 +21,7 @@ type HandlerTxOut struct {
 	globalData   common.GlobalData
 	partyManager PartyManager
 	dheartClient tssclients.DheartClient
+	txTracker    TransactionTracker
 }
 
 func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
@@ -30,6 +31,7 @@ func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
 		globalData:   mc.GlobalData(),
 		partyManager: mc.PartyManager(),
 		dheartClient: mc.DheartClient(),
+		txTracker:    mc.TransactionTracker(),
 	}
 }
 
@@ -105,6 +107,8 @@ func (h *HandlerTxOut) signTx(ctx sdk.Context, tx *types.TxOut) {
 
 	if err != nil {
 		log.Error("Keysign: err =", err)
+	} else {
+		h.txTracker.AddTransaction(tx.OutChain, tx.OutHash)
 	}
 }
 
