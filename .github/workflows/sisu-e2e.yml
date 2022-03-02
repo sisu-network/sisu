@@ -9,7 +9,7 @@ on: [push, pull_request]
 # This workflow makes x86_64 binaries for mac, windows, and linux.
 
 jobs:
-  build:
+  e2e-test:
     runs-on: ubuntu-latest
     steps:
       
@@ -40,8 +40,7 @@ jobs:
       - name: Build sisu and generate  test data for local docker
         working-directory: ./sisu
         run: |
-          go build -o ./sisu cmd/sisud/main.go
-          ./sisu local-docker --v 2 --output-dir ./output
+          go build -o ./sisu cmd/sisud/main.go && ./sisu local-docker --v 2 --output-dir ./output
 
       - name: Start docker-compose stack
         working-directory: ./sisu/output
