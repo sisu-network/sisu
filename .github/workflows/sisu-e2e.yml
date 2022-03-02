@@ -1,0 +1,50 @@
+# This is a basic workflow that is manually triggered
+
+name: sisu-e2e
+
+# Controls when the action will run. Workflow runs when manually triggered using the UI
+# or API.
+on: [push, pull_request]
+
+# This workflow makes x86_64 binaries for mac, windows, and linux.
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      
+      - uses: actions/checkout@master
+        with:
+          repository: sisu-network/sisu
+          path: ./sisu
+      
+      - uses: actions/checkout@master
+        with:
+          repository: sisu-network/deyes
+          path: ./deyes
+      
+      - uses: actions/checkout@master
+        with:
+          repository: sisu-network/dheart
+          path: ./dheart          
+    
+      - name: Show Working directory
+        run: ls -al
+
+      - name: Build sisu, dheart & deyes images
+        working-directory: ./sisu
+        run: |
+          ./scripts/docker_build_all.sh
+
+      - name: Build sisu and generate  test data for local docker
+        working-directory: ./sisu
+        run: |
+          go build -o ./sisu cmd/sisud/main.go
+          ./sisu local-docker --v 2 --output-dir ./output
+
+      - name: Start docker-compose
+        working-directory: ./sisu/output
+        run: |
+          docker-compose up -d
+          docker-compose ps
+
