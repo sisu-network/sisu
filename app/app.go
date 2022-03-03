@@ -167,27 +167,19 @@ type App struct {
 // New returns a reference to an initialized Gaia.
 // NewSimApp returns a reference to an initialized SimApp.
 func New(
-	tLogger tlog.Logger, tdb dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
+	cfg config.Config, tLogger tlog.Logger, tdb dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
 	homePath string, invCheckPeriod uint, encodingConfig appparams.EncodingConfig,
 	// this line is used by starport scaffolding # stargate/app/newArgument
 	appOpts servertypes.AppOptions, baseAppOptions ...func(*baseapp.BaseApp),
 ) *App {
 	_ = sisuAuth.AppModule{}
 
+	log.Info("Sisu home = ", SisuHome)
+	log.Info("Main App home = ", MainAppHome)
+
 	appCodec := encodingConfig.Marshaler
 	cdc := encodingConfig.Amino
 	interfaceRegistry := encodingConfig.InterfaceRegistry
-
-	cfg, err := config.ReadConfig()
-	if err != nil {
-		panic(err)
-	}
-
-	// Switch to use DNA logger is has secret
-	if dnaLog := NewTendermintLoggerIfHasSecret(cfg); dnaLog != nil {
-		log.SetLogger(dnaLog.Inner)
-		tLogger = dnaLog
-	}
 
 	txDecoder := encodingConfig.TxConfig.TxDecoder()
 	bApp := baseapp.NewBaseApp(Name, tLogger, tdb, txDecoder, baseAppOptions...)
