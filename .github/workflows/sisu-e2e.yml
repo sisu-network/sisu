@@ -7,10 +7,16 @@ name: sisu-e2e
 on:
   push:
     branches:
-    - master
+      - master
   pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - converted_to_draft
     branches:
-    - master
+      - master
 
 concurrency:
   group: ci-tests-${{ github.ref }}-1
