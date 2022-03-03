@@ -69,19 +69,25 @@ jobs:
         working-directory: ./sisu/output
         run: |
           docker-compose up -d
-          docker-compose ps
+          docker-compose ps --services --filter "status=running"
 
       - name: Fund account
         working-directory: ./sisu
         run: |
-          ./sisu dev fund-account ganache1 7545 ganache2 8545 100
+          echo "./sisu dev fund-account ganache1 7545 ganache2 8545 100"
+          fund=$(./sisu dev fund-account ganache1 7545 ganache2 8545 100)
+          echo "$fund" | grep 'Transfer ERC20 token done' || (echo "$fund" && exit 1)
 
       - name: Token Swap
         working-directory: ./sisu
         run: |
-          ./sisu dev swap --token SISU --amount 10 --recipient 0x2d532C099CA476780c7703610D807948ae47856A
+          echo "./sisu dev swap --token SISU --amount 10 --recipient 0x2d532C099CA476780c7703610D807948ae47856A"
+          swap=$(./sisu dev swap --token SISU --amount 10 --recipient 0x2d532C099CA476780c7703610D807948ae47856A)
+          echo "$swap" | grep 'destination = ganache2, recipientAddr 0x2d532C099CA476780c7703610D807948ae47856A, srcTokenAddr = 0xf0D676183dD5ae6b370adDdbE770235F23546f9d, dstTokenAddr = 0xf0D676183dD5ae6b370adDdbE770235F23546f9d, amount = 10000000000000000000' || (echo "$swap" && exit 1)
 
       - name: Token Query
         working-directory: ./sisu
         run: |
-          ./sisu dev query --token SISU --src ganache2 --account 0x2d532C099CA476780c7703610D807948ae47856A
+          echo "./sisu dev query --token SISU --src ganache2 --account 0x2d532C099CA476780c7703610D807948ae47856A"
+          query=$(./sisu dev query --token SISU --src ganache2 --account 0x2d532C099CA476780c7703610D807948ae47856A)
+          echo "$query"
