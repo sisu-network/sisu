@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"github.com/sisu-network/sisu/config"
 	"io"
 	"path/filepath"
 
@@ -16,6 +15,7 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/app"
 	"github.com/sisu-network/sisu/app/params"
+	"github.com/sisu-network/sisu/config"
 	"github.com/spf13/cast"
 	tlog "github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
