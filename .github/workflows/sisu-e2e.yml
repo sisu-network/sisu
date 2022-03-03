@@ -4,7 +4,17 @@ name: sisu-e2e
 
 # Controls when the action will run. Workflow runs when manually triggered using the UI
 # or API.
-on: [push, pull_request]
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+
+concurrency:
+  group: ci-tests-${{ github.ref }}-1
+  cancel-in-progress: true
 
 # This workflow makes x86_64 binaries for mac, windows, and linux.
 
