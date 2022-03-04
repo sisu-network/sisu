@@ -20,7 +20,7 @@ type ManagerContainer interface {
 	AppKeys() common.AppKeys
 	TxOutProducer() TxOutputProducer
 	WorldState() world.WorldState
-	TransactionTracker() TransactionTracker
+	TxTracker() TxTracker
 }
 
 type DefaultManagerContainer struct {
@@ -36,13 +36,13 @@ type DefaultManagerContainer struct {
 	appKeys           common.AppKeys
 	txOutProducer     TxOutputProducer
 	worldState        world.WorldState
-	txTracker         TransactionTracker
+	txTracker         TxTracker
 }
 
 func NewManagerContainer(pmm PostedMessageManager, publicDb keeper.Storage, majorityThreshold int, partyManager PartyManager,
 	dheartClient tssclients.DheartClient, deyesClient tssclients.DeyesClient,
 	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.TssConfig,
-	appKeys common.AppKeys, txOutProducer TxOutputProducer, worldState world.WorldState, txTracker TransactionTracker) ManagerContainer {
+	appKeys common.AppKeys, txOutProducer TxOutputProducer, worldState world.WorldState, txTracker TxTracker) ManagerContainer {
 	return &DefaultManagerContainer{
 		pmm:               pmm,
 		publicDb:          publicDb,
@@ -104,6 +104,6 @@ func (mc *DefaultManagerContainer) WorldState() world.WorldState {
 	return mc.worldState
 }
 
-func (mc *DefaultManagerContainer) TransactionTracker() TransactionTracker {
+func (mc *DefaultManagerContainer) TxTracker() TxTracker {
 	return mc.txTracker
 }
