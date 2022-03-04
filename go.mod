@@ -21,7 +21,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
 	github.com/joho/godotenv v1.3.0
 	github.com/libp2p/go-libp2p-core v0.8.0
-	github.com/logdna/logdna-go v1.0.2 // indirect
+	github.com/logdna/logdna-go v1.0.2
 	github.com/prometheus/tsdb v0.10.0 // indirect
 	github.com/rjeczalik/notify v0.9.2 // indirect
 	github.com/sisu-network/deyes v0.1.5
@@ -42,7 +42,7 @@ require (
 	golang.org/x/sys v0.0.0-20220207234003-57398862261d // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.5 // indirect
-	google.golang.org/genproto v0.0.0-20220218161850-94dd64e39d7c // indirect
+	google.golang.org/genproto v0.0.0-20220304144024-325a89244dc8 // indirect
 	google.golang.org/grpc v1.44.0
 )
 

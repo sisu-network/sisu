@@ -209,6 +209,11 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 		liqIds = append(liqIds, liq.Id)
 	}
 	log.Info("Liquidities in the genesis file: ", strings.Join(liqIds, ", "))
+	// Save params
+	params := genState.Params
+	publicDb.SaveParams(params)
+	savedParams := publicDb.GetParams()
+	log.Info("Params in the genesis file: ", savedParams)
 
 	// Create validator nodes
 	validators := make([]abci.ValidatorUpdate, len(genState.Nodes))

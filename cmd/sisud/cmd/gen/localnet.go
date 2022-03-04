@@ -121,6 +121,7 @@ Example:
 				tokens:         getTokens("./misc/tokens_dev.json"),
 				chains:         getChains("./misc/chains.json"),
 				liquidities:    getLiquidity("./misc/liquid_dev.json"),
+				params:         getParams("./misc/params.json"),
 			}
 
 			_, err = InitNetwork(settings)
