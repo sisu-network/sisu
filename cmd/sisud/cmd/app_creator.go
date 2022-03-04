@@ -22,9 +22,8 @@ import (
 )
 
 type appCreator struct {
-	encCfg           params.EncodingConfig
-	appConfig        config.Config
-	tendermintLogger tlog.Logger
+	encCfg    params.EncodingConfig
+	appConfig config.Config
 }
 
 type AppOptionWrapper struct {

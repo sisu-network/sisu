@@ -57,7 +57,6 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	}
 
 	var tendermintLogger tlog.Logger
-	var appLogger log.Logger
 	if dnaCfg := appCfg.LogDNA; len(dnaCfg.Secret) > 0 {
 		opts := logger.Options{
 			App:           dnaCfg.AppName,
@@ -95,7 +94,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		},
 	}
 
-	initRootCmd(rootCmd, encodingConfig, appCfg, appLogger, tendermintLogger)
+	initRootCmd(rootCmd, encodingConfig, appCfg)
 	overwriteFlagDefaults(rootCmd, map[string]string{
 		flags.FlagChainID: ChainID,
 	})
@@ -105,7 +104,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	return rootCmd, encodingConfig
 }
 
-func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, appConfig config.Config, appLogger log.Logger, tendermintLogger tlog.Logger) {
+func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, appConfig config.Config) {
 	authclient.Codec = encodingConfig.Marshaler
 
 	rootCmd.AddCommand(
@@ -124,9 +123,8 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, a
 	)
 
 	a := appCreator{
-		appConfig:        appConfig,
-		encCfg:           encodingConfig,
-		tendermintLogger: tendermintLogger,
+		appConfig: appConfig,
+		encCfg:    encodingConfig,
 	}
 	server.AddCommands(rootCmd, app.MainAppHome, a.newApp, nil, addModuleInitFlags)
 
