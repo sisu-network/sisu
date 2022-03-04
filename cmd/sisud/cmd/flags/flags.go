@@ -8,4 +8,5 @@ const (
 	ChainUrls = "chain-urls"
 	SisuRpc   = "sisu-rpc"
 	Amount    = "amount"
+	NewOwner  = "newOwner"
 )

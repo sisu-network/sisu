@@ -1,0 +1,71 @@
+package cmd
+
+import (
+	"fmt"
+
+	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/tx"
+	"github.com/spf13/cobra"
+
+	sdkflags "github.com/cosmos/cosmos-sdk/client/flags"
+
+	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
+	"github.com/sisu-network/sisu/x/sisu"
+	"github.com/sisu-network/sisu/x/sisu/types"
+)
+
+func ContractChangeOwnershipCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use: "contract-change-ownership",
+		Long: `Change ownership a contract.
+Usage:
+contract-change-ownership --chain [Chain] --name [ContractName] --newOwner [New owner address]
+
+Example:
+./sisu contract-change-ownership --chain ganache1 --name erc20gateway --newOwner 0x2d532C099CA476780c7703610D807948ae47856A --from=node0 --keyring-backend test --chain-id=eth-sisu-local -y
+`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			chain, _ := cmd.Flags().GetString(flags.Chain)
+			name, _ := cmd.Flags().GetString(flags.Name)
+			newOwner, _ := cmd.Flags().GetString(flags.NewOwner)
+
+			if len(chain) == 0 {
+				return fmt.Errorf("invalid chain %s", chain)
+			}
+
+			if len(name) == 0 {
+				return fmt.Errorf("invalid name %s", name)
+			}
+
+			if len(newOwner) == 0 {
+				return fmt.Errorf("invalid newOwner %s", name)
+
+			}
+			hash := sisu.SupportedContracts[name].AbiHash
+			if len(hash) == 0 {
+				return fmt.Errorf("contract with name %s not supported", name)
+			}
+
+			clientCtx, err := client.GetClientTxContext(cmd)
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewChangeOwnershipMsg(clientCtx.GetFromAddress().String(), chain, hash, newOwner)
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+
+			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
+		},
+	}
+
+	sdkflags.AddTxFlagsToCmd(cmd)
+
+	cmd.Flags().String(sdkflags.FlagChainID, "", "name of the sisu chain")
+	cmd.Flags().String(flags.Chain, "", "target chain of the command")
+	cmd.Flags().String(flags.Name, "", "name of the contract that identifies the contract")
+	cmd.Flags().String(flags.NewOwner, "", "new owner address")
+
+	return cmd
+}
