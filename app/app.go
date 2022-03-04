@@ -8,8 +8,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec/types"
-
-	"github.com/sisu-network/lib/log"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/p2p"
@@ -56,6 +54,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	"github.com/sisu-network/lib/log"
 	appparams "github.com/sisu-network/sisu/app/params"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/server"
@@ -168,19 +167,22 @@ type App struct {
 // New returns a reference to an initialized Gaia.
 // NewSimApp returns a reference to an initialized SimApp.
 func New(
-	logger tlog.Logger, tdb dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
+	cfg config.Config, tLogger tlog.Logger, tdb dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
 	homePath string, invCheckPeriod uint, encodingConfig appparams.EncodingConfig,
 	// this line is used by starport scaffolding # stargate/app/newArgument
 	appOpts servertypes.AppOptions, baseAppOptions ...func(*baseapp.BaseApp),
 ) *App {
 	_ = sisuAuth.AppModule{}
 
+	log.Info("Sisu home = ", SisuHome)
+	log.Info("Main App home = ", MainAppHome)
+
 	appCodec := encodingConfig.Marshaler
 	cdc := encodingConfig.Amino
 	interfaceRegistry := encodingConfig.InterfaceRegistry
 
 	txDecoder := encodingConfig.TxConfig.TxDecoder()
-	bApp := baseapp.NewBaseApp(Name, logger, tdb, txDecoder, baseAppOptions...)
+	bApp := baseapp.NewBaseApp(Name, tLogger, tdb, txDecoder, baseAppOptions...)
 	bApp.SetCommitMultiStoreTracer(traceStore)
 	bApp.SetAppVersion(version.Version)
 	bApp.SetInterfaceRegistry(interfaceRegistry)
@@ -209,11 +211,6 @@ func New(
 
 	app.setupDefaultKeepers(homePath, bApp, skipUpgradeHeights)
 	////////////// Sisu related keeper //////////////
-
-	cfg, err := config.ReadConfig()
-	if err != nil {
-		panic(err)
-	}
 
 	app.appKeys = common.NewAppKeys(cfg.Sisu)
 	app.appKeys.Init()

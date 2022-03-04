@@ -12,15 +12,18 @@ import (
 	"github.com/cosmos/cosmos-sdk/snapshots"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/app"
 	"github.com/sisu-network/sisu/app/params"
+	"github.com/sisu-network/sisu/config"
 	"github.com/spf13/cast"
-	"github.com/tendermint/tendermint/libs/log"
+	tlog "github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 )
 
 type appCreator struct {
-	encCfg params.EncodingConfig
+	encCfg    params.EncodingConfig
+	appConfig config.Config
 }
 
 type AppOptionWrapper struct {
@@ -28,7 +31,7 @@ type AppOptionWrapper struct {
 }
 
 // newApp is an AppCreator
-func (a appCreator) newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, appOpts servertypes.AppOptions) servertypes.Application {
+func (a appCreator) newApp(tLogger tlog.Logger, db dbm.DB, traceStore io.Writer, appOpts servertypes.AppOptions) servertypes.Application {
 	var cache sdk.MultiStorePersistentCache
 
 	if cast.ToBool(appOpts.Get(server.FlagInterBlockCache)) {
@@ -55,8 +58,7 @@ func (a appCreator) newApp(logger log.Logger, db dbm.DB, traceStore io.Writer, a
 		panic(err)
 	}
 
-	return app.New(
-		logger, db, traceStore, true, skipUpgradeHeights,
+	return app.New(a.appConfig, tLogger, db, traceStore, true, skipUpgradeHeights,
 		cast.ToString(appOpts.Get(flags.FlagHome)),
 		cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod)),
 		a.encCfg,

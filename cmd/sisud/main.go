@@ -5,11 +5,9 @@ import (
 	"path/filepath"
 
 	svrcmd "github.com/cosmos/cosmos-sdk/server/cmd"
-	"github.com/sisu-network/lib/log"
+	"github.com/joho/godotenv"
 	"github.com/sisu-network/sisu/app"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd"
-
-	"github.com/joho/godotenv"
 )
 
 func loadConfig() {
@@ -29,9 +27,6 @@ func loadConfig() {
 		app.SisuHome = filepath.Join(userHomeDir, "."+app.Name)
 		app.MainAppHome = filepath.Join(app.SisuHome, "/main")
 	}
-
-	log.Info("Sisu home = ", app.SisuHome)
-	log.Info("Main App home = ", app.MainAppHome)
 }
 
 func main() {
