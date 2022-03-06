@@ -7,13 +7,14 @@ import (
 
 var _ sdk.Msg = &ChangeOwnershipContractMsg{}
 
-func NewChangeOwnershipMsg(signer, chain, hash, newOwner string) *ChangeOwnershipContractMsg {
+func NewChangeOwnershipMsg(signer, chain, hash, newOwner string, index int32) *ChangeOwnershipContractMsg {
 	return &ChangeOwnershipContractMsg{
 		Signer: signer,
 		Data: &ChangeOwnership{
 			Chain:    chain,
 			Hash:     hash,
 			NewOwner: newOwner,
+			Index:    index,
 		},
 	}
 }

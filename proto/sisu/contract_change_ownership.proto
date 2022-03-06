@@ -12,4 +12,5 @@ message ChangeOwnership {
   string chain = 1;
   string hash = 2;
   string newOwner = 3;
+  int32 index = 4;
 }

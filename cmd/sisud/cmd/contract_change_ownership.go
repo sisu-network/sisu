@@ -19,15 +19,16 @@ func ContractChangeOwnershipCmd() *cobra.Command {
 		Use: "contract-change-ownership",
 		Long: `Change ownership a contract.
 Usage:
-contract-change-ownership --chain [Chain] --name [ContractName] --newOwner [New owner address]
+contract-change-ownership --chain [Chain] --name [ContractName] --newOwner [New owner address] --index [Index of this message]
 
 Example:
-./sisu contract-change-ownership --chain ganache1 --name erc20gateway --newOwner 0x2d532C099CA476780c7703610D807948ae47856A --from=node0 --keyring-backend test --chain-id=eth-sisu-local -y
+./sisu contract-change-ownership --chain ganache1 --name erc20gateway --newOwner 0x2d532C099CA476780c7703610D807948ae47856A --index=0 --from=node0 --keyring-backend test --chain-id=eth-sisu-local -y
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			chain, _ := cmd.Flags().GetString(flags.Chain)
 			name, _ := cmd.Flags().GetString(flags.Name)
 			newOwner, _ := cmd.Flags().GetString(flags.NewOwner)
+			index, _ := cmd.Flags().GetInt32(flags.Index)
 
 			if len(chain) == 0 {
 				return fmt.Errorf("invalid chain %s", chain)
@@ -51,7 +52,7 @@ Example:
 				return err
 			}
 
-			msg := types.NewChangeOwnershipMsg(clientCtx.GetFromAddress().String(), chain, hash, newOwner)
+			msg := types.NewChangeOwnershipMsg(clientCtx.GetFromAddress().String(), chain, hash, newOwner, index)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -66,6 +67,7 @@ Example:
 	cmd.Flags().String(flags.Chain, "", "target chain of the command")
 	cmd.Flags().String(flags.Name, "", "name of the contract that identifies the contract")
 	cmd.Flags().String(flags.NewOwner, "", "new owner address")
+	cmd.Flags().Int32(flags.Index, 0, "index of the command. This index is used to differentiate calling this contract multiple times")
 
 	return cmd
 }
