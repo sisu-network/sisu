@@ -69,6 +69,9 @@ func (h *HandlerTxOut) doTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWithSi
 
 // signTx sends a TxOut to dheart for TSS signing.
 func (h *HandlerTxOut) signTx(ctx sdk.Context, tx *types.TxOut) {
+	// Update the txOut to be delivered.
+	h.txTracker.UpdateStatus(TxTrackerTxOut, tx.OutChain, tx.OutHash, TxStatusDelivered)
+
 	log.Info("Delivering TXOUT for chain", tx.OutChain, " tx hash = ", tx.OutHash)
 	if tx.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
 		log.Info("This TxOut is a contract deployment")
@@ -104,12 +107,8 @@ func (h *HandlerTxOut) signTx(ctx sdk.Context, tx *types.TxOut) {
 	pubKeys := h.partyManager.GetActivePartyPubkeys()
 
 	err := h.dheartClient.KeySign(keysignReq, pubKeys)
-
 	if err != nil {
 		log.Error("Keysign: err =", err)
-	} else {
-		// Add this tx to TxTracker
-		h.txTracker.AddTransaction(tx.OutChain, tx.OutHash)
 	}
 }
 

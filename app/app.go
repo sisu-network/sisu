@@ -262,7 +262,7 @@ func New(
 
 	worldState := world.NewWorldState(tssConfig, publicDb, deyesClient)
 	worldState.LoadData()
-	txTracker := tss.NewTxTracker()
+	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert)
 
 	tssProcessor := tss.NewProcessor(app.tssKeeper, publicDb, privateDb, tssConfig, nodeKey.PrivKey,
 		app.appKeys, app.txDecoder, app.txSubmitter, app.globalData, dheartClient, deyesClient, worldState,

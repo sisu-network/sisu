@@ -14,6 +14,7 @@ type HandlerTxIn struct {
 	txOutputProducer TxOutputProducer
 	globalData       common.GlobalData
 	txSubmit         common.TxSubmit
+	txTracker        TxTracker
 }
 
 func NewHandlerTxIn(mc ManagerContainer) *HandlerTxIn {
@@ -23,6 +24,7 @@ func NewHandlerTxIn(mc ManagerContainer) *HandlerTxIn {
 		txOutputProducer: mc.TxOutProducer(),
 		globalData:       mc.GlobalData(),
 		txSubmit:         mc.TxSubmit(),
+		txTracker:        mc.TxTracker(),
 	}
 }
 
@@ -39,7 +41,7 @@ func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, signerMsg *types.TxInWithSigne
 func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner) ([]byte, error) {
 	msg := msgWithSigner.Data
 
-	log.Info("Deliverying TxIn....")
+	log.Info("Deliverying TxIn, hash = ", msg.TxHash)
 
 	// Save this to KVStore & private db.
 	h.publicDb.SaveTxIn(msg)
@@ -70,6 +72,9 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigne
 		// Creates TxOut. TODO: Only do this for top validator nodes.
 		for _, msg := range txOutWithSigners {
 			h.txSubmit.SubmitMessageAsync(msg)
+
+			// Track the txout
+			h.txTracker.AddTransaction(TxTrackerTxOut, msg.Data.OutChain, msg.Data.OutHash, msg.Data.OutBytes, msg)
 		}
 	}
 

@@ -7,8 +7,16 @@ import (
 	"time"
 
 	libchain "github.com/sisu-network/lib/chain"
+	"github.com/sisu-network/sisu/config"
 
 	"github.com/sisu-network/lib/log"
+)
+
+type TxTrackerType int64
+
+const (
+	TxTrackerTxIn TxTrackerType = iota
+	TxTrackerTxOut
 )
 
 type TxStatus int64
@@ -16,8 +24,10 @@ type TxStatus int64
 const (
 	TxStatusUnknown TxStatus = iota
 	TxStatusCreated
+	TxStatusDelivered
 	TxStatusSigned
 	TxStatusSignFailed
+	TxStatusDepoyed // transaction has been sent to blockchain but not confirmed yet.
 	TxStatusConfirmed
 )
 
@@ -26,37 +36,45 @@ const (
 )
 
 type txObject struct {
-	status TxStatus
-	chain  string
-	hash   string // hash without signature
+	txType  TxTrackerType
+	chain   string
+	hash    string // hash without signature
+	status  TxStatus
+	content []byte
 
 	addedTime time.Time
 }
 
-func newTxObject(chain string, hash string) *txObject {
+func newTxObject(txType TxTrackerType, chain string, hash string, content []byte) *txObject {
 	return &txObject{
-		status:    TxStatusCreated,
+		txType:    txType,
 		chain:     chain,
 		hash:      hash,
+		content:   content,
+		status:    TxStatusCreated,
 		addedTime: time.Now(),
 	}
 }
 
+// TxTracker is used to track failed transaction. This includes both TxIn and TxOut. The tracked txs
+// are in-memory only.
 type TxTracker interface {
-	AddTransaction(chain string, hash string)
-	UpdateStatus(chain string, hash string, status TxStatus)
-	RemoveTransaction(chain string, hash string)
+	AddTransaction(txType TxTrackerType, chain string, hash string, content []byte, extra interface{})
+	UpdateStatus(txType TxTrackerType, chain string, hash string, status TxStatus)
+	RemoveTransaction(txType TxTrackerType, chain string, hash string)
 
-	OnTxFailed(chain string, hash string, status TxStatus)
+	OnTxFailed(txType TxTrackerType, chain string, hash string, status TxStatus)
 }
 
 type DefaultTxTracker struct {
-	txs *sync.Map
+	txs         *sync.Map
+	emailConfig config.EmailAlertConfig
 }
 
-func NewTxTracker() TxTracker {
+func NewTxTracker(emailConfig config.EmailAlertConfig) TxTracker {
 	return &DefaultTxTracker{
-		txs: &sync.Map{},
+		txs:         &sync.Map{},
+		emailConfig: emailConfig,
 	}
 }
 
@@ -64,7 +82,7 @@ func (t *DefaultTxTracker) getTxoKey(chain string, hash string) string {
 	return fmt.Sprintf("%s__%s", chain, hash)
 }
 
-func (t *DefaultTxTracker) AddTransaction(chain string, hash string) {
+func (t *DefaultTxTracker) AddTransaction(txType TxTrackerType, chain string, hash string, content []byte, extra interface{}) {
 	key := t.getTxoKey(chain, hash)
 
 	if _, ok := t.txs.Load(key); ok {
@@ -72,10 +90,12 @@ func (t *DefaultTxTracker) AddTransaction(chain string, hash string) {
 		return
 	}
 
-	t.txs.Store(key, newTxObject(chain, hash))
+	log.Verbosef("Adding tx to tracking %s %s", chain, hash)
+
+	t.txs.Store(key, newTxObject(txType, chain, hash, content))
 }
 
-func (t *DefaultTxTracker) UpdateStatus(chain string, hash string, status TxStatus) {
+func (t *DefaultTxTracker) UpdateStatus(txType TxTrackerType, chain string, hash string, status TxStatus) {
 	value, ok := t.txs.Load(t.getTxoKey(chain, hash))
 	if ok {
 		tx := value.(*txObject)
@@ -87,12 +107,22 @@ func (t *DefaultTxTracker) CheckExpiredTransaction() {
 	go t.checkExpiredTransaction()
 }
 
-func (t *DefaultTxTracker) RemoveTransaction(chain string, hash string) {
+func (t *DefaultTxTracker) RemoveTransaction(txType TxTrackerType, chain string, hash string) {
 	key := t.getTxoKey(chain, hash)
 	t.txs.Delete(key)
+
+	// Print size
+	count := 0
+	t.txs.Range(func(key, value interface{}) bool {
+		count += 1
+		return true
+	})
+
+	log.Verbosef("TxTracker: Removing tx from tracking %s %s", chain, hash)
+	log.Verbosef("TxTracker: Remaining count = %d", count)
 }
 
-func (t *DefaultTxTracker) OnTxFailed(chain string, hash string, status TxStatus) {
+func (t *DefaultTxTracker) OnTxFailed(txType TxTrackerType, chain string, hash string, status TxStatus) {
 	key := t.getTxoKey(chain, hash)
 	if val, ok := t.txs.Load(key); ok {
 		t.processFailedTx(val.(*txObject))
@@ -135,12 +165,8 @@ func (t *DefaultTxTracker) checkExpiredTransaction() {
 }
 
 func (t *DefaultTxTracker) processFailedTx(txo *txObject) {
+	log.Warnf("Processing failed transaction: %s %s %v", txo.chain, txo.hash, txo.status)
+
 	key := t.getTxoKey(txo.chain, txo.hash)
-
-	switch txo.status {
-	case TxStatusCreated, TxStatusSignFailed:
-	case TxStatusSigned:
-	}
-
 	t.txs.Delete(key)
 }

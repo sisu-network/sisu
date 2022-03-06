@@ -350,13 +350,14 @@ func (p *Processor) addWatchAddress(chain string, address string) {
 func (p *Processor) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 	log.Info("The transaction has been sent to blockchain (but not included in a block yet). chain = ",
 		result.Chain, ", address = ", result.DeployedAddr)
+	p.txTracker.UpdateStatus(TxTrackerTxOut, result.Chain, result.TxHash, TxStatusDepoyed)
 }
 
 // This function is called after dheart sends Sisu keysign result.
 func (p *Processor) OnKeysignResult(result *dhtypes.KeysignResult) {
 	if result.Outcome == dhtypes.OutcometNotSelected {
 		for _, msg := range result.Request.KeysignMessages {
-			p.txTracker.RemoveTransaction(msg.OutChain, msg.OutHash)
+			p.txTracker.RemoveTransaction(TxTrackerTxOut, msg.OutChain, msg.OutHash)
 		}
 		return
 	}
@@ -422,7 +423,7 @@ func (p *Processor) OnKeysignResult(result *dhtypes.KeysignResult) {
 			}
 
 			// Mark the tx as signed
-			p.txTracker.UpdateStatus(keysignMsg.OutChain, keysignMsg.OutHash, TxStatusSigned)
+			p.txTracker.UpdateStatus(TxTrackerTxOut, keysignMsg.OutChain, keysignMsg.OutHash, TxStatusSigned)
 
 			// TODO: Check if we have any pending confirm tx that is waiting for this tx.
 		} else {
@@ -430,7 +431,7 @@ func (p *Processor) OnKeysignResult(result *dhtypes.KeysignResult) {
 			log.Warnf("Signing failed, in chain = %s, out chain = %s, out hash = %s", keysignMsg.InChain,
 				keysignMsg.OutChain, keysignMsg.OutHash)
 
-			p.txTracker.OnTxFailed(keysignMsg.OutChain, keysignMsg.OutHash, TxStatusSignFailed)
+			p.txTracker.OnTxFailed(TxTrackerTxOut, keysignMsg.OutChain, keysignMsg.OutHash, TxStatusSignFailed)
 		}
 	}
 }
@@ -506,6 +507,9 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 	}
 
 	log.Info("confirming tx: chain, hash, type = ", chain, " ", tx.Hash, " ", txOut.TxType)
+
+	// TODO: Verify that the transaction is successful and does contain some event by checking transaction receipt.
+	p.txTracker.RemoveTransaction(TxTrackerTxOut, chain, txOut.OutHash)
 
 	contractAddress := ""
 	if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT && libchain.IsETHBasedChain(chain) {
