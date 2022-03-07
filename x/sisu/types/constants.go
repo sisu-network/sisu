@@ -11,6 +11,7 @@ const (
 	MsgTypeUpdateTokenPrice          = "UpdateTokenPrice"
 	MsgTypePauseContract             = "PauseContract"
 	MsgTypeResumeContract            = "ResumeContract"
+	MsgTypeContractChangeOwnership   = "ContractChangeOwnership"
 
 	MsgTypeTxOut         = "TxOut"
 	MsgTypeKeysignResult = "KeysignResult"

@@ -107,7 +107,7 @@ func (h *handlerPauseResumeContract) doPauseOrResume(ctx sdk.Context, chain, has
 	}
 
 	if !found {
-		err := fmt.Errorf("doPauseOrResume: contarct with hash %s is not supported", hash)
+		err := fmt.Errorf("doPauseOrResume: contract with hash %s is not supported", hash)
 		log.Error(err)
 		return nil, err
 	}

@@ -1,0 +1,16 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message ChangeOwnershipContractMsg {
+  string signer = 1;
+  ChangeOwnership data = 2;
+}
+
+message ChangeOwnership {
+  string chain = 1;
+  string hash = 2;
+  string newOwner = 3;
+  int32 index = 4;
+}
