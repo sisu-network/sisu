@@ -14,18 +14,6 @@ test:
 fmt:
 	find . -name "*.go" | grep -v -E "(.*/proto/.*|./*/mock/.*)" | xargs -I '{}' gofmt -s -w '{}'
 
-.PHONY: dev-mysql-up
-dev-mysql-up:
-	@docker compose \
-		-f docker/docker-compose-mysql.dev.yml \
-		up -d
-
-.PHONY: dev-mysql-down
-dev-mysql-down:
-	@docker compose \
-		-f docker/docker-compose-mysql.dev.yml \
-		down -v --rmi local
-
 # Create a local kind cluster with everything needed for sisu.
 .PHONY: kind-init-cluster
 kind-init-cluster:
@@ -35,11 +23,3 @@ kind-init-cluster:
 .PHONY: kind-delete-cluster
 kind-delete-cluster:
 	@cd ./kind && $(MAKE) -j delete-cluster
-
-# Set global git configuration to only replace our private dependencies with the SSH URL.
-.PHONY: configure-git
-configure-git:
-	git config --global url."git@github.com:sisu-network/deyes".insteadOf 'https://github.com/sisu-network/deyes'
-	git config --global url."git@github.com:sisu-network/dheart".insteadOf 'https://github.com/sisu-network/dheart'
-	git config --global url."git@github.com:sisu-network/lib".insteadOf 'https://github.com/sisu-network/lib'
-	git config --global url."git@github.com:sisu-network/tss-lib".insteadOf 'https://github.com/sisu-network/tss-lib'
