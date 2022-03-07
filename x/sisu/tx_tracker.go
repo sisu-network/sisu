@@ -18,38 +18,13 @@ import (
 	"github.com/sisu-network/lib/log"
 )
 
-type TxStatus int64
-
-const (
-	// Any update to this status enum should update the StatusStrings as well.
-	TxStatusUnknown TxStatus = iota
-	TxStatusCreated
-	TxStatusDelivered
-	TxStatusSigned
-	TxStatusSignFailed
-	TxStatusDepoyed // transaction has been sent to blockchain but not confirmed yet.
-	TxStatusConfirmed
-)
-
 const (
 	ExpireDuration = time.Minute * 5 // 5 minutes
 )
 
-var (
-	StatusStrings = []string{
-		"TxStatusUnknown",
-		"TxStatusCreated",
-		"TxStatusDelivered",
-		"TxStatusSigned",
-		"TxStatusSignFailed",
-		"TxStatusDepoyed",
-		"TxStatusConfirmed",
-	}
-)
-
 type txObject struct {
 	txOut  *types.TxOut
-	status TxStatus
+	status types.TxStatus
 	txIn   *types.TxIn
 
 	addedTime time.Time
@@ -58,32 +33,35 @@ type txObject struct {
 func newTxObject(txOut *types.TxOut, txIn *types.TxIn) *txObject {
 	return &txObject{
 		txOut:     txOut,
-		status:    TxStatusCreated,
+		status:    types.TxStatusCreated,
 		txIn:      txIn,
 		addedTime: time.Now(),
 	}
 }
 
+//go:generate mockgen -source=./x/sisu/transaction_tracker.go -destination=./tests/mock/x/sisu/transaction_tracker.go -package=mock
 // TxTracker is used to track failed transaction. This includes both TxIn and TxOut. The tracked txs
 // are in-memory only.
 type TxTracker interface {
 	AddTransaction(txOut *types.TxOut, txIn *types.TxIn)
-	UpdateStatus(chain string, hash string, status TxStatus)
+	UpdateStatus(chain string, hash string, status types.TxStatus)
 	RemoveTransaction(chain string, hash string)
-	OnTxFailed(chain string, hash string, status TxStatus)
+	OnTxFailed(chain string, hash string, status types.TxStatus)
 
 	CheckExpiredTransaction()
 }
 
 type DefaultTxTracker struct {
-	txs         *sync.Map
+	txs         map[string]*txObject
+	txsLock     *sync.RWMutex
 	emailConfig config.EmailAlertConfig
 	worldState  world.WorldState
 }
 
 func NewTxTracker(emailConfig config.EmailAlertConfig, worldState world.WorldState) TxTracker {
 	return &DefaultTxTracker{
-		txs:         &sync.Map{},
+		txs:         make(map[string]*txObject),
+		txsLock:     &sync.RWMutex{},
 		emailConfig: emailConfig,
 		worldState:  worldState,
 	}
@@ -98,22 +76,28 @@ func (t *DefaultTxTracker) AddTransaction(txOut *types.TxOut, txIn *types.TxIn) 
 	hash := txOut.OutHash
 	key := t.getTxoKey(chain, hash)
 
-	if _, ok := t.txs.Load(key); ok {
+	t.txsLock.Lock()
+	defer t.txsLock.Unlock()
+
+	if t.txs[key] != nil {
 		log.Warnf("Tx has been added to the tracker, chain and hash = ", chain, hash)
+	} else {
+		log.Verbosef("Adding tx to tracking %s %s", chain, hash)
+
+		t.txs[key] = newTxObject(txOut, txIn)
+	}
+}
+
+func (t *DefaultTxTracker) UpdateStatus(chain string, hash string, status types.TxStatus) {
+	t.txsLock.Lock()
+	defer t.txsLock.Unlock()
+
+	txo := t.txs[t.getTxoKey(chain, hash)]
+	if txo == nil {
 		return
 	}
 
-	log.Verbosef("Adding tx to tracking %s %s", chain, hash)
-
-	t.txs.Store(key, newTxObject(txOut, txIn))
-}
-
-func (t *DefaultTxTracker) UpdateStatus(chain string, hash string, status TxStatus) {
-	value, ok := t.txs.Load(t.getTxoKey(chain, hash))
-	if ok {
-		tx := value.(*txObject)
-		tx.status = status
-	}
+	txo.status = status
 }
 
 func (t *DefaultTxTracker) CheckExpiredTransaction() {
@@ -122,55 +106,52 @@ func (t *DefaultTxTracker) CheckExpiredTransaction() {
 
 func (t *DefaultTxTracker) RemoveTransaction(chain string, hash string) {
 	key := t.getTxoKey(chain, hash)
-	t.txs.Delete(key)
 
-	// Print size
-	count := 0
-	t.txs.Range(func(key, value interface{}) bool {
-		count += 1
-		return true
-	})
-
-	log.Verbosef("TxTracker: Removing tx from tracking %s %s", chain, hash)
-	log.Verbosef("TxTracker: Remaining count = %d", count)
+	t.txsLock.Lock()
+	delete(t.txs, key)
+	t.txsLock.Unlock()
 }
 
-func (t *DefaultTxTracker) OnTxFailed(chain string, hash string, status TxStatus) {
+func (t *DefaultTxTracker) OnTxFailed(chain string, hash string, status types.TxStatus) {
 	key := t.getTxoKey(chain, hash)
-	if val, ok := t.txs.Load(key); ok {
-		t.processFailedTx(val.(*txObject))
-	} else {
+	t.txsLock.RLock()
+	txo := t.txs[key]
+	t.txsLock.RUnlock()
+
+	if txo == nil {
 		log.Warnf("cannot find transaction in tracker with chain %s and hash %s", chain, hash)
+		return
 	}
+
+	go t.processFailedTx(txo)
 }
 
 func (t *DefaultTxTracker) checkExpiredTransaction() {
 	toRemove := make(map[string]*txObject)
-
 	now := time.Now()
 
-	t.txs.Range(func(key, value interface{}) bool {
-		txo := value.(*txObject)
+	t.txsLock.RLock()
+	for key, txo := range t.txs {
 		expire := txo.addedTime.Add(ExpireDuration)
 
 		if expire.Before(now) {
 			// This transcation has expired.
-			toRemove[key.(string)] = txo
+			toRemove[key] = txo
 		}
-
-		return true
-	})
+	}
+	t.txsLock.RUnlock()
 
 	if len(toRemove) > 0 {
 		log.Warnf("There are some transactions that are not observed on remote blockchain, size = ", len(toRemove))
 	}
 
 	// Broadcast the failure
+	t.txsLock.Lock()
 	for key, txo := range toRemove {
-		t.txs.Delete(key)
-
+		delete(t.txs, key)
 		go t.processFailedTx(txo)
 	}
+	t.txsLock.Unlock()
 }
 
 func (t *DefaultTxTracker) processFailedTx(txo *txObject) {
@@ -184,7 +165,9 @@ func (t *DefaultTxTracker) processFailedTx(txo *txObject) {
 		txo.txOut.OutChain, txo.txOut.OutHash, txo.status, inChain, inHash)
 
 	key := t.getTxoKey(txo.txOut.OutChain, txo.txOut.OutHash)
-	t.txs.Delete(key)
+	t.txsLock.Lock()
+	delete(t.txs, key)
+	t.txsLock.Unlock()
 
 	// Send email if needed
 	if len(t.emailConfig.Url) > 0 && len(t.emailConfig.Secret) > 0 {
@@ -295,7 +278,7 @@ func (t *DefaultTxTracker) getEmailBodyString(txo *txObject) (string, error) {
 	body := Body{}
 	body.Chain = txo.txOut.OutChain
 	body.Hash = txo.txOut.OutHash
-	body.LastStatus = StatusStrings[txo.status]
+	body.LastStatus = types.StatusStrings[txo.status]
 
 	txIn := txo.txIn
 	if txIn != nil {

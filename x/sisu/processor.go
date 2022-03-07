@@ -350,7 +350,7 @@ func (p *Processor) addWatchAddress(chain string, address string) {
 func (p *Processor) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 	log.Info("The transaction has been sent to blockchain (but not included in a block yet). chain = ",
 		result.Chain, ", address = ", result.DeployedAddr)
-	p.txTracker.UpdateStatus(result.Chain, result.TxHash, TxStatusDepoyed)
+	p.txTracker.UpdateStatus(result.Chain, result.TxHash, types.TxStatusDepoyed)
 }
 
 // This function is called after dheart sends Sisu keysign result.
@@ -423,7 +423,7 @@ func (p *Processor) OnKeysignResult(result *dhtypes.KeysignResult) {
 			}
 
 			// Mark the tx as signed
-			p.txTracker.UpdateStatus(keysignMsg.OutChain, keysignMsg.OutHash, TxStatusSigned)
+			p.txTracker.UpdateStatus(keysignMsg.OutChain, keysignMsg.OutHash, types.TxStatusSigned)
 
 			// TODO: Check if we have any pending confirm tx that is waiting for this tx.
 		} else {
@@ -431,7 +431,7 @@ func (p *Processor) OnKeysignResult(result *dhtypes.KeysignResult) {
 			log.Warnf("Signing failed, in chain = %s, out chain = %s, out hash = %s", keysignMsg.InChain,
 				keysignMsg.OutChain, keysignMsg.OutHash)
 
-			p.txTracker.OnTxFailed(keysignMsg.OutChain, keysignMsg.OutHash, TxStatusSignFailed)
+			p.txTracker.OnTxFailed(keysignMsg.OutChain, keysignMsg.OutHash, types.TxStatusSignFailed)
 		}
 	}
 }
