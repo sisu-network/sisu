@@ -4,15 +4,10 @@ go 1.15
 
 require (
 	github.com/BurntSushi/toml v0.4.1
-	github.com/Masterminds/goutils v1.1.1 // indirect
-	github.com/Masterminds/semver v1.5.0 // indirect
-	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
-	github.com/aokoli/goutils v1.1.1 // indirect
 	github.com/btcsuite/btcd v0.22.0-beta
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-sdk v0.42.1
 	github.com/cosmos/go-bip39 v1.0.0
-	github.com/envoyproxy/protoc-gen-validate v0.6.7 // indirect
 	github.com/ethereum/go-ethereum v1.10.15
 	github.com/gballet/go-libpcsclite v0.0.0-20191108122812-4678299bea08 // indirect
 	github.com/go-sql-driver/mysql v1.6.0
@@ -24,16 +19,9 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/go-retryablehttp v0.7.0
 	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
-	github.com/huandu/xstrings v1.3.2 // indirect
-	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/joho/godotenv v1.3.0
 	github.com/libp2p/go-libp2p-core v0.8.0
-	github.com/mitchellh/copystructure v1.2.0 // indirect
-	github.com/mwitkow/go-proto-validators v0.3.2 // indirect
 	github.com/prometheus/tsdb v0.10.0 // indirect
-	github.com/pseudomuto/protoc-gen-doc v1.5.1 // indirect
-	github.com/pseudomuto/protokit v0.2.1 // indirect
-	github.com/regen-network/cosmos-proto v0.3.1 // indirect
 	github.com/rjeczalik/notify v0.9.2 // indirect
 	github.com/sisu-network/deyes v0.1.5
 	github.com/sisu-network/dheart v0.1.5-alpha2.0.20220225075041-412eb585fef0

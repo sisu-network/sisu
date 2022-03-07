@@ -1,10 +1,7 @@
 package sisu
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"sync"
 	"time"
 
@@ -12,6 +9,7 @@ import (
 
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/email"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/sisu-network/sisu/x/sisu/world"
 
@@ -176,77 +174,19 @@ func (t *DefaultTxTracker) processFailedTx(txo *txObject) {
 }
 
 // Sends alert email using SendGrid. This could be moved into an interface to use any mail service.
-func (t *DefaultTxTracker) sendAlertEmail(url, secret, email string, txo *txObject) {
-	type Email struct {
-		Email string `json:"email"`
-	}
-
-	type ContentElement struct {
-		Type  string `json:"type"`
-		Value string `json:"value"`
-	}
-
-	type To struct {
-		To []Email `json:"to"`
-	}
-
-	type SendGrid struct {
-		Personalizations []To             `json:"personalizations"`
-		From             Email            `json:"from"`
-		Subject          string           `json:"subject"`
-		Content          []ContentElement `json:"content"`
-	}
-
+func (t *DefaultTxTracker) sendAlertEmail(url, secret, emailAddress string, txo *txObject) {
 	body, err := t.getEmailBodyString(txo)
 	if err != nil {
 		log.Error("sendAlertEmail: cannot pretty print body, err = ", err)
 		return
 	}
 
-	value := SendGrid{
-		Personalizations: []To{
-			{
-				To: []Email{
-					{
-						Email: email,
-					},
-				},
-			},
-		},
-		From: Email{
-			Email: email,
-		},
-		Subject: "Not observed transaction",
-		Content: []ContentElement{
-			{
-				Type:  "text/plain",
-				Value: body,
-			},
-		},
-	}
+	subject := fmt.Sprintf("Failed tx on chain %s with hash %s", txo.txOut.OutChain, txo.txOut.OutHash)
 
-	json_data, err := json.Marshal(value)
+	err = email.NewSendGrid().Send(url, secret, emailAddress, subject, body)
 	if err != nil {
-		log.Error("sendAlertEmail: failed to marshal value, err = ", err)
-		return
+		log.Error("sendAlertEmail: Failed to send email, err = ", err)
 	}
-
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json_data))
-	if err != nil {
-		log.Error("sendAlertEmail: failed to create new http post request, err = ", err)
-		return
-	}
-
-	var client http.Client
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", secret))
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Error("sendAlertEmail: failed to send request, err = ", err)
-		return
-	}
-	defer resp.Body.Close() // ignore response
 }
 
 func (t *DefaultTxTracker) getEmailBodyString(txo *txObject) (string, error) {

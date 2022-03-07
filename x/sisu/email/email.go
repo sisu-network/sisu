@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -66,7 +65,7 @@ func (s *SendGridEmail) Send(url string, secret string, email string, subject st
 
 	json_data, err := json.Marshal(value)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(json_data))
@@ -82,12 +81,7 @@ func (s *SendGridEmail) Send(url string, secret string, email string, subject st
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
-
-	_, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
+	defer resp.Body.Close() // ignore response
 
 	return nil
 }
