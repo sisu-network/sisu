@@ -80,7 +80,7 @@ func (h *handlerContractChangeLiquidityAddress) doChangeLiquidityAddress(ctx sdk
 		return nil, err
 	}
 
-	txOutMsg, err := h.txOutputProducer.ContractChangeOwnership(ctx, chain, hash, newLpAddress)
+	txOutMsg, err := h.txOutputProducer.ContractChangeLiquidPoolAddress(ctx, chain, hash, newLpAddress)
 	if err != nil {
 		return nil, err
 	}

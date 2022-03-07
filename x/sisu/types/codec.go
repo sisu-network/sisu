@@ -30,6 +30,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil), &PauseContractMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &ResumeContractMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &ChangeOwnershipContractMsg{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &ChangeLiquidPoolAddressMsg{})
 
 	registry.RegisterInterface("cosmos.crypto.PubKey", (*ctypes.PubKey)(nil))
 	registry.RegisterImplementations((*ctypes.PubKey)(nil), &ed25519.PubKey{})

@@ -27,7 +27,7 @@ Example:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			chain, _ := cmd.Flags().GetString(flags.Chain)
 			name, _ := cmd.Flags().GetString(flags.Name)
-			newLiquidityAddress, _ := cmd.Flags().GetString(flags.NewOwner)
+			newLiquidityAddress, _ := cmd.Flags().GetString(flags.NewLiquidityAddress)
 			index, _ := cmd.Flags().GetInt32(flags.Index)
 
 			if len(chain) == 0 {
