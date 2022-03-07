@@ -236,28 +236,6 @@ func (p *Processor) setContext(ctx sdk.Context) {
 	p.lastContext.Store(ctx)
 }
 
-// shouldProcessMsg counts how many validators have posted the same transaction to blockchain before
-// processing.
-//
-// When adding new message type, remember to add its serialization in the GetTxRecordHash.
-func (p *Processor) shouldProcessMsg(ctx sdk.Context, msg sdk.Msg) (bool, []byte) {
-	hash, signer, err := keeper.GetTxRecordHash(msg)
-	if err != nil {
-		log.Error("failed to get tx hash, err = ", err)
-		return false, hash
-	}
-
-	count := p.publicDb.SaveTxRecord(hash, signer)
-	majorityThreshold := p.publicDb.GetParams().MajorityThreshold
-	if count >= int(majorityThreshold) && !p.publicDb.IsTxRecordProcessed(hash) {
-		return true, hash
-	}
-
-	return false, hash
-}
-
-///// Api Callback
-
 /**
 Process for generating a new key:
 - Wait for the app to catch up
