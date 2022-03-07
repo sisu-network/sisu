@@ -4,13 +4,15 @@ import (
 	"os"
 
 	"github.com/BurntSushi/toml"
+	"github.com/sisu-network/lib/log"
 )
 
 type Config struct {
 	Mode string
 
-	Sisu SisuConfig
-	Tss  TssConfig
+	Sisu   SisuConfig       `toml:"sisu"`
+	Tss    TssConfig        `toml:"tss"`
+	LogDNA log.LogDNAConfig `toml:"log_dna"`
 }
 
 type SisuConfig struct {

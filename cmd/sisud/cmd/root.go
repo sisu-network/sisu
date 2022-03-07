@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	tmcli "github.com/tendermint/tendermint/libs/cli"
+	tlog "github.com/tendermint/tendermint/libs/log"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/debug"
@@ -23,9 +24,12 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/crisis"
 	genutilcli "github.com/cosmos/cosmos-sdk/x/genutil/client/cli"
+	"github.com/logdna/logdna-go/logger"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/app"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/dev"
 	gen "github.com/sisu-network/sisu/cmd/sisud/cmd/gen"
+	"github.com/sisu-network/sisu/config"
 )
 
 var ChainID string
@@ -47,6 +51,27 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		WithBroadcastMode(flags.BroadcastBlock).
 		WithHomeDir(app.MainAppHome)
 
+	appCfg, err := config.ReadConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	var tendermintLogger tlog.Logger
+	if dnaCfg := appCfg.LogDNA; len(dnaCfg.Secret) > 0 {
+		opts := logger.Options{
+			App:           dnaCfg.AppName,
+			FlushInterval: dnaCfg.FlushInterval.Duration,
+			Hostname:      dnaCfg.HostName,
+			MaxBufferLen:  dnaCfg.MaxBufferLen,
+		}
+		dnaLogger := log.NewDNALogger(dnaCfg.Secret, opts)
+		// set Sisu's logger
+		log.SetLogger(dnaLogger)
+
+		// re-assign Tendermint's logger
+		tendermintLogger = app.NewTendermintLogger(dnaLogger)
+	}
+
 	rootCmd := &cobra.Command{
 		Use:   app.Name,
 		Short: "Stargate CosmosHub App",
@@ -55,11 +80,21 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 				return err
 			}
 
-			return server.InterceptConfigsPreRunHandler(cmd)
+			if err := server.InterceptConfigsPreRunHandler(cmd); err != nil {
+				return err
+			}
+
+			if tendermintLogger != nil {
+				srvCtx := server.GetServerContextFromCmd(cmd)
+				srvCtx.Logger = tendermintLogger
+				return server.SetCmdServerContext(cmd, srvCtx)
+			}
+
+			return nil
 		},
 	}
 
-	initRootCmd(rootCmd, encodingConfig)
+	initRootCmd(rootCmd, encodingConfig, appCfg)
 	overwriteFlagDefaults(rootCmd, map[string]string{
 		flags.FlagChainID: ChainID,
 	})
@@ -69,7 +104,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 	return rootCmd, encodingConfig
 }
 
-func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
+func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, appConfig config.Config) {
 	authclient.Codec = encodingConfig.Marshaler
 
 	rootCmd.AddCommand(
@@ -85,12 +120,14 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig) {
 		dev.DevCmd(),
 		PauseContractCmd(),
 		ResumeContractCmd(),
+		ContractChangeOwnershipCmd(),
 	)
 
 	a := appCreator{
-		encCfg: encodingConfig,
+		appConfig: appConfig,
+		encCfg:    encodingConfig,
 	}
-	server.AddCommands(rootCmd, app.MainAppHome, a.newApp, a.appExport, addModuleInitFlags)
+	server.AddCommands(rootCmd, app.MainAppHome, a.newApp, nil, addModuleInitFlags)
 
 	// add keybase, auxiliary RPC, query, and tx child commands
 	rootCmd.AddCommand(

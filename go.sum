@@ -786,6 +786,8 @@ github.com/libp2p/go-yamux v1.4.1/go.mod h1:fr7aVgmdNGJK+N1g+b6DW6VxzbRCjCOejR/h
 github.com/libp2p/go-yamux/v2 v2.0.0/go.mod h1:NVWira5+sVUIU6tu1JWvaRn1dRnG+cawOJiflsAM+7U=
 github.com/lightstep/lightstep-tracer-common/golang/gogo v0.0.0-20190605223551-bc2310a04743/go.mod h1:qklhhLq1aX+mtWk9cPHPzaBjWImj5ULL6C7HFJtXQMM=
 github.com/lightstep/lightstep-tracer-go v0.18.1/go.mod h1:jlF1pusYV4pidLvZ+XD0UBX0ZE6WURAspgAczcDHrL4=
+github.com/logdna/logdna-go v1.0.2 h1:uzunU04spE5QsI0paznz72CEAFDIpvtxCNPphyNgt80=
+github.com/logdna/logdna-go v1.0.2/go.mod h1:RpAFFX9oi5USvAYhXJKK1FbO9D5ANdm0s4JMtUL0YQg=
 github.com/magiconair/properties v1.8.0/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/magiconair/properties v1.8.1/go.mod h1:PppfXfuXeibc/6YijjN8zIbojt8czPbwD3XqdrwzmxQ=
 github.com/magiconair/properties v1.8.4 h1:8KGKTcQQGm0Kv7vEbKFErAoAOFyyacLStRtQSeYtvkY=
@@ -1094,8 +1096,8 @@ github.com/sisu-network/deyes v0.1.5/go.mod h1:uPIOxeb/QvuJspxevITuK/AV3eaaxjFLa
 github.com/sisu-network/dheart v0.1.5-alpha2.0.20220225075041-412eb585fef0 h1:9Id/J76/kJvW/tNV1lrKM+Cx/nYNHRIIW+Q1WCEjcM8=
 github.com/sisu-network/dheart v0.1.5-alpha2.0.20220225075041-412eb585fef0/go.mod h1:z0pRrY61PApX939XmwA7AjWtDEvLcOcpYz8RUHqLVK4=
 github.com/sisu-network/lib v0.0.1-alpha10/go.mod h1:IVs0irBgW1BkGlJ83XTOwWbNxuYHon+xv7m2sdNDss4=
-github.com/sisu-network/lib v0.0.1-alpha9 h1:qE3G/aveMZqCzVSX4t7OIQOHoOt0jNAH7BW9IT/sll8=
-github.com/sisu-network/lib v0.0.1-alpha9/go.mod h1:IVs0irBgW1BkGlJ83XTOwWbNxuYHon+xv7m2sdNDss4=
+github.com/sisu-network/lib v0.0.1-alpha13 h1:s1jVMIK+ktoQQLBEDoFb93aXVO/8a7MdJC1vCWOyeic=
+github.com/sisu-network/lib v0.0.1-alpha13/go.mod h1:kJKc5vnG+vxGsYTeRbgxjG7QgVX2sLUne+qVMrn/hq8=
 github.com/sisu-network/tss-lib v0.1.1 h1:wGMZyLxpIaQB+2N0ckZkV/eiFBslkl5KLGOhJBNUjVQ=
 github.com/sisu-network/tss-lib v0.1.1/go.mod h1:76hDuB4abzc6/s79xacl0wA7ADAqC/3qak1lTW5z5Cc=
 github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d h1:zE9ykElWQ6/NYmHa3jpm/yHnI4xSofP+UP6SpjHcSeM=
