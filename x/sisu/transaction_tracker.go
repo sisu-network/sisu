@@ -21,6 +21,7 @@ import (
 type TxStatus int64
 
 const (
+	// Any update to this status enum should update the StatusStrings as well.
 	TxStatusUnknown TxStatus = iota
 	TxStatusCreated
 	TxStatusDelivered
@@ -34,11 +35,22 @@ const (
 	ExpireDuration = time.Minute * 5 // 5 minutes
 )
 
+var (
+	StatusStrings = []string{
+		"TxStatusUnknown",
+		"TxStatusCreated",
+		"TxStatusDelivered",
+		"TxStatusSigned",
+		"TxStatusSignFailed",
+		"TxStatusDepoyed",
+		"TxStatusConfirmed",
+	}
+)
+
 type txObject struct {
-	txOut   *types.TxOut
-	status  TxStatus
-	content []byte
-	txIn    *types.TxIn
+	txOut  *types.TxOut
+	status TxStatus
+	txIn   *types.TxIn
 
 	addedTime time.Time
 }
@@ -272,16 +284,18 @@ func (t *DefaultTxTracker) getEmailBodyString(txo *txObject) (string, error) {
 	}
 
 	type Body struct {
-		TxType    string    `json:"type"`
-		Chain     string    `json:"chain"`
-		Hash      string    `json:"hash"`
-		TxOutData TxOutData `json:"tx_out_data"`
-		TxInData  TxInData  `json:"tx_in_data"`
+		TxType     string    `json:"type"`
+		Chain      string    `json:"chain"`
+		Hash       string    `json:"hash"`
+		LastStatus string    `json:"last_status"`
+		TxOutData  TxOutData `json:"tx_out_data"`
+		TxInData   TxInData  `json:"tx_in_data"`
 	}
 
 	body := Body{}
 	body.Chain = txo.txOut.OutChain
 	body.Hash = txo.txOut.OutHash
+	body.LastStatus = StatusStrings[txo.status]
 
 	txIn := txo.txIn
 	if txIn != nil {
