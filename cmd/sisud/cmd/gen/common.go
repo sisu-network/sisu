@@ -162,17 +162,3 @@ func getLiquidity(file string) []*types.Liquidity {
 
 	return liquids
 }
-
-func getParams(file string) *types.Params {
-	params := &types.Params{}
-	bz, err := os.ReadFile(file)
-	if err != nil {
-		panic(err)
-	}
-
-	if err := json.Unmarshal(bz, params); err != nil {
-		panic(err)
-	}
-
-	return params
-}
