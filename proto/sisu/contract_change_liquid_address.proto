@@ -1,0 +1,16 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message ChangeLiquidPoolAddressMsg {
+  string signer = 1;
+  ChangeLiquidAddress data = 2;
+}
+
+message ChangeLiquidAddress{
+  string chain = 1;
+  string hash = 2;
+  string newLiquidAddress = 3;
+  int32 index = 4;
+}
