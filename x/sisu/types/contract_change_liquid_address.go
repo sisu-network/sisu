@@ -26,7 +26,7 @@ func (msg *ChangeLiquidPoolAddressMsg) Route() string {
 
 // Type ...
 func (msg *ChangeLiquidPoolAddressMsg) Type() string {
-	return MsgTypeContractChangeOwnership
+	return MsgTypeContractChangeLiquidityAddress
 }
 
 // GetSigners ...
