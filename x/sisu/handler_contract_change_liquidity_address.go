@@ -16,23 +16,23 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-type HandlerContractChangeLiquidityAddress struct {
+type HandlerContractSetLiquidityAddress struct {
 	pmm      PostedMessageManager
 	publicDb keeper.Storage
 	mc       ManagerContainer
 }
 
-func NewHandlerContractChangeLiquidityAddress(mc ManagerContainer) *HandlerContractChangeLiquidityAddress {
-	return &HandlerContractChangeLiquidityAddress{
+func NewHandlerContractSetLiquidityAddress(mc ManagerContainer) *HandlerContractSetLiquidityAddress {
+	return &HandlerContractSetLiquidityAddress{
 		publicDb: mc.PublicDb(),
 		pmm:      mc.PostedMessageManager(),
 		mc:       mc,
 	}
 }
 
-func (h *HandlerContractChangeLiquidityAddress) DeliverMsg(ctx sdk.Context, msg *types.ChangeLiquidPoolAddressMsg) (*sdk.Result, error) {
+func (h *HandlerContractSetLiquidityAddress) DeliverMsg(ctx sdk.Context, msg *types.ChangeLiquidPoolAddressMsg) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
-		newHandlerContractChangeLiquidityAddress(h.mc).doChangeLiquidityAddress(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.NewLiquidAddress)
+		newHandlerContractSetLiquidityAddress(h.mc).doSetLiquidityAddress(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.NewLiquidAddress)
 		h.publicDb.ProcessTxRecord(hash)
 	} else {
 		log.Verbose("HandlerContractChangeOwnership: didn't not reach consensus or transaction has been processed")
@@ -49,7 +49,7 @@ type handlerContractChangeLiquidityAddress struct {
 	dheartClient     tssclients.DheartClient
 }
 
-func newHandlerContractChangeLiquidityAddress(mc ManagerContainer) *handlerContractChangeLiquidityAddress {
+func newHandlerContractSetLiquidityAddress(mc ManagerContainer) *handlerContractChangeLiquidityAddress {
 	return &handlerContractChangeLiquidityAddress{
 		publicDb:         mc.PublicDb(),
 		txOutputProducer: mc.TxOutProducer(),
@@ -59,10 +59,10 @@ func newHandlerContractChangeLiquidityAddress(mc ManagerContainer) *handlerContr
 	}
 }
 
-func (h *handlerContractChangeLiquidityAddress) doChangeLiquidityAddress(ctx sdk.Context, chain, hash, newLpAddress string) ([]byte, error) {
-	// Only do pause/pause if we finished catching up.
+func (h *handlerContractChangeLiquidityAddress) doSetLiquidityAddress(ctx sdk.Context, chain, hash, newLpAddress string) ([]byte, error) {
+	// Only do set liquidity address if we finished catching up.
 	if h.globalData.IsCatchingUp() {
-		log.Info("We are catching up with the network, exiting doPauseOrResume")
+		log.Info("We are catching up with the network, exiting setLiquidAddress")
 		return nil, nil
 	}
 

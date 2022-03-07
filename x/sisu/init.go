@@ -12,12 +12,12 @@ import (
 const (
 	ContractErc20Gateway = "erc20gateway"
 
-	MethodTransferIn          = "transferIn"
-	MethodTransferOut         = "transferOut"
-	MethodPauseGateway        = "pauseGateway"
-	MethodResumeGateway       = "resumeGateway"
-	MethodChangeOwnership     = "transferOwnership"
-	MethodChangeLiquidAddress = "setLiquidAddress"
+	MethodTransferIn        = "transferIn"
+	MethodTransferOut       = "transferOut"
+	MethodPauseGateway      = "pauseGateway"
+	MethodResumeGateway     = "resumeGateway"
+	MethodTransferOwnership = "transferOwnership"
+	MethodSetLiquidAddress  = "setLiquidAddress"
 )
 
 var (

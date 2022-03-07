@@ -43,7 +43,7 @@ func (p *DefaultTxOutputProducer) ContractChangeLiquidPoolAddress(_ sdk.Context,
 		return nil, err
 	}
 
-	input, err := erc20gatewayContract.Abi.Pack(MethodChangeLiquidAddress, ethcommon.HexToAddress(newAddress))
+	input, err := erc20gatewayContract.Abi.Pack(MethodSetLiquidAddress, ethcommon.HexToAddress(newAddress))
 	rawTx := ethTypes.NewTransaction(
 		uint64(nonce),
 		gatewayAddress,
