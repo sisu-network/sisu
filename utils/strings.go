@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"math/rand"
 	"strings"
 )
@@ -23,4 +24,12 @@ func AllInAlphabet(s string, alphabet string) bool {
 		}
 	}
 	return true
+}
+
+func PrettyStruct(data interface{}) (string, error) {
+	val, err := json.MarshalIndent(data, "", "    ")
+	if err != nil {
+		return "", err
+	}
+	return string(val), nil
 }

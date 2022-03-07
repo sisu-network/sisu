@@ -70,11 +70,14 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigne
 		log.Info("Broadcasting txout....")
 
 		// Creates TxOut. TODO: Only do this for top validator nodes.
-		for _, msg := range txOutWithSigners {
-			h.txSubmit.SubmitMessageAsync(msg)
+		for _, txOutWithSigner := range txOutWithSigners {
+			h.txSubmit.SubmitMessageAsync(txOutWithSigner)
 
 			// Track the txout
-			h.txTracker.AddTransaction(TxTrackerTxOut, msg.Data.OutChain, msg.Data.OutHash, msg.Data.OutBytes, msg)
+			h.txTracker.AddTransaction(
+				txOutWithSigner.Data,
+				msg,
+			)
 		}
 	}
 
