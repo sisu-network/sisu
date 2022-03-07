@@ -14,18 +14,6 @@ test:
 fmt:
 	find . -name "*.go" | grep -v -E "(.*/proto/.*|./*/mock/.*)" | xargs -I '{}' gofmt -s -w '{}'
 
-.PHONY: dev-mysql-up
-dev-mysql-up:
-	@docker compose \
-		-f docker/docker-compose-mysql.dev.yml \
-		up -d
-
-.PHONY: dev-mysql-down
-dev-mysql-down:
-	@docker compose \
-		-f docker/docker-compose-mysql.dev.yml \
-		down -v --rmi local
-
 # Create a local kind cluster with everything needed for sisu.
 .PHONY: kind-init-cluster
 kind-init-cluster:
