@@ -209,8 +209,6 @@ Example:
 }
 
 func (g *TestnetGenerator) getNodeSettings(chainID string, keyringBackend string, testnetConfig TestnetNode, n int, chainConfigs []ChainConfig) config.Config {
-	majority := (n + 1) * 2 / 3
-
 	supportedChains := make(map[string]config.TssChainConfig)
 	for _, chainConfig := range chainConfigs {
 		supportedChains[chainConfig.Id] = config.TssChainConfig{
@@ -227,7 +225,6 @@ func (g *TestnetGenerator) getNodeSettings(chainID string, keyringBackend string
 			ApiPort:        25456,
 		},
 		Tss: config.TssConfig{
-			MajorityThreshold: majority,
 			DheartHost:        testnetConfig.HeartIp,
 			DheartPort:        5678,
 			DeyesUrl:          fmt.Sprintf("http://%s:31001", testnetConfig.EyesIp),

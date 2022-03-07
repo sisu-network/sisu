@@ -248,7 +248,8 @@ func (p *Processor) shouldProcessMsg(ctx sdk.Context, msg sdk.Msg) (bool, []byte
 	}
 
 	count := p.publicDb.SaveTxRecord(hash, signer)
-	if count >= p.config.MajorityThreshold && !p.publicDb.IsTxRecordProcessed(hash) {
+	majorityThreshold := p.publicDb.GetParams().MajorityThreshold
+	if count >= int(majorityThreshold) && !p.publicDb.IsTxRecordProcessed(hash) {
 		return true, hash
 	}
 

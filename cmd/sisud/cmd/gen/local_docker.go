@@ -228,8 +228,6 @@ func (g *localDockerGenerator) getDockerConfig(ganacheIps []string, chainIds []*
 }
 
 func (g *localDockerGenerator) getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, ips []string) config.Config {
-	majority := (len(ips) + 1) * 2 / 3
-
 	return config.Config{
 		Mode: "dev",
 		Sisu: config.SisuConfig{
@@ -239,7 +237,6 @@ func (g *localDockerGenerator) getNodeSettings(chainID, keyringBackend string, i
 			ApiPort:        25456,
 		},
 		Tss: config.TssConfig{
-			MajorityThreshold: majority,
 			DheartHost:        fmt.Sprintf("dheart%d", index),
 			DheartPort:        5678,
 			DeyesUrl:          fmt.Sprintf("http://deyes%d:31001", index),

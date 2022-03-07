@@ -268,8 +268,10 @@ func New(
 	valsMgr := tss.NewValidatorManager(publicDb)
 	valsMgr.Init()
 
-	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(publicDb, tssConfig.MajorityThreshold),
-		publicDb, tssConfig.MajorityThreshold,
+	majorityThreshold := publicDb.GetParams().MajorityThreshold
+
+	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(publicDb, int(majorityThreshold)),
+		publicDb, int(majorityThreshold),
 		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
 		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, publicDb, cfg.Tss), worldState)
 	sisuHandler := tss.NewSisuHandler(mc)
