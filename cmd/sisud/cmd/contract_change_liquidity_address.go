@@ -19,10 +19,10 @@ func ContractChangeLiquidityAddressCmd() *cobra.Command {
 		Use: "contract-change-liquidity",
 		Long: `Change liquidity of a gateway.
 Usage:
-contract-change-liquidity --chain [Chain] --name [ContractName] --newLiquidityAddress [New liquidity pool address] --index [Index of this message]
+contract-change-liquidity --chain [Chain] --name [ContractName] --new-liquidity-address [New liquidity pool address] --index [Index of this message]
 
 Example:
-./sisu contract-change-liquidity --chain ganache1 --name erc20gateway --newLiquidityAddress 0x2d532C099CA476780c7703610D807948ae47856A --index=0 --from=node0 --keyring-backend test --chain-id=eth-sisu-local -y
+./sisu contract-change-liquidity --chain ganache1 --name erc20gateway --new-liquidity-address 0x2d532C099CA476780c7703610D807948ae47856A --index=0 --from=node0 --keyring-backend test --chain-id=eth-sisu-local -y
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			chain, _ := cmd.Flags().GetString(flags.Chain)

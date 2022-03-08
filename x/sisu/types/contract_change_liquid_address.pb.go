@@ -22,21 +22,21 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type ChangeSetPoolAddressMsg struct {
+type ChangeLiquidPoolAddressMsg struct {
 	Signer string               `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
 	Data   *ChangeLiquidAddress `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
 }
 
-func (m *ChangeSetPoolAddressMsg) Reset()         { *m = ChangeSetPoolAddressMsg{} }
-func (m *ChangeSetPoolAddressMsg) String() string { return proto.CompactTextString(m) }
-func (*ChangeSetPoolAddressMsg) ProtoMessage()    {}
-func (*ChangeSetPoolAddressMsg) Descriptor() ([]byte, []int) {
+func (m *ChangeLiquidPoolAddressMsg) Reset()         { *m = ChangeLiquidPoolAddressMsg{} }
+func (m *ChangeLiquidPoolAddressMsg) String() string { return proto.CompactTextString(m) }
+func (*ChangeLiquidPoolAddressMsg) ProtoMessage()    {}
+func (*ChangeLiquidPoolAddressMsg) Descriptor() ([]byte, []int) {
 	return fileDescriptor_23dc60e0fae21457, []int{0}
 }
-func (m *ChangeSetPoolAddressMsg) XXX_Unmarshal(b []byte) error {
+func (m *ChangeLiquidPoolAddressMsg) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *ChangeSetPoolAddressMsg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ChangeLiquidPoolAddressMsg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_ChangeLiquidPoolAddressMsg.Marshal(b, m, deterministic)
 	} else {
@@ -48,26 +48,26 @@ func (m *ChangeSetPoolAddressMsg) XXX_Marshal(b []byte, deterministic bool) ([]b
 		return b[:n], nil
 	}
 }
-func (m *ChangeSetPoolAddressMsg) XXX_Merge(src proto.Message) {
+func (m *ChangeLiquidPoolAddressMsg) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_ChangeLiquidPoolAddressMsg.Merge(m, src)
 }
-func (m *ChangeSetPoolAddressMsg) XXX_Size() int {
+func (m *ChangeLiquidPoolAddressMsg) XXX_Size() int {
 	return m.Size()
 }
-func (m *ChangeSetPoolAddressMsg) XXX_DiscardUnknown() {
+func (m *ChangeLiquidPoolAddressMsg) XXX_DiscardUnknown() {
 	xxx_messageInfo_ChangeLiquidPoolAddressMsg.DiscardUnknown(m)
 }
 
 var xxx_messageInfo_ChangeLiquidPoolAddressMsg proto.InternalMessageInfo
 
-func (m *ChangeSetPoolAddressMsg) GetSigner() string {
+func (m *ChangeLiquidPoolAddressMsg) GetSigner() string {
 	if m != nil {
 		return m.Signer
 	}
 	return ""
 }
 
-func (m *ChangeSetPoolAddressMsg) GetData() *ChangeLiquidAddress {
+func (m *ChangeLiquidPoolAddressMsg) GetData() *ChangeLiquidAddress {
 	if m != nil {
 		return m.Data
 	}
@@ -143,7 +143,7 @@ func (m *ChangeLiquidAddress) GetIndex() int32 {
 }
 
 func init() {
-	proto.RegisterType((*ChangeSetPoolAddressMsg)(nil), "types.ChangeSetPoolAddressMsg")
+	proto.RegisterType((*ChangeLiquidPoolAddressMsg)(nil), "types.ChangeLiquidPoolAddressMsg")
 	proto.RegisterType((*ChangeLiquidAddress)(nil), "types.ChangeLiquidAddress")
 }
 
@@ -172,7 +172,7 @@ var fileDescriptor_23dc60e0fae21457 = []byte{
 	0x02, 0x00, 0x00, 0xff, 0xff, 0x1c, 0xbb, 0x9a, 0xeb, 0x69, 0x01, 0x00, 0x00,
 }
 
-func (m *ChangeSetPoolAddressMsg) Marshal() (dAtA []byte, err error) {
+func (m *ChangeLiquidPoolAddressMsg) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -182,12 +182,12 @@ func (m *ChangeSetPoolAddressMsg) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *ChangeSetPoolAddressMsg) MarshalTo(dAtA []byte) (int, error) {
+func (m *ChangeLiquidPoolAddressMsg) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *ChangeSetPoolAddressMsg) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ChangeLiquidPoolAddressMsg) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -274,7 +274,7 @@ func encodeVarintContractChangeLiquidAddress(dAtA []byte, offset int, v uint64) 
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *ChangeSetPoolAddressMsg) Size() (n int) {
+func (m *ChangeLiquidPoolAddressMsg) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -321,7 +321,7 @@ func sovContractChangeLiquidAddress(x uint64) (n int) {
 func sozContractChangeLiquidAddress(x uint64) (n int) {
 	return sovContractChangeLiquidAddress(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *ChangeSetPoolAddressMsg) Unmarshal(dAtA []byte) error {
+func (m *ChangeLiquidPoolAddressMsg) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -344,10 +344,10 @@ func (m *ChangeSetPoolAddressMsg) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: ChangeSetPoolAddressMsg: wiretype end group for non-group")
+			return fmt.Errorf("proto: ChangeLiquidPoolAddressMsg: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: ChangeSetPoolAddressMsg: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ChangeLiquidPoolAddressMsg: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:

@@ -8,6 +8,6 @@ const (
 	ChainUrls           = "chain-urls"
 	SisuRpc             = "sisu-rpc"
 	Amount              = "amount"
-	NewOwner            = "newOwner"
-	NewLiquidityAddress = "newLiquidityAddress"
+	NewOwner            = "new-owner"
+	NewLiquidityAddress = "new-liquidity-address"
 )
