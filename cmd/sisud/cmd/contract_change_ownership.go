@@ -16,13 +16,13 @@ import (
 
 func ContractChangeOwnershipCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "contract-set-ownership",
+		Use: "contract-change-ownership",
 		Long: `Change ownership a contract.
 Usage:
-contract-set-ownership --chain [Chain] --name [ContractName] --new-owner [New owner address] --index [Index of this message]
+contract-change-ownership --chain [Chain] --name [ContractName] --new-owner [New owner address] --index [Index of this message]
 
 Example:
-./sisu contract-set-ownership --chain ganache1 --name erc20gateway --new-owner 0x2d532C099CA476780c7703610D807948ae47856A --index=0 --from=node0 --keyring-backend test --chain-id=eth-sisu-local -y
+./sisu contract-change-ownership --chain ganache1 --name erc20gateway --new-owner 0x2d532C099CA476780c7703610D807948ae47856A --index=0 --from=node0 --keyring-backend test --chain-id=eth-sisu-local -y
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			chain, _ := cmd.Flags().GetString(flags.Chain)

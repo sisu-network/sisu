@@ -60,7 +60,7 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 			return NewHandlerResumeContract(mc).DeliverMsg(ctx, msg)
 		case *types.ChangeOwnershipContractMsg:
 			return NewHandlerContractChangeOwnership(mc).DeliverMsg(ctx, msg)
-		case *types.ChangeSetPoolAddressMsg:
+		case *types.ChangeLiquidPoolAddressMsg:
 			return NewHandlerContractSetLiquidityAddress(mc).DeliverMsg(ctx, msg)
 
 		default:
