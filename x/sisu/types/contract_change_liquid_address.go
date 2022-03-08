@@ -5,10 +5,10 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-var _ sdk.Msg = &ChangeLiquidPoolAddressMsg{}
+var _ sdk.Msg = &ChangeSetPoolAddressMsg{}
 
-func NewChangePoolAddressMsg(signer, chain, hash, newLiquidPoolAddress string, index int32) *ChangeLiquidPoolAddressMsg {
-	return &ChangeLiquidPoolAddressMsg{
+func NewChangePoolAddressMsg(signer, chain, hash, newLiquidPoolAddress string, index int32) *ChangeSetPoolAddressMsg {
+	return &ChangeSetPoolAddressMsg{
 		Signer: signer,
 		Data: &ChangeLiquidAddress{
 			Chain:            chain,
@@ -20,17 +20,17 @@ func NewChangePoolAddressMsg(signer, chain, hash, newLiquidPoolAddress string, i
 }
 
 // Route ...
-func (msg *ChangeLiquidPoolAddressMsg) Route() string {
+func (msg *ChangeSetPoolAddressMsg) Route() string {
 	return RouterKey
 }
 
 // Type ...
-func (msg *ChangeLiquidPoolAddressMsg) Type() string {
+func (msg *ChangeSetPoolAddressMsg) Type() string {
 	return MsgTypeContractChangeLiquidityAddress
 }
 
 // GetSigners ...
-func (msg *ChangeLiquidPoolAddressMsg) GetSigners() []sdk.AccAddress {
+func (msg *ChangeSetPoolAddressMsg) GetSigners() []sdk.AccAddress {
 	author, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		panic(err)
@@ -38,18 +38,18 @@ func (msg *ChangeLiquidPoolAddressMsg) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{author}
 }
 
-func (msg *ChangeLiquidPoolAddressMsg) GetMsgs() []sdk.Msg {
+func (msg *ChangeSetPoolAddressMsg) GetMsgs() []sdk.Msg {
 	return []sdk.Msg{msg}
 }
 
 // GetSignBytes ...
-func (msg *ChangeLiquidPoolAddressMsg) GetSignBytes() []byte {
+func (msg *ChangeSetPoolAddressMsg) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
 // ValidateBasic ...
-func (msg *ChangeLiquidPoolAddressMsg) ValidateBasic() error {
+func (msg *ChangeSetPoolAddressMsg) ValidateBasic() error {
 	_, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid creator address (%s)", err)
