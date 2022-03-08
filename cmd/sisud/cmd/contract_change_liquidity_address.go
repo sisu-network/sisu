@@ -14,20 +14,20 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-func ContractChangeOwnershipCmd() *cobra.Command {
+func ContractChangeLiquidityAddressCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "contract-change-ownership",
-		Long: `Change ownership a contract.
+		Use: "contract-change-liquidity",
+		Long: `Change liquidity of a gateway.
 Usage:
-contract-change-ownership --chain [Chain] --name [ContractName] --new-owner [New owner address] --index [Index of this message]
+contract-change-liquidity --chain [Chain] --name [ContractName] --new-liquidity-address [New liquidity pool address] --index [Index of this message]
 
 Example:
-./sisu contract-change-ownership --chain ganache1 --name erc20gateway --new-owner 0x2d532C099CA476780c7703610D807948ae47856A --index=0 --from=node0 --keyring-backend test --chain-id=eth-sisu-local -y
+./sisu contract-change-liquidity --chain ganache1 --name erc20gateway --new-liquidity-address 0x2d532C099CA476780c7703610D807948ae47856A --index=0 --from=node0 --keyring-backend test --chain-id=eth-sisu-local -y
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			chain, _ := cmd.Flags().GetString(flags.Chain)
 			name, _ := cmd.Flags().GetString(flags.Name)
-			newOwner, _ := cmd.Flags().GetString(flags.NewOwner)
+			newLiquidityAddress, _ := cmd.Flags().GetString(flags.NewLiquidityAddress)
 			index, _ := cmd.Flags().GetInt32(flags.Index)
 
 			if len(chain) == 0 {
@@ -38,8 +38,8 @@ Example:
 				return fmt.Errorf("invalid name %s", name)
 			}
 
-			if len(newOwner) == 0 {
-				return fmt.Errorf("invalid newOwner %s", name)
+			if len(newLiquidityAddress) == 0 {
+				return fmt.Errorf("invalid newLiquidityAddress %s", name)
 
 			}
 			hash := sisu.SupportedContracts[name].AbiHash
@@ -52,7 +52,7 @@ Example:
 				return err
 			}
 
-			msg := types.NewChangeOwnershipMsg(clientCtx.GetFromAddress().String(), chain, hash, newOwner, index)
+			msg := types.NewChangePoolAddressMsg(clientCtx.GetFromAddress().String(), chain, hash, newLiquidityAddress, index)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -66,7 +66,7 @@ Example:
 	cmd.Flags().String(sdkflags.FlagChainID, "", "name of the sisu chain")
 	cmd.Flags().String(flags.Chain, "", "target chain of the command")
 	cmd.Flags().String(flags.Name, "", "name of the contract that identifies the contract")
-	cmd.Flags().String(flags.NewOwner, "", "new owner address")
+	cmd.Flags().String(flags.NewLiquidityAddress, "", "new liquidity pool address")
 	cmd.Flags().Int32(flags.Index, 0, "index of the command. This index is used to differentiate calling this contract multiple times")
 
 	return cmd

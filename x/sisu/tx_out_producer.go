@@ -28,6 +28,8 @@ type TxOutputProducer interface {
 	ResumeContract(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
 
 	ContractChangeOwnership(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutWithSigner, error)
+
+	ContractSetLiquidPoolAddress(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutWithSigner, error)
 }
 
 type DefaultTxOutputProducer struct {

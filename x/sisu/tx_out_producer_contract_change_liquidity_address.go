@@ -14,7 +14,7 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-func (p *DefaultTxOutputProducer) ContractChangeOwnership(_ sdk.Context, chain, contractHash, newOwner string) (*types.TxOutWithSigner, error) {
+func (p *DefaultTxOutputProducer) ContractSetLiquidPoolAddress(_ sdk.Context, chain, contractHash, newAddress string) (*types.TxOutWithSigner, error) {
 	if !libchain.IsETHBasedChain(chain) {
 		return nil, fmt.Errorf("unsupported chain %s", chain)
 	}
@@ -23,7 +23,7 @@ func (p *DefaultTxOutputProducer) ContractChangeOwnership(_ sdk.Context, chain, 
 	targetContractName := ContractErc20Gateway
 	gw := p.publicDb.GetLatestContractAddressByName(chain, targetContractName)
 	if len(gw) == 0 {
-		err := fmt.Errorf("ContractChangeOwnership: cannot find gw address for type: %s", targetContractName)
+		err := fmt.Errorf("ContractSetLiquidPoolAddress: cannot find gw address for type: %s", targetContractName)
 		log.Error(err)
 		return nil, err
 	}
@@ -43,7 +43,7 @@ func (p *DefaultTxOutputProducer) ContractChangeOwnership(_ sdk.Context, chain, 
 		return nil, err
 	}
 
-	input, err := erc20gatewayContract.Abi.Pack(MethodTransferOwnership, ethcommon.HexToAddress(newOwner))
+	input, err := erc20gatewayContract.Abi.Pack(MethodSetLiquidAddress, ethcommon.HexToAddress(newAddress))
 	rawTx := ethTypes.NewTransaction(
 		uint64(nonce),
 		gatewayAddress,
@@ -70,5 +70,4 @@ func (p *DefaultTxOutputProducer) ContractChangeOwnership(_ sdk.Context, chain, 
 		bz,
 		contractHash, // contract hash
 	), nil
-
 }
