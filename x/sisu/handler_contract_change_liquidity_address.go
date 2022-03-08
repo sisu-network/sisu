@@ -41,7 +41,7 @@ func (h *HandlerContractSetLiquidityAddress) DeliverMsg(ctx sdk.Context, msg *ty
 	return &sdk.Result{}, nil
 }
 
-type handlerContractChangeLiquidityAddress struct {
+type handlerContractSetLiquidityAddress struct {
 	publicDb         keeper.Storage
 	txOutputProducer TxOutputProducer
 	globalData       common.GlobalData
@@ -49,8 +49,8 @@ type handlerContractChangeLiquidityAddress struct {
 	dheartClient     tssclients.DheartClient
 }
 
-func newHandlerContractSetLiquidityAddress(mc ManagerContainer) *handlerContractChangeLiquidityAddress {
-	return &handlerContractChangeLiquidityAddress{
+func newHandlerContractSetLiquidityAddress(mc ManagerContainer) *handlerContractSetLiquidityAddress {
+	return &handlerContractSetLiquidityAddress{
 		publicDb:         mc.PublicDb(),
 		txOutputProducer: mc.TxOutProducer(),
 		globalData:       mc.GlobalData(),
@@ -59,7 +59,7 @@ func newHandlerContractSetLiquidityAddress(mc ManagerContainer) *handlerContract
 	}
 }
 
-func (h *handlerContractChangeLiquidityAddress) doSetLiquidityAddress(ctx sdk.Context, chain, hash, newLpAddress string) ([]byte, error) {
+func (h *handlerContractSetLiquidityAddress) doSetLiquidityAddress(ctx sdk.Context, chain, hash, newLpAddress string) ([]byte, error) {
 	// Only do set liquidity address if we finished catching up.
 	if h.globalData.IsCatchingUp() {
 		log.Info("We are catching up with the network, exiting setLiquidAddress")
@@ -75,12 +75,12 @@ func (h *handlerContractChangeLiquidityAddress) doSetLiquidityAddress(ctx sdk.Co
 	}
 
 	if !found {
-		err := fmt.Errorf("doPauseOrResume: contract with hash %s is not supported", hash)
+		err := fmt.Errorf("doSetLiquidityAddress: contract with hash %s is not supported", hash)
 		log.Error(err)
 		return nil, err
 	}
 
-	txOutMsg, err := h.txOutputProducer.ContractChangeLiquidPoolAddress(ctx, chain, hash, newLpAddress)
+	txOutMsg, err := h.txOutputProducer.ContractSetLiquidPoolAddress(ctx, chain, hash, newLpAddress)
 	if err != nil {
 		return nil, err
 	}
@@ -96,7 +96,7 @@ func (h *handlerContractChangeLiquidityAddress) doSetLiquidityAddress(ctx sdk.Co
 
 // TODO: duplicate code with pause/resume contract handler, fix it
 // signTx sends a TxOut to dheart for TSS signing.
-func (h *handlerContractChangeLiquidityAddress) signTx(ctx sdk.Context, tx *types.TxOut) {
+func (h *handlerContractSetLiquidityAddress) signTx(ctx sdk.Context, tx *types.TxOut) {
 	ethTx := &etypes.Transaction{}
 	if err := ethTx.UnmarshalBinary(tx.OutBytes); err != nil {
 		log.Error("cannot unmarshal tx, err =", err)
@@ -133,6 +133,6 @@ func (h *handlerContractChangeLiquidityAddress) signTx(ctx sdk.Context, tx *type
 	}
 }
 
-func (h *handlerContractChangeLiquidityAddress) getKeysignRequestId(chain string, blockHeight int64, txHash string) string {
+func (h *handlerContractSetLiquidityAddress) getKeysignRequestId(chain string, blockHeight int64, txHash string) string {
 	return chain + "_" + strconv.Itoa(int(blockHeight)) + "_" + txHash
 }

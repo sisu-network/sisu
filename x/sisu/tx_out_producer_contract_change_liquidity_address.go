@@ -14,7 +14,7 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-func (p *DefaultTxOutputProducer) ContractChangeLiquidPoolAddress(_ sdk.Context, chain, contractHash, newAddress string) (*types.TxOutWithSigner, error) {
+func (p *DefaultTxOutputProducer) ContractSetLiquidPoolAddress(_ sdk.Context, chain, contractHash, newAddress string) (*types.TxOutWithSigner, error) {
 	if !libchain.IsETHBasedChain(chain) {
 		return nil, fmt.Errorf("unsupported chain %s", chain)
 	}
@@ -23,7 +23,7 @@ func (p *DefaultTxOutputProducer) ContractChangeLiquidPoolAddress(_ sdk.Context,
 	targetContractName := ContractErc20Gateway
 	gw := p.publicDb.GetLatestContractAddressByName(chain, targetContractName)
 	if len(gw) == 0 {
-		err := fmt.Errorf("ContractChangeLiquidPoolAddress: cannot find gw address for type: %s", targetContractName)
+		err := fmt.Errorf("ContractSetLiquidPoolAddress: cannot find gw address for type: %s", targetContractName)
 		log.Error(err)
 		return nil, err
 	}
