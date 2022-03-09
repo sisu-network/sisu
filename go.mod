@@ -42,7 +42,7 @@ require (
 	golang.org/x/sys v0.0.0-20220207234003-57398862261d // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.5 // indirect
-	google.golang.org/genproto v0.0.0-20220307174427-659dce7fcb03 // indirect
+	google.golang.org/genproto v0.0.0-20220308174144-ae0e22291548 // indirect
 	google.golang.org/grpc v1.44.0
 )
 
