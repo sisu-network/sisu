@@ -82,7 +82,7 @@ func (p *DefaultTxOutputProducer) PauseOrResumeEthContract(ctx sdk.Context, chai
 
 	return types.NewMsgTxOutWithSigner(
 		p.appKeys.GetSignerAddress().String(),
-		types.TxOutType_NORMAL,
+		types.TxOutType_TRANSFER_OUT,
 		0,
 		"",                    // in chain
 		"",                    // in hash

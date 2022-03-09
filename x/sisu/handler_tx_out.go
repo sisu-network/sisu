@@ -21,6 +21,7 @@ type HandlerTxOut struct {
 	globalData   common.GlobalData
 	partyManager PartyManager
 	dheartClient tssclients.DheartClient
+	txTracker    TxTracker
 }
 
 func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
@@ -30,6 +31,7 @@ func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
 		globalData:   mc.GlobalData(),
 		partyManager: mc.PartyManager(),
 		dheartClient: mc.DheartClient(),
+		txTracker:    mc.TxTracker(),
 	}
 }
 
@@ -52,8 +54,6 @@ func (h *HandlerTxOut) doTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWithSi
 	// Save this to KVStore
 	h.publicDb.SaveTxOut(txOut)
 
-	// If this is a txout deployment,
-
 	// Do key signing if this node is not catching up.
 	if !h.globalData.IsCatchingUp() {
 		// Only Deliver TxOut if the chain has been up to date.
@@ -67,6 +67,9 @@ func (h *HandlerTxOut) doTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWithSi
 
 // signTx sends a TxOut to dheart for TSS signing.
 func (h *HandlerTxOut) signTx(ctx sdk.Context, tx *types.TxOut) {
+	// Update the txOut to be delivered.
+	h.txTracker.UpdateStatus(tx.OutChain, tx.OutHash, types.TxStatusDelivered)
+
 	log.Info("Delivering TXOUT for chain", tx.OutChain, " tx hash = ", tx.OutHash)
 	if tx.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
 		log.Info("This TxOut is a contract deployment")
@@ -102,7 +105,6 @@ func (h *HandlerTxOut) signTx(ctx sdk.Context, tx *types.TxOut) {
 	pubKeys := h.partyManager.GetActivePartyPubkeys()
 
 	err := h.dheartClient.KeySign(keysignReq, pubKeys)
-
 	if err != nil {
 		log.Error("Keysign: err =", err)
 	}

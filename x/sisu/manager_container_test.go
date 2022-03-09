@@ -30,6 +30,8 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.appKeys = t
 		case PartyManager:
 			mc.partyManager = t
+		case TxTracker:
+			mc.txTracker = t
 		}
 	}
 

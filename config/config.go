@@ -17,10 +17,11 @@ type Config struct {
 
 type SisuConfig struct {
 	Dir            string
-	KeyringBackend string `toml:"keyring-backend"`
-	ChainId        string `toml:"chain-id"`
-	ApiHost        string `toml:"api-host"`
-	ApiPort        uint16 `toml:"api-port"`
+	KeyringBackend string           `toml:"keyring-backend"`
+	ChainId        string           `toml:"chain-id"`
+	ApiHost        string           `toml:"api-host"`
+	ApiPort        uint16           `toml:"api-port"`
+	EmailAlert     EmailAlertConfig `toml:"email-alert"`
 }
 
 type TssChainConfig struct {
@@ -43,6 +44,14 @@ type TssConfig struct {
 	DeyesUrl string `toml:"deyes-url"`
 
 	Dir string
+}
+
+// Optional Email Alert System. This could be useful when we want to send missing transaction alert
+// to some email.
+type EmailAlertConfig struct {
+	Url    string `toml:"url"`
+	Secret string `toml:"secret"`
+	Email  string `toml:"email"`
 }
 
 func ReadConfig() (Config, error) {

@@ -4,8 +4,8 @@ package types;
 option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 
 enum TxOutType {
-  NORMAL = 0;
-  CONTRACT_DEPLOYMENT = 1;
+  CONTRACT_DEPLOYMENT = 0;
+  TRANSFER_OUT = 1;
 }
 
 message TxOutWithSigner {

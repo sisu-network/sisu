@@ -259,9 +259,11 @@ func New(
 
 	worldState := world.NewWorldState(tssConfig, publicDb, deyesClient)
 	worldState.LoadData()
+	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert, worldState)
 
 	tssProcessor := tss.NewProcessor(app.tssKeeper, publicDb, privateDb, tssConfig, nodeKey.PrivKey,
-		app.appKeys, app.txDecoder, app.txSubmitter, app.globalData, dheartClient, deyesClient, worldState)
+		app.appKeys, app.txDecoder, app.txSubmitter, app.globalData, dheartClient, deyesClient, worldState,
+		txTracker)
 	tssProcessor.Init()
 	app.apiHandler.SetAppLogicListener(tssProcessor)
 
@@ -271,7 +273,7 @@ func New(
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(publicDb, tssConfig.MajorityThreshold),
 		publicDb, tssConfig.MajorityThreshold,
 		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
-		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, publicDb, cfg.Tss), worldState)
+		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, publicDb, cfg.Tss), worldState, txTracker)
 	sisuHandler := tss.NewSisuHandler(mc)
 	externalHandler := rest.NewExternalHandler(worldState)
 	app.externalHandler = externalHandler
@@ -289,8 +291,7 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
 
-		tss.NewAppModule(appCodec, sisuHandler, app.tssKeeper, publicDb, app.appKeys, app.txSubmitter,
-			tssProcessor, app.globalData, valsMgr, worldState),
+		tss.NewAppModule(appCodec, sisuHandler, app.tssKeeper, tssProcessor, valsMgr, mc),
 	}
 
 	app.tssProcessor = tssProcessor

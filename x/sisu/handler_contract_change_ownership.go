@@ -80,16 +80,16 @@ func (h *handlerContractChangeOwnership) doChangeOwner(ctx sdk.Context, chain, h
 		return nil, err
 	}
 
-	txOutMsg, err := h.txOutputProducer.ContractChangeOwnership(ctx, chain, hash, newOwner)
+	msg, err := h.txOutputProducer.ContractChangeOwnership(ctx, chain, hash, newOwner)
 	if err != nil {
 		return nil, err
 	}
 
 	// Save this to KVStore
-	h.publicDb.SaveTxOut(txOutMsg.Data)
+	h.publicDb.SaveTxOut(msg.Data)
 
 	// Sends to dheart for signing.
-	h.signTx(ctx, txOutMsg.Data)
+	h.signTx(ctx, msg.Data)
 
 	return nil, nil
 }
