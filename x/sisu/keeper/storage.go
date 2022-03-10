@@ -94,14 +94,14 @@ type Storage interface {
 	GetAllLiquidities() map[string]*types.Liquidity
 }
 
-type defaultPrivateDb struct {
+type defaultStorage struct {
 	store    cosmostypes.KVStore
 	prefixes map[string]prefix.Store
 }
 
-func NewPrivateDb(dbDir string) Storage {
+func NewStorageDb(dbDir string) Storage {
 	log.Info("Private db dir = ", dbDir)
-	db, err := dbm.NewDB("private", dbm.GoLevelDBBackend, dbDir)
+	db, err := dbm.NewDB("storage", dbm.GoLevelDBBackend, dbDir)
 	if err != nil {
 		panic(err)
 	}
@@ -110,7 +110,7 @@ func NewPrivateDb(dbDir string) Storage {
 		DB: db,
 	}
 
-	return &defaultPrivateDb{
+	return &defaultStorage{
 		store:    store,
 		prefixes: initPrefixes(store),
 	}
@@ -160,67 +160,67 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 }
 
 ///// TxRecord
-func (db *defaultPrivateDb) SaveTxRecord(hash []byte, signer string) int {
+func (db *defaultStorage) SaveTxRecord(hash []byte, signer string) int {
 	store := db.prefixes[string(prefixTxRecord)]
 	return saveTxRecord(store, hash, signer)
 }
 
 ///// TxRecordProcessed
-func (db *defaultPrivateDb) ProcessTxRecord(hash []byte) {
+func (db *defaultStorage) ProcessTxRecord(hash []byte) {
 	store := db.prefixes[string(prefixTxRecordProcessed)]
 	processTxRecord(store, hash)
 }
 
-func (db *defaultPrivateDb) IsTxRecordProcessed(hash []byte) bool {
+func (db *defaultStorage) IsTxRecordProcessed(hash []byte) bool {
 	store := db.prefixes[string(prefixTxRecordProcessed)]
 	return isTxRecordProcessed(store, hash)
 }
 
 ///// Keygen
 
-func (db *defaultPrivateDb) SaveKeygen(msg *types.Keygen) {
+func (db *defaultStorage) SaveKeygen(msg *types.Keygen) {
 	store := db.prefixes[string(prefixKeygen)]
 	saveKeygen(store, msg)
 }
 
-func (db *defaultPrivateDb) IsKeygenExisted(keyType string, index int) bool {
+func (db *defaultStorage) IsKeygenExisted(keyType string, index int) bool {
 	store := db.prefixes[string(prefixKeygen)]
 	return isKeygenExisted(store, keyType, index)
 }
 
-func (db *defaultPrivateDb) IsKeygenAddress(keyType string, address string) bool {
+func (db *defaultStorage) IsKeygenAddress(keyType string, address string) bool {
 	store := db.prefixes[string(prefixKeygen)]
 	return isKeygenAddress(store, keyType, address)
 }
 
-func (db *defaultPrivateDb) GetKeygenPubkey(keyType string) []byte {
+func (db *defaultStorage) GetKeygenPubkey(keyType string) []byte {
 	store := db.prefixes[string(prefixKeygen)]
 	return getKeygenPubkey(store, keyType)
 }
 
-func (db *defaultPrivateDb) GetAllKeygenPubkeys() map[string][]byte {
+func (db *defaultStorage) GetAllKeygenPubkeys() map[string][]byte {
 	store := db.prefixes[string(prefixKeygen)]
 	return getAllKeygenPubkeys(store)
 }
 
 ///// Keygen Result
 
-func (db *defaultPrivateDb) SaveKeygenResult(signerMsg *types.KeygenResultWithSigner) {
+func (db *defaultStorage) SaveKeygenResult(signerMsg *types.KeygenResultWithSigner) {
 	store := db.prefixes[string(prefixKeygenResultWithSigner)]
 	saveKeygenResult(store, signerMsg)
 }
 
-func (db *defaultPrivateDb) GetAllKeygenResult(keygenType string, index int32) []*types.KeygenResultWithSigner {
+func (db *defaultStorage) GetAllKeygenResult(keygenType string, index int32) []*types.KeygenResultWithSigner {
 	store := db.prefixes[string(prefixKeygenResultWithSigner)]
 	return getAllKeygenResult(store, keygenType, index)
 }
 
 ///// Contract
-func (db *defaultPrivateDb) SaveContract(msg *types.Contract, saveByteCode bool) {
+func (db *defaultStorage) SaveContract(msg *types.Contract, saveByteCode bool) {
 	db.SaveContracts([]*types.Contract{msg}, saveByteCode)
 }
 
-func (db *defaultPrivateDb) SaveContracts(msgs []*types.Contract, saveByteCode bool) {
+func (db *defaultStorage) SaveContracts(msgs []*types.Contract, saveByteCode bool) {
 	contractStore := db.prefixes[string(prefixContract)]
 	var byteCodeStore cstypes.KVStore
 	byteCodeStore = nil
@@ -237,12 +237,12 @@ func (db *defaultPrivateDb) SaveContracts(msgs []*types.Contract, saveByteCode b
 	}
 }
 
-func (db *defaultPrivateDb) IsContractExisted(msg *types.Contract) bool {
+func (db *defaultStorage) IsContractExisted(msg *types.Contract) bool {
 	contractStore := db.prefixes[string(prefixContract)]
 	return isContractExisted(contractStore, msg)
 }
 
-func (db *defaultPrivateDb) GetContract(chain string, hash string, includeByteCode bool) *types.Contract {
+func (db *defaultStorage) GetContract(chain string, hash string, includeByteCode bool) *types.Contract {
 	contractStore := db.prefixes[string(prefixContract)]
 	var byteCodeStore cstypes.KVStore
 	byteCodeStore = nil
@@ -253,70 +253,70 @@ func (db *defaultPrivateDb) GetContract(chain string, hash string, includeByteCo
 	return getContract(contractStore, byteCodeStore, chain, hash)
 }
 
-func (db *defaultPrivateDb) GetPendingContracts(chain string) []*types.Contract {
+func (db *defaultStorage) GetPendingContracts(chain string) []*types.Contract {
 	contractStore := db.prefixes[string(prefixContract)]
 	byteCodeStore := db.prefixes[string(prefixContractByteCode)]
 
 	return getPendingContracts(contractStore, byteCodeStore, chain)
 }
 
-func (db *defaultPrivateDb) UpdateContractAddress(chain string, hash string, address string) {
+func (db *defaultStorage) UpdateContractAddress(chain string, hash string, address string) {
 	contractStore := db.prefixes[string(prefixContract)]
 	updateContractAddress(contractStore, chain, hash, address)
 }
 
-func (db *defaultPrivateDb) UpdateContractsStatus(chain string, contractHash string, status string) {
+func (db *defaultStorage) UpdateContractsStatus(chain string, contractHash string, status string) {
 	contractStore := db.prefixes[string(prefixContract)]
 	updateContractsStatus(contractStore, chain, contractHash, status)
 }
 
-func (db *defaultPrivateDb) GetLatestContractAddressByName(chain, name string) string {
+func (db *defaultStorage) GetLatestContractAddressByName(chain, name string) string {
 	contractNameStore := db.prefixes[string(prefixContractName)]
 	return getContractAddressByName(contractNameStore, chain, name)
 }
 
 ///// Contract Address
-func (db *defaultPrivateDb) CreateContractAddress(chain string, txOutHash string, address string) {
+func (db *defaultStorage) CreateContractAddress(chain string, txOutHash string, address string) {
 	caStore := db.prefixes[string(prefixContractAddress)]
 	txOutStore := db.prefixes[string(prefixTxOut)]
 
 	createContractAddress(caStore, txOutStore, chain, txOutHash, address)
 }
 
-func (db *defaultPrivateDb) IsContractExistedAtAddress(chain string, address string) bool {
+func (db *defaultStorage) IsContractExistedAtAddress(chain string, address string) bool {
 	caStore := db.prefixes[string(prefixContractAddress)]
 
 	return isContractExistedAtAddress(caStore, chain, address)
 }
 
 ///// TxIn
-func (db *defaultPrivateDb) SaveTxIn(msg *types.TxIn) {
+func (db *defaultStorage) SaveTxIn(msg *types.TxIn) {
 	store := db.prefixes[string(prefixTxIn)]
 	saveTxIn(store, msg)
 }
 
-func (db *defaultPrivateDb) IsTxInExisted(msg *types.TxIn) bool {
+func (db *defaultStorage) IsTxInExisted(msg *types.TxIn) bool {
 	store := db.prefixes[string(prefixTxIn)]
 	return isTxInExisted(store, msg)
 }
 
 ///// TxOut
-func (db *defaultPrivateDb) SaveTxOut(msg *types.TxOut) {
+func (db *defaultStorage) SaveTxOut(msg *types.TxOut) {
 	store := db.prefixes[string(prefixTxOut)]
 	saveTxOut(store, msg)
 }
 
-func (db *defaultPrivateDb) IsTxOutExisted(msg *types.TxOut) bool {
+func (db *defaultStorage) IsTxOutExisted(msg *types.TxOut) bool {
 	store := db.prefixes[string(prefixTxOut)]
 	return isTxOutExisted(store, msg)
 }
 
-func (db *defaultPrivateDb) GetTxOut(outChain, hash string) *types.TxOut {
+func (db *defaultStorage) GetTxOut(outChain, hash string) *types.TxOut {
 	store := db.prefixes[string(prefixTxOut)]
 	return getTxOut(store, outChain, hash)
 }
 
-func (db *defaultPrivateDb) GetTxOutSig(outChain, hashWithSig string) *types.TxOutSig {
+func (db *defaultStorage) GetTxOutSig(outChain, hashWithSig string) *types.TxOutSig {
 	withSigStore := db.prefixes[string(prefixTxOutSig)]
 	txOutSig := getTxOutSig(withSigStore, outChain, hashWithSig)
 
@@ -324,112 +324,112 @@ func (db *defaultPrivateDb) GetTxOutSig(outChain, hashWithSig string) *types.TxO
 }
 
 ///// TxOutSig
-func (db *defaultPrivateDb) SaveTxOutSig(msg *types.TxOutSig) {
+func (db *defaultStorage) SaveTxOutSig(msg *types.TxOutSig) {
 	store := db.prefixes[string(prefixTxOutSig)]
 	saveTxOutSig(store, msg)
 }
 
 ///// TxOutConfirm
-func (db *defaultPrivateDb) SaveTxOutConfirm(msg *types.TxOutContractConfirm) {
+func (db *defaultStorage) SaveTxOutConfirm(msg *types.TxOutContractConfirm) {
 	store := db.prefixes[string(prefixTxOutContractConfirm)]
 	saveTxOutConfirm(store, msg)
 }
 
-func (db *defaultPrivateDb) IsTxOutConfirmExisted(chain, hash string) bool {
+func (db *defaultStorage) IsTxOutConfirmExisted(chain, hash string) bool {
 	store := db.prefixes[string(prefixTxOutContractConfirm)]
 	return isTxOutConfirmExisted(store, chain, hash)
 }
 
 ///// GasPrice
-func (db *defaultPrivateDb) SetGasPrice(msg *types.GasPriceMsg) {
+func (db *defaultStorage) SetGasPrice(msg *types.GasPriceMsg) {
 	store := db.prefixes[string(prefixGasPrice)]
 	saveGasPrice(store, msg)
 }
 
-func (db *defaultPrivateDb) GetGasPriceRecord(chain string, height int64) *types.GasPriceRecord {
+func (db *defaultStorage) GetGasPriceRecord(chain string, height int64) *types.GasPriceRecord {
 	store := db.prefixes[string(prefixGasPrice)]
 	return getGasPriceRecord(store, chain, height)
 }
 
 ///// Network gas price
 
-func (db *defaultPrivateDb) SaveChain(chain *types.Chain) {
+func (db *defaultStorage) SaveChain(chain *types.Chain) {
 	store := db.prefixes[string(prefixChain)]
 
 	saveChain(store, chain)
 }
 
-func (db *defaultPrivateDb) GetChain(chain string) *types.Chain {
+func (db *defaultStorage) GetChain(chain string) *types.Chain {
 	store := db.prefixes[string(prefixChain)]
 	return getChain(store, chain)
 }
 
-func (db *defaultPrivateDb) GetAllChains() map[string]*types.Chain {
+func (db *defaultStorage) GetAllChains() map[string]*types.Chain {
 	store := db.prefixes[string(prefixChain)]
 	return getAllChains(store)
 }
 
 ///// Token Prices
 
-func (db *defaultPrivateDb) SetTokenPrices(blockHeight uint64, msg *types.UpdateTokenPrice) {
+func (db *defaultStorage) SetTokenPrices(blockHeight uint64, msg *types.UpdateTokenPrice) {
 	store := db.prefixes[string(prefixTokenPrices)]
 	setTokenPrices(store, blockHeight, msg)
 }
 
-func (db *defaultPrivateDb) GetAllTokenPricesRecord() map[string]*types.TokenPriceRecord {
+func (db *defaultStorage) GetAllTokenPricesRecord() map[string]*types.TokenPriceRecord {
 	store := db.prefixes[string(prefixTokenPrices)]
 	return getAllTokenPrices(store)
 }
 
 ///// Calculated token prices
 
-func (db *defaultPrivateDb) SetTokens(prices map[string]*types.Token) {
+func (db *defaultStorage) SetTokens(prices map[string]*types.Token) {
 	store := db.prefixes[string(prefixToken)]
 	setTokens(store, prices)
 }
 
-func (db *defaultPrivateDb) GetTokens(tokenIds []string) map[string]*types.Token {
+func (db *defaultStorage) GetTokens(tokenIds []string) map[string]*types.Token {
 	store := db.prefixes[string(prefixToken)]
 	return getTokens(store, tokenIds)
 }
 
-func (db *defaultPrivateDb) GetAllTokens() map[string]*types.Token {
+func (db *defaultStorage) GetAllTokens() map[string]*types.Token {
 	store := db.prefixes[string(prefixToken)]
 	return getAllTokens(store)
 }
 
 ///// Nodes
 
-func (db *defaultPrivateDb) SaveNode(node *types.Node) {
+func (db *defaultStorage) SaveNode(node *types.Node) {
 	store := db.prefixes[string(prefixNode)]
 	saveNode(store, node)
 }
 
-func (db *defaultPrivateDb) LoadValidators() []*types.Node {
+func (db *defaultStorage) LoadValidators() []*types.Node {
 	store := db.prefixes[string(prefixNode)]
 	return loadValidators(store)
 }
 
 ///// Liquidities
 
-func (db *defaultPrivateDb) SetLiquidities(liquids map[string]*types.Liquidity) {
+func (db *defaultStorage) SetLiquidities(liquids map[string]*types.Liquidity) {
 	store := db.prefixes[string(prefixLiquidity)]
 	setLiquidities(store, liquids)
 }
 
-func (db *defaultPrivateDb) GetLiquidity(chain string) *types.Liquidity {
+func (db *defaultStorage) GetLiquidity(chain string) *types.Liquidity {
 	store := db.prefixes[string(prefixLiquidity)]
 	return getLiquidity(store, chain)
 }
 
-func (db *defaultPrivateDb) GetAllLiquidities() map[string]*types.Liquidity {
+func (db *defaultStorage) GetAllLiquidities() map[string]*types.Liquidity {
 	store := db.prefixes[string(prefixLiquidity)]
 	return getAllLiquidities(store)
 }
 
 ///// Debug
 
-func (db *defaultPrivateDb) getStoreFromName(name string) cstypes.KVStore {
+func (db *defaultStorage) getStoreFromName(name string) cstypes.KVStore {
 	var store cstypes.KVStore
 	switch name {
 	case "keygen":
@@ -444,7 +444,7 @@ func (db *defaultPrivateDb) getStoreFromName(name string) cstypes.KVStore {
 }
 
 // PrintStore is a debug function
-func (db *defaultPrivateDb) PrintStore(name string) {
+func (db *defaultStorage) PrintStore(name string) {
 	log.Info("======== DEBUGGING PrintStore")
 	log.Info("Printing ALL values in store ", name)
 
@@ -458,7 +458,7 @@ func (db *defaultPrivateDb) PrintStore(name string) {
 	log.Info("======== END OF DEBUGGING")
 }
 
-func (db *defaultPrivateDb) PrintStoreKeys(name string) {
+func (db *defaultStorage) PrintStoreKeys(name string) {
 	log.Info("======== DEBUGGING PrintStoreKeys")
 	log.Info("Printing ALL values in store ", name)
 	store := db.getStoreFromName(name)

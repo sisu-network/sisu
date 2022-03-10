@@ -254,8 +254,8 @@ func New(
 	dheartClient, deyesClient := bootstrapper.BootstrapInternalNetwork(tssConfig, app.apiHandler, encryptedKey, nodeKey.PrivKey.Type())
 
 	// storage that contains common data for all the nodes
-	publicDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "data"))
-	privateDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "private"))
+	publicDb := keeper.NewStorageDb(filepath.Join(cfg.Sisu.Dir, "data"))
+	privateDb := keeper.NewStorageDb(filepath.Join(cfg.Sisu.Dir, "private"))
 
 	worldState := world.NewWorldState(tssConfig, publicDb, deyesClient)
 	worldState.LoadData()
