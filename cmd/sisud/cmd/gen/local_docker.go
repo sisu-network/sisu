@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -25,6 +26,7 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/types"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	heartconfig "github.com/sisu-network/dheart/core/config"
@@ -141,6 +143,7 @@ Example:
 				tokens:      getTokens("./misc/tokens_dev.json"),
 				chains:      getChains("./misc/chains.json"),
 				liquidities: getLiquidity("./misc/liquid_dev.json"),
+				params:      &types.Params{MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3))},
 			}
 
 			valPubKeys, err := InitNetwork(settings)
@@ -237,9 +240,9 @@ func (g *localDockerGenerator) getNodeSettings(chainID, keyringBackend string, i
 			ApiPort:        25456,
 		},
 		Tss: config.TssConfig{
-			DheartHost:        fmt.Sprintf("dheart%d", index),
-			DheartPort:        5678,
-			DeyesUrl:          fmt.Sprintf("http://deyes%d:31001", index),
+			DheartHost: fmt.Sprintf("dheart%d", index),
+			DheartPort: 5678,
+			DeyesUrl:   fmt.Sprintf("http://deyes%d:31001", index),
 			SupportedChains: map[string]config.TssChainConfig{
 				"ganache1": {
 					Id: "ganache1",
