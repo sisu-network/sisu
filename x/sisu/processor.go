@@ -77,7 +77,7 @@ type Processor struct {
 	privateDb keeper.Storage
 }
 
-func NewProcessor(k keeper.DefaultKeeper,
+func NewProcessor(k keeper.Keeper,
 	publicDb keeper.Storage,
 	privateDb keeper.Storage,
 	config config.TssConfig,
@@ -92,7 +92,7 @@ func NewProcessor(k keeper.DefaultKeeper,
 	txTracker TxTracker,
 ) *Processor {
 	p := &Processor{
-		keeper:            &k,
+		keeper:            k,
 		publicDb:          publicDb,
 		privateDb:         privateDb,
 		txDecoder:         txDecoder,

@@ -98,7 +98,7 @@ type DefaultKeeper struct {
 	storeKey sdk.StoreKey
 }
 
-func NewKeeper(storeKey sdk.StoreKey) *DefaultKeeper {
+func NewKeeper(storeKey sdk.StoreKey) Keeper {
 	keeper := &DefaultKeeper{
 		storeKey: storeKey,
 	}

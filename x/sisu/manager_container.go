@@ -21,40 +21,43 @@ type ManagerContainer interface {
 	TxOutProducer() TxOutputProducer
 	WorldState() world.WorldState
 	TxTracker() TxTracker
+	Keeper() keeper.Keeper
 }
 
 type DefaultManagerContainer struct {
-	pmm               PostedMessageManager
-	publicDb          keeper.Storage
-	partyManager      PartyManager
-	dheartClient      tssclients.DheartClient
-	deyesClient       tssclients.DeyesClient
-	globalData        common.GlobalData
-	txSubmit          common.TxSubmit
-	config            config.TssConfig
-	appKeys           common.AppKeys
-	txOutProducer     TxOutputProducer
-	worldState        world.WorldState
-	txTracker         TxTracker
+	pmm           PostedMessageManager
+	publicDb      keeper.Storage
+	partyManager  PartyManager
+	dheartClient  tssclients.DheartClient
+	deyesClient   tssclients.DeyesClient
+	globalData    common.GlobalData
+	txSubmit      common.TxSubmit
+	config        config.TssConfig
+	appKeys       common.AppKeys
+	txOutProducer TxOutputProducer
+	worldState    world.WorldState
+	txTracker     TxTracker
+	keeper        keeper.Keeper
 }
 
 func NewManagerContainer(pmm PostedMessageManager, publicDb keeper.Storage, partyManager PartyManager,
 	dheartClient tssclients.DheartClient, deyesClient tssclients.DeyesClient,
 	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.TssConfig,
-	appKeys common.AppKeys, txOutProducer TxOutputProducer, worldState world.WorldState, txTracker TxTracker) ManagerContainer {
+	appKeys common.AppKeys, txOutProducer TxOutputProducer, worldState world.WorldState, txTracker TxTracker, keeper keeper.Keeper) ManagerContainer {
 	return &DefaultManagerContainer{
-		pmm:               pmm,
-		publicDb:          publicDb,
-		partyManager:      partyManager,
-		dheartClient:      dheartClient,
-		deyesClient:       deyesClient,
-		globalData:        globalData,
-		txSubmit:          txSubmit,
-		config:            cfg,
-		appKeys:           appKeys,
-		txOutProducer:     txOutProducer,
-		worldState:        worldState,
-		txTracker:         txTracker,
+		pmm:           pmm,
+		publicDb:      publicDb,
+		partyManager:  partyManager,
+		dheartClient:  dheartClient,
+		deyesClient:   deyesClient,
+		globalData:    globalData,
+		txSubmit:      txSubmit,
+		config:        cfg,
+		appKeys:       appKeys,
+		txOutProducer: txOutProducer,
+		worldState:    worldState,
+		txTracker:     txTracker,
+		keeper:        keeper,
 	}
 }
 
@@ -104,4 +107,8 @@ func (mc *DefaultManagerContainer) WorldState() world.WorldState {
 
 func (mc *DefaultManagerContainer) TxTracker() TxTracker {
 	return mc.txTracker
+}
+
+func (mc *DefaultManagerContainer) Keeper() keeper.Keeper {
+	return mc.keeper
 }

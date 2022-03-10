@@ -108,7 +108,7 @@ type AppModule struct {
 
 	sisuHandler     *SisuHandler
 	externalHandler *rest.ExternalHandler
-	keeper          keeper.DefaultKeeper
+	keeper          keeper.Keeper
 	processor       *Processor
 	appKeys         common.AppKeys
 	txSubmit        common.TxSubmit
@@ -121,7 +121,7 @@ type AppModule struct {
 
 func NewAppModule(cdc codec.Marshaler,
 	sisuHandler *SisuHandler,
-	keeper keeper.DefaultKeeper,
+	keeper keeper.Keeper,
 	processor *Processor,
 	valsManager ValidatorManager,
 	mc ManagerContainer,

@@ -32,7 +32,7 @@ func getTestKeeperAndContext() (*DefaultKeeper, sdk.Context) {
 	storeKey := sdk.NewKVStoreKey("store_key")
 	transientKey := sdk.NewTransientStoreKey("transient_key")
 	ctx := defaultContext(storeKey, transientKey)
-	keeper := NewKeeper(storeKey)
+	keeper := NewKeeper(storeKey).(*DefaultKeeper)
 
 	return keeper, ctx
 }

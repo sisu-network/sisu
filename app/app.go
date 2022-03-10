@@ -158,7 +158,7 @@ type App struct {
 	ScopedIBCKeeper      capabilitykeeper.ScopedKeeper
 	ScopedTransferKeeper capabilitykeeper.ScopedKeeper
 
-	tssKeeper tssKeeper.DefaultKeeper
+	tssKeeper tssKeeper.Keeper
 
 	// the module manager
 	mm *module.Manager
@@ -225,7 +225,7 @@ func New(
 	tssConfig := cfg.Tss
 	log.Info("tssConfig = ", tssConfig)
 
-	app.tssKeeper = *tssKeeper.NewKeeper(keys[sisutypes.StoreKey])
+	app.tssKeeper = tssKeeper.NewKeeper(keys[sisutypes.StoreKey])
 
 	//////////////////////////////////////////////////////////////////////
 
@@ -273,7 +273,7 @@ func New(
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(publicDb),
 		publicDb,
 		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
-		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, publicDb, cfg.Tss), worldState, txTracker)
+		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, publicDb, cfg.Tss), worldState, txTracker, app.tssKeeper)
 	sisuHandler := tss.NewSisuHandler(mc)
 	externalHandler := rest.NewExternalHandler(worldState)
 	app.externalHandler = externalHandler
