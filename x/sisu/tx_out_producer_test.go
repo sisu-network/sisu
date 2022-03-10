@@ -58,7 +58,7 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 		},
 	}
 
-	tx := txOutProducer.getContractTx(contract, 100)
+	tx := txOutProducer.getContractTx(sdk.Context{}, contract, 100)
 	require.NotNil(t, tx)
 	require.EqualValues(t, 100, tx.Nonce())
 	require.EqualValues(t, *big.NewInt(400_000_000_000), *tx.GasPrice())
@@ -119,6 +119,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		}
 
 		txOutProducer := NewTxOutputProducer(mockWorldState, mockAppKeys, mockPublicDb,
+			nil,
 			config.TssConfig{
 				DeyesUrl: "http://0.0.0.0:1234",
 				SupportedChains: map[string]config.TssChainConfig{

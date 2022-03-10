@@ -92,6 +92,10 @@ type Keeper interface {
 	SetLiquidities(ctx sdk.Context, liquidities map[string]*types.Liquidity)
 	GetLiquidity(ctx sdk.Context, chain string) *types.Liquidity
 	GetAllLiquidities(ctx sdk.Context) map[string]*types.Liquidity
+
+	// Params
+	SaveParams(ctx sdk.Context, params *types.Params)
+	GetParams(ctx sdk.Context) *types.Params
 }
 
 type DefaultKeeper struct {
@@ -372,6 +376,17 @@ func (k *DefaultKeeper) GetLiquidity(ctx sdk.Context, chain string) *types.Liqui
 func (k *DefaultKeeper) GetAllLiquidities(ctx sdk.Context) map[string]*types.Liquidity {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixLiquidity)
 	return getAllLiquidities(store)
+}
+
+///// Params
+func (k *DefaultKeeper) SaveParams(ctx sdk.Context, params *types.Params) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixParams)
+	saveParams(store, params)
+}
+
+func (k *DefaultKeeper) GetParams(ctx sdk.Context) *types.Params {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixParams)
+	return getParams(store)
 }
 
 ///// Debug

@@ -14,14 +14,14 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-func (p *DefaultTxOutputProducer) ContractSetLiquidPoolAddress(_ sdk.Context, chain, contractHash, newAddress string) (*types.TxOutWithSigner, error) {
+func (p *DefaultTxOutputProducer) ContractSetLiquidPoolAddress(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutWithSigner, error) {
 	if !libchain.IsETHBasedChain(chain) {
 		return nil, fmt.Errorf("unsupported chain %s", chain)
 	}
 
 	// TODO: Support more than gateway contract
 	targetContractName := ContractErc20Gateway
-	gw := p.publicDb.GetLatestContractAddressByName(chain, targetContractName)
+	gw := p.keeper.GetLatestContractAddressByName(ctx, chain, targetContractName)
 	if len(gw) == 0 {
 		err := fmt.Errorf("ContractSetLiquidPoolAddress: cannot find gw address for type: %s", targetContractName)
 		log.Error(err)

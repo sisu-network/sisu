@@ -3,57 +3,69 @@ package sisu
 import (
 	"sync"
 
-	"github.com/ethereum/go-ethereum/log"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type ValidatorManager interface {
-	Init()
-	AddValidator(node *types.Node)
-	IsValidator(signer string) bool
+	AddValidator(ctx sdk.Context, node *types.Node)
+	IsValidator(ctx sdk.Context, signer string) bool
 }
 
 type DefaultValidatorManager struct {
-	publicDb keeper.Storage
-	vals     map[string]*types.Node
-	valLock  *sync.RWMutex
+	keeper  keeper.Keeper
+	vals    map[string]*types.Node
+	valLock *sync.RWMutex
 }
 
-func NewValidatorManager(publicDb keeper.Storage) ValidatorManager {
+func NewValidatorManager(keeper keeper.Keeper) ValidatorManager {
 	return &DefaultValidatorManager{
-		publicDb: publicDb,
-		vals:     make(map[string]*types.Node),
-		valLock:  &sync.RWMutex{},
+		keeper:  keeper,
+		vals:    make(map[string]*types.Node),
+		valLock: &sync.RWMutex{},
 	}
 }
 
-func (m *DefaultValidatorManager) Init() {
-	// Load all validator onto memory
-	valsArr := m.publicDb.LoadValidators()
-	vals := make(map[string]*types.Node)
+func (m *DefaultValidatorManager) getVals(ctx sdk.Context) map[string]*types.Node {
+	var vals map[string]*types.Node
+	m.valLock.RLock()
+	vals = m.vals
+	m.valLock.RUnlock()
+
+	if vals != nil {
+		return vals
+	}
+
+	valsArr := m.keeper.LoadValidators(ctx)
+	vals = make(map[string]*types.Node)
 	for _, val := range valsArr {
 		vals[val.AccAddress] = val
 	}
 
-	log.Info("validators at start = ", vals)
+	m.valLock.Lock()
+	m.vals = vals
+	m.valLock.Unlock()
+
+	return vals
+}
+
+func (m *DefaultValidatorManager) AddValidator(ctx sdk.Context, node *types.Node) {
+	m.keeper.SaveNode(ctx, node)
+
+	vals := m.getVals(ctx)
 
 	m.valLock.Lock()
+	vals[node.AccAddress] = node
 	m.vals = vals
 	m.valLock.Unlock()
 }
 
-func (m *DefaultValidatorManager) AddValidator(node *types.Node) {
-	m.publicDb.SaveNode(node)
+func (m *DefaultValidatorManager) IsValidator(ctx sdk.Context, signer string) bool {
+	vals := m.getVals(ctx)
 
-	m.valLock.Lock()
-	m.vals[node.AccAddress] = node
-	m.valLock.Unlock()
-}
-
-func (m *DefaultValidatorManager) IsValidator(signer string) bool {
 	m.valLock.RLock()
 	defer m.valLock.RUnlock()
 
-	return m.vals[signer] != nil
+	return vals[signer] != nil
 }

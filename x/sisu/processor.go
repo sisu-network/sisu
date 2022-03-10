@@ -117,7 +117,7 @@ func NewProcessor(k keeper.Keeper,
 func (p *Processor) Init() {
 	log.Info("Initializing TSS Processor...")
 
-	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.appKeys, p.publicDb, p.config)
+	p.txOutputProducer = NewTxOutputProducer(p.worldState, p.appKeys, p.publicDb, p.keeper, p.config)
 }
 
 func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
@@ -144,7 +144,7 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 	// TODO: Make keygen to be command instead of embedding inside the code.
 	// Check Vote result.
 	for len(p.keygenBlockPairs) > 0 && !p.globalData.IsCatchingUp() {
-		log.Debug("blockHeight = ", blockHeight)
+		log.Verbose("blockHeight = ", blockHeight)
 		if blockHeight < p.keygenBlockPairs[0].blockHeight {
 			break
 		}
@@ -172,7 +172,7 @@ func (p *Processor) calculateTokenPrices(ctx sdk.Context) {
 	log.Info("Calcuating token prices....")
 
 	// TODO: Fix the signer set.
-	records := p.publicDb.GetAllTokenPricesRecord()
+	records := p.keeper.GetAllTokenPricesRecord(ctx)
 
 	tokenPrices := make(map[string][]int64)
 	for _, record := range records {
@@ -214,13 +214,13 @@ func (p *Processor) calculateTokenPrices(ctx sdk.Context) {
 		arr = append(arr, token)
 	}
 
-	savedTokens := p.publicDb.GetTokens(arr)
+	savedTokens := p.keeper.GetTokens(ctx, arr)
 
 	for tokenId, price := range medians {
 		savedTokens[tokenId].Price = price
 	}
 
-	p.publicDb.SetTokens(savedTokens)
+	p.keeper.SetTokens(ctx, savedTokens)
 
 	// Update the world state
 	p.worldState.SetTokens(savedTokens)
@@ -257,7 +257,7 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 	// Check ECDSA only (for now)
 	keyTypes := []string{libchain.KEY_TYPE_ECDSA}
 	for _, keyType := range keyTypes {
-		if p.publicDb.IsKeygenExisted(keyType, 0) {
+		if p.keeper.IsKeygenExisted(ctx, keyType, 0) {
 			continue
 		}
 
@@ -299,9 +299,6 @@ func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
 		result.PubKeyBytes,
 		result.Address,
 	)
-
-	// Save the result to private db
-	p.publicDb.SaveKeygenResult(signerMsg)
 
 	log.Info("There is keygen result from dheart, resultEnum = ", resultEnum)
 

@@ -36,7 +36,7 @@ func (p *DefaultTxOutputProducer) PauseOrResumeEthContract(ctx sdk.Context, chai
 
 	// TODO: Support more than gateway contract
 	targetContractName := ContractErc20Gateway
-	gw := p.publicDb.GetLatestContractAddressByName(chain, targetContractName)
+	gw := p.keeper.GetLatestContractAddressByName(ctx, chain, targetContractName)
 	if len(gw) == 0 {
 		err := fmt.Errorf("PauseEthContract: cannot find gw address for type: %s", targetContractName)
 		log.Error(err)

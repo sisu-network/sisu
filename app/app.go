@@ -267,13 +267,12 @@ func New(
 	tssProcessor.Init()
 	app.apiHandler.SetAppLogicListener(tssProcessor)
 
-	valsMgr := tss.NewValidatorManager(publicDb)
-	valsMgr.Init()
+	valsMgr := tss.NewValidatorManager(app.tssKeeper)
 
-	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(publicDb),
+	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.tssKeeper),
 		publicDb,
 		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
-		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, publicDb, cfg.Tss), worldState, txTracker, app.tssKeeper)
+		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, publicDb, app.tssKeeper, cfg.Tss), worldState, txTracker, app.tssKeeper)
 	sisuHandler := tss.NewSisuHandler(mc)
 	externalHandler := rest.NewExternalHandler(worldState)
 	app.externalHandler = externalHandler
