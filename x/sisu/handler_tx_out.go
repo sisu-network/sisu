@@ -17,7 +17,7 @@ import (
 
 type HandlerTxOut struct {
 	pmm          PostedMessageManager
-	publicDb     keeper.Storage
+	keeper       keeper.Keeper
 	globalData   common.GlobalData
 	partyManager PartyManager
 	dheartClient tssclients.DheartClient
@@ -26,7 +26,7 @@ type HandlerTxOut struct {
 
 func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
 	return &HandlerTxOut{
-		publicDb:     mc.PublicDb(),
+		keeper:       mc.Keeper(),
 		pmm:          mc.PostedMessageManager(),
 		globalData:   mc.GlobalData(),
 		partyManager: mc.PartyManager(),
@@ -38,7 +38,7 @@ func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
 func (h *HandlerTxOut) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutWithSigner) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
 		h.doTxOut(ctx, signerMsg)
-		h.publicDb.ProcessTxRecord(hash)
+		h.keeper.ProcessTxRecord(ctx, hash)
 	}
 
 	return nil, nil
@@ -52,7 +52,7 @@ func (h *HandlerTxOut) doTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWithSi
 	log.Info("Delivering TxOut")
 
 	// Save this to KVStore
-	h.publicDb.SaveTxOut(txOut)
+	h.keeper.SaveTxOut(ctx, txOut)
 
 	// Do key signing if this node is not catching up.
 	if !h.globalData.IsCatchingUp() {

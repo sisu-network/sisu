@@ -10,7 +10,7 @@ import (
 
 type HandlerTxIn struct {
 	pmm              PostedMessageManager
-	publicDb         keeper.Storage
+	keeper           keeper.Keeper
 	txOutputProducer TxOutputProducer
 	globalData       common.GlobalData
 	txSubmit         common.TxSubmit
@@ -19,7 +19,7 @@ type HandlerTxIn struct {
 
 func NewHandlerTxIn(mc ManagerContainer) *HandlerTxIn {
 	return &HandlerTxIn{
-		publicDb:         mc.PublicDb(),
+		keeper:           mc.Keeper(),
 		pmm:              mc.PostedMessageManager(),
 		txOutputProducer: mc.TxOutProducer(),
 		globalData:       mc.GlobalData(),
@@ -31,7 +31,7 @@ func NewHandlerTxIn(mc ManagerContainer) *HandlerTxIn {
 func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, signerMsg *types.TxInWithSigner) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
 		h.doTxIn(ctx, signerMsg)
-		h.publicDb.ProcessTxRecord(hash)
+		h.keeper.ProcessTxRecord(ctx, hash)
 	}
 
 	return nil, nil
@@ -44,7 +44,7 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigne
 	log.Info("Deliverying TxIn, hash = ", msg.TxHash)
 
 	// Save this to KVStore & private db.
-	h.publicDb.SaveTxIn(msg)
+	h.keeper.SaveTxIn(ctx, msg)
 
 	// Creates and broadcast TxOuts. This has to be deterministic based on all the data that the
 	// processor has.
@@ -60,7 +60,7 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigne
 
 			// If this is a txOut deployment, mark the contract as being deployed.
 			if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
-				h.publicDb.UpdateContractsStatus(txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
+				h.keeper.UpdateContractsStatus(ctx, txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
 			}
 		}
 	}

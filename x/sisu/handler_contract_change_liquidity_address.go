@@ -17,23 +17,23 @@ import (
 )
 
 type HandlerContractSetLiquidityAddress struct {
-	pmm      PostedMessageManager
-	publicDb keeper.Storage
-	mc       ManagerContainer
+	pmm    PostedMessageManager
+	mc     ManagerContainer
+	keeper keeper.Keeper
 }
 
 func NewHandlerContractSetLiquidityAddress(mc ManagerContainer) *HandlerContractSetLiquidityAddress {
 	return &HandlerContractSetLiquidityAddress{
-		publicDb: mc.PublicDb(),
-		pmm:      mc.PostedMessageManager(),
-		mc:       mc,
+		keeper: mc.Keeper(),
+		pmm:    mc.PostedMessageManager(),
+		mc:     mc,
 	}
 }
 
 func (h *HandlerContractSetLiquidityAddress) DeliverMsg(ctx sdk.Context, msg *types.ChangeLiquidPoolAddressMsg) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
 		newHandlerContractSetLiquidityAddress(h.mc).doSetLiquidityAddress(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.NewLiquidAddress)
-		h.publicDb.ProcessTxRecord(hash)
+		h.keeper.ProcessTxRecord(ctx, hash)
 	} else {
 		log.Verbose("HandlerContractChangeOwnership: didn't not reach consensus or transaction has been processed")
 	}
@@ -42,7 +42,7 @@ func (h *HandlerContractSetLiquidityAddress) DeliverMsg(ctx sdk.Context, msg *ty
 }
 
 type handlerContractSetLiquidityAddress struct {
-	publicDb         keeper.Storage
+	keeper           keeper.Keeper
 	txOutputProducer TxOutputProducer
 	globalData       common.GlobalData
 	partyManager     PartyManager
@@ -51,7 +51,7 @@ type handlerContractSetLiquidityAddress struct {
 
 func newHandlerContractSetLiquidityAddress(mc ManagerContainer) *handlerContractSetLiquidityAddress {
 	return &handlerContractSetLiquidityAddress{
-		publicDb:         mc.PublicDb(),
+		keeper:           mc.Keeper(),
 		txOutputProducer: mc.TxOutProducer(),
 		globalData:       mc.GlobalData(),
 		partyManager:     mc.PartyManager(),
@@ -86,7 +86,7 @@ func (h *handlerContractSetLiquidityAddress) doSetLiquidityAddress(ctx sdk.Conte
 	}
 
 	// Save this to KVStore
-	h.publicDb.SaveTxOut(txOutMsg.Data)
+	h.keeper.SaveTxOut(ctx, txOutMsg.Data)
 
 	// Sends to dheart for signing.
 	h.signTx(ctx, txOutMsg.Data)

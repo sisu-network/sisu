@@ -7,17 +7,17 @@ import (
 )
 
 type HandlerTokenPrice struct {
-	publicDb keeper.Storage
+	keeper keeper.Keeper
 }
 
 func NewHandlerTokenPrice(mc ManagerContainer) *HandlerTokenPrice {
 	return &HandlerTokenPrice{
-		publicDb: mc.PublicDb(),
+		keeper: mc.Keeper(),
 	}
 }
 
 func (h *HandlerTokenPrice) DeliverMsg(ctx sdk.Context, msg *types.UpdateTokenPrice) (*sdk.Result, error) {
-	h.publicDb.SetTokenPrices(uint64(ctx.BlockHeight()), msg)
+	h.keeper.SetTokenPrices(ctx, uint64(ctx.BlockHeight()), msg)
 
 	return nil, nil
 }
