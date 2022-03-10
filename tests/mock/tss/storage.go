@@ -214,6 +214,20 @@ func (mr *MockStorageMockRecorder) GetLiquidity(chain interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLiquidity", reflect.TypeOf((*MockStorage)(nil).GetLiquidity), chain)
 }
 
+// GetParams mocks base method.
+func (m *MockStorage) GetParams() *types.Params {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetParams")
+	ret0, _ := ret[0].(*types.Params)
+	return ret0
+}
+
+// GetParams indicates an expected call of GetParams.
+func (mr *MockStorageMockRecorder) GetParams() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetParams", reflect.TypeOf((*MockStorage)(nil).GetParams))
+}
+
 // GetPendingContracts mocks base method.
 func (m *MockStorage) GetPendingContracts(chain string) []*types.Contract {
 	m.ctrl.T.Helper()
@@ -502,6 +516,18 @@ func (m *MockStorage) SaveNode(node *types.Node) {
 func (mr *MockStorageMockRecorder) SaveNode(node interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveNode", reflect.TypeOf((*MockStorage)(nil).SaveNode), node)
+}
+
+// SaveParams mocks base method.
+func (m *MockStorage) SaveParams(arg0 *types.Params) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SaveParams", arg0)
+}
+
+// SaveParams indicates an expected call of SaveParams.
+func (mr *MockStorageMockRecorder) SaveParams(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveParams", reflect.TypeOf((*MockStorage)(nil).SaveParams), arg0)
 }
 
 // SaveTxIn mocks base method.

@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net"
 	"os"
 	"path/filepath"
@@ -172,6 +173,7 @@ Example:
 				tokens:      testnetConfig.Tokens,
 				chains:      chains,
 				liquidities: testnetConfig.Liquidities,
+				params:      &types.Params{MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3))},
 			}
 
 			valPubKeys, err := InitNetwork(settings)
@@ -209,8 +211,6 @@ Example:
 }
 
 func (g *TestnetGenerator) getNodeSettings(chainID string, keyringBackend string, testnetConfig TestnetNode, n int, chainConfigs []ChainConfig) config.Config {
-	majority := (n + 1) * 2 / 3
-
 	supportedChains := make(map[string]config.TssChainConfig)
 	for _, chainConfig := range chainConfigs {
 		supportedChains[chainConfig.Id] = config.TssChainConfig{
@@ -227,11 +227,10 @@ func (g *TestnetGenerator) getNodeSettings(chainID string, keyringBackend string
 			ApiPort:        25456,
 		},
 		Tss: config.TssConfig{
-			MajorityThreshold: majority,
-			DheartHost:        testnetConfig.HeartIp,
-			DheartPort:        5678,
-			DeyesUrl:          fmt.Sprintf("http://%s:31001", testnetConfig.EyesIp),
-			SupportedChains:   supportedChains,
+			DheartHost:      testnetConfig.HeartIp,
+			DheartPort:      5678,
+			DeyesUrl:        fmt.Sprintf("http://%s:31001", testnetConfig.EyesIp),
+			SupportedChains: supportedChains,
 		},
 	}
 }

@@ -7,10 +7,12 @@ import "sisu/node.proto";
 import "sisu/token.proto";
 import "sisu/chain.proto";
 import "sisu/liquidity.proto";
+import "sisu/params.proto";
 
 message GenesisState {
   repeated Node nodes = 1;
   repeated Token tokens = 2;
   repeated Chain chains = 3;
   repeated Liquidity liquids = 4;
+  Params params = 5;
 }
