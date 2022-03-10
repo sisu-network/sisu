@@ -43,7 +43,7 @@ func (p *DefaultTxOutputProducer) ContractChangeOwnership(_ sdk.Context, chain, 
 		return nil, err
 	}
 
-	input, err := erc20gatewayContract.Abi.Pack(MethodChangeOwnership, ethcommon.HexToAddress(newOwner))
+	input, err := erc20gatewayContract.Abi.Pack(MethodTransferOwnership, ethcommon.HexToAddress(newOwner))
 	rawTx := ethTypes.NewTransaction(
 		uint64(nonce),
 		gatewayAddress,
@@ -61,7 +61,7 @@ func (p *DefaultTxOutputProducer) ContractChangeOwnership(_ sdk.Context, chain, 
 
 	return types.NewMsgTxOutWithSigner(
 		p.appKeys.GetSignerAddress().String(),
-		types.TxOutType_NORMAL,
+		types.TxOutType_TRANSFER_OUT,
 		0,
 		"",                    // in chain
 		"",                    // in hash

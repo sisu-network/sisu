@@ -8,28 +8,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
+
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-func (p *DefaultTxOutputProducer) PauseContract(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error) {
-	if libchain.IsETHBasedChain(chain) {
-		return p.PauseOrResumeEthContract(ctx, chain, hash, true)
-	}
-
-	return nil, fmt.Errorf("unsupported chain %s", chain)
-}
-
-func (p *DefaultTxOutputProducer) ResumeContract(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error) {
-	if libchain.IsETHBasedChain(chain) {
-		return p.PauseOrResumeEthContract(ctx, chain, hash, false)
-	}
-
-	return nil, fmt.Errorf("unsupported chain %s", chain)
-}
-
-func (p *DefaultTxOutputProducer) PauseOrResumeEthContract(ctx sdk.Context, chain string, hash string, isPause bool) (*types.TxOutWithSigner, error) {
+func (p *DefaultTxOutputProducer) ContractSetLiquidPoolAddress(_ sdk.Context, chain, contractHash, newAddress string) (*types.TxOutWithSigner, error) {
 	if !libchain.IsETHBasedChain(chain) {
 		return nil, fmt.Errorf("unsupported chain %s", chain)
 	}
@@ -38,7 +23,7 @@ func (p *DefaultTxOutputProducer) PauseOrResumeEthContract(ctx sdk.Context, chai
 	targetContractName := ContractErc20Gateway
 	gw := p.publicDb.GetLatestContractAddressByName(chain, targetContractName)
 	if len(gw) == 0 {
-		err := fmt.Errorf("PauseEthContract: cannot find gw address for type: %s", targetContractName)
+		err := fmt.Errorf("ContractSetLiquidPoolAddress: cannot find gw address for type: %s", targetContractName)
 		log.Error(err)
 		return nil, err
 	}
@@ -58,13 +43,7 @@ func (p *DefaultTxOutputProducer) PauseOrResumeEthContract(ctx sdk.Context, chai
 		return nil, err
 	}
 
-	var input []byte
-	if isPause {
-		input, err = erc20gatewayContract.Abi.Pack(MethodPauseGateway)
-	} else {
-		input, err = erc20gatewayContract.Abi.Pack(MethodResumeGateway)
-	}
-
+	input, err := erc20gatewayContract.Abi.Pack(MethodSetLiquidAddress, ethcommon.HexToAddress(newAddress))
 	rawTx := ethTypes.NewTransaction(
 		uint64(nonce),
 		gatewayAddress,
@@ -82,14 +61,13 @@ func (p *DefaultTxOutputProducer) PauseOrResumeEthContract(ctx sdk.Context, chai
 
 	return types.NewMsgTxOutWithSigner(
 		p.appKeys.GetSignerAddress().String(),
-		types.TxOutType_TRANSFER_OUT,
+		types.TxOutType_CHANGE_LIQUIDITY,
 		0,
 		"",                    // in chain
 		"",                    // in hash
 		chain,                 // out chain
 		rawTx.Hash().String(), // out hash
 		bz,
-		hash, // contract hash
+		contractHash, // contract hash
 	), nil
-
 }

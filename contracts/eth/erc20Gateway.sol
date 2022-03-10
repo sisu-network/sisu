@@ -416,6 +416,7 @@ interface ILiquidityPool {
 
 interface ILPToken {
     function mint(address _recipient, uint256 _amount) external;
+
     function burn(address _from, uint256 _amount) external;
 }
 
@@ -486,6 +487,7 @@ contract ERC20Gateway is Ownable {
     event TransferInEvent(address indexed token, address indexed recipient, uint256 amount);
     event RemoveSupportedChainEvent(string indexed chain);
     event AddSupportedChainEvent(string indexed chain);
+    event SetLiquidPoolAddress(address indexed newLpPool);
 
     modifier isNotPaused {
         require(pause == false, "Gateway is paused");
@@ -532,5 +534,11 @@ contract ERC20Gateway is Ownable {
         supportedChains[chain] = true;
 
         emit AddSupportedChainEvent(chain);
+    }
+
+    function setLiquidAddress(address _newLpPool) public onlyOwner {
+        lpPool = _newLpPool;
+
+        emit SetLiquidPoolAddress(_newLpPool);
     }
 }

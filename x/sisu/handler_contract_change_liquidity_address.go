@@ -16,23 +16,23 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-type HandlerContractChangeOwnership struct {
+type HandlerContractSetLiquidityAddress struct {
 	pmm      PostedMessageManager
 	publicDb keeper.Storage
 	mc       ManagerContainer
 }
 
-func NewHandlerContractChangeOwnership(mc ManagerContainer) *HandlerContractChangeOwnership {
-	return &HandlerContractChangeOwnership{
+func NewHandlerContractSetLiquidityAddress(mc ManagerContainer) *HandlerContractSetLiquidityAddress {
+	return &HandlerContractSetLiquidityAddress{
 		publicDb: mc.PublicDb(),
 		pmm:      mc.PostedMessageManager(),
 		mc:       mc,
 	}
 }
 
-func (h *HandlerContractChangeOwnership) DeliverMsg(ctx sdk.Context, msg *types.ChangeOwnershipContractMsg) (*sdk.Result, error) {
+func (h *HandlerContractSetLiquidityAddress) DeliverMsg(ctx sdk.Context, msg *types.ChangeLiquidPoolAddressMsg) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
-		newHandlerContractChangeOwnership(h.mc).doChangeOwner(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.NewOwner)
+		newHandlerContractSetLiquidityAddress(h.mc).doSetLiquidityAddress(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.NewLiquidAddress)
 		h.publicDb.ProcessTxRecord(hash)
 	} else {
 		log.Verbose("HandlerContractChangeOwnership: didn't not reach consensus or transaction has been processed")
@@ -41,7 +41,7 @@ func (h *HandlerContractChangeOwnership) DeliverMsg(ctx sdk.Context, msg *types.
 	return &sdk.Result{}, nil
 }
 
-type handlerContractChangeOwnership struct {
+type handlerContractSetLiquidityAddress struct {
 	publicDb         keeper.Storage
 	txOutputProducer TxOutputProducer
 	globalData       common.GlobalData
@@ -49,8 +49,8 @@ type handlerContractChangeOwnership struct {
 	dheartClient     tssclients.DheartClient
 }
 
-func newHandlerContractChangeOwnership(mc ManagerContainer) *handlerContractChangeOwnership {
-	return &handlerContractChangeOwnership{
+func newHandlerContractSetLiquidityAddress(mc ManagerContainer) *handlerContractSetLiquidityAddress {
+	return &handlerContractSetLiquidityAddress{
 		publicDb:         mc.PublicDb(),
 		txOutputProducer: mc.TxOutProducer(),
 		globalData:       mc.GlobalData(),
@@ -59,10 +59,10 @@ func newHandlerContractChangeOwnership(mc ManagerContainer) *handlerContractChan
 	}
 }
 
-func (h *handlerContractChangeOwnership) doChangeOwner(ctx sdk.Context, chain, hash, newOwner string) ([]byte, error) {
-	// Only do pause/pause if we finished catching up.
+func (h *handlerContractSetLiquidityAddress) doSetLiquidityAddress(ctx sdk.Context, chain, hash, newLpAddress string) ([]byte, error) {
+	// Only do set liquidity address if we finished catching up.
 	if h.globalData.IsCatchingUp() {
-		log.Info("We are catching up with the network, exiting doPauseOrResume")
+		log.Info("We are catching up with the network, exiting setLiquidAddress")
 		return nil, nil
 	}
 
@@ -75,28 +75,28 @@ func (h *handlerContractChangeOwnership) doChangeOwner(ctx sdk.Context, chain, h
 	}
 
 	if !found {
-		err := fmt.Errorf("doPauseOrResume: contract with hash %s is not supported", hash)
+		err := fmt.Errorf("doSetLiquidityAddress: contract with hash %s is not supported", hash)
 		log.Error(err)
 		return nil, err
 	}
 
-	msg, err := h.txOutputProducer.ContractChangeOwnership(ctx, chain, hash, newOwner)
+	txOutMsg, err := h.txOutputProducer.ContractSetLiquidPoolAddress(ctx, chain, hash, newLpAddress)
 	if err != nil {
 		return nil, err
 	}
 
 	// Save this to KVStore
-	h.publicDb.SaveTxOut(msg.Data)
+	h.publicDb.SaveTxOut(txOutMsg.Data)
 
 	// Sends to dheart for signing.
-	h.signTx(ctx, msg.Data)
+	h.signTx(ctx, txOutMsg.Data)
 
 	return nil, nil
 }
 
 // TODO: duplicate code with pause/resume contract handler, fix it
 // signTx sends a TxOut to dheart for TSS signing.
-func (h *handlerContractChangeOwnership) signTx(ctx sdk.Context, tx *types.TxOut) {
+func (h *handlerContractSetLiquidityAddress) signTx(ctx sdk.Context, tx *types.TxOut) {
 	ethTx := &etypes.Transaction{}
 	if err := ethTx.UnmarshalBinary(tx.OutBytes); err != nil {
 		log.Error("cannot unmarshal tx, err =", err)
@@ -133,6 +133,6 @@ func (h *handlerContractChangeOwnership) signTx(ctx sdk.Context, tx *types.TxOut
 	}
 }
 
-func (h *handlerContractChangeOwnership) getKeysignRequestId(chain string, blockHeight int64, txHash string) string {
+func (h *handlerContractSetLiquidityAddress) getKeysignRequestId(chain string, blockHeight int64, txHash string) string {
 	return chain + "_" + strconv.Itoa(int(blockHeight)) + "_" + txHash
 }

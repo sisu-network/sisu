@@ -13,7 +13,25 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/world"
 )
 
+type transferOutData struct {
+	tokenAddr ethcommon.Address
+	destChain string
+	token     *types.Token
+	recipient ethcommon.Address
+	amount    *big.Int
+}
+
+type transferInData struct {
+	token     ethcommon.Address
+	recipient ethcommon.Address
+	amount    *big.Int
+}
+
 func decodeTxParams(abi abi.ABI, callData []byte) (map[string]interface{}, error) {
+	if len(callData) < 4 {
+		return nil, fmt.Errorf("decodeTxParams: call data size is smaller than 4")
+	}
+
 	txParams := map[string]interface{}{}
 	m, err := abi.MethodById(callData[:4])
 	if err != nil {
@@ -29,8 +47,7 @@ func decodeTxParams(abi abi.ABI, callData []byte) (map[string]interface{}, error
 	return txParams, nil
 }
 
-func (p *DefaultTxOutputProducer) processERC20TransferIn(ethTx *ethTypes.Transaction) (*types.TxResponse, error) {
-	log.Debug("Processing ERC20 transfer In")
+func parseEthTransferOut(ethTx *ethTypes.Transaction, worldState world.WorldState) (*transferOutData, error) {
 	erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
 	gwAbi := erc20gatewayContract.Abi
 	callData := ethTx.Data()
@@ -42,18 +59,16 @@ func (p *DefaultTxOutputProducer) processERC20TransferIn(ethTx *ethTypes.Transac
 	tokenAddr, ok := txParams["_tokenIn"].(ethcommon.Address)
 	if !ok {
 		err := fmt.Errorf("cannot convert _tokenIn to type ethcommon.Address: %v", txParams)
-		log.Error(err)
 		return nil, err
 	}
 
 	destChain, ok := txParams["_destChain"].(string)
 	if !ok {
 		err := fmt.Errorf("cannot convert _destChain to type string: %v", txParams)
-		log.Error(err)
 		return nil, err
 	}
 
-	token := p.worldState.GetTokenFromAddress(destChain, tokenAddr.String())
+	token := worldState.GetTokenFromAddress(destChain, tokenAddr.String())
 	if token == nil {
 		return nil, fmt.Errorf("invalid address %s on chain %s", tokenAddr, destChain)
 	}
@@ -61,18 +76,66 @@ func (p *DefaultTxOutputProducer) processERC20TransferIn(ethTx *ethTypes.Transac
 	recipient, ok := txParams["_recipient"].(ethcommon.Address)
 	if !ok {
 		err := fmt.Errorf("cannot convert _recipient to type ethcommon.Address: %v", txParams)
-		log.Error(err)
 		return nil, err
 	}
 
 	amount, ok := txParams["_amount"].(*big.Int)
 	if !ok {
 		err := fmt.Errorf("cannot convert _amount to type *big.Int: %v", txParams)
+		return nil, err
+	}
+
+	return &transferOutData{
+		tokenAddr: tokenAddr,
+		destChain: destChain,
+		token:     token,
+		recipient: recipient,
+		amount:    amount,
+	}, nil
+}
+
+func parseTransferInData(ethTx *ethTypes.Transaction, worldState world.WorldState) (*transferInData, error) {
+	erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
+	gwAbi := erc20gatewayContract.Abi
+	callData := ethTx.Data()
+	txParams, err := decodeTxParams(gwAbi, callData)
+	if err != nil {
+		return nil, err
+	}
+
+	token, ok := txParams["_token"].(ethcommon.Address)
+	if !ok {
+		err := fmt.Errorf("parseTransferInData: cannot convert _token to type ethcommon.Address: %v", txParams)
+		return nil, err
+	}
+
+	recipient, ok := txParams["_recipient"].(ethcommon.Address)
+	if !ok {
+		err := fmt.Errorf("parseTransferInData: cannot convert _recipient to type ethcommon.Address: %v", txParams)
+		return nil, err
+	}
+
+	amount, ok := txParams["_amount"].(*big.Int)
+	if !ok {
+		err := fmt.Errorf("parseTransferInData: cannot convert _amount to type *big.Int: %v", txParams)
+		return nil, err
+	}
+
+	return &transferInData{
+		token:     token,
+		recipient: recipient,
+		amount:    amount,
+	}, nil
+}
+
+func (p *DefaultTxOutputProducer) processERC20TransferOut(ethTx *ethTypes.Transaction) (*types.TxResponse, error) {
+	data, err := parseEthTransferOut(ethTx, p.worldState)
+	if err != nil {
 		log.Error(err)
 		return nil, err
 	}
 
-	return p.callERC20TransferIn(token, tokenAddr, recipient, amount, destChain)
+	return p.callERC20TransferIn(data.token, data.tokenAddr, data.recipient, data.amount, data.destChain)
 }
 
 func (p *DefaultTxOutputProducer) callERC20TransferIn(

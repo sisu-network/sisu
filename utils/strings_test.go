@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"log"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -24,4 +25,25 @@ func TestAllInAlphabet(t *testing.T) {
 			require.Equal(t, tc.Expected, result)
 		})
 	}
+}
+
+func TestPrettyStruct(t *testing.T) {
+	type Fruit struct {
+		Name  string `json:"name"`
+		Color string `json:"color"`
+	}
+
+	fruit := Fruit{
+		Name:  "Strawberry",
+		Color: "red",
+	}
+	res, err := PrettyStruct(fruit)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	require.Equal(t, `{
+    "name": "Strawberry",
+    "color": "red"
+}`, res)
 }

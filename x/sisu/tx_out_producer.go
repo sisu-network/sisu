@@ -28,6 +28,8 @@ type TxOutputProducer interface {
 	ResumeContract(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
 
 	ContractChangeOwnership(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutWithSigner, error)
+
+	ContractSetLiquidPoolAddress(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutWithSigner, error)
 }
 
 type DefaultTxOutputProducer struct {
@@ -128,7 +130,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 		p.publicDb.IsContractExistedAtAddress(tx.Chain, ethTx.To().String()) && len(ethTx.Data()) >= 4 {
 
 		// TODO: compare method name to trigger corresponding contract method
-		responseTx, err := p.processERC20TransferIn(ethTx)
+		responseTx, err := p.processERC20TransferOut(ethTx)
 		if err != nil {
 			log.Error("cannot get response for erc20 tx, err = ", err)
 			return nil, err
@@ -136,7 +138,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 		outMsg := types.NewMsgTxOutWithSigner(
 			p.appKeys.GetSignerAddress().String(),
-			types.TxOutType_NORMAL,
+			types.TxOutType_TRANSFER_OUT,
 			tx.BlockHeight,
 			tx.Chain,
 			tx.TxHash,

@@ -110,36 +110,34 @@ type AppModule struct {
 	externalHandler *rest.ExternalHandler
 	keeper          keeper.DefaultKeeper
 	processor       *Processor
-	appKeys         *common.DefaultAppKeys
+	appKeys         common.AppKeys
 	txSubmit        common.TxSubmit
 	globalData      common.GlobalData
 	publicDb        keeper.Storage
 	valsManager     ValidatorManager
 	worldState      world.WorldState
+	txTracker       TxTracker
 }
 
 func NewAppModule(cdc codec.Marshaler,
 	sisuHandler *SisuHandler,
 	keeper keeper.DefaultKeeper,
-	publicDb keeper.Storage,
-	appKeys *common.DefaultAppKeys,
-	txSubmit common.TxSubmit,
 	processor *Processor,
-	globalData common.GlobalData,
 	valsManager ValidatorManager,
-	worldState world.WorldState,
+	mc ManagerContainer,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),
 		sisuHandler:    sisuHandler,
-		txSubmit:       txSubmit,
+		txSubmit:       mc.TxSubmit(),
 		processor:      processor,
 		keeper:         keeper,
-		publicDb:       publicDb,
-		appKeys:        appKeys,
-		globalData:     globalData,
+		publicDb:       mc.PublicDb(),
+		appKeys:        mc.AppKeys(),
+		globalData:     mc.GlobalData(),
 		valsManager:    valsManager,
-		worldState:     worldState,
+		worldState:     mc.WorldState(),
+		txTracker:      mc.TxTracker(),
 	}
 }
 
@@ -252,6 +250,8 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 // returns no validator updates.
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	am.processor.EndBlock(ctx)
+
+	am.txTracker.CheckExpiredTransaction()
 
 	return []abci.ValidatorUpdate{}
 }

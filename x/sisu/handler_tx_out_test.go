@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestHandlerTxOut_Normal(t *testing.T) {
+func TestHandlerTxOut_TransferOut(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
@@ -34,6 +34,9 @@ func TestHandlerTxOut_Normal(t *testing.T) {
 
 	mockDheartClient := mocktssclients.NewMockDheartClient(ctrl)
 	mockDheartClient.EXPECT().KeySign(gomock.Any(), gomock.Any()).Return(nil).Times(1)
+
+	mockTracker := mock.NewMockTxTracker(ctrl)
+	mockTracker.EXPECT().UpdateStatus(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 
 	amount := big.NewInt(100)
 	gasLimit := uint64(100)
@@ -62,7 +65,7 @@ func TestHandlerTxOut_Normal(t *testing.T) {
 	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
 	mockGlobalData.EXPECT().IsCatchingUp().Return(false).Times(1)
 
-	mc := sisu.MockManagerContainer(mockPmm, mockGlobalData, mockDheartClient, mockPartyManager, mockPublicDb)
+	mc := sisu.MockManagerContainer(mockPmm, mockGlobalData, mockDheartClient, mockPartyManager, mockPublicDb, mockTracker)
 
 	handler := sisu.NewHandlerTxOut(mc)
 	_, err = handler.DeliverMsg(sdk.Context{}, txOutWithSigner)
