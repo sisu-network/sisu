@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"math/big"
 	"net"
 	"time"
@@ -24,6 +25,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 var (
@@ -85,7 +87,6 @@ Example:
 					ApiPort:        25456,
 				},
 				Tss: config.TssConfig{
-					MajorityThreshold: 1,
 					DheartHost:        "0.0.0.0",
 					DheartPort:        5678,
 					DeyesUrl:          "http://0.0.0.0:31001",
@@ -121,6 +122,7 @@ Example:
 				tokens:         getTokens("./misc/tokens_dev.json"),
 				chains:         getChains("./misc/chains.json"),
 				liquidities:    getLiquidity("./misc/liquid_dev.json"),
+				params:         &types.Params{MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3))},
 			}
 
 			_, err = InitNetwork(settings)

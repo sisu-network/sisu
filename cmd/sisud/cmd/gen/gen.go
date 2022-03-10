@@ -53,6 +53,7 @@ type Setting struct {
 	tokens      []*types.Token // tokens in the genesis data
 	chains      []*types.Chain // chains in the genesis data
 	liquidities []*types.Liquidity
+	params      *types.Params
 }
 
 // Initialize the localnet
@@ -164,7 +165,7 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 
 	if err := initGenFiles(
 		clientCtx, mbm, chainID, genAccounts, genBalances, genFiles, nodes,
-		settings.tokens, settings.chains, settings.liquidities,
+		settings.tokens, settings.chains, settings.liquidities, settings.params,
 	); err != nil {
 		return nil, err
 	}
@@ -214,7 +215,7 @@ func getNode(kb keyring.Keyring, algoStr string, nodeDirName string, outputDir s
 func initGenFiles(
 	clientCtx client.Context, mbm module.BasicManager, chainID string,
 	genAccounts []authtypes.GenesisAccount, genBalances []banktypes.Balance,
-	genFiles []string, nodes []*types.Node, tokens []*types.Token, chains []*types.Chain, liquids []*types.Liquidity,
+	genFiles []string, nodes []*types.Node, tokens []*types.Token, chains []*types.Chain, liquids []*types.Liquidity, params *types.Params,
 ) error {
 	appGenState := mbm.DefaultGenesis(clientCtx.JSONMarshaler)
 
@@ -242,6 +243,7 @@ func initGenFiles(
 	sisuGenState.Tokens = tokens
 	sisuGenState.Chains = chains
 	sisuGenState.Liquids = liquids
+	sisuGenState.Params = params
 
 	appGenState[types.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(sisuGenState)
 

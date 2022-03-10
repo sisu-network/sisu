@@ -13,13 +13,11 @@ type PostedMessageManager interface {
 
 type DefaultPostedMessageManager struct {
 	publicDb  keeper.Storage
-	threshold int
 }
 
-func NewPostedMessageManager(publicDb keeper.Storage, threshold int) *DefaultPostedMessageManager {
+func NewPostedMessageManager(publicDb keeper.Storage) *DefaultPostedMessageManager {
 	return &DefaultPostedMessageManager{
 		publicDb:  publicDb,
-		threshold: threshold,
 	}
 }
 
@@ -31,7 +29,12 @@ func (m *DefaultPostedMessageManager) ShouldProcessMsg(ctx sdk.Context, msg sdk.
 	}
 
 	count := m.publicDb.SaveTxRecord(hash, signer)
-	if count >= m.threshold && !m.publicDb.IsTxRecordProcessed(hash) {
+	tssParams := m.publicDb.GetParams()
+	if tssParams == nil {
+		return false, nil
+	}
+
+	if count >= int(tssParams.MajorityThreshold) && !m.publicDb.IsTxRecordProcessed(hash) {
 		return true, hash
 	}
 

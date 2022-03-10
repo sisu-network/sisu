@@ -39,7 +39,6 @@ type TssConfig struct {
 	DheartHost        string                    `toml:"dheart-host"`
 	DheartPort        int                       `toml:"dheart-port"`
 	SupportedChains   map[string]TssChainConfig `toml:"supported-chains"`
-	MajorityThreshold int                       `toml:"majority-threshold"`
 
 	DeyesUrl string `toml:"deyes-url"`
 

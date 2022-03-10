@@ -29,6 +29,7 @@ var (
 	prefixTokenPrices            = []byte{0x10}
 	prefixNode                   = []byte{0x11}
 	prefixLiquidity              = []byte{0x12}
+	prefixParams                 = []byte{0x13}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -814,6 +815,31 @@ func getAllLiquidities(store cstypes.KVStore) map[string]*types.Liquidity {
 	_ = iter.Close()
 
 	return liquids
+}
+
+///// Params
+func saveParams(store cstypes.KVStore, params *types.Params) {
+	bz, err := params.Marshal()
+	if err != nil {
+		log.Error("cannot marshal params ")
+	}
+
+	store.Set([]byte("params"), bz)
+}
+
+func getParams(store cstypes.KVStore) *types.Params {
+	bz := store.Get([]byte("params"))
+	if bz == nil {
+		return nil
+	}
+
+	params := &types.Params{}
+	if err := params.Unmarshal(bz); err != nil {
+		log.Errorf("getParams: error when unmarshal params")
+		return nil
+	}
+
+	return params
 }
 
 ///// Debug functions
