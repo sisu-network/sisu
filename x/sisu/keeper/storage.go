@@ -434,12 +434,12 @@ func (db *defaultStorage) GetAllLiquidities() map[string]*types.Liquidity {
 }
 
 ///// Params
-func (db *defaultPrivateDb) SaveParams(params *types.Params) {
+func (db *defaultStorage) SaveParams(params *types.Params) {
 	store := db.prefixes[string(prefixParams)]
 	saveParams(store, params)
 }
 
-func (db *defaultPrivateDb) GetParams() *types.Params {
+func (db *defaultStorage) GetParams() *types.Params {
 	store := db.prefixes[string(prefixParams)]
 	return getParams(store)
 }
