@@ -260,10 +260,9 @@ func New(
 	worldState := world.NewWorldState(tssConfig, app.tssKeeper, deyesClient)
 	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert, worldState)
 
-	tssProcessor := tss.NewProcessor(app.tssKeeper, publicDb, privateDb, tssConfig, nodeKey.PrivKey,
-		app.appKeys, app.txDecoder, app.txSubmitter, app.globalData, dheartClient, deyesClient, worldState,
+	tssProcessor := tss.NewProcessor(app.tssKeeper, publicDb, privateDb, tssConfig,
+		app.appKeys, app.txSubmitter, app.globalData, dheartClient, deyesClient, worldState,
 		txTracker)
-	tssProcessor.Init()
 	app.apiHandler.SetAppLogicListener(tssProcessor)
 
 	valsMgr := tss.NewValidatorManager(app.tssKeeper)
