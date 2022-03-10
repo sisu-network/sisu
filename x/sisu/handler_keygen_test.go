@@ -17,26 +17,6 @@ import (
 	mocktssclients "github.com/sisu-network/sisu/tests/mock/x/sisu/tssclients"
 )
 
-func createManagerContainer_TestHandlerKeygen(ctrl *gomock.Controller) sisu.ManagerContainer {
-	mockPublicDb := mocktss.NewMockStorage(ctrl)
-	mockPublicDb.EXPECT().SaveKeygen(gomock.Any()).Times(1)
-	mockPublicDb.EXPECT().ProcessTxRecord(gomock.Any()).Times(1)
-
-	mockPmm := mock.NewMockPostedMessageManager(ctrl)
-	mockPmm.EXPECT().ShouldProcessMsg(gomock.Any(), gomock.Any()).Return(true, []byte("")).Times(1)
-
-	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
-	mockGlobalData.EXPECT().IsCatchingUp().Return(false).Times(1)
-
-	mockDheartClient := mocktssclients.NewMockDheartClient(ctrl)
-	mockDheartClient.EXPECT().KeyGen(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
-
-	mockPartyManager := mocktss.NewMockPartyManager(ctrl)
-	mockPartyManager.EXPECT().GetActivePartyPubkeys().Return([]ctypes.PubKey{}).Times(1)
-
-	return sisu.MockManagerContainer(mockPmm, mockGlobalData, mockDheartClient, mockPartyManager, mockPublicDb)
-}
-
 func TestHandlerKeygen_normal(t *testing.T) {
 	t.Parallel()
 	ctrl := gomock.NewController(t)
@@ -60,7 +40,7 @@ func TestHandlerKeygen_normal(t *testing.T) {
 	mockPartyManager := mocktss.NewMockPartyManager(ctrl)
 	mockPartyManager.EXPECT().GetActivePartyPubkeys().Return([]ctypes.PubKey{}).Times(1)
 
-	mc := sisu.MockManagerContainer(mockPmm, mockGlobalData, mockDheartClient, mockPartyManager, mockPublicDb)
+	mc := sisu.CreateManagerContainer(ctrl, mockPmm, mockGlobalData, mockDheartClient, mockPartyManager, mockPublicDb)
 
 	msg := &types.KeygenWithSigner{
 		Signer: "signer",
