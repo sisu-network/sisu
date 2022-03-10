@@ -8,8 +8,9 @@ import (
 	big "math/big"
 	reflect "reflect"
 
+	types "github.com/cosmos/cosmos-sdk/types"
 	gomock "github.com/golang/mock/gomock"
-	types "github.com/sisu-network/sisu/x/sisu/types"
+	types0 "github.com/sisu-network/sisu/x/sisu/types"
 )
 
 // MockWorldState is a mock of WorldState interface.
@@ -81,10 +82,10 @@ func (mr *MockWorldStateMockRecorder) GetNativeTokenPriceForChain(chain interfac
 }
 
 // GetTokenFromAddress mocks base method.
-func (m *MockWorldState) GetTokenFromAddress(chain, tokenAddr string) *types.Token {
+func (m *MockWorldState) GetTokenFromAddress(chain, tokenAddr string) *types0.Token {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTokenFromAddress", chain, tokenAddr)
-	ret0, _ := ret[0].(*types.Token)
+	ret0, _ := ret[0].(*types0.Token)
 	return ret0
 }
 
@@ -110,19 +111,19 @@ func (mr *MockWorldStateMockRecorder) GetTokenPrice(token interface{}) *gomock.C
 }
 
 // LoadData mocks base method.
-func (m *MockWorldState) LoadData() {
+func (m *MockWorldState) LoadData(ctx types.Context) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "LoadData")
+	m.ctrl.Call(m, "LoadData", ctx)
 }
 
 // LoadData indicates an expected call of LoadData.
-func (mr *MockWorldStateMockRecorder) LoadData() *gomock.Call {
+func (mr *MockWorldStateMockRecorder) LoadData(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadData", reflect.TypeOf((*MockWorldState)(nil).LoadData))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadData", reflect.TypeOf((*MockWorldState)(nil).LoadData), ctx)
 }
 
 // SetChain mocks base method.
-func (m *MockWorldState) SetChain(chain *types.Chain) {
+func (m *MockWorldState) SetChain(chain *types0.Chain) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetChain", chain)
 }
@@ -134,7 +135,7 @@ func (mr *MockWorldStateMockRecorder) SetChain(chain interface{}) *gomock.Call {
 }
 
 // SetTokens mocks base method.
-func (m *MockWorldState) SetTokens(tokenPrices map[string]*types.Token) {
+func (m *MockWorldState) SetTokens(tokenPrices map[string]*types0.Token) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "SetTokens", tokenPrices)
 }
@@ -146,15 +147,15 @@ func (mr *MockWorldStateMockRecorder) SetTokens(tokenPrices interface{}) *gomock
 }
 
 // UseAndIncreaseNonce mocks base method.
-func (m *MockWorldState) UseAndIncreaseNonce(chain string) int64 {
+func (m *MockWorldState) UseAndIncreaseNonce(ctx types.Context, chain string) int64 {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UseAndIncreaseNonce", chain)
+	ret := m.ctrl.Call(m, "UseAndIncreaseNonce", ctx, chain)
 	ret0, _ := ret[0].(int64)
 	return ret0
 }
 
 // UseAndIncreaseNonce indicates an expected call of UseAndIncreaseNonce.
-func (mr *MockWorldStateMockRecorder) UseAndIncreaseNonce(chain interface{}) *gomock.Call {
+func (mr *MockWorldStateMockRecorder) UseAndIncreaseNonce(ctx, chain interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UseAndIncreaseNonce", reflect.TypeOf((*MockWorldState)(nil).UseAndIncreaseNonce), chain)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UseAndIncreaseNonce", reflect.TypeOf((*MockWorldState)(nil).UseAndIncreaseNonce), ctx, chain)
 }

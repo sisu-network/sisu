@@ -98,7 +98,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		mockAppKeys.EXPECT().GetSignerAddress().Return(accAddress).AnyTimes()
 
 		mockWorldState := mocksisu.NewMockWorldState(ctrl)
-		mockWorldState.EXPECT().UseAndIncreaseNonce("eth").Return(int64(0)).Times(1)
+		mockWorldState.EXPECT().UseAndIncreaseNonce(gomock.Any(), "eth").Return(int64(0)).Times(1)
 
 		amount := big.NewInt(100)
 		gasLimit := uint64(100)
@@ -160,7 +160,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 			Id:    "SISU",
 			Price: 1_000_000_000,
 		}).Times(1)
-		mockWorldState.EXPECT().UseAndIncreaseNonce("eth").Return(int64(0)).Times(1)
+		mockWorldState.EXPECT().UseAndIncreaseNonce(gomock.Any(), "eth").Return(int64(0)).Times(1)
 		mockWorldState.EXPECT().GetGasPrice("eth").Return(big.NewInt(1_000_000_000), nil).Times(1)
 		mockWorldState.EXPECT().GetGasCostInToken("SISU", "eth").Return(int64(1234), nil).Times(1)
 

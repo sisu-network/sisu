@@ -164,7 +164,7 @@ func (p *DefaultTxOutputProducer) getEthContractDeploymentTx(ctx sdk.Context, he
 	txs := make([]*ethTypes.Transaction, 0)
 
 	for _, contract := range contracts {
-		nonce := p.worldState.UseAndIncreaseNonce(chain)
+		nonce := p.worldState.UseAndIncreaseNonce(ctx, chain)
 		log.Verbose("nonce for deploying contract:", nonce)
 		if nonce < 0 {
 			log.Error("cannot get nonce for contract")

@@ -46,7 +46,7 @@ func (p *DefaultTxOutputProducer) PauseOrResumeEthContract(ctx sdk.Context, chai
 	gatewayAddress := ethcommon.HexToAddress(gw)
 	erc20gatewayContract := SupportedContracts[targetContractName]
 
-	nonce := p.worldState.UseAndIncreaseNonce(chain)
+	nonce := p.worldState.UseAndIncreaseNonce(ctx, chain)
 	if nonce < 0 {
 		err := errors.New("PauseEthContract: cannot find nonce for chain " + chain)
 		log.Error(err)

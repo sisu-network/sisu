@@ -257,8 +257,7 @@ func New(
 	publicDb := keeper.NewStorageDb(filepath.Join(cfg.Sisu.Dir, "data"))
 	privateDb := keeper.NewStorageDb(filepath.Join(cfg.Sisu.Dir, "private"))
 
-	worldState := world.NewWorldState(tssConfig, publicDb, deyesClient)
-	worldState.LoadData()
+	worldState := world.NewWorldState(tssConfig, app.tssKeeper, deyesClient)
 	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert, worldState)
 
 	tssProcessor := tss.NewProcessor(app.tssKeeper, publicDb, privateDb, tssConfig, nodeKey.PrivKey,

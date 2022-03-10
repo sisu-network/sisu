@@ -117,6 +117,7 @@ type AppModule struct {
 	valsManager     ValidatorManager
 	worldState      world.WorldState
 	txTracker       TxTracker
+	bootstrapped    bool
 }
 
 func NewAppModule(cdc codec.Marshaler,
@@ -230,7 +231,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	}
 
 	// Reload data after reading the genesis
-	am.worldState.LoadData()
+	am.worldState.LoadData(ctx)
 
 	return validators
 }
@@ -243,6 +244,10 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json
 
 // BeginBlock executes all ABCI BeginBlock logic respective to the capability module.
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
+	if !am.bootstrapped {
+		am.worldState.LoadData(ctx)
+		am.bootstrapped = true
+	}
 	am.processor.BeginBlock(ctx, req.Header.Height)
 }
 

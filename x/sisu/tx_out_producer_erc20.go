@@ -158,7 +158,7 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(
 	gatewayAddress := ethcommon.HexToAddress(gw)
 	erc20gatewayContract := SupportedContracts[targetContractName]
 
-	nonce := p.worldState.UseAndIncreaseNonce(destChain)
+	nonce := p.worldState.UseAndIncreaseNonce(ctx, destChain)
 	if nonce < 0 {
 		err := errors.New("cannot find nonce for chain " + destChain)
 		log.Error(err)
