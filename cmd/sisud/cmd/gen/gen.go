@@ -18,7 +18,6 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
-	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -340,7 +339,6 @@ func generateSisuToml(settings *Setting, index int, nodeDir string) {
 	}
 
 	cfg := settings.nodeConfigs[index]
-	log.Info("sisu toml: ", cfg)
 
 	config.WriteConfigFile(filepath.Join(configDir, "sisu.toml"), &cfg)
 }

@@ -219,7 +219,6 @@ Example:
 }
 
 func (g *TestnetGenerator) getNodeSettings(chainID string, keyringBackend string, testnetConfig TestnetNode, chainConfigs []ChainConfig, dnaConfig LogDNAConfig) config.Config {
-	log.Info("dnaConfig: ", dnaConfig)
 	supportedChains := make(map[string]config.TssChainConfig)
 	for _, chainConfig := range chainConfigs {
 		supportedChains[chainConfig.Id] = config.TssChainConfig{
