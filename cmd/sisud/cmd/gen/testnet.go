@@ -32,11 +32,18 @@ import (
 type TestnetGenerator struct {
 }
 
+type LogDNAConfig struct {
+	Secret   string `json:"secret,omitempty"`
+	AppName  string `json:"app_name,omitempty"`
+	HostName string `json:"host_name,omitempty"`
+}
+
 type TestnetConfig struct {
-	Tokens      []*types.Token     `json:"tokens"`
-	Nodes       []TestnetNode      `json:"nodes"`
-	Chains      []ChainConfig      `json:"chains"`
-	Liquidities []*types.Liquidity `json:"liquidity"`
+	Tokens       []*types.Token     `json:"tokens"`
+	Nodes        []TestnetNode      `json:"nodes"`
+	Chains       []ChainConfig      `json:"chains"`
+	Liquidities  []*types.Liquidity `json:"liquidity"`
+	LogDNAConfig LogDNAConfig       `json:"log_dna_config"`
 }
 
 // TODO: merge this field with the chain type in the proto file
@@ -122,6 +129,7 @@ Example:
 			}
 
 			nodes := testnetConfig.Nodes
+			dnaConfig := testnetConfig.LogDNAConfig
 
 			sisuIps := make([]string, numValidators)
 			heartIps := make([]string, numValidators)
@@ -141,7 +149,7 @@ Example:
 					panic(err)
 				}
 
-				nodeConfig := generator.getNodeSettings(chainId, keyringBackend, nodes[i], len(nodes), testnetConfig.Chains)
+				nodeConfig := generator.getNodeSettings(chainId, keyringBackend, nodes[i], len(nodes), testnetConfig.Chains, dnaConfig)
 				nodeConfigs[i] = nodeConfig
 			}
 
@@ -210,7 +218,7 @@ Example:
 	return cmd
 }
 
-func (g *TestnetGenerator) getNodeSettings(chainID string, keyringBackend string, testnetConfig TestnetNode, n int, chainConfigs []ChainConfig) config.Config {
+func (g *TestnetGenerator) getNodeSettings(chainID string, keyringBackend string, testnetConfig TestnetNode, n int, chainConfigs []ChainConfig, dnaConfig LogDNAConfig) config.Config {
 	supportedChains := make(map[string]config.TssChainConfig)
 	for _, chainConfig := range chainConfigs {
 		supportedChains[chainConfig.Id] = config.TssChainConfig{
@@ -231,6 +239,12 @@ func (g *TestnetGenerator) getNodeSettings(chainID string, keyringBackend string
 			DheartPort:      5678,
 			DeyesUrl:        fmt.Sprintf("http://%s:31001", testnetConfig.EyesIp),
 			SupportedChains: supportedChains,
+		},
+		LogDNA: log.LogDNAConfig{
+			Secret:       dnaConfig.Secret,
+			AppName:      dnaConfig.AppName,
+			HostName:     dnaConfig.HostName,
+			MaxBufferLen: 30,
 		},
 	}
 }
