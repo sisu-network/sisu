@@ -149,7 +149,7 @@ Example:
 					panic(err)
 				}
 
-				nodeConfig := generator.getNodeSettings(chainId, keyringBackend, nodes[i], len(nodes), testnetConfig.Chains, dnaConfig)
+				nodeConfig := generator.getNodeSettings(chainId, keyringBackend, nodes[i], testnetConfig.Chains, dnaConfig)
 				nodeConfigs[i] = nodeConfig
 			}
 
@@ -218,7 +218,8 @@ Example:
 	return cmd
 }
 
-func (g *TestnetGenerator) getNodeSettings(chainID string, keyringBackend string, testnetConfig TestnetNode, n int, chainConfigs []ChainConfig, dnaConfig LogDNAConfig) config.Config {
+func (g *TestnetGenerator) getNodeSettings(chainID string, keyringBackend string, testnetConfig TestnetNode, chainConfigs []ChainConfig, dnaConfig LogDNAConfig) config.Config {
+	log.Info("dnaConfig: ", dnaConfig)
 	supportedChains := make(map[string]config.TssChainConfig)
 	for _, chainConfig := range chainConfigs {
 		supportedChains[chainConfig.Id] = config.TssChainConfig{
