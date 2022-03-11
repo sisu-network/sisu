@@ -29,7 +29,7 @@ secret = "{{ .LogDNA.Secret }}"
 app_name = "{{ .LogDNA.AppName }}" 
 host_name = "{{ .LogDNA.HostName }}"
 flush_interval = "{{ .LogDNA.FlushInterval }}"
-max_buffer_len = "{{ .LogDNA.MaxBufferLen }}"
+max_buffer_len = {{ .LogDNA.MaxBufferLen }}
 
 ###############################################################################
 ###                         Siu TSS Connfiguration                          ###
