@@ -196,7 +196,7 @@ func FundAccount() *cobra.Command {
 	return cmd
 }
 
-func (c *fundAccountCmd) waitForContractCreation(context context.Context, chains []string, sisuRpc string) []string {
+func (c *fundAccountCmd) waitForContractCreation(goCtx context.Context, chains []string, sisuRpc string) []string {
 	log.Info("Waiting for all contract created in Sisu's db")
 
 	contractAddrs := make([]string, len(chains))
@@ -214,7 +214,7 @@ func (c *fundAccountCmd) waitForContractCreation(context context.Context, chains
 
 		done := true
 		for i, chain := range chains {
-			res, err := queryClient.QueryContract(context, &tssTypes.QueryContractRequest{
+			res, err := queryClient.QueryContract(goCtx, &tssTypes.QueryContractRequest{
 				Chain: chain,
 				Hash:  sisu.SupportedContracts[sisu.ContractErc20Gateway].AbiHash,
 			})
@@ -468,7 +468,8 @@ func (c *fundAccountCmd) getAccountAddress() common.Address {
 	return ethcrypto.PubkeyToAddress(*publicKeyECDSA)
 }
 
-func (c *fundAccountCmd) waitForGatewayDeployed(context context.Context, chains []string, sisuRpc string) []common.Address {
+func (c *fundAccountCmd) waitForGatewayDeployed(goCtx context.Context, chains []string,
+	sisuRpc string) []common.Address {
 	addrs := make([]string, len(chains))
 
 	for {
@@ -489,7 +490,7 @@ func (c *fundAccountCmd) waitForGatewayDeployed(context context.Context, chains 
 				continue
 			}
 
-			res, err := queryClient.QueryContract(context, &tssTypes.QueryContractRequest{
+			res, err := queryClient.QueryContract(goCtx, &tssTypes.QueryContractRequest{
 				Chain: chain,
 				Hash:  sisu.SupportedContracts[sisu.ContractErc20Gateway].AbiHash,
 			})

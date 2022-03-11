@@ -16,6 +16,7 @@ type HandlerKeygen struct {
 func NewHandlerKeygen(mc ManagerContainer) *HandlerKeygen {
 	return &HandlerKeygen{
 		keeper: mc.Keeper(),
+		mc:     mc,
 	}
 }
 
