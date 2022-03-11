@@ -260,17 +260,17 @@ func New(
 	worldState := world.NewWorldState(tssConfig, app.tssKeeper, deyesClient)
 	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert, worldState)
 
-	tssProcessor := tss.NewProcessor(app.tssKeeper, publicDb, privateDb, tssConfig,
-		app.appKeys, app.txSubmitter, app.globalData, dheartClient, deyesClient, worldState,
-		txTracker)
-	app.apiHandler.SetAppLogicListener(tssProcessor)
-
-	valsMgr := tss.NewValidatorManager(app.tssKeeper)
-
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.tssKeeper),
 		publicDb,
 		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
 		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, publicDb, app.tssKeeper, cfg.Tss), worldState, txTracker, app.tssKeeper)
+
+	tssProcessor := tss.NewProcessor(app.tssKeeper, privateDb, tssConfig,
+		app.appKeys, app.txSubmitter, app.globalData, dheartClient, deyesClient, worldState,
+		txTracker, mc)
+	app.apiHandler.SetAppLogicListener(tssProcessor)
+
+	valsMgr := tss.NewValidatorManager(app.tssKeeper)
 	sisuHandler := tss.NewSisuHandler(mc)
 	externalHandler := rest.NewExternalHandler(worldState)
 	app.externalHandler = externalHandler

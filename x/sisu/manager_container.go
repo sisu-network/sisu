@@ -1,6 +1,10 @@
 package sisu
 
 import (
+	"fmt"
+	"sync/atomic"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -22,6 +26,9 @@ type ManagerContainer interface {
 	WorldState() world.WorldState
 	TxTracker() TxTracker
 	Keeper() keeper.Keeper
+
+	SetReadOnlyContext(ctx sdk.Context)
+	GetReadOnlyContext() (sdk.Context, error)
 }
 
 type DefaultManagerContainer struct {
@@ -38,6 +45,8 @@ type DefaultManagerContainer struct {
 	worldState    world.WorldState
 	txTracker     TxTracker
 	keeper        keeper.Keeper
+
+	readOnlyContext atomic.Value
 }
 
 func NewManagerContainer(pmm PostedMessageManager, publicDb keeper.Storage, partyManager PartyManager,
@@ -111,4 +120,17 @@ func (mc *DefaultManagerContainer) TxTracker() TxTracker {
 
 func (mc *DefaultManagerContainer) Keeper() keeper.Keeper {
 	return mc.keeper
+}
+
+func (mc *DefaultManagerContainer) SetReadOnlyContext(ctx sdk.Context) {
+	mc.readOnlyContext.Store(ctx)
+}
+
+func (mc *DefaultManagerContainer) GetReadOnlyContext() (sdk.Context, error) {
+	val := mc.readOnlyContext.Load()
+	if val == nil {
+		return sdk.Context{}, fmt.Errorf("Read only context is not set")
+	}
+
+	return val.(sdk.Context), nil
 }

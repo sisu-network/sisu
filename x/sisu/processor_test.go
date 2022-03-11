@@ -61,7 +61,6 @@ func TestProcessor_OnTxIns(t *testing.T) {
 
 		// Init processor with mocks
 		processor := &Processor{
-			publicDb: mockPublicDb,
 			appKeys:  appKeysMock,
 			txSubmit: mockTxSubmit,
 		}

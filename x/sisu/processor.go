@@ -51,6 +51,7 @@ type Processor struct {
 	appKeys    common.AppKeys
 	globalData common.GlobalData
 	txTracker  TxTracker
+	mc         ManagerContainer
 
 	// Dheart & Deyes client
 	dheartClient tssclients.DheartClient
@@ -59,12 +60,11 @@ type Processor struct {
 	worldState       world.WorldState
 	keygenBlockPairs []BlockSymbolPair
 
-	publicDb  keeper.Storage
 	privateDb keeper.Storage
 }
 
-func NewProcessor(k keeper.Keeper,
-	publicDb keeper.Storage,
+func NewProcessor(
+	k keeper.Keeper,
 	privateDb keeper.Storage,
 	config config.TssConfig,
 	appKeys *common.DefaultAppKeys,
@@ -74,10 +74,10 @@ func NewProcessor(k keeper.Keeper,
 	deyesClient tssclients.DeyesClient,
 	worldState world.WorldState,
 	txTracker TxTracker,
+	mc ManagerContainer,
 ) *Processor {
 	p := &Processor{
 		keeper:     k,
-		publicDb:   publicDb,
 		privateDb:  privateDb,
 		appKeys:    appKeys,
 		config:     config,
@@ -89,6 +89,7 @@ func NewProcessor(k keeper.Keeper,
 		deyesClient:      deyesClient,
 		worldState:       worldState,
 		txTracker:        txTracker,
+		mc:               mc,
 	}
 
 	return p
@@ -306,6 +307,12 @@ func (p *Processor) OnKeysignResult(result *dhtypes.KeysignResult) {
 		return
 	}
 
+	ctx, err := p.mc.GetReadOnlyContext()
+	if err != nil {
+		log.Error("OnKeysignResult read context is not available, err = ", err)
+		return
+	}
+
 	// Post the keysign result to cosmos chain.
 	request := result.Request
 
@@ -322,7 +329,7 @@ func (p *Processor) OnKeysignResult(result *dhtypes.KeysignResult) {
 		// Sends it to deyes for deployment.
 		if result.Outcome == dhtypes.OutcomeSuccess {
 			// Find the tx in txout table
-			txOut := p.publicDb.GetTxOut(keysignMsg.OutChain, keysignMsg.OutHash)
+			txOut := p.keeper.GetTxOut(ctx, keysignMsg.OutChain, keysignMsg.OutHash)
 			if txOut == nil {
 				log.Error("Cannot find tx out with hash", keysignMsg.OutHash)
 			}
@@ -360,7 +367,7 @@ func (p *Processor) OnKeysignResult(result *dhtypes.KeysignResult) {
 			// If this is a contract deployment transaction, update the contract table with the hash of the
 			// deployment tx bytes.
 			isContractDeployment := chain.IsETHBasedChain(keysignMsg.OutChain) && txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT
-			err = p.deploySignedTx(bz, keysignMsg.OutChain, result.Request.KeysignMessages[i].OutHash, isContractDeployment)
+			err = p.deploySignedTx(ctx, bz, keysignMsg.OutChain, result.Request.KeysignMessages[i].OutHash, isContractDeployment)
 			if err != nil {
 				log.Error("deployment error: ", err)
 				return
@@ -381,10 +388,10 @@ func (p *Processor) OnKeysignResult(result *dhtypes.KeysignResult) {
 }
 
 // deploySignedTx creates a deployment request and sends it to deyes.
-func (p *Processor) deploySignedTx(bz []byte, outChain string, outHash string, isContractDeployment bool) error {
+func (p *Processor) deploySignedTx(ctx sdk.Context, bz []byte, outChain string, outHash string, isContractDeployment bool) error {
 	log.Debug("Sending final tx to the deyes for deployment for chain ", outChain)
 
-	pubkey := p.publicDb.GetKeygenPubkey(libchain.GetKeyTypeForChain(outChain))
+	pubkey := p.keeper.GetKeygenPubkey(ctx, libchain.GetKeyTypeForChain(outChain))
 	if pubkey == nil {
 		return fmt.Errorf("Cannot get pubkey for chain %s", outChain)
 	}
@@ -407,11 +414,16 @@ func (p *Processor) deploySignedTx(bz []byte, outChain string, outHash string, i
 func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 	log.Verbose("There is a new list of txs from deyes, len =", len(txs.Arr))
 
+	ctx, err := p.mc.GetReadOnlyContext()
+	if err != nil {
+		return err
+	}
+
 	// Create TxIn messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
 		// 1. Check if this tx is from one of our key. If it is, update the status of TxOut to confirmed.
-		if p.publicDb.IsKeygenAddress(libchain.KEY_TYPE_ECDSA, tx.From) {
-			return p.confirmTx(tx, txs.Chain, txs.Block)
+		if p.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, tx.From) {
+			return p.confirmTx(ctx, tx, txs.Chain, txs.Block)
 		} else if len(tx.To) > 0 {
 			// 2. This is a transaction to our key account or one of our contracts. Create a message to
 			// indicate that we have observed this transaction and broadcast it to cosmos chain.
@@ -433,7 +445,7 @@ func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 }
 
 // confirmTx confirms that a tx has been included in a block on the blockchain.
-func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64) error {
+func (p *Processor) confirmTx(ctx sdk.Context, tx *eyesTypes.Tx, chain string, blockHeight int64) error {
 	log.Verbose("This is a transaction from us. We need to confirm it. Chain = ", chain)
 
 	// The txOutSig is in private db while txOut should come from common db.
@@ -444,7 +456,7 @@ func (p *Processor) confirmTx(tx *eyesTypes.Tx, chain string, blockHeight int64)
 		return nil
 	}
 
-	txOut := p.publicDb.GetTxOut(chain, txOutSig.HashNoSig)
+	txOut := p.keeper.GetTxOut(ctx, chain, txOutSig.HashNoSig)
 	if txOut == nil {
 		log.Verbose("cannot find txOut with hash (with no sig): ", txOutSig.HashNoSig)
 		return nil
