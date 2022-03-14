@@ -12,6 +12,7 @@ import (
 	mockcommon "github.com/sisu-network/sisu/tests/mock/common"
 	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
 	mock "github.com/sisu-network/sisu/tests/mock/x/sisu"
+	mockkeeper "github.com/sisu-network/sisu/tests/mock/x/sisu/keeper"
 	mocktssclients "github.com/sisu-network/sisu/tests/mock/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -58,14 +59,14 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 		},
 	}
 
-	mockPublicDb := mocktss.NewMockStorage(ctrl)
-	mockPublicDb.EXPECT().SaveTxOut(gomock.Any()).Times(1)
-	mockPublicDb.EXPECT().ProcessTxRecord(gomock.Any()).Times(1)
+	mockKeeper := mockkeeper.NewMockKeeper(ctrl)
+	mockKeeper.EXPECT().SaveTxOut(gomock.Any(), gomock.Any()).Times(1)
+	mockKeeper.EXPECT().ProcessTxRecord(gomock.Any(), gomock.Any()).Times(1)
 
 	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
 	mockGlobalData.EXPECT().IsCatchingUp().Return(false).Times(1)
 
-	mc := sisu.MockManagerContainer(mockPmm, mockGlobalData, mockDheartClient, mockPartyManager, mockPublicDb, mockTracker)
+	mc := sisu.MockManagerContainer(mockPmm, mockGlobalData, mockDheartClient, mockPartyManager, mockKeeper, mockTracker)
 
 	handler := sisu.NewHandlerTxOut(mc)
 	_, err = handler.DeliverMsg(sdk.Context{}, txOutWithSigner)

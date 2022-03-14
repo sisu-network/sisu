@@ -12,8 +12,8 @@ import (
 	"github.com/golang/mock/gomock"
 	libchain "github.com/sisu-network/lib/chain"
 	mock "github.com/sisu-network/sisu/tests/mock/common"
-	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
 	mocksisu "github.com/sisu-network/sisu/tests/mock/x/sisu"
+	mockkeeper "github.com/sisu-network/sisu/tests/mock/x/sisu/keeper"
 
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/contracts/eth/erc20gateway"
@@ -36,18 +36,18 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 		ctrl.Finish()
 	})
 
-	mockPublicDb := mocktss.NewMockStorage(ctrl)
-	mockPublicDb.EXPECT().GetChain("eth").Return(&types.Chain{
+	mockKeeper := mockkeeper.NewMockKeeper(ctrl)
+	mockKeeper.EXPECT().GetChain(gomock.Any(), "eth").Return(&types.Chain{
 		Id:       "eth",
 		GasPrice: int64(400_000_000_000),
 	})
-	mockPublicDb.EXPECT().GetLiquidity("eth").Return(&types.Liquidity{
+	mockKeeper.EXPECT().GetLiquidity(gomock.Any(), "eth").Return(&types.Liquidity{
 		Id:      "eth",
 		Address: "0x1234",
 	})
 
 	txOutProducer := DefaultTxOutputProducer{
-		publicDb: mockPublicDb,
+		keeper: mockKeeper,
 		tssConfig: config.TssConfig{
 			DeyesUrl: "http://0.0.0.0:1234",
 			SupportedChains: map[string]config.TssChainConfig{
@@ -76,19 +76,19 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 			ctrl.Finish()
 		})
 
-		mockPublicDb := mocktss.NewMockStorage(ctrl)
-		mockPublicDb.EXPECT().IsKeygenAddress(libchain.KEY_TYPE_ECDSA, gomock.Any()).Return(true).Times(1)
-		mockPublicDb.EXPECT().GetPendingContracts("eth").Return([]*types.Contract{
+		mockKeeper := mockkeeper.NewMockKeeper(ctrl)
+		mockKeeper.EXPECT().IsKeygenAddress(gomock.Any(), libchain.KEY_TYPE_ECDSA, gomock.Any()).Return(true).Times(1)
+		mockKeeper.EXPECT().GetPendingContracts(gomock.Any(), "eth").Return([]*types.Contract{
 			{
 				Chain: "eth",
 				Hash:  SupportedContracts[ContractErc20Gateway].AbiHash,
 			},
 		}).Times(1)
-		mockPublicDb.EXPECT().GetChain("eth").Return(&types.Chain{
+		mockKeeper.EXPECT().GetChain(gomock.Any(), "eth").Return(&types.Chain{
 			Id:       "eth",
 			GasPrice: int64(400_000_000_000),
 		})
-		mockPublicDb.EXPECT().GetLiquidity("eth").Return(&types.Liquidity{
+		mockKeeper.EXPECT().GetLiquidity(gomock.Any(), "eth").Return(&types.Liquidity{
 			Id:      "eth",
 			Address: "0x1234",
 		})
@@ -118,8 +118,8 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 			Chain:       "eth",
 		}
 
-		txOutProducer := NewTxOutputProducer(mockWorldState, mockAppKeys, mockPublicDb,
-			nil,
+		txOutProducer := NewTxOutputProducer(mockWorldState, mockAppKeys, nil,
+			mockKeeper,
 			config.TssConfig{
 				DeyesUrl: "http://0.0.0.0:1234",
 				SupportedChains: map[string]config.TssChainConfig{
@@ -150,10 +150,10 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 		recipient := common.HexToAddress("0x2d532C099CA476780c7703610D807948ae47856A")
 		tokenAddr := common.HexToAddress("0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C")
 
-		mockPublicDb := mocktss.NewMockStorage(ctrl)
-		mockPublicDb.EXPECT().IsKeygenAddress(libchain.KEY_TYPE_ECDSA, gomock.Any()).Return(false).Times(1)
-		mockPublicDb.EXPECT().IsContractExistedAtAddress("eth", gomock.Any()).Return(true).Times(1)
-		mockPublicDb.EXPECT().GetLatestContractAddressByName(gomock.Any(), ContractErc20Gateway).Return("0x12345").Times(1)
+		mockKeeper := mockkeeper.NewMockKeeper(ctrl)
+		mockKeeper.EXPECT().IsKeygenAddress(gomock.Any(), libchain.KEY_TYPE_ECDSA, gomock.Any()).Return(false).Times(1)
+		mockKeeper.EXPECT().IsContractExistedAtAddress(gomock.Any(), "eth", gomock.Any()).Return(true).Times(1)
+		mockKeeper.EXPECT().GetLatestContractAddressByName(gomock.Any(), gomock.Any(), ContractErc20Gateway).Return("0x12345").Times(1)
 
 		mockWorldState := mocksisu.NewMockWorldState(ctrl)
 		mockWorldState.EXPECT().GetTokenFromAddress("eth", tokenAddr.String()).Return(&types.Token{
@@ -202,8 +202,8 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 					},
 				},
 			},
-			publicDb: mockPublicDb,
-			appKeys:  mockAppKeys,
+			keeper:  mockKeeper,
+			appKeys: mockAppKeys,
 		}
 
 		ctx := sdk.Context{}

@@ -9,7 +9,7 @@ import (
 	eyesTypes "github.com/sisu-network/deyes/types"
 	libchain "github.com/sisu-network/lib/chain"
 	mock "github.com/sisu-network/sisu/tests/mock/common"
-	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
+	mockkeeper "github.com/sisu-network/sisu/tests/mock/x/sisu/keeper"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/ed25519"
@@ -21,7 +21,11 @@ func TestProcessor_OnTxIns(t *testing.T) {
 	t.Run("empty_tx", func(t *testing.T) {
 		t.Parallel()
 
-		processor := &Processor{}
+		mc := MockManagerContainer(sdk.Context{})
+
+		processor := &Processor{
+			mc: mc,
+		}
 		require.NoError(t, processor.OnTxIns(&eyesTypes.Txs{}))
 	})
 
@@ -40,8 +44,8 @@ func TestProcessor_OnTxIns(t *testing.T) {
 		toAddress := utils.RandomHeximalString(64)
 		fromAddres := utils.RandomHeximalString(64)
 
-		mockPublicDb := mocktss.NewMockStorage(ctrl)
-		mockPublicDb.EXPECT().IsKeygenAddress(libchain.KEY_TYPE_ECDSA, fromAddres).Return(false).Times(1)
+		mockKeeper := mockkeeper.NewMockKeeper(ctrl)
+		mockKeeper.EXPECT().IsKeygenAddress(gomock.Any(), libchain.KEY_TYPE_ECDSA, fromAddres).Return(false).Times(1)
 
 		priv := ed25519.GenPrivKey()
 		addr := sdk.AccAddress(priv.PubKey().Address())
@@ -59,8 +63,12 @@ func TestProcessor_OnTxIns(t *testing.T) {
 			}},
 		}
 
+		mc := MockManagerContainer(mockKeeper, sdk.Context{})
+
 		// Init processor with mocks
 		processor := &Processor{
+			mc:       mc,
+			keeper:   mockKeeper,
 			appKeys:  appKeysMock,
 			txSubmit: mockTxSubmit,
 		}

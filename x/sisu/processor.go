@@ -423,6 +423,7 @@ func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 	for _, tx := range txs.Arr {
 		// 1. Check if this tx is from one of our key. If it is, update the status of TxOut to confirmed.
 		if p.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, tx.From) {
+			fmt.Println("AAAA")
 			return p.confirmTx(ctx, tx, txs.Chain, txs.Block)
 		} else if len(tx.To) > 0 {
 			// 2. This is a transaction to our key account or one of our contracts. Create a message to
