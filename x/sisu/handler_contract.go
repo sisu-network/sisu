@@ -1,8 +1,6 @@
 package sisu
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -44,21 +42,9 @@ func (h *HandlerContract) doContracts(ctx sdk.Context, wrappedMsg *types.Contrac
 	}
 
 	log.Info("Saving contracts, contracts length = ", len(wrappedMsg.Data.Contracts))
-	for _, contract := range wrappedMsg.Data.Contracts {
-		fmt.Println("AAA contract hash = ", contract.Hash)
-	}
 
 	// Save into KVStore & private db
 	h.keeper.SaveContracts(ctx, wrappedMsg.Data.Contracts, true)
-
-	for _, contract := range wrappedMsg.Data.Contracts {
-		c := h.keeper.GetContract(ctx, contract.Chain, contract.Hash, false)
-		if c != nil {
-			fmt.Println("Contract is found", contract.Chain, contract.Hash)
-		} else {
-			fmt.Println("Contract is NOT found")
-		}
-	}
 
 	return nil, nil
 }
