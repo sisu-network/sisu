@@ -14,7 +14,6 @@ import (
 
 type ManagerContainer interface {
 	PostedMessageManager() PostedMessageManager
-	PublicDb() keeper.Storage
 	PartyManager() PartyManager
 	DheartClient() tssclients.DheartClient
 	DeyesClient() tssclients.DeyesClient
@@ -33,7 +32,6 @@ type ManagerContainer interface {
 
 type DefaultManagerContainer struct {
 	pmm           PostedMessageManager
-	publicDb      keeper.Storage
 	partyManager  PartyManager
 	dheartClient  tssclients.DheartClient
 	deyesClient   tssclients.DeyesClient
@@ -49,13 +47,12 @@ type DefaultManagerContainer struct {
 	readOnlyContext atomic.Value
 }
 
-func NewManagerContainer(pmm PostedMessageManager, publicDb keeper.Storage, partyManager PartyManager,
+func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 	dheartClient tssclients.DheartClient, deyesClient tssclients.DeyesClient,
 	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.TssConfig,
 	appKeys common.AppKeys, txOutProducer TxOutputProducer, worldState world.WorldState, txTracker TxTracker, keeper keeper.Keeper) ManagerContainer {
 	return &DefaultManagerContainer{
 		pmm:           pmm,
-		publicDb:      publicDb,
 		partyManager:  partyManager,
 		dheartClient:  dheartClient,
 		deyesClient:   deyesClient,
@@ -72,10 +69,6 @@ func NewManagerContainer(pmm PostedMessageManager, publicDb keeper.Storage, part
 
 func (mc *DefaultManagerContainer) PostedMessageManager() PostedMessageManager {
 	return mc.pmm
-}
-
-func (mc *DefaultManagerContainer) PublicDb() keeper.Storage {
-	return mc.publicDb
 }
 
 func (mc *DefaultManagerContainer) PartyManager() PartyManager {

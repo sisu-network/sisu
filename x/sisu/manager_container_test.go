@@ -15,8 +15,6 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 		switch t := arg.(type) {
 		case PostedMessageManager:
 			mc.pmm = t
-		case keeper.Storage:
-			mc.publicDb = t
 		case common.GlobalData:
 			mc.globalData = t
 		case tssclients.DeyesClient:
