@@ -22,6 +22,16 @@ api-host = "{{ .Sisu.ApiHost }}"
 api-port = {{ .Sisu.ApiPort }}
 
 ###############################################################################
+###                     Siu Main LogDNA Connfiguration                      ###
+###############################################################################
+[log_dna]
+secret = "{{ .LogDNA.Secret }}"
+app_name = "{{ .LogDNA.AppName }}" 
+host_name = "{{ .LogDNA.HostName }}"
+flush_interval = "{{ .LogDNA.FlushInterval }}"
+max_buffer_len = {{ .LogDNA.MaxBufferLen }}
+
+###############################################################################
 ###                         Siu TSS Connfiguration                          ###
 ###############################################################################
 [tss]
