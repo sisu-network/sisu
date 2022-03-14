@@ -242,8 +242,8 @@ func (g *TestnetGenerator) getNodeSettings(chainID string, keyringBackend string
 		},
 		LogDNA: log.LogDNAConfig{
 			Secret:       dnaConfig.Secret,
-			AppName:      dnaConfig.AppName,
-			HostName:     dnaConfig.HostName,
+			AppName:      "sisu",
+			HostName:     testnetConfig.SisuIp,
 			MaxBufferLen: 30,
 		},
 	}
