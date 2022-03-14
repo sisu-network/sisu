@@ -32,8 +32,10 @@ func NewHandlerContractChangeOwnership(mc ManagerContainer) *HandlerContractChan
 
 func (h *HandlerContractChangeOwnership) DeliverMsg(ctx sdk.Context, msg *types.ChangeOwnershipContractMsg) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
-		newHandlerContractChangeOwnership(h.mc).doChangeOwner(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.NewOwner)
+		data, err := newHandlerContractChangeOwnership(h.mc).doChangeOwner(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.NewOwner)
 		h.keeper.ProcessTxRecord(ctx, hash)
+
+		return &sdk.Result{Data: data}, err
 	} else {
 		log.Verbose("HandlerContractChangeOwnership: didn't not reach consensus or transaction has been processed")
 	}

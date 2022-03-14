@@ -24,11 +24,13 @@ func NewHandlerTxOutContractConfirmation(mc ManagerContainer) *HandlerTxOutContr
 
 func (h *HandlerTxOutContractConfirmation) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutContractConfirmWithSigner) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
-		h.doTxOutContractConfirm(ctx, signerMsg)
+		data, err := h.doTxOutContractConfirm(ctx, signerMsg)
 		h.keeper.ProcessTxRecord(ctx, hash)
+
+		return &sdk.Result{Data: data}, err
 	}
 
-	return nil, nil
+	return &sdk.Result{}, nil
 }
 
 func (h *HandlerTxOutContractConfirmation) doTxOutContractConfirm(ctx sdk.Context, msgWithSigner *types.TxOutContractConfirmWithSigner) ([]byte, error) {

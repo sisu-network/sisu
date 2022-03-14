@@ -31,8 +31,10 @@ func NewHandlerPauseContract(mc ManagerContainer) *HandlerPauseContract {
 
 func (h *HandlerPauseContract) DeliverMsg(ctx sdk.Context, msg *types.PauseContractMsg) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
-		newHandlerPauseResumeContract(h.mc).doPauseOrResume(ctx, msg.Data.Chain, msg.Data.Hash, true)
+		data, err := newHandlerPauseResumeContract(h.mc).doPauseOrResume(ctx, msg.Data.Chain, msg.Data.Hash, true)
 		h.keeper.ProcessTxRecord(ctx, hash)
+
+		return &sdk.Result{Data: data}, err
 	} else {
 		log.Verbose("HandlerPause: transaction has been processed")
 	}

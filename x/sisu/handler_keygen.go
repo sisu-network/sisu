@@ -24,11 +24,13 @@ func (h *HandlerKeygen) DeliverMsg(ctx sdk.Context, signerMsg *types.KeygenWithS
 	log.Info("Delivering keygen, signer = ", signerMsg.Signer)
 	pmm := h.mc.PostedMessageManager()
 	if process, hash := pmm.ShouldProcessMsg(ctx, signerMsg); process {
-		h.doKeygen(ctx, signerMsg)
+		data, err := h.doKeygen(ctx, signerMsg)
 		h.keeper.ProcessTxRecord(ctx, hash)
+
+		return &sdk.Result{Data: data}, err
 	}
 
-	return nil, nil
+	return &sdk.Result{}, nil
 }
 
 func (h *HandlerKeygen) doKeygen(ctx sdk.Context, signerMsg *types.KeygenWithSigner) ([]byte, error) {

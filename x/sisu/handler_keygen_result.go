@@ -36,12 +36,13 @@ func NewHandlerKeygenResult(mc ManagerContainer) *HandlerKeygenResult {
 
 func (h *HandlerKeygenResult) DeliverMsg(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
-		h.doKeygenResult(ctx, signerMsg)
+		data, err := h.doKeygenResult(ctx, signerMsg)
 		h.keeper.ProcessTxRecord(ctx, hash)
+
+		return &sdk.Result{Data: data}, err
 	}
 
-	return nil, nil
-
+	return &sdk.Result{}, nil
 }
 
 func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) ([]byte, error) {

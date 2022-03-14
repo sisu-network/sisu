@@ -32,7 +32,7 @@ func (h *HandlerGasPrice) DeliverMsg(ctx sdk.Context, msg *types.GasPriceMsg) (*
 		for _, m := range currentPriceRecord.Messages {
 			if strings.EqualFold(strings.ToLower(m.Signer), strings.ToLower(msg.Signer)) {
 				log.Info("This message has been processed")
-				return nil, nil
+				return &sdk.Result{}, nil
 			}
 		}
 	}
@@ -41,7 +41,7 @@ func (h *HandlerGasPrice) DeliverMsg(ctx sdk.Context, msg *types.GasPriceMsg) (*
 	savedRecord := h.keeper.GetGasPriceRecord(ctx, msg.Chain, msg.BlockHeight)
 	totalValidator := len(h.globalData.GetValidatorSet())
 	if savedRecord == nil || !savedRecord.ReachConsensus(totalValidator) {
-		return nil, nil
+		return &sdk.Result{}, nil
 	}
 
 	// Only save network gas price if reached consensus
@@ -67,5 +67,5 @@ func (h *HandlerGasPrice) DeliverMsg(ctx sdk.Context, msg *types.GasPriceMsg) (*
 	// Save to the world state
 	h.worldState.SetChain(chain)
 
-	return nil, nil
+	return &sdk.Result{}, nil
 }

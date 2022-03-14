@@ -32,8 +32,10 @@ func NewHandlerContractSetLiquidityAddress(mc ManagerContainer) *HandlerContract
 
 func (h *HandlerContractSetLiquidityAddress) DeliverMsg(ctx sdk.Context, msg *types.ChangeLiquidPoolAddressMsg) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
-		newHandlerContractSetLiquidityAddress(h.mc).doSetLiquidityAddress(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.NewLiquidAddress)
+		data, err := newHandlerContractSetLiquidityAddress(h.mc).doSetLiquidityAddress(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.NewLiquidAddress)
 		h.keeper.ProcessTxRecord(ctx, hash)
+
+		return &sdk.Result{Data: data}, err
 	} else {
 		log.Verbose("HandlerContractChangeOwnership: didn't not reach consensus or transaction has been processed")
 	}

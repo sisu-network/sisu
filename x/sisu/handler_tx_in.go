@@ -30,11 +30,13 @@ func NewHandlerTxIn(mc ManagerContainer) *HandlerTxIn {
 
 func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, signerMsg *types.TxInWithSigner) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
-		h.doTxIn(ctx, signerMsg)
+		data, err := h.doTxIn(ctx, signerMsg)
 		h.keeper.ProcessTxRecord(ctx, hash)
+
+		return &sdk.Result{Data: data}, err
 	}
 
-	return nil, nil
+	return &sdk.Result{}, nil
 }
 
 // Delivers observed Txs.

@@ -23,11 +23,13 @@ func NewHandlerContract(mc ManagerContainer) *HandlerContract {
 
 func (h *HandlerContract) DeliverMsg(ctx sdk.Context, signerMsg *types.ContractsWithSigner) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
-		h.doContracts(ctx, signerMsg)
+		data, err := h.doContracts(ctx, signerMsg)
 		h.keeper.ProcessTxRecord(ctx, hash)
+
+		return &sdk.Result{Data: data}, err
 	}
 
-	return nil, nil
+	return &sdk.Result{}, nil
 }
 
 func (h *HandlerContract) doContracts(ctx sdk.Context, wrappedMsg *types.ContractsWithSigner) ([]byte, error) {

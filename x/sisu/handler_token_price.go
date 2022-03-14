@@ -19,5 +19,5 @@ func NewHandlerTokenPrice(mc ManagerContainer) *HandlerTokenPrice {
 func (h *HandlerTokenPrice) DeliverMsg(ctx sdk.Context, msg *types.UpdateTokenPrice) (*sdk.Result, error) {
 	h.keeper.SetTokenPrices(ctx, uint64(ctx.BlockHeight()), msg)
 
-	return nil, nil
+	return &sdk.Result{}, nil
 }

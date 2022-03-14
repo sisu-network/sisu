@@ -37,11 +37,13 @@ func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
 
 func (h *HandlerTxOut) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutWithSigner) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
-		h.doTxOut(ctx, signerMsg)
+		data, err := h.doTxOut(ctx, signerMsg)
 		h.keeper.ProcessTxRecord(ctx, hash)
+
+		return &sdk.Result{Data: data}, err
 	}
 
-	return nil, nil
+	return &sdk.Result{}, nil
 }
 
 // deliverTxOut executes a TxOut transaction after it's included in Sisu block. If this node is
