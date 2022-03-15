@@ -149,7 +149,7 @@ Example:
 					panic(err)
 				}
 
-				nodeConfig := generator.getNodeSettings(chainId, keyringBackend, nodes[i], testnetConfig.Chains, dnaConfig)
+				nodeConfig := generator.getNodeSettings(i, chainId, keyringBackend, nodes[i], testnetConfig.Chains, dnaConfig)
 				nodeConfigs[i] = nodeConfig
 			}
 
@@ -218,7 +218,7 @@ Example:
 	return cmd
 }
 
-func (g *TestnetGenerator) getNodeSettings(chainID string, keyringBackend string, testnetConfig TestnetNode, chainConfigs []ChainConfig, dnaConfig LogDNAConfig) config.Config {
+func (g *TestnetGenerator) getNodeSettings(nodeIndex int, chainID string, keyringBackend string, testnetConfig TestnetNode, chainConfigs []ChainConfig, dnaConfig LogDNAConfig) config.Config {
 	supportedChains := make(map[string]config.TssChainConfig)
 	for _, chainConfig := range chainConfigs {
 		supportedChains[chainConfig.Id] = config.TssChainConfig{
@@ -242,8 +242,8 @@ func (g *TestnetGenerator) getNodeSettings(chainID string, keyringBackend string
 		},
 		LogDNA: log.LogDNAConfig{
 			Secret:       dnaConfig.Secret,
-			AppName:      dnaConfig.AppName,
-			HostName:     dnaConfig.HostName,
+			AppName:      fmt.Sprintf("sisu%d", nodeIndex),
+			HostName:     testnetConfig.SisuIp,
 			MaxBufferLen: 30,
 		},
 	}
