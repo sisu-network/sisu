@@ -1,6 +1,10 @@
 package sisu
 
 import (
+	"fmt"
+	"sync/atomic"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -10,7 +14,6 @@ import (
 
 type ManagerContainer interface {
 	PostedMessageManager() PostedMessageManager
-	PublicDb() keeper.Storage
 	PartyManager() PartyManager
 	DheartClient() tssclients.DheartClient
 	DeyesClient() tssclients.DeyesClient
@@ -21,49 +24,51 @@ type ManagerContainer interface {
 	TxOutProducer() TxOutputProducer
 	WorldState() world.WorldState
 	TxTracker() TxTracker
+	Keeper() keeper.Keeper
+
+	SetReadOnlyContext(ctx sdk.Context)
+	GetReadOnlyContext() (sdk.Context, error)
 }
 
 type DefaultManagerContainer struct {
-	pmm               PostedMessageManager
-	publicDb          keeper.Storage
-	partyManager      PartyManager
-	dheartClient      tssclients.DheartClient
-	deyesClient       tssclients.DeyesClient
-	globalData        common.GlobalData
-	txSubmit          common.TxSubmit
-	config            config.TssConfig
-	appKeys           common.AppKeys
-	txOutProducer     TxOutputProducer
-	worldState        world.WorldState
-	txTracker         TxTracker
+	pmm           PostedMessageManager
+	partyManager  PartyManager
+	dheartClient  tssclients.DheartClient
+	deyesClient   tssclients.DeyesClient
+	globalData    common.GlobalData
+	txSubmit      common.TxSubmit
+	config        config.TssConfig
+	appKeys       common.AppKeys
+	txOutProducer TxOutputProducer
+	worldState    world.WorldState
+	txTracker     TxTracker
+	keeper        keeper.Keeper
+
+	readOnlyContext atomic.Value
 }
 
-func NewManagerContainer(pmm PostedMessageManager, publicDb keeper.Storage, partyManager PartyManager,
+func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 	dheartClient tssclients.DheartClient, deyesClient tssclients.DeyesClient,
 	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.TssConfig,
-	appKeys common.AppKeys, txOutProducer TxOutputProducer, worldState world.WorldState, txTracker TxTracker) ManagerContainer {
+	appKeys common.AppKeys, txOutProducer TxOutputProducer, worldState world.WorldState, txTracker TxTracker, keeper keeper.Keeper) ManagerContainer {
 	return &DefaultManagerContainer{
-		pmm:               pmm,
-		publicDb:          publicDb,
-		partyManager:      partyManager,
-		dheartClient:      dheartClient,
-		deyesClient:       deyesClient,
-		globalData:        globalData,
-		txSubmit:          txSubmit,
-		config:            cfg,
-		appKeys:           appKeys,
-		txOutProducer:     txOutProducer,
-		worldState:        worldState,
-		txTracker:         txTracker,
+		pmm:           pmm,
+		partyManager:  partyManager,
+		dheartClient:  dheartClient,
+		deyesClient:   deyesClient,
+		globalData:    globalData,
+		txSubmit:      txSubmit,
+		config:        cfg,
+		appKeys:       appKeys,
+		txOutProducer: txOutProducer,
+		worldState:    worldState,
+		txTracker:     txTracker,
+		keeper:        keeper,
 	}
 }
 
 func (mc *DefaultManagerContainer) PostedMessageManager() PostedMessageManager {
 	return mc.pmm
-}
-
-func (mc *DefaultManagerContainer) PublicDb() keeper.Storage {
-	return mc.publicDb
 }
 
 func (mc *DefaultManagerContainer) PartyManager() PartyManager {
@@ -104,4 +109,21 @@ func (mc *DefaultManagerContainer) WorldState() world.WorldState {
 
 func (mc *DefaultManagerContainer) TxTracker() TxTracker {
 	return mc.txTracker
+}
+
+func (mc *DefaultManagerContainer) Keeper() keeper.Keeper {
+	return mc.keeper
+}
+
+func (mc *DefaultManagerContainer) SetReadOnlyContext(ctx sdk.Context) {
+	mc.readOnlyContext.Store(ctx)
+}
+
+func (mc *DefaultManagerContainer) GetReadOnlyContext() (sdk.Context, error) {
+	val := mc.readOnlyContext.Load()
+	if val == nil {
+		return sdk.Context{}, fmt.Errorf("Read only context is not set")
+	}
+
+	return val.(sdk.Context), nil
 }

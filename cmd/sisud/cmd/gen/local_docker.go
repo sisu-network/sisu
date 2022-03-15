@@ -104,7 +104,7 @@ Example:
 			}
 
 			mysqlIp := "192.168.10.4"
-			chainIds := []*big.Int{libchain.GetChainIntFromId("eth-sisu-local"), libchain.GetChainIntFromId("ganache1")}
+			chainIds := []*big.Int{libchain.GetChainIntFromId("ganache1"), libchain.GetChainIntFromId("ganache2")}
 			dockerConfig := g.getDockerConfig([]string{"192.168.10.2", "192.168.10.3"}, chainIds, "192.168.10.4", ips)
 
 			nodeConfigs := make([]config.Config, numValidators)

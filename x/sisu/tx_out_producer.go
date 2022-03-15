@@ -39,16 +39,17 @@ type DefaultTxOutputProducer struct {
 
 	worldState world.WorldState
 	appKeys    common.AppKeys
-	publicDb   keeper.Storage
+	keeper     keeper.Keeper
 	tssConfig  config.TssConfig
 }
 
-func NewTxOutputProducer(worldState world.WorldState, appKeys common.AppKeys, publicDb keeper.Storage, tssConfig config.TssConfig) TxOutputProducer {
+func NewTxOutputProducer(worldState world.WorldState, appKeys common.AppKeys,
+	keeper keeper.Keeper, tssConfig config.TssConfig) TxOutputProducer {
 	return &DefaultTxOutputProducer{
+		keeper:     keeper,
 		worldState: worldState,
 		appKeys:    appKeys,
 		tssConfig:  tssConfig,
-		publicDb:   publicDb,
 	}
 }
 
@@ -84,8 +85,8 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 	// 1. Check if this is a transaction sent to our key address. If this is true, it's likely a tx
 	// that funds our account.
-	if ethTx.To() != nil && p.publicDb.IsKeygenAddress(libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
-		contracts := p.publicDb.GetPendingContracts(tx.Chain)
+	if ethTx.To() != nil && p.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
+		contracts := p.keeper.GetPendingContracts(ctx, tx.Chain)
 		log.Verbose("len(contracts) = ", len(contracts))
 
 		if len(contracts) > 0 {
@@ -127,10 +128,10 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 	// 2. Check if this is a tx sent to one of our contracts.
 	if ethTx.To() != nil &&
-		p.publicDb.IsContractExistedAtAddress(tx.Chain, ethTx.To().String()) && len(ethTx.Data()) >= 4 {
+		p.keeper.IsContractExistedAtAddress(ctx, tx.Chain, ethTx.To().String()) && len(ethTx.Data()) >= 4 {
 
 		// TODO: compare method name to trigger corresponding contract method
-		responseTx, err := p.processERC20TransferOut(ethTx)
+		responseTx, err := p.processERC20TransferOut(ctx, ethTx)
 		if err != nil {
 			log.Error("cannot get response for erc20 tx, err = ", err)
 			return nil, err
@@ -161,14 +162,14 @@ func (p *DefaultTxOutputProducer) getEthContractDeploymentTx(ctx sdk.Context, he
 	txs := make([]*ethTypes.Transaction, 0)
 
 	for _, contract := range contracts {
-		nonce := p.worldState.UseAndIncreaseNonce(chain)
+		nonce := p.worldState.UseAndIncreaseNonce(ctx, chain)
 		log.Verbose("nonce for deploying contract:", nonce)
 		if nonce < 0 {
 			log.Error("cannot get nonce for contract")
 			continue
 		}
 
-		rawTx := p.getContractTx(contract, nonce)
+		rawTx := p.getContractTx(ctx, contract, nonce)
 		if rawTx == nil {
 			log.Warn("raw Tx is nil")
 			continue
@@ -180,7 +181,7 @@ func (p *DefaultTxOutputProducer) getEthContractDeploymentTx(ctx sdk.Context, he
 	return txs
 }
 
-func (p *DefaultTxOutputProducer) getContractTx(contract *types.Contract, nonce int64) *ethTypes.Transaction {
+func (p *DefaultTxOutputProducer) getContractTx(ctx sdk.Context, contract *types.Contract, nonce int64) *ethTypes.Transaction {
 	erc20 := SupportedContracts[ContractErc20Gateway]
 	switch contract.Hash {
 	case erc20.AbiHash:
@@ -201,7 +202,7 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *types.Contract, nonce 
 
 		log.Info("Allowed chains for chain ", contract.Chain, " are: ", supportedChains)
 
-		lp := p.publicDb.GetLiquidity(contract.Chain)
+		lp := p.keeper.GetLiquidity(ctx, contract.Chain)
 		if lp == nil {
 			return nil
 		}
@@ -215,7 +216,7 @@ func (p *DefaultTxOutputProducer) getContractTx(contract *types.Contract, nonce 
 
 		byteCode := ecommon.FromHex(erc20.Bin)
 		input = append(byteCode, input...)
-		chain := p.publicDb.GetChain(contract.Chain)
+		chain := p.keeper.GetChain(ctx, contract.Chain)
 		if chain == nil {
 			log.Error("getContractTx: chain is nil with id ", contract.Chain)
 			return nil

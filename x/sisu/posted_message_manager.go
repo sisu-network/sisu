@@ -12,12 +12,12 @@ type PostedMessageManager interface {
 }
 
 type DefaultPostedMessageManager struct {
-	publicDb  keeper.Storage
+	keeper keeper.Keeper
 }
 
-func NewPostedMessageManager(publicDb keeper.Storage) *DefaultPostedMessageManager {
+func NewPostedMessageManager(keeper keeper.Keeper) *DefaultPostedMessageManager {
 	return &DefaultPostedMessageManager{
-		publicDb:  publicDb,
+		keeper: keeper,
 	}
 }
 
@@ -28,13 +28,13 @@ func (m *DefaultPostedMessageManager) ShouldProcessMsg(ctx sdk.Context, msg sdk.
 		return false, hash
 	}
 
-	count := m.publicDb.SaveTxRecord(hash, signer)
-	tssParams := m.publicDb.GetParams()
+	count := m.keeper.SaveTxRecord(ctx, hash, signer)
+	tssParams := m.keeper.GetParams(ctx)
 	if tssParams == nil {
 		return false, nil
 	}
 
-	if count >= int(tssParams.MajorityThreshold) && !m.publicDb.IsTxRecordProcessed(hash) {
+	if count >= int(tssParams.MajorityThreshold) && !m.keeper.IsTxRecordProcessed(ctx, hash) {
 		return true, hash
 	}
 

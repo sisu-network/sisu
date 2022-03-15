@@ -108,20 +108,21 @@ type AppModule struct {
 
 	sisuHandler     *SisuHandler
 	externalHandler *rest.ExternalHandler
-	keeper          keeper.DefaultKeeper
+	keeper          keeper.Keeper
 	processor       *Processor
 	appKeys         common.AppKeys
 	txSubmit        common.TxSubmit
 	globalData      common.GlobalData
-	publicDb        keeper.Storage
 	valsManager     ValidatorManager
 	worldState      world.WorldState
 	txTracker       TxTracker
+	mc              ManagerContainer
+	bootstrapped    bool
 }
 
 func NewAppModule(cdc codec.Marshaler,
 	sisuHandler *SisuHandler,
-	keeper keeper.DefaultKeeper,
+	keeper keeper.Keeper,
 	processor *Processor,
 	valsManager ValidatorManager,
 	mc ManagerContainer,
@@ -132,12 +133,12 @@ func NewAppModule(cdc codec.Marshaler,
 		txSubmit:       mc.TxSubmit(),
 		processor:      processor,
 		keeper:         keeper,
-		publicDb:       mc.PublicDb(),
 		appKeys:        mc.AppKeys(),
 		globalData:     mc.GlobalData(),
 		valsManager:    valsManager,
 		worldState:     mc.WorldState(),
 		txTracker:      mc.TxTracker(),
+		mc:             mc,
 	}
 }
 
@@ -162,7 +163,7 @@ func (am AppModule) LegacyQuerierHandler(legacyQuerierCdc *codec.LegacyAmino) sd
 // RegisterServices registers a GRPC query service to respond to the
 // module-specific GRPC queries.
 func (am AppModule) RegisterServices(cfg module.Configurator) {
-	types.RegisterTssQueryServer(cfg.QueryServer(), keeper.NewGrpcQuerier(am.publicDb))
+	types.RegisterTssQueryServer(cfg.QueryServer(), keeper.NewGrpcQuerier(am.keeper))
 }
 
 // RegisterInvariants registers the capability module's invariants.
@@ -174,7 +175,6 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	// Initialize global index to index in genesis state
 	cdc.MustUnmarshalJSON(gs, &genState)
 
-	publicDb := am.publicDb
 	valsMgr := am.valsManager
 
 	// Saves initial token configs from genesis file.
@@ -184,13 +184,13 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 		m[token.Id] = token
 		tokenIds = append(tokenIds, token.Id)
 	}
-	publicDb.SetTokens(m)
+	am.keeper.SetTokens(ctx, m)
 	log.Info("Tokens in the genesis file: ", strings.Join(tokenIds, ", "))
 
 	// Save initial chain data
 	chains := make([]string, 0)
 	for _, chain := range genState.Chains {
-		publicDb.SaveChain(chain)
+		am.keeper.SaveChain(ctx, chain)
 		chains = append(chains, chain.Id)
 	}
 	log.Info("Chains in the genesis file: ", strings.Join(chains, ", "))
@@ -200,8 +200,8 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	for _, liq := range genState.Liquids {
 		liquids[liq.Id] = liq
 	}
-	publicDb.SetLiquidities(liquids)
-	savedLiqs := publicDb.GetAllLiquidities()
+	am.keeper.SetLiquidities(ctx, liquids)
+	savedLiqs := am.keeper.GetAllLiquidities(ctx)
 	liqIds := make([]string, 0, len(savedLiqs))
 	for _, liq := range savedLiqs {
 		liqIds = append(liqIds, liq.Id)
@@ -209,8 +209,8 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	log.Info("Liquidities in the genesis file: ", strings.Join(liqIds, ", "))
 	// Save params
 	params := genState.Params
-	publicDb.SaveParams(params)
-	savedParams := publicDb.GetParams()
+	am.keeper.SaveParams(ctx, params)
+	savedParams := am.keeper.GetParams(ctx)
 	log.Info("Tss params: ", savedParams)
 
 	// Create validator nodes
@@ -226,11 +226,11 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 		}
 
 		validators[i] = abci.Ed25519ValidatorUpdate(pk.Bytes(), 100)
-		valsMgr.AddValidator(node)
+		valsMgr.AddValidator(ctx, node)
 	}
 
 	// Reload data after reading the genesis
-	am.worldState.LoadData()
+	am.worldState.LoadData(ctx)
 
 	return validators
 }
@@ -243,6 +243,10 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json
 
 // BeginBlock executes all ABCI BeginBlock logic respective to the capability module.
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
+	if !am.bootstrapped {
+		am.worldState.LoadData(ctx)
+		am.bootstrapped = true
+	}
 	am.processor.BeginBlock(ctx, req.Header.Height)
 }
 
@@ -252,6 +256,9 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	am.processor.EndBlock(ctx)
 
 	am.txTracker.CheckExpiredTransaction()
+
+	// Set read only context
+	am.mc.SetReadOnlyContext(ctx)
 
 	return []abci.ValidatorUpdate{}
 }

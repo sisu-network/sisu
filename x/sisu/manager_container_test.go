@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -14,8 +15,6 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 		switch t := arg.(type) {
 		case PostedMessageManager:
 			mc.pmm = t
-		case keeper.Storage:
-			mc.publicDb = t
 		case common.GlobalData:
 			mc.globalData = t
 		case tssclients.DeyesClient:
@@ -32,6 +31,10 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.partyManager = t
 		case TxTracker:
 			mc.txTracker = t
+		case keeper.Keeper:
+			mc.keeper = t
+		case sdk.Context:
+			mc.readOnlyContext.Store(t)
 		}
 	}
 

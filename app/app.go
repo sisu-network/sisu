@@ -158,7 +158,7 @@ type App struct {
 	ScopedIBCKeeper      capabilitykeeper.ScopedKeeper
 	ScopedTransferKeeper capabilitykeeper.ScopedKeeper
 
-	tssKeeper tssKeeper.DefaultKeeper
+	tssKeeper tssKeeper.Keeper
 
 	// the module manager
 	mm *module.Manager
@@ -225,7 +225,7 @@ func New(
 	tssConfig := cfg.Tss
 	log.Info("tssConfig = ", tssConfig)
 
-	app.tssKeeper = *tssKeeper.NewKeeper(keys[sisutypes.StoreKey])
+	app.tssKeeper = tssKeeper.NewKeeper(keys[sisutypes.StoreKey])
 
 	//////////////////////////////////////////////////////////////////////
 
@@ -254,26 +254,21 @@ func New(
 	dheartClient, deyesClient := bootstrapper.BootstrapInternalNetwork(tssConfig, app.apiHandler, encryptedKey, nodeKey.PrivKey.Type())
 
 	// storage that contains common data for all the nodes
-	publicDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "data"))
-	privateDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "private"))
+	privateDb := keeper.NewStorageDb(filepath.Join(cfg.Sisu.Dir, "private"))
 
-	worldState := world.NewWorldState(tssConfig, publicDb, deyesClient)
-	worldState.LoadData()
+	worldState := world.NewWorldState(tssConfig, app.tssKeeper, deyesClient)
 	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert, worldState)
 
-	tssProcessor := tss.NewProcessor(app.tssKeeper, publicDb, privateDb, tssConfig, nodeKey.PrivKey,
-		app.appKeys, app.txDecoder, app.txSubmitter, app.globalData, dheartClient, deyesClient, worldState,
-		txTracker)
-	tssProcessor.Init()
+	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.tssKeeper),
+		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
+		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, app.tssKeeper, cfg.Tss), worldState, txTracker, app.tssKeeper)
+
+	tssProcessor := tss.NewProcessor(app.tssKeeper, privateDb, tssConfig,
+		app.appKeys, app.txSubmitter, app.globalData, dheartClient, deyesClient, worldState,
+		txTracker, mc)
 	app.apiHandler.SetAppLogicListener(tssProcessor)
 
-	valsMgr := tss.NewValidatorManager(publicDb)
-	valsMgr.Init()
-
-	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(publicDb),
-		publicDb,
-		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
-		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, publicDb, cfg.Tss), worldState, txTracker)
+	valsMgr := tss.NewValidatorManager(app.tssKeeper)
 	sisuHandler := tss.NewSisuHandler(mc)
 	externalHandler := rest.NewExternalHandler(worldState)
 	app.externalHandler = externalHandler

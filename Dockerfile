@@ -30,8 +30,6 @@ COPY ./misc /app/misc
 COPY --from=builder /tmp/go-app/out/sisu /app/sisu
 
 RUN mkdir -p ~/.sisu
-RUN ./sisu localnet
-RUN mv ./output/node0/main ~/.sisu/main
 
 # Copy config into the container.
 COPY docker-config/local-tss.toml /root/.sisu/tss/tss.toml

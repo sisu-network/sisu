@@ -14,5 +14,5 @@ func NewHandlerKeysignResult(mc ManagerContainer) *HandlerKeysignResult {
 
 func (h *HandlerKeysignResult) DeliverMsg(ctx sdk.Context, signerMsg *types.KeysignResult) (*sdk.Result, error) {
 	// TODO: Implement this.
-	return nil, nil
+	return &sdk.Result{}, nil
 }

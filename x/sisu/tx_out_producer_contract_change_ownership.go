@@ -14,14 +14,14 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-func (p *DefaultTxOutputProducer) ContractChangeOwnership(_ sdk.Context, chain, contractHash, newOwner string) (*types.TxOutWithSigner, error) {
+func (p *DefaultTxOutputProducer) ContractChangeOwnership(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutWithSigner, error) {
 	if !libchain.IsETHBasedChain(chain) {
 		return nil, fmt.Errorf("unsupported chain %s", chain)
 	}
 
 	// TODO: Support more than gateway contract
 	targetContractName := ContractErc20Gateway
-	gw := p.publicDb.GetLatestContractAddressByName(chain, targetContractName)
+	gw := p.keeper.GetLatestContractAddressByName(ctx, chain, targetContractName)
 	if len(gw) == 0 {
 		err := fmt.Errorf("ContractChangeOwnership: cannot find gw address for type: %s", targetContractName)
 		log.Error(err)
@@ -31,7 +31,7 @@ func (p *DefaultTxOutputProducer) ContractChangeOwnership(_ sdk.Context, chain, 
 	gatewayAddress := ethcommon.HexToAddress(gw)
 	erc20gatewayContract := SupportedContracts[targetContractName]
 
-	nonce := p.worldState.UseAndIncreaseNonce(chain)
+	nonce := p.worldState.UseAndIncreaseNonce(ctx, chain)
 	if nonce < 0 {
 		err := errors.New("PauseEthContract: cannot find nonce for chain " + chain)
 		log.Error(err)

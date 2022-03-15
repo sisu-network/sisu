@@ -36,7 +36,7 @@ func (p *DefaultTxOutputProducer) PauseOrResumeEthContract(ctx sdk.Context, chai
 
 	// TODO: Support more than gateway contract
 	targetContractName := ContractErc20Gateway
-	gw := p.publicDb.GetLatestContractAddressByName(chain, targetContractName)
+	gw := p.keeper.GetLatestContractAddressByName(ctx, chain, targetContractName)
 	if len(gw) == 0 {
 		err := fmt.Errorf("PauseEthContract: cannot find gw address for type: %s", targetContractName)
 		log.Error(err)
@@ -46,7 +46,7 @@ func (p *DefaultTxOutputProducer) PauseOrResumeEthContract(ctx sdk.Context, chai
 	gatewayAddress := ethcommon.HexToAddress(gw)
 	erc20gatewayContract := SupportedContracts[targetContractName]
 
-	nonce := p.worldState.UseAndIncreaseNonce(chain)
+	nonce := p.worldState.UseAndIncreaseNonce(ctx, chain)
 	if nonce < 0 {
 		err := errors.New("PauseEthContract: cannot find nonce for chain " + chain)
 		log.Error(err)

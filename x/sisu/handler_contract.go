@@ -8,24 +8,26 @@ import (
 )
 
 type HandlerContract struct {
-	pmm      PostedMessageManager
-	publicDb keeper.Storage
+	pmm    PostedMessageManager
+	keeper keeper.Keeper
 }
 
 func NewHandlerContract(mc ManagerContainer) *HandlerContract {
 	return &HandlerContract{
-		publicDb: mc.PublicDb(),
-		pmm:      mc.PostedMessageManager(),
+		keeper: mc.Keeper(),
+		pmm:    mc.PostedMessageManager(),
 	}
 }
 
 func (h *HandlerContract) DeliverMsg(ctx sdk.Context, signerMsg *types.ContractsWithSigner) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
-		h.doContracts(ctx, signerMsg)
-		h.publicDb.ProcessTxRecord(hash)
+		data, err := h.doContracts(ctx, signerMsg)
+		h.keeper.ProcessTxRecord(ctx, hash)
+
+		return &sdk.Result{Data: data}, err
 	}
 
-	return nil, nil
+	return &sdk.Result{}, nil
 }
 
 func (h *HandlerContract) doContracts(ctx sdk.Context, wrappedMsg *types.ContractsWithSigner) ([]byte, error) {
@@ -33,7 +35,7 @@ func (h *HandlerContract) doContracts(ctx sdk.Context, wrappedMsg *types.Contrac
 	log.Info("Deliver pending contracts")
 
 	for _, contract := range wrappedMsg.Data.Contracts {
-		if h.publicDb.IsContractExisted(contract) {
+		if h.keeper.IsContractExisted(ctx, contract) {
 			log.Infof("Contract %s has been processed", contract.Name)
 			return nil, nil
 		}
@@ -42,7 +44,7 @@ func (h *HandlerContract) doContracts(ctx sdk.Context, wrappedMsg *types.Contrac
 	log.Info("Saving contracts, contracts length = ", len(wrappedMsg.Data.Contracts))
 
 	// Save into KVStore & private db
-	h.publicDb.SaveContracts(wrappedMsg.Data.Contracts, true)
+	h.keeper.SaveContracts(ctx, wrappedMsg.Data.Contracts, true)
 
 	return nil, nil
 }

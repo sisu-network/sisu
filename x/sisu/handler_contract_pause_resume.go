@@ -16,23 +16,25 @@ import (
 )
 
 type HandlerPauseContract struct {
-	pmm      PostedMessageManager
-	publicDb keeper.Storage
-	mc       ManagerContainer
+	pmm    PostedMessageManager
+	keeper keeper.Keeper
+	mc     ManagerContainer
 }
 
 func NewHandlerPauseContract(mc ManagerContainer) *HandlerPauseContract {
 	return &HandlerPauseContract{
-		publicDb: mc.PublicDb(),
-		pmm:      mc.PostedMessageManager(),
-		mc:       mc,
+		keeper: mc.Keeper(),
+		pmm:    mc.PostedMessageManager(),
+		mc:     mc,
 	}
 }
 
 func (h *HandlerPauseContract) DeliverMsg(ctx sdk.Context, msg *types.PauseContractMsg) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
-		newHandlerPauseResumeContract(h.mc).doPauseOrResume(ctx, msg.Data.Chain, msg.Data.Hash, true)
-		h.publicDb.ProcessTxRecord(hash)
+		data, err := newHandlerPauseResumeContract(h.mc).doPauseOrResume(ctx, msg.Data.Chain, msg.Data.Hash, true)
+		h.keeper.ProcessTxRecord(ctx, hash)
+
+		return &sdk.Result{Data: data}, err
 	} else {
 		log.Verbose("HandlerPause: transaction has been processed")
 	}
@@ -45,23 +47,23 @@ func (h *HandlerPauseContract) DeliverMsg(ctx sdk.Context, msg *types.PauseContr
 ////////////////////////////////
 
 type HandlerResumeContract struct {
-	pmm      PostedMessageManager
-	publicDb keeper.Storage
-	mc       ManagerContainer
+	pmm    PostedMessageManager
+	keeper keeper.Keeper
+	mc     ManagerContainer
 }
 
 func NewHandlerResumeContract(mc ManagerContainer) *HandlerResumeContract {
 	return &HandlerResumeContract{
-		publicDb: mc.PublicDb(),
-		pmm:      mc.PostedMessageManager(),
-		mc:       mc,
+		keeper: mc.Keeper(),
+		pmm:    mc.PostedMessageManager(),
+		mc:     mc,
 	}
 }
 
 func (h *HandlerResumeContract) DeliverMsg(ctx sdk.Context, msg *types.ResumeContractMsg) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
 		newHandlerPauseResumeContract(h.mc).doPauseOrResume(ctx, msg.Data.Chain, msg.Data.Hash, false)
-		h.publicDb.ProcessTxRecord(hash)
+		h.keeper.ProcessTxRecord(ctx, hash)
 	} else {
 		log.Verbose("HandlerResumeContract: transaction has been processed")
 	}
@@ -74,7 +76,7 @@ func (h *HandlerResumeContract) DeliverMsg(ctx sdk.Context, msg *types.ResumeCon
 ////////////////////////////////
 
 type handlerPauseResumeContract struct {
-	publicDb         keeper.Storage
+	keeper           keeper.Keeper
 	txOutputProducer TxOutputProducer
 	globalData       common.GlobalData
 	partyManager     PartyManager
@@ -83,7 +85,7 @@ type handlerPauseResumeContract struct {
 
 func newHandlerPauseResumeContract(mc ManagerContainer) *handlerPauseResumeContract {
 	return &handlerPauseResumeContract{
-		publicDb:         mc.PublicDb(),
+		keeper:           mc.Keeper(),
 		txOutputProducer: mc.TxOutProducer(),
 		globalData:       mc.GlobalData(),
 		partyManager:     mc.PartyManager(),
@@ -128,7 +130,7 @@ func (h *handlerPauseResumeContract) doPauseOrResume(ctx sdk.Context, chain, has
 	}
 
 	// Save this to KVStore
-	h.publicDb.SaveTxOut(txOutMsg.Data)
+	h.keeper.SaveTxOut(ctx, txOutMsg.Data)
 
 	// Sends to dheart for signing.
 	h.signTx(ctx, txOutMsg.Data)

@@ -13,35 +13,35 @@ import (
 )
 
 type HandlerGasPrice struct {
-	publicDb   keeper.Storage
+	keeper     keeper.Keeper
 	globalData common.GlobalData
 	worldState world.WorldState
 }
 
 func NewHandlerGasPrice(mc ManagerContainer) *HandlerGasPrice {
 	return &HandlerGasPrice{
-		publicDb:   mc.PublicDb(),
+		keeper:     mc.Keeper(),
 		globalData: mc.GlobalData(),
 		worldState: mc.WorldState(),
 	}
 }
 
 func (h *HandlerGasPrice) DeliverMsg(ctx sdk.Context, msg *types.GasPriceMsg) (*sdk.Result, error) {
-	currentPriceRecord := h.publicDb.GetGasPriceRecord(msg.Chain, msg.BlockHeight)
+	currentPriceRecord := h.keeper.GetGasPriceRecord(ctx, msg.Chain, msg.BlockHeight)
 	if currentPriceRecord != nil {
 		for _, m := range currentPriceRecord.Messages {
 			if strings.EqualFold(strings.ToLower(m.Signer), strings.ToLower(msg.Signer)) {
 				log.Info("This message has been processed")
-				return nil, nil
+				return &sdk.Result{}, nil
 			}
 		}
 	}
 
-	h.publicDb.SetGasPrice(msg)
-	savedRecord := h.publicDb.GetGasPriceRecord(msg.Chain, msg.BlockHeight)
+	h.keeper.SetGasPrice(ctx, msg)
+	savedRecord := h.keeper.GetGasPriceRecord(ctx, msg.Chain, msg.BlockHeight)
 	totalValidator := len(h.globalData.GetValidatorSet())
 	if savedRecord == nil || !savedRecord.ReachConsensus(totalValidator) {
-		return nil, nil
+		return &sdk.Result{}, nil
 	}
 
 	// Only save network gas price if reached consensus
@@ -57,15 +57,15 @@ func (h *HandlerGasPrice) DeliverMsg(ctx sdk.Context, msg *types.GasPriceMsg) (*
 	median := listGasPrices[len(listGasPrices)/2]
 
 	// Save to db
-	chain := h.publicDb.GetChain(msg.Chain)
+	chain := h.keeper.GetChain(ctx, msg.Chain)
 	if chain == nil {
 		chain = new(types.Chain)
 	}
 	chain.GasPrice = median
-	h.publicDb.SaveChain(chain)
+	h.keeper.SaveChain(ctx, chain)
 
 	// Save to the world state
 	h.worldState.SetChain(chain)
 
-	return nil, nil
+	return &sdk.Result{}, nil
 }

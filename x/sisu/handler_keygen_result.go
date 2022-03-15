@@ -14,7 +14,7 @@ import (
 )
 
 type HandlerKeygenResult struct {
-	publicDb    keeper.Storage
+	keeper      keeper.Keeper
 	pmm         PostedMessageManager
 	globalData  common.GlobalData
 	deyesClient tssclients.DeyesClient
@@ -25,7 +25,7 @@ type HandlerKeygenResult struct {
 
 func NewHandlerKeygenResult(mc ManagerContainer) *HandlerKeygenResult {
 	return &HandlerKeygenResult{
-		publicDb:   mc.PublicDb(),
+		keeper:     mc.Keeper(),
 		pmm:        mc.PostedMessageManager(),
 		globalData: mc.GlobalData(),
 		config:     mc.Config(),
@@ -36,12 +36,13 @@ func NewHandlerKeygenResult(mc ManagerContainer) *HandlerKeygenResult {
 
 func (h *HandlerKeygenResult) DeliverMsg(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
-		h.doKeygenResult(ctx, signerMsg)
-		h.publicDb.ProcessTxRecord(hash)
+		data, err := h.doKeygenResult(ctx, signerMsg)
+		h.keeper.ProcessTxRecord(ctx, hash)
+
+		return &sdk.Result{Data: data}, err
 	}
 
-	return nil, nil
-
+	return &sdk.Result{}, nil
 }
 
 func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) ([]byte, error) {
@@ -56,7 +57,7 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, signerMsg *types.K
 		log.Info("Keygen succeeded")
 
 		// Save result to KVStore & private db
-		h.publicDb.SaveKeygenResult(signerMsg)
+		h.keeper.SaveKeygenResult(ctx, signerMsg)
 
 		if !h.globalData.IsCatchingUp() {
 			h.createContracts(ctx, signerMsg.Keygen)
@@ -69,7 +70,7 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, signerMsg *types.K
 }
 
 func (h *HandlerKeygenResult) getKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) types.KeygenResult_Result {
-	results := h.publicDb.GetAllKeygenResult(signerMsg.Keygen.KeyType, signerMsg.Keygen.Index)
+	results := h.keeper.GetAllKeygenResult(ctx, signerMsg.Keygen.KeyType, signerMsg.Keygen.Index)
 
 	// Check the majority of the results
 	successCount := 0
@@ -83,7 +84,7 @@ func (h *HandlerKeygenResult) getKeygenResult(ctx sdk.Context, signerMsg *types.
 		// TODO: Choose the address with most vote.
 		// Save keygen Address
 		log.Info("Saving keygen...")
-		h.publicDb.SaveKeygen(signerMsg.Keygen)
+		h.keeper.SaveKeygen(ctx, signerMsg.Keygen)
 
 		return types.KeygenResult_SUCCESS
 	}

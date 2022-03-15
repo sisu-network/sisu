@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/big"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -128,17 +129,18 @@ func parseTransferInData(ethTx *ethTypes.Transaction, worldState world.WorldStat
 	}, nil
 }
 
-func (p *DefaultTxOutputProducer) processERC20TransferOut(ethTx *ethTypes.Transaction) (*types.TxResponse, error) {
+func (p *DefaultTxOutputProducer) processERC20TransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction) (*types.TxResponse, error) {
 	data, err := parseEthTransferOut(ethTx, p.worldState)
 	if err != nil {
 		log.Error(err)
 		return nil, err
 	}
 
-	return p.callERC20TransferIn(data.token, data.tokenAddr, data.recipient, data.amount, data.destChain)
+	return p.callERC20TransferIn(ctx, data.token, data.tokenAddr, data.recipient, data.amount, data.destChain)
 }
 
 func (p *DefaultTxOutputProducer) callERC20TransferIn(
+	ctx sdk.Context,
 	token *types.Token,
 	tokenAddress,
 	recipient ethcommon.Address,
@@ -146,7 +148,7 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(
 	destChain string,
 ) (*types.TxResponse, error) {
 	targetContractName := ContractErc20Gateway
-	gw := p.publicDb.GetLatestContractAddressByName(destChain, targetContractName)
+	gw := p.keeper.GetLatestContractAddressByName(ctx, destChain, targetContractName)
 	if len(gw) == 0 {
 		err := fmt.Errorf("cannot find gw address for type: %s", targetContractName)
 		log.Error(err)
@@ -156,7 +158,7 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(
 	gatewayAddress := ethcommon.HexToAddress(gw)
 	erc20gatewayContract := SupportedContracts[targetContractName]
 
-	nonce := p.worldState.UseAndIncreaseNonce(destChain)
+	nonce := p.worldState.UseAndIncreaseNonce(ctx, destChain)
 	if nonce < 0 {
 		err := errors.New("cannot find nonce for chain " + destChain)
 		log.Error(err)

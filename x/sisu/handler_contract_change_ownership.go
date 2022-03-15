@@ -17,23 +17,25 @@ import (
 )
 
 type HandlerContractChangeOwnership struct {
-	pmm      PostedMessageManager
-	publicDb keeper.Storage
-	mc       ManagerContainer
+	pmm    PostedMessageManager
+	keeper keeper.Keeper
+	mc     ManagerContainer
 }
 
 func NewHandlerContractChangeOwnership(mc ManagerContainer) *HandlerContractChangeOwnership {
 	return &HandlerContractChangeOwnership{
-		publicDb: mc.PublicDb(),
-		pmm:      mc.PostedMessageManager(),
-		mc:       mc,
+		keeper: mc.Keeper(),
+		pmm:    mc.PostedMessageManager(),
+		mc:     mc,
 	}
 }
 
 func (h *HandlerContractChangeOwnership) DeliverMsg(ctx sdk.Context, msg *types.ChangeOwnershipContractMsg) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
-		newHandlerContractChangeOwnership(h.mc).doChangeOwner(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.NewOwner)
-		h.publicDb.ProcessTxRecord(hash)
+		data, err := newHandlerContractChangeOwnership(h.mc).doChangeOwner(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.NewOwner)
+		h.keeper.ProcessTxRecord(ctx, hash)
+
+		return &sdk.Result{Data: data}, err
 	} else {
 		log.Verbose("HandlerContractChangeOwnership: didn't not reach consensus or transaction has been processed")
 	}
@@ -42,7 +44,7 @@ func (h *HandlerContractChangeOwnership) DeliverMsg(ctx sdk.Context, msg *types.
 }
 
 type handlerContractChangeOwnership struct {
-	publicDb         keeper.Storage
+	keeper           keeper.Keeper
 	txOutputProducer TxOutputProducer
 	globalData       common.GlobalData
 	partyManager     PartyManager
@@ -51,7 +53,7 @@ type handlerContractChangeOwnership struct {
 
 func newHandlerContractChangeOwnership(mc ManagerContainer) *handlerContractChangeOwnership {
 	return &handlerContractChangeOwnership{
-		publicDb:         mc.PublicDb(),
+		keeper:           mc.Keeper(),
 		txOutputProducer: mc.TxOutProducer(),
 		globalData:       mc.GlobalData(),
 		partyManager:     mc.PartyManager(),
@@ -86,7 +88,7 @@ func (h *handlerContractChangeOwnership) doChangeOwner(ctx sdk.Context, chain, h
 	}
 
 	// Save this to KVStore
-	h.publicDb.SaveTxOut(msg.Data)
+	h.keeper.SaveTxOut(ctx, msg.Data)
 
 	// Sends to dheart for signing.
 	h.signTx(ctx, msg.Data)

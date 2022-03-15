@@ -13,6 +13,8 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 var (
@@ -42,9 +44,9 @@ var (
 // data are token price, nonce of addresses, network gas fee, etc.
 // go:generate mockgen -source x/sisu/world/world_state.go -destination=tests/mock/x/sisu/world_state.go -package=mock
 type WorldState interface {
-	LoadData()
+	LoadData(ctx sdk.Context)
 
-	UseAndIncreaseNonce(chain string) int64
+	UseAndIncreaseNonce(ctx sdk.Context, chain string) int64
 
 	SetChain(chain *types.Chain)
 	GetGasPrice(chain string) (*big.Int, error)
@@ -58,7 +60,7 @@ type WorldState interface {
 }
 
 type DefaultWorldState struct {
-	publicDb    keeper.Storage
+	keeper      keeper.Keeper
 	tssConfig   config.TssConfig
 	nonces      map[string]int64
 	deyesClient tssclients.DeyesClient
@@ -68,10 +70,11 @@ type DefaultWorldState struct {
 	addrToToken *sync.Map // chain__addr => *types.Token
 }
 
-func NewWorldState(tssConfig config.TssConfig, publicDb keeper.Storage, deyesClients tssclients.DeyesClient) WorldState {
+func NewWorldState(tssConfig config.TssConfig, keeper keeper.Keeper,
+	deyesClients tssclients.DeyesClient) WorldState {
 	return &DefaultWorldState{
 		tssConfig:   tssConfig,
-		publicDb:    publicDb,
+		keeper:      keeper,
 		nonces:      make(map[string]int64, 0),
 		deyesClient: deyesClients,
 		tokens:      &sync.Map{},
@@ -80,9 +83,9 @@ func NewWorldState(tssConfig config.TssConfig, publicDb keeper.Storage, deyesCli
 	}
 }
 
-func (ws *DefaultWorldState) LoadData() {
+func (ws *DefaultWorldState) LoadData(ctx sdk.Context) {
 	// Get saved tokens
-	tokens := ws.publicDb.GetAllTokens()
+	tokens := ws.keeper.GetAllTokens(ctx)
 	ws.SetTokens(tokens)
 
 	// Map between address and tokens
@@ -94,16 +97,16 @@ func (ws *DefaultWorldState) LoadData() {
 	}
 
 	// Get saved network gas
-	chains := ws.publicDb.GetAllChains()
+	chains := ws.keeper.GetAllChains(ctx)
 	for _, chain := range chains {
 		ws.SetChain(chain)
 	}
 }
 
-func (ws *DefaultWorldState) UseAndIncreaseNonce(chain string) int64 {
+func (ws *DefaultWorldState) UseAndIncreaseNonce(ctx sdk.Context, chain string) int64 {
 	keyType := libchain.GetKeyTypeForChain(chain)
 
-	pubKeyBytes := ws.publicDb.GetKeygenPubkey(keyType)
+	pubKeyBytes := ws.keeper.GetKeygenPubkey(ctx, keyType)
 	if pubKeyBytes == nil {
 		log.Error("cannot find pub key for keyType", chain)
 		return -1

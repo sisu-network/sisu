@@ -9,36 +9,38 @@ import (
 )
 
 type HandlerKeygen struct {
-	mc ManagerContainer
+	mc     ManagerContainer
+	keeper keeper.Keeper
 }
 
 func NewHandlerKeygen(mc ManagerContainer) *HandlerKeygen {
 	return &HandlerKeygen{
-		mc: mc,
+		keeper: mc.Keeper(),
+		mc:     mc,
 	}
 }
 
 func (h *HandlerKeygen) DeliverMsg(ctx sdk.Context, signerMsg *types.KeygenWithSigner) (*sdk.Result, error) {
 	log.Info("Delivering keygen, signer = ", signerMsg.Signer)
 	pmm := h.mc.PostedMessageManager()
-	publicDb := h.mc.PublicDb()
-
 	if process, hash := pmm.ShouldProcessMsg(ctx, signerMsg); process {
-		h.doKeygen(ctx, signerMsg, publicDb)
-		publicDb.ProcessTxRecord(hash)
+		data, err := h.doKeygen(ctx, signerMsg)
+		h.keeper.ProcessTxRecord(ctx, hash)
+
+		return &sdk.Result{Data: data}, err
 	}
 
-	return nil, nil
+	return &sdk.Result{}, nil
 }
 
-func (h *HandlerKeygen) doKeygen(ctx sdk.Context, signerMsg *types.KeygenWithSigner, publicDb keeper.Storage) ([]byte, error) {
+func (h *HandlerKeygen) doKeygen(ctx sdk.Context, signerMsg *types.KeygenWithSigner) ([]byte, error) {
 	log.Info("Doing keygen....")
 
 	msg := signerMsg.Data
 	globalData := h.mc.GlobalData()
 
 	// Save this into Keeper && private db.
-	publicDb.SaveKeygen(msg)
+	h.keeper.SaveKeygen(ctx, msg)
 
 	if globalData.IsCatchingUp() {
 		return nil, nil
