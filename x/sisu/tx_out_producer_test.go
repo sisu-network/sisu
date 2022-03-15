@@ -118,7 +118,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 			Chain:       "eth",
 		}
 
-		txOutProducer := NewTxOutputProducer(mockWorldState, mockAppKeys, nil,
+		txOutProducer := NewTxOutputProducer(mockWorldState, mockAppKeys,
 			mockKeeper,
 			config.TssConfig{
 				DeyesUrl: "http://0.0.0.0:1234",
