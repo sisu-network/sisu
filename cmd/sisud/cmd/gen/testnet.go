@@ -43,7 +43,7 @@ type TestnetConfig struct {
 	Nodes        []TestnetNode      `json:"nodes"`
 	Chains       []ChainConfig      `json:"chains"`
 	Liquidities  []*types.Liquidity `json:"liquidity"`
-	LogDNAConfig LogDNAConfig       `json:"log_dna_config"`
+	LogDNAConfig log.LogDNAConfig   `json:"log_dna_config"`
 }
 
 // TODO: merge this field with the chain type in the proto file
@@ -198,7 +198,7 @@ Example:
 				generator.generateHeartToml(i, dir, heartIps, peerIds, sisuIps[i], nodes[i].Sql, valPubKeys)
 
 				// Deyes configs
-				generator.generateEyesToml(i, dir, sisuIps[i], nodes[i].Sql, testnetConfig.Chains)
+				generator.generateEyesToml(i, dir, sisuIps[i], nodes[i].Sql, testnetConfig.Chains, dnaConfig)
 			}
 
 			return err
@@ -218,13 +218,16 @@ Example:
 	return cmd
 }
 
-func (g *TestnetGenerator) getNodeSettings(nodeIndex int, chainID string, keyringBackend string, testnetConfig TestnetNode, chainConfigs []ChainConfig, dnaConfig LogDNAConfig) config.Config {
+func (g *TestnetGenerator) getNodeSettings(nodeIndex int, chainID string, keyringBackend string, testnetConfig TestnetNode, chainConfigs []ChainConfig, dnaConfig log.LogDNAConfig) config.Config {
 	supportedChains := make(map[string]config.TssChainConfig)
 	for _, chainConfig := range chainConfigs {
 		supportedChains[chainConfig.Id] = config.TssChainConfig{
 			Id: chainConfig.Id,
 		}
 	}
+
+	dnaConfig.HostName = testnetConfig.SisuIp
+	dnaConfig.AppName = fmt.Sprintf("sisu%d", nodeIndex)
 
 	return config.Config{
 		Mode: "testnet",
@@ -240,12 +243,7 @@ func (g *TestnetGenerator) getNodeSettings(nodeIndex int, chainID string, keyrin
 			DeyesUrl:        fmt.Sprintf("http://%s:31001", testnetConfig.EyesIp),
 			SupportedChains: supportedChains,
 		},
-		LogDNA: log.LogDNAConfig{
-			Secret:       dnaConfig.Secret,
-			AppName:      fmt.Sprintf("sisu%d", nodeIndex),
-			HostName:     testnetConfig.SisuIp,
-			MaxBufferLen: 30,
-		},
+		LogDNA: dnaConfig,
 	}
 }
 
@@ -296,14 +294,18 @@ func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartI
 	writeHeartConfig(outputDir, hConfig)
 }
 
-func (g *TestnetGenerator) generateEyesToml(index int, dir string, sisuIp string, sqlConfig SqlConfig, chainConfigs []ChainConfig) {
+func (g *TestnetGenerator) generateEyesToml(index int, dir string, sisuIp string, sqlConfig SqlConfig, chainConfigs []ChainConfig, dnaConfig log.LogDNAConfig) {
 	sqlConfig.Schema = "deyes"
+
+	dnaConfig.HostName = sisuIp
+	dnaConfig.AppName = fmt.Sprintf("sisu%d", index)
 
 	deyesConfig := DeyesConfiguration{
 		Chains: chainConfigs,
 
 		Sql:           sqlConfig,
 		SisuServerUrl: fmt.Sprintf("http://%s:25456", sisuIp),
+		LogDNA:        dnaConfig,
 	}
 
 	writeDeyesConfig(deyesConfig, dir)
