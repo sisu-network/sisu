@@ -10,4 +10,6 @@ const (
 	Amount              = "amount"
 	NewOwner            = "new-owner"
 	NewLiquidityAddress = "new-liquidity-address"
+	Contract            = "contract"
+	Mnemonic            = "mnemonic"
 )
