@@ -298,7 +298,7 @@ func (g *TestnetGenerator) generateEyesToml(index int, dir string, sisuIp string
 	sqlConfig.Schema = "deyes"
 
 	dnaConfig.HostName = sisuIp
-	dnaConfig.AppName = fmt.Sprintf("sisu%d", index)
+	dnaConfig.AppName = fmt.Sprintf("deyes%d", index)
 
 	deyesConfig := DeyesConfiguration{
 		Chains: chainConfigs,
