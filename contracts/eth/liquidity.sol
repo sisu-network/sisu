@@ -239,7 +239,7 @@ library Address {
     function sendValue(address payable recipient, uint256 amount) internal {
         require(address(this).balance >= amount, "Address: insufficient balance");
 
-        (bool success, ) = recipient.call{value: amount}("");
+        (bool success,) = recipient.call{value : amount}("");
         require(success, "Address: unable to send value, recipient may have reverted");
     }
 
@@ -313,7 +313,7 @@ library Address {
         require(address(this).balance >= value, "Address: insufficient balance for call");
         require(isContract(target), "Address: call to non-contract");
 
-        (bool success, bytes memory returndata) = target.call{value: value}(data);
+        (bool success, bytes memory returndata) = target.call{value : value}(data);
         return verifyCallResult(success, returndata, errorMessage);
     }
 
@@ -1105,17 +1105,15 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
 }
 
 
-
 interface ILiquidityPool {
     function transfer(address _token, address _recipient, uint256 _amount) external;
 }
 
 interface ILPToken {
     function mint(address _recipient, uint256 _amount) external;
+
     function burn(address _from, uint256 _amount) external;
 }
-
-
 
 
 contract LPToken is ERC20, Ownable, ILPToken {
@@ -1146,7 +1144,7 @@ contract LPToken is ERC20, Ownable, ILPToken {
 
 // File contracts/Liquidity.sol
 
-contract LiquidityPool is Ownable, ILiquidityPool  {
+contract LiquidityPool is Ownable, ILiquidityPool {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -1187,7 +1185,7 @@ contract LiquidityPool is Ownable, ILiquidityPool  {
         UserInfo storage _user = liquidityPool[_token][msg.sender];
         _user.amount = _user.amount.add(_amount);
 
-        uint256 toMint = calculateLPTokenDepositOrWithdraw(_token, _amount);
+        uint256 toMint = calculateLPTokenDepositOrWithdraw(_amount);
         if (toMint > 0) {
             LPToken lpToken = lpTokenMapping[_token];
             lpToken.mint(msg.sender, toMint);
@@ -1207,7 +1205,7 @@ contract LiquidityPool is Ownable, ILiquidityPool  {
         require(_user.amount >= _amount, "deposited token amount is less than withdraw token amount");
 
         // Burn LP token
-        uint256 lpTokenBurnAmount = calculateLPTokenDepositOrWithdraw(_token, _amount);
+        uint256 lpTokenBurnAmount = calculateLPTokenDepositOrWithdraw(_amount);
         LPToken lpToken = lpTokenMapping[_token];
         lpToken.burn(msg.sender, lpTokenBurnAmount);
         _user.amount = _user.amount.sub(_amount);
@@ -1216,19 +1214,11 @@ contract LiquidityPool is Ownable, ILiquidityPool  {
     }
 
     // calculate amount of LP token to be minted
-    function calculateLPTokenDepositOrWithdraw(address _token, uint256 _amount) public view returns (uint256) {
+    function calculateLPTokenDepositOrWithdraw(uint256 _amount) public pure returns (uint256) {
         require(_amount > 0, "amount must greater than 0");
 
-        // Calculate amount of minted/burnt LPToken by formula: (amount * current LP token supply) / total amount in liquidity pool
-        uint256 totalAmount = IERC20(_token).balanceOf(address(this));
-        LPToken lpToken = lpTokenMapping[_token];
-        uint256 currentLPTokenSupply = lpToken.totalSupply();
-        if (totalAmount == 0 || currentLPTokenSupply == 0) {
-            return _amount;
-        }
-
-        uint256 toMint = _amount.mul(currentLPTokenSupply).div(totalAmount);
-        return toMint;
+        // LPToken is equal to amount to deposit/withdraw
+        return _amount;
     }
 
     function transfer(address _token, address _recipient, uint256 _amount) public onlyGateway {
