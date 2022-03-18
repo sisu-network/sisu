@@ -239,7 +239,7 @@ library Address {
     function sendValue(address payable recipient, uint256 amount) internal {
         require(address(this).balance >= amount, "Address: insufficient balance");
 
-        (bool success, ) = recipient.call{value: amount}("");
+        (bool success,) = recipient.call{value : amount}("");
         require(success, "Address: unable to send value, recipient may have reverted");
     }
 
@@ -313,7 +313,7 @@ library Address {
         require(address(this).balance >= value, "Address: insufficient balance for call");
         require(isContract(target), "Address: call to non-contract");
 
-        (bool success, bytes memory returndata) = target.call{value: value}(data);
+        (bool success, bytes memory returndata) = target.call{value : value}(data);
         return verifyCallResult(success, returndata, errorMessage);
     }
 
@@ -1105,17 +1105,15 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
 }
 
 
-
 interface ILiquidityPool {
     function transfer(address _token, address _recipient, uint256 _amount) external;
 }
 
 interface ILPToken {
     function mint(address _recipient, uint256 _amount) external;
+
     function burn(address _from, uint256 _amount) external;
 }
-
-
 
 
 contract LPToken is ERC20, Ownable, ILPToken {
@@ -1146,7 +1144,7 @@ contract LPToken is ERC20, Ownable, ILPToken {
 
 // File contracts/Liquidity.sol
 
-contract LiquidityPool is Ownable, ILiquidityPool  {
+contract LiquidityPool is Ownable, ILiquidityPool {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
