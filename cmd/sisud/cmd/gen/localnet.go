@@ -76,7 +76,7 @@ Example:
 
 			// Get Chain id and keyring backend from .env file.
 			chainID := "eth-sisu-local"
-			keyringBackend := keyring.BackendTest
+			keyringBackend := keyring.BackendFile
 
 			nodeConfig := config.Config{
 				Mode: "dev",
