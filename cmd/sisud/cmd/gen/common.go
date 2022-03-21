@@ -11,6 +11,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
 	heartconfig "github.com/sisu-network/dheart/core/config"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	tmos "github.com/tendermint/tendermint/libs/os"
 )
@@ -20,7 +21,8 @@ type DeyesConfiguration struct {
 	SisuServerUrl string
 
 	// sql
-	Sql SqlConfig
+	Sql    SqlConfig
+	LogDNA log.LogDNAConfig `toml:"log_dna"`
 }
 
 func getPeerIds(n int, pubKeys []cryptotypes.PubKey) ([]string, error) {
@@ -49,6 +51,13 @@ db_port = {{ .Sql.Port }}
 db_username = "{{ .Sql.Username }}"
 db_password = "{{ .Sql.Password }}"
 db_schema = "{{ .Sql.Schema }}"
+
+[log_dna]
+secret = "{{ .LogDNA.Secret }}"
+app_name = "{{ .LogDNA.AppName }}"
+host_name = "{{ .LogDNA.HostName }}"
+flush_interval = "{{ .LogDNA.FlushInterval }}"
+max_buffer_len = {{ .LogDNA.MaxBufferLen }}
 
 server_port = 31001
 sisu_server_url = "{{ .SisuServerUrl }}"
