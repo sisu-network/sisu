@@ -1,9 +1,10 @@
 package gen
 
 import (
-	"bufio"
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -33,21 +34,22 @@ import (
 const nodeDirPerm = 0755
 
 type Setting struct {
-	clientCtx      client.Context
-	cmd            *cobra.Command
-	tmConfig       *tmconfig.Config
-	mbm            module.BasicManager
-	genBalIterator banktypes.GenesisBalancesIterator
-	outputDir      string
-	chainID        string
-	minGasPrices   string
-	nodeDirPrefix  string
-	nodeDaemonHome string
-	ips            []string
-	monikers       []string
-	keyringBackend string
-	algoStr        string
-	numValidators  int
+	clientCtx         client.Context
+	cmd               *cobra.Command
+	tmConfig          *tmconfig.Config
+	mbm               module.BasicManager
+	genBalIterator    banktypes.GenesisBalancesIterator
+	outputDir         string
+	chainID           string
+	minGasPrices      string
+	nodeDirPrefix     string
+	nodeDaemonHome    string
+	ips               []string
+	monikers          []string
+	keyringBackend    string
+	keyringPassphrase string
+	algoStr           string
+	numValidators     int
 
 	nodeConfigs []config.Config
 	tokens      []*types.Token // tokens in the genesis data
@@ -91,10 +93,19 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 		genFiles    []string
 	)
 
-	inBuf := bufio.NewReader(cmd.InOrStdin())
 	memos := make([]string, numValidators)
 	nodes := make([]*types.Node, numValidators)
 	valPubKeys := make([]cryptotypes.PubKey, numValidators)
+
+	// Temporary set os.Stdin to nil to read the keyring-passphrase from created buffer
+	if settings.keyringBackend == keyring.BackendFile {
+		oldStdin := os.Stdin
+		defer func() {
+			os.Stdin = oldStdin
+		}()
+
+		os.Stdin = nil
+	}
 
 	// generate private keys, node IDs, and initial transactions
 	for i := 0; i < numValidators; i++ {
@@ -117,6 +128,16 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 		}
 
 		ip := ips[i]
+
+		inBuf := io.Reader(os.Stdin)
+		if keyringBackend == keyring.BackendFile {
+			buf := bytes.NewBufferString(settings.keyringPassphrase)
+			buf.WriteByte('\n')
+			buf.WriteString(settings.keyringPassphrase)
+			buf.WriteByte('\n')
+
+			inBuf = buf
+		}
 
 		kb, err := keyring.New(sdk.KeyringServiceName(), keyringBackend, mainAppDir, inBuf)
 		if err != nil {
