@@ -217,7 +217,7 @@ Example:
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
 	cmd.Flags().String(flagConfigString, "", "configuration string for all nodes")
-	cmd.Flags().String(flags.FlagKeyringBackend, keyring.BackendFile, "Keyring backend. file|os|kwallet|pass|test|memory")
+	cmd.Flags().String(flags.FlagKeyringBackend, keyring.BackendTest, "Keyring backend. file|os|kwallet|pass|test|memory")
 	cmd.Flags().String(flagKeyringPassphrase, "", "Passphrase for keyring backend if using backend file. Leave it empty if use backend test")
 
 	return cmd
