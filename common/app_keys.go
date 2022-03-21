@@ -1,8 +1,10 @@
 package common
 
 import (
+	"bytes"
 	"encoding/hex"
 	"errors"
+	"io"
 	"os"
 
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -31,28 +33,46 @@ type AppKeys interface {
 }
 
 type DefaultAppKeys struct {
-	signerInfo keyring.Info
-	kr         keyring.Keyring
-	cfg        config.SisuConfig
-	privateKey ctypes.PrivKey
-	aesKey     []byte
+	signerInfo   keyring.Info
+	kr           keyring.Keyring
+	cfg          config.SisuConfig
+	privateKey   ctypes.PrivKey
+	aesKey       []byte
+	krPassphrase string // TODO: bad way?, need to fix it
 }
 
 func NewAppKeys(cfg config.SisuConfig) *DefaultAppKeys {
 	return &DefaultAppKeys{
-		cfg: cfg,
+		cfg:          cfg,
+		krPassphrase: cfg.KeyringPassphrase,
 	}
 }
 
 func (ak *DefaultAppKeys) Init() {
 	var err error
-	log.Info("ak.cfg.KeyringBackend =", ak.cfg.KeyringBackend)
+	log.Info("ak.cfg.KeyringBackend = ", ak.cfg.KeyringBackend)
 	log.Info("ak.cfg.Home =", ak.cfg.Dir)
 
-	ak.kr, err = keyring.New(sdk.KeyringServiceName(), ak.cfg.KeyringBackend, ak.cfg.Dir, os.Stdin)
+	buf := io.Reader(os.Stdin)
+	if ak.cfg.KeyringBackend == keyring.BackendFile {
+		bufStr := bytes.NewBufferString(ak.krPassphrase)
+		bufStr.WriteByte('\n')
+
+		buf = bufStr
+	}
+
+	ak.kr, err = keyring.New(sdk.KeyringServiceName(), ak.cfg.KeyringBackend, ak.cfg.Dir, buf)
 	if err != nil {
 		panic(err)
 	}
+
+	// the keyring library which used by cosmos sdk , will use interactive terminal if it detect it has one
+	// this will temporary trick it think there is no interactive terminal, thus will read the password from the buffer provided
+	oldStdIn := os.Stdin
+	defer func() {
+		os.Stdin = oldStdIn
+	}()
+	os.Stdin = nil
 
 	infos, err := ak.kr.List()
 	if len(infos) == 0 {

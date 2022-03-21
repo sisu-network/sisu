@@ -37,7 +37,7 @@ func (h *HandlerContractSetLiquidityAddress) DeliverMsg(ctx sdk.Context, msg *ty
 
 		return &sdk.Result{Data: data}, err
 	} else {
-		log.Verbose("HandlerContractChangeOwnership: didn't not reach consensus or transaction has been processed")
+		log.Verbose("HandlerContractSetLiquidityAddress: didn't not reach consensus or transaction has been processed")
 	}
 
 	return &sdk.Result{}, nil

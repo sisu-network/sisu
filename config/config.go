@@ -16,12 +16,13 @@ type Config struct {
 }
 
 type SisuConfig struct {
-	Dir            string
-	KeyringBackend string           `toml:"keyring-backend"`
-	ChainId        string           `toml:"chain-id"`
-	ApiHost        string           `toml:"api-host"`
-	ApiPort        uint16           `toml:"api-port"`
-	EmailAlert     EmailAlertConfig `toml:"email-alert"`
+	Dir               string
+	KeyringBackend    string           `toml:"keyring-backend"`
+	KeyringPassphrase string           `toml:"keyring-passphrase"`
+	ChainId           string           `toml:"chain-id"`
+	ApiHost           string           `toml:"api-host"`
+	ApiPort           uint16           `toml:"api-port"`
+	EmailAlert        EmailAlertConfig `toml:"email-alert"`
 }
 
 type TssChainConfig struct {

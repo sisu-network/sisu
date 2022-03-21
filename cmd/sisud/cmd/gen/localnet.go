@@ -37,6 +37,7 @@ var (
 	flagTmpDir            = "tmp-dir"
 	flagChainId           = "chain-id"
 	flagConfigString      = "config-string"
+	flagKeyringPassphrase = "keyring-passphrase"
 )
 
 type localnetGenerator struct{}
@@ -87,9 +88,9 @@ Example:
 					ApiPort:        25456,
 				},
 				Tss: config.TssConfig{
-					DheartHost:        "0.0.0.0",
-					DheartPort:        5678,
-					DeyesUrl:          "http://0.0.0.0:31001",
+					DheartHost: "0.0.0.0",
+					DheartPort: 5678,
+					DeyesUrl:   "http://0.0.0.0:31001",
 					SupportedChains: map[string]config.TssChainConfig{
 						"ganache1": {
 							Id:    "ganache1",
@@ -137,6 +138,7 @@ Example:
 	cmd.Flags().String(flagStartingIPAddress, "127.0.0.1", "Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
+	cmd.Flags().String(flags.FlagKeyringBackend, keyring.BackendTest, "Keyring backend. file|os|kwallet|pass|test|memory")
 
 	return cmd
 }

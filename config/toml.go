@@ -18,6 +18,7 @@ mode = "{{ .Mode }}"
 [sisu]
 chain-id = "{{ .Sisu.ChainId}}"
 keyring-backend = "{{ .Sisu.KeyringBackend }}"
+keyring-passphrase = "{{ .Sisu.KeyringPassphrase }}"
 api-host = "{{ .Sisu.ApiHost }}"
 api-port = {{ .Sisu.ApiPort }}
 

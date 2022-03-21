@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	heartconfig "github.com/sisu-network/dheart/core/config"
 	p2ptypes "github.com/sisu-network/dheart/p2p/types"
 	"github.com/sisu-network/lib/log"
@@ -21,7 +22,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -100,6 +100,12 @@ Example:
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
 			configString, _ := cmd.Flags().GetString(flagConfigString)
+			keyringBackend, _ := cmd.Flags().GetString(flags.FlagKeyringBackend)
+			keyringPassphrase, _ := cmd.Flags().GetString(flagKeyringPassphrase)
+
+			if keyringPassphrase == keyring.BackendFile && len(keyringPassphrase) == 0 {
+				panic(fmt.Sprintf("Please input the passphrase if you're using keyring backend file by flag %s", keyringPassphrase))
+			}
 
 			testnetConfig := TestnetConfig{}
 			err = json.Unmarshal([]byte(configString), &testnetConfig)
@@ -118,10 +124,6 @@ Example:
 			if err != nil {
 				panic(err)
 			}
-
-			// TODO: Use backend file for keyring
-			// keyringBackend := keyring.BackendFile
-			keyringBackend := keyring.BackendTest
 
 			monikers := make([]string, numValidators)
 			for i := 0; i < numValidators; i++ {
@@ -149,7 +151,7 @@ Example:
 					panic(err)
 				}
 
-				nodeConfig := generator.getNodeSettings(i, chainId, keyringBackend, nodes[i], testnetConfig.Chains, dnaConfig)
+				nodeConfig := generator.getNodeSettings(i, chainId, keyringBackend, keyringPassphrase, nodes[i], testnetConfig.Chains, dnaConfig)
 				nodeConfigs[i] = nodeConfig
 			}
 
@@ -162,19 +164,20 @@ Example:
 			}
 
 			settings := &Setting{
-				clientCtx:      clientCtx,
-				cmd:            cmd,
-				tmConfig:       tmConfig,
-				mbm:            mbm,
-				genBalIterator: genBalIterator,
-				outputDir:      outputDir,
-				chainID:        chainId,
-				minGasPrices:   minGasPrices,
-				nodeDirPrefix:  nodeDirPrefix,
-				nodeDaemonHome: nodeDaemonHome,
-				keyringBackend: keyringBackend,
-				algoStr:        algo,
-				numValidators:  numValidators,
+				clientCtx:         clientCtx,
+				cmd:               cmd,
+				tmConfig:          tmConfig,
+				mbm:               mbm,
+				genBalIterator:    genBalIterator,
+				outputDir:         outputDir,
+				chainID:           chainId,
+				minGasPrices:      minGasPrices,
+				nodeDirPrefix:     nodeDirPrefix,
+				nodeDaemonHome:    nodeDaemonHome,
+				keyringBackend:    keyringBackend,
+				keyringPassphrase: keyringPassphrase,
+				algoStr:           algo,
+				numValidators:     numValidators,
 
 				ips:         sisuIps,
 				nodeConfigs: nodeConfigs,
@@ -214,11 +217,13 @@ Example:
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
 	cmd.Flags().String(flagConfigString, "", "configuration string for all nodes")
+	cmd.Flags().String(flags.FlagKeyringBackend, keyring.BackendTest, "Keyring backend. file|os|kwallet|pass|test|memory")
+	cmd.Flags().String(flagKeyringPassphrase, "", "Passphrase for keyring backend if using backend file. Leave it empty if use backend test")
 
 	return cmd
 }
 
-func (g *TestnetGenerator) getNodeSettings(nodeIndex int, chainID string, keyringBackend string, testnetConfig TestnetNode, chainConfigs []ChainConfig, dnaConfig log.LogDNAConfig) config.Config {
+func (g *TestnetGenerator) getNodeSettings(nodeIndex int, chainID, keyringBackend, keyringPassphrase string, testnetConfig TestnetNode, chainConfigs []ChainConfig, dnaConfig log.LogDNAConfig) config.Config {
 	supportedChains := make(map[string]config.TssChainConfig)
 	for _, chainConfig := range chainConfigs {
 		supportedChains[chainConfig.Id] = config.TssChainConfig{
@@ -232,10 +237,11 @@ func (g *TestnetGenerator) getNodeSettings(nodeIndex int, chainID string, keyrin
 	return config.Config{
 		Mode: "testnet",
 		Sisu: config.SisuConfig{
-			ChainId:        chainID,
-			KeyringBackend: keyringBackend,
-			ApiHost:        "0.0.0.0",
-			ApiPort:        25456,
+			ChainId:           chainID,
+			KeyringBackend:    keyringBackend,
+			KeyringPassphrase: keyringPassphrase,
+			ApiHost:           "0.0.0.0",
+			ApiPort:           25456,
 		},
 		Tss: config.TssConfig{
 			DheartHost:      testnetConfig.HeartIp,

@@ -319,6 +319,8 @@ services:
       - ./node{{ $k }}/dheart.toml:/root/dheart.toml
   deyes{{ $k }}:
     image: deyes
+    expose:
+    - 31001
     restart: on-failure
     depends_on:
       - mysql
