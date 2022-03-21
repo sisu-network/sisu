@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"math"
 	"net"
 	"os"
@@ -12,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	heartconfig "github.com/sisu-network/dheart/core/config"
 	p2ptypes "github.com/sisu-network/dheart/p2p/types"
 	"github.com/sisu-network/lib/log"
@@ -102,6 +102,10 @@ Example:
 			configString, _ := cmd.Flags().GetString(flagConfigString)
 			keyringBackend, _ := cmd.Flags().GetString(flags.FlagKeyringBackend)
 			keyringPassphrase, _ := cmd.Flags().GetString(flagKeyringPassphrase)
+
+			if keyringPassphrase == keyring.BackendFile && len(keyringPassphrase) == 0 {
+				panic(fmt.Sprintf("Please input the passphrase if you're using keyring backend file by flag %s", keyringPassphrase))
+			}
 
 			testnetConfig := TestnetConfig{}
 			err = json.Unmarshal([]byte(configString), &testnetConfig)
@@ -214,7 +218,7 @@ Example:
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
 	cmd.Flags().String(flagConfigString, "", "configuration string for all nodes")
 	cmd.Flags().String(flags.FlagKeyringBackend, keyring.BackendFile, "Keyring backend. file|os|kwallet|pass|test|memory")
-	cmd.Flags().String(flagKeyringPassphrase, "123123123", "Passphrase for keyring backend if using backend file. Leave it empty if use backend test")
+	cmd.Flags().String(flagKeyringPassphrase, "", "Passphrase for keyring backend if using backend file. Leave it empty if use backend test")
 
 	return cmd
 }
