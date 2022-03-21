@@ -52,15 +52,15 @@ db_username = "{{ .Sql.Username }}"
 db_password = "{{ .Sql.Password }}"
 db_schema = "{{ .Sql.Schema }}"
 
+server_port = 31001
+sisu_server_url = "{{ .SisuServerUrl }}"
+
 [log_dna]
 secret = "{{ .LogDNA.Secret }}"
 app_name = "{{ .LogDNA.AppName }}"
 host_name = "{{ .LogDNA.HostName }}"
 flush_interval = "{{ .LogDNA.FlushInterval }}"
 max_buffer_len = {{ .LogDNA.MaxBufferLen }}
-
-server_port = 31001
-sisu_server_url = "{{ .SisuServerUrl }}"
 
 [chains]{{ range $k, $chain := .Chains }}
 [chains.{{ $chain.Id }}]
