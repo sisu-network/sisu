@@ -7,16 +7,12 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcutil/hdkeychain"
-	"github.com/cosmos/go-bip39"
-	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
+	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
 	"github.com/sisu-network/sisu/contracts/eth/liquidity"
 	"github.com/spf13/cobra"
 )
@@ -46,7 +42,7 @@ deploy --contract liquidity --chain-urls http://localhost:7545,http://localhost:
 			switch contract {
 			case "liquidity":
 			default:
-				panic(fmt.Errorf("Unknown contract: %s", contract))
+				panic(fmt.Errorf("unknown contract: %s", contract))
 			}
 
 			// Get all urls from command arguments.
@@ -65,7 +61,7 @@ deploy --contract liquidity --chain-urls http://localhost:7545,http://localhost:
 			}()
 
 			c := &DeployContractCmd{}
-			c.privateKey = c.getPrivateKey(mnemonic)
+			c.privateKey, _ = helper.GetPrivateKeyFromMnemonic(mnemonic)
 			expectedAddress := make([]string, len(urls))
 
 			for i, client := range clients {
@@ -88,34 +84,6 @@ deploy --contract liquidity --chain-urls http://localhost:7545,http://localhost:
 	cmd.Flags().String(flags.ChainUrls, "http://0.0.0.0:7545,http://0.0.0.0:8545", "RPCs of all the chains we want to fund.")
 
 	return cmd
-}
-
-func (c *DeployContractCmd) getPrivateKey(mnemonic string) *ecdsa.PrivateKey {
-	seed := bip39.NewSeed(mnemonic, "")
-	dpath, err := accounts.ParseDerivationPath("m/44'/60'/0'/0/0")
-	if err != nil {
-		panic(err)
-	}
-
-	masterKey, err := hdkeychain.NewMaster(seed, &chaincfg.MainNetParams)
-
-	key := masterKey
-	for _, n := range dpath {
-		key, err = key.Derive(n)
-	}
-
-	privateKey, err := key.ECPrivKey()
-	if err != nil {
-		panic(err)
-	}
-
-	privateKeyECDSA := privateKey.ToECDSA()
-	publicKey := privateKeyECDSA.PublicKey
-	addr := crypto.PubkeyToAddress(publicKey)
-
-	log.Info("Key Addr = ", addr)
-
-	return privateKeyECDSA
 }
 
 func (c *DeployContractCmd) isContractDeployed(client *ethclient.Client, tokenAddress common.Address) bool {
