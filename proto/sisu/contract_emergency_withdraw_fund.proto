@@ -1,0 +1,17 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message EmergencyWithdrawFundMsg {
+  string signer = 1;
+  WithdrawFund data = 2;
+}
+
+message WithdrawFund{
+  string chain = 1;
+  string hash = 2;
+  repeated string tokenAddresses = 3;
+  string newOwner = 4;
+  int32 index = 5;
+}
