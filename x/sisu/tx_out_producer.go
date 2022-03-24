@@ -240,6 +240,7 @@ func (p *DefaultTxOutputProducer) getContractTx(ctx sdk.Context, contract *types
 		return rawTx
 	}
 
+	log.Verbose("come here????")
 	return nil
 }
 

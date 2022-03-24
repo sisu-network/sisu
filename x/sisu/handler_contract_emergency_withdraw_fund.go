@@ -2,9 +2,6 @@ package sisu
 
 import (
 	"fmt"
-	"strconv"
-	"strings"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	etypes "github.com/ethereum/go-ethereum/core/types"
 	hTypes "github.com/sisu-network/dheart/types"
@@ -14,6 +11,7 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
+	"strconv"
 )
 
 type HandlerContractEmergencyWithdrawFund struct {
@@ -32,12 +30,12 @@ func NewHandlerContractEmergencyWithdrawFund(mc ManagerContainer) *HandlerContra
 
 func (h *HandlerContractEmergencyWithdrawFund) DeliverMsg(ctx sdk.Context, msg *types.EmergencyWithdrawFundMsg) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
-		data, err := newHandlerContractEmergencyWithdrawFund(h.mc).doChangeOwner(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.NewOwner)
+		data, err := newHandlerContractEmergencyWithdrawFund(h.mc).doWithdrawFund(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.TokenAddresses, msg.Data.NewOwner)
 		h.keeper.ProcessTxRecord(ctx, hash)
 
 		return &sdk.Result{Data: data}, err
 	} else {
-		log.Verbose("HandlerContractChangeOwnership: didn't not reach consensus or transaction has been processed")
+		log.Verbose("HandlerContractEmergencyWithdrawFund: didn't not reach consensus or transaction has been processed")
 	}
 
 	return &sdk.Result{}, nil
@@ -69,21 +67,7 @@ func (h *handlerContractEmergencyWithdrawFund) doWithdrawFund(ctx sdk.Context, c
 		return nil, nil
 	}
 
-	found := false
-	for _, contract := range SupportedContracts {
-		if strings.EqualFold(strings.ToLower(contract.AbiHash), strings.ToLower(hash)) {
-			found = true
-			break
-		}
-	}
-
-	if !found {
-		err := fmt.Errorf("doWithdrawFund: contract with hash %s is not supported", hash)
-		log.Error(err)
-		return nil, err
-	}
-
-	msg, err := h.txOutputProducer.ContractChangeOwnership(ctx, chain, hash, newOwner)
+	msg, err := h.txOutputProducer.ContractEmergencyWithdrawFund(ctx, chain, hash, tokens, newOwner)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +83,7 @@ func (h *handlerContractEmergencyWithdrawFund) doWithdrawFund(ctx sdk.Context, c
 
 // TODO: duplicate code with pause/resume contract handler, fix it
 // signTx sends a TxOut to dheart for TSS signing.
-func (h *handlerContractChangeOwnership) signTx(ctx sdk.Context, tx *types.TxOut) {
+func (h *handlerContractEmergencyWithdrawFund) signTx(ctx sdk.Context, tx *types.TxOut) {
 	ethTx := &etypes.Transaction{}
 	if err := ethTx.UnmarshalBinary(tx.OutBytes); err != nil {
 		log.Error("cannot unmarshal tx, err =", err)
@@ -136,6 +120,6 @@ func (h *handlerContractChangeOwnership) signTx(ctx sdk.Context, tx *types.TxOut
 	}
 }
 
-func (h *handlerContractChangeOwnership) getKeysignRequestId(chain string, blockHeight int64, txHash string) string {
+func (h *handlerContractEmergencyWithdrawFund) getKeysignRequestId(chain string, blockHeight int64, txHash string) string {
 	return chain + "_" + strconv.Itoa(int(blockHeight)) + "_" + txHash
 }

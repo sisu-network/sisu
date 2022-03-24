@@ -125,6 +125,10 @@ func (h *HandlerKeygenResult) createContracts(ctx sdk.Context, msg *types.Keygen
 
 			for _, name := range names {
 				c := SupportedContracts[name]
+				if !c.IsDeployBySisu {
+					continue
+				}
+
 				contract := &types.Contract{
 					Chain:     chain,
 					Hash:      c.AbiHash,

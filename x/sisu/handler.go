@@ -62,6 +62,8 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 			return NewHandlerContractChangeOwnership(mc).DeliverMsg(ctx, msg)
 		case *types.ChangeLiquidPoolAddressMsg:
 			return NewHandlerContractSetLiquidityAddress(mc).DeliverMsg(ctx, msg)
+		case *types.EmergencyWithdrawFundMsg:
+			return NewHandlerContractEmergencyWithdrawFund(mc).DeliverMsg(ctx, msg)
 
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)

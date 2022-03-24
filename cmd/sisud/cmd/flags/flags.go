@@ -12,4 +12,6 @@ const (
 	NewLiquidityAddress = "new-liquidity-address"
 	Contract            = "contract"
 	Mnemonic            = "mnemonic"
+	ContractHash        = "contract-hash"
+	Tokens              = "tokens"
 )

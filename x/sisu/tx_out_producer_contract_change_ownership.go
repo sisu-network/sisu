@@ -33,7 +33,7 @@ func (p *DefaultTxOutputProducer) ContractChangeOwnership(ctx sdk.Context, chain
 
 	nonce := p.worldState.UseAndIncreaseNonce(ctx, chain)
 	if nonce < 0 {
-		err := errors.New("PauseEthContract: cannot find nonce for chain " + chain)
+		err := errors.New("ContractChangeOwnership: cannot find nonce for chain " + chain)
 		log.Error(err)
 		return nil, err
 	}
@@ -70,5 +70,4 @@ func (p *DefaultTxOutputProducer) ContractChangeOwnership(ctx sdk.Context, chain
 		bz,
 		contractHash, // contract hash
 	), nil
-
 }
