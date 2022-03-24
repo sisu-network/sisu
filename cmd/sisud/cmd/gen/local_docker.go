@@ -140,9 +140,9 @@ Example:
 
 				ips:         ips,
 				nodeConfigs: nodeConfigs,
-				tokens:      getTokens("./misc/tokens_dev.json"),
-				chains:      getChains("./misc/chains.json"),
-				liquidities: getLiquidity("./misc/liquid_dev.json"),
+				tokens:      getTokens("./misc/dev/tokens.json"),
+				chains:      getChains("./misc/dev/chains.json"),
+				liquidities: getLiquidity("./misc/dev/liquid.json"),
 				params:      &types.Params{MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3))},
 			}
 
