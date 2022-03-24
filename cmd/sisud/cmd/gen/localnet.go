@@ -202,7 +202,14 @@ func (g *localnetGenerator) getAuthTransactor(client *ethclient.Client, address 
 		panic(err)
 	}
 
-	auth := bind.NewKeyedTransactor(privateKey)
+	chainId, err := client.ChainID(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainId)
+	if err != nil {
+		return nil, err
+	}
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0)
 	auth.GasPrice = gasPrice

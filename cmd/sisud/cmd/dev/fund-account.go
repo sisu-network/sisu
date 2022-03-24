@@ -378,7 +378,15 @@ func (c *fundAccountCmd) getAuthTransactor(client *ethclient.Client, address com
 	// This is the private key of the accounts0
 	privateKey := c.getPrivateKey()
 
-	auth := bind.NewKeyedTransactor(privateKey)
+	chainId, err := client.ChainID(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainId)
+	if err != nil {
+		return nil, err
+	}
+
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0)
 	auth.GasPrice = gasPrice
