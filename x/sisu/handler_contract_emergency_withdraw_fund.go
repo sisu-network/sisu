@@ -61,7 +61,6 @@ func newHandlerContractEmergencyWithdrawFund(mc ManagerContainer) *handlerContra
 
 func (h *handlerContractEmergencyWithdrawFund) doWithdrawFund(ctx sdk.Context, chain, hash string,
 	tokens []string, newOwner string) ([]byte, error) {
-	// Only do pause/pause if we finished catching up.
 	if h.globalData.IsCatchingUp() {
 		log.Info("We are catching up with the network, exiting doWithdrawFund")
 		return nil, nil
