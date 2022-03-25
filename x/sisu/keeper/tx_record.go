@@ -79,9 +79,13 @@ func GetTxRecordHash(msg sdk.Msg) ([]byte, string, error) {
 			return nil, "", err
 		}
 		return []byte(utils.KeccakHash32(string(serialized))), msg.Signer, nil
+	case *types.LiquidityWithdrawFundMsg:
+		serialized, err := msg.Data.Marshal()
+		if err != nil {
+			return nil, "", err
+		}
+		return []byte(utils.KeccakHash32(string(serialized))), msg.Signer, nil
 	}
-
-
 
 	return nil, "", NotFound
 }

@@ -116,6 +116,7 @@ func FundAccount() *cobra.Command {
 
 			// Fund the accounts
 			allPubKeys := queryPubKeys(cmd, sisuRpc)
+			var tssPubAddr common.Address
 			for _, client := range clients {
 				// Get chain and local chain URL
 				pubKeyBytes := allPubKeys[libchain.KEY_TYPE_ECDSA]
@@ -123,9 +124,9 @@ func FundAccount() *cobra.Command {
 				if err != nil {
 					panic(err)
 				}
-				addr := crypto.PubkeyToAddress(*pubKey).Hex()
+				tssPubAddr = crypto.PubkeyToAddress(*pubKey)
 
-				c.transferEth(client, addr, amount)
+				c.transferEth(client, tssPubAddr.Hex(), amount)
 			}
 
 			// Waits until all gateway contracts are deployed.
@@ -153,6 +154,21 @@ func FundAccount() *cobra.Command {
 			}
 			wg.Wait()
 			log.Info("Gateway approval done!")
+
+			// Transfer ownership of liquidity pool to TSS public address
+			log.Info("Transferring ownership of liquidity pool for ", tssPubAddr.Hex())
+			wg.Add(len(clients))
+			for i, client := range clients {
+				go func(i int, client *ethclient.Client) {
+					if err := c.transferLiquidityOwnership(client, liquidityAddrs[i], tssPubAddr); err != nil {
+						panic(err)
+					}
+
+					wg.Done()
+				}(i, client)
+			}
+			wg.Wait()
+			log.Info("Transferred ownership of liquidity pool to tss public address")
 
 			// Transfer ERC20 tokens
 			erc20Amount := new(big.Int).Mul(big.NewInt(500), utils.EthToWei)
@@ -540,7 +556,7 @@ func (c *fundAccountCmd) getNonceAndGas(client *ethclient.Client, addr common.Ad
 func (c *fundAccountCmd) transferErc20Tokens(
 	client *ethclient.Client,
 	tokenAddress common.Address,
-	gatewateAddr common.Address,
+	gatewayAddr common.Address,
 	amount *big.Int,
 ) {
 	opts, err := c.getAuthTransactor(client, account0.Address)
@@ -553,7 +569,7 @@ func (c *fundAccountCmd) transferErc20Tokens(
 		panic(err)
 	}
 
-	tx, err := store.Transfer(opts, gatewateAddr, amount)
+	tx, err := store.Transfer(opts, gatewayAddr, amount)
 	if err != nil {
 		panic(err)
 	}
@@ -575,4 +591,29 @@ func (c *fundAccountCmd) queryErc20Balance(
 	balance, err := store.BalanceOf(nil, target)
 
 	return balance, err
+}
+
+func (c *fundAccountCmd) transferLiquidityOwnership(
+	client *ethclient.Client, liquidAddr, newOwner common.Address) error {
+	liquidInstance, err := liquidity.NewLiquidity(liquidAddr, client)
+	if err != nil {
+		return err
+	}
+
+	auth, err := c.getAuthTransactor(client, account0.Address)
+	if err != nil {
+		panic(err)
+	}
+
+	tx, err := liquidInstance.TransferOwnership(auth, newOwner)
+	if err != nil {
+		return err
+	}
+
+	_, err = bind.WaitMined(context.Background(), client, tx)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

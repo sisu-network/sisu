@@ -6,34 +6,23 @@ import (
 	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	ethcommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
-
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-func (p *DefaultTxOutputProducer) ContractChangeOwnership(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutWithSigner, error) {
+func (p *DefaultTxOutputProducer) ContractEmergencyWithdrawFund(ctx sdk.Context, chain, contractHash string,
+	tokens []string, newOwner string) (*types.TxOutWithSigner, error) {
+
 	if !libchain.IsETHBasedChain(chain) {
 		return nil, fmt.Errorf("unsupported chain %s", chain)
 	}
 
-	// TODO: Support more than gateway contract
-	targetContractName := ContractErc20Gateway
-	gw := p.keeper.GetLatestContractAddressByName(ctx, chain, targetContractName)
-	if len(gw) == 0 {
-		err := fmt.Errorf("ContractChangeOwnership: cannot find gw address for type: %s", targetContractName)
-		log.Error(err)
-		return nil, err
-	}
-
-	gatewayAddress := ethcommon.HexToAddress(gw)
-	erc20gatewayContract := SupportedContracts[targetContractName]
-
 	nonce := p.worldState.UseAndIncreaseNonce(ctx, chain)
 	if nonce < 0 {
-		err := errors.New("ContractChangeOwnership: cannot find nonce for chain " + chain)
+		err := errors.New("ContractEmergencyWithdrawFund: cannot find nonce for chain " + chain)
 		log.Error(err)
 		return nil, err
 	}
@@ -43,10 +32,21 @@ func (p *DefaultTxOutputProducer) ContractChangeOwnership(ctx sdk.Context, chain
 		return nil, err
 	}
 
-	input, err := erc20gatewayContract.Abi.Pack(MethodTransferOwnership, ethcommon.HexToAddress(newOwner))
+	liquidityContract := SupportedContracts[ContractLiquidityPool]
+	tokenHashes := make([]common.Address, 0, len(tokens))
+	for _, token := range tokens {
+		tokenHashes = append(tokenHashes, common.HexToAddress(token))
+	}
+
+	input, err := liquidityContract.Abi.Pack(MethodEmergencyWithdrawFund, tokenHashes, common.HexToAddress(newOwner))
+	if err != nil {
+		log.Error("ContractEmergencyWithdrawFund: error when pack input ", err)
+		return nil, err
+	}
+
 	rawTx := ethTypes.NewTransaction(
 		uint64(nonce),
-		gatewayAddress,
+		common.HexToAddress(contractHash),
 		big.NewInt(0),
 		p.getGasLimit(chain),
 		gasPrice,
@@ -61,7 +61,7 @@ func (p *DefaultTxOutputProducer) ContractChangeOwnership(ctx sdk.Context, chain
 
 	return types.NewMsgTxOutWithSigner(
 		p.appKeys.GetSignerAddress().String(),
-		types.TxOutType_TRANSFER_OUT,
+		types.TxOutType_LIQUIDITY_WITHDRAW_FUND,
 		0,
 		"",                    // in chain
 		"",                    // in hash

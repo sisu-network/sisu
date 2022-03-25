@@ -13,6 +13,7 @@ const (
 	MsgTypeResumeContract                 = "ResumeContract"
 	MsgTypeContractChangeOwnership        = "ContractChangeOwnership"
 	MsgTypeContractChangeLiquidityAddress = "ContractChangeLiquidityAddress"
+	MsgTypeContractLiquidityWithdrawFund  = "ContractLiquidityWithdrawFund"
 
 	MsgTypeTxOut         = "TxOut"
 	MsgTypeKeysignResult = "KeysignResult"
