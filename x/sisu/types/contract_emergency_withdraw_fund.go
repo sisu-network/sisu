@@ -5,12 +5,12 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-var _ sdk.Msg = &EmergencyWithdrawFundMsg{}
+var _ sdk.Msg = &LiquidityWithdrawFundMsg{}
 
-func NewEmergencyWithdrawFundMsg(signer, chain, hash string, tokens []string, newOwner string, index int32) *EmergencyWithdrawFundMsg {
-	return &EmergencyWithdrawFundMsg{
+func NewLiquidityWithdrawFundMsg(signer, chain, hash string, tokens []string, newOwner string, index int32) *LiquidityWithdrawFundMsg {
+	return &LiquidityWithdrawFundMsg{
 		Signer: signer,
-		Data: &WithdrawFund{
+		Data: &LiquidityWithdrawFund{
 			Chain:          chain,
 			Hash:           hash,
 			TokenAddresses: tokens,
@@ -21,17 +21,17 @@ func NewEmergencyWithdrawFundMsg(signer, chain, hash string, tokens []string, ne
 }
 
 // Route ...
-func (msg *EmergencyWithdrawFundMsg) Route() string {
+func (msg *LiquidityWithdrawFundMsg) Route() string {
 	return RouterKey
 }
 
 // Type ...
-func (msg *EmergencyWithdrawFundMsg) Type() string {
-	return MsgTypeContractEmergencyWithdrawFund
+func (msg *LiquidityWithdrawFundMsg) Type() string {
+	return MsgTypeContractLiquidityWithdrawFund
 }
 
 // GetSigners ...
-func (msg *EmergencyWithdrawFundMsg) GetSigners() []sdk.AccAddress {
+func (msg *LiquidityWithdrawFundMsg) GetSigners() []sdk.AccAddress {
 	author, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		panic(err)
@@ -39,18 +39,18 @@ func (msg *EmergencyWithdrawFundMsg) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{author}
 }
 
-func (msg *EmergencyWithdrawFundMsg) GetMsgs() []sdk.Msg {
+func (msg *LiquidityWithdrawFundMsg) GetMsgs() []sdk.Msg {
 	return []sdk.Msg{msg}
 }
 
 // GetSignBytes ...
-func (msg *EmergencyWithdrawFundMsg) GetSignBytes() []byte {
+func (msg *LiquidityWithdrawFundMsg) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
 // ValidateBasic ...
-func (msg *EmergencyWithdrawFundMsg) ValidateBasic() error {
+func (msg *LiquidityWithdrawFundMsg) ValidateBasic() error {
 	_, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid creator address (%s)", err)

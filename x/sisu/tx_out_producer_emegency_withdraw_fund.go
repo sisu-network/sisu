@@ -61,7 +61,7 @@ func (p *DefaultTxOutputProducer) ContractEmergencyWithdrawFund(ctx sdk.Context,
 
 	return types.NewMsgTxOutWithSigner(
 		p.appKeys.GetSignerAddress().String(),
-		types.TxOutType_EMERGENCY_WITHDRAW_FUND,
+		types.TxOutType_LIQUIDITY_WITHDRAW_FUND,
 		0,
 		"",                    // in chain
 		"",                    // in hash

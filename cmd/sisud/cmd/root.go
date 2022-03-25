@@ -122,7 +122,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, a
 		ResumeContractCmd(),
 		ContractChangeOwnershipCmd(),
 		ContractChangeLiquidityAddressCmd(),
-		ContractEmergencyWithdrawFund(),
+		ContractLiquidityWithdrawFund(),
 	)
 
 	a := appCreator{

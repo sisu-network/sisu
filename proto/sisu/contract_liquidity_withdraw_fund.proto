@@ -3,12 +3,12 @@ package types;
 
 option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 
-message EmergencyWithdrawFundMsg {
+message LiquidityWithdrawFundMsg {
   string signer = 1;
-  WithdrawFund data = 2;
+  LiquidityWithdrawFund data = 2;
 }
 
-message WithdrawFund{
+message LiquidityWithdrawFund{
   string chain = 1;
   string hash = 2;
   repeated string tokenAddresses = 3;

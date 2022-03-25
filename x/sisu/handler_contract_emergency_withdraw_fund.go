@@ -2,6 +2,8 @@ package sisu
 
 import (
 	"fmt"
+	"strconv"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	etypes "github.com/ethereum/go-ethereum/core/types"
 	hTypes "github.com/sisu-network/dheart/types"
@@ -11,37 +13,11 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
-	"strconv"
 )
 
-type HandlerContractEmergencyWithdrawFund struct {
-	pmm    PostedMessageManager
-	keeper keeper.Keeper
-	mc     ManagerContainer
-}
-
-func NewHandlerContractEmergencyWithdrawFund(mc ManagerContainer) *HandlerContractEmergencyWithdrawFund {
-	return &HandlerContractEmergencyWithdrawFund{
-		keeper: mc.Keeper(),
-		pmm:    mc.PostedMessageManager(),
-		mc:     mc,
-	}
-}
-
-func (h *HandlerContractEmergencyWithdrawFund) DeliverMsg(ctx sdk.Context, msg *types.EmergencyWithdrawFundMsg) (*sdk.Result, error) {
-	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
-		data, err := newHandlerContractEmergencyWithdrawFund(h.mc).doWithdrawFund(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.TokenAddresses, msg.Data.NewOwner)
-		h.keeper.ProcessTxRecord(ctx, hash)
-
-		return &sdk.Result{Data: data}, err
-	} else {
-		log.Verbose("HandlerContractEmergencyWithdrawFund: didn't not reach consensus or transaction has been processed")
-	}
-
-	return &sdk.Result{}, nil
-}
-
-type handlerContractEmergencyWithdrawFund struct {
+type HandlerContractLiquidityWithdrawFund struct {
+	pmm              PostedMessageManager
+	mc               ManagerContainer
 	keeper           keeper.Keeper
 	txOutputProducer TxOutputProducer
 	globalData       common.GlobalData
@@ -49,9 +25,11 @@ type handlerContractEmergencyWithdrawFund struct {
 	dheartClient     tssclients.DheartClient
 }
 
-func newHandlerContractEmergencyWithdrawFund(mc ManagerContainer) *handlerContractEmergencyWithdrawFund {
-	return &handlerContractEmergencyWithdrawFund{
+func NewHandlerContractLiquidityWithdrawFund(mc ManagerContainer) *HandlerContractLiquidityWithdrawFund {
+	return &HandlerContractLiquidityWithdrawFund{
 		keeper:           mc.Keeper(),
+		pmm:              mc.PostedMessageManager(),
+		mc:               mc,
 		txOutputProducer: mc.TxOutProducer(),
 		globalData:       mc.GlobalData(),
 		partyManager:     mc.PartyManager(),
@@ -59,7 +37,20 @@ func newHandlerContractEmergencyWithdrawFund(mc ManagerContainer) *handlerContra
 	}
 }
 
-func (h *handlerContractEmergencyWithdrawFund) doWithdrawFund(ctx sdk.Context, chain, hash string,
+func (h *HandlerContractLiquidityWithdrawFund) DeliverMsg(ctx sdk.Context, msg *types.LiquidityWithdrawFundMsg) (*sdk.Result, error) {
+	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
+		data, err := h.doWithdrawFund(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.TokenAddresses, msg.Data.NewOwner)
+		h.keeper.ProcessTxRecord(ctx, hash)
+
+		return &sdk.Result{Data: data}, err
+	} else {
+		log.Verbose("HandlerContractLiquidityWithdrawFund: didn't not reach consensus or transaction has been processed")
+	}
+
+	return &sdk.Result{}, nil
+}
+
+func (h *HandlerContractLiquidityWithdrawFund) doWithdrawFund(ctx sdk.Context, chain, hash string,
 	tokens []string, newOwner string) ([]byte, error) {
 	if h.globalData.IsCatchingUp() {
 		log.Info("We are catching up with the network, exiting doWithdrawFund")
@@ -82,7 +73,7 @@ func (h *handlerContractEmergencyWithdrawFund) doWithdrawFund(ctx sdk.Context, c
 
 // TODO: duplicate code with pause/resume contract handler, fix it
 // signTx sends a TxOut to dheart for TSS signing.
-func (h *handlerContractEmergencyWithdrawFund) signTx(ctx sdk.Context, tx *types.TxOut) {
+func (h *HandlerContractLiquidityWithdrawFund) signTx(ctx sdk.Context, tx *types.TxOut) {
 	ethTx := &etypes.Transaction{}
 	if err := ethTx.UnmarshalBinary(tx.OutBytes); err != nil {
 		log.Error("cannot unmarshal tx, err =", err)
@@ -119,6 +110,6 @@ func (h *handlerContractEmergencyWithdrawFund) signTx(ctx sdk.Context, tx *types
 	}
 }
 
-func (h *handlerContractEmergencyWithdrawFund) getKeysignRequestId(chain string, blockHeight int64, txHash string) string {
+func (h *HandlerContractLiquidityWithdrawFund) getKeysignRequestId(chain string, blockHeight int64, txHash string) string {
 	return chain + "_" + strconv.Itoa(int(blockHeight)) + "_" + txHash
 }
