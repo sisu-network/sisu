@@ -94,6 +94,13 @@ shortcut-preparams = {{ .ShortcutPreparams }}
 sisu-server-url = "{{ .SisuServerUrl }}"
 port = 5678
 
+[log_dna]
+secret = "{{ .LogDNA.Secret }}"
+app_name = "{{ .LogDNA.AppName }}"
+host_name = "{{ .LogDNA.HostName }}"
+flush_interval = "{{ .LogDNA.FlushInterval }}"
+max_buffer_len = {{ .LogDNA.MaxBufferLen }}
+
 ###############################################################################
 ###                        Database Configuration                           ###
 ###############################################################################

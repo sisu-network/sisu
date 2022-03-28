@@ -134,11 +134,13 @@ Example:
 			dnaConfig := testnetConfig.LogDNAConfig
 
 			sisuIps := make([]string, numValidators)
+			eyesIps := make([]string, numValidators)
 			heartIps := make([]string, numValidators)
 
 			for i := 0; i < numValidators; i++ {
 				sisuIps[i] = nodes[i].SisuIp
 				heartIps[i] = nodes[i].HeartIp
+				eyesIps[i] = nodes[i].EyesIp
 			}
 			log.Info("ips = ", sisuIps)
 
@@ -198,10 +200,10 @@ Example:
 				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
 
 				// Dheart configs
-				generator.generateHeartToml(i, dir, heartIps, peerIds, sisuIps[i], nodes[i].Sql, valPubKeys)
+				generator.generateHeartToml(i, dir, heartIps, peerIds, sisuIps[i], nodes[i].Sql, valPubKeys, dnaConfig)
 
 				// Deyes configs
-				generator.generateEyesToml(i, dir, sisuIps[i], nodes[i].Sql, testnetConfig.Chains, dnaConfig)
+				generator.generateEyesToml(i, dir, sisuIps[i], eyesIps[i], nodes[i].Sql, testnetConfig.Chains, dnaConfig)
 			}
 
 			return err
@@ -254,7 +256,7 @@ func (g *TestnetGenerator) getNodeSettings(nodeIndex int, chainID, keyringBacken
 }
 
 func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartIps []string,
-	peerIds []string, sisuIp string, sqlConfig SqlConfig, valPubKeys []cryptotypes.PubKey) {
+	peerIds []string, sisuIp string, sqlConfig SqlConfig, valPubKeys []cryptotypes.PubKey, dnaConfig log.LogDNAConfig) {
 	peers := make([]*p2ptypes.Peer, 0, len(peerIds)-1)
 	for i := range peerIds {
 		if i == index {
@@ -278,6 +280,9 @@ func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartI
 
 	sisuUrl := fmt.Sprintf("http://%s:25456", sisuIp)
 
+	dnaConfig.HostName = heartIps[index]
+	dnaConfig.AppName = fmt.Sprintf("dheart%d", index)
+
 	hConfig := heartconfig.HeartConfig{
 		UseOnMemory:       false,
 		ShortcutPreparams: false,
@@ -295,15 +300,17 @@ func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartI
 			Port:       28300,
 			Rendezvous: "rendezvous",
 		},
+		LogDNA: dnaConfig,
 	}
 
 	writeHeartConfig(outputDir, hConfig)
 }
 
-func (g *TestnetGenerator) generateEyesToml(index int, dir string, sisuIp string, sqlConfig SqlConfig, chainConfigs []ChainConfig, dnaConfig log.LogDNAConfig) {
+func (g *TestnetGenerator) generateEyesToml(index int, dir string, sisuIp, deyesIp string, sqlConfig SqlConfig,
+	chainConfigs []ChainConfig, dnaConfig log.LogDNAConfig) {
 	sqlConfig.Schema = "deyes"
 
-	dnaConfig.HostName = sisuIp
+	dnaConfig.HostName = deyesIp
 	dnaConfig.AppName = fmt.Sprintf("deyes%d", index)
 
 	deyesConfig := DeyesConfiguration{
