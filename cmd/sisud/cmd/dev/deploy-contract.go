@@ -71,11 +71,6 @@ deploy --contract liquidity --chain-urls http://localhost:7545,http://localhost:
 
 			log.Info("Key public addr = ", addr)
 
-			for _, client := range clients {
-				balance := c.queryNativeBalance(client, addr)
-				fmt.Println("balance = ", balance)
-			}
-
 			for i, client := range clients {
 				// If liquidity contract has been deployed, do nothing.
 				if len(expectedAddress[i]) > 0 && c.isContractDeployed(client, common.HexToAddress(expectedAddress[i])) {
@@ -156,7 +151,7 @@ func (c *DeployContractCmd) deployLiquidity(client *ethclient.Client, accountAdd
 		panic(err)
 	}
 
-	_, tx, _, err := liquidity.DeployLiquidity(auth, client, []common.Address{}, []common.Address{})
+	_, tx, _, err := liquidity.DeployLiquidity(auth, client, []common.Address{}, []string{})
 	if err != nil {
 		panic(err)
 	}

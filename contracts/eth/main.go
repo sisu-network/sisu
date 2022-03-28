@@ -57,8 +57,6 @@ func main() {
 
 	flag.Parse()
 
-	fmt.Println("target = ", *target)
-
 	filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if info.IsDir() {
 			return nil
