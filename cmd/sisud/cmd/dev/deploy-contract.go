@@ -17,7 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
-	"github.com/sisu-network/sisu/contracts/eth/liquidity"
+	liquidity "github.com/sisu-network/sisu/contracts/eth/liquiditypool"
 	"github.com/spf13/cobra"
 )
 
@@ -151,7 +151,7 @@ func (c *DeployContractCmd) deployLiquidity(client *ethclient.Client, accountAdd
 		panic(err)
 	}
 
-	_, tx, _, err := liquidity.DeployLiquidity(auth, client, []common.Address{}, []string{})
+	_, tx, _, err := liquidity.DeployLiquiditypool(auth, client, []common.Address{}, []string{})
 	if err != nil {
 		panic(err)
 	}

@@ -22,7 +22,7 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
-	"github.com/sisu-network/sisu/contracts/eth/liquidity"
+	liquidity "github.com/sisu-network/sisu/contracts/eth/liquiditypool"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu"
 	tssTypes "github.com/sisu-network/sisu/x/sisu/types"
@@ -306,7 +306,7 @@ func (c *fundAccountCmd) approveTransfer(client *ethclient.Client, erc20Addr com
 func (c *fundAccountCmd) grantLiquidityPoolAccess(client *ethclient.Client, liquidityAddr, gatewayAddr common.Address) {
 	log.Infof("Granting access for gatewayAddr to call liquidity pool, gateway address: %s\n", gatewayAddr.String())
 
-	contract, err := liquidity.NewLiquidity(liquidityAddr, client)
+	contract, err := liquidity.NewLiquiditypool(liquidityAddr, client)
 	if err != nil {
 		panic(err)
 	}
@@ -342,7 +342,7 @@ func (c *fundAccountCmd) deployLiquid(client *ethclient.Client, tokens []common.
 		panic("invalid nonce, the account0 nonce should be zero. Please restart your ganache and try again.")
 	}
 
-	_, tx, _, err := liquidity.DeployLiquidity(auth, client, tokens, names)
+	_, tx, _, err := liquidity.DeployLiquiditypool(auth, client, tokens, names)
 	if err != nil {
 		panic(err)
 	}
@@ -586,7 +586,7 @@ func (c *fundAccountCmd) getNonceAndGas(client *ethclient.Client, addr common.Ad
 }
 
 func (c *fundAccountCmd) addLiquidity(client *ethclient.Client, liquidAddr, tokenAddress common.Address) {
-	liquidInstance, err := liquidity.NewLiquidity(liquidAddr, client)
+	liquidInstance, err := liquidity.NewLiquiditypool(liquidAddr, client)
 	if err != nil {
 		panic(err)
 	}
@@ -605,7 +605,7 @@ func (c *fundAccountCmd) addLiquidity(client *ethclient.Client, liquidAddr, toke
 }
 
 func (c *fundAccountCmd) setGateway(client *ethclient.Client, liquidAddr, gateway common.Address) {
-	liquidInstance, err := liquidity.NewLiquidity(liquidAddr, client)
+	liquidInstance, err := liquidity.NewLiquiditypool(liquidAddr, client)
 	if err != nil {
 		panic(err)
 	}
@@ -664,7 +664,7 @@ func (c *fundAccountCmd) queryErc20Balance(
 
 func (c *fundAccountCmd) transferLiquidityOwnership(
 	client *ethclient.Client, liquidAddr, newOwner common.Address) error {
-	liquidInstance, err := liquidity.NewLiquidity(liquidAddr, client)
+	liquidInstance, err := liquidity.NewLiquiditypool(liquidAddr, client)
 	if err != nil {
 		return err
 	}

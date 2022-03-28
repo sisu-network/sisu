@@ -6,7 +6,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/sisu-network/sisu/contracts/eth/erc20gateway"
-	"github.com/sisu-network/sisu/contracts/eth/liquidity"
+	"github.com/sisu-network/sisu/contracts/eth/liquiditypool"
 	"github.com/sisu-network/sisu/utils"
 )
 
@@ -42,9 +42,9 @@ var (
 			IsDeployBySisu: true,
 		},
 		ContractLiquidityPool: {
-			AbiString:      liquidity.LiquidityABI,
-			Bin:            liquidity.LiquidityBin,
-			AbiHash:        utils.KeccakHash32(liquidity.LiquidityBin),
+			AbiString:      liquiditypool.LiquiditypoolABI,
+			Bin:            liquiditypool.LiquiditypoolBin,
+			AbiHash:        utils.KeccakHash32(liquiditypool.LiquiditypoolBin),
 			IsDeployBySisu: false,
 		},
 	}

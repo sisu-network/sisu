@@ -1279,7 +1279,7 @@ contract LPToken is ERC20, Ownable, ILPToken {
 
 // File contracts/Liquidity.sol
 
-contract Liquidity is Ownable, ILiquidityPool {
+contract LiquidityPool is Ownable, ILiquidityPool {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -1339,13 +1339,13 @@ contract Liquidity is Ownable, ILiquidityPool {
             "user's balance is less than required amount"
         );
 
+        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+
         uint256 toMint = calculateLPTokenDepositOrWithdraw(_token, _amount);
         if (toMint > 0) {
             LPToken lpToken = lpTokenMapping[_token];
             lpToken.mint(msg.sender, toMint);
         }
-
-        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
 
         liquidityPool[_token][msg.sender] = liquidityPool[_token][msg.sender]
             .add(_amount);
@@ -1369,9 +1369,6 @@ contract Liquidity is Ownable, ILiquidityPool {
             "deposited token amount is less than withdraw token amount"
         );
 
-        // Transfer the token amount to user.
-        IERC20(_token).safeTransfer(msg.sender, _amount);
-
         // Burn LP token
         uint256 lpTokenBurnAmount = calculateLPTokenDepositOrWithdraw(
             _token,
@@ -1381,6 +1378,9 @@ contract Liquidity is Ownable, ILiquidityPool {
         lpToken.burn(msg.sender, lpTokenBurnAmount);
 
         liquidityPool[_token][msg.sender] = currentAmount.sub(_amount);
+
+        // Transfer the token amount to user.
+        IERC20(_token).safeTransfer(msg.sender, _amount);
 
         emit RemoveLiquidity(_token, _amount, lpTokenBurnAmount);
     }
