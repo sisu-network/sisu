@@ -42,9 +42,9 @@ var (
 			IsDeployBySisu: true,
 		},
 		ContractLiquidityPool: {
-			AbiString:      liquidity.LiquidityMetaData.ABI,
-			Bin:            liquidity.LiquidityMetaData.Bin,
-			AbiHash:        utils.KeccakHash32(liquidity.LiquidityMetaData.Bin),
+			AbiString:      liquidity.LiquidityABI,
+			Bin:            liquidity.LiquidityBin,
+			AbiHash:        utils.KeccakHash32(liquidity.LiquidityBin),
 			IsDeployBySisu: false,
 		},
 	}

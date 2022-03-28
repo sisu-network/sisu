@@ -1279,7 +1279,7 @@ contract LPToken is ERC20, Ownable, ILPToken {
 
 // File contracts/Liquidity.sol
 
-contract LiquidityPool is Ownable, ILiquidityPool {
+contract Liquidity is Ownable, ILiquidityPool {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 

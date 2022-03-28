@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -52,6 +53,12 @@ func compileContract(name string) {
 
 // Generates contracts
 func main() {
+	target := flag.String("target", "", "Name of the target contract. Use empty string to generate all contract data.")
+
+	flag.Parse()
+
+	fmt.Println("target = ", *target)
+
 	filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
 		if info.IsDir() {
 			return nil
@@ -62,7 +69,10 @@ func main() {
 		}
 
 		parts := strings.Split(path, ".")
-		compileContract(parts[0])
+
+		if *target == "" || *target == parts[0] {
+			compileContract(parts[0])
+		}
 
 		return nil
 	})
