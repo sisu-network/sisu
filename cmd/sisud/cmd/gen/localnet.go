@@ -120,9 +120,9 @@ Example:
 				algoStr:        algo,
 				numValidators:  numValidators,
 				nodeConfigs:    []config.Config{nodeConfig},
-				tokens:         getTokens("./misc/tokens_dev.json"),
-				chains:         getChains("./misc/chains.json"),
-				liquidities:    getLiquidity("./misc/liquid_dev.json"),
+				tokens:         getTokens("./misc/dev/tokens.json"),
+				chains:         getChains("./misc/dev/chains.json"),
+				liquidities:    getLiquidity("./misc/dev/liquid.json"),
 				params:         &types.Params{MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3))},
 			}
 
@@ -202,7 +202,14 @@ func (g *localnetGenerator) getAuthTransactor(client *ethclient.Client, address 
 		panic(err)
 	}
 
-	auth := bind.NewKeyedTransactor(privateKey)
+	chainId, err := client.ChainID(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainId)
+	if err != nil {
+		return nil, err
+	}
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0)
 	auth.GasPrice = gasPrice

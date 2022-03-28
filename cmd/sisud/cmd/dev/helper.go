@@ -69,7 +69,14 @@ func getAuthTransactor(client *ethclient.Client, address common.Address) (*bind.
 		return nil, err
 	}
 
-	auth := bind.NewKeyedTransactor(privateKey0)
+	chainId, err := client.ChainID(context.Background())
+	if err != nil {
+		return nil, err
+	}
+	auth, err := bind.NewKeyedTransactorWithChainID(privateKey0, chainId)
+	if err != nil {
+		return nil, err
+	}
 	auth.Nonce = nonceMap[addrString]
 	auth.Value = big.NewInt(0)
 	auth.GasPrice = gasPrice
