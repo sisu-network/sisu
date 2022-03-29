@@ -35,6 +35,10 @@ const (
 	ExpectedLiquidPoolAddress = "0xf0D676183dD5ae6b370adDdbE770235F23546f9d"
 )
 
+var (
+	ContributionAmount = new(big.Int).Mul(big.NewInt(500), utils.EthToWei)
+)
+
 type fundAccountCmd struct{}
 
 func FundAccount() *cobra.Command {
@@ -115,12 +119,12 @@ func FundAccount() *cobra.Command {
 			wg.Add(len(clients))
 			for i, client := range clients {
 				go func(i int, client *ethclient.Client) {
-					c.approveTransfer(client, tokenAddrs[i], liquidityAddrs[i])
+					c.approveAddress(client, tokenAddrs[i], liquidityAddrs[i])
 					wg.Done()
 				}(i, client)
 			}
 			wg.Wait()
-			log.Info("Liquidity pool approval done!")
+			log.Info("Liquidity approval done!")
 
 			time.Sleep(time.Second * 3)
 
@@ -148,6 +152,8 @@ func FundAccount() *cobra.Command {
 			// not deployed yet.
 			c.waitForGatewayCreationInSisuDb(cmd.Context(), chains, sisuRpc)
 
+			time.Sleep(time.Second * 3)
+
 			// Fund the accounts with some native ETH
 			allPubKeys := queryPubKeys(cmd, sisuRpc)
 			var tssPubAddr common.Address
@@ -172,6 +178,17 @@ func FundAccount() *cobra.Command {
 			// Waits until all gateway contracts are deployed.
 			log.Info("Now we wait until gateway contracts are deployed on all chains.")
 			gateways := c.waitForGatewayDeployed(cmd.Context(), chains, sisuRpc)
+
+			// Approve the contract with some preallocated token from account0
+			wg.Add(len(clients))
+			for i, client := range clients {
+				go func(i int, client *ethclient.Client) {
+					c.approveAddress(client, tokenAddrs[i], gateways[i])
+					wg.Done()
+				}(i, client)
+			}
+			wg.Wait()
+			log.Info("Gateway approval done!")
 
 			// Grant permission for gateway to use liquidity pool' funds
 			log.Info("Set gateway address for liqiuitidy pool")
@@ -199,35 +216,7 @@ func FundAccount() *cobra.Command {
 			wg.Wait()
 			log.Info("Transferred ownership of liquidity pool to tss public address")
 
-			// // Transfer ERC20 tokens
-			erc20Amount := new(big.Int).Mul(big.NewInt(500), utils.EthToWei)
-			// for i, client := range clients {
-			// 	// Check if we need to transfer to liquidityAddrs
-			// 	balance, err := c.queryErc20Balance(client, tokenAddrs[i], liquidityAddrs[i])
-			// 	if err != nil {
-			// 		panic(err)
-			// 	}
-			// 	// Only transfer if the liquidityAddrs has 0 balance
-			// 	if balance.Cmp(big.NewInt(0)) == 0 {
-			// 		c.transferErc20Tokens(client, tokenAddrs[i], liquidityAddrs[i], erc20Amount)
-			// 	}
-			// }
-
-			time.Sleep(3 * time.Second)
-
-			log.Info("Transfer ERC20 token done")
-
-			// Query balance
-			for i, client := range clients {
-				balance, err := c.queryErc20Balance(client, tokenAddrs[i], liquidityAddrs[i])
-				if err != nil {
-					panic(err)
-				}
-
-				if balance.Cmp(erc20Amount) != 0 {
-					panic(fmt.Sprintf("balance does not match: expected %s, actual %s", erc20Amount.String(), balance.String()))
-				}
-			}
+			c.doSanityCheck(clients, tokenAddrs, liquidityAddrs, gateways)
 
 			return nil
 		},
@@ -284,9 +273,7 @@ func (c *fundAccountCmd) waitForGatewayCreationInSisuDb(goCtx context.Context, c
 	return contractAddrs
 }
 
-func (c *fundAccountCmd) approveTransfer(client *ethclient.Client, erc20Addr common.Address, addr common.Address) {
-	log.Info("Approving gateway: ", addr)
-
+func (c *fundAccountCmd) approveAddress(client *ethclient.Client, erc20Addr common.Address, addr common.Address) {
 	contract, err := erc20.NewErc20(erc20Addr, client)
 	if err != nil {
 		panic(err)
@@ -297,8 +284,7 @@ func (c *fundAccountCmd) approveTransfer(client *ethclient.Client, erc20Addr com
 		panic(err)
 	}
 
-	amount := new(big.Int).Mul(big.NewInt(500), utils.EthToWei)
-	tx, err := contract.Approve(opts, addr, amount)
+	tx, err := contract.Approve(opts, addr, ContributionAmount)
 	bind.WaitDeployed(context.Background(), client, tx)
 	time.Sleep(time.Second * 3)
 }
@@ -596,9 +582,7 @@ func (c *fundAccountCmd) addLiquidity(client *ethclient.Client, liquidAddr, toke
 		panic(err)
 	}
 
-	amount := new(big.Int).Mul(big.NewInt(500), utils.EthToWei) // 100 Sisu token
-
-	_, err = liquidInstance.AddLiquidity(auth, tokenAddress, amount)
+	_, err = liquidInstance.AddLiquidity(auth, tokenAddress, ContributionAmount)
 	if err != nil {
 		panic(err)
 	}
@@ -621,32 +605,6 @@ func (c *fundAccountCmd) setGateway(client *ethclient.Client, liquidAddr, gatewa
 	}
 }
 
-// // transferErc20Tokens transfer ERC20 from account0 to gateway address.
-// func (c *fundAccountCmd) transferErc20Tokens(
-// 	client *ethclient.Client,
-// 	tokenAddress common.Address,
-// 	gatewayAddr common.Address,
-// 	amount *big.Int,
-// ) {
-// 	opts, err := c.getAuthTransactor(client, account0.Address)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	store, err := erc20.NewErc20(tokenAddress, client)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	tx, err := store.Transfer(opts, gatewayAddr, amount)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	bind.WaitDeployed(context.Background(), client, tx)
-// 	time.Sleep(time.Second * 3)
-// }
-
 func (c *fundAccountCmd) queryErc20Balance(
 	client *ethclient.Client,
 	tokenAddr common.Address,
@@ -660,6 +618,21 @@ func (c *fundAccountCmd) queryErc20Balance(
 	balance, err := store.BalanceOf(nil, target)
 
 	return balance, err
+}
+
+func (c *fundAccountCmd) queryAllownace(client *ethclient.Client,
+	tokenAddr, owner, target common.Address) *big.Int {
+	store, err := erc20.NewErc20(tokenAddr, client)
+	if err != nil {
+		panic(err)
+	}
+
+	balance, err := store.Allowance(nil, owner, target)
+	if err != nil {
+		panic(err)
+	}
+
+	return balance
 }
 
 func (c *fundAccountCmd) transferLiquidityOwnership(
@@ -685,4 +658,24 @@ func (c *fundAccountCmd) transferLiquidityOwnership(
 	}
 
 	return nil
+}
+
+func (c *fundAccountCmd) doSanityCheck(clients []*ethclient.Client, tokenAddrs, liquidityAddrs, gateways []common.Address) {
+	// Query balance
+	for i, client := range clients {
+		balance, err := c.queryErc20Balance(client, tokenAddrs[i], liquidityAddrs[i])
+		if err != nil {
+			panic(err)
+		}
+
+		if balance.Cmp(ContributionAmount) != 0 {
+			panic(fmt.Sprintf("balance does not match: expected %s, actual %s", ContributionAmount.String(), balance.String()))
+		}
+
+		// Check allowance
+		allowance := c.queryAllownace(client, tokenAddrs[i], account0.Address, gateways[i])
+		if allowance.Cmp(ContributionAmount) != 0 {
+			panic(fmt.Sprintf("Allowance to gateway should not be 0"))
+		}
+	}
 }
