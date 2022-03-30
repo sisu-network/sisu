@@ -1,8 +1,8 @@
 // Sources flattened with hardhat v2.8.0 https://hardhat.org
 
-// File @openzeppelin/contracts/utils/Context.sol@v4.4.2
-
+// File @openzeppelin/contracts/utils/Context.sol@v4.4.1
 // SPDX-License-Identifier: MIT
+
 // OpenZeppelin Contracts v4.4.1 (utils/Context.sol)
 
 pragma solidity ^0.8.0;
@@ -27,7 +27,11 @@ abstract contract Context {
     }
 }
 
-// File @openzeppelin/contracts/access/Ownable.sol@v4.4.2
+// File @openzeppelin/contracts/access/Ownable.sol@v4.4.1
+
+// OpenZeppelin Contracts v4.4.1 (access/Ownable.sol)
+
+pragma solidity ^0.8.0;
 
 /**
  * @dev Contract module which provides a basic access control mechanism, where
@@ -105,7 +109,11 @@ abstract contract Ownable is Context {
     }
 }
 
-// File @openzeppelin/contracts/token/ERC20/IERC20.sol@v4.4.2
+// File @openzeppelin/contracts/token/ERC20/IERC20.sol@v4.4.1
+
+// OpenZeppelin Contracts v4.4.1 (token/ERC20/IERC20.sol)
+
+pragma solidity ^0.8.0;
 
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.
@@ -194,7 +202,11 @@ interface IERC20 {
     );
 }
 
-// File @openzeppelin/contracts/utils/Address.sol@v4.4.2
+// File @openzeppelin/contracts/utils/Address.sol@v4.4.1
+
+// OpenZeppelin Contracts v4.4.1 (utils/Address.sol)
+
+pragma solidity ^0.8.0;
 
 /**
  * @dev Collection of functions related to the address type
@@ -446,7 +458,11 @@ library Address {
     }
 }
 
-// File @openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol@v4.4.2
+// File @openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol@v4.4.1
+
+// OpenZeppelin Contracts v4.4.1 (token/ERC20/utils/SafeERC20.sol)
+
+pragma solidity ^0.8.0;
 
 /**
  * @title SafeERC20
@@ -572,7 +588,11 @@ library SafeERC20 {
     }
 }
 
-// File @openzeppelin/contracts/utils/math/SafeMath.sol@v4.4.2
+// File @openzeppelin/contracts/utils/math/SafeMath.sol@v4.4.1
+
+// OpenZeppelin Contracts v4.4.1 (utils/math/SafeMath.sol)
+
+pragma solidity ^0.8.0;
 
 // CAUTION
 // This version of SafeMath should only be used with Solidity 0.8 or later,
@@ -817,7 +837,25 @@ library SafeMath {
     }
 }
 
-// File @openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol@v4.4.2
+// File contracts/interfaces/ILiquidityPool.sol
+
+pragma solidity ^0.8.0;
+
+interface ILiquidityPool {
+    function transfer(
+        address _token,
+        address _recipient,
+        uint256 _amount
+    ) external;
+
+    function changeOwner(address newOwner) external;
+}
+
+// File @openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol@v4.4.1
+
+// OpenZeppelin Contracts v4.4.1 (token/ERC20/extensions/IERC20Metadata.sol)
+
+pragma solidity ^0.8.0;
 
 /**
  * @dev Interface for the optional metadata functions from the ERC20 standard.
@@ -841,7 +879,11 @@ interface IERC20Metadata is IERC20 {
     function decimals() external view returns (uint8);
 }
 
-// File @openzeppelin/contracts/token/ERC20/ERC20.sol@v4.4.2
+// File @openzeppelin/contracts/token/ERC20/ERC20.sol@v4.4.1
+
+// OpenZeppelin Contracts v4.4.1 (token/ERC20/ERC20.sol)
+
+pragma solidity ^0.8.0;
 
 /**
  * @dev Implementation of the {IERC20} interface.
@@ -1234,19 +1276,19 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     ) internal virtual {}
 }
 
-interface ILiquidityPool {
-    function transfer(
-        address _token,
-        address _recipient,
-        uint256 _amount
-    ) external;
-}
+// File contracts/interfaces/ILPToken.sol
+
+pragma solidity ^0.8.0;
 
 interface ILPToken {
     function mint(address _recipient, uint256 _amount) external;
 
     function burn(address _from, uint256 _amount) external;
 }
+
+// File contracts/LPToken.sol
+
+pragma solidity >=0.8.10;
 
 contract LPToken is ERC20, Ownable, ILPToken {
     address public liquidity;
@@ -1277,7 +1319,9 @@ contract LPToken is ERC20, Ownable, ILPToken {
     }
 }
 
-// File contracts/Liquidity.sol
+// File contracts/LiquidityPool.sol
+
+pragma solidity ^0.8.0;
 
 contract LiquidityPool is Ownable, ILiquidityPool {
     using SafeERC20 for IERC20;
@@ -1313,11 +1357,6 @@ contract LiquidityPool is Ownable, ILiquidityPool {
         uint256 indexed burnLPTokenAmt
     );
 
-    function getLpTokenAddress(address token) public view returns (address) {
-        LPToken lpToken = lpTokenMapping[token];
-        return address(lpToken);
-    }
-
     function addToken(address[] memory tokenAddrs, string[] memory names)
         public
         onlyOwner
@@ -1331,108 +1370,113 @@ contract LiquidityPool is Ownable, ILiquidityPool {
         }
     }
 
-    function addLiquidity(address _token, uint256 _amount) public {
-        require(_amount > 0, "amount must greater than 0");
-        uint256 balance = IERC20(_token).balanceOf(msg.sender);
+    function addLiquidity(address token, uint256 amount) public {
+        require(amount > 0, "amount must greater than 0");
+        uint256 balance = IERC20(token).balanceOf(msg.sender);
         require(
-            balance >= _amount,
+            balance >= amount,
             "user's balance is less than required amount"
         );
 
-        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
+        IERC20(token).safeTransferFrom(msg.sender, address(this), amount);
 
-        uint256 toMint = calculateLPTokenDepositOrWithdraw(_token, _amount);
+        uint256 toMint = calculateLPTokenDepositOrWithdraw(token, amount);
         if (toMint > 0) {
-            LPToken lpToken = lpTokenMapping[_token];
+            LPToken lpToken = lpTokenMapping[token];
             lpToken.mint(msg.sender, toMint);
         }
 
-        liquidityPool[_token][msg.sender] = liquidityPool[_token][msg.sender]
-            .add(_amount);
+        liquidityPool[token][msg.sender] = liquidityPool[token][msg.sender].add(
+            amount
+        );
 
-        emit AddLiquidity(_token, _amount, toMint);
+        emit AddLiquidity(token, amount, toMint);
     }
 
-    function removeLiquidity(address _token, uint256 _amount) public {
+    function removeLiquidity(address token, uint256 amount) public {
         // Check liquidity pool's balance
-        require(_amount > 0, "amount must greater than 0");
-        uint256 balance = IERC20(_token).balanceOf(address(this));
+        require(amount > 0, "amount must greater than 0");
+        uint256 balance = IERC20(token).balanceOf(address(this));
         require(
-            balance >= _amount,
+            balance >= amount,
             "gateway's balance is less than required amount"
         );
 
         // Check user's liquidity contribution
-        uint256 currentAmount = liquidityPool[_token][msg.sender];
+        uint256 currentAmount = liquidityPool[token][msg.sender];
         require(
-            currentAmount >= _amount,
+            currentAmount >= amount,
             "deposited token amount is less than withdraw token amount"
         );
 
         // Burn LP token
         uint256 lpTokenBurnAmount = calculateLPTokenDepositOrWithdraw(
-            _token,
-            _amount
+            token,
+            amount
         );
-        LPToken lpToken = lpTokenMapping[_token];
+        LPToken lpToken = lpTokenMapping[token];
         lpToken.burn(msg.sender, lpTokenBurnAmount);
 
-        liquidityPool[_token][msg.sender] = currentAmount.sub(_amount);
+        liquidityPool[token][msg.sender] = currentAmount.sub(amount);
 
         // Transfer the token amount to user.
-        IERC20(_token).safeTransfer(msg.sender, _amount);
+        IERC20(token).safeTransfer(msg.sender, amount);
 
-        emit RemoveLiquidity(_token, _amount, lpTokenBurnAmount);
+        emit RemoveLiquidity(token, amount, lpTokenBurnAmount);
     }
 
     // calculate amount of LP token to be minted
-    function calculateLPTokenDepositOrWithdraw(address _token, uint256 _amount)
+    function calculateLPTokenDepositOrWithdraw(address token, uint256 amount)
         public
         view
         returns (uint256)
     {
-        require(_amount > 0, "amount must greater than 0");
+        require(amount > 0, "amount must greater than 0");
 
         // Calculate amount of minted/burnt LPToken by formula: (amount * current LP token supply) / total amount in liquidity pool
-        uint256 totalAmount = IERC20(_token).balanceOf(address(this));
-        LPToken lpToken = lpTokenMapping[_token];
+        uint256 totalAmount = IERC20(token).balanceOf(address(this));
+        LPToken lpToken = lpTokenMapping[token];
         uint256 currentLPTokenSupply = lpToken.totalSupply();
 
         if (totalAmount == 0 || currentLPTokenSupply == 0) {
-            return _amount;
+            return amount;
         }
 
-        uint256 toMint = _amount.mul(currentLPTokenSupply).div(totalAmount);
+        uint256 toMint = amount.mul(currentLPTokenSupply).div(totalAmount);
         return toMint;
     }
 
     function transfer(
-        address _token,
-        address _recipient,
-        uint256 _amount
+        address token,
+        address recipient,
+        uint256 amount
     ) public onlyGateway {
-        require(_amount > 0, "amount must greater than 0");
+        require(amount > 0, "amount must greater than 0");
 
-        IERC20(_token).safeTransfer(_recipient, _amount);
+        IERC20(token).safeTransfer(recipient, amount);
     }
 
-    function setGateway(address _gateway) public onlyOwner {
-        gateway = _gateway;
+    function setGateway(address gateway_) public onlyOwner {
+        gateway = gateway_;
     }
 
-    function emergencyWithdrawFunds(address[] memory _tokens, address newOwner)
+    function emergencyWithdrawFunds(address[] memory tokens, address newOwner)
         public
         onlyOwner
     {
-        for (uint256 i = 0; i < _tokens.length; i++) {
-            uint256 allBalance = IERC20(_tokens[i]).balanceOf(address(this));
+        for (uint256 i = 0; i < tokens.length; i++) {
+            uint256 allBalance = IERC20(tokens[i]).balanceOf(address(this));
             if (allBalance > 0) {
-                IERC20(_tokens[i]).safeTransfer(newOwner, allBalance);
+                IERC20(tokens[i]).safeTransfer(newOwner, allBalance);
             }
 
             // transfer LP token
-            LPToken lpToken = lpTokenMapping[_tokens[i]];
+            LPToken lpToken = lpTokenMapping[tokens[i]];
             lpToken.setLiquidity(newOwner);
         }
+    }
+
+    function changeOwner(address newOwner) public onlyOwner {
+        super.transferOwnership(newOwner);
     }
 }
