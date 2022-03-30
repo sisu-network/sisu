@@ -207,6 +207,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 		liqIds = append(liqIds, liq.Id)
 	}
 	log.Info("Liquidities in the genesis file: ", strings.Join(liqIds, ", "))
+
 	// Save params
 	params := genState.Params
 	am.keeper.SaveParams(ctx, params)

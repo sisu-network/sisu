@@ -93,12 +93,10 @@ Example:
 					DeyesUrl:   "http://0.0.0.0:31001",
 					SupportedChains: map[string]config.TssChainConfig{
 						"ganache1": {
-							Id:    "ganache1",
-							Token: "NATIVE_GANACHE1",
+							Id: "ganache1",
 						},
 						"ganache2": {
-							Id:    "ganache2",
-							Token: "NATIVE_GANACHE2",
+							Id: "ganache2",
 						},
 					},
 				},

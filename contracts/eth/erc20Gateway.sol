@@ -27,9 +27,7 @@ abstract contract Context {
     }
 }
 
-
 // File @openzeppelin/contracts/access/Ownable.sol@v4.4.2
-
 
 /**
  * @dev Contract module which provides a basic access control mechanism, where
@@ -46,7 +44,10 @@ abstract contract Context {
 abstract contract Ownable is Context {
     address private _owner;
 
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
 
     /**
      * @dev Initializes the contract setting the deployer as the initial owner.
@@ -86,7 +87,10 @@ abstract contract Ownable is Context {
      * Can only be called by the current owner.
      */
     function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        require(
+            newOwner != address(0),
+            "Ownable: new owner is the zero address"
+        );
         _transferOwnership(newOwner);
     }
 
@@ -100,7 +104,6 @@ abstract contract Ownable is Context {
         emit OwnershipTransferred(oldOwner, newOwner);
     }
 }
-
 
 // File @openzeppelin/contracts/utils/math/SafeMath.sol@v4.4.2
 
@@ -120,12 +123,16 @@ library SafeMath {
      *
      * _Available since v3.4._
      */
-    function tryAdd(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-    unchecked {
-        uint256 c = a + b;
-        if (c < a) return (false, 0);
-        return (true, c);
-    }
+    function tryAdd(uint256 a, uint256 b)
+        internal
+        pure
+        returns (bool, uint256)
+    {
+        unchecked {
+            uint256 c = a + b;
+            if (c < a) return (false, 0);
+            return (true, c);
+        }
     }
 
     /**
@@ -133,11 +140,15 @@ library SafeMath {
      *
      * _Available since v3.4._
      */
-    function trySub(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-    unchecked {
-        if (b > a) return (false, 0);
-        return (true, a - b);
-    }
+    function trySub(uint256 a, uint256 b)
+        internal
+        pure
+        returns (bool, uint256)
+    {
+        unchecked {
+            if (b > a) return (false, 0);
+            return (true, a - b);
+        }
     }
 
     /**
@@ -145,16 +156,20 @@ library SafeMath {
      *
      * _Available since v3.4._
      */
-    function tryMul(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-    unchecked {
-        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-        // benefit is lost if 'b' is also tested.
-        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-        if (a == 0) return (true, 0);
-        uint256 c = a * b;
-        if (c / a != b) return (false, 0);
-        return (true, c);
-    }
+    function tryMul(uint256 a, uint256 b)
+        internal
+        pure
+        returns (bool, uint256)
+    {
+        unchecked {
+            // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+            // benefit is lost if 'b' is also tested.
+            // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
+            if (a == 0) return (true, 0);
+            uint256 c = a * b;
+            if (c / a != b) return (false, 0);
+            return (true, c);
+        }
     }
 
     /**
@@ -162,11 +177,15 @@ library SafeMath {
      *
      * _Available since v3.4._
      */
-    function tryDiv(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-    unchecked {
-        if (b == 0) return (false, 0);
-        return (true, a / b);
-    }
+    function tryDiv(uint256 a, uint256 b)
+        internal
+        pure
+        returns (bool, uint256)
+    {
+        unchecked {
+            if (b == 0) return (false, 0);
+            return (true, a / b);
+        }
     }
 
     /**
@@ -174,11 +193,15 @@ library SafeMath {
      *
      * _Available since v3.4._
      */
-    function tryMod(uint256 a, uint256 b) internal pure returns (bool, uint256) {
-    unchecked {
-        if (b == 0) return (false, 0);
-        return (true, a % b);
-    }
+    function tryMod(uint256 a, uint256 b)
+        internal
+        pure
+        returns (bool, uint256)
+    {
+        unchecked {
+            if (b == 0) return (false, 0);
+            return (true, a % b);
+        }
     }
 
     /**
@@ -271,10 +294,10 @@ library SafeMath {
         uint256 b,
         string memory errorMessage
     ) internal pure returns (uint256) {
-    unchecked {
-        require(b <= a, errorMessage);
-        return a - b;
-    }
+        unchecked {
+            require(b <= a, errorMessage);
+            return a - b;
+        }
     }
 
     /**
@@ -294,10 +317,10 @@ library SafeMath {
         uint256 b,
         string memory errorMessage
     ) internal pure returns (uint256) {
-    unchecked {
-        require(b > 0, errorMessage);
-        return a / b;
-    }
+        unchecked {
+            require(b > 0, errorMessage);
+            return a / b;
+        }
     }
 
     /**
@@ -320,16 +343,14 @@ library SafeMath {
         uint256 b,
         string memory errorMessage
     ) internal pure returns (uint256) {
-    unchecked {
-        require(b > 0, errorMessage);
-        return a % b;
-    }
+        unchecked {
+            require(b > 0, errorMessage);
+            return a % b;
+        }
     }
 }
 
-
 // File @openzeppelin/contracts/token/ERC20/IERC20.sol@v4.4.2
-
 
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.
@@ -352,7 +373,9 @@ interface IERC20 {
      *
      * Emits a {Transfer} event.
      */
-    function transfer(address recipient, uint256 amount) external returns (bool);
+    function transfer(address recipient, uint256 amount)
+        external
+        returns (bool);
 
     /**
      * @dev Returns the remaining number of tokens that `spender` will be
@@ -361,7 +384,10 @@ interface IERC20 {
      *
      * This value changes when {approve} or {transferFrom} are called.
      */
-    function allowance(address owner, address spender) external view returns (uint256);
+    function allowance(address owner, address spender)
+        external
+        view
+        returns (uint256);
 
     /**
      * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.
@@ -406,12 +432,19 @@ interface IERC20 {
      * @dev Emitted when the allowance of a `spender` for an `owner` is set by
      * a call to {approve}. `value` is the new allowance.
      */
-    event Approval(address indexed owner, address indexed spender, uint256 value);
+    event Approval(
+        address indexed owner,
+        address indexed spender,
+        uint256 value
+    );
 }
 
-
 interface ILiquidityPool {
-    function transfer(address _token, address _recipient, uint256 _amount) external;
+    function transfer(
+        address _token,
+        address _recipient,
+        uint256 _amount
+    ) external;
 }
 
 interface ILPToken {
@@ -419,7 +452,6 @@ interface ILPToken {
 
     function burn(address _from, uint256 _amount) external;
 }
-
 
 // File contracts/ERC20Gateway.sol
 
@@ -437,27 +469,55 @@ interface ILPToken {
 
 // helper methods for interacting with ERC20 tokens and sending NATIVE that do not consistently return true/false
 library TransferHelper {
-    function safeApprove(address token, address to, uint value) internal {
+    function safeApprove(
+        address token,
+        address to,
+        uint256 value
+    ) internal {
         // bytes4(keccak256(bytes('approve(address,uint256)')));
-        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x095ea7b3, to, value));
-        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: APPROVE_FAILED');
+        (bool success, bytes memory data) = token.call(
+            abi.encodeWithSelector(0x095ea7b3, to, value)
+        );
+        require(
+            success && (data.length == 0 || abi.decode(data, (bool))),
+            "TransferHelper: APPROVE_FAILED"
+        );
     }
 
-    function safeTransfer(address token, address to, uint value) internal {
+    function safeTransfer(
+        address token,
+        address to,
+        uint256 value
+    ) internal {
         // bytes4(keccak256(bytes('transfer(address,uint256)')));
-        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));
-        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: TRANSFER_FAILED');
+        (bool success, bytes memory data) = token.call(
+            abi.encodeWithSelector(0xa9059cbb, to, value)
+        );
+        require(
+            success && (data.length == 0 || abi.decode(data, (bool))),
+            "TransferHelper: TRANSFER_FAILED"
+        );
     }
 
-    function safeTransferFrom(address token, address from, address to, uint value) internal {
+    function safeTransferFrom(
+        address token,
+        address from,
+        address to,
+        uint256 value
+    ) internal {
         // bytes4(keccak256(bytes('transferFrom(address,address,uint256)')));
-        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, value));
-        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: TRANSFER_FROM_FAILED');
+        (bool success, bytes memory data) = token.call(
+            abi.encodeWithSelector(0x23b872dd, from, to, value)
+        );
+        require(
+            success && (data.length == 0 || abi.decode(data, (bool))),
+            "TransferHelper: TRANSFER_FROM_FAILED"
+        );
     }
 
-    function safeTransferNative(address to, uint value) internal {
-        (bool success,) = to.call{value : value}(new bytes(0));
-        require(success, 'TransferHelper: NATIVE_TRANSFER_FAILED');
+    function safeTransferNative(address to, uint256 value) internal {
+        (bool success, ) = to.call{value: value}(new bytes(0));
+        require(success, "TransferHelper: NATIVE_TRANSFER_FAILED");
     }
 }
 
@@ -476,38 +536,72 @@ contract ERC20Gateway is Ownable {
     constructor(string[] memory _supportedChains, address _lpPool) {
         pause = false;
 
-        for (uint i = 0; i < _supportedChains.length; i++) {
+        for (uint256 i = 0; i < _supportedChains.length; i++) {
             supportedChains[_supportedChains[i]] = true;
         }
 
         lpPool = _lpPool;
     }
 
-    event TransferOutEvent(string indexed destChain, address indexed recipient, address indexed tokenOut, address tokenIn, address sender, uint256 amount);
-    event TransferInEvent(address indexed token, address indexed recipient, uint256 amount);
+    event TransferOutEvent(
+        string indexed destChain,
+        address indexed recipient,
+        address indexed tokenOut,
+        address tokenIn,
+        address sender,
+        uint256 amount
+    );
+    event TransferInEvent(
+        address indexed token,
+        address indexed recipient,
+        uint256 amount
+    );
     event RemoveSupportedChainEvent(string indexed chain);
     event AddSupportedChainEvent(string indexed chain);
     event SetLiquidPoolAddress(address indexed newLpPool);
 
-    modifier isNotPaused {
+    modifier isNotPaused() {
         require(pause == false, "Gateway is paused");
         _;
     }
 
     // User can call TransferOut to deposit their ERC20 token to gateway
     // Anyone can call TransferOut
-    function transferOut(string memory _destChain, address _recipient, address _tokenOut, address _tokenIn, uint256 _amount) public isNotPaused {
-        require(supportedChains[_destChain] == true, "destChain is not supported");
+    function transferOut(
+        string memory _destChain,
+        address _recipient,
+        address _tokenOut,
+        address _tokenIn,
+        uint256 _amount
+    ) public isNotPaused {
+        require(
+            supportedChains[_destChain] == true,
+            "destChain is not supported"
+        );
         TransferHelper.safeTransferFrom(_tokenOut, msg.sender, lpPool, _amount);
 
-        emit TransferOutEvent(_destChain, _recipient, _tokenOut, _tokenIn, msg.sender, _amount);
+        emit TransferOutEvent(
+            _destChain,
+            _recipient,
+            _tokenOut,
+            _tokenIn,
+            msg.sender,
+            _amount
+        );
     }
 
     // Pool owner call TransferIn to release user's ERC20 token in destination chain
     // Triggered by bridge's backend
-    function transferIn(address _token, address _recipient, uint256 _amount) public onlyOwner isNotPaused {
+    function transferIn(
+        address _token,
+        address _recipient,
+        uint256 _amount
+    ) public onlyOwner isNotPaused {
         uint256 gwBalance = IERC20(_token).balanceOf(lpPool);
-        require(gwBalance >= _amount, "Gateway balance is less than required amount");
+        require(
+            gwBalance >= _amount,
+            "Gateway balance is less than required amount"
+        );
 
         ILiquidityPool(lpPool).transfer(_token, _recipient, _amount);
 

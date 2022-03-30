@@ -30,6 +30,7 @@ func (k *GrpcQuerier) AllPubKeys(goCtx context.Context, req *types.QueryAllPubKe
 
 func (k *GrpcQuerier) QueryContract(goCtx context.Context, req *types.QueryContractRequest) (*types.QueryContractResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
+
 	contract := k.keeper.GetContract(ctx, req.Chain, req.Hash, false)
 	if contract == nil {
 		return nil, fmt.Errorf("cannot find contract on chain %s and hash %s", req.Chain, req.Hash)
