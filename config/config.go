@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"os"
 
 	"github.com/BurntSushi/toml"
@@ -65,6 +66,11 @@ func ReadConfig() (Config, error) {
 	cfg.Tss.Dir = appDir + "/tss"
 
 	configFile := cfg.Sisu.Dir + "/config/sisu.toml"
+
+	if _, err := os.Stat(configFile); errors.Is(err, os.ErrNotExist) {
+		return cfg, os.ErrNotExist
+	}
+
 	_, err := toml.DecodeFile(configFile, &cfg)
 	if err != nil {
 		return cfg, err

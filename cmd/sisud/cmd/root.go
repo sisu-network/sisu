@@ -52,7 +52,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 		WithHomeDir(app.MainAppHome)
 
 	appCfg, err := config.ReadConfig()
-	if err != nil {
+	if err != nil && err != os.ErrNotExist {
 		panic(err)
 	}
 
@@ -126,8 +126,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, a
 	)
 
 	a := appCreator{
-		appConfig: appConfig,
-		encCfg:    encodingConfig,
+		encCfg: encodingConfig,
 	}
 	server.AddCommands(rootCmd, app.MainAppHome, a.newApp, nil, addModuleInitFlags)
 

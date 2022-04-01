@@ -15,15 +15,13 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/app"
 	"github.com/sisu-network/sisu/app/params"
-	"github.com/sisu-network/sisu/config"
 	"github.com/spf13/cast"
 	tlog "github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
 )
 
 type appCreator struct {
-	encCfg    params.EncodingConfig
-	appConfig config.Config
+	encCfg params.EncodingConfig
 }
 
 type AppOptionWrapper struct {
@@ -58,7 +56,7 @@ func (a appCreator) newApp(tLogger tlog.Logger, db dbm.DB, traceStore io.Writer,
 		panic(err)
 	}
 
-	return app.New(a.appConfig, tLogger, db, traceStore, true, skipUpgradeHeights,
+	return app.New(tLogger, db, traceStore, true, skipUpgradeHeights,
 		cast.ToString(appOpts.Get(flags.FlagHome)),
 		cast.ToUint(appOpts.Get(server.FlagInvCheckPeriod)),
 		a.encCfg,
