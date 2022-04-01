@@ -27,7 +27,7 @@ api-port = {{ .Sisu.ApiPort }}
 ###############################################################################
 [log_dna]
 secret = "{{ .LogDNA.Secret }}"
-app_name = "{{ .LogDNA.AppName }}" 
+app_name = "{{ .LogDNA.AppName }}"
 host_name = "{{ .LogDNA.HostName }}"
 flush_interval = "{{ .LogDNA.FlushInterval }}"
 max_buffer_len = {{ .LogDNA.MaxBufferLen }}
@@ -42,7 +42,6 @@ deyes-url = "{{ .Tss.DeyesUrl }}"
 [tss.supported-chains] {{ range $k, $v := .Tss.SupportedChains }}
 	[tss.supported-chains.{{ $v.Id }}]
 		id = "{{ $v.Id }}"
-		token = "{{ $v.Token }}"
 {{ end }}
 `
 

@@ -167,7 +167,7 @@ type App struct {
 // New returns a reference to an initialized Gaia.
 // NewSimApp returns a reference to an initialized SimApp.
 func New(
-	cfg config.Config, tLogger tlog.Logger, tdb dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
+	tLogger tlog.Logger, tdb dbm.DB, traceStore io.Writer, loadLatest bool, skipUpgradeHeights map[int64]bool,
 	homePath string, invCheckPeriod uint, encodingConfig appparams.EncodingConfig,
 	// this line is used by starport scaffolding # stargate/app/newArgument
 	appOpts servertypes.AppOptions, baseAppOptions ...func(*baseapp.BaseApp),
@@ -211,6 +211,11 @@ func New(
 
 	app.setupDefaultKeepers(homePath, bApp, skipUpgradeHeights)
 	////////////// Sisu related keeper //////////////
+
+	cfg, err := config.ReadConfig()
+	if err != nil {
+		panic(err)
+	}
 
 	app.appKeys = common.NewAppKeys(cfg.Sisu)
 	app.appKeys.Init()
