@@ -745,6 +745,7 @@ func saveNode(store cstypes.KVStore, node *types.Node) {
 	if err != nil {
 		log.Error("cannot marshal node, err = ", err)
 	}
+
 	store.Set(node.ConsensusKey.Bytes, bz)
 }
 

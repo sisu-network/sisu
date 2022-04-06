@@ -33,7 +33,7 @@ func (m *DefaultValidatorManager) getVals(ctx sdk.Context) map[string]*types.Nod
 	vals = m.vals
 	m.valLock.RUnlock()
 
-	if vals != nil {
+	if vals != nil && len(vals) > 0 {
 		return vals
 	}
 

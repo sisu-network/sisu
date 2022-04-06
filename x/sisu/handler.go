@@ -28,7 +28,7 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 		}
 
 		if !valsManager.IsValidator(ctx, signers[0].String()) {
-			log.Verbose("sender is not a validator", signers[0].String())
+			log.Verbose("sender is not a validator ", signers[0].String())
 			return nil, fmt.Errorf("sender is not a validator: %s", signers[0].String())
 		}
 

@@ -248,6 +248,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 		am.worldState.LoadData(ctx)
 		am.bootstrapped = true
 	}
+
 	am.processor.BeginBlock(ctx, req.Header.Height)
 }
 
