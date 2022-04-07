@@ -31,6 +31,7 @@ app_name = "{{ .LogDNA.AppName }}"
 host_name = "{{ .LogDNA.HostName }}"
 flush_interval = "{{ .LogDNA.FlushInterval }}"
 max_buffer_len = {{ .LogDNA.MaxBufferLen }}
+log_local = {{ .LogDNA.LogLocal }}
 
 ###############################################################################
 ###                         Siu TSS Connfiguration                          ###

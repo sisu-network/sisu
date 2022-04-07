@@ -26,7 +26,7 @@ require (
 	github.com/rjeczalik/notify v0.9.2 // indirect
 	github.com/sisu-network/deyes v0.1.6
 	github.com/sisu-network/dheart v0.1.6
-	github.com/sisu-network/lib v0.0.1-alpha16
+	github.com/sisu-network/lib v0.0.1-alpha17
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.1
