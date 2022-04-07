@@ -195,7 +195,7 @@ func FundAccount() *cobra.Command {
 			wg.Add(len(gateways))
 			for i, client := range clients {
 				go func(i int, client *ethclient.Client) {
-					c.grantLiquidityPoolAccess(client, liquidityAddrs[i], gateways[i])
+					c.setGatewayForLiquidity(client, liquidityAddrs[i], gateways[i])
 					wg.Done()
 				}(i, client)
 			}
@@ -289,8 +289,8 @@ func (c *fundAccountCmd) approveAddress(client *ethclient.Client, erc20Addr comm
 	time.Sleep(time.Second * 3)
 }
 
-func (c *fundAccountCmd) grantLiquidityPoolAccess(client *ethclient.Client, liquidityAddr, gatewayAddr common.Address) {
-	log.Infof("Granting access for gatewayAddr to call liquidity pool, gateway address: %s\n", gatewayAddr.String())
+func (c *fundAccountCmd) setGatewayForLiquidity(client *ethclient.Client, liquidityAddr, gatewayAddr common.Address) {
+	log.Infof("Setting gateway for liquidity pool, gateway address: %s, liquidity pool address \n", gatewayAddr.String(), liquidityAddr.String())
 
 	contract, err := liquidity.NewLiquiditypool(liquidityAddr, client)
 	if err != nil {
@@ -312,6 +312,7 @@ func (c *fundAccountCmd) grantLiquidityPoolAccess(client *ethclient.Client, liqu
 	}
 
 	if txReceipt.Status != ethtypes.ReceiptStatusSuccessful {
+		log.Info("Tx Hash = ", txReceipt.TxHash)
 		panic("tx grant liquidity pool access failed")
 	}
 
