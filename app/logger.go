@@ -19,7 +19,7 @@ func NewTendermintLogger(dnaLogger *log.DNALogger) *TendermintLogger {
 }
 
 func (l *TendermintLogger) Debug(msg string, keyvals ...interface{}) {
-	l.Inner.HighVerbose(msg, fmt.Sprintf("%v", keyvals))
+	// l.Inner.HighVerbose(msg, fmt.Sprintf("%v", keyvals))
 }
 
 func (l *TendermintLogger) Info(msg string, keyvals ...interface{}) {

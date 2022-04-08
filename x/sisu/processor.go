@@ -100,7 +100,6 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 	if blockHeight > 1 {
 		// We need to wait till block 2 for multistore of the app to be updated with latest account info
 		// for signing.
-		log.Info("Checking tss keygen")
 		p.CheckTssKeygen(ctx, blockHeight)
 	}
 
