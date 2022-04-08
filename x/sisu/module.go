@@ -245,6 +245,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json
 // BeginBlock executes all ABCI BeginBlock logic respective to the capability module.
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	if !am.bootstrapped {
+		log.Info("Loading data for app module")
 		am.worldState.LoadData(ctx)
 		am.bootstrapped = true
 	}
