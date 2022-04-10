@@ -101,7 +101,8 @@ func (ws *DefaultWorldState) InitData(ctx sdk.Context) {
 
 	// Map between address and tokens
 	for _, token := range tokens {
-		for chain, addr := range token.Addresses {
+		for i, chain := range token.Chains {
+			addr := token.Addresses[i]
 			key := ws.getChainAddrKey(chain, addr)
 			ws.addrToToken.Store(key, token)
 		}
