@@ -104,10 +104,10 @@ func (mr *MockKeeperMockRecorder) GetAllLiquidities(ctx interface{}) *gomock.Cal
 }
 
 // GetAllTokenPricesRecord mocks base method.
-func (m *MockKeeper) GetAllTokenPricesRecord(ctx types.Context) map[string]*types0.TokenPriceRecord {
+func (m *MockKeeper) GetAllTokenPricesRecord(ctx types.Context) map[string]*types0.TokenPriceRecords {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllTokenPricesRecord", ctx)
-	ret0, _ := ret[0].(map[string]*types0.TokenPriceRecord)
+	ret0, _ := ret[0].(map[string]*types0.TokenPriceRecords)
 	return ret0
 }
 

@@ -103,10 +103,10 @@ func (mr *MockStorageMockRecorder) GetAllLiquidities() *gomock.Call {
 }
 
 // GetAllTokenPricesRecord mocks base method.
-func (m *MockStorage) GetAllTokenPricesRecord() map[string]*types.TokenPriceRecord {
+func (m *MockStorage) GetAllTokenPricesRecord() map[string]*types.TokenPriceRecords {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAllTokenPricesRecord")
-	ret0, _ := ret[0].(map[string]*types.TokenPriceRecord)
+	ret0, _ := ret[0].(map[string]*types.TokenPriceRecords)
 	return ret0
 }
 
