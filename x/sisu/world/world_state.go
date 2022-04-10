@@ -173,7 +173,7 @@ func (ws *DefaultWorldState) SetTokens(tokens map[string]*types.Token) {
 		// Save the mapping of token address on each chain to token for later retrieval.
 		if token.Addresses != nil {
 			for chain, addr := range token.Addresses {
-				key := fmt.Sprintf("%s__%s", chain, addr)
+				key := fmt.Sprintf("%d__%s", chain, addr)
 				ws.addrToToken.Store(key, token)
 			}
 		}
