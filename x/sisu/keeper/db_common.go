@@ -638,7 +638,7 @@ func setTokenPrices(store cstypes.KVStore, blockHeight uint64, msg *types.Update
 	var record *types.TokenPriceRecords
 	if value == nil {
 		record = new(types.TokenPriceRecords)
-		record.Prices = make(map[string]*types.TokenPriceRecord)
+		record.Records = make([]*types.TokenPriceRecord, 0)
 	} else {
 		err := record.Unmarshal(value)
 		if err != nil {
@@ -647,15 +647,22 @@ func setTokenPrices(store cstypes.KVStore, blockHeight uint64, msg *types.Update
 		}
 	}
 
-	for _, tokenPrice := range msg.TokenPrices {
-		pair := record.Prices[tokenPrice.Id]
-		if pair == nil {
-			pair = new(types.TokenPriceRecord)
-		}
-		pair.BlockHeight = blockHeight
-		pair.Price = tokenPrice.Price
+	indexes := make(map[string]int)
+	for i, record := range record.Records {
+		indexes[record.Token] = i
+	}
 
-		record.Prices[tokenPrice.Id] = pair
+	for _, tokenPrice := range msg.TokenPrices {
+		if index, ok := indexes[tokenPrice.Id]; ok {
+			record.Records[index].BlockHeight = blockHeight
+			record.Records[index].Price = tokenPrice.Price
+		} else {
+			record.Records = append(record.Records, &types.TokenPriceRecord{
+				Token:       tokenPrice.Id,
+				BlockHeight: blockHeight,
+				Price:       tokenPrice.Price,
+			})
+		}
 	}
 
 	bz, err := record.Marshal()
