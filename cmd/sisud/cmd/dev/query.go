@@ -59,7 +59,7 @@ Usage:
 				panic(fmt.Errorf("this is not an ERC20 token"))
 			}
 
-			tokenAddr := token.Addresses[src]
+			tokenAddr := token.GetAddressForChain(src)
 			if len(tokenAddr) == 0 {
 				panic(fmt.Errorf("cannot find address for tokne %s on chain %s", tokenId, src))
 			}

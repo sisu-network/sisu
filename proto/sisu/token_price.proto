@@ -14,12 +14,12 @@ message TokenPrice {
 }
 
 // The record that is saved into db per token.
-message TokenPriceRecord {
-  // Key: token, Value: BlockHeightPricePair
-  map<string, BlockHeightPricePair> prices = 1;
+message TokenPriceRecords {
+  repeated TokenPriceRecord records = 1;
 }
 
-message BlockHeightPricePair {
-  uint64 blockHeight = 1;
-  int64 price = 2;
+message TokenPriceRecord {
+  string token = 1;
+  uint64 blockHeight = 2;
+  int64 price = 3;
 }

@@ -77,7 +77,7 @@ type Storage interface {
 
 	// Token Price
 	SetTokenPrices(blockHeight uint64, msg *types.UpdateTokenPrice)
-	GetAllTokenPricesRecord() map[string]*types.TokenPriceRecord
+	GetAllTokenPricesRecord() map[string]*types.TokenPriceRecords
 
 	// Set Tokens
 	SetTokens(map[string]*types.Token)
@@ -382,7 +382,7 @@ func (db *defaultStorage) SetTokenPrices(blockHeight uint64, msg *types.UpdateTo
 	setTokenPrices(store, blockHeight, msg)
 }
 
-func (db *defaultStorage) GetAllTokenPricesRecord() map[string]*types.TokenPriceRecord {
+func (db *defaultStorage) GetAllTokenPricesRecord() map[string]*types.TokenPriceRecords {
 	store := db.prefixes[string(prefixTokenPrices)]
 	return getAllTokenPrices(store)
 }

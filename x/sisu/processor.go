@@ -148,21 +148,21 @@ func (p *Processor) calculateTokenPrices(ctx sdk.Context) {
 	records := p.keeper.GetAllTokenPricesRecord(ctx)
 
 	tokenPrices := make(map[string][]int64)
-	for _, record := range records {
-		for token, pair := range record.Prices {
+	for _, data := range records {
+		for _, record := range data.Records {
 			// Only calculate token prices that has been updated recently.
-			if curBlock-int64(pair.BlockHeight) > TokenPriceUpdateInterval {
+			if curBlock-int64(record.BlockHeight) > TokenPriceUpdateInterval {
 				continue
 			}
 
-			m := tokenPrices[token]
+			m := tokenPrices[record.Token]
 			if m == nil {
 				m = make([]int64, 0)
 			}
 
-			m = append(m, pair.Price)
+			m = append(m, record.Price)
 
-			tokenPrices[token] = m
+			tokenPrices[record.Token] = m
 		}
 	}
 

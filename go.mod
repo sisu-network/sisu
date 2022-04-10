@@ -26,7 +26,7 @@ require (
 	github.com/rjeczalik/notify v0.9.2 // indirect
 	github.com/sisu-network/deyes v0.1.6
 	github.com/sisu-network/dheart v0.1.6
-	github.com/sisu-network/lib v0.0.1-alpha16
+	github.com/sisu-network/lib v0.0.1-alpha17
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.3.1
 	github.com/spf13/cobra v1.1.1
@@ -36,15 +36,15 @@ require (
 	github.com/tendermint/tendermint v0.34.13
 	github.com/tendermint/tm-db v0.6.4
 	github.com/tyler-smith/go-bip39 v1.0.2
-	golang.org/x/crypto v0.0.0-20220321153916-2c7772ba3064
+	go.uber.org/atomic v1.7.0
+	golang.org/x/crypto v0.0.0-20220408190544-5352b0902921
 	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
 	golang.org/x/mod v0.5.0 // indirect
 	golang.org/x/sys v0.0.0-20220207234003-57398862261d // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.5 // indirect
-	google.golang.org/genproto v0.0.0-20220324131243-acbaeb5b85eb // indirect
+	google.golang.org/genproto v0.0.0-20220407144326-9054f6ed7bac // indirect
 	google.golang.org/grpc v1.45.0
-	google.golang.org/protobuf v1.28.0 // indirect
 )
 
 replace google.golang.org/grpc => google.golang.org/grpc v1.33.2

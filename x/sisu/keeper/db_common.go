@@ -635,10 +635,10 @@ func setTokenPrices(store cstypes.KVStore, blockHeight uint64, msg *types.Update
 	key := []byte(msg.Signer)
 	value := store.Get(key)
 
-	var record *types.TokenPriceRecord
+	var record *types.TokenPriceRecords
 	if value == nil {
-		record = new(types.TokenPriceRecord)
-		record.Prices = make(map[string]*types.BlockHeightPricePair)
+		record = new(types.TokenPriceRecords)
+		record.Records = make([]*types.TokenPriceRecord, 0)
 	} else {
 		err := record.Unmarshal(value)
 		if err != nil {
@@ -647,15 +647,22 @@ func setTokenPrices(store cstypes.KVStore, blockHeight uint64, msg *types.Update
 		}
 	}
 
-	for _, tokenPrice := range msg.TokenPrices {
-		pair := record.Prices[tokenPrice.Id]
-		if pair == nil {
-			pair = new(types.BlockHeightPricePair)
-		}
-		pair.BlockHeight = blockHeight
-		pair.Price = tokenPrice.Price
+	indexes := make(map[string]int)
+	for i, record := range record.Records {
+		indexes[record.Token] = i
+	}
 
-		record.Prices[tokenPrice.Id] = pair
+	for _, tokenPrice := range msg.TokenPrices {
+		if index, ok := indexes[tokenPrice.Id]; ok {
+			record.Records[index].BlockHeight = blockHeight
+			record.Records[index].Price = tokenPrice.Price
+		} else {
+			record.Records = append(record.Records, &types.TokenPriceRecord{
+				Token:       tokenPrice.Id,
+				BlockHeight: blockHeight,
+				Price:       tokenPrice.Price,
+			})
+		}
 	}
 
 	bz, err := record.Marshal()
@@ -668,14 +675,14 @@ func setTokenPrices(store cstypes.KVStore, blockHeight uint64, msg *types.Update
 }
 
 // getAllTokenPrices gets all the token prices all of all signers.
-func getAllTokenPrices(store cstypes.KVStore) map[string]*types.TokenPriceRecord {
-	result := make(map[string]*types.TokenPriceRecord)
+func getAllTokenPrices(store cstypes.KVStore) map[string]*types.TokenPriceRecords {
+	result := make(map[string]*types.TokenPriceRecords)
 
 	for iter := store.Iterator(nil, nil); iter.Valid(); iter.Next() {
 		// Key is signer.
 		signer := string(iter.Key())
 		bz := iter.Value()
-		record := new(types.TokenPriceRecord)
+		record := new(types.TokenPriceRecords)
 		err := record.Unmarshal(bz)
 		if err != nil {
 			log.Error("cannot unmarshal token price record for signer ", signer, " err = ", err)

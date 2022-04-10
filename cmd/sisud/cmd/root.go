@@ -64,7 +64,7 @@ func NewRootCmd() (*cobra.Command, params.EncodingConfig) {
 			Hostname:      dnaCfg.HostName,
 			MaxBufferLen:  dnaCfg.MaxBufferLen,
 		}
-		dnaLogger := log.NewDNALogger(dnaCfg.Secret, opts)
+		dnaLogger := log.NewDNALogger(dnaCfg.Secret, opts, appCfg.LogDNA.LogLocal)
 		// set Sisu's logger
 		log.SetLogger(dnaLogger)
 

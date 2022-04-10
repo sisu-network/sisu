@@ -9,5 +9,6 @@ message Token {
   // price 10^9.
   int64 price = 2;
   int32 decimals = 3;
-  map<string, string> addresses = 4;
+  repeated string chains = 4;
+  repeated string addresses = 5;
 }

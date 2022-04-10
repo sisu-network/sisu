@@ -13,6 +13,7 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
+	"go.uber.org/atomic"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -44,7 +45,8 @@ var (
 // data are token price, nonce of addresses, network gas fee, etc.
 // go:generate mockgen -source x/sisu/world/world_state.go -destination=tests/mock/x/sisu/world_state.go -package=mock
 type WorldState interface {
-	LoadData(ctx sdk.Context)
+	IsDataInitialized() bool
+	InitData(ctx sdk.Context)
 
 	UseAndIncreaseNonce(ctx sdk.Context, chain string) int64
 
@@ -65,6 +67,7 @@ type DefaultWorldState struct {
 	nonces      map[string]int64
 	deyesClient tssclients.DeyesClient
 
+	isDataInit  *atomic.Bool
 	chains      *sync.Map
 	tokens      *sync.Map
 	addrToToken *sync.Map // chain__addr => *types.Token
@@ -72,6 +75,7 @@ type DefaultWorldState struct {
 
 func NewWorldState(tssConfig config.TssConfig, keeper keeper.Keeper,
 	deyesClients tssclients.DeyesClient) WorldState {
+
 	return &DefaultWorldState{
 		tssConfig:   tssConfig,
 		keeper:      keeper,
@@ -80,17 +84,25 @@ func NewWorldState(tssConfig config.TssConfig, keeper keeper.Keeper,
 		tokens:      &sync.Map{},
 		chains:      &sync.Map{},
 		addrToToken: &sync.Map{},
+		isDataInit:  atomic.NewBool(false),
 	}
 }
 
-func (ws *DefaultWorldState) LoadData(ctx sdk.Context) {
+func (ws *DefaultWorldState) IsDataInitialized() bool {
+	return ws.isDataInit.Load()
+}
+
+func (ws *DefaultWorldState) InitData(ctx sdk.Context) {
+	log.Info("Initializing world state data")
+
 	// Get saved tokens
 	tokens := ws.keeper.GetAllTokens(ctx)
 	ws.SetTokens(tokens)
 
 	// Map between address and tokens
 	for _, token := range tokens {
-		for chain, addr := range token.Addresses {
+		for i, chain := range token.Chains {
+			addr := token.Addresses[i]
 			key := ws.getChainAddrKey(chain, addr)
 			ws.addrToToken.Store(key, token)
 		}
@@ -101,6 +113,8 @@ func (ws *DefaultWorldState) LoadData(ctx sdk.Context) {
 	for _, chain := range chains {
 		ws.SetChain(chain)
 	}
+
+	ws.isDataInit.Store(true)
 }
 
 func (ws *DefaultWorldState) UseAndIncreaseNonce(ctx sdk.Context, chain string) int64 {
@@ -159,7 +173,7 @@ func (ws *DefaultWorldState) SetTokens(tokens map[string]*types.Token) {
 		// Save the mapping of token address on each chain to token for later retrieval.
 		if token.Addresses != nil {
 			for chain, addr := range token.Addresses {
-				key := fmt.Sprintf("%s__%s", chain, addr)
+				key := fmt.Sprintf("%d__%s", chain, addr)
 				ws.addrToToken.Store(key, token)
 			}
 		}

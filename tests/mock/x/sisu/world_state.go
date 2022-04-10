@@ -110,16 +110,30 @@ func (mr *MockWorldStateMockRecorder) GetTokenPrice(token interface{}) *gomock.C
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTokenPrice", reflect.TypeOf((*MockWorldState)(nil).GetTokenPrice), token)
 }
 
-// LoadData mocks base method.
-func (m *MockWorldState) LoadData(ctx types.Context) {
+// InitData mocks base method.
+func (m *MockWorldState) InitData(ctx types.Context) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "LoadData", ctx)
+	m.ctrl.Call(m, "InitData", ctx)
 }
 
-// LoadData indicates an expected call of LoadData.
-func (mr *MockWorldStateMockRecorder) LoadData(ctx interface{}) *gomock.Call {
+// InitData indicates an expected call of InitData.
+func (mr *MockWorldStateMockRecorder) InitData(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadData", reflect.TypeOf((*MockWorldState)(nil).LoadData), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitData", reflect.TypeOf((*MockWorldState)(nil).InitData), ctx)
+}
+
+// IsDataInitialized mocks base method.
+func (m *MockWorldState) IsDataInitialized() bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsDataInitialized")
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsDataInitialized indicates an expected call of IsDataInitialized.
+func (mr *MockWorldStateMockRecorder) IsDataInitialized() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsDataInitialized", reflect.TypeOf((*MockWorldState)(nil).IsDataInitialized))
 }
 
 // SetChain mocks base method.

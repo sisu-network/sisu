@@ -121,16 +121,16 @@ func TestSaveTokenPrices(t *testing.T) {
 	allSigners := make([]string, 0)
 	for savedSigner, record := range allPrices {
 		allSigners = append(allSigners, savedSigner)
-		require.Equal(t, 1, len(record.Prices))
+		require.Equal(t, 1, len(record.Records))
 	}
 
 	sort.Strings(allSigners)
 	require.Equal(t, []string{signer1, signer2}, allSigners)
 
 	record := allPrices[signer1]
-	require.Equal(t, int64(5_000_000_000), record.Prices[token].Price)
+	require.Equal(t, int64(5_000_000_000), record.Records[0].Price)
 	record = allPrices[signer2]
-	require.Equal(t, int64(10_000_000_000), record.Prices[token].Price)
+	require.Equal(t, int64(10_000_000_000), record.Records[0].Price)
 }
 
 ///// Node

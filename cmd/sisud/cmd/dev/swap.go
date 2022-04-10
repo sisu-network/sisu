@@ -108,12 +108,12 @@ func (c *swapCommand) getTokenAddrs(tokenId string, srcChain string, dstChain st
 	}
 
 	token := res.Token
-	if len(token.Addresses[srcChain]) == 0 || len(token.Addresses[dstChain]) == 0 {
+	if len(token.GetAddressForChain(srcChain)) == 0 || len(token.GetAddressForChain(dstChain)) == 0 {
 		log.Info("source chain = ", srcChain, " dest chain = ", dstChain)
 		panic(fmt.Errorf("cannot find token address, available token addresses = %v", token.Addresses))
 	}
 
-	return token.Addresses[srcChain], token.Addresses[dstChain]
+	return token.GetAddressForChain(srcChain), token.GetAddressForChain(dstChain)
 }
 
 func (c *swapCommand) getAuthTransactor(client *ethclient.Client, address common.Address) (*bind.TransactOpts, error) {
