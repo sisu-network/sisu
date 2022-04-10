@@ -130,7 +130,7 @@ func TestSaveTokenPrices(t *testing.T) {
 	record := allPrices[signer1]
 	require.Equal(t, int64(5_000_000_000), record.Records[0].Price)
 	record = allPrices[signer2]
-	require.Equal(t, int64(10_000_000_000), record.Records[1].Price)
+	require.Equal(t, int64(10_000_000_000), record.Records[0].Price)
 }
 
 ///// Node
