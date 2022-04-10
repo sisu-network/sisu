@@ -192,6 +192,7 @@ func (g *localDockerGenerator) cleanData(outputDir string) {
 	for _, f := range files {
 		if f.IsDir() {
 			path := filepath.Join(outputDir, f.Name())
+			log.Info("Deleting folder ", path)
 			err := os.RemoveAll(path)
 			if err != nil {
 				panic(err)
