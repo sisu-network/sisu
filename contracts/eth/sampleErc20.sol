@@ -544,3 +544,11 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
         uint256 amount
     ) internal virtual {}
 }
+
+// File contracts/SampleERC20.sol
+
+contract SampleERC20 is ERC20 {
+    constructor() ERC20("Sisu token", "SISU") {
+        _mint(msg.sender, 1000 * 10**18);
+    }
+}
