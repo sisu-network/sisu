@@ -17,8 +17,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
-	"github.com/sisu-network/sisu/contracts/eth/erc20"
 	liquidity "github.com/sisu-network/sisu/contracts/eth/liquiditypool"
+	"github.com/sisu-network/sisu/contracts/eth/sampleerc20"
 	"github.com/spf13/cobra"
 )
 
@@ -175,7 +175,7 @@ func (c *DeployContractCmd) deployErc20(client *ethclient.Client, accountAddr co
 		panic(err)
 	}
 
-	_, tx, _, err := erc20.DeployErc20(auth, client, tokenName, tokenSymbol)
+	_, tx, _, err := sampleerc20.DeploySampleerc20(auth, client, tokenName, tokenSymbol)
 	if err != nil {
 		panic(err)
 	}
@@ -252,7 +252,7 @@ func (c *DeployContractCmd) getAuthTransactor(client *ethclient.Client, address 
 	auth.Value = big.NewInt(0)
 	auth.GasPrice = gasPrice
 
-	auth.GasLimit = uint64(3_000_000)
+	auth.GasLimit = uint64(5_000_000)
 
 	return auth, nil
 }
