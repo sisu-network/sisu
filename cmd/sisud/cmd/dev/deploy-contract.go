@@ -17,6 +17,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
+	"github.com/sisu-network/sisu/contracts/eth/erc20"
 	liquidity "github.com/sisu-network/sisu/contracts/eth/liquiditypool"
 	"github.com/spf13/cobra"
 )
@@ -39,48 +40,10 @@ deploy --contract liquidity --chain-urls http://localhost:7545,http://localhost:
 			urlString, _ := cmd.Flags().GetString(flags.ChainUrls)
 			contract, _ := cmd.Flags().GetString(flags.Contract)
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
+			expAddrString, _ := cmd.Flags().GetString(flags.ExpectedAddrs)
 
-			urls := strings.Split(urlString, ",")
-			clients := make([]*ethclient.Client, 0)
-
-			switch contract {
-			case "liquidity":
-			default:
-				panic(fmt.Errorf("Unknown contract: %s", contract))
-			}
-
-			// Get all urls from command arguments.
-			for i := 0; i < len(urls); i++ {
-				client, err := ethclient.Dial(urls[i])
-				if err != nil {
-					log.Error("please check chain is up and running, url = ", urls[i])
-					panic(err)
-				}
-				clients = append(clients, client)
-			}
-			defer func() {
-				for _, client := range clients {
-					client.Close()
-				}
-			}()
-
-			var addr common.Address
 			c := &DeployContractCmd{}
-			c.privateKey, addr = c.getPrivateKey(mnemonic)
-			expectedAddress := make([]string, len(urls))
-
-			log.Info("Key public addr = ", addr)
-
-			for i, client := range clients {
-				// If liquidity contract has been deployed, do nothing.
-				if len(expectedAddress[i]) > 0 && c.isContractDeployed(client, common.HexToAddress(expectedAddress[i])) {
-					log.Verbose("Liquidity ", i, " has been deployed")
-					continue
-				}
-
-				addr := c.deployLiquidity(client, addr, expectedAddress[i])
-				log.Infof("Deployed on chain %s at address %s", urls[i], addr.String())
-			}
+			c.doDeployment(urlString, contract, mnemonic, expAddrString)
 
 			return nil
 		},
@@ -89,8 +52,69 @@ deploy --contract liquidity --chain-urls http://localhost:7545,http://localhost:
 	cmd.Flags().String(flags.Contract, "liquidity", "Contract name that we want to deploy.")
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
 	cmd.Flags().String(flags.ChainUrls, "http://0.0.0.0:7545,http://0.0.0.0:8545", "RPCs of all the chains we want to fund.")
+	cmd.Flags().String(flags.ExpectedAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "Expected addressed of the contract after deployment. Empty string means do not check for address match.")
 
 	return cmd
+}
+
+func (c *DeployContractCmd) doDeployment(urlString, contract, mnemonic, expAddrString string) []string {
+	urls := strings.Split(urlString, ",")
+	clients := make([]*ethclient.Client, 0)
+
+	expectedAddrs := strings.Split(expAddrString, ",")
+
+	if len(urls) != len(expectedAddrs) {
+		panic("Expected addrs length does not match urls length")
+	}
+
+	// Get all urls from command arguments.
+	for i := 0; i < len(urls); i++ {
+		client, err := ethclient.Dial(urls[i])
+		if err != nil {
+			log.Error("please check chain is up and running, url = ", urls[i])
+			panic(err)
+		}
+		clients = append(clients, client)
+	}
+	defer func() {
+		for _, client := range clients {
+			client.Close()
+		}
+	}()
+
+	var owner common.Address
+	c.privateKey, owner = c.getPrivateKey(mnemonic)
+
+	log.Info("Key public addr = ", owner)
+	deployedAddrs := make([]string, len(urls))
+
+	for i, client := range clients {
+		// If liquidity contract has been deployed, do nothing.
+		if len(expectedAddrs[i]) > 0 && c.isContractDeployed(client, common.HexToAddress(expectedAddrs[i])) {
+			log.Verbose("Contract ", i, " has been deployed")
+			continue
+		}
+
+		var addr common.Address
+		switch contract {
+		case "erc20":
+			addr = c.deployErc20(client, owner, expectedAddrs[i], "Sisu Token", "SISU")
+
+		case "liquidity":
+			addr = c.deployLiquidity(client, owner, expectedAddrs[i])
+
+		default:
+			panic(fmt.Sprintf("Unknown contract %s", contract))
+		}
+
+		deployedAddrs[i] = addr.String()
+	}
+
+	for _, addr := range deployedAddrs {
+		log.Info("Deployed addr = ", addr)
+	}
+
+	return deployedAddrs
 }
 
 func (c *DeployContractCmd) getPrivateKey(mnemonic string) (*ecdsa.PrivateKey, common.Address) {
@@ -145,6 +169,34 @@ func (c *DeployContractCmd) isContractDeployed(client *ethclient.Client, tokenAd
 	return len(bz) > 10
 }
 
+func (c *DeployContractCmd) deployErc20(client *ethclient.Client, accountAddr common.Address, expectedAddress string, tokenName, tokenSymbol string) common.Address {
+	auth, err := c.getAuthTransactor(client, accountAddr)
+	if err != nil {
+		panic(err)
+	}
+
+	_, tx, _, err := erc20.DeployErc20(auth, client, tokenName, tokenSymbol)
+	if err != nil {
+		panic(err)
+	}
+
+	log.Info("Deploying erc20 contract ... ")
+	contractAddr, err := bind.WaitDeployed(context.Background(), client, tx)
+	if err != nil {
+		panic(err)
+	}
+
+	if len(expectedAddress) > 0 && contractAddr.String() != expectedAddress {
+		panic(fmt.Errorf(`Unmatched ERC20 address. We expect address %s but get %s.
+You need to update the expected address (both in this file and the tokens_dev.json).`,
+			expectedAddress, contractAddr.String()))
+	}
+
+	log.Info("Deployed contract successfully, addr: ", contractAddr.String())
+
+	return contractAddr
+}
+
 func (c *DeployContractCmd) deployLiquidity(client *ethclient.Client, accountAddr common.Address, expectedAddress string) common.Address {
 	auth, err := c.getAuthTransactor(client, accountAddr)
 	if err != nil {
@@ -164,7 +216,7 @@ func (c *DeployContractCmd) deployLiquidity(client *ethclient.Client, accountAdd
 
 	if len(expectedAddress) > 0 && contractAddr.String() != expectedAddress {
 		panic(fmt.Errorf(`Unmatched Liquid pool address. We expect address %s but get %s.
-You need to update the expected address (both in this file and the tokens_dev.json).`,
+You need to update the expected address (both in this file and the liquidity_dev.json).`,
 			expectedAddress, contractAddr.String()))
 	}
 
