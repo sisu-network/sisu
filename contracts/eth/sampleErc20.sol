@@ -548,7 +548,7 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
 // File contracts/SampleERC20.sol
 
 contract SampleERC20 is ERC20 {
-    constructor() ERC20("Sisu token", "SISU") {
-        _mint(msg.sender, 1000 * 10**18);
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {
+        _mint(msg.sender, 1000000 * 10**18);
     }
 }
