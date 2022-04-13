@@ -64,7 +64,7 @@ ganache-cli --accounts 10 --blockTime 3 --port 8545 --defaultBalanceEther 100000
 ```
 
 ### Run dheart and deyes
-Follow the instruction on dheart and deyes to run these 2 components in 2 separate tabs.
+Follow the instruction on dheart and deyes to run these 2 components in 2 separate tabs. Make sure you create `dheart.toml` and `deyes.toml` files before running them.
 
 ### Build and run Sisu
 
@@ -100,14 +100,14 @@ You can now deploy ETH transaction on ganache1 at port 7545.
 Run this command to fund 2 gateway smart contract on 2 different chains ganache1 and ganache2:
 
 ```
-./sisu dev fund-account
+./sisu dev deploy-and-fund
 ```
 
 This command does a number of things:
 - Deploy ERC20 contracts in 2 ganache blockchains.
 - Fund the Sisu's network public key with some ETH (the last argument from command line)
 - Wait for Sisu to finish deploying gateway contracts
-- Transfer ERC20 to gateway contracts (about 500 tokens)
+- Transfer ERC20 to gateway contracts
 
 After this command finishes running, you can start swapping token through both chains.
 
