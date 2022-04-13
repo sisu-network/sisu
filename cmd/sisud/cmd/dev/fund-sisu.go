@@ -41,13 +41,12 @@ var (
 
 type fundAccountCmd struct{}
 
-func FundAccount() *cobra.Command {
+func FundSisu() *cobra.Command {
 	cmd := &cobra.Command{
-		Use: "fund-account",
+		Use: "fund-sisu",
 		Short: `Fund accounts with on a list of chains. Example:
-./sisu dev fund-account
+./sisu dev fund-sisu --amount 10
 `,
-
 		RunE: func(cmd *cobra.Command, args []string) error {
 			chainString, _ := cmd.Flags().GetString(flags.Chains)
 			urlString, _ := cmd.Flags().GetString(flags.ChainUrls)
@@ -58,136 +57,8 @@ func FundAccount() *cobra.Command {
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 			log.Info("Amount = ", amount)
 
-			chains := strings.Split(chainString, ",")
-			urls := strings.Split(urlString, ",")
-			tokenAddrs := strings.Split(erc20AddrString, ",")
-			liquidityAddrs := strings.Split(liquidityAddrString, ",")
-
-			log.Info("tokenAddrs = ", tokenAddrs)
-			log.Info("liquidityAddrs = ", liquidityAddrs)
-
 			c := &fundAccountCmd{}
-			wg := &sync.WaitGroup{}
-			clients := make([]*ethclient.Client, 0)
-
-			// Get all urls from command arguments.
-			for i := 0; i < len(urls); i++ {
-				client, err := ethclient.Dial(urls[i])
-				if err != nil {
-					log.Error("please check chain is up and running, url = ", urls[i])
-					panic(err)
-				}
-				clients = append(clients, client)
-			}
-			defer func() {
-				for _, client := range clients {
-					client.Close()
-				}
-			}()
-
-			// Approve the contract with some preallocated token from account0
-			wg.Add(len(clients))
-			for i, client := range clients {
-				go func(i int, client *ethclient.Client) {
-					c.approveAddress(client, tokenAddrs[i], liquidityAddrs[i])
-					wg.Done()
-				}(i, client)
-			}
-			wg.Wait()
-			log.Info("Liquidity approval done!")
-
-			time.Sleep(time.Second * 3)
-
-			// Add liquidity to the pool
-			wg.Add(len(clients))
-			for i, client := range clients {
-				go func(i int, client *ethclient.Client) {
-					defer wg.Done()
-
-					balance, err := c.queryErc20Balance(client, tokenAddrs[i], liquidityAddrs[i])
-					if err != nil {
-						panic(err)
-					}
-
-					if balance.Cmp(big.NewInt(0)) == 0 {
-						log.Infof("Adding liquidity of token %s to the pool at %s", tokenAddrs[i], liquidityAddrs[i])
-						c.addLiquidity(client, liquidityAddrs[i], tokenAddrs[i])
-					} else {
-						log.Infof("Liquidity pool has received %s tokens (%s) \n", balance.String(), tokenAddrs[i])
-					}
-				}(i, client)
-			}
-			wg.Wait()
-
-			// Waits for Sisu to create contract instance in its database. At this stage, the contract is
-			// not deployed yet.
-			c.waitForGatewayCreationInSisuDb(cmd.Context(), chains, sisuRpc)
-
-			time.Sleep(time.Second * 3)
-
-			// Fund the accounts with some native ETH
-			allPubKeys := queryPubKeys(cmd, sisuRpc)
-			var tssPubAddr common.Address
-			wg.Add(len(clients))
-			for i, client := range clients {
-				go func(i int, client *ethclient.Client) {
-					defer wg.Done()
-
-					// Get chain and local chain URL
-					pubKeyBytes := allPubKeys[libchain.KEY_TYPE_ECDSA]
-					pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
-					if err != nil {
-						panic(err)
-					}
-					tssPubAddr = crypto.PubkeyToAddress(*pubKey)
-
-					c.transferEth(client, tssPubAddr.Hex(), amount)
-				}(i, client)
-			}
-			wg.Wait()
-
-			// Waits until all gateway contracts are deployed.
-			log.Info("Now we wait until gateway contracts are deployed on all chains.")
-			gateways := c.waitForGatewayDeployed(cmd.Context(), chains, sisuRpc)
-
-			// Approve the contract with some preallocated token from account0
-			wg.Add(len(clients))
-			for i, client := range clients {
-				go func(i int, client *ethclient.Client) {
-					c.approveAddress(client, tokenAddrs[i], gateways[i])
-					wg.Done()
-				}(i, client)
-			}
-			wg.Wait()
-			log.Info("Gateway approval done!")
-
-			// Grant permission for gateway to use liquidity pool' funds
-			log.Info("Set gateway address for liqiuitidy pool")
-			wg.Add(len(gateways))
-			for i, client := range clients {
-				go func(i int, client *ethclient.Client) {
-					c.setGatewayForLiquidity(client, liquidityAddrs[i], gateways[i])
-					wg.Done()
-				}(i, client)
-			}
-			wg.Wait()
-
-			// Transfer ownership of liquidity pool to TSS public address
-			log.Info("Transferring ownership of liquidity pool for ", tssPubAddr.Hex())
-			wg.Add(len(clients))
-			for i, client := range clients {
-				go func(i int, client *ethclient.Client) {
-					if err := c.transferLiquidityOwnership(client, liquidityAddrs[i], tssPubAddr.String()); err != nil {
-						panic(err)
-					}
-
-					wg.Done()
-				}(i, client)
-			}
-			wg.Wait()
-			log.Info("Transferred ownership of liquidity pool to tss public address")
-
-			c.doSanityCheck(clients, tokenAddrs, liquidityAddrs, gateways)
+			c.fundSisuAccounts(cmd.Context(), chainString, urlString, erc20AddrString, liquidityAddrString, sisuRpc, amount)
 
 			return nil
 		},
@@ -202,6 +73,138 @@ func FundAccount() *cobra.Command {
 	cmd.Flags().Int(flags.Amount, 100, "The amount that gateway addresses will receive")
 
 	return cmd
+}
+
+func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, erc20AddrString, liquidityAddrString, sisuRpc string, amount int) {
+	chains := strings.Split(chainString, ",")
+	urls := strings.Split(urlString, ",")
+	tokenAddrs := strings.Split(erc20AddrString, ",")
+	liquidityAddrs := strings.Split(liquidityAddrString, ",")
+
+	log.Info("tokenAddrs = ", tokenAddrs)
+	log.Info("liquidityAddrs = ", liquidityAddrs)
+
+	wg := &sync.WaitGroup{}
+	clients := make([]*ethclient.Client, 0)
+
+	// Get all urls from command arguments.
+	for i := 0; i < len(urls); i++ {
+		client, err := ethclient.Dial(urls[i])
+		if err != nil {
+			log.Error("please check chain is up and running, url = ", urls[i])
+			panic(err)
+		}
+		clients = append(clients, client)
+	}
+	defer func() {
+		for _, client := range clients {
+			client.Close()
+		}
+	}()
+
+	// Approve the contract with some preallocated token from account0
+	wg.Add(len(clients))
+	for i, client := range clients {
+		go func(i int, client *ethclient.Client) {
+			c.approveAddress(client, tokenAddrs[i], liquidityAddrs[i])
+			wg.Done()
+		}(i, client)
+	}
+	wg.Wait()
+	log.Info("Liquidity approval done!")
+
+	time.Sleep(time.Second * 3)
+
+	// Add liquidity to the pool
+	wg.Add(len(clients))
+	for i, client := range clients {
+		go func(i int, client *ethclient.Client) {
+			defer wg.Done()
+
+			balance, err := c.queryErc20Balance(client, tokenAddrs[i], liquidityAddrs[i])
+			if err != nil {
+				panic(err)
+			}
+
+			if balance.Cmp(big.NewInt(0)) == 0 {
+				log.Infof("Adding liquidity of token %s to the pool at %s", tokenAddrs[i], liquidityAddrs[i])
+				c.addLiquidity(client, liquidityAddrs[i], tokenAddrs[i])
+			} else {
+				log.Infof("Liquidity pool has received %s tokens (%s) \n", balance.String(), tokenAddrs[i])
+			}
+		}(i, client)
+	}
+	wg.Wait()
+
+	// Waits for Sisu to create contract instance in its database. At this stage, the contract is
+	// not deployed yet.
+	c.waitForGatewayCreationInSisuDb(ctx, chains, sisuRpc)
+
+	time.Sleep(time.Second * 3)
+
+	// Fund the accounts with some native ETH
+	allPubKeys := queryPubKeys(ctx, sisuRpc)
+	var tssPubAddr common.Address
+	wg.Add(len(clients))
+	for i, client := range clients {
+		go func(i int, client *ethclient.Client) {
+			defer wg.Done()
+
+			// Get chain and local chain URL
+			pubKeyBytes := allPubKeys[libchain.KEY_TYPE_ECDSA]
+			pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
+			if err != nil {
+				panic(err)
+			}
+			tssPubAddr = crypto.PubkeyToAddress(*pubKey)
+
+			c.transferEth(client, tssPubAddr.Hex(), amount)
+		}(i, client)
+	}
+	wg.Wait()
+
+	// Waits until all gateway contracts are deployed.
+	log.Info("Now we wait until gateway contracts are deployed on all chains.")
+	gateways := c.waitForGatewayDeployed(ctx, chains, sisuRpc)
+
+	// Approve the contract with some preallocated token from account0
+	wg.Add(len(clients))
+	for i, client := range clients {
+		go func(i int, client *ethclient.Client) {
+			c.approveAddress(client, tokenAddrs[i], gateways[i])
+			wg.Done()
+		}(i, client)
+	}
+	wg.Wait()
+	log.Info("Gateway approval done!")
+
+	// Grant permission for gateway to use liquidity pool' funds
+	log.Info("Set gateway address for liqiuitidy pool")
+	wg.Add(len(gateways))
+	for i, client := range clients {
+		go func(i int, client *ethclient.Client) {
+			c.setGatewayForLiquidity(client, liquidityAddrs[i], gateways[i])
+			wg.Done()
+		}(i, client)
+	}
+	wg.Wait()
+
+	// Transfer ownership of liquidity pool to TSS public address
+	log.Info("Transferring ownership of liquidity pool for ", tssPubAddr.Hex())
+	wg.Add(len(clients))
+	for i, client := range clients {
+		go func(i int, client *ethclient.Client) {
+			if err := c.transferLiquidityOwnership(client, liquidityAddrs[i], tssPubAddr.String()); err != nil {
+				panic(err)
+			}
+
+			wg.Done()
+		}(i, client)
+	}
+	wg.Wait()
+	log.Info("Transferred ownership of liquidity pool to tss public address")
+
+	c.doSanityCheck(clients, tokenAddrs, liquidityAddrs, gateways)
 }
 
 func (c *fundAccountCmd) waitForGatewayCreationInSisuDb(goCtx context.Context, chains []string, sisuRpc string) []string {
@@ -264,7 +267,7 @@ func (c *fundAccountCmd) approveAddress(client *ethclient.Client, erc20Addr stri
 }
 
 func (c *fundAccountCmd) setGatewayForLiquidity(client *ethclient.Client, liquidityAddr, gatewayAddr string) {
-	log.Infof("Setting gateway for liquidity pool, gateway address: %s, liquidity pool address \n", gatewayAddr, liquidityAddr)
+	log.Infof("Setting gateway for liquidity pool, gateway address: %s, liquidity pool address %s\n", gatewayAddr, liquidityAddr)
 
 	contract, err := liquidity.NewLiquiditypool(common.HexToAddress(liquidityAddr), client)
 	if err != nil {
@@ -432,7 +435,7 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, recipient string,
 	time.Sleep(time.Second * 3)
 }
 
-func queryPubKeys(cmd *cobra.Command, sisuRpc string) map[string][]byte {
+func queryPubKeys(ctx context.Context, sisuRpc string) map[string][]byte {
 	grpcConn, err := grpc.Dial(
 		sisuRpc,
 		grpc.WithInsecure(),
@@ -444,7 +447,7 @@ func queryPubKeys(cmd *cobra.Command, sisuRpc string) map[string][]byte {
 
 	queryClient := tssTypes.NewTssQueryClient(grpcConn)
 
-	res, err := queryClient.AllPubKeys(cmd.Context(), &tssTypes.QueryAllPubKeysRequest{})
+	res, err := queryClient.AllPubKeys(ctx, &tssTypes.QueryAllPubKeysRequest{})
 	if err != nil {
 		panic(err)
 	}

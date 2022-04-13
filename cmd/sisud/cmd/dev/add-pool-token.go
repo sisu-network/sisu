@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -77,22 +78,28 @@ func (c *AddPoolTokenCommand) addToken(urlString, mnemonic, tokenSymbol, tokenAd
 
 	log.Infof("Adding pool token %s (address %s) for the pool %s", tokenSymbol, tokenAddrs[0], liquidityAddrString)
 
+	wg := &sync.WaitGroup{}
+	wg.Add(len(clients))
 	for i, liquidityAddr := range liquidityAddrs {
-		liquidInstance, err := liquidity.NewLiquiditypool(common.HexToAddress(liquidityAddr), clients[i])
-		if err != nil {
-			panic(err)
-		}
+		go func(i int, liquidityAddr string) {
+			liquidInstance, err := liquidity.NewLiquiditypool(common.HexToAddress(liquidityAddr), clients[i])
+			if err != nil {
+				panic(err)
+			}
 
-		auth, err := getAuthTransactor(clients[i], mnemonic, account0.Address)
-		if err != nil {
-			panic(err)
-		}
+			auth, err := getAuthTransactor(clients[i], mnemonic, account0.Address)
+			if err != nil {
+				panic(err)
+			}
 
-		tx, err := liquidInstance.AddToken(auth, []common.Address{common.HexToAddress(tokenAddrs[i])}, []string{tokenSymbol})
-		if err != nil {
-			panic(err)
-		}
+			tx, err := liquidInstance.AddToken(auth, []common.Address{common.HexToAddress(tokenAddrs[i])}, []string{tokenSymbol})
+			if err != nil {
+				panic(err)
+			}
 
-		bind.WaitMined(context.Background(), clients[i], tx)
+			bind.WaitMined(context.Background(), clients[i], tx)
+			wg.Done()
+		}(i, liquidityAddr)
 	}
+	wg.Wait()
 }

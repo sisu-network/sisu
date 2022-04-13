@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"sync"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil/hdkeychain"
@@ -45,6 +46,7 @@ Example:
 			tokenSymbol, _ := cmd.Flags().GetString(flags.Erc20Symbol)
 
 			c := &DeployContractCmd{}
+
 			c.doDeployment(urlString, contract, mnemonic, expectedAddrString, tokenName, tokenSymbol)
 
 			return nil
@@ -86,33 +88,35 @@ func (c *DeployContractCmd) doDeployment(urlString, contract, mnemonic, expAddrS
 		}
 	}()
 
-	var owner common.Address
-	c.privateKey, owner = c.getPrivateKey(mnemonic)
-
-	log.Info("Key public addr = ", owner)
 	deployedAddrs := make([]string, len(urls))
+	wg := &sync.WaitGroup{}
+	wg.Add(len(clients))
 
 	for i, client := range clients {
-		// If liquidity contract has been deployed, do nothing.
-		if len(expectedAddrs[i]) > 0 && c.isContractDeployed(client, common.HexToAddress(expectedAddrs[i])) {
-			log.Verbose("Contract ", i, " has been deployed")
-			continue
-		}
+		go func(i int, client *ethclient.Client) {
+			// If liquidity contract has been deployed, do nothing.
+			if len(expectedAddrs[i]) > 0 && c.isContractDeployed(client, common.HexToAddress(expectedAddrs[i])) {
+				log.Verbose("Contract ", i, " has been deployed")
+				return
+			}
 
-		var addr common.Address
-		switch contract {
-		case "erc20":
-			addr = c.deployErc20(client, owner, expectedAddrs[i], tokenName, tokenSymbol)
+			var addr common.Address
+			switch contract {
+			case "erc20":
+				addr = c.deployErc20(client, mnemonic, expectedAddrs[i], tokenName, tokenSymbol)
 
-		case "liquidity":
-			addr = c.deployLiquidity(client, owner, expectedAddrs[i])
+			case "liquidity":
+				addr = c.deployLiquidity(client, mnemonic, expectedAddrs[i])
 
-		default:
-			panic(fmt.Sprintf("Unknown contract %s", contract))
-		}
+			default:
+				panic(fmt.Sprintf("Unknown contract %s", contract))
+			}
 
-		deployedAddrs[i] = addr.String()
+			deployedAddrs[i] = addr.String()
+			wg.Done()
+		}(i, client)
 	}
+	wg.Wait()
 
 	for _, addr := range deployedAddrs {
 		log.Info("Deployed addr = ", addr)
@@ -173,8 +177,10 @@ func (c *DeployContractCmd) isContractDeployed(client *ethclient.Client, tokenAd
 	return len(bz) > 10
 }
 
-func (c *DeployContractCmd) deployErc20(client *ethclient.Client, accountAddr common.Address, expectedAddress string, tokenName, tokenSymbol string) common.Address {
-	auth, err := c.getAuthTransactor(client, accountAddr)
+func (c *DeployContractCmd) deployErc20(client *ethclient.Client, mnemonic string, expectedAddress string, tokenName, tokenSymbol string) common.Address {
+	var owner common.Address
+	c.privateKey, owner = c.getPrivateKey(mnemonic)
+	auth, err := c.getAuthTransactor(client, owner)
 	if err != nil {
 		panic(err)
 	}
@@ -201,8 +207,11 @@ You need to update the expected address (both in this file and the tokens_dev.js
 	return contractAddr
 }
 
-func (c *DeployContractCmd) deployLiquidity(client *ethclient.Client, accountAddr common.Address, expectedAddress string) common.Address {
-	auth, err := c.getAuthTransactor(client, accountAddr)
+func (c *DeployContractCmd) deployLiquidity(client *ethclient.Client, mnemonic string, expectedAddress string) common.Address {
+	var owner common.Address
+	c.privateKey, owner = c.getPrivateKey(mnemonic)
+
+	auth, err := c.getAuthTransactor(client, owner)
 	if err != nil {
 		panic(err)
 	}
