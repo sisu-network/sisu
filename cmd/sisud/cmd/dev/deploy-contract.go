@@ -29,21 +29,23 @@ type DeployContractCmd struct {
 func DeployContract() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "deploy",
-		Long: `Deploy an ERC20 contract.
+		Long: `Deploy an ERC20 contract. You can list of empty string to expected addresses param.
 Usage:
-deploy --contract [contract-type] --chain-urls [list-of-urls]
+./sisu dev deploy --contract [contract-type] --chain-urls [list-of-urls] --token-name [TOKEN_NAME] --token-symbol [TOKEN_SYMBOL] --expected-addrs [List of Expected Addresses]
 
 Example:
-deploy --contract liquidity --chain-urls http://localhost:7545,http://localhost:8545
+./sisu dev deploy --contract liquidity --chain-urls http://localhost:7545,http://localhost:8545
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			urlString, _ := cmd.Flags().GetString(flags.ChainUrls)
 			contract, _ := cmd.Flags().GetString(flags.Contract)
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
-			expAddrString, _ := cmd.Flags().GetString(flags.ExpectedAddrs)
+			expectedAddrString, _ := cmd.Flags().GetString(flags.ExpectedAddrs)
+			tokenName, _ := cmd.Flags().GetString(flags.Erc20Name)
+			tokenSymbol, _ := cmd.Flags().GetString(flags.Erc20Symbol)
 
 			c := &DeployContractCmd{}
-			c.doDeployment(urlString, contract, mnemonic, expAddrString)
+			c.doDeployment(urlString, contract, mnemonic, expectedAddrString, tokenName, tokenSymbol)
 
 			return nil
 		},
@@ -53,15 +55,17 @@ deploy --contract liquidity --chain-urls http://localhost:7545,http://localhost:
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
 	cmd.Flags().String(flags.ChainUrls, "http://0.0.0.0:7545,http://0.0.0.0:8545", "RPCs of all the chains we want to fund.")
 	cmd.Flags().String(flags.ExpectedAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "Expected addressed of the contract after deployment. Empty string means do not check for address match.")
+	cmd.Flags().String(flags.Erc20Name, "Sisu Token", "Token name")
+	cmd.Flags().String(flags.Erc20Symbol, "SISU", "Token symbol")
 
 	return cmd
 }
 
-func (c *DeployContractCmd) doDeployment(urlString, contract, mnemonic, expAddrString string) []string {
+func (c *DeployContractCmd) doDeployment(urlString, contract, mnemonic, expAddrString, tokenName, tokenSymbol string) []string {
 	urls := strings.Split(urlString, ",")
-	clients := make([]*ethclient.Client, 0)
-
 	expectedAddrs := strings.Split(expAddrString, ",")
+
+	clients := make([]*ethclient.Client, 0)
 
 	if len(urls) != len(expectedAddrs) {
 		panic("Expected addrs length does not match urls length")
@@ -98,7 +102,7 @@ func (c *DeployContractCmd) doDeployment(urlString, contract, mnemonic, expAddrS
 		var addr common.Address
 		switch contract {
 		case "erc20":
-			addr = c.deployErc20(client, owner, expectedAddrs[i], "Sisu Token", "SISU")
+			addr = c.deployErc20(client, owner, expectedAddrs[i], tokenName, tokenSymbol)
 
 		case "liquidity":
 			addr = c.deployLiquidity(client, owner, expectedAddrs[i])

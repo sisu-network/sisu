@@ -16,6 +16,7 @@ func DevCmd() *cobra.Command {
 
 	cmd.AddCommand(FundAccount())
 	cmd.AddCommand(DeployContract())
+	cmd.AddCommand(AddPoolToken())
 	cmd.AddCommand(Swap())
 	cmd.AddCommand(Query())
 
