@@ -14,8 +14,10 @@ func DevCmd() *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 
-	cmd.AddCommand(FundAccount())
+	cmd.AddCommand(FundSisu())
 	cmd.AddCommand(DeployContract())
+	cmd.AddCommand(AddPoolToken())
+	cmd.AddCommand(DeployAndFund())
 	cmd.AddCommand(Swap())
 	cmd.AddCommand(Query())
 

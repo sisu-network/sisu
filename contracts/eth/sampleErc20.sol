@@ -544,3 +544,11 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
         uint256 amount
     ) internal virtual {}
 }
+
+// File contracts/SampleERC20.sol
+
+contract SampleERC20 is ERC20 {
+    constructor(string memory name, string memory symbol) ERC20(name, symbol) {
+        _mint(msg.sender, 1000000 * 10**18);
+    }
+}
