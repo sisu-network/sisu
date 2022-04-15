@@ -8,7 +8,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 	liquidity "github.com/sisu-network/sisu/contracts/eth/liquiditypool"
@@ -55,21 +54,10 @@ Short:
 }
 
 func (c *AddPoolTokenCommand) addToken(urlString, mnemonic, tokenSymbol, tokenAddrString, liquidityAddrString string) {
-	urls := strings.Split(urlString, ",")
 	liquidityAddrs := strings.Split(liquidityAddrString, ",")
 	tokenAddrs := strings.Split(tokenAddrString, ",")
 
-	clients := make([]*ethclient.Client, 0)
-
-	// Get all urls from command arguments.
-	for i := 0; i < len(urls); i++ {
-		client, err := ethclient.Dial(urls[i])
-		if err != nil {
-			log.Error("please check chain is up and running, url = ", urls[i])
-			panic(err)
-		}
-		clients = append(clients, client)
-	}
+	clients := getEthClients(urlString)
 	defer func() {
 		for _, client := range clients {
 			client.Close()
@@ -87,7 +75,7 @@ func (c *AddPoolTokenCommand) addToken(urlString, mnemonic, tokenSymbol, tokenAd
 				panic(err)
 			}
 
-			auth, err := getAuthTransactor(clients[i], mnemonic, account0.Address)
+			auth, err := getAuthTransactor(clients[i], mnemonic)
 			if err != nil {
 				panic(err)
 			}

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 	"github.com/spf13/cobra"
 )
@@ -28,6 +29,8 @@ func DeployAndFund() *cobra.Command {
 			expectedErc20String := fmt.Sprintf("%s,%s", ExpectedErc20Address, ExpectedErc20Address)
 			expectedLiquidityString := fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress)
 
+			log.Info("========= Deploy ERC20 and Liquidity Pool =========")
+
 			// Deploy ERC20 And liquidity pool
 			deployContractCmd := &DeployContractCmd{}
 			erc20Addrs := deployContractCmd.doDeployment(chainUrls, "erc20", mnemonic, expectedErc20String, "Sisu Token", "SISU")
@@ -35,15 +38,25 @@ func DeployAndFund() *cobra.Command {
 
 			time.Sleep(time.Second * 3)
 
+			log.Info("========= Adding support token to the pool =========")
+
 			// Add support token to the pool
 			tokenAddrString := strings.Join(erc20Addrs, ",")
 			liquidityAddrString := strings.Join(liquidityAddrs, ",")
 			addPoolTokenCmd := &AddPoolTokenCommand{}
 			addPoolTokenCmd.addToken(chainUrls, mnemonic, "SISU,SISU", tokenAddrString, liquidityAddrString)
 
+			log.Info("========= Adding liquidity to the pool =========")
+
+			// Add liquidity to the pool
+			addLiquidityCmd := &AddLiquidityCmd{}
+			addLiquidityCmd.approveAndAddLiquidity(chainUrls, mnemonic, tokenAddrString, liquidityAddrString, amount)
+
+			log.Info("========= Fund sisu's account and gateway =========")
+
 			// Fund Sisu's account
 			fundSisuCmd := &fundAccountCmd{}
-			fundSisuCmd.fundSisuAccounts(cmd.Context(), chainString, chainUrls, tokenAddrString, liquidityAddrString, sisuRpc, amount)
+			fundSisuCmd.fundSisuAccounts(cmd.Context(), chainString, chainUrls, mnemonic, tokenAddrString, liquidityAddrString, sisuRpc, amount)
 
 			return nil
 		},

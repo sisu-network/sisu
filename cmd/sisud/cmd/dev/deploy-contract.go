@@ -8,13 +8,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcutil/hdkeychain"
-	"github.com/cosmos/go-bip39"
-	"github.com/ethereum/go-ethereum/accounts"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
@@ -125,39 +120,6 @@ func (c *DeployContractCmd) doDeployment(urlString, contract, mnemonic, expAddrS
 	return deployedAddrs
 }
 
-func (c *DeployContractCmd) getPrivateKey(mnemonic string) (*ecdsa.PrivateKey, common.Address) {
-	seed, err := bip39.NewSeedWithErrorChecking(mnemonic, "")
-	if err != nil {
-		panic(err)
-	}
-
-	dpath, err := accounts.ParseDerivationPath("m/44'/60'/0'/0/0")
-	if err != nil {
-		panic(err)
-	}
-
-	masterKey, err := hdkeychain.NewMaster(seed, &chaincfg.MainNetParams)
-
-	key := masterKey
-	for _, n := range dpath {
-		key, err = key.Derive(n)
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	privateKey, err := key.ECPrivKey()
-	if err != nil {
-		panic(err)
-	}
-
-	privateKeyECDSA := privateKey.ToECDSA()
-	publicKey := privateKeyECDSA.PublicKey
-	addr := crypto.PubkeyToAddress(publicKey)
-
-	return privateKeyECDSA, addr
-}
-
 func (c *DeployContractCmd) queryNativeBalance(client *ethclient.Client, addr common.Address) *big.Int {
 	balance, err := client.BalanceAt(context.Background(), addr, nil)
 	if err != nil {
@@ -179,7 +141,7 @@ func (c *DeployContractCmd) isContractDeployed(client *ethclient.Client, tokenAd
 
 func (c *DeployContractCmd) deployErc20(client *ethclient.Client, mnemonic string, expectedAddress string, tokenName, tokenSymbol string) common.Address {
 	var owner common.Address
-	c.privateKey, owner = c.getPrivateKey(mnemonic)
+	c.privateKey, owner = getPrivateKey(mnemonic)
 	auth, err := c.getAuthTransactor(client, owner)
 	if err != nil {
 		panic(err)
@@ -209,7 +171,7 @@ You need to update the expected address (both in this file and the tokens_dev.js
 
 func (c *DeployContractCmd) deployLiquidity(client *ethclient.Client, mnemonic string, expectedAddress string) common.Address {
 	var owner common.Address
-	c.privateKey, owner = c.getPrivateKey(mnemonic)
+	c.privateKey, owner = getPrivateKey(mnemonic)
 
 	auth, err := c.getAuthTransactor(client, owner)
 	if err != nil {

@@ -36,9 +36,9 @@ type ContractInfo struct {
 var (
 	SupportedContracts = map[string]*ContractInfo{
 		ContractErc20Gateway: {
-			AbiString:      erc20gateway.Erc20gatewayMetaData.ABI,
-			Bin:            erc20gateway.Erc20gatewayMetaData.Bin,
-			AbiHash:        utils.KeccakHash32(erc20gateway.Erc20gatewayMetaData.Bin),
+			AbiString:      erc20gateway.Erc20gatewayABI,
+			Bin:            erc20gateway.Erc20gatewayBin,
+			AbiHash:        utils.KeccakHash32(erc20gateway.Erc20gatewayBin),
 			IsDeployBySisu: true,
 		},
 		ContractLiquidityPool: {
