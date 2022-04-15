@@ -129,7 +129,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	wg.Wait()
 	log.Info("Gateway approval done!")
 
-	// Grant permission for gateway to use liquidity pool' funds
+	// Set gateway for the liquidity
 	log.Info("Set gateway address for liqiuitidy pool")
 	wg.Add(len(gateways))
 	for i, client := range clients {
@@ -402,12 +402,6 @@ func (c *fundAccountCmd) doSanityCheck(clients []*ethclient.Client, tokenAddrs, 
 
 		if balance.Cmp(amountInWei) != 0 {
 			panic(fmt.Sprintf("balance does not match: expected %s, actual %s", amountInWei.String(), balance.String()))
-		}
-
-		// Check allowance
-		allowance := c.queryAllownace(client, tokenAddrs[i], account0.Address.String(), gateways[i])
-		if allowance.Cmp(amountInWei) != 0 {
-			panic(fmt.Sprintf("Allowance to gateway should not be 0"))
 		}
 	}
 }
