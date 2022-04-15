@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
 	"github.com/btcsuite/btcd/chaincfg"
@@ -15,6 +16,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/contracts/eth/erc20"
 	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
 )
 
@@ -99,7 +102,17 @@ func getPrivateKey(mnemonic string) (*ecdsa.PrivateKey, common.Address) {
 	return privateKeyECDSA, addr
 }
 
-func getAuthTransactor(client *ethclient.Client, mnemonic string, address common.Address) (*bind.TransactOpts, error) {
+func getAuthTransactor(client *ethclient.Client, mnemonic string) (*bind.TransactOpts, error) {
+	// This is the private key of the accounts0
+	privateKey, _ := getPrivateKey(mnemonic)
+	publicKey := privateKey.Public()
+	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
+	if !ok {
+		panic("cannot convert crypto pubkey to ecdsa pubkey")
+	}
+
+	address := crypto.PubkeyToAddress(*publicKeyECDSA)
+
 	nonce, err := client.PendingNonceAt(context.Background(), address)
 	if err != nil {
 		return nil, err
@@ -110,13 +123,11 @@ func getAuthTransactor(client *ethclient.Client, mnemonic string, address common
 		return nil, err
 	}
 
-	// This is the private key of the accounts0
-	privateKey, _ := getPrivateKey(mnemonic)
-
 	chainId, err := client.ChainID(context.Background())
 	if err != nil {
 		return nil, err
 	}
+
 	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainId)
 	if err != nil {
 		return nil, err
@@ -129,4 +140,51 @@ func getAuthTransactor(client *ethclient.Client, mnemonic string, address common
 	auth.GasLimit = uint64(10_000_000)
 
 	return auth, nil
+}
+
+func getEthClients(urlString string) []*ethclient.Client {
+	urls := strings.Split(urlString, ",")
+	clients := make([]*ethclient.Client, 0)
+
+	// Get all urls from command arguments.
+	for i := 0; i < len(urls); i++ {
+		client, err := ethclient.Dial(urls[i])
+		if err != nil {
+			log.Error("please check chain is up and running, url = ", urls[i])
+			panic(err)
+		}
+		clients = append(clients, client)
+	}
+
+	return clients
+}
+
+func queryErc20Balance(client *ethclient.Client, tokenAddr string, target string) (*big.Int, error) {
+	store, err := erc20.NewErc20(common.HexToAddress(tokenAddr), client)
+	if err != nil {
+		return nil, err
+	}
+
+	balance, err := store.BalanceOf(nil, common.HexToAddress(target))
+
+	return balance, err
+}
+
+func approveAddress(client *ethclient.Client, mnemonic string, erc20Addr string, target string) {
+	contract, err := erc20.NewErc20(common.HexToAddress(erc20Addr), client)
+	if err != nil {
+		panic(err)
+	}
+
+	opts, err := getAuthTransactor(client, mnemonic)
+	if err != nil {
+		panic(err)
+	}
+
+	_, owner := getPrivateKey(mnemonic)
+	ownerBalance, err := contract.BalanceOf(nil, owner)
+
+	tx, err := contract.Approve(opts, common.HexToAddress(target), ownerBalance)
+	bind.WaitDeployed(context.Background(), client, tx)
+	time.Sleep(time.Second * 3)
 }
