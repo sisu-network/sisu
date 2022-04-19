@@ -206,6 +206,7 @@ func (p *DefaultTxOutputProducer) getContractTx(ctx sdk.Context, contract *types
 
 		lp := p.keeper.GetLiquidity(ctx, contract.Chain)
 		if lp == nil {
+			log.Warn("Lp is nil for chain ", contract.Chain)
 			return nil
 		}
 
