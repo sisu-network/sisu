@@ -98,6 +98,9 @@ Example:
 						"ganache2": {
 							Id: "ganache2",
 						},
+						"eth-binance-testnet": {
+							Id: "eth-binance-testnet",
+						},
 					},
 				},
 			}
