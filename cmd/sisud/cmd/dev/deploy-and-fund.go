@@ -26,8 +26,8 @@ func DeployAndFund() *cobra.Command {
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 			amount, _ := cmd.Flags().GetInt(flags.Amount)
 
-			expectedErc20String := fmt.Sprintf("%s,%s", ExpectedErc20Address, "0x76E03282751C8630Eee558C98640b1D114b8ecEa")
-			expectedLiquidityString := fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, "0x2082Bb3A31B5A60De1E5A18D6AFcE301ca72FB8f")
+			expectedErc20String := fmt.Sprintf("%s,%s", ExpectedErc20Address, ExpectedErc20Address)
+			expectedLiquidityString := fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress)
 
 			log.Info("========= Deploy ERC20 and Liquidity Pool =========")
 

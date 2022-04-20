@@ -239,9 +239,9 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, mnemonic, recipie
 		panic(err)
 	}
 
-	// 0.1 ETH
+	// 0.2 ETH
 	value := new(big.Int).Mul(utils.EthToWei, big.NewInt(int64(amount)))
-	value = new(big.Int).Div(value, big.NewInt(10))
+	value = new(big.Int).Div(value, big.NewInt(5))
 	gasLimit := uint64(21000) // in units
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {

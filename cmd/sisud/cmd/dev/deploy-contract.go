@@ -51,7 +51,7 @@ Example:
 	cmd.Flags().String(flags.Contract, "liquidity", "Contract name that we want to deploy.")
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
 	cmd.Flags().String(flags.ChainUrls, "http://0.0.0.0:7545,http://0.0.0.0:8545", "RPCs of all the chains we want to fund.")
-	cmd.Flags().String(flags.ExpectedAddrs, "", "Expected addressed of the contract after deployment. Empty string means do not check for address match.")
+	cmd.Flags().String(flags.ExpectedAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "Expected addressed of the contract after deployment. Empty string means do not check for address match.")
 	cmd.Flags().String(flags.Erc20Name, "Sisu Token", "Token name")
 	cmd.Flags().String(flags.Erc20Symbol, "SISU", "Token symbol")
 
@@ -212,7 +212,6 @@ func (c *DeployContractCmd) getAuthTransactor(client *ethclient.Client, address 
 	if err != nil {
 		return nil, err
 	}
-	log.Info("Gas price = ", gasPrice)
 
 	// This is the private key of the accounts0
 
