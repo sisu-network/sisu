@@ -92,6 +92,8 @@ func (c *DeployContractCmd) doDeployment(urlString, contract, mnemonic, expAddrS
 			// If liquidity contract has been deployed, do nothing.
 			if len(expectedAddrs[i]) > 0 && c.isContractDeployed(client, common.HexToAddress(expectedAddrs[i])) {
 				log.Verbose("Contract ", i, " has been deployed")
+				deployedAddrs[i] = expectedAddrs[i]
+				wg.Done()
 				return
 			}
 
