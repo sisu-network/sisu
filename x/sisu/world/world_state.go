@@ -21,11 +21,12 @@ import (
 var (
 	// This is a mapping between chain name and the native token that it uses.
 	chainToTokens = map[string]string{
-		"bsc":      "BNB",
-		"eth":      "ETH",
-		"ropsten":  "ETH",
-		"ganache1": "NATIVE_GANACHE1",
-		"ganache2": "NATIVE_GANACHE2",
+		"bsc":                 "BNB",
+		"eth":                 "ETH",
+		"ropsten":             "ETH",
+		"ganache1":            "NATIVE_GANACHE1",
+		"ganache2":            "NATIVE_GANACHE2",
+		"eth-binance-testnet": "BNB",
 	}
 
 	defaultTokenPrices = map[string]float32{

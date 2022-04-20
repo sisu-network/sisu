@@ -25,9 +25,8 @@ func DeployAndFund() *cobra.Command {
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 			amount, _ := cmd.Flags().GetInt(flags.Amount)
-
-			expectedErc20String := fmt.Sprintf("%s,%s", ExpectedErc20Address, ExpectedErc20Address)
-			expectedLiquidityString := fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress)
+			expectedErc20String, _ := cmd.Flags().GetString(flags.ExpectedErc20Addrs)
+			expectedLiquidityString, _ := cmd.Flags().GetString(flags.ExpectedLiquidityAddrs)
 
 			log.Info("========= Deploy ERC20 and Liquidity Pool =========")
 
@@ -68,6 +67,9 @@ func DeployAndFund() *cobra.Command {
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
 
 	cmd.Flags().Int(flags.Amount, 100, "The amount that gateway addresses will receive")
+
+	cmd.Flags().String(flags.ExpectedErc20Addrs, fmt.Sprintf("%s,%s", ExpectedErc20Address, ExpectedErc20Address), "Expected addressed of the erc20 contract after deployment. Empty string means do not check for address match.")
+	cmd.Flags().String(flags.ExpectedLiquidityAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "Expected addressed of the liquidity contract after deployment. Empty string means do not check for address match.")
 
 	return cmd
 }
