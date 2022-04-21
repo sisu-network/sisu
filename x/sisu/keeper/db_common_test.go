@@ -3,6 +3,7 @@ package keeper
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"testing"
 
 	memstore "github.com/cosmos/cosmos-sdk/store/mem"
@@ -162,4 +163,50 @@ func Test_SaveNode(t *testing.T) {
 	require.Equal(t, 2, len(vals), "there should be 2 validators")
 	require.Equal(t, vals[0].AccAddress, "addr1")
 	require.Equal(t, vals[1].AccAddress, "addr2")
+}
+
+func TestDefaultKeeper_SetValidators(t *testing.T) {
+	t.Parallel()
+
+	store := memstore.NewStore()
+	oldValidatorSet := make([]*types.Node, 0)
+	for i := 0; i < 2; i++ {
+		oldValidatorSet = append(oldValidatorSet, &types.Node{
+			Id: "old_val" + strconv.Itoa(i),
+			ConsensusKey: &types.Pubkey{
+				Type:  "ed",
+				Bytes: []byte("old_pubkey" + strconv.Itoa(i)),
+			},
+			AccAddress:  "old_addr" + strconv.Itoa(i),
+			IsValidator: true,
+		})
+	}
+
+	for _, val := range oldValidatorSet {
+		saveNode(store, val)
+	}
+
+	newValidatorSet := make([]*types.Node, 0)
+	for i := 0; i < 2; i++ {
+		newValidatorSet = append(newValidatorSet, &types.Node{
+			Id: "new_val" + strconv.Itoa(i),
+			ConsensusKey: &types.Pubkey{
+				Type:  "ed",
+				Bytes: []byte("new_pubkey" + strconv.Itoa(i)),
+			},
+			AccAddress:  "new_addr" + strconv.Itoa(i),
+			IsValidator: true,
+		})
+	}
+
+	validVals, err := setValidators(store, newValidatorSet)
+	require.NoError(t, err)
+	require.Len(t, validVals, 2)
+
+	for i, val := range validVals {
+		require.Equal(t, "new_val"+strconv.Itoa(i), val.Id)
+		require.Equal(t, "new_addr"+strconv.Itoa(i), val.AccAddress)
+		require.True(t, val.IsValidator)
+		require.Equal(t, []byte("new_pubkey"+strconv.Itoa(i)), val.ConsensusKey.Bytes)
+	}
 }
