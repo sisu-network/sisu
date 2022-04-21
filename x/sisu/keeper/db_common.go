@@ -776,6 +776,45 @@ func loadValidators(store cstypes.KVStore) []*types.Node {
 	return vals
 }
 
+func setValidators(store cstypes.KVStore, vals []*types.Node) ([]*types.Node, error) {
+	if err := clearOldValidators(store); err != nil {
+		log.Error("error when clear old validators set. error = ", err)
+		return nil, err
+	}
+
+	res := make([]*types.Node, 0)
+	for _, val := range vals {
+		if !val.IsValidator {
+			continue
+		}
+
+		saveNode(store, val)
+		res = append(res, val)
+	}
+
+	return res, nil
+}
+
+func clearOldValidators(store cstypes.KVStore) error {
+	iter := store.Iterator(nil, nil)
+	for ; iter.Valid(); iter.Next() {
+		node := &types.Node{}
+		err := node.Unmarshal(iter.Value())
+		if err != nil {
+			log.Error("cannot unmarshal node, err = ", err)
+			continue
+		}
+
+		if !node.IsValidator {
+			continue
+		}
+
+		store.Delete(iter.Key())
+	}
+
+	return iter.Close()
+}
+
 ///// Liquidity
 func setLiquidities(store cstypes.KVStore, liquidities map[string]*types.Liquidity) {
 	for id, liquid := range liquidities {

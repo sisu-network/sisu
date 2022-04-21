@@ -16,6 +16,7 @@ type DheartClient interface {
 	Ping(string) error
 	KeyGen(keygenId string, chain string, pubKeys []ctypes.PubKey) error
 	KeySign(req *htypes.KeysignRequest, pubKeys []ctypes.PubKey) error
+	Reshare(oldPubKeys, newPubKeys []ctypes.PubKey) error
 	BlockEnd(blockHeight int64) error
 	SetSisuReady(isReady bool) error
 }

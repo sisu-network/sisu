@@ -11,6 +11,7 @@ import (
 type ValidatorManager interface {
 	AddValidator(ctx sdk.Context, node *types.Node)
 	IsValidator(ctx sdk.Context, signer string) bool
+	SetValidators(ctx sdk.Context, nodes []*types.Node) error
 }
 
 type DefaultValidatorManager struct {
@@ -68,4 +69,22 @@ func (m *DefaultValidatorManager) IsValidator(ctx sdk.Context, signer string) bo
 	defer m.valLock.RUnlock()
 
 	return vals[signer] != nil
+}
+
+func (m *DefaultValidatorManager) SetValidators(ctx sdk.Context, nodes []*types.Node) error {
+	validVals, err := m.keeper.SetValidators(ctx, nodes)
+	if err != nil {
+		return err
+	}
+
+	newVals := make(map[string]*types.Node)
+	for _, val := range validVals {
+		newVals[val.AccAddress] = val
+	}
+
+	m.valLock.Lock()
+	defer m.valLock.Unlock()
+
+	m.vals = newVals
+	return nil
 }
