@@ -4,7 +4,7 @@
     "address": "0xf0D676183dD5ae6b370adDdbE770235F23546f9d"
   },
   {
-    "id": "eth-binance-testnet",
-    "address": "0xB4bF7FF5143b084c1886C29d2C66F50376C61314"
+    "id": "ganache2",
+    "address": "0xf0D676183dD5ae6b370adDdbE770235F23546f9d"
   }
 ]
