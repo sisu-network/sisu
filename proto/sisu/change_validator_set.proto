@@ -1,0 +1,15 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message ChangeValidatorSetMsg {
+  string signer = 1;
+  ChangeValidatorSetData data = 2;
+}
+
+message ChangeValidatorSetData{
+  repeated bytes oldValidatorSet = 1;
+  repeated bytes newValidatorSet = 2;
+  int32 index = 3;
+}

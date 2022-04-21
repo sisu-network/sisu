@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 )
 
@@ -29,4 +30,10 @@ func GetGasCostInToken(gas, gasPrice, tokenPrice, nativeTokenPrice *big.Int) (*b
 	gasInToken = new(big.Int).Div(gasInToken, tokenPrice)
 
 	return gasInToken, nil
+}
+
+// BytesToValPubKey converts from byte array to validator public key
+// Cosmos sdk use ed25519 format to present validator public key
+func BytesToValPubKey(bz []byte) ctypes.PubKey {
+	return &ed25519.PubKey{Key: bz}
 }

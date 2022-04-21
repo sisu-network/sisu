@@ -139,7 +139,7 @@ func (a *GlobalDataDefault) UpdateValidatorSets() {
 	}
 
 	response := new(rpc.ResultValidatorsOutput)
-	err = a.cdc.UnmarshalJSON([]byte(responseWithHeight.Result), response)
+	err = a.cdc.UnmarshalJSON(responseWithHeight.Result, response)
 	if err != nil {
 		return
 	}
