@@ -4,7 +4,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/sisu-network/sisu/x/sisu/helper"
+	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/utils"
 )
 
 var _ sdk.Msg = &ChangeValidatorSetMsg{}
@@ -58,17 +59,29 @@ func (msg *ChangeValidatorSetMsg) ValidateBasic() error {
 	return nil
 }
 
-func (msg *ChangeValidatorSetMsg) GetOldAndNewValidatorSet() ([]types.PubKey, []types.PubKey) {
+func (msg *ChangeValidatorSetMsg) GetOldAndNewValidatorSet() ([]types.PubKey, []types.PubKey, error) {
 	oldValSet := make([]types.PubKey, 0, len(msg.Data.OldValidatorSet))
 	newValSet := make([]types.PubKey, 0, len(msg.Data.NewValidatorSet))
 
 	for _, val := range msg.Data.OldValidatorSet {
-		oldValSet = append(oldValSet, helper.BytesToValPubKey(val))
+		pk, err := utils.GetCosmosPubKey("ed25519", val)
+		if err != nil {
+			log.Error("error when get cosmos pubkey: ", err)
+			return nil, nil, err
+		}
+
+		oldValSet = append(oldValSet, pk)
 	}
 
 	for _, val := range msg.Data.NewValidatorSet {
-		newValSet = append(newValSet, helper.BytesToValPubKey(val))
+		pk, err := utils.GetCosmosPubKey("ed25519", val)
+		if err != nil {
+			log.Error("error when get cosmos pubkey: ", err)
+			return nil, nil, err
+		}
+
+		newValSet = append(newValSet, pk)
 	}
 
-	return oldValSet, newValSet
+	return oldValSet, newValSet, nil
 }

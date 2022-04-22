@@ -41,7 +41,11 @@ func (h *HandlerChangeValidatorSet) doChangeValidatorSet(msg *types.ChangeValida
 		return nil
 	}
 
-	oldPubKeys, newPubKeys := msg.GetOldAndNewValidatorSet()
+	oldPubKeys, newPubKeys, err := msg.GetOldAndNewValidatorSet()
+	if err != nil {
+		return err
+	}
+
 	dheartClient := h.mc.DheartClient()
 	if err := dheartClient.Reshare(oldPubKeys, newPubKeys); err != nil {
 		log.Error("error when sending reshape request to heart. error = ", err)

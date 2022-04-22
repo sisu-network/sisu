@@ -1,0 +1,19 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message ReshareResultWithSigner {
+  string signer = 1;
+  ReshareData data = 2;
+}
+
+message ReshareData {
+  repeated bytes newValidatorSetPubKeyBytes = 1;
+  Result result = 2;
+
+  enum Result {
+    SUCCESS = 0;
+    FAILURE = 1;
+  }
+}

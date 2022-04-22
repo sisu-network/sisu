@@ -18,6 +18,7 @@ type AppLogicListener interface {
 	OnKeygenResult(result dhtypes.KeygenResult)
 	OnTxIns(txs *eyesTypes.Txs) error
 	OnKeysignResult(result *htypes.KeysignResult)
+	OnReshareResult(result *htypes.ReshareResult)
 	OnTxDeploymentResult(result *etypes.DispatchedTxResult)
 	OnUpdateGasPriceRequest(request *etypes.GasPriceRequest)
 	OnUpdateTokenPrice(tokenPrices []*etypes.TokenPrice)

@@ -25,6 +25,8 @@ import (
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
+var _ AppLogicListener = (*Processor)(nil)
+
 const (
 	// The number of block interval that we should update all token prices.
 	TokenPriceUpdateInterval = 600 // About 30 mins for 3s block.
@@ -285,6 +287,25 @@ func (p *Processor) OnKeygenResult(result dhtypes.KeygenResult) {
 
 		p.addWatchAddress(chain, result.Address)
 	}
+}
+
+func (p *Processor) OnReshareResult(result *dhtypes.ReshareResult) {
+	var reshareResult types.ReshareData_Result
+	switch result.Outcome {
+	case dhtypes.OutcomeSuccess:
+		reshareResult = types.ReshareData_SUCCESS
+	case dhtypes.OutcomeFailure:
+		reshareResult = types.ReshareData_FAILURE
+	}
+
+	signerMsg := types.NewReshareResultWithSigner(
+		p.appKeys.GetSignerAddress().String(),
+		result.NewValidatorSetPubKeyBytes,
+		reshareResult,
+	)
+
+	log.Info("There is reshare result from dheart, result = ", reshareResult)
+	_ = p.txSubmit.SubmitMessageAsync(signerMsg)
 }
 
 func (p *Processor) addWatchAddress(chain string, address string) {

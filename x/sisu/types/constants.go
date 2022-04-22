@@ -3,6 +3,7 @@ package types
 const (
 	MsgTypeKeygenWithSigner               = "KeygenWithSigner"
 	MsgTypeKeygenResultWithSigner         = "KeygenResultWithSigner"
+	MsgTypeReshareResultWithSigner        = "ReshareResultWithSigner"
 	MsgTypeContractsWithSigner            = "ContractsWithSigner"
 	MsgTypeTxOutWithSigner                = "TxOutWithSigner"
 	MsgTypeContractConfirmWithSigner      = "ContractConfirmWithSigner"

@@ -1093,8 +1093,6 @@ github.com/sirupsen/logrus v1.8.1 h1:dJKuHgqk1NNQlqoA6BTlM1Wf9DOH3NBjQyu0h9+AZZE
 github.com/sirupsen/logrus v1.8.1/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
 github.com/sisu-network/deyes v0.1.6 h1:4BPEEa4CJNL86XEStnLOjKfs2W9iDgorvURb0TN3D9E=
 github.com/sisu-network/deyes v0.1.6/go.mod h1:mXDwRHewZ67VPSeVrnXDrzmOP552SsJ3VjZSIt5zKno=
-github.com/sisu-network/dheart v0.1.6 h1:TZIxyfa2E3TVVsO8/PHLy6tuST3h0lbCJ3Jt4blh/JM=
-github.com/sisu-network/dheart v0.1.6/go.mod h1:Jy6hlwbXOVM9PquJZd5GULB2ehxhlz59bXNBu9L7dwI=
 github.com/sisu-network/lib v0.0.1-alpha13/go.mod h1:kJKc5vnG+vxGsYTeRbgxjG7QgVX2sLUne+qVMrn/hq8=
 github.com/sisu-network/lib v0.0.1-alpha17 h1:0bfWCQ20xdeTWQLmcAXiP0m5ni/33PZWbrsqvpnw/6E=
 github.com/sisu-network/lib v0.0.1-alpha17/go.mod h1:kJKc5vnG+vxGsYTeRbgxjG7QgVX2sLUne+qVMrn/hq8=
@@ -1559,8 +1557,8 @@ google.golang.org/genproto v0.0.0-20201030142918-24207fddd1c3/go.mod h1:FWY/as6D
 google.golang.org/genproto v0.0.0-20201111145450-ac7456db90a6/go.mod h1:FWY/as6DDZQgahTzZj3fqbO1CbirC29ZNUFHwi0/+no=
 google.golang.org/genproto v0.0.0-20201119123407-9b1e624d6bc4/go.mod h1:FWY/as6DDZQgahTzZj3fqbO1CbirC29ZNUFHwi0/+no=
 google.golang.org/genproto v0.0.0-20210114201628-6edceaf6022f/go.mod h1:FWY/as6DDZQgahTzZj3fqbO1CbirC29ZNUFHwi0/+no=
-google.golang.org/genproto v0.0.0-20220420195807-44278fea765b h1:5zvsLqz9A1TKTeI6AhjJH/Vkaw0GGBs+D3GkvUUqNO0=
-google.golang.org/genproto v0.0.0-20220420195807-44278fea765b/go.mod h1:8w6bsBMX6yCPbAVTeqQHvzxW0EIFigd5lZyahWgyfDo=
+google.golang.org/genproto v0.0.0-20220421151946-72621c1f0bd3 h1:SeX3QUcBj3fciwnfPT9kt5gBhFy/FCZtYZ+I/RB8agc=
+google.golang.org/genproto v0.0.0-20220421151946-72621c1f0bd3/go.mod h1:8w6bsBMX6yCPbAVTeqQHvzxW0EIFigd5lZyahWgyfDo=
 google.golang.org/grpc v1.33.2 h1:EQyQC3sa8M+p6Ulc8yy9SWSS2GVwyRc83gAbG8lrl4o=
 google.golang.org/grpc v1.33.2/go.mod h1:JMHMWHQWaTccqQQlmk3MJZS+GWXOdAesneDmEnv2fbc=
 google.golang.org/protobuf v0.0.0-20200109180630-ec00e32a8dfd/go.mod h1:DFci5gLYBciE7Vtevhsrf46CRTquxDuWsQurQQe4oz8=
