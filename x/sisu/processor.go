@@ -307,6 +307,12 @@ func (p *Processor) OnKeysignResult(result *dhtypes.KeysignResult) {
 		return
 	}
 
+	if result.Outcome == dhtypes.OutcomeFailure {
+		// TODO: Report failure and culprits here.
+		log.Warn("Dheart signing failed")
+		return
+	}
+
 	ctx, err := p.mc.GetReadOnlyContext()
 	if err != nil {
 		log.Error("OnKeysignResult read context is not available, err = ", err)
