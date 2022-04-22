@@ -24,7 +24,7 @@ func (msg *ReshareResultWithSigner) Route() string {
 
 // Type ...
 func (msg *ReshareResultWithSigner) Type() string {
-	return MsgTypeKeygenResultWithSigner
+	return MsgTypeReshareResultWithSigner
 }
 
 // GetSigners ...
