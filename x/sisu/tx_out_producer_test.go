@@ -5,49 +5,32 @@ import (
 	"strings"
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
+	ecommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/golang/mock/gomock"
-	libchain "github.com/sisu-network/lib/chain"
-	mock "github.com/sisu-network/sisu/tests/mock/common"
-	mocksisu "github.com/sisu-network/sisu/tests/mock/x/sisu"
-	mockkeeper "github.com/sisu-network/sisu/tests/mock/x/sisu/keeper"
 
+	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/contracts/eth/erc20gateway"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
+	"github.com/sisu-network/sisu/x/sisu/world"
 	"github.com/stretchr/testify/require"
 )
 
 func TestTxOutProducer_getContractTx(t *testing.T) {
-	t.Parallel()
+	ctx := testContext()
+	keeper := keeperTestGenesis(ctx)
 
 	hash := utils.KeccakHash32(erc20gateway.Erc20gatewayBin)
 	contract := &types.Contract{
-		Chain: "eth",
+		Chain: "ganache1",
 		Hash:  hash,
 	}
 
-	ctrl := gomock.NewController(t)
-	t.Cleanup(func() {
-		ctrl.Finish()
-	})
-
-	mockKeeper := mockkeeper.NewMockKeeper(ctrl)
-	mockKeeper.EXPECT().GetChain(gomock.Any(), "eth").Return(&types.Chain{
-		Id:       "eth",
-		GasPrice: int64(400_000_000_000),
-	})
-	mockKeeper.EXPECT().GetLiquidity(gomock.Any(), "eth").Return(&types.Liquidity{
-		Id:      "eth",
-		Address: "0x1234",
-	})
-
 	txOutProducer := DefaultTxOutputProducer{
-		keeper: mockKeeper,
+		keeper: keeper,
 		tssConfig: config.TssConfig{
 			DeyesUrl: "http://0.0.0.0:1234",
 			SupportedChains: map[string]config.TssChainConfig{
@@ -58,68 +41,38 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 		},
 	}
 
-	tx := txOutProducer.getContractTx(sdk.Context{}, contract, 100)
+	tx := txOutProducer.getContractTx(ctx, contract, 100)
 	require.NotNil(t, tx)
 	require.EqualValues(t, 100, tx.Nonce())
-	require.EqualValues(t, *big.NewInt(400_000_000_000), *tx.GasPrice())
-	require.EqualValues(t, *big.NewInt(400_000_000_000), *tx.GasFeeCap())
+	require.EqualValues(t, *big.NewInt(5_000_000_000), *tx.GasPrice())
+	require.EqualValues(t, *big.NewInt(5_000_000_000), *tx.GasFeeCap())
 }
 
-func TestTxOutProducer_getEthResponse(t *testing.T) {
+func TestTxOutProducer_getEthResponse2(t *testing.T) {
 	t.Parallel()
 
 	t.Run("transaction_send_to_key", func(t *testing.T) {
 		t.Parallel()
 
-		ctrl := gomock.NewController(t)
-		t.Cleanup(func() {
-			ctrl.Finish()
-		})
+		ethTx := defaultTestEthTx(0)
+		ctx := testContext()
+		keeper := keeperTestAfterKeygen(ctx)
 
-		mockKeeper := mockkeeper.NewMockKeeper(ctrl)
-		mockKeeper.EXPECT().IsKeygenAddress(gomock.Any(), libchain.KEY_TYPE_ECDSA, gomock.Any()).Return(true).Times(1)
-		mockKeeper.EXPECT().GetPendingContracts(gomock.Any(), "eth").Return([]*types.Contract{
-			{
-				Chain: "eth",
-				Hash:  SupportedContracts[ContractErc20Gateway].AbiHash,
-			},
-		}).Times(1)
-		mockKeeper.EXPECT().GetChain(gomock.Any(), "eth").Return(&types.Chain{
-			Id:       "eth",
-			GasPrice: int64(400_000_000_000),
-		})
-		mockKeeper.EXPECT().GetLiquidity(gomock.Any(), "eth").Return(&types.Liquidity{
-			Id:      "eth",
-			Address: "0x1234",
-		})
+		appKeys := common.NewMockAppKeys()
 
-		mockAppKeys := mock.NewMockAppKeys(ctrl)
-		accAddress := []byte{1, 2, 3}
-		mockAppKeys.EXPECT().GetSignerAddress().Return(accAddress).AnyTimes()
+		worldState := world.NewWorldState(keeper, &tssclients.MockDeyesClient{})
 
-		mockWorldState := mocksisu.NewMockWorldState(ctrl)
-		mockWorldState.EXPECT().UseAndIncreaseNonce(gomock.Any(), "eth").Return(int64(0)).Times(1)
-
-		amount := big.NewInt(100)
-		gasLimit := uint64(100)
-		gasPrice := big.NewInt(100)
-		ethTransaction := ethTypes.NewTx(&ethTypes.LegacyTx{
-			GasPrice: gasPrice,
-			Gas:      gasLimit,
-			To:       &common.Address{},
-			Value:    amount,
-		})
-		binary, err := ethTransaction.MarshalBinary()
+		binary, err := ethTx.MarshalBinary()
 		require.NoError(t, err)
 
-		observedTx := types.TxIn{
+		txIn := types.TxIn{
 			BlockHeight: 1,
 			Serialized:  binary,
-			Chain:       "eth",
+			Chain:       "ganache1",
 		}
 
-		txOutProducer := NewTxOutputProducer(mockWorldState, mockAppKeys,
-			mockKeeper,
+		txOutProducer := NewTxOutputProducer(worldState, appKeys,
+			keeper,
 			config.TssConfig{
 				DeyesUrl: "http://0.0.0.0:1234",
 				SupportedChains: map[string]config.TssChainConfig{
@@ -130,8 +83,7 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 			},
 		).(*DefaultTxOutputProducer)
 
-		ctx := sdk.Context{}
-		txOuts, err := txOutProducer.getEthResponse(ctx, 1, &observedTx)
+		txOuts, err := txOutProducer.getEthResponse(ctx, 1, &txIn)
 		require.NoError(t, err)
 		require.Len(t, txOuts, 1)
 
@@ -141,45 +93,33 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 	t.Run("transaction_send_to_contract", func(t *testing.T) {
 		t.Parallel()
 
-		ctrl := gomock.NewController(t)
-		t.Cleanup(func() {
-			ctrl.Finish()
+		ctx := testContext()
+		keeper := keeperTestAfterContractDeployed(ctx)
+		txOutHash := "someTxOutHash"
+		contractAddress := ecommon.HexToAddress("0x08BAB502c5e7125fD558B19a98D14907CF7f7E93")
+		keeper.SaveTxOut(ctx, &types.TxOut{
+			OutChain:     "ganache1",
+			OutHash:      txOutHash,
+			ContractHash: "contractHash",
 		})
+		keeper.CreateContractAddress(ctx, "ganache1", txOutHash, contractAddress.String())
 
-		amount := new(big.Int).Mul(big.NewInt(1), utils.EthToWei)
-		recipient := common.HexToAddress("0x2d532C099CA476780c7703610D807948ae47856A")
-		tokenAddr := common.HexToAddress("0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C")
+		worldState := defaultWorldStateTest(ctx, keeper, &tssclients.MockDeyesClient{})
+		appKeys := common.NewMockAppKeys()
 
-		mockKeeper := mockkeeper.NewMockKeeper(ctrl)
-		mockKeeper.EXPECT().IsKeygenAddress(gomock.Any(), libchain.KEY_TYPE_ECDSA, gomock.Any()).Return(false).Times(1)
-		mockKeeper.EXPECT().IsContractExistedAtAddress(gomock.Any(), "eth", gomock.Any()).Return(true).Times(1)
-		mockKeeper.EXPECT().GetLatestContractAddressByName(gomock.Any(), gomock.Any(), ContractErc20Gateway).Return("0x12345").Times(1)
-
-		mockWorldState := mocksisu.NewMockWorldState(ctrl)
-		mockWorldState.EXPECT().GetTokenFromAddress("eth", tokenAddr.String()).Return(&types.Token{
-			Id:    "SISU",
-			Price: 1_000_000_000,
-		}).Times(1)
-		mockWorldState.EXPECT().UseAndIncreaseNonce(gomock.Any(), "eth").Return(int64(0)).Times(1)
-		mockWorldState.EXPECT().GetGasPrice("eth").Return(big.NewInt(1_000_000_000), nil).Times(1)
-		mockWorldState.EXPECT().GetGasCostInToken("SISU", "eth").Return(int64(1234), nil).Times(1)
-
-		mockAppKeys := mock.NewMockAppKeys(ctrl)
-		accAddress := []byte{1, 2, 3}
-		mockAppKeys.EXPECT().GetSignerAddress().Return(accAddress).AnyTimes()
-
+		// Create transfer tx
 		abi, err := abi.JSON(strings.NewReader(SupportedContracts[ContractErc20Gateway].AbiString))
 		require.NoError(t, err)
-		data, err := abi.Pack(MethodTransferOut, "eth", recipient, tokenAddr, tokenAddr, amount)
-
+		amount := new(big.Int).Mul(big.NewInt(1), utils.EthToWei)
+		tokenAddr := ecommon.HexToAddress(testErc20TokenAddress)
+		data, err := abi.Pack(MethodTransferOut, "ganache2", contractAddress, tokenAddr, tokenAddr, amount)
 		require.NoError(t, err)
-
 		gasLimit := uint64(100)
 		gasPrice := big.NewInt(100)
 		ethTransaction := ethTypes.NewTx(&ethTypes.LegacyTx{
 			GasPrice: gasPrice,
 			Gas:      gasLimit,
-			To:       &common.Address{},
+			To:       &contractAddress,
 			Value:    big.NewInt(100),
 			Data:     data,
 		})
@@ -188,12 +128,12 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 
 		observedTx := types.TxIn{
 			BlockHeight: 1,
-			Chain:       "eth",
+			Chain:       "ganache1",
 			Serialized:  binary,
 		}
 
 		txOutProducer := DefaultTxOutputProducer{
-			worldState: mockWorldState,
+			worldState: worldState,
 			tssConfig: config.TssConfig{
 				DeyesUrl: "http://0.0.0.0:1234",
 				SupportedChains: map[string]config.TssChainConfig{
@@ -202,11 +142,10 @@ func TestTxOutProducer_getEthResponse(t *testing.T) {
 					},
 				},
 			},
-			keeper:  mockKeeper,
-			appKeys: mockAppKeys,
+			keeper:  keeper,
+			appKeys: appKeys,
 		}
 
-		ctx := sdk.Context{}
 		txOuts, err := txOutProducer.getEthResponse(ctx, 1, &observedTx)
 		require.NoError(t, err)
 		require.Len(t, txOuts, 1)

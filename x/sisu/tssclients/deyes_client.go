@@ -16,7 +16,7 @@ type DeyesClient interface {
 	SetSisuReady(isReady bool) error
 }
 
-type DefaultDeyesClient struct {
+type defaultDeyesClient struct {
 	client *rpc.Client
 }
 
@@ -33,10 +33,10 @@ func dialDeyesContext(ctx context.Context, rawurl string) (DeyesClient, error) {
 }
 
 func newDeyesClient(c *rpc.Client) DeyesClient {
-	return &DefaultDeyesClient{c}
+	return &defaultDeyesClient{c}
 }
 
-func (c *DefaultDeyesClient) Ping(source string) error {
+func (c *defaultDeyesClient) Ping(source string) error {
 	var result interface{}
 	err := c.client.CallContext(context.Background(), &result, "deyes_ping", source)
 	if err != nil {
@@ -48,7 +48,7 @@ func (c *DefaultDeyesClient) Ping(source string) error {
 }
 
 // Informs the deyes that Sisu server is ready to accept transaction.
-func (c *DefaultDeyesClient) SetSisuReady(isReady bool) error {
+func (c *defaultDeyesClient) SetSisuReady(isReady bool) error {
 	var result string
 	err := c.client.CallContext(context.Background(), &result, "deyes_setSisuReady", isReady)
 	if err != nil {
@@ -60,7 +60,7 @@ func (c *DefaultDeyesClient) SetSisuReady(isReady bool) error {
 }
 
 // Adds a list of addresses to watch on a specific chain
-func (c *DefaultDeyesClient) AddWatchAddresses(chain string, addrs []string) error {
+func (c *defaultDeyesClient) AddWatchAddresses(chain string, addrs []string) error {
 	var result string
 	err := c.client.CallContext(context.Background(), &result, "deyes_addWatchAddresses", chain, addrs)
 	if err != nil {
@@ -71,7 +71,7 @@ func (c *DefaultDeyesClient) AddWatchAddresses(chain string, addrs []string) err
 	return nil
 }
 
-func (c *DefaultDeyesClient) Dispatch(request *eTypes.DispatchedTxRequest) (*eTypes.DispatchedTxResult, error) {
+func (c *defaultDeyesClient) Dispatch(request *eTypes.DispatchedTxRequest) (*eTypes.DispatchedTxResult, error) {
 	var result = &eTypes.DispatchedTxResult{}
 	err := c.client.CallContext(context.Background(), &result, "deyes_dispatchTx", request)
 	if err != nil {
@@ -84,7 +84,7 @@ func (c *DefaultDeyesClient) Dispatch(request *eTypes.DispatchedTxRequest) (*eTy
 	return result, nil
 }
 
-func (c *DefaultDeyesClient) GetNonce(chain string, address string) int64 {
+func (c *defaultDeyesClient) GetNonce(chain string, address string) int64 {
 	var result int64
 	err := c.client.CallContext(context.Background(), &result, "deyes_getNonce", chain, address)
 	if err != nil {
