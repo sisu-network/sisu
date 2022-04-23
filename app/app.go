@@ -261,7 +261,7 @@ func New(
 	// storage that contains common data for all the nodes
 	privateDb := keeper.NewStorageDb(filepath.Join(cfg.Sisu.Dir, "private"))
 
-	worldState := world.NewWorldState(tssConfig, app.tssKeeper, deyesClient)
+	worldState := world.NewWorldState(app.tssKeeper, deyesClient)
 	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert, worldState)
 
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.tssKeeper),

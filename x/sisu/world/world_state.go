@@ -8,7 +8,6 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/helper"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
@@ -63,7 +62,6 @@ type WorldState interface {
 
 type DefaultWorldState struct {
 	keeper      keeper.Keeper
-	tssConfig   config.TssConfig
 	nonces      map[string]int64
 	deyesClient tssclients.DeyesClient
 
@@ -73,11 +71,8 @@ type DefaultWorldState struct {
 	addrToToken *sync.Map // chain__addr => *types.Token
 }
 
-func NewWorldState(tssConfig config.TssConfig, keeper keeper.Keeper,
-	deyesClients tssclients.DeyesClient) WorldState {
-
+func NewWorldState(keeper keeper.Keeper, deyesClients tssclients.DeyesClient) WorldState {
 	return &DefaultWorldState{
-		tssConfig:   tssConfig,
 		keeper:      keeper,
 		nonces:      make(map[string]int64, 0),
 		deyesClient: deyesClients,
