@@ -131,7 +131,6 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 	// 2. Check if this is a tx sent to one of our contracts.
 	if ethTx.To() != nil &&
 		p.keeper.IsContractExistedAtAddress(ctx, tx.Chain, ethTx.To().String()) && len(ethTx.Data()) >= 4 {
-
 		// TODO: compare method name to trigger corresponding contract method
 		responseTx, err := p.processERC20TransferOut(ctx, ethTx)
 		if err != nil {
