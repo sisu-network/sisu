@@ -97,6 +97,10 @@ type Keeper interface {
 	// Params
 	SaveParams(ctx sdk.Context, params *types.Params)
 	GetParams(ctx sdk.Context) *types.Params
+
+	// Slash
+	IncSlashToken(ctx sdk.Context, address sdk.AccAddress, amount int64) error
+	DecSlashToken(ctx sdk.Context, address sdk.AccAddress, amount int64) error
 }
 
 type DefaultKeeper struct {
@@ -393,6 +397,16 @@ func (k *DefaultKeeper) SaveParams(ctx sdk.Context, params *types.Params) {
 func (k *DefaultKeeper) GetParams(ctx sdk.Context) *types.Params {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixParams)
 	return getParams(store)
+}
+
+func (k *DefaultKeeper) IncSlashToken(ctx sdk.Context, address sdk.AccAddress, amount int64) error {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixSlash)
+	return incOrDecSlashToken(store, address, amount)
+}
+
+func (k *DefaultKeeper) DecSlashToken(ctx sdk.Context, address sdk.AccAddress, amount int64) error {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixSlash)
+	return incOrDecSlashToken(store, address, -amount)
 }
 
 ///// Debug

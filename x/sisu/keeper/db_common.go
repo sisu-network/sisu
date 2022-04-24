@@ -1,7 +1,9 @@
 package keeper
 
 import (
+	"encoding/json"
 	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"strings"
 
 	cstypes "github.com/cosmos/cosmos-sdk/store/types"
@@ -30,6 +32,7 @@ var (
 	prefixNode                   = []byte{0x11}
 	prefixLiquidity              = []byte{0x12}
 	prefixParams                 = []byte{0x13}
+	prefixSlash                  = []byte{0x14}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -887,6 +890,32 @@ func getParams(store cstypes.KVStore) *types.Params {
 	}
 
 	return params
+}
+
+func incOrDecSlashToken(store cstypes.KVStore, address sdk.AccAddress, amount int64) error {
+	oldAmt := int64(0)
+	addrKey := address.Bytes()
+	bz := store.Get(addrKey)
+	if bz != nil {
+		protoInt64 := types.ProtoInt64{}
+		if err := json.Unmarshal(bz, &protoInt64); err != nil {
+			log.Error("error when unmarshalling proto int64")
+			return err
+		}
+
+		oldAmt = protoInt64.Value
+	}
+
+	newAmt := oldAmt + amount
+	protoInt64 := types.ProtoInt64{Value: newAmt}
+	bz, err := json.Marshal(protoInt64)
+	if err != nil {
+		log.Error("error when marshaling proto int64")
+		return err
+	}
+
+	store.Set(addrKey, bz)
+	return nil
 }
 
 ///// Debug functions
