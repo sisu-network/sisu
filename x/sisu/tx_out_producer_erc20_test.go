@@ -21,9 +21,9 @@ func TestTxOutProducerErc20_getGasCostInToken(t *testing.T) {
 	chain := "ganache1"
 	token := &types.Token{
 		Id:    "SISU",
-		Price: int64(4 * utils.DecinmalUnit),
+		Price: int64(4 * utils.DecimalUnit),
 	}
-	mockWorldState.EXPECT().GetNativeTokenPriceForChain(chain).Return(int64(2*utils.DecinmalUnit), nil).Times(1)
+	mockWorldState.EXPECT().GetNativeTokenPriceForChain(chain).Return(int64(2*utils.DecimalUnit), nil).Times(1)
 
 	gas := big.NewInt(8_000_000)
 	gasPrice := big.NewInt(10 * 1_000_000_000) // 10 gwei

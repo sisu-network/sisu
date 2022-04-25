@@ -545,7 +545,7 @@ func (p *Processor) OnUpdateTokenPrice(tokenPrices []*etypes.TokenPrice) {
 	for _, token := range tokenPrices {
 		prices = append(prices, &types.TokenPrice{
 			Id:    token.Id,
-			Price: int64(token.Price * utils.DecinmalUnit),
+			Price: int64(token.Price * utils.DecimalUnit),
 		})
 	}
 

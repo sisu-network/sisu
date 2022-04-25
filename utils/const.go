@@ -19,7 +19,7 @@ const (
 const (
 	// A value used to replace floating unit. Instead of using float/double, we can use a big
 	// integer to represent a floating number with smallest unit to be 10^9
-	DecinmalUnit = 1_000_000_000
+	DecimalUnit = 1_000_000_000
 )
 
 var (
