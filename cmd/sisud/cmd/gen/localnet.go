@@ -101,6 +101,9 @@ Example:
 						"eth-binance-testnet": {
 							Id: "eth-binance-testnet",
 						},
+						"xdai": {
+							Id: "xdai",
+						},
 					},
 				},
 			}
