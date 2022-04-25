@@ -26,7 +26,7 @@ var (
 		"ganache1":            "NATIVE_GANACHE1",
 		"ganache2":            "NATIVE_GANACHE2",
 		"eth-binance-testnet": "BNB",
-		"xdai":                "xDai",
+		"xdai":                "xDAI",
 	}
 
 	defaultGasPrice = map[string]*big.Int{
