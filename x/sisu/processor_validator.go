@@ -24,7 +24,7 @@ func (p *Processor) EndBlockValidator(ctx sdk.Context) []abci.ValidatorUpdate {
 	return validators
 }
 
-// detects what candidate nodes will be promoted to active node and what active nodes will be removed from validator set
+// detects candidate nodes will be promoted to active node and active nodes will be removed from validator set
 func (p *Processor) getChangedNodes(ctx sdk.Context) ([]*types.Node, []types.Node, error) {
 	return nil, nil, nil
 }

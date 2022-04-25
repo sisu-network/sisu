@@ -1,7 +1,7 @@
 package keeper
 
 import (
-	"encoding/json"
+	"encoding/binary"
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"strings"
@@ -899,13 +899,8 @@ func incOrDecSlashToken(store cstypes.KVStore, address sdk.AccAddress, amount in
 	}
 
 	newAmt := oldAmt + amount
-	protoInt64 := types.ProtoInt64{Value: newAmt}
-	bz, err := json.Marshal(protoInt64)
-	if err != nil {
-		log.Error("error when marshaling proto int64")
-		return err
-	}
-
+	bz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bz, uint64(newAmt))
 	store.Set(address.Bytes(), bz)
 	return nil
 }
@@ -917,13 +912,8 @@ func getCurSlashToken(store cstypes.KVStore, address sdk.AccAddress) (int64, err
 		return 0, nil
 	}
 
-	protoInt64 := types.ProtoInt64{}
-	if err := json.Unmarshal(bz, &protoInt64); err != nil {
-		log.Error("error when unmarshalling proto int64")
-		return 0, err
-	}
-
-	return protoInt64.Value, nil
+	cur := binary.LittleEndian.Uint64(bz)
+	return int64(cur), nil
 }
 
 ///// Debug functions
