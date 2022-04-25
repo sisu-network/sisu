@@ -124,5 +124,27 @@ func TestDefaultKeeper_IncAndDecSlashToken(t *testing.T) {
 	require.NoError(t, keeper.DecSlashToken(ctx, addr, 1))
 	curSlash, err = keeper.GetSlashToken(ctx, addr)
 	require.NoError(t, err)
-	require.Equal(t, int64(-1), curSlash)
+	require.Equal(t, int64(0), curSlash)
+}
+
+func TestDefaultKeeper_IncAndDecNodeBalance(t *testing.T) {
+	t.Parallel()
+
+	keeper, ctx := getTestKeeperAndContext()
+
+	addr := []byte("0x1")
+	require.NoError(t, keeper.IncBalance(ctx, addr, 1))
+	curBalance, err := keeper.GetBalance(ctx, addr)
+	require.NoError(t, err)
+	require.Equal(t, int64(1), curBalance)
+
+	require.NoError(t, keeper.DecBalance(ctx, addr, 1))
+	curBalance, err = keeper.GetBalance(ctx, addr)
+	require.NoError(t, err)
+	require.Equal(t, int64(0), curBalance)
+
+	require.NoError(t, keeper.DecBalance(ctx, addr, 1))
+	curBalance, err = keeper.GetBalance(ctx, addr)
+	require.NoError(t, err)
+	require.Equal(t, int64(0), curBalance)
 }

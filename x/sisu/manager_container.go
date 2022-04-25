@@ -5,6 +5,7 @@ import (
 	"sync/atomic"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -25,6 +26,7 @@ type ManagerContainer interface {
 	WorldState() world.WorldState
 	TxTracker() TxTracker
 	Keeper() keeper.Keeper
+	BankKeeper() bankkeeper.Keeper
 
 	SetReadOnlyContext(ctx sdk.Context)
 	GetReadOnlyContext() (sdk.Context, error)
@@ -43,6 +45,7 @@ type DefaultManagerContainer struct {
 	worldState    world.WorldState
 	txTracker     TxTracker
 	keeper        keeper.Keeper
+	bankKeeper    bankkeeper.Keeper
 
 	readOnlyContext atomic.Value
 }
@@ -50,7 +53,7 @@ type DefaultManagerContainer struct {
 func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 	dheartClient tssclients.DheartClient, deyesClient tssclients.DeyesClient,
 	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.TssConfig,
-	appKeys common.AppKeys, txOutProducer TxOutputProducer, worldState world.WorldState, txTracker TxTracker, keeper keeper.Keeper) ManagerContainer {
+	appKeys common.AppKeys, txOutProducer TxOutputProducer, worldState world.WorldState, txTracker TxTracker, keeper keeper.Keeper, bankKeeper bankkeeper.Keeper) ManagerContainer {
 	return &DefaultManagerContainer{
 		pmm:           pmm,
 		partyManager:  partyManager,
@@ -64,6 +67,7 @@ func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 		worldState:    worldState,
 		txTracker:     txTracker,
 		keeper:        keeper,
+		bankKeeper:    bankKeeper,
 	}
 }
 
@@ -113,6 +117,10 @@ func (mc *DefaultManagerContainer) TxTracker() TxTracker {
 
 func (mc *DefaultManagerContainer) Keeper() keeper.Keeper {
 	return mc.keeper
+}
+
+func (mc *DefaultManagerContainer) BankKeeper() bankkeeper.Keeper {
+	return mc.bankKeeper
 }
 
 func (mc *DefaultManagerContainer) SetReadOnlyContext(ctx sdk.Context) {

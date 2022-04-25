@@ -25,6 +25,13 @@ func (p *Processor) EndBlockValidator(ctx sdk.Context) []abci.ValidatorUpdate {
 }
 
 // detects candidate nodes will be promoted to active node and active nodes will be removed from validator set
-func (p *Processor) getChangedNodes(ctx sdk.Context) ([]*types.Node, []types.Node, error) {
-	return nil, nil, nil
+func (p *Processor) getChangedNodes(ctx sdk.Context) ([]*types.Node, []*types.Node, error) {
+	removedNodes, err := p.validatorManager.GetExceedSlashThresholdValidators(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// TODO: get highest deposit candidates
+	newNodes := make([]*types.Node, len(removedNodes))
+	return newNodes, removedNodes, nil
 }

@@ -16,6 +16,7 @@ const (
 	MsgTypeContractChangeLiquidityAddress = "ContractChangeLiquidityAddress"
 	MsgTypeContractLiquidityWithdrawFund  = "ContractLiquidityWithdrawFund"
 	MsgTypeChangeValidatorSet             = "ChangeValidatorSet"
+	MsgTypeDepositSisuTokenWithSigner     = "DepositSisuTokenWithSigner"
 
 	MsgTypeTxOut         = "TxOut"
 	MsgTypeKeysignResult = "KeysignResult"

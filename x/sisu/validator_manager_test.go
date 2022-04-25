@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDefaultValidatorManager_GetSlashValidators(t *testing.T) {
+func TestDefaultValidatorManager_GetExceedSlashThresholdValidators(t *testing.T) {
 	t.Parallel()
 
 	ctx := testContext()

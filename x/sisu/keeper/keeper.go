@@ -102,6 +102,11 @@ type Keeper interface {
 	IncSlashToken(ctx sdk.Context, address sdk.AccAddress, amount int64) error
 	DecSlashToken(ctx sdk.Context, address sdk.AccAddress, amount int64) error
 	GetSlashToken(ctx sdk.Context, address sdk.AccAddress) (int64, error)
+
+	// Nodes balance
+	IncBalance(ctx sdk.Context, address sdk.AccAddress, amount int64) error
+	DecBalance(ctx sdk.Context, address sdk.AccAddress, amount int64) error
+	GetBalance(ctx sdk.Context, address sdk.AccAddress) (int64, error)
 }
 
 type DefaultKeeper struct {
@@ -400,6 +405,7 @@ func (k *DefaultKeeper) GetParams(ctx sdk.Context) *types.Params {
 	return getParams(store)
 }
 
+///// Slash
 func (k *DefaultKeeper) IncSlashToken(ctx sdk.Context, address sdk.AccAddress, amount int64) error {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixSlash)
 	return incOrDecSlashToken(store, address, amount)
@@ -413,6 +419,22 @@ func (k *DefaultKeeper) DecSlashToken(ctx sdk.Context, address sdk.AccAddress, a
 func (k *DefaultKeeper) GetSlashToken(ctx sdk.Context, address sdk.AccAddress) (int64, error) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixSlash)
 	return getCurSlashToken(store, address)
+}
+
+///// Node balances
+func (k *DefaultKeeper) IncBalance(ctx sdk.Context, address sdk.AccAddress, amount int64) error {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixNodeBalance)
+	return incOrDecNodeBalance(store, address, amount)
+}
+
+func (k *DefaultKeeper) DecBalance(ctx sdk.Context, address sdk.AccAddress, amount int64) error {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixNodeBalance)
+	return incOrDecNodeBalance(store, address, -amount)
+}
+
+func (k *DefaultKeeper) GetBalance(ctx sdk.Context, address sdk.AccAddress) (int64, error) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixNodeBalance)
+	return getCurNodeBalance(store, address)
 }
 
 ///// Debug

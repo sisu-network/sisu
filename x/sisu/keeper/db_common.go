@@ -33,6 +33,7 @@ var (
 	prefixLiquidity              = []byte{0x12}
 	prefixParams                 = []byte{0x13}
 	prefixSlash                  = []byte{0x14}
+	prefixNodeBalance            = []byte{0x15}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -892,6 +893,7 @@ func getParams(store cstypes.KVStore) *types.Params {
 	return params
 }
 
+///// Slash
 func incOrDecSlashToken(store cstypes.KVStore, address sdk.AccAddress, amount int64) error {
 	oldAmt, err := getCurSlashToken(store, address)
 	if err != nil {
@@ -899,6 +901,10 @@ func incOrDecSlashToken(store cstypes.KVStore, address sdk.AccAddress, amount in
 	}
 
 	newAmt := oldAmt + amount
+	if newAmt < 0 {
+		newAmt = 0
+	}
+
 	bz := make([]byte, 8)
 	binary.LittleEndian.PutUint64(bz, uint64(newAmt))
 	store.Set(address.Bytes(), bz)
@@ -906,6 +912,35 @@ func incOrDecSlashToken(store cstypes.KVStore, address sdk.AccAddress, amount in
 }
 
 func getCurSlashToken(store cstypes.KVStore, address sdk.AccAddress) (int64, error) {
+	addrKey := address.Bytes()
+	bz := store.Get(addrKey)
+	if bz == nil {
+		return 0, nil
+	}
+
+	cur := binary.LittleEndian.Uint64(bz)
+	return int64(cur), nil
+}
+
+///// Node balance
+func incOrDecNodeBalance(store cstypes.KVStore, address sdk.AccAddress, amount int64) error {
+	oldAmt, err := getCurNodeBalance(store, address)
+	if err != nil {
+		return err
+	}
+
+	newAmt := oldAmt + amount
+	if newAmt < 0 {
+		newAmt = 0
+	}
+
+	bz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bz, uint64(newAmt))
+	store.Set(address.Bytes(), bz)
+	return nil
+}
+
+func getCurNodeBalance(store cstypes.KVStore, address sdk.AccAddress) (int64, error) {
 	addrKey := address.Bytes()
 	bz := store.Get(addrKey)
 	if bz == nil {

@@ -47,13 +47,14 @@ type BlockSymbolPair struct {
 // A major struct that processes complicated logic of TSS keysign and keygen. Read the documentation
 // of keygen and keysign's flow before working on this.
 type Processor struct {
-	keeper     keeper.Keeper
-	config     config.TssConfig
-	txSubmit   common.TxSubmit
-	appKeys    common.AppKeys
-	globalData common.GlobalData
-	txTracker  TxTracker
-	mc         ManagerContainer
+	keeper           keeper.Keeper
+	config           config.TssConfig
+	txSubmit         common.TxSubmit
+	appKeys          common.AppKeys
+	globalData       common.GlobalData
+	txTracker        TxTracker
+	mc               ManagerContainer
+	validatorManager ValidatorManager
 
 	// Dheart & Deyes client
 	dheartClient tssclients.DheartClient
@@ -67,6 +68,7 @@ type Processor struct {
 
 func NewProcessor(
 	k keeper.Keeper,
+	validatorManager ValidatorManager,
 	privateDb keeper.Storage,
 	config config.TssConfig,
 	appKeys *common.DefaultAppKeys,
@@ -79,12 +81,13 @@ func NewProcessor(
 	mc ManagerContainer,
 ) *Processor {
 	p := &Processor{
-		keeper:     k,
-		privateDb:  privateDb,
-		appKeys:    appKeys,
-		config:     config,
-		txSubmit:   txSubmit,
-		globalData: globalData,
+		keeper:           k,
+		validatorManager: validatorManager,
+		privateDb:        privateDb,
+		appKeys:          appKeys,
+		config:           config,
+		txSubmit:         txSubmit,
+		globalData:       globalData,
 		// And array that stores block numbers where we should do final vote count.
 		keygenBlockPairs: make([]BlockSymbolPair, 0),
 		dheartClient:     dheartClient,
