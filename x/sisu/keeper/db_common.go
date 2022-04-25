@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"sort"
 	"strings"
 
 	cstypes "github.com/cosmos/cosmos-sdk/store/types"
@@ -949,6 +950,45 @@ func getCurNodeBalance(store cstypes.KVStore, address sdk.AccAddress) (int64, er
 
 	cur := binary.LittleEndian.Uint64(bz)
 	return int64(cur), nil
+}
+
+type NodeBalance struct {
+	Addr    sdk.AccAddress
+	Balance int64
+}
+
+func getTopBalances(store cstypes.KVStore, n int) []sdk.AccAddress {
+	allNodeBalances := getOrderedNodeBalances(store)
+	topBalanceAddrs := make([]sdk.AccAddress, 0)
+
+	if n > len(allNodeBalances) {
+		n = len(allNodeBalances)
+	}
+
+	for i := len(allNodeBalances) - n; i < len(allNodeBalances); i++ {
+		topBalanceAddrs = append(topBalanceAddrs, allNodeBalances[i].Addr)
+	}
+	return topBalanceAddrs
+}
+
+func getOrderedNodeBalances(store cstypes.KVStore) []*NodeBalance {
+	allNodeBalances := make([]*NodeBalance, 0)
+	iter := store.Iterator(nil, nil)
+	for ; iter.Valid(); iter.Next() {
+		addr := sdk.AccAddress(iter.Key())
+		balance := binary.LittleEndian.Uint64(iter.Value())
+		allNodeBalances = append(allNodeBalances, &NodeBalance{
+			Addr:    addr,
+			Balance: int64(balance),
+		})
+	}
+	_ = iter.Close()
+
+	sort.SliceStable(allNodeBalances, func(i, j int) bool {
+		return allNodeBalances[i].Balance < allNodeBalances[j].Balance
+	})
+
+	return allNodeBalances
 }
 
 ///// Debug functions

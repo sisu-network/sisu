@@ -148,3 +148,20 @@ func TestDefaultKeeper_IncAndDecNodeBalance(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, int64(0), curBalance)
 }
+
+func TestDefaultKeeper_GetTopBalance(t *testing.T) {
+	t.Parallel()
+
+	keeper, ctx := getTestKeeperAndContext()
+
+	addr1 := []byte("0x1")
+	require.NoError(t, keeper.IncBalance(ctx, addr1, 1))
+	addr2 := []byte("0x2")
+	require.NoError(t, keeper.IncBalance(ctx, addr2, 3))
+	addr3 := []byte("0x3")
+	require.NoError(t, keeper.IncBalance(ctx, addr3, 2))
+
+	top1Balance := keeper.GetTopBalance(ctx, 1)
+	require.Len(t, top1Balance, 1)
+	require.Equal(t, addr2, top1Balance[0].Bytes())
+}

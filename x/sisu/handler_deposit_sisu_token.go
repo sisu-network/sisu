@@ -49,7 +49,7 @@ func (h *HandlerDepositSisuToken) doDepositSisuToken(ctx sdk.Context, msg *types
 	})
 
 	if err != nil {
-		log.Error("error when quering sisu balance. error = ", err)
+		log.Error("error when querying sisu balance. error = ", err)
 		return err
 	}
 
@@ -68,9 +68,5 @@ func (h *HandlerDepositSisuToken) doDepositSisuToken(ctx sdk.Context, msg *types
 		return err
 	}
 
-	if err = h.keeper.IncBalance(ctx, msg.GetSender(), depositAmt); err != nil {
-		return err
-	}
-
-	return nil
+	return h.keeper.IncBalance(ctx, msg.GetSender(), depositAmt)
 }
