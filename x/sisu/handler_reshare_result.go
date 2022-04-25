@@ -63,6 +63,7 @@ func (h *HandlerReshareResult) doReshareResult(ctx sdk.Context, msg *types.Resha
 			},
 			AccAddress:  sdk.AccAddress(cosmosPubKey.Address()).String(),
 			IsValidator: true,
+			Status:      types.NodeStatus_Validator,
 		}
 
 		nodes = append(nodes, node)

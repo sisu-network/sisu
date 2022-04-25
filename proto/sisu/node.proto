@@ -8,6 +8,13 @@ message Pubkey {
   bytes bytes = 2;
 }
 
+enum NodeStatus {
+  Unknown = 0;
+  Candidate = 1;
+  Validator = 2;
+  Disabled = 3;
+}
+
 message Node {
   // This id field is not used to identify a node. Use the consensusKey to identify a node.
   string id = 1;
@@ -15,4 +22,5 @@ message Node {
   Pubkey consensusKey = 2;
   string accAddress = 3;
   bool isValidator = 4;
+  NodeStatus status = 5;
 }

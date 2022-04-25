@@ -14,6 +14,7 @@ type ValidatorManager interface {
 	AddValidator(ctx sdk.Context, node *types.Node)
 	IsValidator(ctx sdk.Context, signer string) bool
 	SetValidators(ctx sdk.Context, nodes []*types.Node) error
+	GetVals(ctx sdk.Context) map[string]*types.Node
 	GetExceedSlashThresholdValidators(ctx sdk.Context) ([]*types.Node, error)
 }
 
@@ -31,7 +32,7 @@ func NewValidatorManager(keeper keeper.Keeper) ValidatorManager {
 	}
 }
 
-func (m *DefaultValidatorManager) getVals(ctx sdk.Context) map[string]*types.Node {
+func (m *DefaultValidatorManager) GetVals(ctx sdk.Context) map[string]*types.Node {
 	var vals map[string]*types.Node
 	m.valLock.RLock()
 	vals = m.vals
@@ -57,7 +58,7 @@ func (m *DefaultValidatorManager) getVals(ctx sdk.Context) map[string]*types.Nod
 func (m *DefaultValidatorManager) AddValidator(ctx sdk.Context, node *types.Node) {
 	m.keeper.SaveNode(ctx, node)
 
-	vals := m.getVals(ctx)
+	vals := m.GetVals(ctx)
 
 	m.valLock.Lock()
 	vals[node.AccAddress] = node
@@ -66,7 +67,7 @@ func (m *DefaultValidatorManager) AddValidator(ctx sdk.Context, node *types.Node
 }
 
 func (m *DefaultValidatorManager) IsValidator(ctx sdk.Context, signer string) bool {
-	vals := m.getVals(ctx)
+	vals := m.GetVals(ctx)
 
 	m.valLock.RLock()
 	defer m.valLock.RUnlock()
@@ -95,7 +96,7 @@ func (m *DefaultValidatorManager) SetValidators(ctx sdk.Context, nodes []*types.
 // GetExceedSlashThresholdValidators return validators who has too much slash points (exceed threshold)
 func (m *DefaultValidatorManager) GetExceedSlashThresholdValidators(ctx sdk.Context) ([]*types.Node, error) {
 	slashValidators := make([]*types.Node, 0)
-	validators := m.getVals(ctx)
+	validators := m.GetVals(ctx)
 
 	for _, validator := range validators {
 		slashPoint, err := m.keeper.GetSlashToken(ctx, validator.ConsensusKey.GetBytes())

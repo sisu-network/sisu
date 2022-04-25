@@ -164,4 +164,16 @@ func TestDefaultKeeper_GetTopBalance(t *testing.T) {
 	top1Balance := keeper.GetTopBalance(ctx, 1)
 	require.Len(t, top1Balance, 1)
 	require.Equal(t, addr2, top1Balance[0].Bytes())
+
+	top2Balances := keeper.GetTopBalance(ctx, 2)
+	require.Len(t, top2Balances, 2)
+	require.Equal(t, addr3, top2Balances[0].Bytes())
+	require.Equal(t, addr2, top2Balances[1].Bytes())
+
+	// addr1 = 1, addr2 = 0, addr3 = 2
+	require.NoError(t, keeper.DecBalance(ctx, addr2, 3))
+	top2Balances = keeper.GetTopBalance(ctx, 2)
+	require.Len(t, top2Balances, 2)
+	require.Equal(t, addr1, top2Balances[0].Bytes())
+	require.Equal(t, addr3, top2Balances[1].Bytes())
 }

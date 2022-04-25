@@ -107,6 +107,7 @@ type Keeper interface {
 	IncBalance(ctx sdk.Context, address sdk.AccAddress, amount int64) error
 	DecBalance(ctx sdk.Context, address sdk.AccAddress, amount int64) error
 	GetBalance(ctx sdk.Context, address sdk.AccAddress) (int64, error)
+	GetTopBalance(ctx sdk.Context, n int) []sdk.AccAddress
 }
 
 type DefaultKeeper struct {

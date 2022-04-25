@@ -266,7 +266,7 @@ func New(
 
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.tssKeeper),
 		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
-		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, app.tssKeeper, cfg.Tss), worldState, txTracker, app.tssKeeper)
+		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, app.tssKeeper, cfg.Tss), worldState, txTracker, app.tssKeeper, app.BankKeeper)
 
 	valsMgr := tss.NewValidatorManager(app.tssKeeper)
 	tssProcessor := tss.NewProcessor(app.tssKeeper, valsMgr, privateDb, tssConfig,

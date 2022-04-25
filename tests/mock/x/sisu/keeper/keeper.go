@@ -47,6 +47,20 @@ func (mr *MockKeeperMockRecorder) CreateContractAddress(ctx, chain, txOutHash, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateContractAddress", reflect.TypeOf((*MockKeeper)(nil).CreateContractAddress), ctx, chain, txOutHash, address)
 }
 
+// DecBalance mocks base method.
+func (m *MockKeeper) DecBalance(ctx types.Context, address types.AccAddress, amount int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DecBalance", ctx, address, amount)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DecBalance indicates an expected call of DecBalance.
+func (mr *MockKeeperMockRecorder) DecBalance(ctx, address, amount interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecBalance", reflect.TypeOf((*MockKeeper)(nil).DecBalance), ctx, address, amount)
+}
+
 // DecSlashToken mocks base method.
 func (m *MockKeeper) DecSlashToken(ctx types.Context, address types.AccAddress, amount int64) error {
 	m.ctrl.T.Helper()
@@ -143,6 +157,21 @@ func (m *MockKeeper) GetAllTokens(ctx types.Context) map[string]*types0.Token {
 func (mr *MockKeeperMockRecorder) GetAllTokens(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllTokens", reflect.TypeOf((*MockKeeper)(nil).GetAllTokens), ctx)
+}
+
+// GetBalance mocks base method.
+func (m *MockKeeper) GetBalance(ctx types.Context, address types.AccAddress) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetBalance", ctx, address)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetBalance indicates an expected call of GetBalance.
+func (mr *MockKeeperMockRecorder) GetBalance(ctx, address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBalance", reflect.TypeOf((*MockKeeper)(nil).GetBalance), ctx, address)
 }
 
 // GetChain mocks base method.
@@ -286,6 +315,20 @@ func (mr *MockKeeperMockRecorder) GetTokens(ctx, tokens interface{}) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTokens", reflect.TypeOf((*MockKeeper)(nil).GetTokens), ctx, tokens)
 }
 
+// GetTopBalance mocks base method.
+func (m *MockKeeper) GetTopBalance(ctx types.Context, n int) []types.AccAddress {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTopBalance", ctx, n)
+	ret0, _ := ret[0].([]types.AccAddress)
+	return ret0
+}
+
+// GetTopBalance indicates an expected call of GetTopBalance.
+func (mr *MockKeeperMockRecorder) GetTopBalance(ctx, n interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTopBalance", reflect.TypeOf((*MockKeeper)(nil).GetTopBalance), ctx, n)
+}
+
 // GetTxOut mocks base method.
 func (m *MockKeeper) GetTxOut(ctx types.Context, outChain, hash string) *types0.TxOut {
 	m.ctrl.T.Helper()
@@ -312,6 +355,20 @@ func (m *MockKeeper) GetTxOutSig(ctx types.Context, outChain, hashWithSig string
 func (mr *MockKeeperMockRecorder) GetTxOutSig(ctx, outChain, hashWithSig interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxOutSig", reflect.TypeOf((*MockKeeper)(nil).GetTxOutSig), ctx, outChain, hashWithSig)
+}
+
+// IncBalance mocks base method.
+func (m *MockKeeper) IncBalance(ctx types.Context, address types.AccAddress, amount int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncBalance", ctx, address, amount)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IncBalance indicates an expected call of IncBalance.
+func (mr *MockKeeperMockRecorder) IncBalance(ctx, address, amount interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncBalance", reflect.TypeOf((*MockKeeper)(nil).IncBalance), ctx, address, amount)
 }
 
 // IncSlashToken mocks base method.

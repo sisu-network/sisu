@@ -230,6 +230,7 @@ func getNode(kb keyring.Keyring, algoStr string, nodeDirName string, outputDir s
 		},
 		AccAddress:  addr.String(),
 		IsValidator: true,
+		Status:      types.NodeStatus_Validator,
 	}, secret, tendermintPubKey
 }
 

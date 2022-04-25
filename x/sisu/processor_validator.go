@@ -1,7 +1,11 @@
 package sisu
 
 import (
+	"errors"
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -31,7 +35,19 @@ func (p *Processor) getChangedNodes(ctx sdk.Context) ([]*types.Node, []*types.No
 		return nil, nil, err
 	}
 
-	// TODO: get highest deposit candidates
-	newNodes := make([]*types.Node, len(removedNodes))
+	// TODO: only get candidates node
+	topCandidates := p.keeper.GetTopBalance(ctx, len(removedNodes))
+	newNodes := make([]*types.Node, len(topCandidates))
+	for _, candidate := range topCandidates {
+		vals := p.validatorManager.GetVals(ctx)
+		node, ok := vals[candidate.String()]
+		if !ok {
+			err = errors.New(fmt.Sprintf("can not find validator info. addr = %s", candidate.String()))
+			log.Error(err)
+			return nil, nil, err
+		}
+
+		newNodes = append(newNodes, node)
+	}
 	return newNodes, removedNodes, nil
 }
