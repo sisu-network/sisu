@@ -104,3 +104,20 @@ func TestKeeper_SaveAndGetTxOut(t *testing.T) {
 	other.OutHash = utils.RandomHeximalString(48)
 	require.Equal(t, false, keeper.IsTxOutExisted(ctx, &other))
 }
+
+func TestDefaultKeeper_IncAndDecSlashToken(t *testing.T) {
+	t.Parallel()
+
+	keeper, ctx := getTestKeeperAndContext()
+
+	addr := []byte("0x1")
+	require.NoError(t, keeper.IncSlashToken(ctx, addr, 1))
+	curSlash, err := keeper.GetSlashToken(ctx, addr)
+	require.NoError(t, err)
+	require.Equal(t, int64(1), curSlash)
+
+	require.NoError(t, keeper.DecSlashToken(ctx, addr, 1))
+	curSlash, err = keeper.GetSlashToken(ctx, addr)
+	require.NoError(t, err)
+	require.Equal(t, int64(0), curSlash)
+}

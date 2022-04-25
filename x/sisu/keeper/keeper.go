@@ -101,6 +101,7 @@ type Keeper interface {
 	// Slash
 	IncSlashToken(ctx sdk.Context, address sdk.AccAddress, amount int64) error
 	DecSlashToken(ctx sdk.Context, address sdk.AccAddress, amount int64) error
+	GetSlashToken(ctx sdk.Context, address sdk.AccAddress) (int64, error)
 }
 
 type DefaultKeeper struct {
@@ -407,6 +408,11 @@ func (k *DefaultKeeper) IncSlashToken(ctx sdk.Context, address sdk.AccAddress, a
 func (k *DefaultKeeper) DecSlashToken(ctx sdk.Context, address sdk.AccAddress, amount int64) error {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixSlash)
 	return incOrDecSlashToken(store, address, -amount)
+}
+
+func (k *DefaultKeeper) GetSlashToken(ctx sdk.Context, address sdk.AccAddress) (int64, error) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixSlash)
+	return getCurSlashToken(store, address)
 }
 
 ///// Debug

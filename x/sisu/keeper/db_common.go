@@ -893,17 +893,9 @@ func getParams(store cstypes.KVStore) *types.Params {
 }
 
 func incOrDecSlashToken(store cstypes.KVStore, address sdk.AccAddress, amount int64) error {
-	oldAmt := int64(0)
-	addrKey := address.Bytes()
-	bz := store.Get(addrKey)
-	if bz != nil {
-		protoInt64 := types.ProtoInt64{}
-		if err := json.Unmarshal(bz, &protoInt64); err != nil {
-			log.Error("error when unmarshalling proto int64")
-			return err
-		}
-
-		oldAmt = protoInt64.Value
+	oldAmt, err := getCurSlashToken(store, address)
+	if err != nil {
+		return err
 	}
 
 	newAmt := oldAmt + amount
@@ -914,8 +906,24 @@ func incOrDecSlashToken(store cstypes.KVStore, address sdk.AccAddress, amount in
 		return err
 	}
 
-	store.Set(addrKey, bz)
+	store.Set(address.Bytes(), bz)
 	return nil
+}
+
+func getCurSlashToken(store cstypes.KVStore, address sdk.AccAddress) (int64, error) {
+	addrKey := address.Bytes()
+	bz := store.Get(addrKey)
+	if bz == nil {
+		return 0, nil
+	}
+
+	protoInt64 := types.ProtoInt64{}
+	if err := json.Unmarshal(bz, &protoInt64); err != nil {
+		log.Error("error when unmarshalling proto int64")
+		return 0, err
+	}
+
+	return protoInt64.Value, nil
 }
 
 ///// Debug functions
