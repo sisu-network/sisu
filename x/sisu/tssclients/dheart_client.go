@@ -9,6 +9,8 @@ import (
 	"github.com/sisu-network/lib/log"
 )
 
+var _ DheartClient = (*DefaultDheartClient)(nil)
+
 //go:generate mockgen -source=x/sisu/tssclients/dheart_client.go -destination=tests/mock/x/sisu/tssclients/dheart_client.go -package=mock
 
 type DheartClient interface {
@@ -134,5 +136,10 @@ func (c *DefaultDheartClient) SetSisuReady(isReady bool) error {
 		return err
 	}
 
+	return nil
+}
+
+func (c *DefaultDheartClient) Reshare(oldPubKeys, newPubKeys []ctypes.PubKey) error {
+	// TODO: Call to dheart
 	return nil
 }
