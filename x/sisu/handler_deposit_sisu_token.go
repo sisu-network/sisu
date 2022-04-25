@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/sisu-network/sisu/common"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	bTypes "github.com/cosmos/cosmos-sdk/x/bank/types"
@@ -45,7 +46,7 @@ func (h *HandlerDepositSisuToken) DeliverMsg(ctx sdk.Context, msg *types.Deposit
 func (h *HandlerDepositSisuToken) doDepositSisuToken(ctx sdk.Context, msg *types.DepositSisuTokenMsg) error {
 	resp, err := h.mc.BankKeeper().Balance(context.Background(), &bTypes.QueryBalanceRequest{
 		Address: msg.Signer,
-		Denom:   SISU_DENOM,
+		Denom:   common.SisuCoinName,
 	})
 
 	if err != nil {
@@ -62,7 +63,7 @@ func (h *HandlerDepositSisuToken) doDepositSisuToken(ctx sdk.Context, msg *types
 	}
 
 	if err = h.mc.BankKeeper().SendCoins(ctx, msg.GetSender(), BondAddr, sdk.Coins{
-		sdk.NewCoin(SISU_DENOM, sdk.NewInt(depositAmt)),
+		sdk.NewCoin(common.SisuCoinName, sdk.NewInt(depositAmt)),
 	}); err != nil {
 		log.Error("error when send coin to bond addr. error = ", err)
 		return err
