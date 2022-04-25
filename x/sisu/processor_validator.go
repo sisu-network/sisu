@@ -7,17 +7,17 @@ import (
 )
 
 func (p *Processor) EndBlockValidator(ctx sdk.Context) []abci.ValidatorUpdate {
-	newVals, oldVals, err := p.getChangedNodes(ctx)
+	newValidators, oldValidators, err := p.getChangedNodes(ctx)
 	if err != nil {
 		return []abci.ValidatorUpdate{}
 	}
 
-	validators := make([]abci.ValidatorUpdate, 0, len(newVals)+len(oldVals))
-	for _, val := range newVals {
+	validators := make([]abci.ValidatorUpdate, 0, len(newValidators)+len(oldValidators))
+	for _, val := range newValidators {
 		validators = append(validators, abci.Ed25519ValidatorUpdate(val.ConsensusKey.GetBytes(), 100))
 	}
 
-	for _, val := range oldVals {
+	for _, val := range oldValidators {
 		validators = append(validators, abci.Ed25519ValidatorUpdate(val.ConsensusKey.GetBytes(), 0))
 	}
 

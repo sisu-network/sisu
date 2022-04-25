@@ -8,10 +8,13 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
+const SlashPointThreshold = 100
+
 type ValidatorManager interface {
 	AddValidator(ctx sdk.Context, node *types.Node)
 	IsValidator(ctx sdk.Context, signer string) bool
 	SetValidators(ctx sdk.Context, nodes []*types.Node) error
+	GetExceedSlashThresholdValidators(ctx sdk.Context) ([]*types.Node, error)
 }
 
 type DefaultValidatorManager struct {
@@ -87,4 +90,25 @@ func (m *DefaultValidatorManager) SetValidators(ctx sdk.Context, nodes []*types.
 
 	m.vals = newVals
 	return nil
+}
+
+// GetExceedSlashThresholdValidators return validators who has too much slash points (exceed threshold)
+func (m *DefaultValidatorManager) GetExceedSlashThresholdValidators(ctx sdk.Context) ([]*types.Node, error) {
+	slashValidators := make([]*types.Node, 0)
+	validators := m.getVals(ctx)
+
+	for _, validator := range validators {
+		slashPoint, err := m.keeper.GetSlashToken(ctx, validator.ConsensusKey.GetBytes())
+		if err != nil {
+			return nil, err
+		}
+
+		if slashPoint <= SlashPointThreshold {
+			continue
+		}
+
+		slashValidators = append(slashValidators, validator)
+	}
+
+	return slashValidators, nil
 }

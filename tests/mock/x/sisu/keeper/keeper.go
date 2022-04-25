@@ -47,6 +47,20 @@ func (mr *MockKeeperMockRecorder) CreateContractAddress(ctx, chain, txOutHash, a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateContractAddress", reflect.TypeOf((*MockKeeper)(nil).CreateContractAddress), ctx, chain, txOutHash, address)
 }
 
+// DecSlashToken mocks base method.
+func (m *MockKeeper) DecSlashToken(ctx types.Context, address types.AccAddress, amount int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DecSlashToken", ctx, address, amount)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DecSlashToken indicates an expected call of DecSlashToken.
+func (mr *MockKeeperMockRecorder) DecSlashToken(ctx, address, amount interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DecSlashToken", reflect.TypeOf((*MockKeeper)(nil).DecSlashToken), ctx, address, amount)
+}
+
 // GetAllChains mocks base method.
 func (m *MockKeeper) GetAllChains(ctx types.Context) map[string]*types0.Chain {
 	m.ctrl.T.Helper()
@@ -243,6 +257,21 @@ func (mr *MockKeeperMockRecorder) GetPendingContracts(ctx, chain interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingContracts", reflect.TypeOf((*MockKeeper)(nil).GetPendingContracts), ctx, chain)
 }
 
+// GetSlashToken mocks base method.
+func (m *MockKeeper) GetSlashToken(ctx types.Context, address types.AccAddress) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSlashToken", ctx, address)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSlashToken indicates an expected call of GetSlashToken.
+func (mr *MockKeeperMockRecorder) GetSlashToken(ctx, address interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSlashToken", reflect.TypeOf((*MockKeeper)(nil).GetSlashToken), ctx, address)
+}
+
 // GetTokens mocks base method.
 func (m *MockKeeper) GetTokens(ctx types.Context, tokens []string) map[string]*types0.Token {
 	m.ctrl.T.Helper()
@@ -283,6 +312,20 @@ func (m *MockKeeper) GetTxOutSig(ctx types.Context, outChain, hashWithSig string
 func (mr *MockKeeperMockRecorder) GetTxOutSig(ctx, outChain, hashWithSig interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxOutSig", reflect.TypeOf((*MockKeeper)(nil).GetTxOutSig), ctx, outChain, hashWithSig)
+}
+
+// IncSlashToken mocks base method.
+func (m *MockKeeper) IncSlashToken(ctx types.Context, address types.AccAddress, amount int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IncSlashToken", ctx, address, amount)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// IncSlashToken indicates an expected call of IncSlashToken.
+func (mr *MockKeeperMockRecorder) IncSlashToken(ctx, address, amount interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IncSlashToken", reflect.TypeOf((*MockKeeper)(nil).IncSlashToken), ctx, address, amount)
 }
 
 // IsContractExisted mocks base method.
@@ -639,6 +682,21 @@ func (m *MockKeeper) SetTokens(ctx types.Context, tokens map[string]*types0.Toke
 func (mr *MockKeeperMockRecorder) SetTokens(ctx, tokens interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetTokens", reflect.TypeOf((*MockKeeper)(nil).SetTokens), ctx, tokens)
+}
+
+// SetValidators mocks base method.
+func (m *MockKeeper) SetValidators(ctx types.Context, nodes []*types0.Node) ([]*types0.Node, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SetValidators", ctx, nodes)
+	ret0, _ := ret[0].([]*types0.Node)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SetValidators indicates an expected call of SetValidators.
+func (mr *MockKeeperMockRecorder) SetValidators(ctx, nodes interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetValidators", reflect.TypeOf((*MockKeeper)(nil).SetValidators), ctx, nodes)
 }
 
 // UpdateContractAddress mocks base method.
