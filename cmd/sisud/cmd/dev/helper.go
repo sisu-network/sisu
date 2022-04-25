@@ -66,6 +66,8 @@ func getDefaultChainUrl(chain string) string {
 		return "http://0.0.0.0:8545"
 	case "eth-binance-testnet":
 		return "https://data-seed-prebsc-1-s1.binance.org:8545"
+	case "xdai":
+		return "https://rpc.gnosischain.com"
 	default:
 		panic(fmt.Errorf("unknown chain %s", chain))
 	}

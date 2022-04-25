@@ -26,11 +26,7 @@ var (
 		"ganache1":            "NATIVE_GANACHE1",
 		"ganache2":            "NATIVE_GANACHE2",
 		"eth-binance-testnet": "BNB",
-	}
-
-	defaultTokenPrices = map[string]float32{
-		"BNB": 100.0,
-		"ETH": 2000.0,
+		"xdai":                "xDai",
 	}
 
 	defaultGasPrice = map[string]*big.Int{
