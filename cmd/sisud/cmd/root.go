@@ -123,6 +123,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, a
 		ContractChangeOwnershipCmd(),
 		ContractChangeLiquidityAddressCmd(),
 		ContractLiquidityWithdrawFund(),
+		DepositSisuTokenCmd(),
 	)
 
 	a := appCreator{
