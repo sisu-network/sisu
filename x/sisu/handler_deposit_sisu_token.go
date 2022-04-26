@@ -1,14 +1,14 @@
 package sisu
 
 import (
+	"errors"
+	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
-
-var BondAddr = sdk.AccAddress("0xbondaddress")
 
 type HandlerDepositSisuToken struct {
 	pmm    PostedMessageManager
@@ -40,6 +40,14 @@ func (h *HandlerDepositSisuToken) DeliverMsg(ctx sdk.Context, msg *types.Deposit
 
 func (h *HandlerDepositSisuToken) doDepositSisuToken(ctx sdk.Context, msg *types.DepositSisuTokenMsg) error {
 	depositAmt := msg.Data.Amount
+	balance := h.mc.BankKeeper().GetBalance(ctx, msg.GetSender(), common.SisuCoinName)
+	if balance.Amount.Int64() < depositAmt {
+		err := errors.New(fmt.Sprintf("not enough sisu balance. Require %d, has %d", depositAmt, balance))
+		log.Error(err)
+		return err
+	}
+
+	log.Debug("Balance before: ", balance)
 	if err := h.mc.BankKeeper().SendCoinsFromAccountToModule(ctx, msg.GetSender(), BondName, sdk.Coins{
 		sdk.NewCoin(common.SisuCoinName, sdk.NewInt(depositAmt)),
 	}); err != nil {
@@ -47,5 +55,7 @@ func (h *HandlerDepositSisuToken) doDepositSisuToken(ctx sdk.Context, msg *types
 		return err
 	}
 
+	balance = h.mc.BankKeeper().GetBalance(ctx, msg.GetSender(), common.SisuCoinName)
+	log.Debug("Balance after: ", balance)
 	return h.keeper.IncBalance(ctx, msg.GetSender(), depositAmt)
 }
