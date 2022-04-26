@@ -98,8 +98,14 @@ Example:
 						"ganache2": {
 							Id: "ganache2",
 						},
+						"eth-ropsten": {
+							Id: "eth-ropsten",
+						},
 						"eth-binance-testnet": {
 							Id: "eth-binance-testnet",
+						},
+						"polygon-testnet": {
+							Id: "polygon-testnet",
 						},
 						"xdai": {
 							Id: "xdai",

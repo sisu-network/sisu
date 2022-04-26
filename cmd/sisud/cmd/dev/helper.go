@@ -64,8 +64,12 @@ func getDefaultChainUrl(chain string) string {
 		return "http://0.0.0.0:7545"
 	case "ganache2":
 		return "http://0.0.0.0:8545"
+	case "eth-ropsten":
+		return "https://ropsten.infura.io/v3/2d847a1ca2fd452695bb461be77dab14"
 	case "eth-binance-testnet":
 		return "https://data-seed-prebsc-1-s1.binance.org:8545"
+	case "polygon-testnet":
+		return "https://rpc-mumbai.maticvigil.com"
 	case "xdai":
 		return "https://rpc.gnosischain.com"
 	default:

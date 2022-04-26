@@ -257,9 +257,11 @@ func (p *DefaultTxOutputProducer) getDefaultGasPrice(chain string) *big.Int {
 	case "ganache2":
 		return big.NewInt(2_000_000_000) // 2 Gwei
 	case "eth-ropsten":
-		return big.NewInt(1_700_000_000)
+		return big.NewInt(4_000_000_000) // 4 Gwei
 	case "eth-binance-testnet":
 		return big.NewInt(10_000_000_000) // 10 Gwei
+	case "polygon-testnet":
+		return big.NewInt(2_000_000_000) // 2 Gwei
 	case "xdai":
 		return big.NewInt(2_000_000_000) // 2 Gwei
 	}

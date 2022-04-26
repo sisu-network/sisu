@@ -22,10 +22,11 @@ var (
 	chainToTokens = map[string]string{
 		"bsc":                 "BNB",
 		"eth":                 "ETH",
-		"ropsten":             "ETH",
 		"ganache1":            "NATIVE_GANACHE1",
 		"ganache2":            "NATIVE_GANACHE2",
+		"eth-ropsten":         "ETH",
 		"eth-binance-testnet": "BNB",
+		"polygon-testnet":     "MATIC",
 		"xdai":                "xDai",
 	}
 
@@ -34,6 +35,7 @@ var (
 		"ganache2":            big.NewInt(2_000_000_000),
 		"eth-ropsten":         big.NewInt(4_000_000_000),
 		"eth-binance-testnet": big.NewInt(10_000_000_000),
+		"polygon-testnet":     big.NewInt(2_000_000_000),
 		"xdai":                big.NewInt(2_000_000_000),
 	}
 )
