@@ -27,7 +27,7 @@ func DeployContract() *cobra.Command {
 		Use: "deploy",
 		Long: `Deploy an ERC20 contract. You can list of empty string to expected addresses param.
 Usage:
-./sisu dev deploy --contract [contract-type] --chain-urls [list-of-urls] --token-name [TOKEN_NAME] --token-symbol [TOKEN_SYMBOL] --expected-addrs [List of Expected Addresses]
+./sisu dev deploy --contract [contract-type] --chain-urls [list-of-urls] --erc20-name [TOKEN_NAME] --erc20-symbol [TOKEN_SYMBOL] --expected-addrs [List of Expected Addresses]
 
 Example:
 ./sisu dev deploy --contract liquidity --chain-urls http://localhost:7545,http://localhost:8545
@@ -61,6 +61,10 @@ Example:
 func (c *DeployContractCmd) doDeployment(urlString, contract, mnemonic, expAddrString, tokenName, tokenSymbol string) []string {
 	urls := strings.Split(urlString, ",")
 	expectedAddrs := strings.Split(expAddrString, ",")
+
+	if len(expectedAddrs) == 0 {
+		expectedAddrs = make([]string, len(urls))
+	}
 
 	clients := make([]*ethclient.Client, 0)
 
