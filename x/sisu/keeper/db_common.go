@@ -579,7 +579,7 @@ func getGasPriceRecord(store cstypes.KVStore, chain string, height int64) *types
 func saveChain(store cstypes.KVStore, chain *types.Chain) {
 	bz, err := chain.Marshal()
 	if err != nil {
-		log.Error("saveChain: failed to save chain, chaain = ", chain.Id)
+		log.Error("saveChain: failed to save chain, chain = ", chain.Id)
 		return
 	}
 

@@ -60,6 +60,7 @@ func (h *HandlerGasPrice) DeliverMsg(ctx sdk.Context, msg *types.GasPriceMsg) (*
 	chain := h.keeper.GetChain(ctx, msg.Chain)
 	if chain == nil {
 		chain = new(types.Chain)
+		chain.Id = msg.Chain
 	}
 	chain.GasPrice = median
 	h.keeper.SaveChain(ctx, chain)
