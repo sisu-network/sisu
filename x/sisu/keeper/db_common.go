@@ -774,6 +774,12 @@ func updateNodeStatus(store cstypes.KVStore, consKey []byte, nodeStatus types.No
 		return
 	}
 
+	if nodeStatus == types.NodeStatus_Validator {
+		node.IsValidator = true
+	} else {
+		node.IsValidator = false
+	}
+
 	node.Status = nodeStatus
 	saveNode(store, node)
 }

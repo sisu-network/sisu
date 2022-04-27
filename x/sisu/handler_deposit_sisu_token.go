@@ -12,16 +12,18 @@ import (
 )
 
 type HandlerDepositSisuToken struct {
-	pmm    PostedMessageManager
-	mc     ManagerContainer
-	keeper keeper.Keeper
+	pmm        PostedMessageManager
+	mc         ManagerContainer
+	keeper     keeper.Keeper
+	valManager ValidatorManager
 }
 
 func NewHandlerDepositSisuToken(mc ManagerContainer) *HandlerDepositSisuToken {
 	return &HandlerDepositSisuToken{
-		pmm:    mc.PostedMessageManager(),
-		mc:     mc,
-		keeper: mc.Keeper(),
+		pmm:        mc.PostedMessageManager(),
+		mc:         mc,
+		keeper:     mc.Keeper(),
+		valManager: NewValidatorManager(mc.Keeper()),
 	}
 }
 

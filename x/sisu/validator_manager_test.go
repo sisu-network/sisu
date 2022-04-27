@@ -26,7 +26,7 @@ func TestDefaultValidatorManager_GetExceedSlashThresholdValidators(t *testing.T)
 		t.Parallel()
 
 		pk := []byte("pubkey1")
-		validatorManager.AddValidator(ctx, &types.Node{
+		validatorManager.AddNode(ctx, &types.Node{
 			ConsensusKey: &types.Pubkey{
 				Type:  "ed25519",
 				Bytes: pk,
@@ -56,20 +56,48 @@ func TestDefaultValidatorManager_UpdateNodeStatus(t *testing.T) {
 	keeper := keeperTestGenesis(ctx)
 	validatorManager := NewValidatorManager(keeper)
 
-	pk := []byte("pubkey1")
-	accAddr := "0x1"
-	validatorManager.AddValidator(ctx, &types.Node{
-		ConsensusKey: &types.Pubkey{
-			Type:  "ed25519",
-			Bytes: pk,
-		},
-		AccAddress:  accAddr,
-		IsValidator: true,
-		Status:      types.NodeStatus_Validator,
+	t.Run("from_validator_to_candidate", func(t *testing.T) {
+		t.Parallel()
+
+		pk := []byte("pubkey1")
+		accAddr := "0x1"
+		validatorManager.AddNode(ctx, &types.Node{
+			ConsensusKey: &types.Pubkey{
+				Type:  "ed25519",
+				Bytes: pk,
+			},
+			AccAddress:  accAddr,
+			IsValidator: true,
+			Status:      types.NodeStatus_Validator,
+		})
+
+		validatorManager.UpdateNodeStatus(ctx, accAddr, pk, types.NodeStatus_Candidate)
+		vals := validatorManager.GetVals(ctx)
+		node := vals[accAddr]
+		require.Equal(t, types.NodeStatus_Candidate, node.Status)
+		require.False(t, node.IsValidator)
 	})
 
-	validatorManager.UpdateNodeStatus(ctx, accAddr, pk, types.NodeStatus_Candidate)
-	vals := validatorManager.GetVals(ctx)
-	node := vals[accAddr]
-	require.Equal(t, types.NodeStatus_Candidate, node.Status)
+	t.Run("from_candidate_to_validator", func(t *testing.T) {
+		t.Parallel()
+
+		pk := []byte("pubkey2")
+		accAddr := "0x2"
+		validatorManager.AddNode(ctx, &types.Node{
+			ConsensusKey: &types.Pubkey{
+				Type:  "ed25519",
+				Bytes: pk,
+			},
+			AccAddress:  accAddr,
+			IsValidator: false,
+			Status:      types.NodeStatus_Candidate,
+		})
+
+		validatorManager.UpdateNodeStatus(ctx, accAddr, pk, types.NodeStatus_Validator)
+		vals := validatorManager.GetVals(ctx)
+		node := vals[accAddr]
+		require.NotEmpty(t, node)
+		require.Equal(t, types.NodeStatus_Validator, node.Status)
+		require.True(t, node.IsValidator)
+	})
 }

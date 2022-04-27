@@ -19,9 +19,10 @@ type HandlerReshareResult struct {
 
 func NewHandlerReshareResult(mc ManagerContainer) *HandlerReshareResult {
 	return &HandlerReshareResult{
-		mc:     mc,
-		pmm:    mc.PostedMessageManager(),
-		keeper: mc.Keeper(),
+		mc:         mc,
+		pmm:        mc.PostedMessageManager(),
+		keeper:     mc.Keeper(),
+		valManager: NewValidatorManager(mc.Keeper()),
 	}
 }
 

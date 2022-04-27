@@ -226,7 +226,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 		}
 
 		validators[i] = abci.Ed25519ValidatorUpdate(pk.Bytes(), 100)
-		valsMgr.AddValidator(ctx, node)
+		valsMgr.AddNode(ctx, node)
 	}
 
 	// Reload data after reading the genesis
