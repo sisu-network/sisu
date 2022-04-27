@@ -32,7 +32,7 @@ func (h *HandlerContract) DeliverMsg(ctx sdk.Context, signerMsg *types.Contracts
 
 func (h *HandlerContract) doContracts(ctx sdk.Context, wrappedMsg *types.ContractsWithSigner) ([]byte, error) {
 	// TODO: Don't do duplicated delivery
-	log.Info("Deliver pending contracts")
+	log.Info("Deliver pending contracts, wrappedMsg.Data.Contracts length = ", len(wrappedMsg.Data.Contracts))
 
 	for _, contract := range wrappedMsg.Data.Contracts {
 		if h.keeper.IsContractExisted(ctx, contract) {
