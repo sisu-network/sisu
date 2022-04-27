@@ -756,9 +756,26 @@ func saveNode(store cstypes.KVStore, node *types.Node) {
 	bz, err := node.Marshal()
 	if err != nil {
 		log.Error("cannot marshal node, err = ", err)
+		return
 	}
 
 	store.Set(node.ConsensusKey.Bytes, bz)
+}
+
+func updateNodeStatus(store cstypes.KVStore, consKey []byte, nodeStatus types.NodeStatus) {
+	bz := store.Get(consKey)
+	if bz == nil {
+		return
+	}
+
+	node := &types.Node{}
+	if err := node.Unmarshal(bz); err != nil {
+		log.Error("can not unmarshal node, err = ", err)
+		return
+	}
+
+	node.Status = nodeStatus
+	saveNode(store, node)
 }
 
 func loadValidators(store cstypes.KVStore) []*types.Node {

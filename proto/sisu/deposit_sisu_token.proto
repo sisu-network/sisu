@@ -10,4 +10,5 @@ message DepositSisuTokenMsg {
 
 message DepositSisuData {
   int64 amount = 1;
+  int32 index = 2;
 }

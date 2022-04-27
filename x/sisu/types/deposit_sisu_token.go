@@ -7,10 +7,10 @@ import (
 
 var _ sdk.Msg = &DepositSisuTokenMsg{}
 
-func NewDepositSisuTokenMsg(signer string, amount int64) *DepositSisuTokenMsg {
+func NewDepositSisuTokenMsg(signer string, amount int64, index int32) *DepositSisuTokenMsg {
 	return &DepositSisuTokenMsg{
 		Signer: signer,
-		Data:   &DepositSisuData{Amount: amount},
+		Data:   &DepositSisuData{Amount: amount, Index: index},
 	}
 }
 

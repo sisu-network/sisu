@@ -12,6 +12,7 @@ const SlashPointThreshold = 100
 
 type ValidatorManager interface {
 	AddValidator(ctx sdk.Context, node *types.Node)
+	UpdateNodeStatus(ctx sdk.Context, accAddress string, consKey []byte, status types.NodeStatus)
 	IsValidator(ctx sdk.Context, signer string) bool
 	SetValidators(ctx sdk.Context, nodes []*types.Node) error
 	GetVals(ctx sdk.Context) map[string]*types.Node
@@ -64,6 +65,17 @@ func (m *DefaultValidatorManager) AddValidator(ctx sdk.Context, node *types.Node
 	vals[node.AccAddress] = node
 	m.vals = vals
 	m.valLock.Unlock()
+}
+
+func (m *DefaultValidatorManager) UpdateNodeStatus(ctx sdk.Context, accAddress string, consKey []byte, status types.NodeStatus) {
+	m.keeper.UpdateNodeStatus(ctx, consKey, status)
+	vals := m.GetVals(ctx)
+
+	m.valLock.RLock()
+	node := vals[accAddress]
+	m.valLock.RUnlock()
+
+	node.Status = status
 }
 
 func (m *DefaultValidatorManager) IsValidator(ctx sdk.Context, signer string) bool {

@@ -33,6 +33,7 @@ func TestDefaultValidatorManager_GetExceedSlashThresholdValidators(t *testing.T)
 			},
 			AccAddress:  "0x1",
 			IsValidator: true,
+			Status:      types.NodeStatus_Validator,
 		})
 
 		// Slash points exceed threshold then node should be slash
@@ -46,4 +47,29 @@ func TestDefaultValidatorManager_GetExceedSlashThresholdValidators(t *testing.T)
 		require.NoError(t, err)
 		require.Empty(t, slashValidators)
 	})
+}
+
+func TestDefaultValidatorManager_UpdateNodeStatus(t *testing.T) {
+	t.Parallel()
+
+	ctx := testContext()
+	keeper := keeperTestGenesis(ctx)
+	validatorManager := NewValidatorManager(keeper)
+
+	pk := []byte("pubkey1")
+	accAddr := "0x1"
+	validatorManager.AddValidator(ctx, &types.Node{
+		ConsensusKey: &types.Pubkey{
+			Type:  "ed25519",
+			Bytes: pk,
+		},
+		AccAddress:  accAddr,
+		IsValidator: true,
+		Status:      types.NodeStatus_Validator,
+	})
+
+	validatorManager.UpdateNodeStatus(ctx, accAddr, pk, types.NodeStatus_Candidate)
+	vals := validatorManager.GetVals(ctx)
+	node := vals[accAddr]
+	require.Equal(t, types.NodeStatus_Candidate, node.Status)
 }

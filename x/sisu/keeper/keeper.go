@@ -88,6 +88,7 @@ type Keeper interface {
 	SaveNode(ctx sdk.Context, node *types.Node)
 	LoadValidators(ctx sdk.Context) []*types.Node
 	SetValidators(ctx sdk.Context, nodes []*types.Node) ([]*types.Node, error)
+	UpdateNodeStatus(ctx sdk.Context, consKey []byte, status types.NodeStatus)
 
 	// Liquidities
 	SetLiquidities(ctx sdk.Context, liquidities map[string]*types.Liquidity)
@@ -376,6 +377,11 @@ func (k *DefaultKeeper) LoadValidators(ctx sdk.Context) []*types.Node {
 func (k *DefaultKeeper) SetValidators(ctx sdk.Context, vals []*types.Node) ([]*types.Node, error) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixNode)
 	return setValidators(store, vals)
+}
+
+func (k *DefaultKeeper) UpdateNodeStatus(ctx sdk.Context, consKey []byte, status types.NodeStatus) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixNode)
+	updateNodeStatus(store, consKey, status)
 }
 
 ///// Liquidities

@@ -3,6 +3,7 @@ package sisu
 import (
 	"errors"
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
@@ -47,7 +48,7 @@ func (h *HandlerDepositSisuToken) doDepositSisuToken(ctx sdk.Context, msg *types
 	depositAmt := msg.Data.Amount
 	balance := h.mc.BankKeeper().GetBalance(ctx, msg.GetSender(), common.SisuCoinName)
 	if balance.Amount.Int64() < depositAmt {
-		err := errors.New(fmt.Sprintf("not enough sisu balance. Require %d, has %d", depositAmt, balance))
+		err = errors.New(fmt.Sprintf("not enough sisu balance. Require %d, has %d", depositAmt, balance.Amount.Int64()))
 		log.Error(err)
 		return err
 	}
@@ -60,7 +61,5 @@ func (h *HandlerDepositSisuToken) doDepositSisuToken(ctx sdk.Context, msg *types
 		return err
 	}
 
-	balance = h.mc.BankKeeper().GetBalance(ctx, msg.GetSender(), common.SisuCoinName)
-	log.Debug("Balance after: ", balance)
 	return h.keeper.IncBalance(ctx, msg.GetSender(), depositAmt)
 }
