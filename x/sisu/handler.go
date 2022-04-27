@@ -69,7 +69,6 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 		case *types.ChangeValidatorSetMsg:
 			return NewHandlerChangeValidatorSet(mc).DeliverMsg(ctx, msg)
 		case *types.DepositSisuTokenMsg:
-			log.Debug("Receive deposit msg")
 			return NewHandlerDepositSisuToken(mc).DeliverMsg(ctx, msg)
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)

@@ -24,7 +24,7 @@ func NewHandlerChangeValidatorSet(mc ManagerContainer) *HandlerChangeValidatorSe
 func (h *HandlerChangeValidatorSet) DeliverMsg(ctx sdk.Context, msg *types.ChangeValidatorSetMsg) (*sdk.Result, error) {
 	process, hash := h.pmm.ShouldProcessMsg(ctx, msg)
 	if !process {
-		return nil, nil
+		return &sdk.Result{}, nil
 	}
 
 	if err := h.doChangeValidatorSet(msg); err != nil {
@@ -32,7 +32,7 @@ func (h *HandlerChangeValidatorSet) DeliverMsg(ctx sdk.Context, msg *types.Chang
 	}
 
 	h.keeper.ProcessTxRecord(ctx, hash)
-	return nil, nil
+	return &sdk.Result{}, nil
 }
 
 func (h *HandlerChangeValidatorSet) doChangeValidatorSet(msg *types.ChangeValidatorSetMsg) error {

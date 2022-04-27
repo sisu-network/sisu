@@ -27,7 +27,7 @@ func NewHandlerDepositSisuToken(mc ManagerContainer) *HandlerDepositSisuToken {
 func (h *HandlerDepositSisuToken) DeliverMsg(ctx sdk.Context, msg *types.DepositSisuTokenMsg) (*sdk.Result, error) {
 	process, hash := h.pmm.ShouldProcessMsg(ctx, msg)
 	if !process {
-		return nil, nil
+		return &sdk.Result{}, nil
 	}
 
 	if err := h.doDepositSisuToken(ctx, msg); err != nil {
@@ -35,7 +35,7 @@ func (h *HandlerDepositSisuToken) DeliverMsg(ctx sdk.Context, msg *types.Deposit
 	}
 
 	h.keeper.ProcessTxRecord(ctx, hash)
-	return nil, nil
+	return &sdk.Result{}, nil
 }
 
 func (h *HandlerDepositSisuToken) doDepositSisuToken(ctx sdk.Context, msg *types.DepositSisuTokenMsg) error {
