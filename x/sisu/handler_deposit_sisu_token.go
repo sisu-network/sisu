@@ -37,6 +37,8 @@ func (h *HandlerDepositSisuToken) DeliverMsg(ctx sdk.Context, msg *types.Deposit
 		return &sdk.Result{}, err
 	}
 
+	h.addToCandidateNode(ctx, msg)
+
 	h.keeper.ProcessTxRecord(ctx, hash)
 	return &sdk.Result{}, nil
 }
@@ -64,4 +66,17 @@ func (h *HandlerDepositSisuToken) doDepositSisuToken(ctx sdk.Context, msg *types
 	}
 
 	return h.keeper.IncBalance(ctx, msg.GetSender(), depositAmt)
+}
+
+func (h *HandlerDepositSisuToken) addToCandidateNode(ctx sdk.Context, msg *types.DepositSisuTokenMsg) {
+	h.valManager.AddNode(ctx, &types.Node{
+		Id: "",
+		ConsensusKey: &types.Pubkey{
+			Type:  "ed25519",
+			Bytes: []byte(msg.Data.ConsensusKey),
+		},
+		AccAddress:  msg.GetSender().String(),
+		IsValidator: false,
+		Status:      types.NodeStatus_Candidate,
+	})
 }

@@ -23,6 +23,7 @@ func (p *Processor) EndBlockValidator(ctx sdk.Context) []abci.ValidatorUpdate {
 	}
 
 	for _, val := range oldValidators {
+		p.validatorManager.UpdateNodeStatus(ctx, val.AccAddress, val.ConsensusKey.GetBytes(), types.NodeStatus_Candidate)
 		validators = append(validators, abci.Ed25519ValidatorUpdate(val.ConsensusKey.GetBytes(), 0))
 	}
 

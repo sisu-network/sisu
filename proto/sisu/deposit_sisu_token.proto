@@ -10,7 +10,6 @@ message DepositSisuTokenMsg {
 
 message DepositSisuData {
   int64 amount = 1;
-  string nodeAddress = 2;
-
+  string consensusKey = 2;
   int32 index = 3;
 }
