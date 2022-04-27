@@ -35,7 +35,7 @@ func DepositSisuTokenCmd() *cobra.Command {
 
 	sdkflags.AddTxFlagsToCmd(cmd)
 
-	cmd.Flags().Int64(flags.Amount, 0, "Deposit sisu token amount")
+	cmd.Flags().Int64(flags.Amount, 0, "Sisu token amount")
 	cmd.Flags().String(sdkflags.FlagChainID, "", "name of the sisu chain")
 
 	return cmd
