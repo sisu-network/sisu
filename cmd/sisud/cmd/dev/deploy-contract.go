@@ -2,7 +2,6 @@ package dev
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"fmt"
 	"math/big"
 	"strings"
@@ -19,7 +18,6 @@ import (
 )
 
 type DeployContractCmd struct {
-	privateKey *ecdsa.PrivateKey
 }
 
 func DeployContract() *cobra.Command {
@@ -61,6 +59,9 @@ Example:
 func (c *DeployContractCmd) doDeployment(urlString, contract, mnemonic, expAddrString, tokenName, tokenSymbol string) []string {
 	urls := strings.Split(urlString, ",")
 	expectedAddrs := strings.Split(expAddrString, ",")
+	if len(expectedAddrs) == 0 {
+		expectedAddrs = make([]string, len(urls))
+	}
 
 	if len(expectedAddrs) == 0 {
 		expectedAddrs = make([]string, len(urls))
@@ -146,9 +147,7 @@ func (c *DeployContractCmd) isContractDeployed(client *ethclient.Client, tokenAd
 }
 
 func (c *DeployContractCmd) deployErc20(client *ethclient.Client, mnemonic string, expectedAddress string, tokenName, tokenSymbol string) common.Address {
-	var owner common.Address
-	c.privateKey, owner = getPrivateKey(mnemonic)
-	auth, err := c.getAuthTransactor(client, owner)
+	auth, err := getAuthTransactor(client, mnemonic)
 	if err != nil {
 		panic(err)
 	}
@@ -176,10 +175,7 @@ You need to update the expected address (both in this file and the tokens_dev.js
 }
 
 func (c *DeployContractCmd) deployLiquidity(client *ethclient.Client, mnemonic string, expectedAddress string) common.Address {
-	var owner common.Address
-	c.privateKey, owner = getPrivateKey(mnemonic)
-
-	auth, err := c.getAuthTransactor(client, owner)
+	auth, err := getAuthTransactor(client, mnemonic)
 	if err != nil {
 		panic(err)
 	}
@@ -188,8 +184,9 @@ func (c *DeployContractCmd) deployLiquidity(client *ethclient.Client, mnemonic s
 	if err != nil {
 		panic(err)
 	}
-
+	log.Info("Tx hash = ", tx.Hash())
 	log.Info("Deploying liquidity ... ")
+
 	contractAddr, err := bind.WaitDeployed(context.Background(), client, tx)
 	if err != nil {
 		panic(err)
@@ -204,36 +201,4 @@ You need to update the expected address (both in this file and the liquidity_dev
 	log.Info("Deployed liquidity successfully, addr: ", contractAddr.String())
 
 	return contractAddr
-}
-
-func (c *DeployContractCmd) getAuthTransactor(client *ethclient.Client, address common.Address) (*bind.TransactOpts, error) {
-	nonce, err := client.PendingNonceAt(context.Background(), address)
-	if err != nil {
-		return nil, err
-	}
-
-	gasPrice, err := client.SuggestGasPrice(context.Background())
-	if err != nil {
-		return nil, err
-	}
-
-	// This is the private key of the accounts0
-
-	chainId, err := client.ChainID(context.Background())
-	if err != nil {
-		return nil, err
-	}
-
-	auth, err := bind.NewKeyedTransactorWithChainID(c.privateKey, chainId)
-	if err != nil {
-		return nil, err
-	}
-
-	auth.Nonce = big.NewInt(int64(nonce))
-	auth.Value = big.NewInt(0)
-	auth.GasPrice = gasPrice
-
-	auth.GasLimit = uint64(5_000_000)
-
-	return auth, nil
 }
