@@ -85,6 +85,8 @@ func (c *AddPoolTokenCommand) addToken(urlString, mnemonic, tokenSymbol, tokenAd
 				panic(err)
 			}
 
+			log.Info("Tx hash = ", tx.Hash())
+
 			bind.WaitMined(context.Background(), clients[i], tx)
 			wg.Done()
 		}(i, liquidityAddr)
