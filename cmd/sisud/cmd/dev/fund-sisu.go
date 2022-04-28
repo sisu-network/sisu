@@ -253,7 +253,7 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, mnemonic, recipie
 	tx := ethtypes.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, data)
 
 	privateKey, _ := getPrivateKey(mnemonic)
-	signedTx, err := ethtypes.SignTx(tx, ethtypes.HomesteadSigner{}, privateKey)
+	signedTx, err := ethtypes.SignTx(tx, getSigner(client), privateKey)
 
 	err = client.SendTransaction(context.Background(), signedTx)
 	if err != nil {

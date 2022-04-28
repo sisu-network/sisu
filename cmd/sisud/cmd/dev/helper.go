@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	etypes "github.com/ethereum/go-ethereum/core/types"
+
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil/hdkeychain"
 	"github.com/cosmos/go-bip39"
@@ -89,6 +91,15 @@ func getPrivateKey(mnemonic string) (*ecdsa.PrivateKey, common.Address) {
 	addr := crypto.PubkeyToAddress(publicKey)
 
 	return privateKeyECDSA, addr
+}
+
+func getSigner(client *ethclient.Client) etypes.Signer {
+	chainId, err := client.ChainID(context.Background())
+	if err != nil {
+		panic(err)
+	}
+
+	return etypes.NewEIP2930Signer(chainId)
 }
 
 func getAuthTransactor(client *ethclient.Client, mnemonic string) (*bind.TransactOpts, error) {
