@@ -157,6 +157,7 @@ func (c *DeployContractCmd) deployErc20(client *ethclient.Client, mnemonic strin
 		panic(err)
 	}
 
+	log.Info("Tx hash = ", tx.Hash())
 	log.Info("Deploying erc20 contract ... ")
 	contractAddr, err := bind.WaitDeployed(context.Background(), client, tx)
 	if err != nil {

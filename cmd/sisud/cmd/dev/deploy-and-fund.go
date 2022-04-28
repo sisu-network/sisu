@@ -28,6 +28,8 @@ func DeployAndFund() *cobra.Command {
 			expectedErc20String, _ := cmd.Flags().GetString(flags.ExpectedErc20Addrs)
 			expectedLiquidityString, _ := cmd.Flags().GetString(flags.ExpectedLiquidityAddrs)
 
+			log.Info("chainUrls = ", chainUrls)
+
 			log.Info("========= Deploy ERC20 and Liquidity Pool =========")
 
 			// Deploy ERC20 And liquidity pool
