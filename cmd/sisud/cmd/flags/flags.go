@@ -14,6 +14,7 @@ const (
 	LiquidityAddrs         = "liquidity-addrs"
 	ExpectedErc20Addrs     = "expected-erc20-addrs"
 	ExpectedLiquidityAddrs = "expected-liquidity-addrs"
+	ChainUrl               = "chain-url"
 	ChainUrls              = "chain-urls"
 	SisuRpc                = "sisu-rpc"
 	Amount                 = "amount"
@@ -23,4 +24,8 @@ const (
 	Mnemonic               = "mnemonic"
 	ContractHash           = "contract-hash"
 	Tokens                 = "tokens"
+	Account                = "account"
+	Src                    = "src"
+	SrcUrl                 = "src-url"
+	Dst                    = "dst"
 )

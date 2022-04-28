@@ -58,23 +58,6 @@ func getEthClient(port int) (*ethclient.Client, error) {
 	return ethclient.Dial(fmt.Sprintf("http://0.0.0.0:%d", port))
 }
 
-func getDefaultChainUrl(chain string) string {
-	switch chain {
-	case "ganache1":
-		return "http://0.0.0.0:7545"
-	case "ganache2":
-		return "http://0.0.0.0:8545"
-	case "eth-binance-testnet":
-		return "https://data-seed-prebsc-1-s1.binance.org:8545"
-	case "polygon-testnet":
-		return "https://rpc-mumbai.maticvigil.com"
-	case "xdai":
-		return "https://rpc.gnosischain.com"
-	default:
-		panic(fmt.Errorf("unknown chain %s", chain))
-	}
-}
-
 func getPrivateKey(mnemonic string) (*ecdsa.PrivateKey, common.Address) {
 	seed, err := bip39.NewSeedWithErrorChecking(mnemonic, "")
 	if err != nil {
