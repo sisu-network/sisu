@@ -66,7 +66,7 @@ log_local = {{ .LogDNA.LogLocal }}
 [chains]{{ range $k, $chain := .Chains }}
 [chains.{{ $chain.Id }}]
   chain = "{{ $chain.Id }}"
-  block_time = 1000
+  block_time = {{ $chain.BlockTime }}
   starting_block = 0
   rpc_url = "{{ $chain.Rpc }}"{{ end }}
 `
