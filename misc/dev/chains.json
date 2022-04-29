@@ -4,7 +4,7 @@
     "gas_price": 5000000000
   },
   {
-    "id": "ganache2",
+    "id": "polygon-testnet",
     "gas_price": 10000000000
   }
 ]
