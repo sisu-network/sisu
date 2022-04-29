@@ -7,6 +7,7 @@ import (
 	"math"
 	"math/big"
 	"net"
+	"path/filepath"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -38,6 +39,7 @@ var (
 	flagChainId           = "chain-id"
 	flagConfigString      = "config-string"
 	flagKeyringPassphrase = "keyring-passphrase"
+	flagGenesisFolder     = "genesis-folder"
 )
 
 type localnetGenerator struct{}
@@ -74,10 +76,19 @@ Example:
 			startingIPAddress, _ := cmd.Flags().GetString(flagStartingIPAddress)
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
+			genesisFolder, _ := cmd.Flags().GetString(flagGenesisFolder)
 
 			// Get Chain id and keyring backend from .env file.
 			chainID := "eth-sisu-local"
 			keyringBackend := keyring.BackendTest
+
+			chains := getChains(filepath.Join(genesisFolder, "chains.json"))
+			supportedChains := make(map[string]config.TssChainConfig)
+			for _, chain := range chains {
+				supportedChains[chain.Id] = config.TssChainConfig{
+					Id: chain.Id,
+				}
+			}
 
 			nodeConfig := config.Config{
 				Mode: "dev",
@@ -88,17 +99,10 @@ Example:
 					ApiPort:        25456,
 				},
 				Tss: config.TssConfig{
-					DheartHost: "0.0.0.0",
-					DheartPort: 5678,
-					DeyesUrl:   "http://0.0.0.0:31001",
-					SupportedChains: map[string]config.TssChainConfig{
-						"ganache1": {
-							Id: "ganache1",
-						},
-						"ganache2": {
-							Id: "ganache2",
-						},
-					},
+					DheartHost:      "0.0.0.0",
+					DheartPort:      5678,
+					DeyesUrl:        "http://0.0.0.0:31001",
+					SupportedChains: supportedChains,
 				},
 			}
 
@@ -118,9 +122,9 @@ Example:
 				algoStr:        algo,
 				numValidators:  numValidators,
 				nodeConfigs:    []config.Config{nodeConfig},
-				tokens:         getTokens("./misc/dev/tokens.json"),
-				chains:         getChains("./misc/dev/chains.json"),
-				liquidities:    getLiquidity("./misc/dev/liquid.json"),
+				tokens:         getTokens(filepath.Join(genesisFolder, "tokens.json")),
+				chains:         chains,
+				liquidities:    getLiquidity(filepath.Join(genesisFolder, "liquid.json")),
 				params:         &types.Params{MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3))},
 			}
 
@@ -137,6 +141,7 @@ Example:
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
 	cmd.Flags().String(flags.FlagKeyringBackend, keyring.BackendTest, "Keyring backend. file|os|kwallet|pass|test|memory")
+	cmd.Flags().String(flagGenesisFolder, "./misc/dev", "Relative path to the folder that contains genesis configuration.")
 
 	return cmd
 }
