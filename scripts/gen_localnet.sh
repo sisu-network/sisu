@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 go build -o ./sisu cmd/sisud/main.go
 if [ $? -eq 0 ]; then
