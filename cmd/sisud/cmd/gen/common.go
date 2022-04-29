@@ -17,7 +17,7 @@ import (
 )
 
 type DeyesConfiguration struct {
-	Chains        []ChainConfig
+	Chains        []DeyesChainConfig
 	SisuServerUrl string
 
 	// sql

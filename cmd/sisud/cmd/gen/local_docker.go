@@ -346,7 +346,7 @@ services:
 
 func (g *localDockerGenerator) generateEyesToml(index int, dir string) {
 	deyesConfig := DeyesConfiguration{
-		Chains: []ChainConfig{
+		Chains: []DeyesChainConfig{
 			{
 				Id:  "ganache1",
 				Rpc: "http://ganache1:7545",
