@@ -19,13 +19,13 @@ func DepositSisuTokenCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			amount, _ := cmd.Flags().GetInt64(flags.Amount)
 			index, _ := cmd.Flags().GetInt32(flags.Index)
-
+			consensusKey, _ := cmd.Flags().GetString(flags.ConsensusKey)
 			clientCtx, err := client.GetClientTxContext(cmd)
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewDepositSisuTokenMsg(clientCtx.GetFromAddress().String(), amount, index)
+			msg := types.NewDepositSisuTokenMsg(clientCtx.GetFromAddress().String(), consensusKey, amount, index)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -39,6 +39,7 @@ func DepositSisuTokenCmd() *cobra.Command {
 	cmd.Flags().Int64(flags.Amount, 0, "Sisu token amount")
 	cmd.Flags().String(sdkflags.FlagChainID, "", "name of the sisu chain")
 	cmd.Flags().Int32(flags.Index, 0, "index of the command. This index is used to differentiate calling this contract multiple times")
+	cmd.Flags().String(flags.ConsensusKey, "", "Consensus key of a node")
 
 	return cmd
 }

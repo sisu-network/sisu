@@ -21,4 +21,6 @@ const (
 	Mnemonic            = "mnemonic"
 	ContractHash        = "contract-hash"
 	Tokens              = "tokens"
+	ConsensusKey        = "consensus-key"
+	NodeAddress         = "node-address"
 )

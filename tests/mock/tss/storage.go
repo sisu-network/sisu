@@ -399,7 +399,7 @@ func (mr *MockStorageMockRecorder) IsTxRecordProcessed(hash interface{}) *gomock
 // LoadValidators mocks base method.
 func (m *MockStorage) LoadValidators() []*types.Node {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LoadValidators")
+	ret := m.ctrl.Call(m, "LoadNodesByStatus")
 	ret0, _ := ret[0].([]*types.Node)
 	return ret0
 }
@@ -407,7 +407,7 @@ func (m *MockStorage) LoadValidators() []*types.Node {
 // LoadValidators indicates an expected call of LoadValidators.
 func (mr *MockStorageMockRecorder) LoadValidators() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadValidators", reflect.TypeOf((*MockStorage)(nil).LoadValidators))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadNodesByStatus", reflect.TypeOf((*MockStorage)(nil).LoadValidators))
 }
 
 // PrintStore mocks base method.

@@ -413,7 +413,7 @@ func (db *defaultStorage) SaveNode(node *types.Node) {
 
 func (db *defaultStorage) LoadValidators() []*types.Node {
 	store := db.prefixes[string(prefixNode)]
-	return loadValidators(store)
+	return loadNodesByStatus(store, types.NodeStatus_Validator)
 }
 
 ///// Liquidities

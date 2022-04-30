@@ -145,6 +145,7 @@ func Test_SaveNode(t *testing.T) {
 		},
 		AccAddress:  "addr1",
 		IsValidator: true,
+		Status:      types.NodeStatus_Candidate,
 	}
 	node2 := &types.Node{
 		ConsensusKey: &types.Pubkey{
@@ -153,12 +154,13 @@ func Test_SaveNode(t *testing.T) {
 		},
 		AccAddress:  "addr2",
 		IsValidator: true,
+		Status:      types.NodeStatus_Candidate,
 	}
 
 	saveNode(store, node1)
 	saveNode(store, node2)
 
-	vals := loadValidators(store)
+	vals := loadNodesByStatus(store, types.NodeStatus_Candidate)
 
 	require.Equal(t, 2, len(vals), "there should be 2 validators")
 	require.Equal(t, vals[0].AccAddress, "addr1")

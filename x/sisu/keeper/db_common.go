@@ -3,11 +3,11 @@ package keeper
 import (
 	"encoding/binary"
 	"fmt"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"sort"
 	"strings"
 
 	cstypes "github.com/cosmos/cosmos-sdk/store/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -784,7 +784,7 @@ func updateNodeStatus(store cstypes.KVStore, consKey []byte, nodeStatus types.No
 	saveNode(store, node)
 }
 
-func loadValidators(store cstypes.KVStore) []*types.Node {
+func loadNodesByStatus(store cstypes.KVStore, status types.NodeStatus) []*types.Node {
 	vals := make([]*types.Node, 0)
 
 	iter := store.Iterator(nil, nil)
@@ -796,7 +796,7 @@ func loadValidators(store cstypes.KVStore) []*types.Node {
 			continue
 		}
 
-		if node.IsValidator {
+		if status == types.NodeStatus_Unknown || node.Status == status {
 			vals = append(vals, node)
 		}
 	}

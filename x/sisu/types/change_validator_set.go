@@ -8,9 +8,13 @@ import (
 	"github.com/sisu-network/sisu/utils"
 )
 
+var index = int32(0)
+
 var _ sdk.Msg = &ChangeValidatorSetMsg{}
 
-func NewChangeValidatorSetMsg(signer string, oldValidatorSet, newValidatorSet [][]byte, index int32) *ChangeValidatorSetMsg {
+func NewChangeValidatorSetMsg(signer string, oldValidatorSet, newValidatorSet [][]byte) *ChangeValidatorSetMsg {
+	// TODO: use atomic for index
+	index++
 	return &ChangeValidatorSetMsg{
 		Signer: signer,
 		Data: &ChangeValidatorSetData{

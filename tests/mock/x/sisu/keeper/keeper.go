@@ -498,9 +498,9 @@ func (mr *MockKeeperMockRecorder) IsTxRecordProcessed(ctx, hash interface{}) *go
 }
 
 // LoadValidators mocks base method.
-func (m *MockKeeper) LoadValidators(ctx types.Context) []*types0.Node {
+func (m *MockKeeper) LoadNodesByStatus(ctx types.Context) []*types0.Node {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LoadValidators", ctx)
+	ret := m.ctrl.Call(m, "LoadNodesByStatus", ctx)
 	ret0, _ := ret[0].([]*types0.Node)
 	return ret0
 }
@@ -508,7 +508,7 @@ func (m *MockKeeper) LoadValidators(ctx types.Context) []*types0.Node {
 // LoadValidators indicates an expected call of LoadValidators.
 func (mr *MockKeeperMockRecorder) LoadValidators(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadValidators", reflect.TypeOf((*MockKeeper)(nil).LoadValidators), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadNodesByStatus", reflect.TypeOf((*MockKeeper)(nil).LoadNodesByStatus), ctx)
 }
 
 // PrintStore mocks base method.

@@ -7,10 +7,10 @@ import (
 
 var _ sdk.Msg = &DepositSisuTokenMsg{}
 
-func NewDepositSisuTokenMsg(signer string, amount int64, index int32) *DepositSisuTokenMsg {
+func NewDepositSisuTokenMsg(signer string, consensusKey string, amount int64, index int32) *DepositSisuTokenMsg {
 	return &DepositSisuTokenMsg{
 		Signer: signer,
-		Data:   &DepositSisuData{Amount: amount, Index: index},
+		Data:   &DepositSisuData{Amount: amount, ConsensusKey: consensusKey, Index: index},
 	}
 }
 
@@ -21,7 +21,7 @@ func (msg *DepositSisuTokenMsg) Route() string {
 
 // Type ...
 func (msg *DepositSisuTokenMsg) Type() string {
-	return MsgTypeDepositSisuTokenWithSigner
+	return MsgTypeDepositSisuToken
 }
 
 // GetSigners ...

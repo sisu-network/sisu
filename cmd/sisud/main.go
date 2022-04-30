@@ -25,8 +25,9 @@ func loadConfig() {
 		}
 
 		app.SisuHome = filepath.Join(userHomeDir, "."+app.Name)
-		app.MainAppHome = filepath.Join(app.SisuHome, "/main")
 	}
+
+	app.MainAppHome = filepath.Join(app.SisuHome, "/main")
 }
 
 func main() {

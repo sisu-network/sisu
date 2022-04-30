@@ -21,6 +21,7 @@ func DevCmd() *cobra.Command {
 	cmd.AddCommand(DeployAndFund())
 	cmd.AddCommand(Swap())
 	cmd.AddCommand(Query())
+	cmd.AddCommand(SlashValidatorCmd())
 
 	return cmd
 }

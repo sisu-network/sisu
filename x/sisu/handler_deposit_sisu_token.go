@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 
@@ -70,7 +71,7 @@ func (h *HandlerDepositSisuToken) doDepositSisuToken(ctx sdk.Context, msg *types
 
 func (h *HandlerDepositSisuToken) addToCandidateNode(ctx sdk.Context, msg *types.DepositSisuTokenMsg) {
 	h.valManager.AddNode(ctx, &types.Node{
-		Id: "",
+		Id: hex.EncodeToString(msg.GetSender().Bytes()),
 		ConsensusKey: &types.Pubkey{
 			Type:  "ed25519",
 			Bytes: []byte(msg.Data.ConsensusKey),
@@ -79,4 +80,8 @@ func (h *HandlerDepositSisuToken) addToCandidateNode(ctx sdk.Context, msg *types
 		IsValidator: false,
 		Status:      types.NodeStatus_Candidate,
 	})
+
+	log.Debug("addToCandidateNode = ", h.valManager.GetNodesByStatus(ctx, types.NodeStatus_Candidate))
+
+	log.Debugf("added node %s to candidate", msg.GetSender().String())
 }

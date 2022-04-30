@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -15,7 +16,7 @@ type ValidatorManager interface {
 	UpdateNodeStatus(ctx sdk.Context, accAddress string, consKey []byte, status types.NodeStatus)
 	IsValidator(ctx sdk.Context, signer string) bool
 	SetValidators(ctx sdk.Context, nodes []*types.Node) error
-	GetVals(ctx sdk.Context) map[string]*types.Node
+	GetNodesByStatus(ctx sdk.Context, status types.NodeStatus) map[string]*types.Node
 	GetExceedSlashThresholdValidators(ctx sdk.Context) ([]*types.Node, error)
 }
 
@@ -33,7 +34,7 @@ func NewValidatorManager(keeper keeper.Keeper) ValidatorManager {
 	}
 }
 
-func (m *DefaultValidatorManager) GetVals(ctx sdk.Context) map[string]*types.Node {
+func (m *DefaultValidatorManager) GetNodesByStatus(ctx sdk.Context, status types.NodeStatus) map[string]*types.Node {
 	var vals map[string]*types.Node
 	m.valLock.RLock()
 	vals = m.vals
@@ -43,7 +44,7 @@ func (m *DefaultValidatorManager) GetVals(ctx sdk.Context) map[string]*types.Nod
 		return vals
 	}
 
-	valsArr := m.keeper.LoadValidators(ctx)
+	valsArr := m.keeper.LoadNodesByStatus(ctx, status)
 	vals = make(map[string]*types.Node)
 	for _, val := range valsArr {
 		vals[val.AccAddress] = val
@@ -59,7 +60,7 @@ func (m *DefaultValidatorManager) GetVals(ctx sdk.Context) map[string]*types.Nod
 func (m *DefaultValidatorManager) AddNode(ctx sdk.Context, node *types.Node) {
 	m.keeper.SaveNode(ctx, node)
 
-	vals := m.GetVals(ctx)
+	vals := m.GetNodesByStatus(ctx, types.NodeStatus_Unknown)
 
 	m.valLock.Lock()
 	vals[node.AccAddress] = node
@@ -69,7 +70,7 @@ func (m *DefaultValidatorManager) AddNode(ctx sdk.Context, node *types.Node) {
 
 func (m *DefaultValidatorManager) UpdateNodeStatus(ctx sdk.Context, accAddress string, consKey []byte, status types.NodeStatus) {
 	m.keeper.UpdateNodeStatus(ctx, consKey, status)
-	vals := m.GetVals(ctx)
+	vals := m.GetNodesByStatus(ctx, types.NodeStatus_Unknown)
 
 	m.valLock.RLock()
 	node := vals[accAddress]
@@ -90,7 +91,7 @@ func (m *DefaultValidatorManager) UpdateNodeStatus(ctx sdk.Context, accAddress s
 }
 
 func (m *DefaultValidatorManager) IsValidator(ctx sdk.Context, signer string) bool {
-	vals := m.GetVals(ctx)
+	vals := m.GetNodesByStatus(ctx, types.NodeStatus_Unknown)
 
 	m.valLock.RLock()
 	defer m.valLock.RUnlock()
@@ -119,13 +120,21 @@ func (m *DefaultValidatorManager) SetValidators(ctx sdk.Context, nodes []*types.
 // GetExceedSlashThresholdValidators return validators who has too much slash points (exceed threshold)
 func (m *DefaultValidatorManager) GetExceedSlashThresholdValidators(ctx sdk.Context) ([]*types.Node, error) {
 	slashValidators := make([]*types.Node, 0)
-	validators := m.GetVals(ctx)
+	validators := m.GetNodesByStatus(ctx, types.NodeStatus_Unknown)
 
 	for _, validator := range validators {
-		slashPoint, err := m.keeper.GetSlashToken(ctx, validator.ConsensusKey.GetBytes())
+		addr, err := sdk.AccAddressFromBech32(validator.AccAddress)
+		if err != nil {
+			log.Error("error when parsing addr. error = ", err)
+			return nil, err
+		}
+
+		slashPoint, err := m.keeper.GetSlashToken(ctx, addr)
 		if err != nil {
 			return nil, err
 		}
+
+		log.Debugf("slash point of address %s is %d", addr, slashPoint)
 
 		if slashPoint <= SlashPointThreshold {
 			continue
