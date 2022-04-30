@@ -1,0 +1,15 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message SlashValidatorMsg {
+  string signer = 1;
+  SlashValidatorData data = 2;
+}
+
+message SlashValidatorData{
+  string nodeAddress = 1;
+  int64 slashPoint = 2;
+  int32 index = 3;
+}
