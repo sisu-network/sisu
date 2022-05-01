@@ -497,18 +497,18 @@ func (mr *MockKeeperMockRecorder) IsTxRecordProcessed(ctx, hash interface{}) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsTxRecordProcessed", reflect.TypeOf((*MockKeeper)(nil).IsTxRecordProcessed), ctx, hash)
 }
 
-// LoadValidators mocks base method.
-func (m *MockKeeper) LoadNodesByStatus(ctx types.Context) []*types0.Node {
+// LoadNodesByStatus mocks base method.
+func (m *MockKeeper) LoadNodesByStatus(ctx types.Context, status types0.NodeStatus) []*types0.Node {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LoadNodesByStatus", ctx)
+	ret := m.ctrl.Call(m, "LoadNodesByStatus", ctx, status)
 	ret0, _ := ret[0].([]*types0.Node)
 	return ret0
 }
 
-// LoadValidators indicates an expected call of LoadValidators.
-func (mr *MockKeeperMockRecorder) LoadValidators(ctx interface{}) *gomock.Call {
+// LoadNodesByStatus indicates an expected call of LoadNodesByStatus.
+func (mr *MockKeeperMockRecorder) LoadNodesByStatus(ctx, status interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadNodesByStatus", reflect.TypeOf((*MockKeeper)(nil).LoadNodesByStatus), ctx)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadNodesByStatus", reflect.TypeOf((*MockKeeper)(nil).LoadNodesByStatus), ctx, status)
 }
 
 // PrintStore mocks base method.

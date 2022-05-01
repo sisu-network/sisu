@@ -34,6 +34,7 @@ func NewValidatorManager(keeper keeper.Keeper) ValidatorManager {
 	}
 }
 
+// GetNodesByStatus if status = types.NodeStatus_Unknown, returns all nodes
 func (m *DefaultValidatorManager) GetNodesByStatus(ctx sdk.Context, status types.NodeStatus) map[string]*types.Node {
 	var vals map[string]*types.Node
 	m.valLock.RLock()
@@ -60,6 +61,7 @@ func (m *DefaultValidatorManager) GetNodesByStatus(ctx sdk.Context, status types
 func (m *DefaultValidatorManager) AddNode(ctx sdk.Context, node *types.Node) {
 	m.keeper.SaveNode(ctx, node)
 
+	// get all nodes
 	vals := m.GetNodesByStatus(ctx, types.NodeStatus_Unknown)
 
 	m.valLock.Lock()

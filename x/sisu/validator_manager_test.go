@@ -72,7 +72,7 @@ func TestDefaultValidatorManager_UpdateNodeStatus(t *testing.T) {
 		})
 
 		validatorManager.UpdateNodeStatus(ctx, accAddr, pk, types.NodeStatus_Candidate)
-		vals := validatorManager.GetNodesByStatus(ctx)
+		vals := validatorManager.GetNodesByStatus(ctx, types.NodeStatus_Candidate)
 		node := vals[accAddr]
 		require.Equal(t, types.NodeStatus_Candidate, node.Status)
 		require.False(t, node.IsValidator)
@@ -94,7 +94,7 @@ func TestDefaultValidatorManager_UpdateNodeStatus(t *testing.T) {
 		})
 
 		validatorManager.UpdateNodeStatus(ctx, accAddr, pk, types.NodeStatus_Validator)
-		vals := validatorManager.GetNodesByStatus(ctx)
+		vals := validatorManager.GetNodesByStatus(ctx, types.NodeStatus_Candidate)
 		node := vals[accAddr]
 		require.NotEmpty(t, node)
 		require.Equal(t, types.NodeStatus_Validator, node.Status)
