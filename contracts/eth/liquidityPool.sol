@@ -1363,6 +1363,9 @@ contract LiquidityPool is Ownable, ILiquidityPool {
     {
         require(tokenAddrs.length == names.length);
         for (uint256 i = 0; i < tokenAddrs.length; i++) {
+            if (address(lpTokenMapping[tokenAddrs[i]]) != address(0x0)) {
+                continue;
+            }
             LPToken lpContract = new LPToken(names[i]);
             lpTokenMapping[tokenAddrs[i]] = lpContract;
 
