@@ -122,7 +122,7 @@ func (m *DefaultValidatorManager) SetValidators(ctx sdk.Context, nodes []*types.
 // GetExceedSlashThresholdValidators return validators who has too much slash points (exceed threshold)
 func (m *DefaultValidatorManager) GetExceedSlashThresholdValidators(ctx sdk.Context) ([]*types.Node, error) {
 	slashValidators := make([]*types.Node, 0)
-	validators := m.GetNodesByStatus(ctx, types.NodeStatus_Unknown)
+	validators := m.keeper.LoadNodesByStatus(ctx, types.NodeStatus_Validator)
 
 	for _, validator := range validators {
 		addr, err := sdk.AccAddressFromBech32(validator.AccAddress)
