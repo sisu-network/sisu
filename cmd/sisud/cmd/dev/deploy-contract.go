@@ -181,7 +181,7 @@ func (c *DeployContractCmd) deployLiquidity(client *ethclient.Client, mnemonic s
 		panic(err)
 	}
 
-	_, tx, _, err := liquidity.DeployLiquiditypool(auth, client, []common.Address{}, []string{})
+	_, tx, _, err := liquidity.DeployLiquiditypool(auth, client)
 	if err != nil {
 		panic(err)
 	}
