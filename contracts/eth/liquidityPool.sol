@@ -1345,7 +1345,6 @@ contract LiquidityPool is Ownable, ILiquidityPool {
             }
             LPToken lpToken = new LPToken(names[i]);
             lpTokenMapping[tokenAddrs[i]] = lpToken;
-            lpToken.setLiquidity(address(this));
 
             emit AddToken(tokenAddrs[i], address(lpToken), names[i]);
         }
