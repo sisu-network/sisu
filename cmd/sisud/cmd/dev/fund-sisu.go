@@ -400,10 +400,10 @@ func (c *fundAccountCmd) doSanityCheck(clients []*ethclient.Client, tokenAddrs, 
 			panic(err)
 		}
 
-		amountInWei := new(big.Int).Mul(big.NewInt(500), utils.EthToWei)
-
-		if balance.Cmp(amountInWei) != 0 {
-			panic(fmt.Sprintf("balance does not match: expected %s, actual %s", amountInWei.String(), balance.String()))
+		if balance.Cmp(big.NewInt(0)) == 0 {
+			panic(fmt.Sprintf("balance cannot be 0"))
+		} else {
+			log.Verbose("balance of token ", tokenAddrs[i], " = ", balance)
 		}
 	}
 }

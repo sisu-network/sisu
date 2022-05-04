@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -30,6 +31,7 @@ Usage:
 			src, _ := cmd.Flags().GetString(flags.Chain)
 			srcUrl, _ := cmd.Flags().GetString(flags.ChainUrl)
 			account, _ := cmd.Flags().GetString(flags.Account)
+			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 
 			log.Infof("Querying token %s on chain %s", tokenId, src)
 
@@ -46,7 +48,7 @@ Usage:
 
 			c := &queryCommand{}
 
-			tokens := c.getTokens()
+			tokens := c.getTokens(genesisFolder)
 			var token *types.Token
 
 			for _, t := range tokens {
@@ -88,14 +90,15 @@ Usage:
 	cmd.Flags().String(flags.ChainUrl, "http://127.0.0.1:8545", "Source chain url")
 	cmd.Flags().String(flags.Erc20Symbol, "SISU", "Id of the token to be queried")
 	cmd.Flags().String(flags.Account, "", "account address that we want to query")
+	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "Location of genesis folder. This is used to load the list of tokens.")
 
 	return cmd
 }
 
-func (c *queryCommand) getTokens() []*types.Token {
+func (c *queryCommand) getTokens(genesisFolder string) []*types.Token {
 	tokens := []*types.Token{}
 
-	dat, err := os.ReadFile("./misc/dev/tokens.json")
+	dat, err := os.ReadFile(filepath.Join(genesisFolder, "tokens.json"))
 	if err != nil {
 		panic(err)
 	}

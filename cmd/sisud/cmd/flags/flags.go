@@ -28,4 +28,5 @@ const (
 	Src                    = "src"
 	SrcUrl                 = "src-url"
 	Dst                    = "dst"
+	GenesisFolder          = "genesis-folder"
 )
