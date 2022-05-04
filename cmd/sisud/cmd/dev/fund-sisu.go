@@ -44,7 +44,7 @@ func FundSisu() *cobra.Command {
 			chainString, _ := cmd.Flags().GetString(flags.Chains)
 			urlString, _ := cmd.Flags().GetString(flags.ChainUrls)
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
-			erc20AddrString, _ := cmd.Flags().GetString(flags.Erc20Addrs)
+
 			liquidityAddrString, _ := cmd.Flags().GetString(flags.LiquidityAddrs)
 
 			amount, _ := cmd.Flags().GetInt(flags.Amount)
@@ -52,7 +52,7 @@ func FundSisu() *cobra.Command {
 			log.Info("Amount = ", amount)
 
 			c := &fundAccountCmd{}
-			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, erc20AddrString, liquidityAddrString, sisuRpc, amount)
+			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, liquidityAddrString, sisuRpc, amount)
 
 			return nil
 		},
@@ -62,7 +62,6 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.ChainUrls, "http://0.0.0.0:7545,http://0.0.0.0:8545", "RPCs of all the chains we want to fund.")
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
-	cmd.Flags().String(flags.Erc20Addrs, fmt.Sprintf("%s,%s", ExpectedErc20Address, ExpectedErc20Address), "List of erc20 addresses")
 	cmd.Flags().String(flags.LiquidityAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "List of liquidity pool addresses")
 
 	cmd.Flags().Int(flags.Amount, 100, "The amount that gateway addresses will receive")
@@ -70,12 +69,10 @@ func FundSisu() *cobra.Command {
 	return cmd
 }
 
-func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic, erc20AddrString, liquidityAddrString, sisuRpc string, amount int) {
+func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic, liquidityAddrString, sisuRpc string, amount int) {
 	chains := strings.Split(chainString, ",")
-	tokenAddrs := strings.Split(erc20AddrString, ",")
 	liquidityAddrs := strings.Split(liquidityAddrString, ",")
 
-	log.Info("tokenAddrs = ", tokenAddrs)
 	log.Info("liquidityAddrs = ", liquidityAddrs)
 
 	wg := &sync.WaitGroup{}
@@ -118,17 +115,6 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	log.Info("Now we wait until gateway contracts are deployed on all chains.")
 	gateways := c.waitForGatewayDeployed(ctx, chains, sisuRpc)
 
-	// Approve the contract with some preallocated token from account0
-	wg.Add(len(clients))
-	for i, client := range clients {
-		go func(i int, client *ethclient.Client) {
-			approveAddress(client, mnemonic, tokenAddrs[i], gateways[i])
-			wg.Done()
-		}(i, client)
-	}
-	wg.Wait()
-	log.Info("Gateway approval done!")
-
 	// Set gateway for the liquidity
 	log.Info("Set gateway address for liqiuitidy pool")
 	wg.Add(len(gateways))
@@ -139,8 +125,6 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 		}(i, client)
 	}
 	wg.Wait()
-
-	c.doSanityCheck(clients, tokenAddrs, liquidityAddrs, gateways, amount)
 }
 
 func (c *fundAccountCmd) waitForGatewayCreationInSisuDb(goCtx context.Context, chains []string, sisuRpc string) []string {
@@ -390,20 +374,4 @@ func (c *fundAccountCmd) transferLiquidityOwnership(
 	}
 
 	return nil
-}
-
-func (c *fundAccountCmd) doSanityCheck(clients []*ethclient.Client, tokenAddrs, liquidityAddrs, gateways []string, amount int) {
-	// Query balance
-	for i, client := range clients {
-		balance, err := queryErc20Balance(client, tokenAddrs[i], liquidityAddrs[i])
-		if err != nil {
-			panic(err)
-		}
-
-		if balance.Cmp(big.NewInt(0)) == 0 {
-			panic(fmt.Sprintf("balance cannot be 0"))
-		} else {
-			log.Verbose("balance of token ", tokenAddrs[i], " = ", balance)
-		}
-	}
 }

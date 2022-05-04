@@ -57,7 +57,7 @@ func DeployAndFund() *cobra.Command {
 
 			// Fund Sisu's account
 			fundSisuCmd := &fundAccountCmd{}
-			fundSisuCmd.fundSisuAccounts(cmd.Context(), chainString, chainUrls, mnemonic, tokenAddrString, liquidityAddrString, sisuRpc, amount)
+			fundSisuCmd.fundSisuAccounts(cmd.Context(), chainString, chainUrls, mnemonic, liquidityAddrString, sisuRpc, amount)
 
 			return nil
 		},
