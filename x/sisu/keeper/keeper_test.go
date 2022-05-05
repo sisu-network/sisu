@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"encoding/base64"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -8,6 +9,7 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 
 	"github.com/cosmos/cosmos-sdk/store"
+	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
@@ -176,4 +178,24 @@ func TestDefaultKeeper_GetTopBalance(t *testing.T) {
 	require.Len(t, top2Balances, 2)
 	require.Equal(t, addr1, top2Balances[0].Bytes())
 	require.Equal(t, addr3, top2Balances[1].Bytes())
+}
+
+func TestDefaultKeeper_SaveAndGetValidatorUpdates(t *testing.T) {
+	t.Parallel()
+
+	keeper, ctx := getTestKeeperAndContext()
+
+	bz1, err := base64.StdEncoding.DecodeString("sk9Ab7wGydi2YEXJzOWAHlKBc/3un2i78hXEl0Mlohs=")
+	require.NoError(t, err)
+	v1 := abci.Ed25519ValidatorUpdate(bz1, 100)
+
+	bz2, err := base64.StdEncoding.DecodeString("FAmIvjG2OsZ3wAdoqoXOwJPud9LCofVmF7CZfIXCO2k=")
+	require.NoError(t, err)
+	v2 := abci.Ed25519ValidatorUpdate(bz2, 0)
+
+	valUpdates := []abci.ValidatorUpdate{v1, v2}
+	require.NoError(t, keeper.SaveIncomingValidatorUpdates(ctx, valUpdates))
+
+	afterSaved := keeper.GetIncomingValidatorUpdates(ctx)
+	require.Len(t, afterSaved, 2)
 }

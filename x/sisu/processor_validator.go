@@ -17,28 +17,31 @@ func (p *Processor) EndBlockValidator(ctx sdk.Context) []abci.ValidatorUpdate {
 		return []abci.ValidatorUpdate{}
 	}
 
-	log.Debug("newValidators = ", newValidators)
-	log.Debug("oldValidators = ", oldValidators)
+	log.Debug("len = ", len(newValidators), " newValidators = ", newValidators)
+	log.Debug("len = ", len(oldValidators), " oldValidators = ", oldValidators)
 
-	newValidatorKeys := make([][]byte, 0, len(newValidators))
-	oldValidatorKeys := make([][]byte, 0, len(oldValidators))
-	validators := make([]abci.ValidatorUpdate, 0, len(newValidators)+len(oldValidators))
+	newValidatorKeys := make([][]byte, 0)
+	oldValidatorKeys := make([][]byte, 0)
 	for _, val := range newValidators {
-		p.validatorManager.UpdateNodeStatus(ctx, val.AccAddress, val.ConsensusKey.GetBytes(), types.NodeStatus_Validator)
-		validators = append(validators, abci.Ed25519ValidatorUpdate(val.ConsensusKey.GetBytes(), 100))
+		//p.validatorManager.UpdateNodeStatus(ctx, val.AccAddress, val.ConsensusKey.GetBytes(), types.NodeStatus_Validator)
 		newValidatorKeys = append(newValidatorKeys, val.ConsensusKey.GetBytes())
 	}
 
 	for _, val := range oldValidators {
-		p.validatorManager.UpdateNodeStatus(ctx, val.AccAddress, val.ConsensusKey.GetBytes(), types.NodeStatus_Candidate)
-		validators = append(validators, abci.Ed25519ValidatorUpdate(val.ConsensusKey.GetBytes(), 0))
+		//p.validatorManager.UpdateNodeStatus(ctx, val.AccAddress, val.ConsensusKey.GetBytes(), types.NodeStatus_Candidate)
 		oldValidatorKeys = append(oldValidatorKeys, val.ConsensusKey.GetBytes())
 	}
 
+	log.Debug("len oldValidatorKeys = ", len(oldValidatorKeys))
+	log.Debug("len newValidatorKeys = ", len(newValidatorKeys))
 	changeValSetMsg := types.NewChangeValidatorSetMsg(p.appKeys.GetSignerAddress().String(), oldValidatorKeys, newValidatorKeys)
 	p.txSubmit.SubmitMessageAsync(changeValSetMsg)
 
-	return validators
+	incomingValUpdate := p.keeper.GetIncomingValidatorUpdates(ctx)
+	for i, vUp := range incomingValUpdate {
+		log.Debugf("incomingValUpdate[%d] pubkey = %s, power = %d\n", i, vUp.PubKey.String(), vUp.Power)
+	}
+	return p.keeper.GetIncomingValidatorUpdates(ctx)
 }
 
 // detects candidate nodes will be promoted to active node and active nodes will be removed from validator set

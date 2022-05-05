@@ -140,6 +140,25 @@ func (c *DefaultDheartClient) SetSisuReady(isReady bool) error {
 }
 
 func (c *DefaultDheartClient) Reshare(oldPubKeys, newPubKeys []ctypes.PubKey) error {
-	// TODO: Call to dheart
+	var r interface{}
+	newKeys := make([][]byte, 0, len(newPubKeys))
+	oldKeys := make([][]byte, 0, len(oldPubKeys))
+	for _, k := range newPubKeys {
+		newKeys = append(newKeys, k.Bytes())
+	}
+	for _, k := range oldPubKeys {
+		oldKeys = append(oldKeys, k.Bytes())
+	}
+
+	req := &htypes.ReshareRequest{
+		NewValidatorSetPubKeyBytes: newKeys,
+		OldValidatorSetPubKeyBytes: oldKeys,
+	}
+	err := c.client.CallContext(context.Background(), &r, "tss_reshare", req)
+	if err != nil {
+		log.Error("Cannot call Reshare, err = ", err)
+		return err
+	}
+
 	return nil
 }

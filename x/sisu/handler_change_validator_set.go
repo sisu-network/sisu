@@ -46,6 +46,8 @@ func (h *HandlerChangeValidatorSet) doChangeValidatorSet(msg *types.ChangeValida
 		return err
 	}
 
+	log.Debug("oldPubKeys = ", oldPubKeys)
+	log.Debug("newPubKeys = ", newPubKeys)
 	dheartClient := h.mc.DheartClient()
 	if err := dheartClient.Reshare(oldPubKeys, newPubKeys); err != nil {
 		log.Error("error when sending reshare request to heart. error = ", err)

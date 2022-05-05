@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 var _ Keeper = (*DefaultKeeper)(nil)
@@ -109,6 +110,10 @@ type Keeper interface {
 	DecBalance(ctx sdk.Context, address sdk.AccAddress, amount int64) error
 	GetBalance(ctx sdk.Context, address sdk.AccAddress) (int64, error)
 	GetTopBalance(ctx sdk.Context, n int) []sdk.AccAddress
+
+	// Validator update
+	SaveIncomingValidatorUpdates(ctx sdk.Context, validatorUpdates abci.ValidatorUpdates) error
+	GetIncomingValidatorUpdates(ctx sdk.Context) abci.ValidatorUpdates
 }
 
 type DefaultKeeper struct {
@@ -447,6 +452,17 @@ func (k *DefaultKeeper) GetBalance(ctx sdk.Context, address sdk.AccAddress) (int
 func (k *DefaultKeeper) GetTopBalance(ctx sdk.Context, n int) []sdk.AccAddress {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixNodeBalance)
 	return getTopBalances(store, n)
+}
+
+///// Validator updates
+func (k *DefaultKeeper) SaveIncomingValidatorUpdates(ctx sdk.Context, validatorUpdates abci.ValidatorUpdates) error {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixValidatorUpdate)
+	return saveValidatorUpdates(store, validatorUpdates)
+}
+
+func (k *DefaultKeeper) GetIncomingValidatorUpdates(ctx sdk.Context) abci.ValidatorUpdates {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixValidatorUpdate)
+	return getValidatorUpdates(store)
 }
 
 ///// Debug

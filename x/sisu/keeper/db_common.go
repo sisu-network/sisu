@@ -1,6 +1,7 @@
 package keeper
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"sort"
@@ -10,6 +11,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmTypes "github.com/tendermint/tendermint/abci/types"
 )
 
 // TODO: Move txout's byte into separate store.
@@ -35,6 +38,7 @@ var (
 	prefixParams                 = []byte{0x13}
 	prefixSlash                  = []byte{0x14}
 	prefixNodeBalance            = []byte{0x15}
+	prefixValidatorUpdate        = []byte{0x16}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -87,9 +91,8 @@ func getGasPriceKey(chain string, height int64) []byte {
 	return []byte(fmt.Sprintf("%s__%d", chain, height))
 }
 
-func getLiquidityKey(chain string) []byte {
-	// chain
-	return []byte(chain)
+func getValidatorUpdatesKey() []byte {
+	return []byte(fmt.Sprintf("validator_update"))
 }
 
 ///// TxREcord
@@ -1012,6 +1015,49 @@ func getOrderedNodeBalances(store cstypes.KVStore) []*NodeBalance {
 	})
 
 	return allNodeBalances
+}
+
+func saveValidatorUpdates(store cstypes.KVStore, validatorUpdates abci.ValidatorUpdates) error {
+	log.Debug("Save incoming validator update", validatorUpdates)
+	resetValidatorUpdate(store)
+	for i, v := range validatorUpdates {
+		buf := bytes.NewBuffer(make([]byte, 0))
+		if err := tmTypes.WriteMessage(&v, buf); err != nil {
+			log.Error("error when write validator update message. error = ", err)
+			return err
+		}
+
+		key := make([]byte, 4)
+		binary.BigEndian.PutUint32(key, uint32(i))
+
+		store.Set(key, buf.Bytes())
+	}
+
+	return nil
+}
+
+func getValidatorUpdates(store cstypes.KVStore) abci.ValidatorUpdates {
+	validatorUpdates := make(abci.ValidatorUpdates, 0)
+	iter := store.Iterator(nil, nil)
+	for ; iter.Valid(); iter.Next() {
+		buf := bytes.NewBuffer(iter.Value())
+		v := new(abci.ValidatorUpdate)
+		if err := tmTypes.ReadMessage(buf, v); err != nil {
+			log.Error("error when read validate update from buffer. error = ", err)
+			return abci.ValidatorUpdates{}
+		}
+
+		validatorUpdates = append(validatorUpdates, *v)
+	}
+
+	return validatorUpdates
+}
+
+func resetValidatorUpdate(store cstypes.KVStore) {
+	iter := store.Iterator(nil, nil)
+	for ; iter.Valid(); iter.Next() {
+		store.Delete(iter.Key())
+	}
 }
 
 ///// Debug functions

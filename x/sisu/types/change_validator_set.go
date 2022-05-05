@@ -87,5 +87,8 @@ func (msg *ChangeValidatorSetMsg) GetOldAndNewValidatorSet() ([]types.PubKey, []
 		newValSet = append(newValSet, pk)
 	}
 
+	log.Debug("len oldValSet = ", len(oldValSet))
+	log.Debug("len newValSet = ", len(newValSet))
+
 	return oldValSet, newValSet, nil
 }

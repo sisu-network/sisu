@@ -114,6 +114,15 @@ func (a *ApiHandler) KeysignResult(result *htypes.KeysignResult) {
 	}
 }
 
+func (a *ApiHandler) ReshareResult(result *htypes.ReshareResult) {
+	log.Info("There is reshare result")
+	handler := a.getAppLogicListener()
+	if handler != nil {
+		log.Debug("On going reshare result...")
+		go handler.OnReshareResult(result)
+	}
+}
+
 func (a *ApiHandler) PostDeploymentResult(result *etypes.DispatchedTxResult) {
 	listener := a.getAppLogicListener()
 	if listener != nil {

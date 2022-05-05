@@ -216,7 +216,7 @@ func getNode(kb keyring.Keyring, algoStr string, nodeDirName string, outputDir s
 		panic(err)
 	}
 
-	nodeId, tendermintPubKey, err := InitializeNodeValidatorFilesFromMnemonic(tmConfig, secret)
+	nodeId, cosmosPubKey, err := InitializeNodeValidatorFilesFromMnemonic(tmConfig, secret)
 	if err != nil {
 		_ = os.RemoveAll(outputDir)
 		panic(err)
@@ -225,13 +225,13 @@ func getNode(kb keyring.Keyring, algoStr string, nodeDirName string, outputDir s
 	return &types.Node{
 		Id: nodeId,
 		ConsensusKey: &types.Pubkey{
-			Type:  tendermintPubKey.Type(),
-			Bytes: tendermintPubKey.Bytes(),
+			Type:  cosmosPubKey.Type(),
+			Bytes: cosmosPubKey.Bytes(),
 		},
 		AccAddress:  addr.String(),
 		IsValidator: true,
 		Status:      types.NodeStatus_Validator,
-	}, secret, tendermintPubKey
+	}, secret, cosmosPubKey
 }
 
 func initGenFiles(
