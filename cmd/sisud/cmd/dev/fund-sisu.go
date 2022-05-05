@@ -239,6 +239,8 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, mnemonic, recipie
 	privateKey, _ := getPrivateKey(mnemonic)
 	signedTx, err := ethtypes.SignTx(tx, getSigner(client), privateKey)
 
+	log.Info("Tx hash = ", signedTx.Hash())
+
 	err = client.SendTransaction(context.Background(), signedTx)
 	if err != nil {
 		panic(err)
