@@ -3,7 +3,9 @@ package gen
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"math/big"
 	"net"
@@ -105,6 +107,9 @@ Example:
 					SupportedChains: supportedChains,
 				},
 			}
+
+			deyesChains := generator.readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
+			generator.generateEyesToml("../deyes", deyesChains)
 
 			settings := &Setting{
 				clientCtx:      clientCtx,
@@ -220,4 +225,33 @@ func (g *localnetGenerator) getAuthTransactor(client *ethclient.Client, address 
 	auth.GasLimit = uint64(10_000_000)
 
 	return auth, nil
+}
+
+func (g *localnetGenerator) readDeyesChainConfigs(path string) []DeyesChainConfig {
+	deyesChains := make([]DeyesChainConfig, 0)
+	file, _ := ioutil.ReadFile(path)
+	err := json.Unmarshal([]byte(file), &deyesChains)
+	if err != nil {
+		panic(err)
+	}
+
+	return deyesChains
+}
+
+func (g *localnetGenerator) generateEyesToml(dir string, chainConfigs []DeyesChainConfig) {
+	sqlConfig := SqlConfig{}
+	sqlConfig.Host = "localhost"
+	sqlConfig.Port = 3306
+	sqlConfig.Username = "root"
+	sqlConfig.Password = "password"
+	sqlConfig.Schema = "deyes"
+
+	deyesConfig := DeyesConfiguration{
+		Chains: chainConfigs,
+
+		Sql:           sqlConfig,
+		SisuServerUrl: fmt.Sprintf("http://%s:25456", "0.0.0.0"),
+	}
+
+	writeDeyesConfig(deyesConfig, dir)
 }

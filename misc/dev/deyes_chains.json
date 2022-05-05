@@ -1,0 +1,14 @@
+[
+  {
+    "id": "ganache1",
+    "block_time": 3000,
+    "starting_block": 0,
+    "rpc_url": "http://localhost:7545"
+  },
+  {
+    "id": "ganache2",
+    "block_time": 3000,
+    "starting_block": 0,
+    "rpc_url": "http://localhost:8545"
+  }
+]
