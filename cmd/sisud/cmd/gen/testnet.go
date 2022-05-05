@@ -51,7 +51,7 @@ type DeyesChainConfig struct {
 	Id        string `json:"id"`
 	GasPrice  int64  `json:"gas_price"`
 	BlockTime int    `json:"block_time"`
-	Rpc       string `json:"rpc"`
+	RpcUrl    string `json:"rpc_url"`
 }
 
 type SqlConfig struct {
