@@ -20,6 +20,8 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
 
+	econfig "github.com/sisu-network/deyes/config"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
@@ -27,6 +29,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
@@ -44,14 +47,6 @@ type TestnetConfig struct {
 	Nodes           []TestnetNode    `json:"nodes"`
 	DeyesChainsPath string           `json:"deyes_chains_path"`
 	LogDNAConfig    log.LogDNAConfig `json:"log_dna_config"`
-}
-
-// Deyes chains config, which is different from Sisu's chain configs
-type DeyesChainConfig struct {
-	Id        string `json:"id"`
-	GasPrice  int64  `json:"gas_price"`
-	BlockTime int    `json:"block_time"`
-	RpcUrl    string `json:"rpc_url"`
 }
 
 type SqlConfig struct {
@@ -254,8 +249,8 @@ func (g *TestnetGenerator) getNodeSettings(nodeIndex int, chainID, keyringBacken
 	}
 }
 
-func (g *TestnetGenerator) readDeyesChainConfigs(path string) []DeyesChainConfig {
-	deyesChains := make([]DeyesChainConfig, 0)
+func (g *TestnetGenerator) readDeyesChainConfigs(path string) []econfig.Chain {
+	deyesChains := make([]econfig.Chain, 0)
 	file, _ := ioutil.ReadFile(path)
 	err := json.Unmarshal([]byte(file), &deyesChains)
 	if err != nil {
@@ -317,7 +312,7 @@ func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartI
 }
 
 func (g *TestnetGenerator) generateEyesToml(index int, dir string, sisuIp, deyesIp string, sqlConfig SqlConfig,
-	chainConfigs []DeyesChainConfig, dnaConfig log.LogDNAConfig) {
+	chainConfigs []econfig.Chain, dnaConfig log.LogDNAConfig) {
 	sqlConfig.Schema = "deyes"
 
 	dnaConfig.HostName = deyesIp

@@ -10,6 +10,7 @@ import (
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/peer"
+	econfig "github.com/sisu-network/deyes/config"
 	heartconfig "github.com/sisu-network/dheart/core/config"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -17,7 +18,7 @@ import (
 )
 
 type DeyesConfiguration struct {
-	Chains        []DeyesChainConfig
+	Chains        []econfig.Chain
 	SisuServerUrl string
 
 	// sql
@@ -64,9 +65,10 @@ max_buffer_len = {{ .LogDNA.MaxBufferLen }}
 log_local = {{ .LogDNA.LogLocal }}
 
 [chains]{{ range $k, $chain := .Chains }}
-[chains.{{ $chain.Id }}]
-  chain = "{{ $chain.Id }}"
+[chains.{{ $chain.Chain }}]
+  chain = "{{ $chain.Chain }}"
   block_time = {{ $chain.BlockTime }}
+	adjust_time = {{ $chain.AdjustTime }}
   starting_block = 0
   rpc_url = "{{ $chain.RpcUrl }}"{{ end }}
 `

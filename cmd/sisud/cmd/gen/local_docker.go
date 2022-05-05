@@ -22,6 +22,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	econfig "github.com/sisu-network/deyes/config"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
@@ -346,13 +347,13 @@ services:
 
 func (g *localDockerGenerator) generateEyesToml(index int, dir string) {
 	deyesConfig := DeyesConfiguration{
-		Chains: []DeyesChainConfig{
+		Chains: []econfig.Chain{
 			{
-				Id:     "ganache1",
+				Chain:  "ganache1",
 				RpcUrl: "http://ganache1:7545",
 			},
 			{
-				Id:     "ganache2",
+				Chain:  "ganache2",
 				RpcUrl: "http://ganache2:7545",
 			},
 		},

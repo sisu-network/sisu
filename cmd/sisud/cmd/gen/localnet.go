@@ -27,6 +27,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	econfig "github.com/sisu-network/deyes/config"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -227,8 +228,8 @@ func (g *localnetGenerator) getAuthTransactor(client *ethclient.Client, address 
 	return auth, nil
 }
 
-func (g *localnetGenerator) readDeyesChainConfigs(path string) []DeyesChainConfig {
-	deyesChains := make([]DeyesChainConfig, 0)
+func (g *localnetGenerator) readDeyesChainConfigs(path string) []econfig.Chain {
+	deyesChains := make([]econfig.Chain, 0)
 	file, _ := ioutil.ReadFile(path)
 	err := json.Unmarshal([]byte(file), &deyesChains)
 	if err != nil {
@@ -238,7 +239,7 @@ func (g *localnetGenerator) readDeyesChainConfigs(path string) []DeyesChainConfi
 	return deyesChains
 }
 
-func (g *localnetGenerator) generateEyesToml(dir string, chainConfigs []DeyesChainConfig) {
+func (g *localnetGenerator) generateEyesToml(dir string, chainConfigs []econfig.Chain) {
 	sqlConfig := SqlConfig{}
 	sqlConfig.Host = "localhost"
 	sqlConfig.Port = 3306
