@@ -5,6 +5,7 @@ const (
 	Name                   = "name"
 	Index                  = "index"
 	Chains                 = "chains"
+	Erc20Addr              = "erc20-addr"
 	Erc20Addrs             = "erc20-addrs"
 	Erc20Name              = "erc20-name"
 	Erc20Names             = "erc20-names"

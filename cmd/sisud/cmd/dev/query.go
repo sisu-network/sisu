@@ -2,7 +2,6 @@ package dev
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -27,13 +26,12 @@ Usage:
 ./sisu dev query --erc20-symbol SISU --chain ganache1 --chain-url http://127.0.0.1:7545 --account 0x2d532C099CA476780c7703610D807948ae47856A
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			tokenId, _ := cmd.Flags().GetString(flags.Erc20Symbol)
 			src, _ := cmd.Flags().GetString(flags.Chain)
 			srcUrl, _ := cmd.Flags().GetString(flags.ChainUrl)
+			tokenAddr, _ := cmd.Flags().GetString(flags.Erc20Addr)
 			account, _ := cmd.Flags().GetString(flags.Account)
-			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 
-			log.Infof("Querying token %s on chain %s", tokenId, src)
+			log.Infof("Querying token at address %s on chain %s", tokenAddr, src)
 
 			client, err := ethclient.Dial(srcUrl)
 			if err != nil {
@@ -44,30 +42,6 @@ Usage:
 
 			if len(account) == 0 {
 				panic(flags.Account + " cannot be empty")
-			}
-
-			c := &queryCommand{}
-
-			tokens := c.getTokens(genesisFolder)
-			var token *types.Token
-
-			for _, t := range tokens {
-				if t.Id == tokenId {
-					token = t
-					break
-				}
-			}
-			if token == nil {
-				panic(fmt.Errorf("cannot find token %s", tokenId))
-			}
-
-			if token.Addresses == nil {
-				panic(fmt.Errorf("this is not an ERC20 token"))
-			}
-
-			tokenAddr := token.GetAddressForChain(src)
-			if len(tokenAddr) == 0 {
-				panic(fmt.Errorf("cannot find address for tokne %s on chain %s", tokenId, src))
 			}
 
 			store, err := erc20.NewErc20(common.HexToAddress(tokenAddr), client)
@@ -88,9 +62,8 @@ Usage:
 
 	cmd.Flags().String(flags.Chain, "ganache2", "Source chain where the token is transferred from")
 	cmd.Flags().String(flags.ChainUrl, "http://127.0.0.1:8545", "Source chain url")
-	cmd.Flags().String(flags.Erc20Symbol, "SISU", "Id of the token to be queried")
+	cmd.Flags().String(flags.Erc20Addr, ExpectedErc20Address, "Id of the token to be queried")
 	cmd.Flags().String(flags.Account, "", "account address that we want to query")
-	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "Location of genesis folder. This is used to load the list of tokens.")
 
 	return cmd
 }
