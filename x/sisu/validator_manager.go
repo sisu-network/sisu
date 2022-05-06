@@ -13,92 +13,82 @@ const SlashPointThreshold = 100
 
 type ValidatorManager interface {
 	AddNode(ctx sdk.Context, node *types.Node)
-	UpdateNodeStatus(ctx sdk.Context, accAddress string, consKey []byte, status types.NodeStatus)
-	IsValidator(ctx sdk.Context, signer string) bool
+	UpdateNodeStatus(ctx sdk.Context, consensusKey []byte, status types.NodeStatus)
 	SetValidators(ctx sdk.Context, nodes []*types.Node) error
-	GetNodesByStatus(ctx sdk.Context, status types.NodeStatus) map[string]*types.Node
+	GetNodesByStatus(status types.NodeStatus) map[string]*types.Node
 	GetExceedSlashThresholdValidators(ctx sdk.Context) ([]*types.Node, error)
+	GetPotentialCandidates(ctx sdk.Context, n int) []*types.Node
 }
 
 type DefaultValidatorManager struct {
-	keeper  keeper.Keeper
-	vals    map[string]*types.Node
-	valLock *sync.RWMutex
+	keeper keeper.Keeper
+	// key: consensus public key
+	nodes    map[string]*types.Node
+	nodeLock *sync.RWMutex
 }
 
 func NewValidatorManager(keeper keeper.Keeper) ValidatorManager {
 	return &DefaultValidatorManager{
-		keeper:  keeper,
-		vals:    make(map[string]*types.Node),
-		valLock: &sync.RWMutex{},
+		keeper:   keeper,
+		nodes:    make(map[string]*types.Node),
+		nodeLock: &sync.RWMutex{},
 	}
 }
 
 // GetNodesByStatus if status = types.NodeStatus_Unknown, returns all nodes
-func (m *DefaultValidatorManager) GetNodesByStatus(ctx sdk.Context, status types.NodeStatus) map[string]*types.Node {
-	var vals map[string]*types.Node
-	m.valLock.RLock()
-	vals = m.vals
-	m.valLock.RUnlock()
+func (m *DefaultValidatorManager) GetNodesByStatus(status types.NodeStatus) map[string]*types.Node {
+	allNodes, filteredNodes := map[string]*types.Node{}, map[string]*types.Node{}
+	m.nodeLock.RLock()
+	allNodes = m.nodes
+	m.nodeLock.RUnlock()
 
-	if vals != nil && len(vals) > 0 {
-		return vals
+	if status == types.NodeStatus_Unknown {
+		return allNodes
 	}
 
-	valsArr := m.keeper.LoadNodesByStatus(ctx, status)
-	vals = make(map[string]*types.Node)
-	for _, val := range valsArr {
-		vals[val.AccAddress] = val
+	for key, node := range allNodes {
+		if node.Status != status {
+			continue
+		}
+
+		filteredNodes[key] = node
 	}
 
-	m.valLock.Lock()
-	m.vals = vals
-	m.valLock.Unlock()
-
-	return vals
+	return filteredNodes
 }
 
 func (m *DefaultValidatorManager) AddNode(ctx sdk.Context, node *types.Node) {
 	m.keeper.SaveNode(ctx, node)
 
-	// get all nodes
-	vals := m.GetNodesByStatus(ctx, types.NodeStatus_Unknown)
+	m.nodeLock.Lock()
+	defer m.nodeLock.Unlock()
 
-	m.valLock.Lock()
-	vals[node.AccAddress] = node
-	m.vals = vals
-	m.valLock.Unlock()
+	m.nodes[getNodeKey(node)] = node
 }
 
-func (m *DefaultValidatorManager) UpdateNodeStatus(ctx sdk.Context, accAddress string, consKey []byte, status types.NodeStatus) {
-	m.keeper.UpdateNodeStatus(ctx, consKey, status)
-	vals := m.GetNodesByStatus(ctx, types.NodeStatus_Unknown)
+func (m *DefaultValidatorManager) UpdateNodeStatus(ctx sdk.Context, consensusKey []byte, status types.NodeStatus) {
+	vals := m.GetNodesByStatus(types.NodeStatus_Unknown)
 
-	m.valLock.RLock()
-	node := vals[accAddress]
-	m.valLock.RUnlock()
-
+	m.nodeLock.RLock()
+	node := vals[string(consensusKey)]
+	m.nodeLock.RUnlock()
 	if node == nil {
 		return
 	}
 
-	m.valLock.Lock()
-	defer m.valLock.Unlock()
+	// Update keeper
+	m.keeper.UpdateNodeStatus(ctx, node.ConsensusKey.GetBytes(), status)
+
+	// Update cache
+	m.nodeLock.Lock()
+	defer m.nodeLock.Unlock()
 	node.Status = status
 	if status == types.NodeStatus_Validator {
 		node.IsValidator = true
-		return
+	} else {
+		node.IsValidator = false
 	}
-	node.IsValidator = false
-}
-
-func (m *DefaultValidatorManager) IsValidator(ctx sdk.Context, signer string) bool {
-	vals := m.GetNodesByStatus(ctx, types.NodeStatus_Unknown)
-
-	m.valLock.RLock()
-	defer m.valLock.RUnlock()
-
-	return vals[signer] != nil
+	vals[string(consensusKey)] = node
 }
 
 func (m *DefaultValidatorManager) SetValidators(ctx sdk.Context, nodes []*types.Node) error {
@@ -109,13 +99,13 @@ func (m *DefaultValidatorManager) SetValidators(ctx sdk.Context, nodes []*types.
 
 	newVals := make(map[string]*types.Node)
 	for _, val := range validVals {
-		newVals[val.AccAddress] = val
+		newVals[string(val.ConsensusKey.GetBytes())] = val
 	}
 
-	m.valLock.Lock()
-	defer m.valLock.Unlock()
+	m.nodeLock.Lock()
+	defer m.nodeLock.Unlock()
 
-	m.vals = newVals
+	m.nodes = newVals
 	return nil
 }
 
@@ -146,4 +136,43 @@ func (m *DefaultValidatorManager) GetExceedSlashThresholdValidators(ctx sdk.Cont
 	}
 
 	return slashValidators, nil
+}
+
+func (m *DefaultValidatorManager) GetPotentialCandidates(ctx sdk.Context, n int) []*types.Node {
+	topBalances := m.keeper.GetTopBalance(ctx, -1)
+	if len(topBalances) == 0 {
+		return []*types.Node{}
+	}
+
+	newNodes := make([]*types.Node, 0)
+
+	for _, accAddr := range topBalances {
+		// enough node already
+		if len(newNodes) == n {
+			return newNodes
+		}
+
+		if nodeFromAddr := m.getNodeByAccAddr(accAddr, types.NodeStatus_Candidate); nodeFromAddr != nil {
+			newNodes = append(newNodes, nodeFromAddr)
+		}
+	}
+
+	return newNodes
+}
+
+func (m *DefaultValidatorManager) getNodeByAccAddr(addr sdk.AccAddress, status types.NodeStatus) *types.Node {
+	nodes := m.GetNodesByStatus(status)
+	for _, node := range nodes {
+		if node.AccAddress != addr.String() {
+			continue
+		}
+
+		return node
+	}
+
+	return nil
+}
+
+func getNodeKey(node *types.Node) string {
+	return string(node.ConsensusKey.GetBytes())
 }

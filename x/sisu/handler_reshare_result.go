@@ -73,7 +73,7 @@ func (h *HandlerReshareResult) doReshareResult(ctx sdk.Context, msg *types.Resha
 		valUpdates = append(valUpdates, message)
 	}
 
-	// Loop all current validators, find node which is become to candidate node
+	// Reset old validators
 	currentValidators := h.keeper.LoadNodesByStatus(ctx, types.NodeStatus_Validator)
 	for _, v := range currentValidators {
 		isNewValidator := false

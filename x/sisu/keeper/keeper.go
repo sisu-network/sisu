@@ -449,6 +449,7 @@ func (k *DefaultKeeper) GetBalance(ctx sdk.Context, address sdk.AccAddress) (int
 	return getCurNodeBalance(store, address)
 }
 
+// GetTopBalance if n is -1, get all balances
 func (k *DefaultKeeper) GetTopBalance(ctx sdk.Context, n int) []sdk.AccAddress {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixNodeBalance)
 	return getTopBalances(store, n)

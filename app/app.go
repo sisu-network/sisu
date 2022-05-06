@@ -265,11 +265,11 @@ func New(
 	worldState := world.NewWorldState(app.tssKeeper, deyesClient)
 	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert, worldState)
 
+	valsMgr := tss.NewValidatorManager(app.tssKeeper)
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.tssKeeper),
 		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
-		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, app.tssKeeper, cfg.Tss), worldState, txTracker, app.tssKeeper, app.BankKeeper)
+		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, app.tssKeeper, cfg.Tss), worldState, txTracker, app.tssKeeper, app.BankKeeper, valsMgr)
 
-	valsMgr := tss.NewValidatorManager(app.tssKeeper)
 	tssProcessor := tss.NewProcessor(app.tssKeeper, valsMgr, privateDb, tssConfig,
 		app.appKeys, app.txSubmitter, app.globalData, dheartClient, deyesClient, worldState,
 		txTracker, mc)

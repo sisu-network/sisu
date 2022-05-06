@@ -27,25 +27,27 @@ type ManagerContainer interface {
 	TxTracker() TxTracker
 	Keeper() keeper.Keeper
 	BankKeeper() bankkeeper.Keeper
+	ValidatorManager() ValidatorManager
 
 	SetReadOnlyContext(ctx sdk.Context)
 	GetReadOnlyContext() (sdk.Context, error)
 }
 
 type DefaultManagerContainer struct {
-	pmm           PostedMessageManager
-	partyManager  PartyManager
-	dheartClient  tssclients.DheartClient
-	deyesClient   tssclients.DeyesClient
-	globalData    common.GlobalData
-	txSubmit      common.TxSubmit
-	config        config.TssConfig
-	appKeys       common.AppKeys
-	txOutProducer TxOutputProducer
-	worldState    world.WorldState
-	txTracker     TxTracker
-	keeper        keeper.Keeper
-	bankKeeper    bankkeeper.Keeper
+	pmm              PostedMessageManager
+	partyManager     PartyManager
+	dheartClient     tssclients.DheartClient
+	deyesClient      tssclients.DeyesClient
+	globalData       common.GlobalData
+	txSubmit         common.TxSubmit
+	config           config.TssConfig
+	appKeys          common.AppKeys
+	txOutProducer    TxOutputProducer
+	worldState       world.WorldState
+	txTracker        TxTracker
+	keeper           keeper.Keeper
+	bankKeeper       bankkeeper.Keeper
+	validatorManager ValidatorManager
 
 	readOnlyContext atomic.Value
 }
@@ -54,21 +56,22 @@ func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 	dheartClient tssclients.DheartClient, deyesClient tssclients.DeyesClient,
 	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.TssConfig,
 	appKeys common.AppKeys, txOutProducer TxOutputProducer, worldState world.WorldState, txTracker TxTracker,
-	keeper keeper.Keeper, bankKeeper bankkeeper.Keeper) ManagerContainer {
+	keeper keeper.Keeper, bankKeeper bankkeeper.Keeper, validatorManager ValidatorManager) ManagerContainer {
 	return &DefaultManagerContainer{
-		pmm:           pmm,
-		partyManager:  partyManager,
-		dheartClient:  dheartClient,
-		deyesClient:   deyesClient,
-		globalData:    globalData,
-		txSubmit:      txSubmit,
-		config:        cfg,
-		appKeys:       appKeys,
-		txOutProducer: txOutProducer,
-		worldState:    worldState,
-		txTracker:     txTracker,
-		keeper:        keeper,
-		bankKeeper:    bankKeeper,
+		pmm:              pmm,
+		partyManager:     partyManager,
+		dheartClient:     dheartClient,
+		deyesClient:      deyesClient,
+		globalData:       globalData,
+		txSubmit:         txSubmit,
+		config:           cfg,
+		appKeys:          appKeys,
+		txOutProducer:    txOutProducer,
+		worldState:       worldState,
+		txTracker:        txTracker,
+		keeper:           keeper,
+		bankKeeper:       bankKeeper,
+		validatorManager: validatorManager,
 	}
 }
 
@@ -122,6 +125,10 @@ func (mc *DefaultManagerContainer) Keeper() keeper.Keeper {
 
 func (mc *DefaultManagerContainer) BankKeeper() bankkeeper.Keeper {
 	return mc.bankKeeper
+}
+
+func (mc *DefaultManagerContainer) ValidatorManager() ValidatorManager {
+	return mc.validatorManager
 }
 
 func (mc *DefaultManagerContainer) SetReadOnlyContext(ctx sdk.Context) {

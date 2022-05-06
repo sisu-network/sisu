@@ -23,12 +23,10 @@ func (p *Processor) EndBlockValidator(ctx sdk.Context) []abci.ValidatorUpdate {
 	newValidatorKeys := make([][]byte, 0)
 	oldValidatorKeys := make([][]byte, 0)
 	for _, val := range newValidators {
-		//p.validatorManager.UpdateNodeStatus(ctx, val.AccAddress, val.ConsensusKey.GetBytes(), types.NodeStatus_Validator)
 		newValidatorKeys = append(newValidatorKeys, val.ConsensusKey.GetBytes())
 	}
 
 	for _, val := range oldValidators {
-		//p.validatorManager.UpdateNodeStatus(ctx, val.AccAddress, val.ConsensusKey.GetBytes(), types.NodeStatus_Candidate)
 		oldValidatorKeys = append(oldValidatorKeys, val.ConsensusKey.GetBytes())
 	}
 
@@ -40,6 +38,13 @@ func (p *Processor) EndBlockValidator(ctx sdk.Context) []abci.ValidatorUpdate {
 	incomingValUpdate := p.keeper.GetIncomingValidatorUpdates(ctx)
 	for i, vUp := range incomingValUpdate {
 		log.Debugf("incomingValUpdate[%d] pubkey = %s, power = %d\n", i, vUp.PubKey.String(), vUp.Power)
+		// 100 is default power for validator
+		if vUp.Power == 100 {
+			p.validatorManager.UpdateNodeStatus(ctx, vUp.PubKey.GetEd25519(), types.NodeStatus_Validator)
+			continue
+		}
+
+		p.validatorManager.UpdateNodeStatus(ctx, vUp.PubKey.GetEd25519(), types.NodeStatus_Candidate)
 	}
 	return p.keeper.GetIncomingValidatorUpdates(ctx)
 }
@@ -56,17 +61,6 @@ func (p *Processor) getChangedNodes(ctx sdk.Context) ([]*types.Node, []*types.No
 		return nil, nil, nil
 	}
 
-	topCandidates := p.keeper.GetTopBalance(ctx, len(removedNodes))
-	newNodes := make([]*types.Node, 0, len(removedNodes))
-	for _, candidate := range topCandidates {
-		vals := p.keeper.LoadNodesByStatus(ctx, types.NodeStatus_Unknown)
-		for _, node := range vals {
-			if node.AccAddress == candidate.String() {
-				newNodes = append(newNodes, node)
-				break
-			}
-		}
-	}
-
+	newNodes := p.validatorManager.GetPotentialCandidates(ctx, len(removedNodes))
 	return newNodes, removedNodes, nil
 }

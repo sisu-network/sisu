@@ -5,7 +5,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
@@ -69,7 +68,6 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 		case *types.ChangeValidatorSetMsg:
 			return NewHandlerChangeValidatorSet(mc).DeliverMsg(ctx, msg)
 		case *types.DepositSisuTokenMsg:
-			log.Debug("Deposit token msg")
 			return NewHandlerDepositSisuToken(mc).DeliverMsg(ctx, msg)
 		case *types.SlashValidatorMsg:
 			return NewHandlerSlashValidator(mc).DeliverMsg(ctx, msg)

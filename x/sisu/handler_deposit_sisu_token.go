@@ -25,7 +25,7 @@ func NewHandlerDepositSisuToken(mc ManagerContainer) *HandlerDepositSisuToken {
 		pmm:        mc.PostedMessageManager(),
 		mc:         mc,
 		keeper:     mc.Keeper(),
-		valManager: NewValidatorManager(mc.Keeper()),
+		valManager: mc.ValidatorManager(),
 	}
 }
 

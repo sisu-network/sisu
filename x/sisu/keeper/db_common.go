@@ -983,15 +983,23 @@ type NodeBalance struct {
 	Balance int64
 }
 
+// order from the highest balance to the lowest balance
 func getTopBalances(store cstypes.KVStore, n int) []sdk.AccAddress {
 	allNodeBalances := getOrderedNodeBalances(store)
 	topBalanceAddrs := make([]sdk.AccAddress, 0)
+	if n == -1 {
+		for _, nodeBalance := range allNodeBalances {
+			topBalanceAddrs = append(topBalanceAddrs, nodeBalance.Addr)
+		}
+
+		return topBalanceAddrs
+	}
 
 	if n > len(allNodeBalances) {
 		n = len(allNodeBalances)
 	}
 
-	for i := len(allNodeBalances) - n; i < len(allNodeBalances); i++ {
+	for i := 0; i < n; i++ {
 		topBalanceAddrs = append(topBalanceAddrs, allNodeBalances[i].Addr)
 	}
 	return topBalanceAddrs
@@ -1011,7 +1019,7 @@ func getOrderedNodeBalances(store cstypes.KVStore) []*NodeBalance {
 	_ = iter.Close()
 
 	sort.SliceStable(allNodeBalances, func(i, j int) bool {
-		return allNodeBalances[i].Balance < allNodeBalances[j].Balance
+		return allNodeBalances[i].Balance > allNodeBalances[j].Balance
 	})
 
 	return allNodeBalances

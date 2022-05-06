@@ -29,7 +29,7 @@ func (h *HandlerSlashValidator) DeliverMsg(ctx sdk.Context, msg *types.SlashVali
 		return &sdk.Result{}, nil
 	}
 
-	vals := h.valManager.GetNodesByStatus(ctx, types.NodeStatus_Validator)
+	vals := h.valManager.GetNodesByStatus(types.NodeStatus_Validator)
 	for addr, _ := range vals {
 		log.Debug("val address = ", addr)
 	}

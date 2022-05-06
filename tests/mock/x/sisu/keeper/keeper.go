@@ -10,6 +10,7 @@ import (
 	types "github.com/cosmos/cosmos-sdk/types"
 	gomock "github.com/golang/mock/gomock"
 	types0 "github.com/sisu-network/sisu/x/sisu/types"
+	types1 "github.com/tendermint/tendermint/abci/types"
 )
 
 // MockKeeper is a mock of Keeper interface.
@@ -214,6 +215,20 @@ func (m *MockKeeper) GetGasPriceRecord(ctx types.Context, chain string, height i
 func (mr *MockKeeperMockRecorder) GetGasPriceRecord(ctx, chain, height interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGasPriceRecord", reflect.TypeOf((*MockKeeper)(nil).GetGasPriceRecord), ctx, chain, height)
+}
+
+// GetIncomingValidatorUpdates mocks base method.
+func (m *MockKeeper) GetIncomingValidatorUpdates(ctx types.Context) types1.ValidatorUpdates {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetIncomingValidatorUpdates", ctx)
+	ret0, _ := ret[0].(types1.ValidatorUpdates)
+	return ret0
+}
+
+// GetIncomingValidatorUpdates indicates an expected call of GetIncomingValidatorUpdates.
+func (mr *MockKeeperMockRecorder) GetIncomingValidatorUpdates(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetIncomingValidatorUpdates", reflect.TypeOf((*MockKeeper)(nil).GetIncomingValidatorUpdates), ctx)
 }
 
 // GetKeygenPubkey mocks base method.
@@ -581,6 +596,20 @@ func (m *MockKeeper) SaveContracts(ctx types.Context, msgs []*types0.Contract, s
 func (mr *MockKeeperMockRecorder) SaveContracts(ctx, msgs, saveByteCode interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveContracts", reflect.TypeOf((*MockKeeper)(nil).SaveContracts), ctx, msgs, saveByteCode)
+}
+
+// SaveIncomingValidatorUpdates mocks base method.
+func (m *MockKeeper) SaveIncomingValidatorUpdates(ctx types.Context, validatorUpdates types1.ValidatorUpdates) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveIncomingValidatorUpdates", ctx, validatorUpdates)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveIncomingValidatorUpdates indicates an expected call of SaveIncomingValidatorUpdates.
+func (mr *MockKeeperMockRecorder) SaveIncomingValidatorUpdates(ctx, validatorUpdates interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveIncomingValidatorUpdates", reflect.TypeOf((*MockKeeper)(nil).SaveIncomingValidatorUpdates), ctx, validatorUpdates)
 }
 
 // SaveKeygen mocks base method.
