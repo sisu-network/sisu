@@ -9,6 +9,7 @@ import (
 	"time"
 
 	etypes "github.com/ethereum/go-ethereum/core/types"
+	"google.golang.org/grpc"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil/hdkeychain"
@@ -21,6 +22,7 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
 	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
+	tssTypes "github.com/sisu-network/sisu/x/sisu/types"
 )
 
 const (
@@ -181,4 +183,25 @@ func approveAddress(client *ethclient.Client, mnemonic string, erc20Addr string,
 	tx, err := contract.Approve(opts, common.HexToAddress(target), ownerBalance)
 	bind.WaitDeployed(context.Background(), client, tx)
 	time.Sleep(time.Second * 3)
+}
+
+func queryToken(ctx context.Context, sisuRpc, tokenId string, chain string) *tssTypes.Token {
+	grpcConn, err := grpc.Dial(
+		sisuRpc,
+		grpc.WithInsecure(),
+	)
+	defer grpcConn.Close()
+	if err != nil {
+		panic(err)
+	}
+
+	queryClient := tssTypes.NewTssQueryClient(grpcConn)
+	res, err := queryClient.QueryToken(context.Background(), &tssTypes.QueryTokenRequest{
+		Id: tokenId,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	return res.Token
 }

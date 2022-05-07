@@ -3,12 +3,12 @@ package utils
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
 	tlog "github.com/tendermint/tendermint/libs/log"
 
 	"github.com/cosmos/cosmos-sdk/store"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/stretchr/testify/require"
 	dbm "github.com/tendermint/tm-db"
 
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"

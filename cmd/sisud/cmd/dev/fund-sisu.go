@@ -44,7 +44,7 @@ func FundSisu() *cobra.Command {
 			chainString, _ := cmd.Flags().GetString(flags.Chains)
 			urlString, _ := cmd.Flags().GetString(flags.ChainUrls)
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
-
+			tokenString, _ := cmd.Flags().GetString(flags.Erc20Symbols)
 			liquidityAddrString, _ := cmd.Flags().GetString(flags.LiquidityAddrs)
 
 			amount, _ := cmd.Flags().GetInt(flags.Amount)
@@ -52,7 +52,7 @@ func FundSisu() *cobra.Command {
 			log.Info("Amount = ", amount)
 
 			c := &fundAccountCmd{}
-			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, liquidityAddrString, sisuRpc, amount)
+			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokenString, liquidityAddrString, sisuRpc, amount)
 
 			return nil
 		},
@@ -63,13 +63,15 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
 	cmd.Flags().String(flags.LiquidityAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "List of liquidity pool addresses")
+	cmd.Flags().String(flags.Erc20Symbols, "SISU", "List of ERC20 to approve")
 
 	cmd.Flags().Int(flags.Amount, 100, "The amount that gateway addresses will receive")
 
 	return cmd
 }
 
-func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic, liquidityAddrString, sisuRpc string, amount int) {
+func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic,
+	tokenString, liquidityAddrString, sisuRpc string, amount int) {
 	chains := strings.Split(chainString, ",")
 	liquidityAddrs := strings.Split(liquidityAddrString, ",")
 
@@ -114,6 +116,22 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	// Waits until all gateway contracts are deployed.
 	log.Info("Now we wait until gateway contracts are deployed on all chains.")
 	gateways := c.waitForGatewayDeployed(ctx, chains, sisuRpc)
+
+	// Approve the contract with some preallocated token from account0
+	wg.Add(len(clients))
+	for i, client := range clients {
+		go func(i int, client *ethclient.Client) {
+			addrs := c.getTokenAddrs(ctx, sisuRpc, tokenString, chains[i])
+
+			for _, addr := range addrs {
+				log.Infof("Approve token with address %s for gateway %s", addr, gateways[i])
+				approveAddress(client, mnemonic, addr, gateways[i])
+			}
+			wg.Done()
+		}(i, client)
+	}
+	wg.Wait()
+	log.Info("Gateway approval done!")
 
 	// Set gateway for the liquidity
 	log.Info("Set gateway address for liqiuitidy pool")
@@ -376,4 +394,21 @@ func (c *fundAccountCmd) transferLiquidityOwnership(
 	}
 
 	return nil
+}
+
+func (c *fundAccountCmd) getTokenAddrs(ctx context.Context, sisuRpc, tokenString, chain string) []string {
+	tokenSymbols := strings.Split(tokenString, ",")
+	addrs := make([]string, len(tokenSymbols))
+
+	for i, tokenSymbol := range tokenSymbols {
+		token := queryToken(ctx, sisuRpc, tokenSymbol, chain)
+		for j, addr := range token.Addresses {
+			if token.Chains[j] == chain {
+				addrs[i] = addr
+				break
+			}
+		}
+	}
+
+	return addrs
 }
