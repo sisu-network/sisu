@@ -26,16 +26,17 @@ Usage:
 ./sisu dev query --erc20-symbol SISU --chain ganache1 --chain-url http://127.0.0.1:7545 --account 0x2d532C099CA476780c7703610D807948ae47856A
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			src, _ := cmd.Flags().GetString(flags.Chain)
-			srcUrl, _ := cmd.Flags().GetString(flags.ChainUrl)
-			tokenAddr, _ := cmd.Flags().GetString(flags.Erc20Addr)
+			chain, _ := cmd.Flags().GetString(flags.Chain)
+			chainUrl, _ := cmd.Flags().GetString(flags.ChainUrl)
+			tokenSymbol, _ := cmd.Flags().GetString(flags.Erc20Symbol)
 			account, _ := cmd.Flags().GetString(flags.Account)
+			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 
-			log.Infof("Querying token at address %s on chain %s", tokenAddr, src)
+			log.Infof("Querying token at address %s on chain %s", tokenSymbol, chain)
 
-			client, err := ethclient.Dial(srcUrl)
+			client, err := ethclient.Dial(chainUrl)
 			if err != nil {
-				log.Error("cannot connect to chain, url = ", srcUrl)
+				log.Error("cannot connect to chain, url = ", chainUrl)
 				panic(err)
 			}
 			defer client.Close()
@@ -44,7 +45,22 @@ Usage:
 				panic(flags.Account + " cannot be empty")
 			}
 
-			store, err := erc20.NewErc20(common.HexToAddress(tokenAddr), client)
+			token := queryToken(cmd.Context(), sisuRpc, tokenSymbol, chain)
+			if token == nil {
+				panic("cannot find token " + tokenSymbol)
+			}
+			addr := ""
+			for i := range token.Addresses {
+				if token.Chains[i] == chain {
+					addr = token.Addresses[i]
+					break
+				}
+			}
+			if addr == "" {
+				panic("cannot find address on chain " + chain)
+			}
+
+			store, err := erc20.NewErc20(common.HexToAddress(addr), client)
 			if err != nil {
 				panic(err)
 			}
@@ -62,8 +78,9 @@ Usage:
 
 	cmd.Flags().String(flags.Chain, "ganache2", "Source chain where the token is transferred from")
 	cmd.Flags().String(flags.ChainUrl, "http://127.0.0.1:8545", "Source chain url")
-	cmd.Flags().String(flags.Erc20Addr, ExpectedErc20Address, "Id of the token to be queried")
+	cmd.Flags().String(flags.Erc20Symbol, ExpectedErc20Address, "Id of the token to be queried")
 	cmd.Flags().String(flags.Account, "", "account address that we want to query")
+	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
 
 	return cmd
 }
