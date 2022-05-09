@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/BurntSushi/toml"
@@ -23,6 +24,8 @@ type SisuConfig struct {
 	ChainId           string           `toml:"chain-id"`
 	ApiHost           string           `toml:"api-host"`
 	ApiPort           uint16           `toml:"api-port"`
+	RpcPort           int              `toml:"rpc-port"`
+	InternalApiPort   int              `toml:"internal-api-port"`
 	EmailAlert        EmailAlertConfig `toml:"email-alert"`
 }
 
@@ -75,6 +78,17 @@ func ReadConfig() (Config, error) {
 	if err != nil {
 		return cfg, err
 	}
+
+	if cfg.Sisu.RpcPort == 0 {
+		cfg.Sisu.RpcPort = 26657
+	}
+
+	if cfg.Sisu.InternalApiPort == 0 {
+		cfg.Sisu.InternalApiPort = 1317
+	}
+
+	fmt.Println("p2p port ", cfg.Sisu.RpcPort)
+	fmt.Println("internal api port ", cfg.Sisu.InternalApiPort)
 
 	return cfg, nil
 }

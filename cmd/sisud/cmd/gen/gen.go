@@ -50,6 +50,8 @@ type Setting struct {
 	keyringPassphrase string
 	algoStr           string
 	numValidators     int
+	numCandidates     int
+	isLocalMultiNode  bool
 
 	nodeConfigs []config.Config
 	tokens      []*types.Token // tokens in the genesis data
@@ -72,6 +74,7 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 	keyringBackend := settings.keyringBackend
 	algoStr := settings.algoStr
 	numValidators := settings.numValidators
+	numCandidates := settings.numCandidates
 	monikers := settings.monikers
 
 	if settings.chainID == "" {
@@ -94,8 +97,12 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 	)
 
 	memos := make([]string, numValidators)
+	p2ps := make([]string, numValidators)
+	rpcs := make([]string, numValidators)
+	proxies := make([]string, numValidators)
 	nodes := make([]*types.Node, numValidators)
 	valPubKeys := make([]cryptotypes.PubKey, numValidators)
+	//canPubKeys := make([]cryptotypes.PubKey, numCandidates)
 
 	// Temporary set os.Stdin to nil to read the keyring-passphrase from created buffer
 	if settings.keyringBackend == keyring.BackendFile {
@@ -114,7 +121,9 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 		mainAppDir := filepath.Join(nodeDir, nodeDaemonHome)
 
 		tmConfig.SetRoot(mainAppDir)
-		tmConfig.RPC.ListenAddress = "tcp://0.0.0.0:26657"
+		rpcs[i] = fmt.Sprintf("tcp://0.0.0.0:%d", 36656+i)
+		p2ps[i] = fmt.Sprintf("tcp://0.0.0.0:%d", 26656+i)
+		proxies[i] = fmt.Sprintf("tcp://127.0.0.1:%d", 16656+i)
 
 		if err := os.MkdirAll(filepath.Join(mainAppDir, "config"), nodeDirPerm); err != nil {
 			_ = os.RemoveAll(outputDir)
@@ -148,7 +157,12 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 		nodes[i] = node
 		valPubKeys[i] = tendermintKey
 
-		memo := fmt.Sprintf("%s@%s:26656", node.Id, ip)
+		var memo string
+		if settings.isLocalMultiNode {
+			memo = fmt.Sprintf("%s@%s:%d", node.Id, ip, 26656+i)
+		} else {
+			memo = fmt.Sprintf("%s@%s:26656", node.Id, ip)
+		}
 		genFiles = append(genFiles, tmConfig.GenesisFile())
 		memos[i] = memo
 
@@ -178,6 +192,8 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 		genAccounts = append(genAccounts, authtypes.NewBaseAccount(acc, nil, 0, 0))
 
 		// Write config/app.toml
+		simappConfig.API.Address = fmt.Sprintf("tcp://0.0.0.0:%d", 1317+i)
+		simappConfig.GRPC.Address = fmt.Sprintf("0.0.0.0:%d", 9090+i)
 		srvconfig.WriteConfigFile(filepath.Join(mainAppDir, "config/app.toml"), simappConfig)
 
 		// Genreate sisu.toml
@@ -193,13 +209,13 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 
 	err := collectGenFiles(
 		clientCtx, tmConfig, chainID, numValidators,
-		outputDir, nodeDirPrefix, nodeDaemonHome, memos,
+		outputDir, nodeDirPrefix, nodeDaemonHome, memos, rpcs, p2ps, proxies,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	cmd.PrintErrf("Successfully initialized %d node directories\n", numValidators)
+	cmd.PrintErrf("Successfully initialized %d node directories\n", numValidators+numCandidates)
 	return valPubKeys, nil
 }
 
@@ -293,7 +309,7 @@ func initGenFiles(
 
 func collectGenFiles(
 	clientCtx client.Context, nodeConfig *tmconfig.Config, chainID string,
-	numValidators int, outputDir, nodeDirPrefix, nodeDaemonHome string, memos []string,
+	numValidators int, outputDir, nodeDirPrefix, nodeDaemonHome string, memos []string, rpcs []string, p2ps []string, proxies []string,
 ) error {
 
 	var appState json.RawMessage
@@ -303,6 +319,9 @@ func collectGenFiles(
 		nodeDirName := fmt.Sprintf("%s%d", nodeDirPrefix, i)
 		nodeDir := filepath.Join(outputDir, nodeDirName, nodeDaemonHome)
 		nodeConfig.Moniker = nodeDirName
+		nodeConfig.P2P.ListenAddress = p2ps[i]
+		nodeConfig.RPC.ListenAddress = rpcs[i]
+		nodeConfig.ProxyApp = proxies[i]
 
 		nodeConfig.SetRoot(nodeDir)
 

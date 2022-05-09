@@ -31,6 +31,7 @@ import (
 var (
 	flagNodeDirPrefix     = "node-dir-prefix"
 	flagNumValidators     = "v"
+	flagNumCandidates     = "c"
 	flagOutputDir         = "output-dir"
 	flagNodeDaemonHome    = "node-daemon-home"
 	flagStartingIPAddress = "starting-ip-address"
@@ -64,8 +65,6 @@ Example:
 			tmConfig := serverCtx.Config
 			tmConfig.LogLevel = ""
 			tmConfig.Consensus.TimeoutCommit = time.Second * 3
-
-			generator := &localnetGenerator{}
 
 			outputDir, _ := cmd.Flags().GetString(flagOutputDir)
 			minGasPrices, _ := cmd.Flags().GetString(server.FlagMinGasPrices)
@@ -113,7 +112,7 @@ Example:
 				minGasPrices:   minGasPrices,
 				nodeDirPrefix:  nodeDirPrefix,
 				nodeDaemonHome: nodeDaemonHome,
-				ips:            generator.getLocalIps(startingIPAddress, numValidators),
+				ips:            getLocalIps(startingIPAddress, numValidators),
 				keyringBackend: keyringBackend,
 				algoStr:        algo,
 				numValidators:  numValidators,
@@ -141,10 +140,10 @@ Example:
 	return cmd
 }
 
-func (g *localnetGenerator) getLocalIps(startingIPAddress string, count int) []string {
+func getLocalIps(startingIPAddress string, count int) []string {
 	ips := make([]string, count)
 	for i := 0; i < count; i++ {
-		ip, err := g.getIP(i, startingIPAddress)
+		ip, err := getIP(i, startingIPAddress)
 		if err != nil {
 			panic(err)
 		}
@@ -154,7 +153,7 @@ func (g *localnetGenerator) getLocalIps(startingIPAddress string, count int) []s
 	return ips
 }
 
-func (g *localnetGenerator) getIP(i int, startingIPAddr string) (ip string, err error) {
+func getIP(i int, startingIPAddr string) (ip string, err error) {
 	if len(startingIPAddr) == 0 {
 		ip, err = server.ExternalIP()
 		if err != nil {
@@ -162,10 +161,10 @@ func (g *localnetGenerator) getIP(i int, startingIPAddr string) (ip string, err 
 		}
 		return ip, nil
 	}
-	return g.calculateIP(startingIPAddr, i)
+	return calculateIP(startingIPAddr, i)
 }
 
-func (g *localnetGenerator) calculateIP(ip string, i int) (string, error) {
+func calculateIP(ip string, i int) (string, error) {
 	ipv4 := net.ParseIP(ip).To4()
 	if ipv4 == nil {
 		return "", fmt.Errorf("%v: non ipv4 address", ip)

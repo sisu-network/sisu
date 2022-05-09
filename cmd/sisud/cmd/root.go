@@ -140,6 +140,7 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, a
 		gen.LocalnetCmd(app.ModuleBasics, banktypes.GenesisBalancesIterator{}),
 		gen.LocalDockerCmd(app.ModuleBasics, banktypes.GenesisBalancesIterator{}),
 		gen.TestnetCmd(app.ModuleBasics, banktypes.GenesisBalancesIterator{}),
+		gen.MultiNodesCmd(app.ModuleBasics, banktypes.GenesisBalancesIterator{}),
 		resetCmd(),
 	)
 }

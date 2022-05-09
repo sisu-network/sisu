@@ -80,9 +80,9 @@ type TxSubmitter struct {
 	submitRequestCh chan bool
 }
 
-var (
-	nodeAddress = "http://0.0.0.0:26657"
-)
+//var (
+//	nodeAddress = "http://0.0.0.0:26657"
+//)
 
 func NewTxSubmitter(cfg config.Config, appKeys *DefaultAppKeys) *TxSubmitter {
 	httpClient := retryablehttp.NewClient()
@@ -271,7 +271,7 @@ func (t *TxSubmitter) submitMsgs(msgs []sdk.Msg) (*sdk.TxResponse, error) {
 
 // getLatestSequence makes a request to tendermint and get the correct sequence for the current account.
 func (t *TxSubmitter) getLatestSequence() (uint64, uint64, error) {
-	url := fmt.Sprintf("http://127.0.0.1:1317/auth/accounts/%s", t.fromAccount)
+	url := fmt.Sprintf("http://127.0.0.1:%d/auth/accounts/%s", t.cfg.Sisu.RpcPort, t.fromAccount)
 
 	type AccountResp struct {
 		Height string `json:"height"`
@@ -366,7 +366,7 @@ func convert(list []*QElementPair) []sdk.Msg {
 func (t *TxSubmitter) buildClientCtx(accountName string) (client.Context, error) {
 	info := t.appKeys.GetSignerInfo()
 
-	client, err := rpchttp.New(nodeAddress, "/websocket")
+	client, err := rpchttp.New(fmt.Sprintf("http://0.0.0.0:%d", t.cfg.Sisu.RpcPort), "/websocket")
 	if err != nil {
 		panic(err)
 	}
