@@ -348,9 +348,12 @@ func (p *Processor) OnKeysignResult(result *dhtypes.KeysignResult) {
 
 			// Create full tx with signature.
 			chainId := libchain.GetChainIntFromId(keysignMsg.OutChain)
+			if len(result.Signatures[i]) != 65 {
+				log.Error("Signature length is not 65 for chain: ", chainId)
+			}
 			signedTx, err := tx.WithSignature(ethtypes.NewEIP2930Signer(chainId), result.Signatures[i])
 			if err != nil {
-				log.Error("cannot set signatuer for tx, err =", err)
+				log.Error("cannot set signature for tx, err =", err)
 				return
 			}
 
