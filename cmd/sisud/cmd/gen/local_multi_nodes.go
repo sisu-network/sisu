@@ -67,12 +67,13 @@ func MultiNodesCmd(mbm module.BasicManager, genBalIterator banktypes.GenesisBala
 			keyringBackend := keyring.BackendTest
 
 			//ips := getLocalIps(startingIPAddress, numValidators)
-			ips := make([]string, numValidators)
-			for i := 0; i < numValidators; i++ {
+			totalNodes := numValidators + numCandidates
+			ips := make([]string, totalNodes)
+			for i := 0; i < totalNodes; i++ {
 				ips[i] = "127.0.0.1"
 			}
 
-			nodeConfigs := g.getNodeSettings(chainID, keyringBackend, numValidators)
+			nodeConfigs := g.getNodeSettings(chainID, keyringBackend, totalNodes)
 			//for i := range ips {
 			//	dir := filepath.Join(outputDir, fmt.Sprintf("validator%d", i))
 			//

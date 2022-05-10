@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/BurntSushi/toml"
@@ -86,9 +85,6 @@ func ReadConfig() (Config, error) {
 	if cfg.Sisu.InternalApiPort == 0 {
 		cfg.Sisu.InternalApiPort = 1317
 	}
-
-	fmt.Println("p2p port ", cfg.Sisu.RpcPort)
-	fmt.Println("internal api port ", cfg.Sisu.InternalApiPort)
 
 	return cfg, nil
 }

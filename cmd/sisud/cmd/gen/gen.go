@@ -19,6 +19,7 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -96,12 +97,15 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 		genFiles    []string
 	)
 
-	memos := make([]string, numValidators)
-	p2ps := make([]string, numValidators)
-	rpcs := make([]string, numValidators)
-	proxies := make([]string, numValidators)
-	nodes := make([]*types.Node, numValidators)
-	valPubKeys := make([]cryptotypes.PubKey, numValidators)
+	totalNodes := numValidators + numCandidates
+
+	memos := make([]string, totalNodes)
+	p2ps := make([]string, totalNodes)
+	rpcs := make([]string, totalNodes)
+	proxies := make([]string, totalNodes)
+	pprofs := make([]string, totalNodes)
+	nodes := make([]*types.Node, totalNodes)
+	valAndCanPubKeys := make([]cryptotypes.PubKey, totalNodes)
 	//canPubKeys := make([]cryptotypes.PubKey, numCandidates)
 
 	// Temporary set os.Stdin to nil to read the keyring-passphrase from created buffer
@@ -115,7 +119,7 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 	}
 
 	// generate private keys, node IDs, and initial transactions
-	for i := 0; i < numValidators; i++ {
+	for i := 0; i < totalNodes; i++ {
 		nodeDirName := fmt.Sprintf("%s%d", nodeDirPrefix, i)
 		nodeDir := filepath.Join(outputDir, nodeDirName)
 		mainAppDir := filepath.Join(nodeDir, nodeDaemonHome)
@@ -123,7 +127,8 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 		tmConfig.SetRoot(mainAppDir)
 		rpcs[i] = fmt.Sprintf("tcp://0.0.0.0:%d", 36656+i)
 		p2ps[i] = fmt.Sprintf("tcp://0.0.0.0:%d", 26656+i)
-		proxies[i] = fmt.Sprintf("tcp://127.0.0.1:%d", 16656+i)
+		proxies[i] = fmt.Sprintf("tcp://0.0.0.0:%d", 16656+i)
+		pprofs[i] = fmt.Sprintf("localhost:%d", 6060+i)
 
 		if err := os.MkdirAll(filepath.Join(mainAppDir, "config"), nodeDirPerm); err != nil {
 			_ = os.RemoveAll(outputDir)
@@ -153,9 +158,14 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 			return nil, err
 		}
 
-		node, secret, tendermintKey := getNode(kb, algoStr, nodeDirName, outputDir, tmConfig)
+		isValidator := true
+		if i >= numValidators {
+			isValidator = false
+		}
+
+		node, secret, tendermintKey := getNode(kb, algoStr, nodeDirName, outputDir, tmConfig, isValidator)
 		nodes[i] = node
-		valPubKeys[i] = tendermintKey
+		valAndCanPubKeys[i] = tendermintKey
 
 		var memo string
 		if settings.isLocalMultiNode {
@@ -208,18 +218,18 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 	}
 
 	err := collectGenFiles(
-		clientCtx, tmConfig, chainID, numValidators,
-		outputDir, nodeDirPrefix, nodeDaemonHome, memos, rpcs, p2ps, proxies,
+		clientCtx, tmConfig, chainID, numValidators, numCandidates,
+		outputDir, nodeDirPrefix, nodeDaemonHome, memos, rpcs, p2ps, proxies, pprofs,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	cmd.PrintErrf("Successfully initialized %d node directories\n", numValidators+numCandidates)
-	return valPubKeys, nil
+	cmd.PrintErrf("Successfully initialized %d node directories\n", totalNodes)
+	return valAndCanPubKeys, nil
 }
 
-func getNode(kb keyring.Keyring, algoStr string, nodeDirName string, outputDir string, tmConfig *tmconfig.Config) (*types.Node, string, cryptotypes.PubKey) {
+func getNode(kb keyring.Keyring, algoStr string, nodeDirName string, outputDir string, tmConfig *tmconfig.Config, isValidator bool) (*types.Node, string, cryptotypes.PubKey) {
 	keyringAlgos, _ := kb.SupportedAlgorithms()
 	algo, err := keyring.NewSigningAlgoFromString(algoStr, keyringAlgos)
 	if err != nil {
@@ -238,6 +248,11 @@ func getNode(kb keyring.Keyring, algoStr string, nodeDirName string, outputDir s
 		panic(err)
 	}
 
+	status := types.NodeStatus_Candidate
+	if isValidator {
+		status = types.NodeStatus_Validator
+	}
+
 	return &types.Node{
 		Id: nodeId,
 		ConsensusKey: &types.Pubkey{
@@ -245,8 +260,8 @@ func getNode(kb keyring.Keyring, algoStr string, nodeDirName string, outputDir s
 			Bytes: cosmosPubKey.Bytes(),
 		},
 		AccAddress:  addr.String(),
-		IsValidator: true,
-		Status:      types.NodeStatus_Validator,
+		IsValidator: isValidator,
+		Status:      status,
 	}, secret, cosmosPubKey
 }
 
@@ -309,19 +324,44 @@ func initGenFiles(
 
 func collectGenFiles(
 	clientCtx client.Context, nodeConfig *tmconfig.Config, chainID string,
-	numValidators int, outputDir, nodeDirPrefix, nodeDaemonHome string, memos []string, rpcs []string, p2ps []string, proxies []string,
+	numValidators int, numCandidates int, outputDir, nodeDirPrefix, nodeDaemonHome string, memos []string, rpcs []string, p2ps []string, proxies []string, pprofs []string,
 ) error {
 
 	var appState json.RawMessage
 	genTime := tmtime.Now()
 
+	persistentPeers := make([][]string, numValidators)
 	for i := 0; i < numValidators; i++ {
+		peers := make([]string, 0, numValidators-1)
+		for j := 0; j < numValidators; j++ {
+			if i == j {
+				continue
+			}
+
+			peers = append(peers, memos[j])
+		}
+
+		persistentPeers[i] = peers
+	}
+
+	// set all validator nodes as persistent peers of candidates
+	canPersistentPeers := make([][]string, numCandidates)
+	for i := 0; i < numCandidates; i++ {
+		canPersistentPeers[i] = memos[:numValidators]
+	}
+
+	persistentPeers = append(persistentPeers, canPersistentPeers...)
+
+	log.Debug("persistent peers: ", persistentPeers)
+
+	for i := 0; i < numValidators+numCandidates; i++ {
 		nodeDirName := fmt.Sprintf("%s%d", nodeDirPrefix, i)
 		nodeDir := filepath.Join(outputDir, nodeDirName, nodeDaemonHome)
 		nodeConfig.Moniker = nodeDirName
 		nodeConfig.P2P.ListenAddress = p2ps[i]
 		nodeConfig.RPC.ListenAddress = rpcs[i]
 		nodeConfig.ProxyApp = proxies[i]
+		nodeConfig.RPC.PprofListenAddress = pprofs[i]
 
 		nodeConfig.SetRoot(nodeDir)
 
@@ -330,20 +370,11 @@ func collectGenFiles(
 			return err
 		}
 
-		persistenPeers := make([]string, 0, numValidators-1)
-		for j, memo := range memos {
-			if i == j {
-				continue
-			}
-
-			persistenPeers = append(persistenPeers, memo)
-		}
-
 		nodeAppState, err := GenAppStateFromConfig(
 			clientCtx.JSONMarshaler,
 			nodeConfig,
 			*genDoc,
-			strings.Join(persistenPeers, ","),
+			strings.Join(persistentPeers[i], ","),
 		)
 		if err != nil {
 			return err

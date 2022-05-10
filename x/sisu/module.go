@@ -214,8 +214,8 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	log.Info("Tss params: ", savedParams)
 
 	// Create validator nodes
-	validators := make([]abci.ValidatorUpdate, len(genState.Nodes))
-	for i, node := range genState.Nodes {
+	validators := make([]abci.ValidatorUpdate, 0)
+	for _, node := range genState.Nodes {
 		if !node.IsValidator {
 			continue
 		}
@@ -225,7 +225,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 			panic(err)
 		}
 
-		validators[i] = abci.Ed25519ValidatorUpdate(pk.Bytes(), 100)
+		validators = append(validators, abci.Ed25519ValidatorUpdate(pk.Bytes(), 100))
 		valsMgr.AddNode(ctx, node)
 	}
 
