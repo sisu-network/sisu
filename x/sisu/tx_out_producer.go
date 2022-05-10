@@ -2,6 +2,7 @@ package sisu
 
 import (
 	"math/big"
+	"sort"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -117,6 +118,8 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 					contracts[i].Hash,
 				)
 
+				log.Verbose("ETH Tx Out hash = ", outTx.Hash().String(), " on chain ", tx.Chain)
+
 				outMsgs = append(outMsgs, outMsg)
 			}
 
@@ -164,7 +167,7 @@ func (p *DefaultTxOutputProducer) getEthContractDeploymentTx(ctx sdk.Context, he
 
 	for _, contract := range contracts {
 		nonce := p.worldState.UseAndIncreaseNonce(ctx, chain)
-		log.Verbose("nonce for deploying contract:", nonce)
+		log.Verbose("nonce for deploying contract:", nonce, " on chain ", chain)
 		if nonce < 0 {
 			log.Error("cannot get nonce for contract")
 			continue
@@ -201,6 +204,8 @@ func (p *DefaultTxOutputProducer) getContractTx(ctx sdk.Context, contract *types
 			}
 		}
 
+		sort.Strings(supportedChains)
+
 		log.Info("Allowed chains for chain ", contract.Chain, " are: ", supportedChains)
 
 		lp := p.keeper.GetLiquidity(ctx, contract.Chain)
@@ -228,11 +233,15 @@ func (p *DefaultTxOutputProducer) getContractTx(ctx sdk.Context, contract *types
 		if gasPrice < 0 {
 			gasPrice = p.getDefaultGasPrice(contract.Chain).Int64()
 		}
+		gasLimit := p.getGasLimit(contract.Chain)
+
+		log.Verbose("Gas price = ", gasPrice, " on chain ", contract.Chain)
+		log.Verbose("gasLimit = ", gasLimit, " on chain ", contract.Chain)
 
 		rawTx := ethTypes.NewContractCreation(
 			uint64(nonce),
 			big.NewInt(0),
-			p.getGasLimit(contract.Chain),
+			gasLimit,
 			big.NewInt(gasPrice),
 			input,
 		)
