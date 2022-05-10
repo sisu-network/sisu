@@ -35,24 +35,18 @@ func NewValidatorManager(keeper keeper.Keeper) ValidatorManager {
 	}
 }
 
-// GetNodesByStatus if status = types.NodeStatus_Unknown, returns all nodes
+// GetNodesByStatus returns all nodes whose status is either unkonwn or equal to a specific status.
 func (m *DefaultValidatorManager) GetNodesByStatus(status types.NodeStatus) map[string]*types.Node {
-	allNodes, filteredNodes := map[string]*types.Node{}, map[string]*types.Node{}
+	filteredNodes := make(map[string]*types.Node)
 	m.nodeLock.RLock()
-	allNodes = m.nodes
-	m.nodeLock.RUnlock()
-
-	if status == types.NodeStatus_Unknown {
-		return allNodes
-	}
-
-	for key, node := range allNodes {
-		if node.Status != status {
+	for key, node := range m.nodes {
+		if status != types.NodeStatus_Unknown && node.Status != status {
 			continue
 		}
 
 		filteredNodes[key] = node
 	}
+	m.nodeLock.RUnlock()
 
 	return filteredNodes
 }
