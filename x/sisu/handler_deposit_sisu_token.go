@@ -14,7 +14,6 @@ import (
 )
 
 type HandlerDepositSisuToken struct {
-	pmm        PostedMessageManager
 	mc         ManagerContainer
 	keeper     keeper.Keeper
 	valManager ValidatorManager
@@ -22,7 +21,6 @@ type HandlerDepositSisuToken struct {
 
 func NewHandlerDepositSisuToken(mc ManagerContainer) *HandlerDepositSisuToken {
 	return &HandlerDepositSisuToken{
-		pmm:        mc.PostedMessageManager(),
 		mc:         mc,
 		keeper:     mc.Keeper(),
 		valManager: mc.ValidatorManager(),
@@ -30,18 +28,15 @@ func NewHandlerDepositSisuToken(mc ManagerContainer) *HandlerDepositSisuToken {
 }
 
 func (h *HandlerDepositSisuToken) DeliverMsg(ctx sdk.Context, msg *types.DepositSisuTokenMsg) (*sdk.Result, error) {
-	process, hash := h.pmm.ShouldProcessMsg(ctx, msg)
-	if !process {
-		return &sdk.Result{}, nil
-	}
-
 	if err := h.doDepositSisuToken(ctx, msg); err != nil {
-		return &sdk.Result{}, err
+		return nil, err
 	}
 
-	_ = h.addToCandidateNode(ctx, msg)
+	err := h.addToCandidateNode(ctx, msg)
+	if err != nil {
+		return nil, err
+	}
 
-	h.keeper.ProcessTxRecord(ctx, hash)
 	return &sdk.Result{}, nil
 }
 
