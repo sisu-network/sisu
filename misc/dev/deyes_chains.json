@@ -1,14 +1,16 @@
 [
   {
-    "id": "ganache1",
+    "chain": "ganache1",
     "block_time": 3000,
     "starting_block": 0,
+    "adjust_time": 0,
     "rpc_url": "http://localhost:7545"
   },
   {
-    "id": "ganache2",
+    "chain": "ganache2",
     "block_time": 3000,
     "starting_block": 0,
+    "adjust_time": 0,
     "rpc_url": "http://localhost:8545"
   }
 ]
