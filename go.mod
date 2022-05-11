@@ -37,7 +37,7 @@ require (
 	github.com/regen-network/cosmos-proto v0.3.1 // indirect
 	github.com/rjeczalik/notify v0.9.2 // indirect
 	github.com/sisu-network/deyes v0.1.6
-	github.com/sisu-network/dheart v0.1.6
+	github.com/sisu-network/dheart v0.1.7-0.20220510050526-c13406d40ee1
 	github.com/sisu-network/lib v0.0.1-alpha17
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.3.1
@@ -63,4 +63,4 @@ replace google.golang.org/grpc => google.golang.org/grpc v1.33.2
 
 replace github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 
-replace github.com/sisu-network/dheart => ../dheart
+//replace github.com/sisu-network/dheart => ../dheart

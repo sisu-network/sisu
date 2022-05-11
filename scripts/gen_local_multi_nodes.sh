@@ -9,16 +9,16 @@ fi
 
 rm -rf output/
 
-./sisu multi-nodes --v 2 --c 2
+./sisu multi-nodes --v 1 --c 1
 
-for ((i = 0; i < 4; i++))
+for ((i = 0; i < 2; i++))
 do
   rm -rf ~/.validator"$i"
   cp -rf ./output/validator"$i" ~/.validator"$i"
 done
 
 # Copy dheart.toml to its folder
-for ((i = 0; i < 4; i++))
+for ((i = 0; i < 2; i++))
 do
   mkdir -p ~/.validator"$i"/dheart
   cp ../dheart/dheart.toml ~/.validator"$i"/dheart
