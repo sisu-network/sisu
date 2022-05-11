@@ -430,6 +430,12 @@ func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 
 	// Create TxIn messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
+		if !tx.Success {
+			// TODO: Have a mechanism to handle failed transaction.
+			p.txTracker.OnTxFailed(txs.Chain, tx.Hash, types.TxStatusReverted)
+			continue
+		}
+
 		// 1. Check if this tx is from one of our key. If it is, update the status of TxOut to confirmed.
 		if p.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, tx.From) {
 			return p.confirmTx(ctx, tx, txs.Chain, txs.Block)
