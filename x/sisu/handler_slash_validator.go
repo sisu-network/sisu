@@ -24,11 +24,6 @@ func NewHandlerSlashValidator(mc ManagerContainer) *HandlerSlashValidator {
 }
 
 func (h *HandlerSlashValidator) DeliverMsg(ctx sdk.Context, msg *types.SlashValidatorMsg) (*sdk.Result, error) {
-	process, hash := h.pmm.ShouldProcessMsg(ctx, msg)
-	if !process {
-		return &sdk.Result{}, nil
-	}
-
 	vals := h.valManager.GetNodesByStatus(types.NodeStatus_Validator)
 	for addr, _ := range vals {
 		log.Debug("val address = ", addr)
@@ -52,7 +47,5 @@ func (h *HandlerSlashValidator) DeliverMsg(ctx sdk.Context, msg *types.SlashVali
 	}
 
 	log.Debugf("after slash balance of node %s is %d", nodeAddr, afterSlashBalance)
-
-	h.keeper.ProcessTxRecord(ctx, hash)
 	return &sdk.Result{}, nil
 }

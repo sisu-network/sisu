@@ -271,7 +271,7 @@ func (t *TxSubmitter) submitMsgs(msgs []sdk.Msg) (*sdk.TxResponse, error) {
 
 // getLatestSequence makes a request to tendermint and get the correct sequence for the current account.
 func (t *TxSubmitter) getLatestSequence() (uint64, uint64, error) {
-	url := fmt.Sprintf("http://127.0.0.1:%d/auth/accounts/%s", t.cfg.Sisu.RpcPort, t.fromAccount)
+	url := fmt.Sprintf("http://127.0.0.1:1317/auth/accounts/%s", t.fromAccount)
 
 	type AccountResp struct {
 		Height string `json:"height"`

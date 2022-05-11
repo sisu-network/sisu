@@ -90,7 +90,7 @@ func (a *GlobalDataDefault) Init() {
 func (a *GlobalDataDefault) UpdateCatchingUp() bool {
 	oldValue := a.IsCatchingUp()
 
-	url := fmt.Sprintf("http://127.0.0.1:%d/status", a.cfg.Sisu.RpcPort)
+	url := "http://127.0.0.1:26657/status"
 	body, _, err := utils.HttpGet(a.httpClient, url)
 	if err != nil {
 		log.Error(fmt.Errorf("Cannot get status data: %w", err))
@@ -125,7 +125,7 @@ func (a *GlobalDataDefault) UpdateCatchingUp() bool {
 }
 
 func (a *GlobalDataDefault) UpdateValidatorSets() {
-	url := fmt.Sprintf("http://127.0.0.1:%d/validatorsets/latest", a.cfg.Sisu.InternalApiPort)
+	url := "http://127.0.0.1:1317/validatorsets/latest"
 	body, _, err := utils.HttpGet(a.httpClient, url)
 	if err != nil {
 		log.Error(fmt.Errorf("Cannot get status data: %w", err))
