@@ -4,11 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"os"
-	"path/filepath"
-	"strings"
-
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -24,6 +19,10 @@ import (
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
+	"io"
+	"os"
+	"path/filepath"
+	"strings"
 
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmos "github.com/tendermint/tendermint/libs/os"
@@ -100,13 +99,8 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 	totalNodes := numValidators + numCandidates
 
 	memos := make([]string, totalNodes)
-	p2ps := make([]string, totalNodes)
-	rpcs := make([]string, totalNodes)
-	proxies := make([]string, totalNodes)
-	pprofs := make([]string, totalNodes)
 	nodes := make([]*types.Node, totalNodes)
 	valAndCanPubKeys := make([]cryptotypes.PubKey, totalNodes)
-	//canPubKeys := make([]cryptotypes.PubKey, numCandidates)
 
 	// Temporary set os.Stdin to nil to read the keyring-passphrase from created buffer
 	if settings.keyringBackend == keyring.BackendFile {
@@ -125,10 +119,6 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 		mainAppDir := filepath.Join(nodeDir, nodeDaemonHome)
 
 		tmConfig.SetRoot(mainAppDir)
-		rpcs[i] = fmt.Sprintf("tcp://0.0.0.0:%d", 36656+i)
-		p2ps[i] = fmt.Sprintf("tcp://0.0.0.0:%d", 26656+i)
-		proxies[i] = fmt.Sprintf("tcp://0.0.0.0:%d", 16656+i)
-		pprofs[i] = fmt.Sprintf("localhost:%d", 6060+i)
 
 		if err := os.MkdirAll(filepath.Join(mainAppDir, "config"), nodeDirPerm); err != nil {
 			_ = os.RemoveAll(outputDir)
@@ -202,8 +192,6 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 		genAccounts = append(genAccounts, authtypes.NewBaseAccount(acc, nil, 0, 0))
 
 		// Write config/app.toml
-		simappConfig.API.Address = fmt.Sprintf("tcp://0.0.0.0:%d", 1317+i)
-		simappConfig.GRPC.Address = fmt.Sprintf("0.0.0.0:%d", 9090+i)
 		srvconfig.WriteConfigFile(filepath.Join(mainAppDir, "config/app.toml"), simappConfig)
 
 		// Genreate sisu.toml
@@ -219,7 +207,7 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 
 	err := collectGenFiles(
 		clientCtx, tmConfig, chainID, numValidators, numCandidates,
-		outputDir, nodeDirPrefix, nodeDaemonHome, memos, rpcs, p2ps, proxies, pprofs,
+		outputDir, nodeDirPrefix, nodeDaemonHome, memos,
 	)
 	if err != nil {
 		return nil, err
@@ -324,7 +312,7 @@ func initGenFiles(
 
 func collectGenFiles(
 	clientCtx client.Context, nodeConfig *tmconfig.Config, chainID string,
-	numValidators int, numCandidates int, outputDir, nodeDirPrefix, nodeDaemonHome string, memos []string, rpcs []string, p2ps []string, proxies []string, pprofs []string,
+	numValidators int, numCandidates int, outputDir, nodeDirPrefix, nodeDaemonHome string, memos []string,
 ) error {
 
 	var appState json.RawMessage
@@ -358,10 +346,6 @@ func collectGenFiles(
 		nodeDirName := fmt.Sprintf("%s%d", nodeDirPrefix, i)
 		nodeDir := filepath.Join(outputDir, nodeDirName, nodeDaemonHome)
 		nodeConfig.Moniker = nodeDirName
-		nodeConfig.P2P.ListenAddress = p2ps[i]
-		nodeConfig.RPC.ListenAddress = rpcs[i]
-		nodeConfig.ProxyApp = proxies[i]
-		nodeConfig.RPC.PprofListenAddress = pprofs[i]
 
 		nodeConfig.SetRoot(nodeDir)
 

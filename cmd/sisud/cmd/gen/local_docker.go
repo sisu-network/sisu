@@ -77,7 +77,7 @@ Example:
 			minGasPrices, _ := cmd.Flags().GetString(server.FlagMinGasPrices)
 			nodeDirPrefix, _ := cmd.Flags().GetString(flagNodeDirPrefix)
 			nodeDaemonHome, _ := cmd.Flags().GetString(flagNodeDaemonHome)
-			// startingIPAddress, _ := cmd.Flags().GetString(flagStartingIPAddress)
+			numCandidates, _ := cmd.Flags().GetInt(flagNumCandidates)
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
 
@@ -96,10 +96,9 @@ Example:
 			chainID := "eth-sisu-local"
 			keyringBackend := keyring.BackendTest
 
-			// startingIPAddress := "192.168.10.6"
-			// ips := getLocalIps(startingIPAddress, numValidators)
-			ips := make([]string, numValidators)
-			for i := range ips {
+			totalNodes := numValidators + numCandidates
+			ips := make([]string, totalNodes)
+			for i := 0; i < totalNodes; i++ {
 				ips[i] = fmt.Sprintf("sisu%d", i)
 			}
 
@@ -107,7 +106,7 @@ Example:
 			chainIds := []*big.Int{libchain.GetChainIntFromId("ganache1"), libchain.GetChainIntFromId("ganache2")}
 			dockerConfig := g.getDockerConfig([]string{"192.168.10.2", "192.168.10.3"}, chainIds, "192.168.10.4", ips)
 
-			nodeConfigs := make([]config.Config, numValidators)
+			nodeConfigs := make([]config.Config, totalNodes)
 			for i := range ips {
 				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
 
@@ -137,6 +136,7 @@ Example:
 				keyringBackend: keyringBackend,
 				algoStr:        algo,
 				numValidators:  numValidators,
+				numCandidates:  numCandidates,
 
 				ips:         ips,
 				nodeConfigs: nodeConfigs,
@@ -166,6 +166,7 @@ Example:
 	}
 
 	cmd.Flags().Int(flagNumValidators, 1, "Number of validators to initialize the localnet with")
+	cmd.Flags().Int(flagNumCandidates, 0, "Number of candidates to initialize the localnet with")
 	cmd.Flags().StringP(flagOutputDir, "o", "./output", "Directory to store initialization data for the localnet")
 	cmd.Flags().String(flagNodeDirPrefix, "node", "Prefix the directory name for each node with (node results in node0, node1, ...)")
 	cmd.Flags().String(flagNodeDaemonHome, "main", "Home directory of the node's daemon configuration")
