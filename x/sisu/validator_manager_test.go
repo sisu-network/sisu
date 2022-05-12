@@ -1,8 +1,9 @@
 package sisu
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"testing"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
@@ -119,7 +120,7 @@ func TestTestDefaultValidatorManager_GetPotentialCandidates(t *testing.T) {
 
 		candidate, err := sdk.AccAddressFromBech32("cosmos1g64vzyutdjfdvw5kyae73fc39sksg3r7gzmrzy")
 		require.NoError(t, err)
-		require.NoError(t, keeper.IncBalance(ctx, candidate, 100))
+		require.NoError(t, keeper.IncBondBalance(ctx, candidate, 100))
 
 		consensusKey := []byte("0x1")
 		validatorManager.AddNode(ctx, &types.Node{

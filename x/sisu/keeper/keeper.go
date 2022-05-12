@@ -106,10 +106,10 @@ type Keeper interface {
 	GetSlashToken(ctx sdk.Context, address sdk.AccAddress) (int64, error)
 
 	// Nodes balance
-	IncBalance(ctx sdk.Context, address sdk.AccAddress, amount int64) error
-	DecBalance(ctx sdk.Context, address sdk.AccAddress, amount int64) error
-	GetBalance(ctx sdk.Context, address sdk.AccAddress) (int64, error)
-	GetTopBalance(ctx sdk.Context, n int) []sdk.AccAddress
+	IncBondBalance(ctx sdk.Context, address sdk.AccAddress, amount int64) error
+	DecBondBalance(ctx sdk.Context, address sdk.AccAddress, amount int64) error
+	GetBondBalance(ctx sdk.Context, address sdk.AccAddress) (int64, error)
+	GetTopBondBalance(ctx sdk.Context, n int) []sdk.AccAddress
 
 	// Validator update
 	SaveIncomingValidatorUpdates(ctx sdk.Context, validatorUpdates abci.ValidatorUpdates) error
@@ -433,24 +433,24 @@ func (k *DefaultKeeper) GetSlashToken(ctx sdk.Context, address sdk.AccAddress) (
 	return getCurSlashToken(store, address)
 }
 
-///// Node balances
-func (k *DefaultKeeper) IncBalance(ctx sdk.Context, address sdk.AccAddress, amount int64) error {
+///// Bond balances
+func (k *DefaultKeeper) IncBondBalance(ctx sdk.Context, address sdk.AccAddress, amount int64) error {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixNodeBalance)
-	return incOrDecNodeBalance(store, address, amount)
+	return incOrDecBondBalance(store, address, amount)
 }
 
-func (k *DefaultKeeper) DecBalance(ctx sdk.Context, address sdk.AccAddress, amount int64) error {
+func (k *DefaultKeeper) DecBondBalance(ctx sdk.Context, address sdk.AccAddress, amount int64) error {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixNodeBalance)
-	return incOrDecNodeBalance(store, address, -amount)
+	return incOrDecBondBalance(store, address, -amount)
 }
 
-func (k *DefaultKeeper) GetBalance(ctx sdk.Context, address sdk.AccAddress) (int64, error) {
+func (k *DefaultKeeper) GetBondBalance(ctx sdk.Context, address sdk.AccAddress) (int64, error) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixNodeBalance)
-	return getCurNodeBalance(store, address)
+	return getBondBalance(store, address)
 }
 
 // GetTopBalance if n is -1, get all balances
-func (k *DefaultKeeper) GetTopBalance(ctx sdk.Context, n int) []sdk.AccAddress {
+func (k *DefaultKeeper) GetTopBondBalance(ctx sdk.Context, n int) []sdk.AccAddress {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixNodeBalance)
 	return getTopBalances(store, n)
 }
