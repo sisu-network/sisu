@@ -179,6 +179,11 @@ func approveAddress(client *ethclient.Client, mnemonic string, erc20Addr string,
 
 	_, owner := getPrivateKey(mnemonic)
 	ownerBalance, err := contract.BalanceOf(nil, owner)
+	if err != nil {
+		log.Error("cannot get balance for owner: ", owner, " err = ", err)
+	}
+
+	log.Verbose("Approving address ", target, " token = ", erc20Addr, "owner balance = ", ownerBalance)
 
 	tx, err := contract.Approve(opts, common.HexToAddress(target), ownerBalance)
 	bind.WaitDeployed(context.Background(), client, tx)
