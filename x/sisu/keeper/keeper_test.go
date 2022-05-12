@@ -169,15 +169,15 @@ func TestDefaultKeeper_GetTopBalance(t *testing.T) {
 
 	top2Balances := keeper.GetTopBondBalance(ctx, 2)
 	require.Len(t, top2Balances, 2)
-	require.Equal(t, addr3, top2Balances[0].Bytes())
-	require.Equal(t, addr2, top2Balances[1].Bytes())
+	require.Equal(t, addr2, top2Balances[0].Bytes())
+	require.Equal(t, addr3, top2Balances[1].Bytes())
 
 	// addr1 = 1, addr2 = 0, addr3 = 2
 	require.NoError(t, keeper.DecBondBalance(ctx, addr2, 3))
 	top2Balances = keeper.GetTopBondBalance(ctx, 2)
 	require.Len(t, top2Balances, 2)
-	require.Equal(t, addr1, top2Balances[0].Bytes())
-	require.Equal(t, addr3, top2Balances[1].Bytes())
+	require.Equal(t, addr3, top2Balances[0].Bytes())
+	require.Equal(t, addr1, top2Balances[1].Bytes())
 }
 
 func TestDefaultKeeper_SaveAndGetValidatorUpdates(t *testing.T) {

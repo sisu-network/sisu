@@ -79,7 +79,7 @@ func TestHandlerDepositSisuToken_DepositToken(t *testing.T) {
 		_, err := handler.DeliverMsg(ctx, depositMsg)
 		require.Nil(t, err)
 
-		balance, err := keeper.GetBalance(ctx, appKeys.GetSignerAddress())
+		balance, err := keeper.GetBondBalance(ctx, appKeys.GetSignerAddress())
 		require.Nil(t, err)
 
 		require.Equal(t, deposit, balance)

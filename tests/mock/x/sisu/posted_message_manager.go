@@ -34,6 +34,21 @@ func (m *MockPostedMessageManager) EXPECT() *MockPostedMessageManagerMockRecorde
 	return m.recorder
 }
 
+// IsReachedThreshold mocks base method.
+func (m *MockPostedMessageManager) IsReachedThreshold(ctx types.Context, msg types.Msg, threshold int) (bool, []byte) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsReachedThreshold", ctx, msg, threshold)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].([]byte)
+	return ret0, ret1
+}
+
+// IsReachedThreshold indicates an expected call of IsReachedThreshold.
+func (mr *MockPostedMessageManagerMockRecorder) IsReachedThreshold(ctx, msg, threshold interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsReachedThreshold", reflect.TypeOf((*MockPostedMessageManager)(nil).IsReachedThreshold), ctx, msg, threshold)
+}
+
 // ShouldProcessMsg mocks base method.
 func (m *MockPostedMessageManager) ShouldProcessMsg(ctx types.Context, msg types.Msg) (bool, []byte) {
 	m.ctrl.T.Helper()
