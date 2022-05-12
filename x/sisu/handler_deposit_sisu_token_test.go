@@ -1,7 +1,7 @@
 package sisu
 
 import (
-	"fmt"
+	"encoding/base64"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -51,7 +51,7 @@ func TestHandlerDepositSisuToken_DepositToken(t *testing.T) {
 	initTokens := sdk.TokensFromConsensusPower(initialPower)
 	initCoins := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, initTokens))
 
-	t.Run("emtpy", func(t *testing.T) {
+	t.Run("User can deposit", func(t *testing.T) {
 		t.Parallel()
 
 		ctx := testContext()
@@ -65,16 +65,52 @@ func TestHandlerDepositSisuToken_DepositToken(t *testing.T) {
 		authKeeper.SetModuleAccount(ctx, authtypes.NewEmptyModuleAccount(BondName))
 		authKeeper.SetAccount(ctx, baseAcc)
 
+		accBalance := int64(100)
+		deposit := int64(10)
+
 		account := appKeys.GetSignerAddress()
-		bankKeeper.AddCoins(ctx, account, []sdk.Coin{sdk.NewCoin(common.SisuCoinName, sdk.NewInt(100))})
+		bankKeeper.AddCoins(ctx, account, []sdk.Coin{sdk.NewCoin(common.SisuCoinName, sdk.NewInt(accBalance))})
 
 		mc := MockManagerContainer(validatorManager, keeper, bankKeeper)
 		handler := NewHandlerDepositSisuToken(mc)
 
-		depositMsg := types.NewDepositSisuTokenMsg(appKeys.GetSignerAddress().String(), "pubKey", 10, 0)
+		depositMsg := types.NewDepositSisuTokenMsg(appKeys.GetSignerAddress().String(), base64.StdEncoding.EncodeToString([]byte("pubkey")), deposit, 0)
 
 		_, err := handler.DeliverMsg(ctx, depositMsg)
-		fmt.Println("err = ", err)
+		require.Nil(t, err)
+
+		balance, err := keeper.GetBalance(ctx, appKeys.GetSignerAddress())
+		require.Nil(t, err)
+
+		require.Equal(t, deposit, balance)
+	})
+
+	t.Run("User cannot deposit when balance is not enough", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := testContext()
+		authKeeper, bankKeeper := getTestAccountAndBankKeepers()
+		keeper := keeperTestGenesis(ctx)
+		validatorManager := NewValidatorManager(keeper)
+		appKeys := common.NewMockAppKeys()
+
+		baseAcc := authKeeper.NewAccountWithAddress(ctx, authtypes.NewModuleAddress("baseAcc"))
+		bankKeeper.SetSupply(ctx, banktypes.NewSupply(initCoins))
+		authKeeper.SetModuleAccount(ctx, authtypes.NewEmptyModuleAccount(BondName))
+		authKeeper.SetAccount(ctx, baseAcc)
+
+		accBalance := int64(100)
+		deposit := int64(200)
+
+		account := appKeys.GetSignerAddress()
+		bankKeeper.AddCoins(ctx, account, []sdk.Coin{sdk.NewCoin(common.SisuCoinName, sdk.NewInt(accBalance))})
+
+		mc := MockManagerContainer(validatorManager, keeper, bankKeeper)
+		handler := NewHandlerDepositSisuToken(mc)
+
+		depositMsg := types.NewDepositSisuTokenMsg(appKeys.GetSignerAddress().String(), base64.StdEncoding.EncodeToString([]byte("pubkey")), deposit, 0)
+
+		_, err := handler.DeliverMsg(ctx, depositMsg)
 		require.NotNil(t, err)
 	})
 }
