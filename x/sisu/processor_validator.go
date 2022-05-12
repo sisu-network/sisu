@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	"bytes"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -8,31 +9,55 @@ import (
 )
 
 func (p *Processor) EndBlockValidator(ctx sdk.Context) []abci.ValidatorUpdate {
-	newValidators, oldValidators, err := p.getChangedNodes(ctx)
+	newValidators, removedValidators, err := p.getChangedNodes(ctx)
 	if err != nil {
 		return []abci.ValidatorUpdate{}
 	}
 
-	if len(newValidators) == 0 && len(oldValidators) == 0 {
+	if len(newValidators) == 0 && len(removedValidators) == 0 {
 		return []abci.ValidatorUpdate{}
 	}
 
 	log.Debug("len = ", len(newValidators), " newValidators = ", newValidators)
-	log.Debug("len = ", len(oldValidators), " oldValidators = ", oldValidators)
+	log.Debug("len = ", len(removedValidators), " removedValidators = ", removedValidators)
 
 	newValidatorKeys := make([][]byte, 0)
-	oldValidatorKeys := make([][]byte, 0)
 	for _, val := range newValidators {
 		newValidatorKeys = append(newValidatorKeys, val.ConsensusKey.GetBytes())
 	}
 
-	for _, val := range oldValidators {
-		oldValidatorKeys = append(oldValidatorKeys, val.ConsensusKey.GetBytes())
+	// 1. newValSet = current validator set - removedValidators + newValidators
+	newValSet := make([][]byte, 0)
+	currentVals := p.validatorManager.GetNodesByStatus(types.NodeStatus_Validator)
+
+	// 1a. excludes removed validators
+	for _, val := range currentVals {
+		// if this validator is in removed validators list, ignore
+		isOld := false
+		for _, old := range removedValidators {
+			if bytes.Equal(val.ConsensusKey.GetBytes(), old.ConsensusKey.GetBytes()) {
+				isOld = true
+				break
+			}
+		}
+
+		if isOld {
+			continue
+		}
+
+		newValSet = append(newValSet, val.ConsensusKey.GetBytes())
 	}
 
-	log.Debug("len oldValidatorKeys = ", len(oldValidatorKeys))
-	log.Debug("len newValidatorKeys = ", len(newValidatorKeys))
-	changeValSetMsg := types.NewChangeValidatorSetMsg(p.appKeys.GetSignerAddress().String(), oldValidatorKeys, newValidatorKeys)
+	// 1b. includes new validators
+	newValSet = append(newValSet, newValidatorKeys...)
+
+	oldValSet := make([][]byte, 0)
+	for _, oldVal := range currentVals {
+		oldValSet = append(oldValSet, oldVal.ConsensusKey.GetBytes())
+	}
+
+	log.Debug("len newValSet = ", len(newValidatorKeys))
+	changeValSetMsg := types.NewChangeValidatorSetMsg(p.appKeys.GetSignerAddress().String(), oldValSet, newValSet)
 	p.txSubmit.SubmitMessageAsync(changeValSetMsg)
 
 	incomingValUpdate := p.keeper.GetIncomingValidatorUpdates(ctx)
