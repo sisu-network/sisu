@@ -950,8 +950,8 @@ func getCurSlashToken(store cstypes.KVStore, address sdk.AccAddress) (int64, err
 }
 
 ///// Node balance
-func incOrDecNodeBalance(store cstypes.KVStore, address sdk.AccAddress, amount int64) error {
-	oldAmt, err := getCurNodeBalance(store, address)
+func incOrDecBondBalance(store cstypes.KVStore, address sdk.AccAddress, amount int64) error {
+	oldAmt, err := getBondBalance(store, address)
 	if err != nil {
 		return err
 	}
@@ -967,7 +967,7 @@ func incOrDecNodeBalance(store cstypes.KVStore, address sdk.AccAddress, amount i
 	return nil
 }
 
-func getCurNodeBalance(store cstypes.KVStore, address sdk.AccAddress) (int64, error) {
+func getBondBalance(store cstypes.KVStore, address sdk.AccAddress) (int64, error) {
 	addrKey := address.Bytes()
 	bz := store.Get(addrKey)
 	if bz == nil {

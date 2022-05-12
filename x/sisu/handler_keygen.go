@@ -54,7 +54,6 @@ func (h *HandlerKeygen) doKeygen(ctx sdk.Context, signerMsg *types.KeygenWithSig
 
 func (h *HandlerKeygen) doTss(msg *types.Keygen, blockHeight int64) {
 	log.Info("doing keygen tsss...")
-
 	partyManager := h.mc.PartyManager()
 	dheartClient := h.mc.DheartClient()
 

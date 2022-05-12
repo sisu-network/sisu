@@ -135,18 +135,18 @@ func TestDefaultKeeper_IncAndDecNodeBalance(t *testing.T) {
 	keeper, ctx := getTestKeeperAndContext()
 
 	addr := []byte("0x1")
-	require.NoError(t, keeper.IncBalance(ctx, addr, 1))
-	curBalance, err := keeper.GetBalance(ctx, addr)
+	require.NoError(t, keeper.IncBondBalance(ctx, addr, 1))
+	curBalance, err := keeper.GetBondBalance(ctx, addr)
 	require.NoError(t, err)
 	require.Equal(t, int64(1), curBalance)
 
-	require.NoError(t, keeper.DecBalance(ctx, addr, 1))
-	curBalance, err = keeper.GetBalance(ctx, addr)
+	require.NoError(t, keeper.DecBondBalance(ctx, addr, 1))
+	curBalance, err = keeper.GetBondBalance(ctx, addr)
 	require.NoError(t, err)
 	require.Equal(t, int64(0), curBalance)
 
-	require.NoError(t, keeper.DecBalance(ctx, addr, 1))
-	curBalance, err = keeper.GetBalance(ctx, addr)
+	require.NoError(t, keeper.DecBondBalance(ctx, addr, 1))
+	curBalance, err = keeper.GetBondBalance(ctx, addr)
 	require.NoError(t, err)
 	require.Equal(t, int64(0), curBalance)
 }
@@ -157,27 +157,27 @@ func TestDefaultKeeper_GetTopBalance(t *testing.T) {
 	keeper, ctx := getTestKeeperAndContext()
 
 	addr1 := []byte("0x1")
-	require.NoError(t, keeper.IncBalance(ctx, addr1, 1))
+	require.NoError(t, keeper.IncBondBalance(ctx, addr1, 1))
 	addr2 := []byte("0x2")
-	require.NoError(t, keeper.IncBalance(ctx, addr2, 3))
+	require.NoError(t, keeper.IncBondBalance(ctx, addr2, 3))
 	addr3 := []byte("0x3")
-	require.NoError(t, keeper.IncBalance(ctx, addr3, 2))
+	require.NoError(t, keeper.IncBondBalance(ctx, addr3, 2))
 
-	top1Balance := keeper.GetTopBalance(ctx, 1)
+	top1Balance := keeper.GetTopBondBalance(ctx, 1)
 	require.Len(t, top1Balance, 1)
 	require.Equal(t, addr2, top1Balance[0].Bytes())
 
-	top2Balances := keeper.GetTopBalance(ctx, 2)
+	top2Balances := keeper.GetTopBondBalance(ctx, 2)
 	require.Len(t, top2Balances, 2)
-	require.Equal(t, addr3, top2Balances[0].Bytes())
-	require.Equal(t, addr2, top2Balances[1].Bytes())
+	require.Equal(t, addr2, top2Balances[0].Bytes())
+	require.Equal(t, addr3, top2Balances[1].Bytes())
 
 	// addr1 = 1, addr2 = 0, addr3 = 2
-	require.NoError(t, keeper.DecBalance(ctx, addr2, 3))
-	top2Balances = keeper.GetTopBalance(ctx, 2)
+	require.NoError(t, keeper.DecBondBalance(ctx, addr2, 3))
+	top2Balances = keeper.GetTopBondBalance(ctx, 2)
 	require.Len(t, top2Balances, 2)
-	require.Equal(t, addr1, top2Balances[0].Bytes())
-	require.Equal(t, addr3, top2Balances[1].Bytes())
+	require.Equal(t, addr3, top2Balances[0].Bytes())
+	require.Equal(t, addr1, top2Balances[1].Bytes())
 }
 
 func TestDefaultKeeper_SaveAndGetValidatorUpdates(t *testing.T) {

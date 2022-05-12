@@ -41,7 +41,7 @@ func (h *HandlerDepositSisuToken) DeliverMsg(ctx sdk.Context, msg *types.Deposit
 }
 
 func (h *HandlerDepositSisuToken) doDepositSisuToken(ctx sdk.Context, msg *types.DepositSisuTokenMsg) error {
-	b, err := h.keeper.GetBalance(ctx, msg.GetSender())
+	b, err := h.keeper.GetBondBalance(ctx, msg.GetSender())
 	if err != nil {
 		return err
 	}
@@ -62,7 +62,7 @@ func (h *HandlerDepositSisuToken) doDepositSisuToken(ctx sdk.Context, msg *types
 		return err
 	}
 
-	return h.keeper.IncBalance(ctx, msg.GetSender(), depositAmt)
+	return h.keeper.IncBondBalance(ctx, msg.GetSender(), depositAmt)
 }
 
 func (h *HandlerDepositSisuToken) addToCandidateNode(ctx sdk.Context, msg *types.DepositSisuTokenMsg) error {

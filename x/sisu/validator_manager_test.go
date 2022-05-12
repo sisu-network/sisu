@@ -1,8 +1,9 @@
 package sisu
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"testing"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
@@ -11,12 +12,12 @@ import (
 func TestDefaultValidatorManager_GetExceedSlashThresholdValidators(t *testing.T) {
 	t.Parallel()
 
-	ctx := testContext()
-	keeper := keeperTestGenesis(ctx)
-	validatorManager := NewValidatorManager(keeper)
-
 	t.Run("emtpy", func(t *testing.T) {
 		t.Parallel()
+
+		ctx := testContext()
+		keeper := keeperTestGenesis(ctx)
+		validatorManager := NewValidatorManager(keeper)
 
 		slashValidators, err := validatorManager.GetExceedSlashThresholdValidators(ctx)
 		require.NoError(t, err)
@@ -25,6 +26,10 @@ func TestDefaultValidatorManager_GetExceedSlashThresholdValidators(t *testing.T)
 
 	t.Run("success", func(t *testing.T) {
 		t.Parallel()
+
+		ctx := testContext()
+		keeper := keeperTestGenesis(ctx)
+		validatorManager := NewValidatorManager(keeper)
 
 		pk := []byte("pubkey1")
 		addr, err := sdk.AccAddressFromBech32("cosmos1g64vzyutdjfdvw5kyae73fc39sksg3r7gzmrzy")
@@ -55,12 +60,12 @@ func TestDefaultValidatorManager_GetExceedSlashThresholdValidators(t *testing.T)
 func TestDefaultValidatorManager_UpdateNodeStatus(t *testing.T) {
 	t.Parallel()
 
-	ctx := testContext()
-	keeper := keeperTestGenesis(ctx)
-	validatorManager := NewValidatorManager(keeper)
-
 	t.Run("from_validator_to_candidate", func(t *testing.T) {
 		t.Parallel()
+
+		ctx := testContext()
+		keeper := keeperTestGenesis(ctx)
+		validatorManager := NewValidatorManager(keeper)
 
 		consensusKey := []byte("pubkey1")
 		addr, err := sdk.AccAddressFromBech32("cosmos1g64vzyutdjfdvw5kyae73fc39sksg3r7gzmrzy")
@@ -86,6 +91,10 @@ func TestDefaultValidatorManager_UpdateNodeStatus(t *testing.T) {
 	t.Run("from_candidate_to_validator", func(t *testing.T) {
 		t.Parallel()
 
+		ctx := testContext()
+		keeper := keeperTestGenesis(ctx)
+		validatorManager := NewValidatorManager(keeper)
+
 		pk := []byte("pubkey2")
 		accAddr := "0x2"
 		validatorManager.AddNode(ctx, &types.Node{
@@ -110,16 +119,16 @@ func TestDefaultValidatorManager_UpdateNodeStatus(t *testing.T) {
 func TestTestDefaultValidatorManager_GetPotentialCandidates(t *testing.T) {
 	t.Parallel()
 
-	ctx := testContext()
-	keeper := keeperTestGenesis(ctx)
-	validatorManager := NewValidatorManager(keeper)
-
 	t.Run("success_only_1_candidate", func(t *testing.T) {
 		t.Parallel()
 
+		ctx := testContext()
+		keeper := keeperTestGenesis(ctx)
+		validatorManager := NewValidatorManager(keeper)
+
 		candidate, err := sdk.AccAddressFromBech32("cosmos1g64vzyutdjfdvw5kyae73fc39sksg3r7gzmrzy")
 		require.NoError(t, err)
-		require.NoError(t, keeper.IncBalance(ctx, candidate, 100))
+		require.NoError(t, keeper.IncBondBalance(ctx, candidate, 100))
 
 		consensusKey := []byte("0x1")
 		validatorManager.AddNode(ctx, &types.Node{

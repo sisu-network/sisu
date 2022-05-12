@@ -2,6 +2,7 @@ package sisu
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	bankkeeper "github.com/cosmos/cosmos-sdk/x/bank/keeper"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -35,6 +36,10 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.keeper = t
 		case sdk.Context:
 			mc.readOnlyContext.Store(t)
+		case ValidatorManager:
+			mc.validatorManager = t
+		case bankkeeper.Keeper:
+			mc.bankKeeper = t
 		}
 	}
 

@@ -133,7 +133,7 @@ func (m *DefaultValidatorManager) GetExceedSlashThresholdValidators(ctx sdk.Cont
 }
 
 func (m *DefaultValidatorManager) GetPotentialCandidates(ctx sdk.Context, n int) []*types.Node {
-	topBalances := m.keeper.GetTopBalance(ctx, -1)
+	topBalances := m.keeper.GetTopBondBalance(ctx, -1)
 	if len(topBalances) == 0 {
 		return []*types.Node{}
 	}
