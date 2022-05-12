@@ -28,6 +28,7 @@ var (
 		"binance-testnet": "BNB",
 		"polygon-testnet": "MATIC",
 		"xdai":            "xDai",
+		"goerli-testnet":  "ETH",
 	}
 
 	defaultGasPrice = map[string]*big.Int{
@@ -37,6 +38,7 @@ var (
 		"binance-testnet": big.NewInt(10_000_000_000),
 		"polygon-testnet": big.NewInt(2_000_000_000),
 		"xdai":            big.NewInt(2_000_000_000),
+		"goerli-testnet":  big.NewInt(4_000_000_000),
 	}
 )
 
