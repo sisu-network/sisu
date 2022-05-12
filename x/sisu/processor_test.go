@@ -60,6 +60,7 @@ func TestProcessor_OnTxIns(t *testing.T) {
 				Serialized: []byte{},
 				To:         toAddress,
 				From:       fromAddres,
+				Success:    true,
 			}},
 		}
 
