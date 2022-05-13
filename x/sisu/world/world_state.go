@@ -20,25 +20,16 @@ import (
 var (
 	// This is a mapping between chain name and the native token that it uses.
 	chainToTokens = map[string]string{
-		"bsc":             "BNB",
-		"eth":             "ETH",
-		"ganache1":        "NATIVE_GANACHE1",
-		"ganache2":        "NATIVE_GANACHE2",
-		"ropsten-testnet": "ETH",
-		"binance-testnet": "BNB",
-		"polygon-testnet": "MATIC",
-		"xdai":            "xDai",
-		"goerli-testnet":  "ETH",
-	}
-
-	defaultGasPrice = map[string]*big.Int{
-		"ganache1":        big.NewInt(2_000_000_000),
-		"ganache2":        big.NewInt(2_000_000_000),
-		"ropsten-testnet": big.NewInt(4_000_000_000),
-		"binance-testnet": big.NewInt(10_000_000_000),
-		"polygon-testnet": big.NewInt(2_000_000_000),
-		"xdai":            big.NewInt(2_000_000_000),
-		"goerli-testnet":  big.NewInt(4_000_000_000),
+		"bsc":              "BNB",
+		"eth":              "ETH",
+		"ganache1":         "NATIVE_GANACHE1",
+		"ganache2":         "NATIVE_GANACHE2",
+		"ropsten-testnet":  "ETH",
+		"binance-testnet":  "BNB",
+		"polygon-testnet":  "MATIC",
+		"xdai":             "xDai",
+		"goerli-testnet":   "ETH",
+		"arbitrum-testnet": "ETH",
 	}
 )
 

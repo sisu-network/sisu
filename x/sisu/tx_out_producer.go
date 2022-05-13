@@ -277,6 +277,8 @@ func (p *DefaultTxOutputProducer) getDefaultGasPrice(chain string) *big.Int {
 		return big.NewInt(4_000_000_000)
 	case "eth":
 		return big.NewInt(70_000_000_000)
+	case "arbitrum-testnet":
+		return big.NewInt(5_000_000_000)
 	}
 	return big.NewInt(100_000_000_000)
 }
