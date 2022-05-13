@@ -68,7 +68,7 @@ log_local = {{ .LogDNA.LogLocal }}
 [chains.{{ $chain.Chain }}]
   chain = "{{ $chain.Chain }}"
   block_time = {{ $chain.BlockTime }}
-	adjust_time = {{ $chain.AdjustTime }}
+  adjust_time = {{ $chain.AdjustTime }}
   starting_block = 0
   rpc_url = "{{ $chain.RpcUrl }}"{{ end }}
 `
