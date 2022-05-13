@@ -30,6 +30,7 @@ var (
 		"xdai":             "xDai",
 		"goerli-testnet":   "ETH",
 		"arbitrum-testnet": "ETH",
+		"fantom-testnet":   "FTM",
 	}
 )
 
