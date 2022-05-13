@@ -43,10 +43,11 @@ type LogDNAConfig struct {
 }
 
 type TestnetConfig struct {
-	GenesisFolder   string           `json:"genesis_folder"`
-	Nodes           []TestnetNode    `json:"nodes"`
-	DeyesChainsPath string           `json:"deyes_chains_path"`
-	LogDNAConfig    log.LogDNAConfig `json:"log_dna_config"`
+	GenesisFolder   string                  `json:"genesis_folder"`
+	Nodes           []TestnetNode           `json:"nodes"`
+	DeyesChainsPath string                  `json:"deyes_chains_path"`
+	LogDNAConfig    log.LogDNAConfig        `json:"log_dna_config"`
+	EmailAlert      config.EmailAlertConfig `json:"email_alert"`
 }
 
 type SqlConfig struct {
@@ -177,6 +178,7 @@ Example:
 				chains:      chains,
 				liquidities: getLiquidity(filepath.Join(testnetConfig.GenesisFolder, "liquid.json")),
 				params:      &types.Params{MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3))},
+				emailAlert:  testnetConfig.EmailAlert,
 			}
 
 			valPubKeys, err := InitNetwork(settings)
