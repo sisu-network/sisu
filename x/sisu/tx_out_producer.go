@@ -230,7 +230,7 @@ func (p *DefaultTxOutputProducer) getContractTx(ctx sdk.Context, contract *types
 		}
 
 		gasPrice := chain.GasPrice
-		if gasPrice < 0 {
+		if gasPrice <= 0 {
 			gasPrice = p.getDefaultGasPrice(contract.Chain).Int64()
 		}
 		gasLimit := p.getGasLimit(contract.Chain)
