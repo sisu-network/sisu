@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	ExpireDuration = time.Minute * 5 // 5 minutes
+	ExpireDuration = time.Minute * 1 // 5 minutes
 )
 
 type txObject struct {
