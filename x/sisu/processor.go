@@ -100,6 +100,7 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 	if blockHeight > 1 {
 		// We need to wait till block 2 for multistore of the app to be updated with latest account info
 		// for signing.
+		log.Debug("Checking tss keygen")
 		p.CheckTssKeygen(ctx, blockHeight)
 	}
 
@@ -226,6 +227,7 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 	keyTypes := []string{libchain.KEY_TYPE_ECDSA}
 	for _, keyType := range keyTypes {
 		if p.keeper.IsKeygenExisted(ctx, keyType, 0) {
+			log.Debug("Keygen already existed")
 			continue
 		}
 
