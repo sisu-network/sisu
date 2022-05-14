@@ -243,6 +243,8 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json
 
 // BeginBlock executes all ABCI BeginBlock logic respective to the capability module.
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
+	log.Verbose("BeginBlock, height = ", ctx.BlockHeight())
+
 	if !am.worldState.IsDataInitialized() {
 		cloneCtx := utils.CloneSdkContext(ctx)
 		am.worldState.InitData(cloneCtx)
@@ -254,6 +256,8 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 // EndBlock executes all ABCI EndBlock logic respective to the capability module. It
 // returns no validator updates.
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
+	log.Verbose("End block reached, height = ", ctx.BlockHeight())
+
 	am.processor.EndBlock(ctx)
 
 	am.txTracker.CheckExpiredTransaction()

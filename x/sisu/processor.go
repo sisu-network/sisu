@@ -203,7 +203,6 @@ func (p *Processor) EndBlock(ctx sdk.Context) {
 	if !p.globalData.IsCatchingUp() {
 		// Inform dheart that we have reached end of block so that dheart could run presign works.
 		height := ctx.BlockHeight()
-		log.Verbose("End block reached, height = ", height)
 		p.dheartClient.BlockEnd(height)
 	}
 }
