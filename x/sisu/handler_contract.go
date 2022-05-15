@@ -31,17 +31,16 @@ func (h *HandlerContract) DeliverMsg(ctx sdk.Context, signerMsg *types.Contracts
 }
 
 func (h *HandlerContract) doContracts(ctx sdk.Context, wrappedMsg *types.ContractsWithSigner) ([]byte, error) {
-	// TODO: Don't do duplicated delivery
-	log.Info("Deliver pending contracts, wrappedMsg.Data.Contracts length = ", len(wrappedMsg.Data.Contracts))
+	log.Info("Saving contracts, contracts length = ", len(wrappedMsg.Data.Contracts))
 
 	for _, contract := range wrappedMsg.Data.Contracts {
 		if h.keeper.IsContractExisted(ctx, contract) {
 			log.Infof("Contract %s has been processed", contract.Name)
 			return nil, nil
 		}
-	}
 
-	log.Info("Saving contracts, contracts length = ", len(wrappedMsg.Data.Contracts))
+		log.Info("Saving contarct ", contract.Name, " on chain ", contract.Chain)
+	}
 
 	// Save into KVStore & private db
 	h.keeper.SaveContracts(ctx, wrappedMsg.Data.Contracts, true)
