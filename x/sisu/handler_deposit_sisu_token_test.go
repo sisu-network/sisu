@@ -30,16 +30,16 @@ func testCodec() *codec.LegacyAmino {
 
 func getTestAccountAndBankKeepers() (authkeeper.AccountKeeper, bankkeeper.Keeper) {
 	legacyCodec := testCodec()
-	marshaler := simapp.MakeTestEncodingConfig().Marshaler
+	marshaller := simapp.MakeTestEncodingConfig().Marshaler
 
 	maccPerms := make(map[string][]string)
 	maccPerms[BondName] = []string{}
 	maccPerms[authtypes.Burner] = []string{authtypes.Burner}
 	maccPerms[authtypes.Minter] = []string{authtypes.Minter}
 
-	pk := paramskeeper.NewKeeper(marshaler, legacyCodec, testStoreKeys[paramstypes.StoreKey], sdk.NewTransientStoreKey(paramstypes.TStoreKey))
-	ak := authkeeper.NewAccountKeeper(marshaler, testStoreKeys[authtypes.StoreKey], pk.Subspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms)
-	bk := bankkeeper.NewBaseKeeper(marshaler, testStoreKeys[banktypes.StoreKey], ak, pk.Subspace(banktypes.ModuleName), nil)
+	pk := paramskeeper.NewKeeper(marshaller, legacyCodec, testStoreKeys[paramstypes.StoreKey], sdk.NewTransientStoreKey(paramstypes.TStoreKey))
+	ak := authkeeper.NewAccountKeeper(marshaller, testStoreKeys[authtypes.StoreKey], pk.Subspace(authtypes.ModuleName), authtypes.ProtoBaseAccount, maccPerms)
+	bk := bankkeeper.NewBaseKeeper(marshaller, testStoreKeys[banktypes.StoreKey], ak, pk.Subspace(banktypes.ModuleName), nil)
 
 	return ak, bk
 }
