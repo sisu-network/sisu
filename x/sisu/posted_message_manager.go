@@ -41,7 +41,6 @@ func (m *DefaultPostedMessageManager) IsReachedThreshold(ctx sdk.Context, msg sd
 	}
 
 	count := m.keeper.SaveTxRecord(ctx, hash, signer)
-	log.Debug("count = ", count)
 	if count >= threshold && !m.keeper.IsTxRecordProcessed(ctx, hash) {
 		return true, hash
 	}

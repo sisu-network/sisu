@@ -71,6 +71,8 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 			return NewHandlerDepositSisuToken(mc).DeliverMsg(ctx, msg)
 		case *types.SlashValidatorMsg:
 			return NewHandlerSlashValidator(mc).DeliverMsg(ctx, msg)
+		case *types.SetDheartIpAddressMsg:
+			return NewHandlerSetDheartIPAddress(mc).DeliverMsg(ctx, msg)
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)
 			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)

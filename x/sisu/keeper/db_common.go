@@ -39,6 +39,7 @@ var (
 	prefixSlash                  = []byte{0x14}
 	prefixNodeBalance            = []byte{0x15}
 	prefixValidatorUpdate        = []byte{0x16}
+	prefixDheartIPAddress        = []byte{0x17}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -1066,6 +1067,47 @@ func resetValidatorUpdate(store cstypes.KVStore) {
 	for ; iter.Valid(); iter.Next() {
 		store.Delete(iter.Key())
 	}
+}
+
+func saveDheartIPAddress(store cstypes.KVStore, accAddr sdk.AccAddress, ip string) error {
+	if len(ip) == 0 {
+		return nil
+	}
+
+	bz, err := accAddr.Marshal()
+	if err != nil {
+		log.Error("error when marshal accAddr: ", err)
+		return err
+	}
+
+	store.Set(bz, []byte(ip))
+	return nil
+}
+
+type AccAddressDheartIP struct {
+	Addr sdk.AccAddress
+	IP   string
+}
+
+func getAllDheartIPAddresses(store cstypes.KVStore) []AccAddressDheartIP {
+	r := make([]AccAddressDheartIP, 0)
+	iter := store.Iterator(nil, nil)
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		addr := sdk.AccAddress{}
+		if err := addr.Unmarshal(iter.Key()); err != nil {
+			log.Error("error when unmarshalling acc address: ", err)
+			return nil
+		}
+
+		r = append(r, AccAddressDheartIP{
+			Addr: addr,
+			IP:   string(iter.Value()),
+		})
+	}
+
+	return r
 }
 
 ///// Debug functions

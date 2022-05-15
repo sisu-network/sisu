@@ -18,6 +18,7 @@ const (
 	MsgTypeChangeValidatorSet             = "ChangeValidatorSet"
 	MsgTypeDepositSisuToken               = "DepositSisuTokenWith"
 	MsgTypeSlashValidator                 = "SlashValidator"
+	MsgTypeSetDheartIPAddress             = "SetDheartIPAddress"
 
 	MsgTypeTxOut         = "TxOut"
 	MsgTypeKeysignResult = "KeysignResult"

@@ -9,6 +9,7 @@ import (
 
 	types "github.com/cosmos/cosmos-sdk/types"
 	gomock "github.com/golang/mock/gomock"
+	keeper "github.com/sisu-network/sisu/x/sisu/keeper"
 	types0 "github.com/sisu-network/sisu/x/sisu/types"
 	types1 "github.com/tendermint/tendermint/abci/types"
 )
@@ -88,6 +89,20 @@ func (m *MockKeeper) GetAllChains(ctx types.Context) map[string]*types0.Chain {
 func (mr *MockKeeperMockRecorder) GetAllChains(ctx interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllChains", reflect.TypeOf((*MockKeeper)(nil).GetAllChains), ctx)
+}
+
+// GetAllDheartIPAddresses mocks base method.
+func (m *MockKeeper) GetAllDheartIPAddresses(ctx types.Context) []keeper.AccAddressDheartIP {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAllDheartIPAddresses", ctx)
+	ret0, _ := ret[0].([]keeper.AccAddressDheartIP)
+	return ret0
+}
+
+// GetAllDheartIPAddresses indicates an expected call of GetAllDheartIPAddresses.
+func (mr *MockKeeperMockRecorder) GetAllDheartIPAddresses(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllDheartIPAddresses", reflect.TypeOf((*MockKeeper)(nil).GetAllDheartIPAddresses), ctx)
 }
 
 // GetAllKeygenPubkeys mocks base method.
@@ -596,6 +611,20 @@ func (m *MockKeeper) SaveContracts(ctx types.Context, msgs []*types0.Contract, s
 func (mr *MockKeeperMockRecorder) SaveContracts(ctx, msgs, saveByteCode interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveContracts", reflect.TypeOf((*MockKeeper)(nil).SaveContracts), ctx, msgs, saveByteCode)
+}
+
+// SaveDheartIPAddress mocks base method.
+func (m *MockKeeper) SaveDheartIPAddress(ctx types.Context, address types.AccAddress, ip string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SaveDheartIPAddress", ctx, address, ip)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SaveDheartIPAddress indicates an expected call of SaveDheartIPAddress.
+func (mr *MockKeeperMockRecorder) SaveDheartIPAddress(ctx, address, ip interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SaveDheartIPAddress", reflect.TypeOf((*MockKeeper)(nil).SaveDheartIPAddress), ctx, address, ip)
 }
 
 // SaveIncomingValidatorUpdates mocks base method.

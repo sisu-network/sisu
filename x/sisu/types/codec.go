@@ -36,6 +36,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil), &ChangeValidatorSetMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &DepositSisuTokenMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &SlashValidatorMsg{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &SetDheartIpAddressMsg{})
 
 	registry.RegisterInterface("cosmos.crypto.PubKey", (*ctypes.PubKey)(nil))
 	registry.RegisterImplementations((*ctypes.PubKey)(nil), &ed25519.PubKey{})
