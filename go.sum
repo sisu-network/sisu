@@ -1098,6 +1098,8 @@ github.com/sisu-network/dheart v0.1.6/go.mod h1:Jy6hlwbXOVM9PquJZd5GULB2ehxhlz59
 github.com/sisu-network/lib v0.0.1-alpha13/go.mod h1:kJKc5vnG+vxGsYTeRbgxjG7QgVX2sLUne+qVMrn/hq8=
 github.com/sisu-network/lib v0.0.1-alpha9.0.20220513004242-472b80d0d606 h1:T/AtSW7KOUrZIpzVGjfD2MF2O513838xq2jgUe13b2g=
 github.com/sisu-network/lib v0.0.1-alpha9.0.20220513004242-472b80d0d606/go.mod h1:kJKc5vnG+vxGsYTeRbgxjG7QgVX2sLUne+qVMrn/hq8=
+github.com/sisu-network/lib v0.0.1-alpha9.0.20220515002326-586a33045ac5 h1:d5uyHkEbQALAxwbxwxAh9NCkuahmjVStXST9q67B3Ck=
+github.com/sisu-network/lib v0.0.1-alpha9.0.20220515002326-586a33045ac5/go.mod h1:kJKc5vnG+vxGsYTeRbgxjG7QgVX2sLUne+qVMrn/hq8=
 github.com/sisu-network/tss-lib v0.1.1 h1:wGMZyLxpIaQB+2N0ckZkV/eiFBslkl5KLGOhJBNUjVQ=
 github.com/sisu-network/tss-lib v0.1.1/go.mod h1:76hDuB4abzc6/s79xacl0wA7ADAqC/3qak1lTW5z5Cc=
 github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d h1:zE9ykElWQ6/NYmHa3jpm/yHnI4xSofP+UP6SpjHcSeM=
