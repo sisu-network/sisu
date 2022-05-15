@@ -146,3 +146,47 @@ func TestTestDefaultValidatorManager_GetPotentialCandidates(t *testing.T) {
 		require.Equal(t, got[0].AccAddress, candidate.String())
 	})
 }
+
+func TestValidatorManager_HasConsensus(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Tx record reached consensus by 2 signer", func(t *testing.T) {
+		t.Parallel()
+
+		ctx := testContext()
+		keeper := keeperTestGenesis(ctx)
+		val1, err := sdk.AccAddressFromBech32("cosmos1g64vzyutdjfdvw5kyae73fc39sksg3r7gzmrzy")
+		require.NoError(t, err)
+
+		val2, err := sdk.AccAddressFromBech32("cosmos19ucgagq35rqhnj4xev5cvwszs05875rlc3k9rq")
+		require.NoError(t, err)
+
+		rcHash := []byte("record_hash")
+		keeper.SaveTxRecord(ctx, rcHash, val1.String())
+		keeper.SaveTxRecord(ctx, rcHash, val2.String())
+		keeper.SaveParams(ctx, &types.Params{MajorityThreshold: 2})
+
+		validatorManager := NewValidatorManager(keeper)
+		validatorManager.AddNode(ctx, &types.Node{
+			ConsensusKey: &types.Pubkey{
+				Type:  "ed25519",
+				Bytes: []byte("consensus_key_1"),
+			},
+			AccAddress:  val1.String(),
+			IsValidator: true,
+			Status:      types.NodeStatus_Validator,
+		})
+		validatorManager.AddNode(ctx, &types.Node{
+			ConsensusKey: &types.Pubkey{
+				Type:  "ed25519",
+				Bytes: []byte("consensus_key_2"),
+			},
+			AccAddress:  val2.String(),
+			IsValidator: true,
+			Status:      types.NodeStatus_Validator,
+		})
+
+		got := validatorManager.HasConsensus(ctx, rcHash)
+		require.True(t, got)
+	})
+}

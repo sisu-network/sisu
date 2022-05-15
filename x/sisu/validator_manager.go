@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	"strings"
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -18,6 +19,7 @@ type ValidatorManager interface {
 	GetNodesByStatus(status types.NodeStatus) map[string]*types.Node
 	GetExceedSlashThresholdValidators(ctx sdk.Context) ([]*types.Node, error)
 	GetPotentialCandidates(ctx sdk.Context, n int) []*types.Node
+	HasConsensus(ctx sdk.Context, recordHash []byte) bool
 }
 
 type DefaultValidatorManager struct {
@@ -152,6 +154,32 @@ func (m *DefaultValidatorManager) GetPotentialCandidates(ctx sdk.Context, n int)
 	}
 
 	return newNodes
+}
+
+func (m *DefaultValidatorManager) HasConsensus(ctx sdk.Context, recordHash []byte) bool {
+	// Get all signed validators. Note that it maybe included inactive validators
+	signers := m.keeper.GetSignedValidators(ctx, recordHash)
+
+	params := m.keeper.GetParams(ctx)
+	if params == nil {
+		return false
+	}
+
+	// Only count vote of active validators
+	vote := 0
+	active := m.GetNodesByStatus(types.NodeStatus_Validator)
+	for _, signer := range signers {
+		for _, activeVal := range active {
+			if !strings.EqualFold(strings.ToLower(signer), strings.ToLower(activeVal.AccAddress)) {
+				continue
+			}
+
+			vote++
+			break
+		}
+	}
+
+	return vote >= int(params.MajorityThreshold)
 }
 
 func (m *DefaultValidatorManager) getNodeByAccAddr(addr sdk.AccAddress, status types.NodeStatus) *types.Node {

@@ -19,6 +19,7 @@ type Keeper interface {
 
 	// TxRecord
 	SaveTxRecord(ctx sdk.Context, hash []byte, signer string) int
+	GetSignedValidators(ctx sdk.Context, hash []byte) []string
 
 	// TxRecordProcessed
 	ProcessTxRecord(ctx sdk.Context, hash []byte)
@@ -136,6 +137,11 @@ func NewKeeper(storeKey sdk.StoreKey) Keeper {
 func (k *DefaultKeeper) SaveTxRecord(ctx sdk.Context, hash []byte, signer string) int {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxRecord)
 	return saveTxRecord(store, hash, signer)
+}
+
+func (k *DefaultKeeper) GetSignedValidators(ctx sdk.Context, hash []byte) []string {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxRecord)
+	return getSignedValidators(store, hash)
 }
 
 ///// TxRecordProcessed

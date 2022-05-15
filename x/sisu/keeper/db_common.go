@@ -96,7 +96,7 @@ func getValidatorUpdatesKey() []byte {
 	return []byte(fmt.Sprintf("validator_update"))
 }
 
-///// TxREcord
+///// TxRecord
 
 func saveTxRecord(store cstypes.KVStore, hash []byte, validator string) int {
 	vals := make([]string, 0)
@@ -125,6 +125,15 @@ func saveTxRecord(store cstypes.KVStore, hash []byte, validator string) int {
 	}
 
 	return len(vals)
+}
+
+func getSignedValidators(store cstypes.KVStore, hash []byte) []string {
+	bz := store.Get(hash)
+	if bz == nil {
+		return []string{}
+	}
+
+	return strings.Split(string(bz), ",")
 }
 
 func processTxRecord(store cstypes.KVStore, hash []byte) {

@@ -316,6 +316,20 @@ func (mr *MockKeeperMockRecorder) GetPendingContracts(ctx, chain interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPendingContracts", reflect.TypeOf((*MockKeeper)(nil).GetPendingContracts), ctx, chain)
 }
 
+// GetSignedValidators mocks base method.
+func (m *MockKeeper) GetSignedValidators(ctx types.Context, hash []byte) []string {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSignedValidators", ctx, hash)
+	ret0, _ := ret[0].([]string)
+	return ret0
+}
+
+// GetSignedValidators indicates an expected call of GetSignedValidators.
+func (mr *MockKeeperMockRecorder) GetSignedValidators(ctx, hash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSignedValidators", reflect.TypeOf((*MockKeeper)(nil).GetSignedValidators), ctx, hash)
+}
+
 // GetSlashToken mocks base method.
 func (m *MockKeeper) GetSlashToken(ctx types.Context, address types.AccAddress) (int64, error) {
 	m.ctrl.T.Helper()

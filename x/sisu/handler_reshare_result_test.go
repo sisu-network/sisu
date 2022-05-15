@@ -28,7 +28,6 @@ func TestHandlerReshareResult(t *testing.T) {
 		appKeys := common.NewMockAppKeys()
 		mockPmm := mock.NewMockPostedMessageManager(ctrl)
 		mockPmm.EXPECT().ShouldProcessMsg(gomock.Any(), gomock.Any()).Return(true, []byte("mock_hash")).Times(1)
-		mockPmm.EXPECT().IsReachedThreshold(gomock.Any(), gomock.Any(), 2).Return(true, []byte("")).Times(1)
 
 		mc := MockManagerContainer(validatorManager, keeper, mockPmm)
 		handler := NewHandlerReshareResult(mc)

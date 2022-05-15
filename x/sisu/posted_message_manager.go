@@ -11,37 +11,29 @@ var _ PostedMessageManager = (*DefaultPostedMessageManager)(nil)
 //go:generate mockgen -source=./x/sisu/posted_message_manager.go -destination=./tests/mock/x/sisu/posted_message_manager.go -package=mock
 type PostedMessageManager interface {
 	ShouldProcessMsg(ctx sdk.Context, msg sdk.Msg) (bool, []byte)
-	IsReachedThreshold(ctx sdk.Context, msg sdk.Msg, threshold int) (bool, []byte)
 }
 
 type DefaultPostedMessageManager struct {
-	keeper keeper.Keeper
+	keeper     keeper.Keeper
+	valManager ValidatorManager
 }
 
-func NewPostedMessageManager(keeper keeper.Keeper) *DefaultPostedMessageManager {
+func NewPostedMessageManager(keeper keeper.Keeper, valManager ValidatorManager) *DefaultPostedMessageManager {
 	return &DefaultPostedMessageManager{
-		keeper: keeper,
+		keeper:     keeper,
+		valManager: valManager,
 	}
 }
 
 func (m *DefaultPostedMessageManager) ShouldProcessMsg(ctx sdk.Context, msg sdk.Msg) (bool, []byte) {
-	tssParams := m.keeper.GetParams(ctx)
-	if tssParams == nil {
-		return false, nil
-	}
-
-	return m.IsReachedThreshold(ctx, msg, int(tssParams.MajorityThreshold))
-}
-
-func (m *DefaultPostedMessageManager) IsReachedThreshold(ctx sdk.Context, msg sdk.Msg, threshold int) (bool, []byte) {
 	hash, signer, err := keeper.GetTxRecordHash(msg)
 	if err != nil {
 		log.Error("failed to get tx hash, err = ", err)
 		return false, hash
 	}
 
-	count := m.keeper.SaveTxRecord(ctx, hash, signer)
-	if count >= threshold && !m.keeper.IsTxRecordProcessed(ctx, hash) {
+	m.keeper.SaveTxRecord(ctx, hash, signer)
+	if m.valManager.HasConsensus(ctx, hash) && !m.keeper.IsTxRecordProcessed(ctx, hash) {
 		return true, hash
 	}
 

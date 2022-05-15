@@ -29,12 +29,15 @@ func TestHandlerChangeValidatorSet(t *testing.T) {
 		appKeys := common.NewMockAppKeys()
 		global := m.NewMockGlobalData(ctrl)
 		global.EXPECT().IsCatchingUp().Return(false)
-		mockPmm := mock.NewMockPostedMessageManager(ctrl)
-		mockPmm.EXPECT().ShouldProcessMsg(gomock.Any(), gomock.Any()).Return(true, []byte("mock_hash")).Times(1)
+
 		mockDheartClient := mocktssclients.NewMockDheartClient(ctrl)
 		mockDheartClient.EXPECT().Reshare(gomock.Any(), gomock.Any()).Return(nil).Times(1)
 
-		mc := MockManagerContainer(keeper, mockPmm, mockDheartClient, global)
+		mockValidatorManager := mock.NewMockValidatorManager(ctrl)
+		mockValidatorManager.EXPECT().HasConsensus(gomock.Any(), gomock.Any()).Return(true).Times(1)
+
+		pmm := NewPostedMessageManager(keeper, mockValidatorManager)
+		mc := MockManagerContainer(keeper, mockDheartClient, global, mockValidatorManager, pmm)
 
 		oldVal, err := base64.StdEncoding.DecodeString("1jPHjoWahm5WDES2ud3zJbzmRzCPLFacQsrl/pbO/Wo=")
 		require.NoError(t, err)

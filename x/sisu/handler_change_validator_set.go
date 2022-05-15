@@ -3,27 +3,32 @@ package sisu
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type HandlerChangeValidatorSet struct {
-	pmm    PostedMessageManager
-	mc     ManagerContainer
-	keeper keeper.Keeper
+	pmm        PostedMessageManager
+	mc         ManagerContainer
+	keeper     keeper.Keeper
+	valManager ValidatorManager
+	globalData common.GlobalData
 }
 
 func NewHandlerChangeValidatorSet(mc ManagerContainer) *HandlerChangeValidatorSet {
 	return &HandlerChangeValidatorSet{
-		pmm:    mc.PostedMessageManager(),
-		mc:     mc,
-		keeper: mc.Keeper(),
+		pmm:        mc.PostedMessageManager(),
+		mc:         mc,
+		keeper:     mc.Keeper(),
+		valManager: mc.ValidatorManager(),
+		globalData: mc.GlobalData(),
 	}
 }
 
 func (h *HandlerChangeValidatorSet) DeliverMsg(ctx sdk.Context, msg *types.ChangeValidatorSetMsg) (*sdk.Result, error) {
-	process, hash := h.pmm.ShouldProcessMsg(ctx, msg)
-	if !process {
+	shouldProcess, rcHash := h.pmm.ShouldProcessMsg(ctx, msg)
+	if !shouldProcess {
 		return &sdk.Result{}, nil
 	}
 
@@ -31,7 +36,7 @@ func (h *HandlerChangeValidatorSet) DeliverMsg(ctx sdk.Context, msg *types.Chang
 		return &sdk.Result{}, err
 	}
 
-	h.keeper.ProcessTxRecord(ctx, hash)
+	h.keeper.ProcessTxRecord(ctx, rcHash)
 	return &sdk.Result{}, nil
 }
 
