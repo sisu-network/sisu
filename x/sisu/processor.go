@@ -100,7 +100,6 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 	if blockHeight > 1 {
 		// We need to wait till block 2 for multistore of the app to be updated with latest account info
 		// for signing.
-		log.Debug("Checking tss keygen")
 		p.CheckTssKeygen(ctx, blockHeight)
 	}
 
@@ -227,7 +226,6 @@ func (p *Processor) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 	keyTypes := []string{libchain.KEY_TYPE_ECDSA}
 	for _, keyType := range keyTypes {
 		if p.keeper.IsKeygenExisted(ctx, keyType, 0) {
-			log.Debug("Keygen already existed")
 			continue
 		}
 
@@ -399,7 +397,7 @@ func (p *Processor) OnKeysignResult(result *dhtypes.KeysignResult) {
 
 // deploySignedTx creates a deployment request and sends it to deyes.
 func (p *Processor) deploySignedTx(ctx sdk.Context, bz []byte, outChain string, outHash string, isContractDeployment bool) error {
-	log.Debug("Sending final tx to the deyes for deployment for chain ", outChain)
+	log.Verbose("Sending final tx to the deyes for deployment for chain ", outChain)
 
 	pubkey := p.keeper.GetKeygenPubkey(ctx, libchain.GetKeyTypeForChain(outChain))
 	if pubkey == nil {

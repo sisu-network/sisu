@@ -280,7 +280,7 @@ func (p *DefaultTxOutputProducer) getDefaultGasPrice(chain string) *big.Int {
 	case "arbitrum-testnet":
 		return big.NewInt(50_000_000)
 	case "fantom-testnet":
-		return big.NewInt(100_000_000_000)
+		return big.NewInt(75_000_000_000)
 	}
 	return big.NewInt(100_000_000_000)
 }
