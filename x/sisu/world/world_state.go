@@ -206,11 +206,15 @@ func (ws *DefaultWorldState) GetGasCostInToken(tokenId, chainId string) (int64, 
 	}
 
 	// TODO: correct gasUnit here
-	gasUnit := big.NewInt(8_000_000)
+	gasUnit := big.NewInt(60_000) // Estimated cost for swapping.
 	tokenPrice, err := ws.GetTokenPrice(tokenId)
 	if err != nil {
 		log.Error(err)
 		return -1, err
+	}
+
+	if tokenPrice < 0 {
+		return 0, fmt.Errorf("Token price is negative, token id = %s, token price = %d", tokenId, tokenPrice)
 	}
 
 	nativeTokenPrice, err := ws.GetNativeTokenPriceForChain(chainId)
@@ -218,6 +222,7 @@ func (ws *DefaultWorldState) GetGasCostInToken(tokenId, chainId string) (int64, 
 		log.Error(err)
 		return -1, err
 	}
+
 	gasCost, err := helper.GetGasCostInToken(gasUnit, gasPrice, big.NewInt(tokenPrice), big.NewInt(nativeTokenPrice))
 	if err != nil {
 		log.Error(err)
