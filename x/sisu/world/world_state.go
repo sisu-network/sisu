@@ -20,16 +20,13 @@ import (
 var (
 	// This is a mapping between chain name and the native token that it uses.
 	chainToTokens = map[string]string{
-		"bsc":      "BNB",
-		"eth":      "ETH",
-		"ropsten":  "ETH",
-		"ganache1": "NATIVE_GANACHE1",
-		"ganache2": "NATIVE_GANACHE2",
-	}
-
-	defaultTokenPrices = map[string]float32{
-		"BNB": 100.0,
-		"ETH": 2000.0,
+		"bsc":                 "BNB",
+		"eth":                 "ETH",
+		"ropsten":             "ETH",
+		"ganache1":            "NATIVE_GANACHE1",
+		"ganache2":            "NATIVE_GANACHE2",
+		"eth-binance-testnet": "BNB",
+		"xdai":                "xDai",
 	}
 
 	defaultGasPrice = map[string]*big.Int{
@@ -37,6 +34,7 @@ var (
 		"ganache2":            big.NewInt(2_000_000_000),
 		"eth-ropsten":         big.NewInt(4_000_000_000),
 		"eth-binance-testnet": big.NewInt(10_000_000_000),
+		"xdai":                big.NewInt(2_000_000_000),
 	}
 )
 

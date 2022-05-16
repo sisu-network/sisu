@@ -253,13 +253,15 @@ func (p *DefaultTxOutputProducer) getDefaultGasPrice(chain string) *big.Int {
 	// TODO: Make this dependent on different chains.
 	switch chain {
 	case "ganache1":
-		return big.NewInt(2_000_000_000) // 1 Gwei
+		return big.NewInt(2_000_000_000) // 2 Gwei
 	case "ganache2":
-		return big.NewInt(2_000_000_000) // 1 Gwei
+		return big.NewInt(2_000_000_000) // 2 Gwei
 	case "eth-ropsten":
 		return big.NewInt(1_700_000_000)
 	case "eth-binance-testnet":
 		return big.NewInt(10_000_000_000) // 10 Gwei
+	case "xdai":
+		return big.NewInt(2_000_000_000) // 2 Gwei
 	}
 	return big.NewInt(400_000_000_000) // 400 Gwei
 }

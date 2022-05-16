@@ -64,6 +64,10 @@ func getDefaultChainUrl(chain string) string {
 		return "http://0.0.0.0:7545"
 	case "ganache2":
 		return "http://0.0.0.0:8545"
+	case "eth-binance-testnet":
+		return "https://data-seed-prebsc-1-s1.binance.org:8545"
+	case "xdai":
+		return "https://rpc.gnosischain.com"
 	default:
 		panic(fmt.Errorf("unknown chain %s", chain))
 	}
@@ -104,16 +108,8 @@ func getPrivateKey(mnemonic string) (*ecdsa.PrivateKey, common.Address) {
 
 func getAuthTransactor(client *ethclient.Client, mnemonic string) (*bind.TransactOpts, error) {
 	// This is the private key of the accounts0
-	privateKey, _ := getPrivateKey(mnemonic)
-	publicKey := privateKey.Public()
-	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		panic("cannot convert crypto pubkey to ecdsa pubkey")
-	}
-
-	address := crypto.PubkeyToAddress(*publicKeyECDSA)
-
-	nonce, err := client.PendingNonceAt(context.Background(), address)
+	privateKey, owner := getPrivateKey(mnemonic)
+	nonce, err := client.PendingNonceAt(context.Background(), owner)
 	if err != nil {
 		return nil, err
 	}
@@ -122,6 +118,8 @@ func getAuthTransactor(client *ethclient.Client, mnemonic string) (*bind.Transac
 	if err != nil {
 		return nil, err
 	}
+
+	// This is the private key of the accounts0
 
 	chainId, err := client.ChainID(context.Background())
 	if err != nil {
@@ -137,7 +135,7 @@ func getAuthTransactor(client *ethclient.Client, mnemonic string) (*bind.Transac
 	auth.Value = big.NewInt(0)
 	auth.GasPrice = gasPrice
 
-	auth.GasLimit = uint64(10_000_000)
+	auth.GasLimit = uint64(5_000_000)
 
 	return auth, nil
 }
