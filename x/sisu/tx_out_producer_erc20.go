@@ -185,7 +185,8 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(
 	}
 
 	if gasPriceInToken < 0 {
-		return nil, fmt.Errorf("Gas price in token is negative: token id = %s", token.Id)
+		log.Errorf("Gas price in token is negative: token id = %s", token.Id)
+		gasPriceInToken = 0
 	}
 
 	amountOut.Sub(amountOut, big.NewInt(gasPriceInToken))
