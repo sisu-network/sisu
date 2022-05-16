@@ -42,16 +42,16 @@ func (h *HandlerReshareResult) DeliverMsg(ctx sdk.Context, signerMsg *types.Resh
 
 func (h *HandlerReshareResult) doReshareResult(ctx sdk.Context, msg *types.ReshareResultWithSigner) ([]byte, error) {
 	newValPubKeys := msg.Data.NewValidatorSetPubKeyBytes
-	// TODO: check validator address who sent confirm msg is in new validator set
-	//if isConfirmedByAllVals, _ := h.pmm.IsReachedThreshold(
-	//	ctx,
-	//	msg,
-	//	len(newValPubKeys),
-	//); !isConfirmedByAllVals {
-	//	log.Debug("len newValPubKeys = ", len(newValPubKeys))
-	//	log.Debug("ReshareResultWithSigner do not reach consensus")
-	//	return nil, nil
-	//}
+	rcHash, _, err := keeper.GetTxRecordHash(msg)
+	if err != nil {
+		log.Error("error when getting tx record hash: ", err)
+		return nil, err
+	}
+
+	if vote := h.valManager.CountVote(ctx, rcHash); vote < len(msg.Data.NewValidatorSetPubKeyBytes) {
+		log.Debug("reshare result is not confirmed by all new validator")
+		return nil, nil
+	}
 
 	// Build []abci.ValidatorUpdate
 	// Dheart is using cosmos pubkey format as input, meanwhile abci.ValidatorUpdate is using Tendermint pubkey format

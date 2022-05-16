@@ -20,6 +20,7 @@ type ValidatorManager interface {
 	GetExceedSlashThresholdValidators(ctx sdk.Context) ([]*types.Node, error)
 	GetPotentialCandidates(ctx sdk.Context, n int) []*types.Node
 	HasConsensus(ctx sdk.Context, recordHash []byte) bool
+	CountVote(ctx sdk.Context, recordHash []byte) int
 }
 
 type DefaultValidatorManager struct {
@@ -157,15 +158,18 @@ func (m *DefaultValidatorManager) GetPotentialCandidates(ctx sdk.Context, n int)
 }
 
 func (m *DefaultValidatorManager) HasConsensus(ctx sdk.Context, recordHash []byte) bool {
-	// Get all signed validators. Note that it maybe included inactive validators
-	signers := m.keeper.GetSignedValidators(ctx, recordHash)
-
 	params := m.keeper.GetParams(ctx)
 	if params == nil {
 		return false
 	}
 
-	// Only count vote of active validators
+	return m.CountVote(ctx, recordHash) >= int(params.MajorityThreshold)
+}
+
+func (m *DefaultValidatorManager) CountVote(ctx sdk.Context, recordHash []byte) int {
+	// Get all signed validators. Note that it maybe included inactive validators
+	signers := m.keeper.GetSignedValidators(ctx, recordHash)
+
 	vote := 0
 	active := m.GetNodesByStatus(types.NodeStatus_Validator)
 	for _, signer := range signers {
@@ -179,7 +183,7 @@ func (m *DefaultValidatorManager) HasConsensus(ctx sdk.Context, recordHash []byt
 		}
 	}
 
-	return vote >= int(params.MajorityThreshold)
+	return vote
 }
 
 func (m *DefaultValidatorManager) getNodeByAccAddr(addr sdk.AccAddress, status types.NodeStatus) *types.Node {
