@@ -5,8 +5,6 @@ import (
 	"testing"
 
 	"github.com/golang/mock/gomock"
-	"github.com/sisu-network/sisu/common"
-	mock "github.com/sisu-network/sisu/tests/mock/x/sisu"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
@@ -24,22 +22,49 @@ func TestHandlerReshareResult(t *testing.T) {
 
 		ctx := testContext()
 		keeper := keeperTestGenesis(ctx)
-		validatorManager := NewValidatorManager(keeper)
-		appKeys := common.NewMockAppKeys()
-		mockPmm := mock.NewMockPostedMessageManager(ctrl)
-		mockPmm.EXPECT().ShouldProcessMsg(gomock.Any(), gomock.Any()).Return(true, []byte("mock_hash")).Times(1)
+		keeper.SaveParams(ctx, &types.Params{MajorityThreshold: 2})
 
-		mc := MockManagerContainer(validatorManager, keeper, mockPmm)
+		consensusKey1, err := base64.StdEncoding.DecodeString("1jPHjoWahm5WDES2ud3zJbzmRzCPLFacQsrl/pbO/Wo=")
+		require.NoError(t, err)
+		consensusKey2, err := base64.StdEncoding.DecodeString("qsXeJ51BGalR2V2Zz9ugh3ofsIS58Kjya9pDgfKH018=")
+		require.NoError(t, err)
+
+		signer1 := "cosmos14z5sxua3m2hxda6e0c7d9j2jzuxfh2fr94xjkw"
+		signer2 := "cosmos1nec9fjd7dp0aph6xqp9rqnv426yyrutrj40rt3"
+		validatorManager := NewValidatorManager(keeper)
+		validatorManager.AddNode(ctx, &types.Node{
+			ConsensusKey: &types.Pubkey{
+				Type:  "ed25519",
+				Bytes: consensusKey1,
+			},
+			AccAddress:  signer1,
+			IsValidator: true,
+			Status:      types.NodeStatus_Validator,
+		})
+		validatorManager.AddNode(ctx, &types.Node{
+			ConsensusKey: &types.Pubkey{
+				Type:  "ed25519",
+				Bytes: consensusKey2,
+			},
+			AccAddress:  signer2,
+			IsValidator: false,
+			Status:      types.NodeStatus_Candidate,
+		})
+
+		newValSet := [][]byte{consensusKey1, consensusKey2}
+		reshareMsg1 := types.NewReshareResultWithSigner(signer1, newValSet, types.ReshareData_SUCCESS)
+
+		pmm := NewPostedMessageManager(keeper, validatorManager)
+		mc := MockManagerContainer(validatorManager, keeper, pmm)
 		handler := NewHandlerReshareResult(mc)
 
-		newVal1, err := base64.StdEncoding.DecodeString("1jPHjoWahm5WDES2ud3zJbzmRzCPLFacQsrl/pbO/Wo=")
+		// Signed by signer 1
+		_, err = handler.DeliverMsg(ctx, reshareMsg1)
 		require.NoError(t, err)
-		newVal2, err := base64.StdEncoding.DecodeString("qsXeJ51BGalR2V2Zz9ugh3ofsIS58Kjya9pDgfKH018=")
-		require.NoError(t, err)
-		newValSet := [][]byte{newVal1, newVal2}
-		reshareMsg := types.NewReshareResultWithSigner(appKeys.GetSignerAddress().String(), newValSet, types.ReshareData_SUCCESS)
 
-		_, err = handler.DeliverMsg(ctx, reshareMsg)
+		// Signed by signer 2
+		reshareMsg2 := types.NewReshareResultWithSigner(signer2, newValSet, types.ReshareData_SUCCESS)
+		_, err = handler.DeliverMsg(ctx, reshareMsg2)
 		require.NoError(t, err)
 
 		incomingValidateUpdates := keeper.GetIncomingValidatorUpdates(ctx)

@@ -47,6 +47,20 @@ func (mr *MockValidatorManagerMockRecorder) AddNode(ctx, node interface{}) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddNode", reflect.TypeOf((*MockValidatorManager)(nil).AddNode), ctx, node)
 }
 
+// CountVote mocks base method.
+func (m *MockValidatorManager) CountVote(ctx types.Context, recordHash []byte) int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CountVote", ctx, recordHash)
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// CountVote indicates an expected call of CountVote.
+func (mr *MockValidatorManagerMockRecorder) CountVote(ctx, recordHash interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CountVote", reflect.TypeOf((*MockValidatorManager)(nil).CountVote), ctx, recordHash)
+}
+
 // GetExceedSlashThresholdValidators mocks base method.
 func (m *MockValidatorManager) GetExceedSlashThresholdValidators(ctx types.Context) ([]*types0.Node, error) {
 	m.ctrl.T.Helper()
