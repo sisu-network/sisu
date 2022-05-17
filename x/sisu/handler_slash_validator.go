@@ -35,7 +35,7 @@ func (h *HandlerSlashValidator) DeliverMsg(ctx sdk.Context, msg *types.SlashVali
 		return &sdk.Result{}, err
 	}
 
-	if err := h.keeper.IncSlashToken(ctx, nodeAddr, msg.Data.SlashPoint); err != nil {
+	if err := h.keeper.IncSlashToken(ctx, msg.Data.SlashPoint, nodeAddr); err != nil {
 		log.Error(err)
 		return &sdk.Result{}, err
 	}

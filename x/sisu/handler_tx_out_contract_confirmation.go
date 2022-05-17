@@ -23,9 +23,18 @@ func NewHandlerTxOutContractConfirmation(mc ManagerContainer) *HandlerTxOutContr
 }
 
 func (h *HandlerTxOutContractConfirmation) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutContractConfirmWithSigner) (*sdk.Result, error) {
+	if err := h.keeper.IncSlashToken(ctx, types.ObserverSlashPoint, signerMsg.GetSender()); err != nil {
+		return &sdk.Result{}, nil
+	}
+
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
 		data, err := h.doTxOutContractConfirm(ctx, signerMsg)
 		h.keeper.ProcessTxRecord(ctx, hash)
+
+		voters := h.keeper.GetVotersInAccAddress(ctx, hash)
+		if err := h.keeper.DecSlashToken(ctx, types.ObserverSlashPoint, voters...); err != nil {
+			return &sdk.Result{}, err
+		}
 
 		return &sdk.Result{Data: data}, err
 	}

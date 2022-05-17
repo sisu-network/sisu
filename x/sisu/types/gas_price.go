@@ -35,6 +35,11 @@ func (msg *GasPriceMsg) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{author}
 }
 
+// GetSender ...
+func (msg *GasPriceMsg) GetSender() sdk.AccAddress {
+	return msg.GetSigners()[0]
+}
+
 func (msg *GasPriceMsg) GetMsgs() []sdk.Msg {
 	return []sdk.Msg{msg}
 }

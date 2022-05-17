@@ -20,6 +20,7 @@ type Keeper interface {
 	// TxRecord
 	SaveTxRecord(ctx sdk.Context, hash []byte, signer string) int
 	GetVoters(ctx sdk.Context, hash []byte) []string
+	GetVotersInAccAddress(ctx sdk.Context, hash []byte) []sdk.AccAddress
 
 	// TxRecordProcessed
 	ProcessTxRecord(ctx sdk.Context, hash []byte)
@@ -102,8 +103,8 @@ type Keeper interface {
 	GetParams(ctx sdk.Context) *types.Params
 
 	// Slash
-	IncSlashToken(ctx sdk.Context, address sdk.AccAddress, amount int64) error
-	DecSlashToken(ctx sdk.Context, address sdk.AccAddress, amount int64) error
+	IncSlashToken(ctx sdk.Context, amount int64, addresses ...sdk.AccAddress) error
+	DecSlashToken(ctx sdk.Context, amount int64, addresses ...sdk.AccAddress) error
 	GetSlashToken(ctx sdk.Context, address sdk.AccAddress) (int64, error)
 
 	// Nodes balance
@@ -141,7 +142,25 @@ func (k *DefaultKeeper) SaveTxRecord(ctx sdk.Context, hash []byte, signer string
 
 func (k *DefaultKeeper) GetVoters(ctx sdk.Context, hash []byte) []string {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxRecord)
-	return getSignedValidators(store, hash)
+	return getVotersString(store, hash)
+}
+
+func (k *DefaultKeeper) GetVotersInAccAddress(ctx sdk.Context, hash []byte) []sdk.AccAddress {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxRecord)
+	voters := getVotersString(store, hash)
+
+	addrs := make([]sdk.AccAddress, 0)
+	for _, v := range voters {
+		a, err := sdk.AccAddressFromBech32(v)
+		if err != nil {
+			log.Error("invalid address: ", v)
+			continue
+		}
+
+		addrs = append(addrs, a)
+	}
+
+	return addrs
 }
 
 ///// TxRecordProcessed
@@ -428,14 +447,14 @@ func (k *DefaultKeeper) GetParams(ctx sdk.Context) *types.Params {
 }
 
 ///// Slash
-func (k *DefaultKeeper) IncSlashToken(ctx sdk.Context, address sdk.AccAddress, amount int64) error {
+func (k *DefaultKeeper) IncSlashToken(ctx sdk.Context, amount int64, addresses ...sdk.AccAddress) error {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixSlash)
-	return incOrDecSlashToken(store, address, amount)
+	return incOrDecSlashToken(store, amount, addresses...)
 }
 
-func (k *DefaultKeeper) DecSlashToken(ctx sdk.Context, address sdk.AccAddress, amount int64) error {
+func (k *DefaultKeeper) DecSlashToken(ctx sdk.Context, amount int64, addresses ...sdk.AccAddress) error {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixSlash)
-	return incOrDecSlashToken(store, address, -amount)
+	return incOrDecSlashToken(store, -amount, addresses...)
 }
 
 func (k *DefaultKeeper) GetSlashToken(ctx sdk.Context, address sdk.AccAddress) (int64, error) {

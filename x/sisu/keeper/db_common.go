@@ -127,7 +127,7 @@ func saveTxRecord(store cstypes.KVStore, hash []byte, validator string) int {
 	return len(vals)
 }
 
-func getSignedValidators(store cstypes.KVStore, hash []byte) []string {
+func getVotersString(store cstypes.KVStore, hash []byte) []string {
 	bz := store.Get(hash)
 	if bz == nil {
 		return []string{}
@@ -931,20 +931,24 @@ func getParams(store cstypes.KVStore) *types.Params {
 }
 
 ///// Slash
-func incOrDecSlashToken(store cstypes.KVStore, address sdk.AccAddress, amount int64) error {
-	oldAmt, err := getCurSlashToken(store, address)
-	if err != nil {
-		return err
+func incOrDecSlashToken(store cstypes.KVStore, amount int64, addresses ...sdk.AccAddress) error {
+	for _, address := range addresses {
+		oldAmt, err := getCurSlashToken(store, address)
+		if err != nil {
+			return err
+		}
+
+		newAmt := oldAmt + amount
+		if newAmt < 0 {
+			newAmt = 0
+		}
+
+		bz := make([]byte, 8)
+		binary.LittleEndian.PutUint64(bz, uint64(newAmt))
+		store.Set(address.Bytes(), bz)
+		return nil
 	}
 
-	newAmt := oldAmt + amount
-	if newAmt < 0 {
-		newAmt = 0
-	}
-
-	bz := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bz, uint64(newAmt))
-	store.Set(address.Bytes(), bz)
 	return nil
 }
 

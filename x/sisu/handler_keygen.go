@@ -21,11 +21,20 @@ func NewHandlerKeygen(mc ManagerContainer) *HandlerKeygen {
 }
 
 func (h *HandlerKeygen) DeliverMsg(ctx sdk.Context, signerMsg *types.KeygenWithSigner) (*sdk.Result, error) {
+	if err := h.keeper.IncSlashToken(ctx, types.ObserverSlashPoint, signerMsg.GetSender()); err != nil {
+		return &sdk.Result{}, nil
+	}
+
 	log.Info("Delivering keygen, signer = ", signerMsg.Signer)
 	pmm := h.mc.PostedMessageManager()
 	if process, hash := pmm.ShouldProcessMsg(ctx, signerMsg); process {
 		data, err := h.doKeygen(ctx, signerMsg)
 		h.keeper.ProcessTxRecord(ctx, hash)
+
+		voters := h.keeper.GetVotersInAccAddress(ctx, hash)
+		if err := h.keeper.DecSlashToken(ctx, types.ObserverSlashPoint, voters...); err != nil {
+			return &sdk.Result{}, err
+		}
 
 		return &sdk.Result{Data: data}, err
 	}

@@ -38,6 +38,10 @@ func (msg *TxInWithSigner) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{author}
 }
 
+func (msg *TxInWithSigner) GetSender() sdk.AccAddress {
+	return msg.GetSigners()[0]
+}
+
 func (msg *TxInWithSigner) GetMsgs() []sdk.Msg {
 	return []sdk.Msg{msg}
 }

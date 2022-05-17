@@ -33,6 +33,10 @@ func (msg *TxOutContractConfirmWithSigner) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{author}
 }
 
+func (msg *TxOutContractConfirmWithSigner) GetSender() sdk.AccAddress {
+	return msg.GetSigners()[0]
+}
+
 func (msg *TxOutContractConfirmWithSigner) GetMsgs() []sdk.Msg {
 	return []sdk.Msg{msg}
 }

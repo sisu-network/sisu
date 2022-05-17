@@ -38,6 +38,10 @@ func (msg *KeygenWithSigner) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{author}
 }
 
+func (msg *KeygenWithSigner) GetSender() sdk.AccAddress {
+	return msg.GetSigners()[0]
+}
+
 func (msg *KeygenWithSigner) GetMsgs() []sdk.Msg {
 	return []sdk.Msg{msg}
 }

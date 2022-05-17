@@ -20,16 +20,6 @@ func NewSisuHandler(mc ManagerContainer) *SisuHandler {
 
 func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorManager) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
-		//signers := msg.GetSigners()
-		//if len(signers) != 1 {
-		//	log.Error("Signers length must be 1. Actual length = ", len(signers))
-		//	return nil, fmt.Errorf("incorrect signers length: %d", len(signers))
-		//}
-		//
-		//if !valsManager.IsValidator(ctx, signers[0].String()) {
-		//	log.Verbose("sender is not a validator ", signers[0].String())
-		//	return nil, fmt.Errorf("sender is not a validator: %s", signers[0].String())
-		//}
 
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		mc := sh.mc

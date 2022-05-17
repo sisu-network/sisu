@@ -36,6 +36,10 @@ func (msg *ReshareResultWithSigner) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{author}
 }
 
+// GetSender ...
+func (msg *ReshareResultWithSigner) GetSender() sdk.AccAddress {
+	return msg.GetSigners()[0]
+}
 func (msg *ReshareResultWithSigner) GetMsgs() []sdk.Msg {
 	return []sdk.Msg{msg}
 }

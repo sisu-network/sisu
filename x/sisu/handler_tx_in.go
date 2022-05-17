@@ -29,9 +29,34 @@ func NewHandlerTxIn(mc ManagerContainer) *HandlerTxIn {
 }
 
 func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, signerMsg *types.TxInWithSigner) (*sdk.Result, error) {
+	if err := h.keeper.IncSlashToken(ctx, types.ObserverSlashPoint, signerMsg.GetSender()); err != nil {
+		return &sdk.Result{}, nil
+	}
+	log.Debug("inc slash token successfully for sender: ", signerMsg.GetSender().String())
+
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
 		data, err := h.doTxIn(ctx, signerMsg)
+		if err != nil {
+			return &sdk.Result{}, err
+		}
+
 		h.keeper.ProcessTxRecord(ctx, hash)
+
+		voters := h.keeper.GetVotersInAccAddress(ctx, hash)
+		if err := h.keeper.DecSlashToken(ctx, types.ObserverSlashPoint, voters...); err != nil {
+			return &sdk.Result{}, err
+		}
+
+		log.Debug("dec slash token successfully")
+		for _, v := range voters {
+			slash, err := h.keeper.GetSlashToken(ctx, v)
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+
+			log.Debugf("address %s has slash %d", v.String(), slash)
+		}
 
 		return &sdk.Result{Data: data}, err
 	}
