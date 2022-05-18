@@ -75,8 +75,6 @@ type TxSubmitter struct {
 	// Tx queue
 	queue           []*QElementPair
 	queueLock       *sync.RWMutex
-	msgIndex        int64
-	msgStatuses     map[int64]error
 	submitRequestCh chan bool
 }
 
@@ -95,7 +93,6 @@ func NewTxSubmitter(cfg config.Config, appKeys *DefaultAppKeys) *TxSubmitter {
 		queueLock:       &sync.RWMutex{},
 		queue:           make([]*QElementPair, 0),
 		submitRequestCh: make(chan bool, 20),
-		msgStatuses:     make(map[int64]error),
 		sequenceLock:    &sync.RWMutex{},
 		curSequence:     UnInitializedSeq,
 	}
@@ -124,55 +121,27 @@ func (t *TxSubmitter) SubmitMessageSync(msg sdk.Msg) error {
 func (t *TxSubmitter) submitMessage(msg sdk.Msg) error {
 	log.Debug("Submitting tx ....")
 
-	index := t.addMessage(msg)
-	var err error
+	t.addMessage(msg)
 
 	// Delay a short period to accumulate more transactions before sending.
 	t.schedule()
 
-	for {
-		time.Sleep(QueueTime)
-
-		t.queueLock.RLock()
-		err = t.msgStatuses[index]
-		t.queueLock.RUnlock()
-		if err != nil {
-			break
-		}
-	}
-	defer t.removeMessage(index)
-
-	if err != ErrNone {
-		return err
-	}
-
 	return nil
 }
 
-func (t *TxSubmitter) addMessage(msg sdk.Msg) int64 {
-	return t.addMessages([]sdk.Msg{msg})
+func (t *TxSubmitter) addMessage(msg sdk.Msg) {
+	t.addMessages([]sdk.Msg{msg})
 }
 
-func (t *TxSubmitter) addMessages(msgs []sdk.Msg) int64 {
+func (t *TxSubmitter) addMessages(msgs []sdk.Msg) {
 	t.queueLock.Lock()
 	defer t.queueLock.Unlock()
 
 	for _, msg := range msgs {
-		t.msgIndex++
 		t.queue = append(t.queue, &QElementPair{
-			msg:   msg,
-			index: t.msgIndex,
+			msg: msg,
 		})
 	}
-
-	return t.msgIndex
-}
-
-func (t *TxSubmitter) removeMessage(msgIndex int64) {
-	t.queueLock.Lock()
-	defer t.queueLock.Unlock()
-
-	delete(t.msgStatuses, msgIndex)
 }
 
 func (t *TxSubmitter) schedule() {
@@ -229,13 +198,11 @@ func (t *TxSubmitter) Start() {
 						res2, err2 := t.trySubmitTx(copy)
 						if err2 != nil || (res2 != nil && res2.Code != 0) {
 							log.Errorf("Retry failed, code = %d and err = %v", res2.Code, err2)
-							t.updateStatus(copy, err2)
 						} else {
 							log.Verbose("Retry succeeded")
 						}
 					} else {
 						log.Error("cannot get sequence, err = ", err)
-						t.updateStatus(copy, err)
 					}
 				} else {
 					log.Error("We cannot sequence number. We will readded all transactions in the queue again.")
@@ -257,7 +224,6 @@ func (t *TxSubmitter) trySubmitTx(list []*QElementPair) (*sdk.TxResponse, error)
 		return res, err
 	} else {
 		log.Debug("Tx submitted successfully")
-		t.updateStatus(list, ErrNone)
 		t.incSequence()
 
 		return res, err
@@ -359,15 +325,6 @@ func (t *TxSubmitter) updateAccNumberAndSquence(newAccountNumber, newSeq uint64)
 	t.accountNumber = newAccountNumber
 	t.factory = t.factory.WithAccountNumber(newAccountNumber)
 	t.factory = t.factory.WithSequence(newSeq)
-}
-
-func (t *TxSubmitter) updateStatus(list []*QElementPair, err error) {
-	t.queueLock.Lock()
-	defer t.queueLock.Unlock()
-
-	for _, pair := range list {
-		t.msgStatuses[pair.index] = err
-	}
 }
 
 func convert(list []*QElementPair) []sdk.Msg {
