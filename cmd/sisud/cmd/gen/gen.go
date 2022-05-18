@@ -56,6 +56,8 @@ type Setting struct {
 	chains      []*types.Chain // chains in the genesis data
 	liquidities []*types.Liquidity
 	params      *types.Params
+
+	emailAlert config.EmailAlertConfig
 }
 
 // Initialize the localnet
@@ -360,6 +362,9 @@ func generateSisuToml(settings *Setting, index int, nodeDir string) {
 	}
 
 	cfg := settings.nodeConfigs[index]
+	if index == 0 {
+		cfg.Sisu.EmailAlert = settings.emailAlert
+	}
 
 	config.WriteConfigFile(filepath.Join(configDir, "sisu.toml"), &cfg)
 }

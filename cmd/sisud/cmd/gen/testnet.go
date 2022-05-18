@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"net"
 	"os"
@@ -19,6 +20,8 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
 
+	econfig "github.com/sisu-network/deyes/config"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
@@ -26,6 +29,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
 
@@ -39,18 +43,11 @@ type LogDNAConfig struct {
 }
 
 type TestnetConfig struct {
-	Tokens       []*types.Token     `json:"tokens"`
-	Nodes        []TestnetNode      `json:"nodes"`
-	Chains       []ChainConfig      `json:"chains"`
-	Liquidities  []*types.Liquidity `json:"liquidity"`
-	LogDNAConfig log.LogDNAConfig   `json:"log_dna_config"`
-}
-
-// TODO: merge this field with the chain type in the proto file
-type ChainConfig struct {
-	Id       string `json:"id"`
-	GasPrice int64  `json:"gas_price"`
-	Rpc      string `json:"rpc"`
+	GenesisFolder   string                  `json:"genesis_folder"`
+	Nodes           []TestnetNode           `json:"nodes"`
+	DeyesChainsPath string                  `json:"deyes_chains_path"`
+	LogDNAConfig    log.LogDNAConfig        `json:"log_dna_config"`
+	EmailAlert      config.EmailAlertConfig `json:"email_alert"`
 }
 
 type SqlConfig struct {
@@ -77,7 +74,7 @@ func TestnetCmd(mbm module.BasicManager, genBalIterator banktypes.GenesisBalance
 		Long: `privatenet creates configuration for a network with N validators.
 Example:
 	For multiple nodes (running with docker):
-	  ./sisu testnet --v 2 --output-dir ./output --config-string '{"chains":[{"id":"ganache1","rpc":"http://ganache-0.ganache.ganache:7545","gas_price":5000000000},{"id":"ganache2","rpc":"http://ganache-1.ganache.ganache:7545","gas_price":10000000000}],"tokens":[{"id":"NATIVE_GANACHE1","price":2000000000},{"id":"NATIVE_GANACHE2","price":3000000000},{"id":"SISU","price":4000000000,"addresses":{"ganache1":"0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C","ganache2":"0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"}}],"nodes":[{"sisu_ip":"sisud.sisu-0","dheart_ip":"dheart.sisu-0","deyes_ip":"deyes.sisu-0","sql":{"host":"mysql.mysql","port":3306,"username":"root","password":"password"}},{"sisu_ip":"sisud.sisu--1","dheart_ip":"dheart.sisu--1","deyes_ip":"deyes.sisu--1","sql":{"host":"mysql.mysql","port":3306,"username":"root","password":"password"}}]}'
+	  ./sisu testnet --v 2 --output-dir ./output --config-string '{"deyes_chains":[{"id":"ganache1","rpc":"http://ganache-0.ganache.ganache:7545","gas_price":5000000000,"block_time":3000},{"id":"ganache2","rpc":"http://ganache-1.ganache.ganache:7545","gas_price":10000000000,"block_time":3000}],"tokens":[{"id":"NATIVE_GANACHE1","price":2000000000},{"id":"NATIVE_GANACHE2","price":3000000000},{"id":"SISU","price":4000000000,"decimals":18,"chains":["ganache1","ganache2"],"addresses":["0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C","0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"]}],"nodes":[{"sisu_ip":"sisud.sisu-0","dheart_ip":"dheart.sisu-0","deyes_ip":"deyes.sisu-0","sql":{"host":"mysql.mysql","port":3306,"username":"root","password":"password"}},{"sisu_ip":"sisud.sisu--1","dheart_ip":"dheart.sisu--1","deyes_ip":"deyes.sisu--1","sql":{"host":"mysql.mysql","port":3306,"username":"root","password":"password"}}]}'
 	`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
@@ -144,6 +141,8 @@ Example:
 			}
 			log.Info("ips = ", sisuIps)
 
+			chains := getChains(filepath.Join(testnetConfig.GenesisFolder, "chains.json"))
+
 			// Create configuration
 			nodeConfigs := make([]config.Config, numValidators)
 			for i := range sisuIps {
@@ -153,16 +152,8 @@ Example:
 					panic(err)
 				}
 
-				nodeConfig := generator.getNodeSettings(i, chainId, keyringBackend, keyringPassphrase, nodes[i], testnetConfig.Chains, dnaConfig)
+				nodeConfig := generator.getNodeSettings(i, chainId, keyringBackend, keyringPassphrase, nodes[i], chains, dnaConfig)
 				nodeConfigs[i] = nodeConfig
-			}
-
-			chains := make([]*types.Chain, len(testnetConfig.Chains))
-			for i, c := range testnetConfig.Chains {
-				chains[i] = &types.Chain{
-					Id:       c.Id,
-					GasPrice: c.GasPrice,
-				}
 			}
 
 			settings := &Setting{
@@ -183,10 +174,11 @@ Example:
 
 				ips:         sisuIps,
 				nodeConfigs: nodeConfigs,
-				tokens:      testnetConfig.Tokens,
+				tokens:      getTokens(filepath.Join(testnetConfig.GenesisFolder, "tokens.json")),
 				chains:      chains,
-				liquidities: testnetConfig.Liquidities,
+				liquidities: getLiquidity(filepath.Join(testnetConfig.GenesisFolder, "liquid.json")),
 				params:      &types.Params{MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3))},
+				emailAlert:  testnetConfig.EmailAlert,
 			}
 
 			valPubKeys, err := InitNetwork(settings)
@@ -194,6 +186,8 @@ Example:
 			if err != nil {
 				panic(err)
 			}
+
+			deyesChains := generator.readDeyesChainConfigs(testnetConfig.DeyesChainsPath)
 
 			// Create config files for dheart and deyes.
 			for i := range heartIps {
@@ -203,7 +197,7 @@ Example:
 				generator.generateHeartToml(i, dir, heartIps, peerIds, sisuIps[i], nodes[i].Sql, valPubKeys, dnaConfig)
 
 				// Deyes configs
-				generator.generateEyesToml(i, dir, sisuIps[i], eyesIps[i], nodes[i].Sql, testnetConfig.Chains, dnaConfig)
+				generator.generateEyesToml(i, dir, sisuIps[i], eyesIps[i], nodes[i].Sql, deyesChains, dnaConfig)
 			}
 
 			return err
@@ -221,11 +215,13 @@ Example:
 	cmd.Flags().String(flagConfigString, "", "configuration string for all nodes")
 	cmd.Flags().String(flags.FlagKeyringBackend, keyring.BackendTest, "Keyring backend. file|os|kwallet|pass|test|memory")
 	cmd.Flags().String(flagKeyringPassphrase, "", "Passphrase for keyring backend if using backend file. Leave it empty if use backend test")
+	cmd.Flags().String(flagGenesisFolder, "./misc/dev", "Relative path to the folder that contains genesis configuration.")
 
 	return cmd
 }
 
-func (g *TestnetGenerator) getNodeSettings(nodeIndex int, chainID, keyringBackend, keyringPassphrase string, testnetConfig TestnetNode, chainConfigs []ChainConfig, dnaConfig log.LogDNAConfig) config.Config {
+func (g *TestnetGenerator) getNodeSettings(nodeIndex int, chainID, keyringBackend, keyringPassphrase string,
+	testnetConfig TestnetNode, chainConfigs []*types.Chain, dnaConfig log.LogDNAConfig) config.Config {
 	supportedChains := make(map[string]config.TssChainConfig)
 	for _, chainConfig := range chainConfigs {
 		supportedChains[chainConfig.Id] = config.TssChainConfig{
@@ -253,6 +249,17 @@ func (g *TestnetGenerator) getNodeSettings(nodeIndex int, chainID, keyringBacken
 		},
 		LogDNA: dnaConfig,
 	}
+}
+
+func (g *TestnetGenerator) readDeyesChainConfigs(path string) []econfig.Chain {
+	deyesChains := make([]econfig.Chain, 0)
+	file, _ := ioutil.ReadFile(path)
+	err := json.Unmarshal([]byte(file), &deyesChains)
+	if err != nil {
+		panic(err)
+	}
+
+	return deyesChains
 }
 
 func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartIps []string,
@@ -307,7 +314,7 @@ func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartI
 }
 
 func (g *TestnetGenerator) generateEyesToml(index int, dir string, sisuIp, deyesIp string, sqlConfig SqlConfig,
-	chainConfigs []ChainConfig, dnaConfig log.LogDNAConfig) {
+	chainConfigs []econfig.Chain, dnaConfig log.LogDNAConfig) {
 	sqlConfig.Schema = "deyes"
 
 	dnaConfig.HostName = deyesIp

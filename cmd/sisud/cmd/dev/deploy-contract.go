@@ -25,7 +25,7 @@ func DeployContract() *cobra.Command {
 		Use: "deploy",
 		Long: `Deploy an ERC20 contract. You can list of empty string to expected addresses param.
 Usage:
-./sisu dev deploy --contract [contract-type] --chain-urls [list-of-urls] --token-name [TOKEN_NAME] --token-symbol [TOKEN_SYMBOL] --expected-addrs [List of Expected Addresses]
+./sisu dev deploy --contract [contract-type] --chain-urls [list-of-urls] --erc20-name [TOKEN_NAME] --erc20-symbol [TOKEN_SYMBOL] --expected-addrs [List of Expected Addresses]
 
 Example:
 ./sisu dev deploy --contract liquidity --chain-urls http://localhost:7545,http://localhost:8545
@@ -59,6 +59,10 @@ Example:
 func (c *DeployContractCmd) doDeployment(urlString, contract, mnemonic, expAddrString, tokenName, tokenSymbol string) []string {
 	urls := strings.Split(urlString, ",")
 	expectedAddrs := strings.Split(expAddrString, ",")
+	if len(expectedAddrs) == 0 {
+		expectedAddrs = make([]string, len(urls))
+	}
+
 	if len(expectedAddrs) == 0 {
 		expectedAddrs = make([]string, len(urls))
 	}
@@ -153,6 +157,7 @@ func (c *DeployContractCmd) deployErc20(client *ethclient.Client, mnemonic strin
 		panic(err)
 	}
 
+	log.Info("Tx hash = ", tx.Hash())
 	log.Info("Deploying erc20 contract ... ")
 	contractAddr, err := bind.WaitDeployed(context.Background(), client, tx)
 	if err != nil {
@@ -176,7 +181,7 @@ func (c *DeployContractCmd) deployLiquidity(client *ethclient.Client, mnemonic s
 		panic(err)
 	}
 
-	_, tx, _, err := liquidity.DeployLiquiditypool(auth, client, []common.Address{}, []string{})
+	_, tx, _, err := liquidity.DeployLiquiditypool(auth, client)
 	if err != nil {
 		panic(err)
 	}

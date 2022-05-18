@@ -5,6 +5,10 @@
   },
   {
     "id": "ganache2",
+    "gas_price": 4000000000
+  },
+  {
+    "id": "polygon-testnet",
     "gas_price": 10000000000
   }
 ]

@@ -49,9 +49,9 @@ type TssConfig struct {
 // Optional Email Alert System. This could be useful when we want to send missing transaction alert
 // to some email.
 type EmailAlertConfig struct {
-	Url    string `toml:"url"`
-	Secret string `toml:"secret"`
-	Email  string `toml:"email"`
+	Url    string `toml:"url" json:"url"`
+	Secret string `toml:"secret" json:"secret"`
+	Email  string `toml:"email" json:"email"`
 }
 
 func ReadConfig() (Config, error) {

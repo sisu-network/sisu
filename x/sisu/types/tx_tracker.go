@@ -9,8 +9,9 @@ const (
 	TxStatusDelivered
 	TxStatusSigned
 	TxStatusSignFailed
-	TxStatusDepoyed // transaction has been sent to blockchain but not confirmed yet.
-	TxStatusConfirmed
+	TxStatusDepoyed   // transaction has been sent to blockchain but not confirmed yet.
+	TxStatusConfirmed // Tx is successfully executed in a block.
+	TxStatusReverted  // Tx is included in the blockchain but reverted/failed during execution.
 )
 
 var (

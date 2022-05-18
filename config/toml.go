@@ -21,6 +21,10 @@ keyring-backend = "{{ .Sisu.KeyringBackend }}"
 keyring-passphrase = "{{ .Sisu.KeyringPassphrase }}"
 api-host = "{{ .Sisu.ApiHost }}"
 api-port = {{ .Sisu.ApiPort }}
+[sisu.email-alert]
+	url = "{{ .Sisu.EmailAlert.Url }}"
+	secret = "{{ .Sisu.EmailAlert.Secret }}"
+	email = "{{ .Sisu.EmailAlert.Email }}"
 
 ###############################################################################
 ###                     Siu Main LogDNA Connfiguration                      ###

@@ -203,7 +203,6 @@ func (p *Processor) EndBlock(ctx sdk.Context) {
 	if !p.globalData.IsCatchingUp() {
 		// Inform dheart that we have reached end of block so that dheart could run presign works.
 		height := ctx.BlockHeight()
-		log.Verbose("End block reached, height = ", height)
 		p.dheartClient.BlockEnd(height)
 	}
 }
@@ -348,9 +347,12 @@ func (p *Processor) OnKeysignResult(result *dhtypes.KeysignResult) {
 
 			// Create full tx with signature.
 			chainId := libchain.GetChainIntFromId(keysignMsg.OutChain)
+			if len(result.Signatures[i]) != 65 {
+				log.Error("Signature length is not 65 for chain: ", chainId)
+			}
 			signedTx, err := tx.WithSignature(ethtypes.NewEIP2930Signer(chainId), result.Signatures[i])
 			if err != nil {
-				log.Error("cannot set signatuer for tx, err =", err)
+				log.Error("cannot set signature for tx, err =", err)
 				return
 			}
 
@@ -395,7 +397,7 @@ func (p *Processor) OnKeysignResult(result *dhtypes.KeysignResult) {
 
 // deploySignedTx creates a deployment request and sends it to deyes.
 func (p *Processor) deploySignedTx(ctx sdk.Context, bz []byte, outChain string, outHash string, isContractDeployment bool) error {
-	log.Debug("Sending final tx to the deyes for deployment for chain ", outChain)
+	log.Verbose("Sending final tx to the deyes for deployment for chain ", outChain)
 
 	pubkey := p.keeper.GetKeygenPubkey(ctx, libchain.GetKeyTypeForChain(outChain))
 	if pubkey == nil {
@@ -427,6 +429,12 @@ func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 
 	// Create TxIn messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
+		if !tx.Success {
+			// TODO: Have a mechanism to handle failed transaction.
+			p.txTracker.OnTxFailed(txs.Chain, tx.Hash, types.TxStatusReverted)
+			continue
+		}
+
 		// 1. Check if this tx is from one of our key. If it is, update the status of TxOut to confirmed.
 		if p.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, tx.From) {
 			return p.confirmTx(ctx, tx, txs.Chain, txs.Block)
