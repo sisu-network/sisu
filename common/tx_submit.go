@@ -205,12 +205,14 @@ func (t *TxSubmitter) Start() {
 				code := -1
 				if res != nil {
 					code = int(res.Code)
+				} else {
+					log.Error("responsed from sisu is nil")
 				}
 				log.Errorf("Cannot broadcast transaction, code = %d and err = %v", code, err)
 
 				// Do retry if the error we get is incorrect sequence number
 				// List of error code here: https://github.com/cosmos/cosmos-sdk/blob/v0.42.1/types/errors/errors.go
-				if res.Code == 32 { // incorrect sequence number
+				if res != nil && res.Code == 32 { // incorrect sequence number
 					accNumber, newSequence, err := t.getLatestSequence()
 					if err == nil {
 						log.Info("New sequence = ", newSequence)
