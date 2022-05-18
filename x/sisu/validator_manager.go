@@ -21,6 +21,7 @@ type ValidatorManager interface {
 	GetPotentialCandidates(ctx sdk.Context, n int) []*types.Node
 	HasConsensus(ctx sdk.Context, recordHash []byte) bool
 	CountVote(ctx sdk.Context, recordHash []byte) int
+	IsNodeAccount(ctx sdk.Context, addr sdk.AccAddress) bool
 }
 
 type DefaultValidatorManager struct {
@@ -184,6 +185,16 @@ func (m *DefaultValidatorManager) CountVote(ctx sdk.Context, recordHash []byte) 
 	}
 
 	return vote
+}
+
+// IsNodeAccount return trues if it's candidate/validator address
+func (m *DefaultValidatorManager) IsNodeAccount(ctx sdk.Context, addr sdk.AccAddress) bool {
+	if m.getNodeByAccAddr(addr, types.NodeStatus_Validator) != nil ||
+		m.getNodeByAccAddr(addr, types.NodeStatus_Candidate) != nil {
+		return true
+	}
+
+	return false
 }
 
 func (m *DefaultValidatorManager) getNodeByAccAddr(addr sdk.AccAddress, status types.NodeStatus) *types.Node {

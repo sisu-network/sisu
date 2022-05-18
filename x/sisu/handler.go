@@ -24,6 +24,15 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		mc := sh.mc
 
+		signers := msg.GetSigners()
+		if len(signers) == 0 {
+			return &sdk.Result{}, fmt.Errorf("empty signer for msg: %s", msg.String())
+		}
+
+		if RequireSubmitPerm(msg) && !valsManager.IsNodeAccount(ctx, signers[0]) {
+			return &sdk.Result{}, fmt.Errorf("require permision: %s", msg.String())
+		}
+
 		switch msg := msg.(type) {
 		case *types.KeygenWithSigner:
 			return NewHandlerKeygen(mc).DeliverMsg(ctx, msg)
@@ -65,7 +74,16 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 			return NewHandlerSetDheartIPAddress(mc).DeliverMsg(ctx, msg)
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)
-			return nil, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
+			return &sdk.Result{}, sdkerrors.Wrap(sdkerrors.ErrUnknownRequest, errMsg)
 		}
+	}
+}
+
+func RequireSubmitPerm(msg sdk.Msg) bool {
+	switch msg.(type) {
+	case *types.DepositSisuTokenMsg, *types.SetDheartIpAddressMsg, *types.SlashValidatorMsg:
+		return false
+	default:
+		return true
 	}
 }
