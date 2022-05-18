@@ -1082,6 +1082,24 @@ func resetValidatorUpdate(store cstypes.KVStore) {
 	}
 }
 
+func increaseValidatorUpdateIndex(store cstypes.KVStore) int {
+	key := []byte("msg_index")
+	b := store.Get([]byte("msg_index"))
+	if b == nil {
+		index := make([]byte, 4)
+		binary.LittleEndian.PutUint32(index, 0)
+		store.Set(key, index)
+		return 0
+	}
+
+	index := binary.LittleEndian.Uint32(b)
+	index++
+	indexBytes := make([]byte, 4)
+	binary.LittleEndian.PutUint32(indexBytes, index)
+	store.Set(key, indexBytes)
+	return int(index)
+}
+
 func saveDheartIPAddress(store cstypes.KVStore, accAddr sdk.AccAddress, ip string) error {
 	if len(ip) == 0 {
 		return nil

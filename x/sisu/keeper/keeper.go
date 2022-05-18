@@ -116,6 +116,7 @@ type Keeper interface {
 	// Validator update
 	SaveIncomingValidatorUpdates(ctx sdk.Context, validatorUpdates abci.ValidatorUpdates) error
 	GetIncomingValidatorUpdates(ctx sdk.Context) abci.ValidatorUpdates
+	GetValidatorUpdateIndex(ctx sdk.Context) int
 
 	// Dheart IP address
 	SaveDheartIPAddress(ctx sdk.Context, address sdk.AccAddress, ip string) error
@@ -493,6 +494,11 @@ func (k *DefaultKeeper) SaveIncomingValidatorUpdates(ctx sdk.Context, validatorU
 func (k *DefaultKeeper) GetIncomingValidatorUpdates(ctx sdk.Context) abci.ValidatorUpdates {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixValidatorUpdate)
 	return getValidatorUpdates(store)
+}
+
+func (k *DefaultKeeper) GetValidatorUpdateIndex(ctx sdk.Context) int {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixValidatorUpdate)
+	return increaseValidatorUpdateIndex(store)
 }
 
 ///// Set Dheart IP address

@@ -392,6 +392,20 @@ func (mr *MockKeeperMockRecorder) GetTxOutSig(ctx, outChain, hashWithSig interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTxOutSig", reflect.TypeOf((*MockKeeper)(nil).GetTxOutSig), ctx, outChain, hashWithSig)
 }
 
+// GetValidatorUpdateIndex mocks base method.
+func (m *MockKeeper) GetValidatorUpdateIndex(ctx types.Context) int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetValidatorUpdateIndex", ctx)
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// GetValidatorUpdateIndex indicates an expected call of GetValidatorUpdateIndex.
+func (mr *MockKeeperMockRecorder) GetValidatorUpdateIndex(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetValidatorUpdateIndex", reflect.TypeOf((*MockKeeper)(nil).GetValidatorUpdateIndex), ctx)
+}
+
 // GetVoters mocks base method.
 func (m *MockKeeper) GetVoters(ctx types.Context, hash []byte) []string {
 	m.ctrl.T.Helper()
