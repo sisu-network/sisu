@@ -41,11 +41,6 @@ var (
 	ErrNone   = errors.New("This is not an error")
 )
 
-type QElementPair struct {
-	msg   sdk.Msg
-	index int64
-}
-
 //go:generate mockgen -source=common/tx_submit.go -destination=tests/mock/common/tx_submit.go -package=mock
 type TxSubmit interface {
 	SubmitMessageAsync(msg sdk.Msg) error
@@ -73,10 +68,8 @@ type TxSubmitter struct {
 	accountNumber uint64
 
 	// Tx queue
-	queue           []*QElementPair
+	queue           []sdk.Msg
 	queueLock       *sync.RWMutex
-	msgIndex        int64
-	msgStatuses     map[int64]error
 	submitRequestCh chan bool
 }
 
@@ -93,9 +86,8 @@ func NewTxSubmitter(cfg config.Config, appKeys *DefaultAppKeys) *TxSubmitter {
 		cfg:             cfg,
 		httpClient:      httpClient,
 		queueLock:       &sync.RWMutex{},
-		queue:           make([]*QElementPair, 0),
+		queue:           make([]sdk.Msg, 0),
 		submitRequestCh: make(chan bool, 20),
-		msgStatuses:     make(map[int64]error),
 		sequenceLock:    &sync.RWMutex{},
 		curSequence:     UnInitializedSeq,
 	}
@@ -124,49 +116,25 @@ func (t *TxSubmitter) SubmitMessageSync(msg sdk.Msg) error {
 func (t *TxSubmitter) submitMessage(msg sdk.Msg) error {
 	log.Debug("Submitting tx ....")
 
-	index := t.addMessage(msg)
-	var err error
+	t.addMessage(msg)
 
 	// Delay a short period to accumulate more transactions before sending.
 	t.schedule()
 
-	for {
-		time.Sleep(QueueTime)
-
-		t.queueLock.RLock()
-		err = t.msgStatuses[index]
-		t.queueLock.RUnlock()
-		if err != nil {
-			break
-		}
-	}
-	defer t.removeMessage(index)
-
-	if err != ErrNone {
-		return err
-	}
-
 	return nil
 }
 
-func (t *TxSubmitter) addMessage(msg sdk.Msg) int64 {
-	t.queueLock.Lock()
-	defer t.queueLock.Unlock()
-
-	t.msgIndex++
-	t.queue = append(t.queue, &QElementPair{
-		msg:   msg,
-		index: t.msgIndex,
-	})
-
-	return t.msgIndex
+func (t *TxSubmitter) addMessage(msg sdk.Msg) {
+	t.addMessages([]sdk.Msg{msg})
 }
 
-func (t *TxSubmitter) removeMessage(msgIndex int64) {
+func (t *TxSubmitter) addMessages(msgs []sdk.Msg) {
 	t.queueLock.Lock()
 	defer t.queueLock.Unlock()
 
-	delete(t.msgStatuses, msgIndex)
+	for _, msg := range msgs {
+		t.queue = append(t.queue, msg)
+	}
 }
 
 func (t *TxSubmitter) schedule() {
@@ -185,7 +153,7 @@ func (t *TxSubmitter) Start() {
 				continue
 			}
 			copy := t.queue
-			t.queue = make([]*QElementPair, 0) // Clear the queue
+			t.queue = make([]sdk.Msg, 0) // Clear the queue
 			t.queueLock.Unlock()
 
 			if len(copy) == 0 {
@@ -205,12 +173,14 @@ func (t *TxSubmitter) Start() {
 				code := -1
 				if res != nil {
 					code = int(res.Code)
+				} else {
+					log.Error("responsed from sisu is nil")
 				}
 				log.Errorf("Cannot broadcast transaction, code = %d and err = %v", code, err)
 
 				// Do retry if the error we get is incorrect sequence number
 				// List of error code here: https://github.com/cosmos/cosmos-sdk/blob/v0.42.1/types/errors/errors.go
-				if res.Code == 32 { // incorrect sequence number
+				if res != nil && res.Code == 32 { // incorrect sequence number
 					accNumber, newSequence, err := t.getLatestSequence()
 					if err == nil {
 						log.Info("New sequence = ", newSequence)
@@ -221,28 +191,26 @@ func (t *TxSubmitter) Start() {
 						res2, err2 := t.trySubmitTx(copy)
 						if err2 != nil || (res2 != nil && res2.Code != 0) {
 							log.Errorf("Retry failed, code = %d and err = %v", res2.Code, err2)
-							t.updateStatus(copy, err2)
 						} else {
 							log.Verbose("Retry succeeded")
 						}
 					} else {
 						log.Error("cannot get sequence, err = ", err)
-						t.updateStatus(copy, err)
 					}
+				} else {
+					log.Error("We cannot sequence number. We will readded all transactions in the queue again.")
+					t.addMessages(copy)
 				}
 			}
 		}
 	}
 }
 
-func (t *TxSubmitter) trySubmitTx(list []*QElementPair) (*sdk.TxResponse, error) {
-	msgs := convert(list)
-
+func (t *TxSubmitter) trySubmitTx(msgs []sdk.Msg) (*sdk.TxResponse, error) {
 	if res, err := t.submitMsgs(msgs); err != nil || (res != nil && res.Code != 0) {
 		return res, err
 	} else {
 		log.Debug("Tx submitted successfully")
-		t.updateStatus(list, ErrNone)
 		t.incSequence()
 
 		return res, err
@@ -344,23 +312,6 @@ func (t *TxSubmitter) updateAccNumberAndSquence(newAccountNumber, newSeq uint64)
 	t.accountNumber = newAccountNumber
 	t.factory = t.factory.WithAccountNumber(newAccountNumber)
 	t.factory = t.factory.WithSequence(newSeq)
-}
-
-func (t *TxSubmitter) updateStatus(list []*QElementPair, err error) {
-	t.queueLock.Lock()
-	defer t.queueLock.Unlock()
-
-	for _, pair := range list {
-		t.msgStatuses[pair.index] = err
-	}
-}
-
-func convert(list []*QElementPair) []sdk.Msg {
-	msgs := make([]sdk.Msg, len(list))
-	for i, pair := range list {
-		msgs[i] = pair.msg
-	}
-	return msgs
 }
 
 func (t *TxSubmitter) buildClientCtx(accountName string) (client.Context, error) {
