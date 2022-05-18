@@ -150,14 +150,20 @@ func (t *TxSubmitter) submitMessage(msg sdk.Msg) error {
 }
 
 func (t *TxSubmitter) addMessage(msg sdk.Msg) int64 {
+	return t.addMessages([]sdk.Msg{msg})
+}
+
+func (t *TxSubmitter) addMessages(msgs []sdk.Msg) int64 {
 	t.queueLock.Lock()
 	defer t.queueLock.Unlock()
 
-	t.msgIndex++
-	t.queue = append(t.queue, &QElementPair{
-		msg:   msg,
-		index: t.msgIndex,
-	})
+	for _, msg := range msgs {
+		t.msgIndex++
+		t.queue = append(t.queue, &QElementPair{
+			msg:   msg,
+			index: t.msgIndex,
+		})
+	}
 
 	return t.msgIndex
 }
@@ -232,7 +238,12 @@ func (t *TxSubmitter) Start() {
 						t.updateStatus(copy, err)
 					}
 				} else {
-					log.Error("We cannot sequence number. We might lose a transaction.")
+					log.Error("We cannot sequence number. We will readded all transactions in the queue again.")
+					msgs := make([]sdk.Msg, 0)
+					for _, e := range copy {
+						msgs = append(msgs, e.msg)
+					}
+					t.addMessages(msgs)
 				}
 			}
 		}
