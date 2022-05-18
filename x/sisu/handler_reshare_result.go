@@ -45,8 +45,13 @@ func (h *HandlerReshareResult) DeliverMsg(ctx sdk.Context, msg *types.ReshareRes
 	h.keeper.SaveTxRecord(ctx, rcHash, signer)
 
 	if h.keeper.IsTxRecordProcessed(ctx, rcHash) {
+		// Tx is processed, refund to who post this tx lately
+		if err := h.keeper.DecSlashToken(ctx, types.ObserveSlashPoint, msg.GetSender()); err != nil {
+			return &sdk.Result{}, err
+		}
 		return &sdk.Result{}, nil
 	}
+
 	data, err := h.doReshareResult(ctx, msg, rcHash)
 	if err != nil {
 		return &sdk.Result{}, err

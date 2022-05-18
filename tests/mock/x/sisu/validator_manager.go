@@ -118,6 +118,20 @@ func (mr *MockValidatorManagerMockRecorder) HasConsensus(ctx, recordHash interfa
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasConsensus", reflect.TypeOf((*MockValidatorManager)(nil).HasConsensus), ctx, recordHash)
 }
 
+// IsNodeAccount mocks base method.
+func (m *MockValidatorManager) IsNodeAccount(ctx types.Context, addr types.AccAddress) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsNodeAccount", ctx, addr)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// IsNodeAccount indicates an expected call of IsNodeAccount.
+func (mr *MockValidatorManagerMockRecorder) IsNodeAccount(ctx, addr interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsNodeAccount", reflect.TypeOf((*MockValidatorManager)(nil).IsNodeAccount), ctx, addr)
+}
+
 // SetValidators mocks base method.
 func (m *MockValidatorManager) SetValidators(ctx types.Context, nodes []*types0.Node) error {
 	m.ctrl.T.Helper()

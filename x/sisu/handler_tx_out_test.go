@@ -67,6 +67,7 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 	mockKeeper.EXPECT().IncSlashToken(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	mockKeeper.EXPECT().DecSlashToken(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	mockKeeper.EXPECT().GetVotersInAccAddress(gomock.Any(), gomock.Any()).Return([]sdk.AccAddress{signer})
+	mockKeeper.EXPECT().IsTxRecordProcessed(gomock.Any(), gomock.Any()).Return(false).Times(1)
 
 	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
 	mockGlobalData.EXPECT().IsCatchingUp().Return(false).Times(1)

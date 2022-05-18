@@ -33,6 +33,7 @@ func TestHandlerKeygen_normal(t *testing.T) {
 	mockKeeper.EXPECT().IncSlashToken(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	mockKeeper.EXPECT().DecSlashToken(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	mockKeeper.EXPECT().GetVotersInAccAddress(gomock.Any(), gomock.Any()).Return([]sdk.AccAddress{signer})
+	mockKeeper.EXPECT().IsTxRecordProcessed(gomock.Any(), gomock.Any()).Return(false).Times(1)
 
 	mockPmm := mock.NewMockPostedMessageManager(ctrl)
 	mockPmm.EXPECT().ShouldProcessMsg(gomock.Any(), gomock.Any()).Return(true, []byte("")).Times(1)
@@ -77,6 +78,7 @@ func TestHandlerKeygen_CatchingUp(t *testing.T) {
 	mockKeeper.EXPECT().IncSlashToken(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	mockKeeper.EXPECT().DecSlashToken(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
 	mockKeeper.EXPECT().GetVotersInAccAddress(gomock.Any(), gomock.Any()).Return([]sdk.AccAddress{signer})
+	mockKeeper.EXPECT().IsTxRecordProcessed(gomock.Any(), gomock.Any()).Return(false).Times(1)
 
 	mockPmm := mock.NewMockPostedMessageManager(ctrl)
 	mockPmm.EXPECT().ShouldProcessMsg(gomock.Any(), gomock.Any()).Return(true, []byte("")).Times(1)

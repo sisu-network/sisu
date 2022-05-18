@@ -33,7 +33,7 @@ func (m *DefaultPostedMessageManager) ShouldProcessMsg(ctx sdk.Context, msg sdk.
 	}
 
 	m.keeper.SaveTxRecord(ctx, hash, signer)
-	if m.valManager.HasConsensus(ctx, hash) && !m.keeper.IsTxRecordProcessed(ctx, hash) {
+	if m.valManager.HasConsensus(ctx, hash) {
 		return true, hash
 	}
 

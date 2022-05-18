@@ -35,6 +35,15 @@ func NewHandlerKeygenResult(mc ManagerContainer) *HandlerKeygenResult {
 }
 
 func (h *HandlerKeygenResult) DeliverMsg(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) (*sdk.Result, error) {
+	rcHash, _, err := keeper.GetTxRecordHash(signerMsg)
+	if err != nil {
+		return &sdk.Result{}, err
+	}
+
+	if h.keeper.IsTxRecordProcessed(ctx, rcHash) {
+		return &sdk.Result{}, err
+	}
+
 	if err := h.keeper.IncSlashToken(ctx, types.ObserveSlashPoint, signerMsg.GetSender()); err != nil {
 		return &sdk.Result{}, nil
 	}
