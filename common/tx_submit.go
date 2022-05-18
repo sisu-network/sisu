@@ -41,11 +41,6 @@ var (
 	ErrNone   = errors.New("This is not an error")
 )
 
-type QElementPair struct {
-	msg   sdk.Msg
-	index int64
-}
-
 //go:generate mockgen -source=common/tx_submit.go -destination=tests/mock/common/tx_submit.go -package=mock
 type TxSubmit interface {
 	SubmitMessageAsync(msg sdk.Msg) error
@@ -73,7 +68,7 @@ type TxSubmitter struct {
 	accountNumber uint64
 
 	// Tx queue
-	queue           []*QElementPair
+	queue           []sdk.Msg
 	queueLock       *sync.RWMutex
 	submitRequestCh chan bool
 }
@@ -91,7 +86,7 @@ func NewTxSubmitter(cfg config.Config, appKeys *DefaultAppKeys) *TxSubmitter {
 		cfg:             cfg,
 		httpClient:      httpClient,
 		queueLock:       &sync.RWMutex{},
-		queue:           make([]*QElementPair, 0),
+		queue:           make([]sdk.Msg, 0),
 		submitRequestCh: make(chan bool, 20),
 		sequenceLock:    &sync.RWMutex{},
 		curSequence:     UnInitializedSeq,
@@ -138,9 +133,7 @@ func (t *TxSubmitter) addMessages(msgs []sdk.Msg) {
 	defer t.queueLock.Unlock()
 
 	for _, msg := range msgs {
-		t.queue = append(t.queue, &QElementPair{
-			msg: msg,
-		})
+		t.queue = append(t.queue, msg)
 	}
 }
 
@@ -160,7 +153,7 @@ func (t *TxSubmitter) Start() {
 				continue
 			}
 			copy := t.queue
-			t.queue = make([]*QElementPair, 0) // Clear the queue
+			t.queue = make([]sdk.Msg, 0) // Clear the queue
 			t.queueLock.Unlock()
 
 			if len(copy) == 0 {
@@ -206,20 +199,14 @@ func (t *TxSubmitter) Start() {
 					}
 				} else {
 					log.Error("We cannot sequence number. We will readded all transactions in the queue again.")
-					msgs := make([]sdk.Msg, 0)
-					for _, e := range copy {
-						msgs = append(msgs, e.msg)
-					}
-					t.addMessages(msgs)
+					t.addMessages(copy)
 				}
 			}
 		}
 	}
 }
 
-func (t *TxSubmitter) trySubmitTx(list []*QElementPair) (*sdk.TxResponse, error) {
-	msgs := convert(list)
-
+func (t *TxSubmitter) trySubmitTx(msgs []sdk.Msg) (*sdk.TxResponse, error) {
 	if res, err := t.submitMsgs(msgs); err != nil || (res != nil && res.Code != 0) {
 		return res, err
 	} else {
@@ -325,14 +312,6 @@ func (t *TxSubmitter) updateAccNumberAndSquence(newAccountNumber, newSeq uint64)
 	t.accountNumber = newAccountNumber
 	t.factory = t.factory.WithAccountNumber(newAccountNumber)
 	t.factory = t.factory.WithSequence(newSeq)
-}
-
-func convert(list []*QElementPair) []sdk.Msg {
-	msgs := make([]sdk.Msg, len(list))
-	for i, pair := range list {
-		msgs[i] = pair.msg
-	}
-	return msgs
 }
 
 func (t *TxSubmitter) buildClientCtx(accountName string) (client.Context, error) {
