@@ -51,8 +51,10 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 	binary, err := ethTransaction.MarshalBinary()
 	require.NoError(t, err)
 
+	signer, err := sdk.AccAddressFromBech32("cosmos1g64vzyutdjfdvw5kyae73fc39sksg3r7gzmrzy")
+	require.NoError(t, err)
 	txOutWithSigner := &types.TxOutWithSigner{
-		Signer: "signer",
+		Signer: signer.String(),
 		Data: &types.TxOut{
 			OutChain: "eth",
 			OutBytes: binary,
@@ -62,6 +64,9 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 	mockKeeper := mockkeeper.NewMockKeeper(ctrl)
 	mockKeeper.EXPECT().SaveTxOut(gomock.Any(), gomock.Any()).Times(1)
 	mockKeeper.EXPECT().ProcessTxRecord(gomock.Any(), gomock.Any()).Times(1)
+	mockKeeper.EXPECT().IncSlashToken(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	mockKeeper.EXPECT().DecSlashToken(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	mockKeeper.EXPECT().GetVotersInAccAddress(gomock.Any(), gomock.Any()).Return([]sdk.AccAddress{signer})
 
 	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
 	mockGlobalData.EXPECT().IsCatchingUp().Return(false).Times(1)

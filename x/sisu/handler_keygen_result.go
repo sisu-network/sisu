@@ -35,7 +35,7 @@ func NewHandlerKeygenResult(mc ManagerContainer) *HandlerKeygenResult {
 }
 
 func (h *HandlerKeygenResult) DeliverMsg(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) (*sdk.Result, error) {
-	if err := h.keeper.IncSlashToken(ctx, types.ObserverSlashPoint, signerMsg.GetSender()); err != nil {
+	if err := h.keeper.IncSlashToken(ctx, types.ObserveSlashPoint, signerMsg.GetSender()); err != nil {
 		return &sdk.Result{}, nil
 	}
 	slash, _ := h.keeper.GetSlashToken(ctx, signerMsg.GetSender())
@@ -46,7 +46,7 @@ func (h *HandlerKeygenResult) DeliverMsg(ctx sdk.Context, signerMsg *types.Keyge
 		h.keeper.ProcessTxRecord(ctx, hash)
 
 		voters := h.keeper.GetVotersInAccAddress(ctx, hash)
-		if err := h.keeper.DecSlashToken(ctx, types.ObserverSlashPoint, voters...); err != nil {
+		if err := h.keeper.DecSlashToken(ctx, types.ObserveSlashPoint, voters...); err != nil {
 			return &sdk.Result{}, err
 		}
 

@@ -32,7 +32,7 @@ func NewHandlerReshareResult(mc ManagerContainer) *HandlerReshareResult {
 func (h *HandlerReshareResult) DeliverMsg(ctx sdk.Context, msg *types.ReshareResultWithSigner) (*sdk.Result, error) {
 	log.Debug("handling HandlerReshareResult ...")
 
-	if err := h.keeper.IncSlashToken(ctx, types.ObserverSlashPoint, msg.GetSender()); err != nil {
+	if err := h.keeper.IncSlashToken(ctx, types.ObserveSlashPoint, msg.GetSender()); err != nil {
 		return &sdk.Result{}, nil
 	}
 
@@ -53,7 +53,7 @@ func (h *HandlerReshareResult) DeliverMsg(ctx sdk.Context, msg *types.ReshareRes
 	}
 
 	voters := h.keeper.GetVotersInAccAddress(ctx, rcHash)
-	if err := h.keeper.DecSlashToken(ctx, types.ObserverSlashPoint, voters...); err != nil {
+	if err := h.keeper.DecSlashToken(ctx, types.ObserveSlashPoint, voters...); err != nil {
 		return &sdk.Result{}, err
 	}
 

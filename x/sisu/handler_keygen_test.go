@@ -25,9 +25,14 @@ func TestHandlerKeygen_normal(t *testing.T) {
 		ctrl.Finish()
 	})
 
+	signer, err := sdk.AccAddressFromBech32("cosmos1g64vzyutdjfdvw5kyae73fc39sksg3r7gzmrzy")
+	require.NoError(t, err)
 	mockKeeper := mockkeeper.NewMockKeeper(ctrl)
 	mockKeeper.EXPECT().SaveKeygen(gomock.Any(), gomock.Any()).Times(1)
 	mockKeeper.EXPECT().ProcessTxRecord(gomock.Any(), gomock.Any()).Times(1)
+	mockKeeper.EXPECT().IncSlashToken(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	mockKeeper.EXPECT().DecSlashToken(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	mockKeeper.EXPECT().GetVotersInAccAddress(gomock.Any(), gomock.Any()).Return([]sdk.AccAddress{signer})
 
 	mockPmm := mock.NewMockPostedMessageManager(ctrl)
 	mockPmm.EXPECT().ShouldProcessMsg(gomock.Any(), gomock.Any()).Return(true, []byte("")).Times(1)
@@ -44,7 +49,7 @@ func TestHandlerKeygen_normal(t *testing.T) {
 	mc := sisu.MockManagerContainer(mockPmm, mockGlobalData, mockDheartClient, mockPartyManager, mockKeeper)
 
 	msg := &types.KeygenWithSigner{
-		Signer: "signer",
+		Signer: signer.String(),
 		Data: &types.Keygen{
 			KeyType: libchain.KEY_TYPE_ECDSA,
 			Index:   0,
@@ -52,7 +57,7 @@ func TestHandlerKeygen_normal(t *testing.T) {
 	}
 
 	handler := sisu.NewHandlerKeygen(mc)
-	_, err := handler.DeliverMsg(sdk.Context{}, msg)
+	_, err = handler.DeliverMsg(sdk.Context{}, msg)
 
 	require.NoError(t, err)
 }
@@ -64,9 +69,14 @@ func TestHandlerKeygen_CatchingUp(t *testing.T) {
 		ctrl.Finish()
 	})
 
+	signer, err := sdk.AccAddressFromBech32("cosmos1g64vzyutdjfdvw5kyae73fc39sksg3r7gzmrzy")
+	require.NoError(t, err)
 	mockKeeper := mockkeeper.NewMockKeeper(ctrl)
 	mockKeeper.EXPECT().SaveKeygen(gomock.Any(), gomock.Any()).Times(1)
 	mockKeeper.EXPECT().ProcessTxRecord(gomock.Any(), gomock.Any()).Times(1)
+	mockKeeper.EXPECT().IncSlashToken(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	mockKeeper.EXPECT().DecSlashToken(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
+	mockKeeper.EXPECT().GetVotersInAccAddress(gomock.Any(), gomock.Any()).Return([]sdk.AccAddress{signer})
 
 	mockPmm := mock.NewMockPostedMessageManager(ctrl)
 	mockPmm.EXPECT().ShouldProcessMsg(gomock.Any(), gomock.Any()).Return(true, []byte("")).Times(1)
@@ -80,7 +90,7 @@ func TestHandlerKeygen_CatchingUp(t *testing.T) {
 	mc := sisu.MockManagerContainer(mockPmm, mockGlobalData, mockDheartClient, mockKeeper)
 
 	msg := &types.KeygenWithSigner{
-		Signer: "signer",
+		Signer: signer.String(),
 		Data: &types.Keygen{
 			KeyType: libchain.KEY_TYPE_ECDSA,
 			Index:   0,
@@ -88,7 +98,7 @@ func TestHandlerKeygen_CatchingUp(t *testing.T) {
 	}
 
 	handler := sisu.NewHandlerKeygen(mc)
-	_, err := handler.DeliverMsg(sdk.Context{}, msg)
+	_, err = handler.DeliverMsg(sdk.Context{}, msg)
 
 	require.NoError(t, err)
 }

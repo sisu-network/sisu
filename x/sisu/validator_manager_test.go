@@ -45,12 +45,12 @@ func TestDefaultValidatorManager_GetExceedSlashThresholdValidators(t *testing.T)
 		})
 
 		// Slash points exceed threshold then node should be slashed
-		require.NoError(t, keeper.IncSlashToken(ctx, addr, SlashPointThreshold+1))
+		require.NoError(t, keeper.IncSlashToken(ctx, SlashPointThreshold+1, addr))
 		slashValidators, err := validatorManager.GetExceedSlashThresholdValidators(ctx)
 		require.NoError(t, err)
 		require.Len(t, slashValidators, 1)
 
-		require.NoError(t, keeper.DecSlashToken(ctx, addr, SlashPointThreshold+1))
+		require.NoError(t, keeper.DecSlashToken(ctx, SlashPointThreshold+1, addr))
 		slashValidators, err = validatorManager.GetExceedSlashThresholdValidators(ctx)
 		require.NoError(t, err)
 		require.Empty(t, slashValidators)

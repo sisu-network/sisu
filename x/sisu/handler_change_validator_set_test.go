@@ -43,7 +43,7 @@ func TestHandlerChangeValidatorSet(t *testing.T) {
 		require.NoError(t, err)
 		newVal, err := base64.StdEncoding.DecodeString("qsXeJ51BGalR2V2Zz9ugh3ofsIS58Kjya9pDgfKH018=")
 		require.NoError(t, err)
-		msg := types.NewChangeValidatorSetMsg(appKeys.GetSignerAddress().String(), [][]byte{oldVal}, [][]byte{newVal})
+		msg := types.NewChangeValidatorSetMsg(appKeys.GetSignerAddress().String(), [][]byte{oldVal}, [][]byte{newVal}, 1)
 		handler := NewHandlerChangeValidatorSet(mc)
 		_, err = handler.DeliverMsg(ctx, msg)
 		require.NoError(t, err)

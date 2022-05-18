@@ -25,5 +25,5 @@ const (
 )
 
 const (
-	ObserverSlashPoint = 1
+	ObserveSlashPoint = 1
 )
