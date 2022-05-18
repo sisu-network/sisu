@@ -8,6 +8,9 @@ import (
 	"strings"
 	"time"
 
+	etypes "github.com/ethereum/go-ethereum/core/types"
+	"google.golang.org/grpc"
+
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil/hdkeychain"
 	"github.com/cosmos/go-bip39"
@@ -19,6 +22,7 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
 	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
+	tssTypes "github.com/sisu-network/sisu/x/sisu/types"
 )
 
 const (
@@ -58,21 +62,6 @@ func getEthClient(port int) (*ethclient.Client, error) {
 	return ethclient.Dial(fmt.Sprintf("http://0.0.0.0:%d", port))
 }
 
-func getDefaultChainUrl(chain string) string {
-	switch chain {
-	case "ganache1":
-		return "http://0.0.0.0:7545"
-	case "ganache2":
-		return "http://0.0.0.0:8545"
-	case "eth-binance-testnet":
-		return "https://data-seed-prebsc-1-s1.binance.org:8545"
-	case "xdai":
-		return "https://rpc.gnosischain.com"
-	default:
-		panic(fmt.Errorf("unknown chain %s", chain))
-	}
-}
-
 func getPrivateKey(mnemonic string) (*ecdsa.PrivateKey, common.Address) {
 	seed, err := bip39.NewSeedWithErrorChecking(mnemonic, "")
 	if err != nil {
@@ -104,6 +93,15 @@ func getPrivateKey(mnemonic string) (*ecdsa.PrivateKey, common.Address) {
 	addr := crypto.PubkeyToAddress(publicKey)
 
 	return privateKeyECDSA, addr
+}
+
+func getSigner(client *ethclient.Client) etypes.Signer {
+	chainId, err := client.ChainID(context.Background())
+	if err != nil {
+		panic(err)
+	}
+
+	return etypes.NewEIP2930Signer(chainId)
 }
 
 func getAuthTransactor(client *ethclient.Client, mnemonic string) (*bind.TransactOpts, error) {
@@ -181,8 +179,34 @@ func approveAddress(client *ethclient.Client, mnemonic string, erc20Addr string,
 
 	_, owner := getPrivateKey(mnemonic)
 	ownerBalance, err := contract.BalanceOf(nil, owner)
+	if err != nil {
+		log.Error("cannot get balance for owner: ", owner, " err = ", err)
+	}
+
+	log.Verbose("Approving address ", target, " token = ", erc20Addr, "owner balance = ", ownerBalance)
 
 	tx, err := contract.Approve(opts, common.HexToAddress(target), ownerBalance)
 	bind.WaitDeployed(context.Background(), client, tx)
 	time.Sleep(time.Second * 3)
+}
+
+func queryToken(ctx context.Context, sisuRpc, tokenId string, chain string) *tssTypes.Token {
+	grpcConn, err := grpc.Dial(
+		sisuRpc,
+		grpc.WithInsecure(),
+	)
+	defer grpcConn.Close()
+	if err != nil {
+		panic(err)
+	}
+
+	queryClient := tssTypes.NewTssQueryClient(grpcConn)
+	res, err := queryClient.QueryToken(context.Background(), &tssTypes.QueryTokenRequest{
+		Id: tokenId,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	return res.Token
 }

@@ -44,7 +44,7 @@ func FundSisu() *cobra.Command {
 			chainString, _ := cmd.Flags().GetString(flags.Chains)
 			urlString, _ := cmd.Flags().GetString(flags.ChainUrls)
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
-			erc20AddrString, _ := cmd.Flags().GetString(flags.Erc20Addrs)
+			tokenString, _ := cmd.Flags().GetString(flags.Erc20Symbols)
 			liquidityAddrString, _ := cmd.Flags().GetString(flags.LiquidityAddrs)
 
 			amount, _ := cmd.Flags().GetInt(flags.Amount)
@@ -52,7 +52,7 @@ func FundSisu() *cobra.Command {
 			log.Info("Amount = ", amount)
 
 			c := &fundAccountCmd{}
-			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, erc20AddrString, liquidityAddrString, sisuRpc, amount)
+			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokenString, liquidityAddrString, sisuRpc, amount)
 
 			return nil
 		},
@@ -62,20 +62,19 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.ChainUrls, "http://0.0.0.0:7545,http://0.0.0.0:8545", "RPCs of all the chains we want to fund.")
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
-	cmd.Flags().String(flags.Erc20Addrs, fmt.Sprintf("%s,%s", ExpectedErc20Address, ExpectedErc20Address), "List of erc20 addresses")
 	cmd.Flags().String(flags.LiquidityAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "List of liquidity pool addresses")
+	cmd.Flags().String(flags.Erc20Symbols, "SISU", "List of ERC20 to approve")
 
 	cmd.Flags().Int(flags.Amount, 100, "The amount that gateway addresses will receive")
 
 	return cmd
 }
 
-func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic, erc20AddrString, liquidityAddrString, sisuRpc string, amount int) {
+func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic,
+	tokenString, liquidityAddrString, sisuRpc string, amount int) {
 	chains := strings.Split(chainString, ",")
-	tokenAddrs := strings.Split(erc20AddrString, ",")
 	liquidityAddrs := strings.Split(liquidityAddrString, ",")
 
-	log.Info("tokenAddrs = ", tokenAddrs)
 	log.Info("liquidityAddrs = ", liquidityAddrs)
 
 	wg := &sync.WaitGroup{}
@@ -122,7 +121,12 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	wg.Add(len(clients))
 	for i, client := range clients {
 		go func(i int, client *ethclient.Client) {
-			approveAddress(client, mnemonic, tokenAddrs[i], gateways[i])
+			addrs := c.getTokenAddrs(ctx, sisuRpc, tokenString, chains[i])
+
+			for _, addr := range addrs {
+				log.Infof("Approve token with address %s for gateway %s", addr, gateways[i])
+				approveAddress(client, mnemonic, addr, gateways[i])
+			}
 			wg.Done()
 		}(i, client)
 	}
@@ -139,8 +143,6 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 		}(i, client)
 	}
 	wg.Wait()
-
-	c.doSanityCheck(clients, tokenAddrs, liquidityAddrs, gateways, amount)
 }
 
 func (c *fundAccountCmd) waitForGatewayCreationInSisuDb(goCtx context.Context, chains []string, sisuRpc string) []string {
@@ -239,9 +241,9 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, mnemonic, recipie
 		panic(err)
 	}
 
-	// 0.2 ETH
+	// 0.1 ETH
 	value := new(big.Int).Mul(utils.EthToWei, big.NewInt(int64(amount)))
-	value = new(big.Int).Div(value, big.NewInt(5))
+	value = new(big.Int).Div(value, big.NewInt(10))
 	gasLimit := uint64(21000) // in units
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
@@ -253,7 +255,9 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, mnemonic, recipie
 	tx := ethtypes.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, data)
 
 	privateKey, _ := getPrivateKey(mnemonic)
-	signedTx, err := ethtypes.SignTx(tx, ethtypes.HomesteadSigner{}, privateKey)
+	signedTx, err := ethtypes.SignTx(tx, getSigner(client), privateKey)
+
+	log.Info("Tx hash = ", signedTx.Hash())
 
 	err = client.SendTransaction(context.Background(), signedTx)
 	if err != nil {
@@ -392,18 +396,19 @@ func (c *fundAccountCmd) transferLiquidityOwnership(
 	return nil
 }
 
-func (c *fundAccountCmd) doSanityCheck(clients []*ethclient.Client, tokenAddrs, liquidityAddrs, gateways []string, amount int) {
-	// Query balance
-	for i, client := range clients {
-		balance, err := queryErc20Balance(client, tokenAddrs[i], liquidityAddrs[i])
-		if err != nil {
-			panic(err)
-		}
+func (c *fundAccountCmd) getTokenAddrs(ctx context.Context, sisuRpc, tokenString, chain string) []string {
+	tokenSymbols := strings.Split(tokenString, ",")
+	addrs := make([]string, len(tokenSymbols))
 
-		amountInWei := new(big.Int).Mul(big.NewInt(500), utils.EthToWei)
-
-		if balance.Cmp(amountInWei) != 0 {
-			panic(fmt.Sprintf("balance does not match: expected %s, actual %s", amountInWei.String(), balance.String()))
+	for i, tokenSymbol := range tokenSymbols {
+		token := queryToken(ctx, sisuRpc, tokenSymbol, chain)
+		for j, addr := range token.Addresses {
+			if token.Chains[j] == chain {
+				addrs[i] = addr
+				break
+			}
 		}
 	}
+
+	return addrs
 }

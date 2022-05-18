@@ -28,6 +28,8 @@ func DeployAndFund() *cobra.Command {
 			expectedErc20String, _ := cmd.Flags().GetString(flags.ExpectedErc20Addrs)
 			expectedLiquidityString, _ := cmd.Flags().GetString(flags.ExpectedLiquidityAddrs)
 
+			log.Info("chainUrls = ", chainUrls)
+
 			log.Info("========= Deploy ERC20 and Liquidity Pool =========")
 
 			// Deploy ERC20 And liquidity pool
@@ -55,7 +57,7 @@ func DeployAndFund() *cobra.Command {
 
 			// Fund Sisu's account
 			fundSisuCmd := &fundAccountCmd{}
-			fundSisuCmd.fundSisuAccounts(cmd.Context(), chainString, chainUrls, mnemonic, tokenAddrString, liquidityAddrString, sisuRpc, amount)
+			fundSisuCmd.fundSisuAccounts(cmd.Context(), chainString, chainUrls, mnemonic, "SISU", liquidityAddrString, sisuRpc, amount)
 
 			return nil
 		},
