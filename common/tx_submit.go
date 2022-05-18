@@ -231,6 +231,8 @@ func (t *TxSubmitter) Start() {
 						log.Error("cannot get sequence, err = ", err)
 						t.updateStatus(copy, err)
 					}
+				} else {
+					log.Error("We cannot sequence number. We might lose a transaction.")
 				}
 			}
 		}
