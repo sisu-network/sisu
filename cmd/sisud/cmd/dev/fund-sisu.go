@@ -47,12 +47,10 @@ func FundSisu() *cobra.Command {
 			tokenString, _ := cmd.Flags().GetString(flags.Erc20Symbols)
 			liquidityAddrString, _ := cmd.Flags().GetString(flags.LiquidityAddrs)
 
-			amount, _ := cmd.Flags().GetInt(flags.Amount)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
-			log.Info("Amount = ", amount)
 
 			c := &fundAccountCmd{}
-			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokenString, liquidityAddrString, sisuRpc, amount)
+			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokenString, liquidityAddrString, sisuRpc)
 
 			return nil
 		},
@@ -65,13 +63,11 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.LiquidityAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "List of liquidity pool addresses")
 	cmd.Flags().String(flags.Erc20Symbols, "SISU", "List of ERC20 to approve")
 
-	cmd.Flags().Int(flags.Amount, 100, "The amount that gateway addresses will receive")
-
 	return cmd
 }
 
 func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic,
-	tokenString, liquidityAddrString, sisuRpc string, amount int) {
+	tokenString, liquidityAddrString, sisuRpc string) {
 	chains := strings.Split(chainString, ",")
 	liquidityAddrs := strings.Split(liquidityAddrString, ",")
 
@@ -246,7 +242,13 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, chain, mnemonic, 
 		panic(err)
 	}
 
+	log.Info("Gas price = ", gasPrice, " on chain ", chain)
+
 	amount := new(big.Int).Mul(big.NewInt(8_000_000), gasPrice)
+	// amount = amount * 1.2
+	amount = amount.Mul(amount, big.NewInt(12))
+	amount = amount.Quo(amount, big.NewInt(10))
+
 	gasLimit := uint64(22000) // in units
 
 	amountFloat := new(big.Float).Quo(new(big.Float).SetInt(amount), new(big.Float).SetInt(utils.ONE_ETHER_IN_WEI))
