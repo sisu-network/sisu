@@ -97,7 +97,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	var tssPubAddr common.Address
 	wg.Add(len(clients))
 	for i, client := range clients {
-		go func(i int, client *ethclient.Client) {
+		go func(i int, client *ethclient.Client, chain string) {
 			defer wg.Done()
 
 			// Get chain and local chain URL
@@ -108,8 +108,8 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 			}
 			tssPubAddr = crypto.PubkeyToAddress(*pubKey)
 
-			c.transferEth(client, mnemonic, tssPubAddr.Hex(), amount)
-		}(i, client)
+			c.transferEth(client, chain, mnemonic, tssPubAddr.Hex())
+		}(i, client, chains[i])
 	}
 	wg.Wait()
 
@@ -231,7 +231,7 @@ func (c *fundAccountCmd) isContractDeployed(client *ethclient.Client, tokenAddre
 }
 
 // transferEth transfers a specific ETH amount to an address.
-func (c *fundAccountCmd) transferEth(client *ethclient.Client, mnemonic, recipient string, amount int) {
+func (c *fundAccountCmd) transferEth(client *ethclient.Client, chain, mnemonic, recipient string) {
 	_, account := getPrivateKey(mnemonic)
 
 	log.Info("from address = ", account.String(), " to Address = ", recipient)
@@ -241,18 +241,20 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, mnemonic, recipie
 		panic(err)
 	}
 
-	// 0.1 ETH
-	value := new(big.Int).Mul(utils.EthToWei, big.NewInt(int64(amount)))
-	value = new(big.Int).Div(value, big.NewInt(10))
-	gasLimit := uint64(21000) // in units
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
 		panic(err)
 	}
 
+	amount := new(big.Int).Mul(big.NewInt(8_000_000), gasPrice)
+	gasLimit := uint64(22000) // in units
+
+	amountFloat := new(big.Float).Quo(new(big.Float).SetInt(amount), new(big.Float).SetInt(utils.ONE_ETHER_IN_WEI))
+	log.Info("Amount in ETH: ", amountFloat, " on chain ", chain)
+
 	toAddress := common.HexToAddress(recipient)
 	var data []byte
-	tx := ethtypes.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, data)
+	tx := ethtypes.NewTransaction(nonce, toAddress, amount, gasLimit, gasPrice, data)
 
 	privateKey, _ := getPrivateKey(mnemonic)
 	signedTx, err := ethtypes.SignTx(tx, getSigner(client), privateKey)
