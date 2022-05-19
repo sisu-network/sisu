@@ -47,12 +47,10 @@ func FundSisu() *cobra.Command {
 			tokenString, _ := cmd.Flags().GetString(flags.Erc20Symbols)
 			liquidityAddrString, _ := cmd.Flags().GetString(flags.LiquidityAddrs)
 
-			amount, _ := cmd.Flags().GetInt(flags.Amount)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
-			log.Info("Amount = ", amount)
 
 			c := &fundAccountCmd{}
-			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokenString, liquidityAddrString, sisuRpc, amount)
+			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokenString, liquidityAddrString, sisuRpc)
 
 			return nil
 		},
@@ -65,13 +63,11 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.LiquidityAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "List of liquidity pool addresses")
 	cmd.Flags().String(flags.Erc20Symbols, "SISU", "List of ERC20 to approve")
 
-	cmd.Flags().Int(flags.Amount, 100, "The amount that gateway addresses will receive")
-
 	return cmd
 }
 
 func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic,
-	tokenString, liquidityAddrString, sisuRpc string, amount int) {
+	tokenString, liquidityAddrString, sisuRpc string) {
 	chains := strings.Split(chainString, ",")
 	liquidityAddrs := strings.Split(liquidityAddrString, ",")
 
@@ -97,7 +93,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	var tssPubAddr common.Address
 	wg.Add(len(clients))
 	for i, client := range clients {
-		go func(i int, client *ethclient.Client) {
+		go func(i int, client *ethclient.Client, chain string) {
 			defer wg.Done()
 
 			// Get chain and local chain URL
@@ -108,8 +104,8 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 			}
 			tssPubAddr = crypto.PubkeyToAddress(*pubKey)
 
-			c.transferEth(client, mnemonic, tssPubAddr.Hex(), amount)
-		}(i, client)
+			c.transferEth(client, chain, mnemonic, tssPubAddr.Hex())
+		}(i, client, chains[i])
 	}
 	wg.Wait()
 
@@ -231,7 +227,7 @@ func (c *fundAccountCmd) isContractDeployed(client *ethclient.Client, tokenAddre
 }
 
 // transferEth transfers a specific ETH amount to an address.
-func (c *fundAccountCmd) transferEth(client *ethclient.Client, mnemonic, recipient string, amount int) {
+func (c *fundAccountCmd) transferEth(client *ethclient.Client, chain, mnemonic, recipient string) {
 	_, account := getPrivateKey(mnemonic)
 
 	log.Info("from address = ", account.String(), " to Address = ", recipient)
@@ -241,18 +237,26 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, mnemonic, recipie
 		panic(err)
 	}
 
-	// 0.1 ETH
-	value := new(big.Int).Mul(utils.EthToWei, big.NewInt(int64(amount)))
-	value = new(big.Int).Div(value, big.NewInt(10))
-	gasLimit := uint64(21000) // in units
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
 		panic(err)
 	}
 
+	log.Info("Gas price = ", gasPrice, " on chain ", chain)
+
+	amount := new(big.Int).Mul(big.NewInt(8_000_000), gasPrice)
+	// amount = amount * 1.2
+	amount = amount.Mul(amount, big.NewInt(12))
+	amount = amount.Quo(amount, big.NewInt(10))
+
+	gasLimit := uint64(22000) // in units
+
+	amountFloat := new(big.Float).Quo(new(big.Float).SetInt(amount), new(big.Float).SetInt(utils.ONE_ETHER_IN_WEI))
+	log.Info("Amount in ETH: ", amountFloat, " on chain ", chain)
+
 	toAddress := common.HexToAddress(recipient)
 	var data []byte
-	tx := ethtypes.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, data)
+	tx := ethtypes.NewTransaction(nonce, toAddress, amount, gasLimit, gasPrice, data)
 
 	privateKey, _ := getPrivateKey(mnemonic)
 	signedTx, err := ethtypes.SignTx(tx, getSigner(client), privateKey)

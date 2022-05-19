@@ -24,7 +24,6 @@ func DeployAndFund() *cobra.Command {
 			chainUrls, _ := cmd.Flags().GetString(flags.ChainUrls)
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
-			amount, _ := cmd.Flags().GetInt(flags.Amount)
 			expectedErc20String, _ := cmd.Flags().GetString(flags.ExpectedErc20Addrs)
 			expectedLiquidityString, _ := cmd.Flags().GetString(flags.ExpectedLiquidityAddrs)
 
@@ -51,13 +50,13 @@ func DeployAndFund() *cobra.Command {
 
 			// Add liquidity to the pool
 			addLiquidityCmd := &AddLiquidityCmd{}
-			addLiquidityCmd.approveAndAddLiquidity(chainUrls, mnemonic, tokenAddrString, liquidityAddrString, amount)
+			addLiquidityCmd.approveAndAddLiquidity(chainUrls, mnemonic, tokenAddrString, liquidityAddrString)
 
 			log.Info("========= Fund sisu's account and gateway =========")
 
 			// Fund Sisu's account
 			fundSisuCmd := &fundAccountCmd{}
-			fundSisuCmd.fundSisuAccounts(cmd.Context(), chainString, chainUrls, mnemonic, "SISU", liquidityAddrString, sisuRpc, amount)
+			fundSisuCmd.fundSisuAccounts(cmd.Context(), chainString, chainUrls, mnemonic, "SISU", liquidityAddrString, sisuRpc)
 
 			return nil
 		},
@@ -67,8 +66,6 @@ func DeployAndFund() *cobra.Command {
 	cmd.Flags().String(flags.ChainUrls, "http://0.0.0.0:7545,http://0.0.0.0:8545", "RPCs of all the chains we want to fund.")
 	cmd.Flags().String(flags.Chains, "ganache1,ganache2", "Names of all chains we want to fund.")
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
-
-	cmd.Flags().Int(flags.Amount, 100, "The amount that gateway addresses will receive")
 
 	cmd.Flags().String(flags.ExpectedErc20Addrs, fmt.Sprintf("%s,%s", ExpectedErc20Address, ExpectedErc20Address), "Expected addressed of the erc20 contract after deployment. Empty string means do not check for address match.")
 	cmd.Flags().String(flags.ExpectedLiquidityAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "Expected addressed of the liquidity contract after deployment. Empty string means do not check for address match.")
