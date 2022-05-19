@@ -29,7 +29,7 @@ var _ AppLogicListener = (*Processor)(nil)
 
 const (
 	// The number of block interval that we should update all token prices.
-	TokenPriceUpdateInterval = 600 // About 30 mins for 3s block.
+	TokenPriceUpdateInterval = 3 // About 30 mins for 3s block.
 )
 
 var (
@@ -143,11 +143,11 @@ func (p *Processor) calculateTokenPrices(ctx sdk.Context) {
 
 	// We wait for 5 more blocks after we get prices from deyes so that any record can be posted
 	// onto the blockchain.
-	if curBlock%TokenPriceUpdateInterval != 5 {
+	if curBlock%TokenPriceUpdateInterval != 0 {
 		return
 	}
 
-	log.Info("Calcuating token prices....")
+	log.Info("Calculating token prices....")
 
 	// TODO: Fix the signer set.
 	records := p.keeper.GetAllTokenPricesRecord(ctx)

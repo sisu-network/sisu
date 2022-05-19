@@ -199,3 +199,15 @@ func TestDefaultKeeper_SaveAndGetValidatorUpdates(t *testing.T) {
 	afterSaved := keeper.GetIncomingValidatorUpdates(ctx)
 	require.Len(t, afterSaved, 2)
 }
+
+func TestDefaultKeeper_GetValidatorUpdateIndex(t *testing.T) {
+	t.Parallel()
+
+	keeper, ctx := getTestKeeperAndContext()
+	index := keeper.GetValidatorUpdateIndex(ctx)
+	require.Equal(t, 0, index)
+	index = keeper.GetValidatorUpdateIndex(ctx)
+	require.Equal(t, 1, index)
+	index = keeper.GetValidatorUpdateIndex(ctx)
+	require.Equal(t, 2, index)
+}

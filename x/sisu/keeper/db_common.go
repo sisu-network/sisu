@@ -1084,7 +1084,7 @@ func resetValidatorUpdate(store cstypes.KVStore) {
 
 func increaseValidatorUpdateIndex(store cstypes.KVStore) int {
 	key := []byte("msg_index")
-	b := store.Get([]byte("msg_index"))
+	b := store.Get(key)
 	if b == nil {
 		index := make([]byte, 4)
 		binary.LittleEndian.PutUint32(index, 0)

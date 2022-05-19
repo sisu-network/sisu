@@ -59,6 +59,7 @@ func (p *Processor) EndBlockValidator(ctx sdk.Context) []abci.ValidatorUpdate {
 
 	log.Debug("len newValSet = ", len(newValidatorKeys))
 	msgIndex := p.keeper.GetValidatorUpdateIndex(ctx)
+	log.Debug("msg index = ", msgIndex)
 	changeValSetMsg := types.NewChangeValidatorSetMsg(p.appKeys.GetSignerAddress().String(), oldValSet, newValSet, int32(msgIndex))
 	p.txSubmit.SubmitMessageAsync(changeValSetMsg)
 

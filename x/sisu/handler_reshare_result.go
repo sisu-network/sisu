@@ -32,10 +32,6 @@ func NewHandlerReshareResult(mc ManagerContainer) *HandlerReshareResult {
 func (h *HandlerReshareResult) DeliverMsg(ctx sdk.Context, msg *types.ReshareResultWithSigner) (*sdk.Result, error) {
 	log.Debug("handling HandlerReshareResult ...")
 
-	if err := h.keeper.IncSlashToken(ctx, types.ObserveSlashPoint, msg.GetSender()); err != nil {
-		return &sdk.Result{}, nil
-	}
-
 	rcHash, signer, err := keeper.GetTxRecordHash(msg)
 	if err != nil {
 		log.Error("error when getting tx record hash: ", err)
@@ -45,10 +41,10 @@ func (h *HandlerReshareResult) DeliverMsg(ctx sdk.Context, msg *types.ReshareRes
 	h.keeper.SaveTxRecord(ctx, rcHash, signer)
 
 	if h.keeper.IsTxRecordProcessed(ctx, rcHash) {
-		// Tx is processed, refund to who post this tx lately
-		if err := h.keeper.DecSlashToken(ctx, types.ObserveSlashPoint, msg.GetSender()); err != nil {
-			return &sdk.Result{}, err
-		}
+		return &sdk.Result{}, nil
+	}
+
+	if err := h.keeper.IncSlashToken(ctx, types.ObserveSlashPoint, msg.GetSender()); err != nil {
 		return &sdk.Result{}, nil
 	}
 
