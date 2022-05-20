@@ -117,6 +117,7 @@ type Keeper interface {
 	SaveIncomingValidatorUpdates(ctx sdk.Context, validatorUpdates abci.ValidatorUpdates) error
 	GetIncomingValidatorUpdates(ctx sdk.Context) abci.ValidatorUpdates
 	GetValidatorUpdateIndex(ctx sdk.Context) int
+	ClearValidatorUpdates(ctx sdk.Context)
 
 	// Dheart IP address
 	SaveDheartIPAddress(ctx sdk.Context, address sdk.AccAddress, ip string) error
@@ -450,12 +451,26 @@ func (k *DefaultKeeper) GetParams(ctx sdk.Context) *types.Params {
 ///// Slash
 func (k *DefaultKeeper) IncSlashToken(ctx sdk.Context, amount int64, addresses ...sdk.AccAddress) error {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixSlash)
-	return incOrDecSlashToken(store, amount, addresses...)
+
+	for _, a := range addresses {
+		if err := incOrDecSlashToken(store, amount, a); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (k *DefaultKeeper) DecSlashToken(ctx sdk.Context, amount int64, addresses ...sdk.AccAddress) error {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixSlash)
-	return incOrDecSlashToken(store, -amount, addresses...)
+
+	for _, a := range addresses {
+		if err := incOrDecSlashToken(store, -amount, a); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (k *DefaultKeeper) GetSlashToken(ctx sdk.Context, address sdk.AccAddress) (int64, error) {
@@ -489,6 +504,11 @@ func (k *DefaultKeeper) GetTopBondBalance(ctx sdk.Context, n int) []sdk.AccAddre
 func (k *DefaultKeeper) SaveIncomingValidatorUpdates(ctx sdk.Context, validatorUpdates abci.ValidatorUpdates) error {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixValidatorUpdate)
 	return saveValidatorUpdates(store, validatorUpdates)
+}
+
+func (k *DefaultKeeper) ClearValidatorUpdates(ctx sdk.Context) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixValidatorUpdate)
+	resetValidatorUpdate(store)
 }
 
 func (k *DefaultKeeper) GetIncomingValidatorUpdates(ctx sdk.Context) abci.ValidatorUpdates {

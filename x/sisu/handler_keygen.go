@@ -30,19 +30,52 @@ func (h *HandlerKeygen) DeliverMsg(ctx sdk.Context, signerMsg *types.KeygenWithS
 		return &sdk.Result{}, nil
 	}
 
+	log.Debug("IncSlashToken in HandlerKeygen")
 	if err := h.keeper.IncSlashToken(ctx, types.ObserveSlashPoint, signerMsg.GetSender()); err != nil {
 		return &sdk.Result{}, nil
 	}
+
+	a, err := h.keeper.GetSlashToken(ctx, signerMsg.GetSender())
+	if err != nil {
+		panic(err)
+	}
+
+	log.Debug("After IncSlashToken in HandlerKeygen. slash = ", a)
 
 	log.Info("Delivering keygen, signer = ", signerMsg.Signer)
 	pmm := h.mc.PostedMessageManager()
 	if process, hash := pmm.ShouldProcessMsg(ctx, signerMsg); process {
 		data, err := h.doKeygen(ctx, signerMsg)
+		if err != nil {
+			return &sdk.Result{}, err
+		}
+
 		h.keeper.ProcessTxRecord(ctx, hash)
 
 		voters := h.keeper.GetVotersInAccAddress(ctx, hash)
+		log.Debug("before dec slash token")
+		for _, v := range voters {
+			a, err := h.keeper.GetSlashToken(ctx, v)
+			if err != nil {
+				panic(err)
+			}
+
+			log.Debug("before dec slash. v = ", v.String(), " slash = ", a)
+		}
+
+		log.Debug("voters = ", h.keeper.GetVoters(ctx, hash))
 		if err := h.keeper.DecSlashToken(ctx, types.ObserveSlashPoint, voters...); err != nil {
 			return &sdk.Result{}, err
+		}
+
+		log.Debug("after dec slash token")
+		for _, v := range voters {
+			a, err := h.keeper.GetSlashToken(ctx, v)
+			if err != nil {
+				panic(err)
+			}
+
+			log.Debug("after dec slash. v = ", v.String(), " slash = ", a)
 		}
 
 		return &sdk.Result{Data: data}, err

@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	"encoding/base64"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
@@ -32,6 +33,7 @@ func (h *HandlerChangeValidatorSet) DeliverMsg(ctx sdk.Context, msg *types.Chang
 		return &sdk.Result{}, nil
 	}
 
+	log.Debug("doChangeValidatorSet ...")
 	if err := h.doChangeValidatorSet(msg); err != nil {
 		return &sdk.Result{}, err
 	}
@@ -51,8 +53,13 @@ func (h *HandlerChangeValidatorSet) doChangeValidatorSet(msg *types.ChangeValida
 		return err
 	}
 
-	log.Debug("oldPubKeys = ", oldPubKeys)
-	log.Debug("newPubKeys = ", newPubKeys)
+	for i, k := range oldPubKeys {
+		log.Debugf("old pub key[%d]: %s", i, base64.StdEncoding.EncodeToString(k.Bytes()))
+	}
+	for i, k := range newPubKeys {
+		log.Debugf("new pub key[%d]: %s", i, base64.StdEncoding.EncodeToString(k.Bytes()))
+	}
+
 	dheartClient := h.mc.DheartClient()
 	if err := dheartClient.Reshare(oldPubKeys, newPubKeys); err != nil {
 		log.Error("error when sending reshare request to heart. error = ", err)

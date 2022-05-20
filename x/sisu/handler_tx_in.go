@@ -38,6 +38,7 @@ func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, signerMsg *types.TxInWithSigne
 		return &sdk.Result{}, nil
 	}
 
+	log.Debug("IncSlashToken in HandlerTxIn")
 	if err := h.keeper.IncSlashToken(ctx, types.ObserveSlashPoint, signerMsg.GetSender()); err != nil {
 		return &sdk.Result{}, nil
 	}

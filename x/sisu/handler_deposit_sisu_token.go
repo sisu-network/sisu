@@ -41,20 +41,14 @@ func (h *HandlerDepositSisuToken) DeliverMsg(ctx sdk.Context, msg *types.Deposit
 }
 
 func (h *HandlerDepositSisuToken) doDepositSisuToken(ctx sdk.Context, msg *types.DepositSisuTokenMsg) error {
-	b, err := h.keeper.GetBondBalance(ctx, msg.GetSender())
-	if err != nil {
-		return err
-	}
-	log.Debug("balance in keeper: ", b)
 	depositAmt := msg.Data.Amount
 	balance := h.mc.BankKeeper().GetBalance(ctx, msg.GetSender(), common.SisuCoinName)
 	if balance.Amount.Int64() < depositAmt {
-		err = errors.New(fmt.Sprintf("not enough sisu balance. Require %d, has %d", depositAmt, balance.Amount.Int64()))
+		err := errors.New(fmt.Sprintf("not enough sisu balance. Require %d, has %d", depositAmt, balance.Amount.Int64()))
 		log.Error(err)
 		return err
 	}
 
-	log.Debug("Balance before: ", balance)
 	if err := h.mc.BankKeeper().SendCoinsFromAccountToModule(ctx, msg.GetSender(), BondName, sdk.Coins{
 		sdk.NewCoin(common.SisuCoinName, sdk.NewInt(depositAmt)),
 	}); err != nil {

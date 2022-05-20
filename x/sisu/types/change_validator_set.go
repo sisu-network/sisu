@@ -10,13 +10,17 @@ import (
 
 var _ sdk.Msg = &ChangeValidatorSetMsg{}
 
-func NewChangeValidatorSetMsg(signer string, oldValidatorSet, newValidatorSet [][]byte, index int32) *ChangeValidatorSetMsg {
+var index = 0
+
+func NewChangeValidatorSetMsg(signer string, oldValidatorSet, newValidatorSet [][]byte) *ChangeValidatorSetMsg {
+	index++
+	log.Debug("msg index = ", index)
 	return &ChangeValidatorSetMsg{
 		Signer: signer,
 		Data: &ChangeValidatorSetData{
 			OldValidatorSet: oldValidatorSet,
 			NewValidatorSet: newValidatorSet,
-			Index:           index,
+			Index:           int32(index),
 		},
 	}
 }

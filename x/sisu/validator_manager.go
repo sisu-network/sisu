@@ -168,7 +168,7 @@ func (m *DefaultValidatorManager) HasConsensus(ctx sdk.Context, recordHash []byt
 }
 
 func (m *DefaultValidatorManager) CountVote(ctx sdk.Context, recordHash []byte) int {
-	// Get all signed validators. Note that it maybe included inactive validators
+	// Get all signer. Note that it maybe included inactive validators
 	signers := m.keeper.GetVoters(ctx, recordHash)
 
 	vote := 0

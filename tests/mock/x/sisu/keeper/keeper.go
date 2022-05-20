@@ -37,6 +37,18 @@ func (m *MockKeeper) EXPECT() *MockKeeperMockRecorder {
 	return m.recorder
 }
 
+// ClearValidatorUpdates mocks base method.
+func (m *MockKeeper) ClearValidatorUpdates(ctx types.Context) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "ClearValidatorUpdates", ctx)
+}
+
+// ClearValidatorUpdates indicates an expected call of ClearValidatorUpdates.
+func (mr *MockKeeperMockRecorder) ClearValidatorUpdates(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ClearValidatorUpdates", reflect.TypeOf((*MockKeeper)(nil).ClearValidatorUpdates), ctx)
+}
+
 // CreateContractAddress mocks base method.
 func (m *MockKeeper) CreateContractAddress(ctx types.Context, chain, txOutHash, address string) {
 	m.ctrl.T.Helper()

@@ -44,6 +44,7 @@ func (h *HandlerKeygenResult) DeliverMsg(ctx sdk.Context, signerMsg *types.Keyge
 		return &sdk.Result{}, err
 	}
 
+	log.Debug("IncSlashToken in HandlerKeygenResult")
 	if err := h.keeper.IncSlashToken(ctx, types.ObserveSlashPoint, signerMsg.GetSender()); err != nil {
 		return &sdk.Result{}, nil
 	}

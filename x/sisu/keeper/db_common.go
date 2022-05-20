@@ -931,24 +931,20 @@ func getParams(store cstypes.KVStore) *types.Params {
 }
 
 ///// Slash
-func incOrDecSlashToken(store cstypes.KVStore, amount int64, addresses ...sdk.AccAddress) error {
-	for _, address := range addresses {
-		oldAmt, err := getCurSlashToken(store, address)
-		if err != nil {
-			return err
-		}
-
-		newAmt := oldAmt + amount
-		if newAmt < 0 {
-			newAmt = 0
-		}
-
-		bz := make([]byte, 8)
-		binary.LittleEndian.PutUint64(bz, uint64(newAmt))
-		store.Set(address.Bytes(), bz)
-		return nil
+func incOrDecSlashToken(store cstypes.KVStore, amount int64, address sdk.AccAddress) error {
+	oldAmt, err := getCurSlashToken(store, address)
+	if err != nil {
+		return err
 	}
 
+	newAmt := oldAmt + amount
+	if newAmt < 0 {
+		newAmt = 0
+	}
+
+	bz := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bz, uint64(newAmt))
+	store.Set(address.Bytes(), bz)
 	return nil
 }
 
@@ -1085,6 +1081,7 @@ func resetValidatorUpdate(store cstypes.KVStore) {
 func increaseValidatorUpdateIndex(store cstypes.KVStore) int {
 	key := []byte("msg_index")
 	b := store.Get(key)
+	// Set index to 0 for the first time
 	if b == nil {
 		index := make([]byte, 4)
 		binary.LittleEndian.PutUint32(index, 0)

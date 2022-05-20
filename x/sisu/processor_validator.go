@@ -2,21 +2,23 @@ package sisu
 
 import (
 	"bytes"
+	"encoding/base64"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-func (p *Processor) EndBlockValidator(ctx sdk.Context) []abci.ValidatorUpdate {
+func (p *Processor) ChangeValidatorSet(ctx sdk.Context) {
 	newValidators, removedValidators, err := p.getChangedNodes(ctx)
 	if err != nil {
-		return []abci.ValidatorUpdate{}
+		return
 	}
 
 	if len(newValidators) == 0 && len(removedValidators) == 0 {
-		return []abci.ValidatorUpdate{}
+		return
 	}
 
 	log.Debug("len = ", len(newValidators), " newValidators = ", newValidators)
@@ -58,14 +60,32 @@ func (p *Processor) EndBlockValidator(ctx sdk.Context) []abci.ValidatorUpdate {
 	}
 
 	log.Debug("len newValSet = ", len(newValidatorKeys))
-	msgIndex := p.keeper.GetValidatorUpdateIndex(ctx)
-	log.Debug("msg index = ", msgIndex)
-	changeValSetMsg := types.NewChangeValidatorSetMsg(p.appKeys.GetSignerAddress().String(), oldValSet, newValSet, int32(msgIndex))
-	p.txSubmit.SubmitMessageAsync(changeValSetMsg)
+	//msgIndex := p.keeper.GetValidatorUpdateIndex(ctx)
+	//log.Debug("msg index = ", msgIndex)
+	changeValSetMsg := types.NewChangeValidatorSetMsg(p.appKeys.GetSignerAddress().String(), oldValSet, newValSet)
+	hash, _, err := keeper.GetTxRecordHash(changeValSetMsg)
+	if err != nil {
+		log.Error(err)
+		return
+	}
 
+	if !p.keeper.IsTxRecordProcessed(ctx, hash) {
+		p.txSubmit.SubmitMessageAsync(changeValSetMsg)
+	}
+}
+
+func (p *Processor) GetPendingValidatorUpdates(ctx sdk.Context) []abci.ValidatorUpdate {
 	incomingValUpdate := p.keeper.GetIncomingValidatorUpdates(ctx)
+	log.Debug("len of incomingValUpdate is", len(incomingValUpdate))
+
+	if len(incomingValUpdate) == 0 {
+		return []abci.ValidatorUpdate{}
+	}
+
+	p.keeper.ClearValidatorUpdates(ctx)
+
 	for i, vUp := range incomingValUpdate {
-		log.Debugf("incomingValUpdate[%d] pubkey = %s, power = %d\n", i, vUp.PubKey.String(), vUp.Power)
+		log.Debugf("incomingValUpdate[%d] pubkey = %s, power = %d\n", i, base64.StdEncoding.EncodeToString(vUp.PubKey.GetEd25519()), vUp.Power)
 		// 100 is default power for validator
 		if vUp.Power == 100 {
 			p.validatorManager.UpdateNodeStatus(ctx, vUp.PubKey.GetEd25519(), types.NodeStatus_Validator)
@@ -74,7 +94,8 @@ func (p *Processor) EndBlockValidator(ctx sdk.Context) []abci.ValidatorUpdate {
 
 		p.validatorManager.UpdateNodeStatus(ctx, vUp.PubKey.GetEd25519(), types.NodeStatus_Candidate)
 	}
-	return p.keeper.GetIncomingValidatorUpdates(ctx)
+
+	return incomingValUpdate
 }
 
 // detects candidate nodes will be promoted to active node and active nodes will be removed from validator set

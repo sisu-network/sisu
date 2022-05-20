@@ -261,6 +261,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	cloneCtx := utils.CloneSdkContext(ctx)
 	am.mc.SetReadOnlyContext(cloneCtx)
 
-	validators := am.processor.EndBlockValidator(ctx)
+	am.processor.ChangeValidatorSet(ctx)
+	validators := am.processor.GetPendingValidatorUpdates(ctx)
 	return validators
 }
