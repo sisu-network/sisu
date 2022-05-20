@@ -7,11 +7,11 @@ import (
 
 var _ sdk.Msg = &GasPriceMsg{}
 
-func NewGasPriceMsg(signer, chain string, blockHeight, gasPrice int64) *GasPriceMsg {
+func NewGasPriceMsg(signer string, chains []string, blockHeight int64, prices []int64) *GasPriceMsg {
 	return &GasPriceMsg{
-		Chain:       chain,
+		Chains:      chains,
 		BlockHeight: blockHeight,
-		GasPrice:    gasPrice,
+		Prices:      prices,
 		Signer:      signer,
 	}
 }
@@ -52,9 +52,4 @@ func (msg *GasPriceMsg) ValidateBasic() error {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid creator address (%s)", err)
 	}
 	return nil
-}
-
-func (record *GasPriceRecord) ReachConsensus(nbActiveNodes int) bool {
-	// TODO: Check signers is actually validator
-	return len(record.Messages) >= nbActiveNodes*2/3
 }

@@ -517,11 +517,6 @@ func (p *Processor) confirmTx(ctx sdk.Context, tx *eyesTypes.Tx, chain string, b
 	return nil
 }
 
-func (p *Processor) OnUpdateGasPriceRequest(request *etypes.GasPriceRequest) {
-	gasPriceMsg := types.NewGasPriceMsg(p.appKeys.GetSignerAddress().String(), request.Chain, request.Height, request.GasPrice)
-	p.txSubmit.SubmitMessageAsync(gasPriceMsg)
-}
-
 // OnUpdateTokenPrice is called when there is a token price update from deyes. Post to the network
 // until we reach a consensus about token price. The token price is only used to calculate gas price
 // fee and not used for actual swapping calculation.

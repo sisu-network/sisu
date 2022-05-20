@@ -5,9 +5,9 @@ option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 
 message GasPriceMsg {
   string signer = 1;
-  string chain = 2;
+  repeated string chains = 2;
   int64 blockHeight = 3;
-  int64 gasPrice = 4;
+  repeated int64 prices = 4;
 }
 
 message GasPriceRecord {

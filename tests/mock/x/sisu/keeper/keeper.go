@@ -160,17 +160,17 @@ func (mr *MockKeeperMockRecorder) GetContract(ctx, chain, hash, includeByteCode 
 }
 
 // GetGasPriceRecord mocks base method.
-func (m *MockKeeper) GetGasPriceRecord(ctx types.Context, chain string, height int64) *types0.GasPriceRecord {
+func (m *MockKeeper) GetGasPriceRecord(ctx types.Context, height int64) *types0.GasPriceRecord {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetGasPriceRecord", ctx, chain, height)
+	ret := m.ctrl.Call(m, "GetGasPriceRecord", ctx, height)
 	ret0, _ := ret[0].(*types0.GasPriceRecord)
 	return ret0
 }
 
 // GetGasPriceRecord indicates an expected call of GetGasPriceRecord.
-func (mr *MockKeeperMockRecorder) GetGasPriceRecord(ctx, chain, height interface{}) *gomock.Call {
+func (mr *MockKeeperMockRecorder) GetGasPriceRecord(ctx, height interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGasPriceRecord", reflect.TypeOf((*MockKeeper)(nil).GetGasPriceRecord), ctx, chain, height)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGasPriceRecord", reflect.TypeOf((*MockKeeper)(nil).GetGasPriceRecord), ctx, height)
 }
 
 // GetKeygenPubkey mocks base method.
