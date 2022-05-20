@@ -3,9 +3,7 @@ package gen
 import (
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"math/big"
 	"net"
@@ -109,7 +107,7 @@ Example:
 				},
 			}
 
-			deyesChains := generator.readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
+			deyesChains := readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
 			generator.generateEyesToml("../deyes", deyesChains)
 
 			settings := &Setting{
@@ -226,17 +224,6 @@ func (g *localnetGenerator) getAuthTransactor(client *ethclient.Client, address 
 	auth.GasLimit = uint64(10_000_000)
 
 	return auth, nil
-}
-
-func (g *localnetGenerator) readDeyesChainConfigs(path string) []econfig.Chain {
-	deyesChains := make([]econfig.Chain, 0)
-	file, _ := ioutil.ReadFile(path)
-	err := json.Unmarshal([]byte(file), &deyesChains)
-	if err != nil {
-		panic(err)
-	}
-
-	return deyesChains
 }
 
 func (g *localnetGenerator) generateEyesToml(dir string, chainConfigs []econfig.Chain) {

@@ -3,6 +3,7 @@ package gen
 import (
 	"bytes"
 	"encoding/json"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"text/template"
@@ -182,4 +183,15 @@ func getLiquidity(file string) []*types.Liquidity {
 	}
 
 	return liquids
+}
+
+func readDeyesChainConfigs(path string) []econfig.Chain {
+	deyesChains := make([]econfig.Chain, 0)
+	file, _ := ioutil.ReadFile(path)
+	err := json.Unmarshal([]byte(file), &deyesChains)
+	if err != nil {
+		panic(err)
+	}
+
+	return deyesChains
 }

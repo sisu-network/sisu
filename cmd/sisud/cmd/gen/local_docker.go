@@ -81,6 +81,7 @@ Example:
 			// startingIPAddress, _ := cmd.Flags().GetString(flagStartingIPAddress)
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
+			genesisFolder, _ := cmd.Flags().GetString(flagGenesisFolder)
 
 			g := &localDockerGenerator{}
 
@@ -104,9 +105,18 @@ Example:
 				ips[i] = fmt.Sprintf("sisu%d", i)
 			}
 
+			chains := getChains(filepath.Join(genesisFolder, "chains.json"))
+			supportedChains := make(map[string]config.TssChainConfig)
+			for _, chain := range chains {
+				supportedChains[chain.Id] = config.TssChainConfig{
+					Id: chain.Id,
+				}
+			}
+
 			mysqlIp := "192.168.10.4"
 			chainIds := []*big.Int{libchain.GetChainIntFromId("ganache1"), libchain.GetChainIntFromId("ganache2")}
 			dockerConfig := g.getDockerConfig([]string{"192.168.10.2", "192.168.10.3"}, chainIds, "192.168.10.4", ips)
+			deyesChains := readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
 
 			nodeConfigs := make([]config.Config, numValidators)
 			for i := range ips {
@@ -116,10 +126,10 @@ Example:
 					panic(err)
 				}
 
-				nodeConfig := g.getNodeSettings(chainID, keyringBackend, i, mysqlIp, ips)
+				nodeConfig := g.getNodeSettings(chainID, keyringBackend, i, mysqlIp, ips, supportedChains)
 				nodeConfigs[i] = nodeConfig
 
-				g.generateEyesToml(i, dir)
+				g.generateEyesToml(i, dir, deyesChains)
 			}
 
 			g.generateDockerCompose(filepath.Join(outputDir, "docker-compose.yml"), ips, dockerConfig)
@@ -141,9 +151,9 @@ Example:
 
 				ips:         ips,
 				nodeConfigs: nodeConfigs,
-				tokens:      getTokens("./misc/dev/tokens.json"),
-				chains:      getChains("./misc/dev/chains.json"),
-				liquidities: getLiquidity("./misc/dev/liquid.json"),
+				tokens:      getTokens(filepath.Join(genesisFolder, "tokens.json")),
+				chains:      chains,
+				liquidities: getLiquidity(filepath.Join(genesisFolder, "liquid.json")),
 				params:      &types.Params{MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3))},
 			}
 
@@ -173,6 +183,7 @@ Example:
 	cmd.Flags().String(flagStartingIPAddress, "127.0.0.1", "Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
+	cmd.Flags().String(flagGenesisFolder, "./misc/dev", "Relative path to the folder that contains genesis configuration.")
 
 	return cmd
 }
@@ -232,7 +243,8 @@ func (g *localDockerGenerator) getDockerConfig(ganacheIps []string, chainIds []*
 	return docker
 }
 
-func (g *localDockerGenerator) getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, ips []string) config.Config {
+func (g *localDockerGenerator) getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string,
+	ips []string, supportedChains map[string]config.TssChainConfig) config.Config {
 	return config.Config{
 		Mode: "dev",
 		Sisu: config.SisuConfig{
@@ -242,17 +254,10 @@ func (g *localDockerGenerator) getNodeSettings(chainID, keyringBackend string, i
 			ApiPort:        25456,
 		},
 		Tss: config.TssConfig{
-			DheartHost: fmt.Sprintf("dheart%d", index),
-			DheartPort: 5678,
-			DeyesUrl:   fmt.Sprintf("http://deyes%d:31001", index),
-			SupportedChains: map[string]config.TssChainConfig{
-				"ganache1": {
-					Id: "ganache1",
-				},
-				"ganache2": {
-					Id: "ganache2",
-				},
-			},
+			DheartHost:      fmt.Sprintf("dheart%d", index),
+			DheartPort:      5678,
+			DeyesUrl:        fmt.Sprintf("http://deyes%d:31001", index),
+			SupportedChains: supportedChains,
 		},
 	}
 }
@@ -345,18 +350,9 @@ services:
 	tmos.MustWriteFile(outputPath, buffer.Bytes(), 0644)
 }
 
-func (g *localDockerGenerator) generateEyesToml(index int, dir string) {
+func (g *localDockerGenerator) generateEyesToml(index int, dir string, chainConfigs []econfig.Chain) {
 	deyesConfig := DeyesConfiguration{
-		Chains: []econfig.Chain{
-			{
-				Chain:  "ganache1",
-				RpcUrl: "http://ganache1:7545",
-			},
-			{
-				Chain:  "ganache2",
-				RpcUrl: "http://ganache2:7545",
-			},
-		},
+		Chains: chainConfigs,
 
 		Sql: SqlConfig{
 			Host:     "mysql",
