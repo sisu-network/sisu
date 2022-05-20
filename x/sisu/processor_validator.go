@@ -60,9 +60,9 @@ func (p *Processor) ChangeValidatorSet(ctx sdk.Context) {
 	}
 
 	log.Debug("len newValSet = ", len(newValidatorKeys))
-	//msgIndex := p.keeper.GetValidatorUpdateIndex(ctx)
-	//log.Debug("msg index = ", msgIndex)
-	changeValSetMsg := types.NewChangeValidatorSetMsg(p.appKeys.GetSignerAddress().String(), oldValSet, newValSet)
+	msgIndex := p.keeper.GetValidatorUpdateIndex(ctx)
+	log.Debug("msg index = ", msgIndex)
+	changeValSetMsg := types.NewChangeValidatorSetMsg(p.appKeys.GetSignerAddress().String(), oldValSet, newValSet, msgIndex)
 	hash, _, err := keeper.GetTxRecordHash(changeValSetMsg)
 	if err != nil {
 		log.Error(err)
