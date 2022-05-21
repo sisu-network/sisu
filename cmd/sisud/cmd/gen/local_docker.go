@@ -183,7 +183,7 @@ Example:
 	cmd.Flags().String(flagStartingIPAddress, "127.0.0.1", "Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
-	cmd.Flags().String(flagGenesisFolder, "./misc/dev", "Relative path to the folder that contains genesis configuration.")
+	cmd.Flags().String(flagGenesisFolder, "./misc/local-docker", "Relative path to the folder that contains genesis configuration.")
 
 	return cmd
 }
