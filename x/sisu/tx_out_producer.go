@@ -2,6 +2,7 @@ package sisu
 
 import (
 	"math/big"
+	"sort"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -117,6 +118,8 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 					contracts[i].Hash,
 				)
 
+				log.Verbose("ETH Tx Out hash = ", outTx.Hash().String(), " on chain ", tx.Chain)
+
 				outMsgs = append(outMsgs, outMsg)
 			}
 
@@ -164,7 +167,7 @@ func (p *DefaultTxOutputProducer) getEthContractDeploymentTx(ctx sdk.Context, he
 
 	for _, contract := range contracts {
 		nonce := p.worldState.UseAndIncreaseNonce(ctx, chain)
-		log.Verbose("nonce for deploying contract:", nonce)
+		log.Verbose("nonce for deploying contract:", nonce, " on chain ", chain)
 		if nonce < 0 {
 			log.Error("cannot get nonce for contract")
 			continue
@@ -201,6 +204,8 @@ func (p *DefaultTxOutputProducer) getContractTx(ctx sdk.Context, contract *types
 			}
 		}
 
+		sort.Strings(supportedChains)
+
 		log.Info("Allowed chains for chain ", contract.Chain, " are: ", supportedChains)
 
 		lp := p.keeper.GetLiquidity(ctx, contract.Chain)
@@ -225,14 +230,18 @@ func (p *DefaultTxOutputProducer) getContractTx(ctx sdk.Context, contract *types
 		}
 
 		gasPrice := chain.GasPrice
-		if gasPrice < 0 {
+		if gasPrice <= 0 {
 			gasPrice = p.getDefaultGasPrice(contract.Chain).Int64()
 		}
+		gasLimit := p.getGasLimit(contract.Chain)
+
+		log.Verbose("Gas price = ", gasPrice, " on chain ", contract.Chain)
+		log.Verbose("gasLimit = ", gasLimit, " on chain ", contract.Chain)
 
 		rawTx := ethTypes.NewContractCreation(
 			uint64(nonce),
 			big.NewInt(0),
-			p.getGasLimit(contract.Chain),
+			gasLimit,
 			big.NewInt(gasPrice),
 			input,
 		)
@@ -253,15 +262,25 @@ func (p *DefaultTxOutputProducer) getDefaultGasPrice(chain string) *big.Int {
 	// TODO: Make this dependent on different chains.
 	switch chain {
 	case "ganache1":
-		return big.NewInt(2_000_000_000) // 2 Gwei
+		return big.NewInt(2_000_000_000)
 	case "ganache2":
-		return big.NewInt(2_000_000_000) // 2 Gwei
-	case "eth-ropsten":
-		return big.NewInt(1_700_000_000)
-	case "eth-binance-testnet":
-		return big.NewInt(10_000_000_000) // 10 Gwei
+		return big.NewInt(2_000_000_000)
+	case "ropsten-testnet":
+		return big.NewInt(4_000_000_000)
+	case "binance-testnet":
+		return big.NewInt(18_000_000_000)
+	case "polygon-testnet":
+		return big.NewInt(7_000_000_000)
 	case "xdai":
-		return big.NewInt(2_000_000_000) // 2 Gwei
+		return big.NewInt(2_000_000_000)
+	case "goerli-testnet":
+		return big.NewInt(1_500_000_000)
+	case "eth":
+		return big.NewInt(70_000_000_000)
+	case "arbitrum-testnet":
+		return big.NewInt(50_000_000)
+	case "fantom-testnet":
+		return big.NewInt(75_000_000_000)
 	}
-	return big.NewInt(400_000_000_000) // 400 Gwei
+	return big.NewInt(100_000_000_000)
 }

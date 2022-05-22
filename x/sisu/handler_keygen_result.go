@@ -150,7 +150,6 @@ func (h *HandlerKeygenResult) createContracts(ctx sdk.Context, msg *types.Keygen
 	sort.Strings(names)
 
 	// Create contracts
-	contracts := make([]*types.Contract, 0)
 	for _, chain := range chains {
 		if libchain.GetKeyTypeForChain(chain) == msg.KeyType {
 			log.Info("Saving contracts for chain ", chain)
@@ -168,13 +167,11 @@ func (h *HandlerKeygenResult) createContracts(ctx sdk.Context, msg *types.Keygen
 					ByteCodes: []byte(c.Bin),
 				}
 
-				contracts = append(contracts, contract)
+				h.txSubmit.SubmitMessageAsync(types.NewContractsWithSigner(
+					h.appKeys.GetSignerAddress().String(),
+					[]*types.Contract{contract},
+				))
 			}
 		}
 	}
-
-	h.txSubmit.SubmitMessageAsync(types.NewContractsWithSigner(
-		h.appKeys.GetSignerAddress().String(),
-		contracts,
-	))
 }

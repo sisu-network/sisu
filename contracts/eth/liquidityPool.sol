@@ -1,11 +1,11 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
 // Sources flattened with hardhat v2.8.0 https://hardhat.org
 
 // File @openzeppelin/contracts/utils/Context.sol@v4.4.1
-// SPDX-License-Identifier: MIT
 
 // OpenZeppelin Contracts v4.4.1 (utils/Context.sol)
-
-pragma solidity ^0.8.0;
 
 /**
  * @dev Provides information about the current execution context, including the
@@ -30,8 +30,6 @@ abstract contract Context {
 // File @openzeppelin/contracts/access/Ownable.sol@v4.4.1
 
 // OpenZeppelin Contracts v4.4.1 (access/Ownable.sol)
-
-pragma solidity ^0.8.0;
 
 /**
  * @dev Contract module which provides a basic access control mechanism, where
@@ -112,8 +110,6 @@ abstract contract Ownable is Context {
 // File @openzeppelin/contracts/token/ERC20/IERC20.sol@v4.4.1
 
 // OpenZeppelin Contracts v4.4.1 (token/ERC20/IERC20.sol)
-
-pragma solidity ^0.8.0;
 
 /**
  * @dev Interface of the ERC20 standard as defined in the EIP.
@@ -205,8 +201,6 @@ interface IERC20 {
 // File @openzeppelin/contracts/utils/Address.sol@v4.4.1
 
 // OpenZeppelin Contracts v4.4.1 (utils/Address.sol)
-
-pragma solidity ^0.8.0;
 
 /**
  * @dev Collection of functions related to the address type
@@ -462,8 +456,6 @@ library Address {
 
 // OpenZeppelin Contracts v4.4.1 (token/ERC20/utils/SafeERC20.sol)
 
-pragma solidity ^0.8.0;
-
 /**
  * @title SafeERC20
  * @dev Wrappers around ERC20 operations that throw on failure (when the token
@@ -588,258 +580,7 @@ library SafeERC20 {
     }
 }
 
-// File @openzeppelin/contracts/utils/math/SafeMath.sol@v4.4.1
-
-// OpenZeppelin Contracts v4.4.1 (utils/math/SafeMath.sol)
-
-pragma solidity ^0.8.0;
-
-// CAUTION
-// This version of SafeMath should only be used with Solidity 0.8 or later,
-// because it relies on the compiler's built in overflow checks.
-
-/**
- * @dev Wrappers over Solidity's arithmetic operations.
- *
- * NOTE: `SafeMath` is generally not needed starting with Solidity 0.8, since the compiler
- * now has built in overflow checking.
- */
-library SafeMath {
-    /**
-     * @dev Returns the addition of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryAdd(uint256 a, uint256 b)
-        internal
-        pure
-        returns (bool, uint256)
-    {
-        unchecked {
-            uint256 c = a + b;
-            if (c < a) return (false, 0);
-            return (true, c);
-        }
-    }
-
-    /**
-     * @dev Returns the substraction of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function trySub(uint256 a, uint256 b)
-        internal
-        pure
-        returns (bool, uint256)
-    {
-        unchecked {
-            if (b > a) return (false, 0);
-            return (true, a - b);
-        }
-    }
-
-    /**
-     * @dev Returns the multiplication of two unsigned integers, with an overflow flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryMul(uint256 a, uint256 b)
-        internal
-        pure
-        returns (bool, uint256)
-    {
-        unchecked {
-            // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
-            // benefit is lost if 'b' is also tested.
-            // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
-            if (a == 0) return (true, 0);
-            uint256 c = a * b;
-            if (c / a != b) return (false, 0);
-            return (true, c);
-        }
-    }
-
-    /**
-     * @dev Returns the division of two unsigned integers, with a division by zero flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryDiv(uint256 a, uint256 b)
-        internal
-        pure
-        returns (bool, uint256)
-    {
-        unchecked {
-            if (b == 0) return (false, 0);
-            return (true, a / b);
-        }
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers, with a division by zero flag.
-     *
-     * _Available since v3.4._
-     */
-    function tryMod(uint256 a, uint256 b)
-        internal
-        pure
-        returns (bool, uint256)
-    {
-        unchecked {
-            if (b == 0) return (false, 0);
-            return (true, a % b);
-        }
-    }
-
-    /**
-     * @dev Returns the addition of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `+` operator.
-     *
-     * Requirements:
-     *
-     * - Addition cannot overflow.
-     */
-    function add(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a + b;
-    }
-
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting on
-     * overflow (when the result is negative).
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a - b;
-    }
-
-    /**
-     * @dev Returns the multiplication of two unsigned integers, reverting on
-     * overflow.
-     *
-     * Counterpart to Solidity's `*` operator.
-     *
-     * Requirements:
-     *
-     * - Multiplication cannot overflow.
-     */
-    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a * b;
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers, reverting on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator.
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a / b;
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * reverting when dividing by zero.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
-        return a % b;
-    }
-
-    /**
-     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
-     * overflow (when the result is negative).
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {trySub}.
-     *
-     * Counterpart to Solidity's `-` operator.
-     *
-     * Requirements:
-     *
-     * - Subtraction cannot overflow.
-     */
-    function sub(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        unchecked {
-            require(b <= a, errorMessage);
-            return a - b;
-        }
-    }
-
-    /**
-     * @dev Returns the integer division of two unsigned integers, reverting with custom message on
-     * division by zero. The result is rounded towards zero.
-     *
-     * Counterpart to Solidity's `/` operator. Note: this function uses a
-     * `revert` opcode (which leaves remaining gas untouched) while Solidity
-     * uses an invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function div(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        unchecked {
-            require(b > 0, errorMessage);
-            return a / b;
-        }
-    }
-
-    /**
-     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
-     * reverting with custom message when dividing by zero.
-     *
-     * CAUTION: This function is deprecated because it requires allocating memory for the error
-     * message unnecessarily. For custom revert reasons use {tryMod}.
-     *
-     * Counterpart to Solidity's `%` operator. This function uses a `revert`
-     * opcode (which leaves remaining gas untouched) while Solidity uses an
-     * invalid opcode to revert (consuming all remaining gas).
-     *
-     * Requirements:
-     *
-     * - The divisor cannot be zero.
-     */
-    function mod(
-        uint256 a,
-        uint256 b,
-        string memory errorMessage
-    ) internal pure returns (uint256) {
-        unchecked {
-            require(b > 0, errorMessage);
-            return a % b;
-        }
-    }
-}
-
 // File contracts/interfaces/ILiquidityPool.sol
-
-pragma solidity ^0.8.0;
 
 interface ILiquidityPool {
     function transfer(
@@ -847,15 +588,21 @@ interface ILiquidityPool {
         address _recipient,
         uint256 _amount
     ) external;
+}
 
-    function changeOwner(address newOwner) external;
+// File contracts/interfaces/ILPToken.sol
+
+interface ILPToken {
+    function mint(address _recipient, uint256 _amount) external;
+
+    function burn(address _from, uint256 _amount) external;
+
+    function setLiquidity(address _liquidity) external;
 }
 
 // File @openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol@v4.4.1
 
 // OpenZeppelin Contracts v4.4.1 (token/ERC20/extensions/IERC20Metadata.sol)
-
-pragma solidity ^0.8.0;
 
 /**
  * @dev Interface for the optional metadata functions from the ERC20 standard.
@@ -882,8 +629,6 @@ interface IERC20Metadata is IERC20 {
 // File @openzeppelin/contracts/token/ERC20/ERC20.sol@v4.4.1
 
 // OpenZeppelin Contracts v4.4.1 (token/ERC20/ERC20.sol)
-
-pragma solidity ^0.8.0;
 
 /**
  * @dev Implementation of the {IERC20} interface.
@@ -1276,19 +1021,254 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     ) internal virtual {}
 }
 
-// File contracts/interfaces/ILPToken.sol
+// File @openzeppelin/contracts/utils/math/SafeMath.sol@v4.4.1
 
-pragma solidity ^0.8.0;
+// OpenZeppelin Contracts v4.4.1 (utils/math/SafeMath.sol)
 
-interface ILPToken {
-    function mint(address _recipient, uint256 _amount) external;
+// CAUTION
+// This version of SafeMath should only be used with Solidity 0.8 or later,
+// because it relies on the compiler's built in overflow checks.
 
-    function burn(address _from, uint256 _amount) external;
+/**
+ * @dev Wrappers over Solidity's arithmetic operations.
+ *
+ * NOTE: `SafeMath` is generally not needed starting with Solidity 0.8, since the compiler
+ * now has built in overflow checking.
+ */
+library SafeMath {
+    /**
+     * @dev Returns the addition of two unsigned integers, with an overflow flag.
+     *
+     * _Available since v3.4._
+     */
+    function tryAdd(uint256 a, uint256 b)
+        internal
+        pure
+        returns (bool, uint256)
+    {
+        unchecked {
+            uint256 c = a + b;
+            if (c < a) return (false, 0);
+            return (true, c);
+        }
+    }
+
+    /**
+     * @dev Returns the substraction of two unsigned integers, with an overflow flag.
+     *
+     * _Available since v3.4._
+     */
+    function trySub(uint256 a, uint256 b)
+        internal
+        pure
+        returns (bool, uint256)
+    {
+        unchecked {
+            if (b > a) return (false, 0);
+            return (true, a - b);
+        }
+    }
+
+    /**
+     * @dev Returns the multiplication of two unsigned integers, with an overflow flag.
+     *
+     * _Available since v3.4._
+     */
+    function tryMul(uint256 a, uint256 b)
+        internal
+        pure
+        returns (bool, uint256)
+    {
+        unchecked {
+            // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+            // benefit is lost if 'b' is also tested.
+            // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522
+            if (a == 0) return (true, 0);
+            uint256 c = a * b;
+            if (c / a != b) return (false, 0);
+            return (true, c);
+        }
+    }
+
+    /**
+     * @dev Returns the division of two unsigned integers, with a division by zero flag.
+     *
+     * _Available since v3.4._
+     */
+    function tryDiv(uint256 a, uint256 b)
+        internal
+        pure
+        returns (bool, uint256)
+    {
+        unchecked {
+            if (b == 0) return (false, 0);
+            return (true, a / b);
+        }
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers, with a division by zero flag.
+     *
+     * _Available since v3.4._
+     */
+    function tryMod(uint256 a, uint256 b)
+        internal
+        pure
+        returns (bool, uint256)
+    {
+        unchecked {
+            if (b == 0) return (false, 0);
+            return (true, a % b);
+        }
+    }
+
+    /**
+     * @dev Returns the addition of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `+` operator.
+     *
+     * Requirements:
+     *
+     * - Addition cannot overflow.
+     */
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a + b;
+    }
+
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting on
+     * overflow (when the result is negative).
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     *
+     * - Subtraction cannot overflow.
+     */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a - b;
+    }
+
+    /**
+     * @dev Returns the multiplication of two unsigned integers, reverting on
+     * overflow.
+     *
+     * Counterpart to Solidity's `*` operator.
+     *
+     * Requirements:
+     *
+     * - Multiplication cannot overflow.
+     */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a * b;
+    }
+
+    /**
+     * @dev Returns the integer division of two unsigned integers, reverting on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator.
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a / b;
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * reverting when dividing by zero.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a % b;
+    }
+
+    /**
+     * @dev Returns the subtraction of two unsigned integers, reverting with custom message on
+     * overflow (when the result is negative).
+     *
+     * CAUTION: This function is deprecated because it requires allocating memory for the error
+     * message unnecessarily. For custom revert reasons use {trySub}.
+     *
+     * Counterpart to Solidity's `-` operator.
+     *
+     * Requirements:
+     *
+     * - Subtraction cannot overflow.
+     */
+    function sub(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
+        unchecked {
+            require(b <= a, errorMessage);
+            return a - b;
+        }
+    }
+
+    /**
+     * @dev Returns the integer division of two unsigned integers, reverting with custom message on
+     * division by zero. The result is rounded towards zero.
+     *
+     * Counterpart to Solidity's `/` operator. Note: this function uses a
+     * `revert` opcode (which leaves remaining gas untouched) while Solidity
+     * uses an invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function div(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
+        unchecked {
+            require(b > 0, errorMessage);
+            return a / b;
+        }
+    }
+
+    /**
+     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),
+     * reverting with custom message when dividing by zero.
+     *
+     * CAUTION: This function is deprecated because it requires allocating memory for the error
+     * message unnecessarily. For custom revert reasons use {tryMod}.
+     *
+     * Counterpart to Solidity's `%` operator. This function uses a `revert`
+     * opcode (which leaves remaining gas untouched) while Solidity uses an
+     * invalid opcode to revert (consuming all remaining gas).
+     *
+     * Requirements:
+     *
+     * - The divisor cannot be zero.
+     */
+    function mod(
+        uint256 a,
+        uint256 b,
+        string memory errorMessage
+    ) internal pure returns (uint256) {
+        unchecked {
+            require(b > 0, errorMessage);
+            return a % b;
+        }
+    }
 }
 
 // File contracts/LPToken.sol
-
-pragma solidity >=0.8.10;
 
 contract LPToken is ERC20, Ownable, ILPToken {
     address public liquidity;
@@ -1321,11 +1301,8 @@ contract LPToken is ERC20, Ownable, ILPToken {
 
 // File contracts/LiquidityPool.sol
 
-pragma solidity ^0.8.0;
-
 contract LiquidityPool is Ownable, ILiquidityPool {
     using SafeERC20 for IERC20;
-    using SafeMath for uint256;
 
     address public gateway;
 
@@ -1340,9 +1317,7 @@ contract LiquidityPool is Ownable, ILiquidityPool {
         _;
     }
 
-    constructor(address[] memory tokenAddrs, string[] memory names) {
-        addToken(tokenAddrs, names);
-    }
+    constructor() {}
 
     event AddToken(address indexed token, address indexed lpToken, string name);
 
@@ -1362,11 +1337,16 @@ contract LiquidityPool is Ownable, ILiquidityPool {
         onlyOwner
     {
         require(tokenAddrs.length == names.length);
-        for (uint256 i = 0; i < tokenAddrs.length; i++) {
-            LPToken lpContract = new LPToken(names[i]);
-            lpTokenMapping[tokenAddrs[i]] = lpContract;
+        require(tokenAddrs.length > 0);
 
-            emit AddToken(tokenAddrs[i], address(lpContract), names[i]);
+        for (uint256 i = 0; i < tokenAddrs.length; i++) {
+            if (address(lpTokenMapping[tokenAddrs[i]]) != address(0x0)) {
+                continue;
+            }
+            LPToken lpToken = new LPToken(names[i]);
+            lpTokenMapping[tokenAddrs[i]] = lpToken;
+
+            emit AddToken(tokenAddrs[i], address(lpToken), names[i]);
         }
     }
 
@@ -1382,13 +1362,13 @@ contract LiquidityPool is Ownable, ILiquidityPool {
 
         uint256 toMint = calculateLPTokenDepositOrWithdraw(token, amount);
         if (toMint > 0) {
-            LPToken lpToken = lpTokenMapping[token];
+            ILPToken lpToken = lpTokenMapping[token];
             lpToken.mint(msg.sender, toMint);
         }
 
-        liquidityPool[token][msg.sender] = liquidityPool[token][msg.sender].add(
-            amount
-        );
+        liquidityPool[token][msg.sender] =
+            liquidityPool[token][msg.sender] +
+            amount;
 
         emit AddLiquidity(token, amount, toMint);
     }
@@ -1414,10 +1394,10 @@ contract LiquidityPool is Ownable, ILiquidityPool {
             token,
             amount
         );
-        LPToken lpToken = lpTokenMapping[token];
+        ILPToken lpToken = lpTokenMapping[token];
         lpToken.burn(msg.sender, lpTokenBurnAmount);
 
-        liquidityPool[token][msg.sender] = currentAmount.sub(amount);
+        liquidityPool[token][msg.sender] = currentAmount - amount;
 
         // Transfer the token amount to user.
         IERC20(token).safeTransfer(msg.sender, amount);
@@ -1436,13 +1416,13 @@ contract LiquidityPool is Ownable, ILiquidityPool {
         // Calculate amount of minted/burnt LPToken by formula: (amount * current LP token supply) / total amount in liquidity pool
         uint256 totalAmount = IERC20(token).balanceOf(address(this));
         LPToken lpToken = lpTokenMapping[token];
-        uint256 currentLPTokenSupply = lpToken.totalSupply();
+        uint256 currentLPTokenSupply = IERC20(lpToken).totalSupply();
 
         if (totalAmount == 0 || currentLPTokenSupply == 0) {
             return amount;
         }
 
-        uint256 toMint = amount.mul(currentLPTokenSupply).div(totalAmount);
+        uint256 toMint = (amount * currentLPTokenSupply) / totalAmount;
         return toMint;
     }
 
@@ -1471,12 +1451,8 @@ contract LiquidityPool is Ownable, ILiquidityPool {
             }
 
             // transfer LP token
-            LPToken lpToken = lpTokenMapping[tokens[i]];
+            ILPToken lpToken = lpTokenMapping[tokens[i]];
             lpToken.setLiquidity(newOwner);
         }
-    }
-
-    function changeOwner(address newOwner) public onlyOwner {
-        super.transferOwnership(newOwner);
     }
 }

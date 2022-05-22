@@ -24,6 +24,8 @@ const (
 
 	// Methods in liquidity smart contract
 	MethodEmergencyWithdrawFund = "emergencyWithdrawFunds"
+
+	UpdateGasPriceFrequency = 100
 )
 
 type ContractInfo struct {

@@ -2,12 +2,13 @@ package dev
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
@@ -20,51 +21,46 @@ func Query() *cobra.Command {
 		Use: "query",
 		Long: `Query ERC20 token balance.
 Usage:
-./sisu dev query --token SISU --src ganache1 --account 0x2d532C099CA476780c7703610D807948ae47856A
+./sisu dev query --account 0x2d532C099CA476780c7703610D807948ae47856A
+
+./sisu dev query --erc20-symbol SISU --chain ganache1 --chain-url http://127.0.0.1:7545 --account 0x2d532C099CA476780c7703610D807948ae47856A
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			tokenId, _ := cmd.Flags().GetString(flagToken)
-			src, _ := cmd.Flags().GetString(flagSrc)
-			srcUrl, _ := cmd.Flags().GetString(flagSrcUrl)
-			account, _ := cmd.Flags().GetString(flagAccount)
+			chain, _ := cmd.Flags().GetString(flags.Chain)
+			chainUrl, _ := cmd.Flags().GetString(flags.ChainUrl)
+			tokenSymbol, _ := cmd.Flags().GetString(flags.Erc20Symbol)
+			account, _ := cmd.Flags().GetString(flags.Account)
+			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 
-			log.Infof("Querying token %s on chain %s", tokenId, src)
-			if len(srcUrl) == 0 {
-				srcUrl = getDefaultChainUrl(src)
-			}
+			log.Infof("Querying token at address %s on chain %s", tokenSymbol, chain)
 
-			client, err := ethclient.Dial(srcUrl)
+			client, err := ethclient.Dial(chainUrl)
 			if err != nil {
-				log.Error("cannot connect to chain, url = ", srcUrl)
+				log.Error("cannot connect to chain, url = ", chainUrl)
 				panic(err)
 			}
 			defer client.Close()
 
-			c := &queryCommand{}
+			if len(account) == 0 {
+				panic(flags.Account + " cannot be empty")
+			}
 
-			tokens := c.getTokens()
-			var token *types.Token
-
-			for _, t := range tokens {
-				if t.Id == tokenId {
-					token = t
+			token := queryToken(cmd.Context(), sisuRpc, tokenSymbol, chain)
+			if token == nil {
+				panic("cannot find token " + tokenSymbol)
+			}
+			addr := ""
+			for i := range token.Addresses {
+				if token.Chains[i] == chain {
+					addr = token.Addresses[i]
 					break
 				}
 			}
-			if token == nil {
-				panic(fmt.Errorf("cannot find token %s", tokenId))
+			if addr == "" {
+				panic("cannot find address on chain " + chain)
 			}
 
-			if token.Addresses == nil {
-				panic(fmt.Errorf("this is not an ERC20 token"))
-			}
-
-			tokenAddr := token.GetAddressForChain(src)
-			if len(tokenAddr) == 0 {
-				panic(fmt.Errorf("cannot find address for tokne %s on chain %s", tokenId, src))
-			}
-
-			store, err := erc20.NewErc20(common.HexToAddress(tokenAddr), client)
+			store, err := erc20.NewErc20(common.HexToAddress(addr), client)
 			if err != nil {
 				panic(err)
 			}
@@ -80,18 +76,19 @@ Usage:
 		},
 	}
 
-	cmd.Flags().String(flagSrc, "ganache1", "Source chain where the token is transferred from")
-	cmd.Flags().String(flagSrcUrl, "", "Source chain url")
-	cmd.Flags().String(flagToken, "SISU", "Id of the token to be queried")
-	cmd.Flags().String(flagAccount, "account", "account address that we want to query")
+	cmd.Flags().String(flags.Chain, "ganache2", "Source chain where the token is transferred from")
+	cmd.Flags().String(flags.ChainUrl, "http://127.0.0.1:8545", "Source chain url")
+	cmd.Flags().String(flags.Erc20Symbol, ExpectedErc20Address, "Id of the token to be queried")
+	cmd.Flags().String(flags.Account, "", "account address that we want to query")
+	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
 
 	return cmd
 }
 
-func (c *queryCommand) getTokens() []*types.Token {
+func (c *queryCommand) getTokens(genesisFolder string) []*types.Token {
 	tokens := []*types.Token{}
 
-	dat, err := os.ReadFile("./misc/dev/tokens.json")
+	dat, err := os.ReadFile(filepath.Join(genesisFolder, "tokens.json"))
 	if err != nil {
 		panic(err)
 	}

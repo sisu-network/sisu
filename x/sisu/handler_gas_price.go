@@ -1,8 +1,8 @@
 package sisu
 
 import (
+	"fmt"
 	"sort"
-	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
@@ -27,46 +27,56 @@ func NewHandlerGasPrice(mc ManagerContainer) *HandlerGasPrice {
 }
 
 func (h *HandlerGasPrice) DeliverMsg(ctx sdk.Context, msg *types.GasPriceMsg) (*sdk.Result, error) {
-	currentPriceRecord := h.keeper.GetGasPriceRecord(ctx, msg.Chain, msg.BlockHeight)
-	if currentPriceRecord != nil {
-		for _, m := range currentPriceRecord.Messages {
-			if strings.EqualFold(strings.ToLower(m.Signer), strings.ToLower(msg.Signer)) {
-				log.Info("This message has been processed")
-				return &sdk.Result{}, nil
-			}
-		}
+	h.keeper.SetGasPrice(ctx, msg)
+
+	params := h.keeper.GetParams(ctx)
+	if params == nil {
+		return nil, fmt.Errorf("Cannot find tss params")
 	}
 
 	h.keeper.SetGasPrice(ctx, msg)
-	savedRecord := h.keeper.GetGasPriceRecord(ctx, msg.Chain, msg.BlockHeight)
-	totalValidator := len(h.globalData.GetValidatorSet())
-	if savedRecord == nil || !savedRecord.ReachConsensus(totalValidator) {
-		return &sdk.Result{}, nil
+	savedRecord := h.keeper.GetGasPriceRecord(ctx, msg.BlockHeight)
+
+	allChains := make(map[string]bool)
+	for _, record := range savedRecord.Messages {
+		for _, chain := range record.Chains {
+			allChains[chain] = true
+		}
 	}
 
-	// Only save network gas price if reached consensus
-	listGasPrices := make([]int64, 0)
-	for _, m := range savedRecord.Messages {
-		listGasPrices = append(listGasPrices, m.GasPrice)
+	for chain := range allChains {
+		prices := make([]int64, 0)
+		for _, record := range savedRecord.Messages {
+			for i, c := range record.Chains {
+				if c == chain {
+					prices = append(prices, record.Prices[i])
+					break
+				}
+			}
+		}
+
+		if len(prices) >= int(params.MajorityThreshold) {
+			// Calculate the median
+			sort.SliceStable(prices, func(i, j int) bool {
+				return prices[i] < prices[j]
+			})
+
+			median := prices[len(prices)/2]
+			log.Verbose("Median gas price for chain ", chain, " is ", median)
+
+			// Save to db
+			c := h.keeper.GetChain(ctx, chain)
+			if c == nil {
+				c = new(types.Chain)
+				c.Id = chain
+			}
+			c.GasPrice = median
+			h.keeper.SaveChain(ctx, c)
+
+			// Save to the world state
+			h.worldState.SetChain(c)
+		}
 	}
-
-	sort.SliceStable(listGasPrices, func(i, j int) bool {
-		return listGasPrices[i] < listGasPrices[j]
-	})
-
-	median := listGasPrices[len(listGasPrices)/2]
-
-	// Save to db
-	chain := h.keeper.GetChain(ctx, msg.Chain)
-	if chain == nil {
-		chain = new(types.Chain)
-		chain.Id = msg.Chain
-	}
-	chain.GasPrice = median
-	h.keeper.SaveChain(ctx, chain)
-
-	// Save to the world state
-	h.worldState.SetChain(chain)
 
 	return &sdk.Result{}, nil
 }

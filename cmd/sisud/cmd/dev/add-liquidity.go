@@ -37,10 +37,9 @@ Short:
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
 			tokenAddrString, _ := cmd.Flags().GetString(flags.Erc20Addrs)
 			liquidityAddrString, _ := cmd.Flags().GetString(flags.LiquidityAddrs)
-			amount, _ := cmd.Flags().GetInt(flags.Amount)
 
 			c := &AddLiquidityCmd{}
-			c.approveAndAddLiquidity(urlString, mnemonic, tokenAddrString, liquidityAddrString, amount)
+			c.approveAndAddLiquidity(urlString, mnemonic, tokenAddrString, liquidityAddrString)
 
 			return nil
 		},
@@ -50,12 +49,11 @@ Short:
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
 	cmd.Flags().String(flags.Erc20Addrs, fmt.Sprintf("%s,%s", ExpectedErc20Address, ExpectedErc20Address), "Token address.")
 	cmd.Flags().String(flags.LiquidityAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "Liquidity addresses.")
-	cmd.Flags().Int(flags.Amount, 100, "The amount that the liquidity pool will receive")
 
 	return cmd
 }
 
-func (c *AddLiquidityCmd) approveAndAddLiquidity(urlString, mnemonic, tokenAddrString, liquidityAddrString string, amount int) {
+func (c *AddLiquidityCmd) approveAndAddLiquidity(urlString, mnemonic, tokenAddrString, liquidityAddrString string) {
 	tokenAddrs := strings.Split(tokenAddrString, ",")
 	liquidityAddrs := strings.Split(liquidityAddrString, ",")
 	clients := getEthClients(urlString)
@@ -92,7 +90,7 @@ func (c *AddLiquidityCmd) approveAndAddLiquidity(urlString, mnemonic, tokenAddrS
 
 			if balance.Cmp(big.NewInt(0)) == 0 {
 				log.Infof("Adding liquidity of token %s to the pool at %s", tokenAddrs[i], liquidityAddrs[i])
-				c.addLiquidity(client, mnemonic, liquidityAddrs[i], tokenAddrs[i], amount)
+				c.addLiquidity(client, mnemonic, liquidityAddrs[i], tokenAddrs[i])
 			} else {
 				log.Infof("Liquidity pool has received %s tokens (%s) \n", balance.String(), tokenAddrs[i])
 			}
@@ -101,7 +99,7 @@ func (c *AddLiquidityCmd) approveAndAddLiquidity(urlString, mnemonic, tokenAddrS
 	wg.Wait()
 }
 
-func (c *AddLiquidityCmd) addLiquidity(client *ethclient.Client, mnemonic string, liquidAddr, tokenAddress string, amount int) {
+func (c *AddLiquidityCmd) addLiquidity(client *ethclient.Client, mnemonic string, liquidAddr, tokenAddress string) {
 	liquidInstance, err := liquidity.NewLiquiditypool(common.HexToAddress(liquidAddr), client)
 	if err != nil {
 		panic(err)
