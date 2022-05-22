@@ -29,7 +29,7 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 			return &sdk.Result{}, fmt.Errorf("empty signer for msg: %s", msg.String())
 		}
 
-		if RequireSubmitPerm(msg) && !valsManager.IsNodeAccount(ctx, signers[0]) {
+		if requireValidatorPermission(msg) && !valsManager.IsNodeAccount(ctx, signers[0]) {
 			return &sdk.Result{}, fmt.Errorf("require permision: %s", msg.String())
 		}
 
@@ -79,7 +79,9 @@ func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorMan
 	}
 }
 
-func RequireSubmitPerm(msg sdk.Msg) bool {
+// requireValidatorPermission checks if a message's sender needs to be a validator in order for the
+// message to be processed.
+func requireValidatorPermission(msg sdk.Msg) bool {
 	switch msg.(type) {
 	case *types.DepositSisuTokenMsg, *types.SetDheartIpAddressMsg, *types.SlashValidatorMsg:
 		return false
