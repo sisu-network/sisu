@@ -134,7 +134,7 @@ func (p *Processor) BeginBlock(ctx sdk.Context, blockHeight int64) {
 	}
 
 	// Calculate all token prices.
-	p.calculateTokenPrices(ctx)
+	//p.calculateTokenPrices(ctx)
 }
 
 // calculateTokenPrices gets all token prices posted from all validators and calculate the median.
@@ -545,6 +545,7 @@ func (p *Processor) confirmTx(ctx sdk.Context, tx *eyesTypes.Tx, chain string, b
 // until we reach a consensus about token price. The token price is only used to calculate gas price
 // fee and not used for actual swapping calculation.
 func (p *Processor) OnUpdateTokenPrice(tokenPrices []*etypes.TokenPrice) {
+	return
 	prices := make([]*types.TokenPrice, 0, len(tokenPrices))
 
 	// Convert from deyes type to msg type

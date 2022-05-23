@@ -37,7 +37,7 @@ func (h *HandlerKeygen) DeliverMsg(ctx sdk.Context, signerMsg *types.KeygenWithS
 
 	a, err := h.keeper.GetSlashToken(ctx, signerMsg.GetSender())
 	if err != nil {
-		panic(err)
+		return &sdk.Result{}, err
 	}
 
 	log.Debug("After IncSlashToken in HandlerKeygen. slash = ", a)

@@ -669,11 +669,8 @@ func setTokenPrices(store cstypes.KVStore, blockHeight uint64, msg *types.Update
 	key := []byte(msg.Signer)
 	value := store.Get(key)
 
-	var record *types.TokenPriceRecords
-	if value == nil {
-		record = new(types.TokenPriceRecords)
-		record.Records = make([]*types.TokenPriceRecord, 0)
-	} else {
+	record := &types.TokenPriceRecords{Records: make([]*types.TokenPriceRecord, 0)}
+	if len(value) > 0 {
 		if err := json.Unmarshal(value, &record); err != nil {
 			log.Error("cannot unmarshal record for signer ", msg.Signer)
 			return
@@ -698,7 +695,7 @@ func setTokenPrices(store cstypes.KVStore, blockHeight uint64, msg *types.Update
 		}
 	}
 
-	bz, err := json.Marshal(record)
+	bz, err := record.Marshal()
 	if err != nil {
 		log.Error("cannot unmarshal token price record for signer ", msg.Signer)
 		return
@@ -715,8 +712,8 @@ func getAllTokenPrices(store cstypes.KVStore) map[string]*types.TokenPriceRecord
 		// Key is signer.
 		signer := string(iter.Key())
 		bz := iter.Value()
-		record := new(types.TokenPriceRecords)
-		err := json.Unmarshal(bz, record)
+		record := &types.TokenPriceRecords{Records: make([]*types.TokenPriceRecord, 0)}
+		err := record.Unmarshal(bz)
 		if err != nil {
 			log.Error("cannot unmarshal token price record for signer ", signer, " err = ", err)
 			continue
@@ -1076,7 +1073,7 @@ func getValidatorUpdates(store cstypes.KVStore) abci.ValidatorUpdates {
 		buf := bytes.NewBuffer(iter.Value())
 		v := new(abci.ValidatorUpdate)
 		if err := tmTypes.ReadMessage(buf, v); err != nil {
-			log.Error("error when read validate update from buffer. error = ", err)
+			log.Error("error when read validator update from buffer. error = ", err)
 			return abci.ValidatorUpdates{}
 		}
 
