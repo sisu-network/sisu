@@ -650,11 +650,8 @@ func setTokenPrices(store cstypes.KVStore, blockHeight uint64, msg *types.Update
 	key := []byte(msg.Signer)
 	value := store.Get(key)
 
-	var record *types.TokenPriceRecords
-	if value == nil {
-		record = new(types.TokenPriceRecords)
-		record.Records = make([]*types.TokenPriceRecord, 0)
-	} else {
+	record := &types.TokenPriceRecords{Records: make([]*types.TokenPriceRecord, 0)}
+	if len(value) > 0 {
 		err := record.Unmarshal(value)
 		if err != nil {
 			log.Error("cannot unmarshal record for signer ", msg.Signer)

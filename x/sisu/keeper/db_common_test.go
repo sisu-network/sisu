@@ -90,7 +90,7 @@ func TestSaveTokenPrices(t *testing.T) {
 	token := "ETH"
 
 	signer1 := "signer1"
-	msg1 := &types.UpdateTokenPrice{
+	msg1Signer1 := &types.UpdateTokenPrice{
 		Signer: signer1,
 		TokenPrices: []*types.TokenPrice{
 			{
@@ -99,9 +99,18 @@ func TestSaveTokenPrices(t *testing.T) {
 			},
 		},
 	}
+	msg2Signer1 := &types.UpdateTokenPrice{
+		Signer: signer1,
+		TokenPrices: []*types.TokenPrice{
+			{
+				Id:    token,
+				Price: 6_000_000_000,
+			},
+		},
+	}
 
 	signer2 := "signer2"
-	msg2 := &types.UpdateTokenPrice{
+	msg1Signer2 := &types.UpdateTokenPrice{
 		Signer: signer2,
 		TokenPrices: []*types.TokenPrice{
 			{
@@ -110,9 +119,19 @@ func TestSaveTokenPrices(t *testing.T) {
 			},
 		},
 	}
+	msg2Signer2 := &types.UpdateTokenPrice{
+		Signer: signer2,
+		TokenPrices: []*types.TokenPrice{
+			{
+				Id:    token,
+				Price: 11_000_000_000,
+			},
+		}}
 
-	setTokenPrices(store, 1, msg1)
-	setTokenPrices(store, 1, msg2)
+	setTokenPrices(store, 1, msg1Signer1)
+	setTokenPrices(store, 1, msg2Signer1)
+	setTokenPrices(store, 1, msg1Signer2)
+	setTokenPrices(store, 1, msg2Signer2)
 
 	allPrices := getAllTokenPrices(store)
 
@@ -128,9 +147,9 @@ func TestSaveTokenPrices(t *testing.T) {
 	require.Equal(t, []string{signer1, signer2}, allSigners)
 
 	record := allPrices[signer1]
-	require.Equal(t, int64(5_000_000_000), record.Records[0].Price)
+	require.Equal(t, int64(6_000_000_000), record.Records[0].Price)
 	record = allPrices[signer2]
-	require.Equal(t, int64(10_000_000_000), record.Records[0].Price)
+	require.Equal(t, int64(11_000_000_000), record.Records[0].Price)
 }
 
 ///// Node
