@@ -20,21 +20,17 @@ import (
 var (
 	// This is a mapping between chain name and the native token that it uses.
 	chainToTokens = map[string]string{
-		"bsc":                 "BNB",
-		"eth":                 "ETH",
-		"ropsten":             "ETH",
-		"ganache1":            "NATIVE_GANACHE1",
-		"ganache2":            "NATIVE_GANACHE2",
-		"eth-binance-testnet": "BNB",
-		"xdai":                "xDai",
-	}
-
-	defaultGasPrice = map[string]*big.Int{
-		"ganache1":            big.NewInt(2_000_000_000),
-		"ganache2":            big.NewInt(2_000_000_000),
-		"eth-ropsten":         big.NewInt(4_000_000_000),
-		"eth-binance-testnet": big.NewInt(10_000_000_000),
-		"xdai":                big.NewInt(2_000_000_000),
+		"bsc":              "BNB",
+		"eth":              "ETH",
+		"ganache1":         "NATIVE_GANACHE1",
+		"ganache2":         "NATIVE_GANACHE2",
+		"ropsten-testnet":  "ETH",
+		"binance-testnet":  "BNB",
+		"polygon-testnet":  "MATIC",
+		"xdai":             "xDai",
+		"goerli-testnet":   "ETH",
+		"arbitrum-testnet": "ETH",
+		"fantom-testnet":   "FTM",
 	}
 )
 
@@ -210,11 +206,15 @@ func (ws *DefaultWorldState) GetGasCostInToken(tokenId, chainId string) (int64, 
 	}
 
 	// TODO: correct gasUnit here
-	gasUnit := big.NewInt(8_000_000)
+	gasUnit := big.NewInt(60_000) // Estimated cost for swapping.
 	tokenPrice, err := ws.GetTokenPrice(tokenId)
 	if err != nil {
 		log.Error(err)
 		return -1, err
+	}
+
+	if tokenPrice < 0 {
+		return 0, fmt.Errorf("Token price is negative, token id = %s, token price = %d", tokenId, tokenPrice)
 	}
 
 	nativeTokenPrice, err := ws.GetNativeTokenPriceForChain(chainId)
@@ -222,6 +222,7 @@ func (ws *DefaultWorldState) GetGasCostInToken(tokenId, chainId string) (int64, 
 		log.Error(err)
 		return -1, err
 	}
+
 	gasCost, err := helper.GetGasCostInToken(gasUnit, gasPrice, big.NewInt(tokenPrice), big.NewInt(nativeTokenPrice))
 	if err != nil {
 		log.Error(err)

@@ -184,6 +184,12 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(
 		return nil, err
 	}
 
+	if gasPriceInToken < 0 {
+		// TODO: Fix this.
+		log.Errorf("Gas price in token is negative: token id = %s", token.Id)
+		gasPriceInToken = 0
+	}
+
 	amountOut.Sub(amountOut, big.NewInt(gasPriceInToken))
 
 	if amountOut.Cmp(big.NewInt(0)) < 0 {
@@ -204,7 +210,7 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(
 		uint64(nonce),
 		gatewayAddress,
 		big.NewInt(0),
-		p.getGasLimit(destChain),
+		100_000, // 100k for swapping operation.
 		gasPrice,
 		input,
 	)

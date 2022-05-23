@@ -88,9 +88,9 @@ func getContractAddressKey(chain string, address string) []byte {
 	return []byte(fmt.Sprintf("%s__%s", chain, address))
 }
 
-func getGasPriceKey(chain string, height int64) []byte {
+func getGasPriceKey(height int64) []byte {
 	// chain, height
-	return []byte(fmt.Sprintf("%s__%d", chain, height))
+	return []byte(fmt.Sprintf("%d", height))
 }
 
 func getValidatorUpdatesKey() []byte {
@@ -548,8 +548,9 @@ func saveGasPrice(store cstypes.KVStore, msg *types.GasPriceMsg) {
 		savedRecord []byte
 		err         error
 	)
-	key := getGasPriceKey(msg.Chain, msg.BlockHeight)
-	currentRecord := getGasPriceRecord(store, msg.Chain, msg.BlockHeight)
+
+	key := getGasPriceKey(msg.BlockHeight)
+	currentRecord := getGasPriceRecord(store, msg.BlockHeight)
 	if currentRecord == nil {
 		record = &types.GasPriceRecord{
 			Messages: []*types.GasPriceMsg{msg},
@@ -560,6 +561,19 @@ func saveGasPrice(store cstypes.KVStore, msg *types.GasPriceMsg) {
 			return
 		}
 	} else {
+		signerExisted := false
+		for _, savedMsg := range currentRecord.Messages {
+			if savedMsg.Signer == msg.Signer {
+				signerExisted = true
+				break
+			}
+		}
+
+		if signerExisted {
+			// This signer has already been saved
+			return
+		}
+
 		record = &types.GasPriceRecord{
 			Messages: append(currentRecord.Messages, msg),
 		}
@@ -571,14 +585,15 @@ func saveGasPrice(store cstypes.KVStore, msg *types.GasPriceMsg) {
 	}
 
 	if savedRecord == nil {
+		log.Error("savedRecord is nil")
 		return
 	}
 
 	store.Set(key, savedRecord)
 }
 
-func getGasPriceRecord(store cstypes.KVStore, chain string, height int64) *types.GasPriceRecord {
-	key := getGasPriceKey(chain, height)
+func getGasPriceRecord(store cstypes.KVStore, height int64) *types.GasPriceRecord {
+	key := getGasPriceKey(height)
 	bz := store.Get(key)
 	record := &types.GasPriceRecord{}
 	if err := record.Unmarshal(bz); err != nil {

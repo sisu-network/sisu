@@ -20,7 +20,6 @@ type AppLogicListener interface {
 	OnKeysignResult(result *htypes.KeysignResult)
 	OnReshareResult(result *htypes.ReshareResult)
 	OnTxDeploymentResult(result *etypes.DispatchedTxResult)
-	OnUpdateGasPriceRequest(request *etypes.GasPriceRequest)
 	OnUpdateTokenPrice(tokenPrices []*etypes.TokenPrice)
 }
 
@@ -125,15 +124,6 @@ func (a *ApiHandler) PostDeploymentResult(result *etypes.DispatchedTxResult) {
 	listener := a.getAppLogicListener()
 	if listener != nil {
 		go listener.OnTxDeploymentResult(result)
-	}
-}
-
-func (a *ApiHandler) UpdateGasPrice(request *etypes.GasPriceRequest) {
-	log.Info("Received update gas price request")
-
-	listener := a.getAppLogicListener()
-	if listener != nil {
-		go listener.OnUpdateGasPriceRequest(request)
 	}
 }
 

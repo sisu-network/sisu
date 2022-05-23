@@ -8,6 +8,7 @@ type MockDeyesClient struct {
 	AddWatchAddressesFunc func(chain string, addrs []string) error
 	GetNonceFunc          func(chain string, address string) int64
 	SetSisuReadyFunc      func(isReady bool) error
+	GetGasPricesFunc      func(chains []string) ([]int64, error)
 }
 
 func (c *MockDeyesClient) Ping(source string) error {
@@ -48,4 +49,12 @@ func (c *MockDeyesClient) SetSisuReady(isReady bool) error {
 	}
 
 	return nil
+}
+
+func (c *MockDeyesClient) GetGasPrices(chains []string) ([]int64, error) {
+	if c.GetGasPricesFunc != nil {
+		return c.GetGasPricesFunc(chains)
+	}
+
+	return nil, nil
 }

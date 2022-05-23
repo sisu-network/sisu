@@ -3,10 +3,13 @@ package gen
 import (
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"math/big"
 	"net"
+	"path/filepath"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -24,6 +27,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
+	econfig "github.com/sisu-network/deyes/config"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -39,6 +43,7 @@ var (
 	flagChainId           = "chain-id"
 	flagConfigString      = "config-string"
 	flagKeyringPassphrase = "keyring-passphrase"
+	flagGenesisFolder     = "genesis-folder"
 )
 
 type localnetGenerator struct{}
@@ -73,10 +78,21 @@ Example:
 			startingIPAddress, _ := cmd.Flags().GetString(flagStartingIPAddress)
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
+			genesisFolder, _ := cmd.Flags().GetString(flagGenesisFolder)
+
+			generator := &localnetGenerator{}
 
 			// Get Chain id and keyring backend from .env file.
 			chainID := "eth-sisu-local"
 			keyringBackend := keyring.BackendTest
+
+			chains := getChains(filepath.Join(genesisFolder, "chains.json"))
+			supportedChains := make(map[string]config.TssChainConfig)
+			for _, chain := range chains {
+				supportedChains[chain.Id] = config.TssChainConfig{
+					Id: chain.Id,
+				}
+			}
 
 			nodeConfig := config.Config{
 				Mode: "dev",
@@ -87,25 +103,15 @@ Example:
 					ApiPort:        25456,
 				},
 				Tss: config.TssConfig{
-					DheartHost: "0.0.0.0",
-					DheartPort: 5678,
-					DeyesUrl:   "http://0.0.0.0:31001",
-					SupportedChains: map[string]config.TssChainConfig{
-						"ganache1": {
-							Id: "ganache1",
-						},
-						"ganache2": {
-							Id: "ganache2",
-						},
-						"eth-binance-testnet": {
-							Id: "eth-binance-testnet",
-						},
-						"xdai": {
-							Id: "xdai",
-						},
-					},
+					DheartHost:      "0.0.0.0",
+					DheartPort:      5678,
+					DeyesUrl:        "http://0.0.0.0:31001",
+					SupportedChains: supportedChains,
 				},
 			}
+
+			deyesChains := generator.readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
+			generator.generateEyesToml("../deyes", deyesChains)
 
 			settings := &Setting{
 				clientCtx:      clientCtx,
@@ -118,14 +124,14 @@ Example:
 				minGasPrices:   minGasPrices,
 				nodeDirPrefix:  nodeDirPrefix,
 				nodeDaemonHome: nodeDaemonHome,
-				ips:            getLocalIps(startingIPAddress, numValidators),
+				ips:            generator.getLocalIps(startingIPAddress, numValidators),
 				keyringBackend: keyringBackend,
 				algoStr:        algo,
 				numValidators:  numValidators,
 				nodeConfigs:    []config.Config{nodeConfig},
-				tokens:         getTokens("./misc/dev/tokens.json"),
-				chains:         getChains("./misc/dev/chains.json"),
-				liquidities:    getLiquidity("./misc/dev/liquid.json"),
+				tokens:         getTokens(filepath.Join(genesisFolder, "tokens.json")),
+				chains:         chains,
+				liquidities:    getLiquidity(filepath.Join(genesisFolder, "liquid.json")),
 				params:         &types.Params{MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3))},
 			}
 
@@ -142,14 +148,15 @@ Example:
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
 	cmd.Flags().String(flags.FlagKeyringBackend, keyring.BackendTest, "Keyring backend. file|os|kwallet|pass|test|memory")
+	cmd.Flags().String(flagGenesisFolder, "./misc/dev", "Relative path to the folder that contains genesis configuration.")
 
 	return cmd
 }
 
-func getLocalIps(startingIPAddress string, count int) []string {
+func (g *localnetGenerator) getLocalIps(startingIPAddress string, count int) []string {
 	ips := make([]string, count)
 	for i := 0; i < count; i++ {
-		ip, err := getIP(i, startingIPAddress)
+		ip, err := g.getIP(i, startingIPAddress)
 		if err != nil {
 			panic(err)
 		}
@@ -159,7 +166,7 @@ func getLocalIps(startingIPAddress string, count int) []string {
 	return ips
 }
 
-func getIP(i int, startingIPAddr string) (ip string, err error) {
+func (g *localnetGenerator) getIP(i int, startingIPAddr string) (ip string, err error) {
 	if len(startingIPAddr) == 0 {
 		ip, err = server.ExternalIP()
 		if err != nil {
@@ -220,4 +227,33 @@ func (g *localnetGenerator) getAuthTransactor(client *ethclient.Client, address 
 	auth.GasLimit = uint64(10_000_000)
 
 	return auth, nil
+}
+
+func (g *localnetGenerator) readDeyesChainConfigs(path string) []econfig.Chain {
+	deyesChains := make([]econfig.Chain, 0)
+	file, _ := ioutil.ReadFile(path)
+	err := json.Unmarshal([]byte(file), &deyesChains)
+	if err != nil {
+		panic(err)
+	}
+
+	return deyesChains
+}
+
+func (g *localnetGenerator) generateEyesToml(dir string, chainConfigs []econfig.Chain) {
+	sqlConfig := SqlConfig{}
+	sqlConfig.Host = "localhost"
+	sqlConfig.Port = 3306
+	sqlConfig.Username = "root"
+	sqlConfig.Password = "password"
+	sqlConfig.Schema = "deyes"
+
+	deyesConfig := DeyesConfiguration{
+		Chains: chainConfigs,
+
+		Sql:           sqlConfig,
+		SisuServerUrl: fmt.Sprintf("http://%s:25456", "0.0.0.0"),
+	}
+
+	writeDeyesConfig(deyesConfig, dir)
 }

@@ -24,6 +24,11 @@ api-port = {{ .Sisu.ApiPort }}
 rpc-port = {{ .Sisu.RpcPort }}
 internal-api-port = {{ .Sisu.InternalApiPort }}
 
+[sisu.email-alert]
+	url = "{{ .Sisu.EmailAlert.Url }}"
+	secret = "{{ .Sisu.EmailAlert.Secret }}"
+	email = "{{ .Sisu.EmailAlert.Email }}"
+
 ###############################################################################
 ###                     Siu Main LogDNA Connfiguration                      ###
 ###############################################################################

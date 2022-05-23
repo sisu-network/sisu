@@ -124,7 +124,9 @@ func (m *DefaultValidatorManager) GetExceedSlashThresholdValidators(ctx sdk.Cont
 			return nil, err
 		}
 
-		log.Debugf("slash point of address %s is %d", addr, slashPoint)
+		if slashPoint > 0 {
+			log.Debugf("slash point of address %s is %d", addr, slashPoint)
+		}
 
 		if slashPoint <= SlashPointThreshold {
 			continue

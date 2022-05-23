@@ -14,6 +14,8 @@ type DeyesClient interface {
 	AddWatchAddresses(chain string, addrs []string) error
 	GetNonce(chain string, address string) int64
 	SetSisuReady(isReady bool) error
+
+	GetGasPrices(chains []string) ([]int64, error)
 }
 
 type defaultDeyesClient struct {
@@ -92,4 +94,15 @@ func (c *defaultDeyesClient) GetNonce(chain string, address string) int64 {
 	}
 
 	return result
+}
+
+func (c *defaultDeyesClient) GetGasPrices(chains []string) ([]int64, error) {
+	result := make([]int64, 0)
+	err := c.client.CallContext(context.Background(), &result, "deyes_getGasPrices", chains)
+	if err != nil {
+		log.Error("Cannot get gas price for chains = ", chains, "err = ", err)
+		return nil, err
+	}
+
+	return result, nil
 }

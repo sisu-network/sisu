@@ -549,6 +549,6 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
 
 contract SampleERC20 is ERC20 {
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {
-        _mint(msg.sender, 1000000 * 10**18);
+        _mint(msg.sender, 1000000000 * 10**18);
     }
 }

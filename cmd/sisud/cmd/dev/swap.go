@@ -19,7 +19,6 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
-	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
 )
 
 type swapCommand struct{}
@@ -29,32 +28,31 @@ func Swap() *cobra.Command {
 		Use: "swap",
 		Long: `Swap ERC20 token.
 Usage:
-./sisu dev swap --token SISU --amount 10 --recipient 0x2d532C099CA476780c7703610D807948ae47856A
+./sisu dev swap --amount 10 --account 0x2d532C099CA476780c7703610D807948ae47856A
 
-for swapping token from chain ganache1 to ganache2. To swap tokens between 2 chains:
+for swapping token from chain ganache1 to ganache2.
 
-./sisu dev swap --src ganache1 --src-url http://0.0.0.0:7545 --dst ganache2 --token SISU --amount 10 --recipient 0x2d532C099CA476780c7703610D807948ae47856A
+Full command swap tokens between 2 chains:
+
+./sisu dev swap --src ganache1 --src-url http://0.0.0.0:7545 --dst ganache2 --erc20-symbol SISU --amount 10 --account 0x2d532C099CA476780c7703610D807948ae47856A
 
 Please note that the amount is the number of whole unit. amount 1 is equivalent to 10^18 in the
 transfer params.
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			src, _ := cmd.Flags().GetString(flagSrc)
-			srcUrl, _ := cmd.Flags().GetString(flagSrcUrl)
-			dst, _ := cmd.Flags().GetString(flagDst)
-			token, _ := cmd.Flags().GetString(flagToken)
-			recipient, _ := cmd.Flags().GetString(flagRecipient)
-			unit, _ := cmd.Flags().GetInt(flagAmount)
+			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
+			src, _ := cmd.Flags().GetString(flags.Src)
+			srcUrl, _ := cmd.Flags().GetString(flags.SrcUrl)
+			dst, _ := cmd.Flags().GetString(flags.Dst)
+			token, _ := cmd.Flags().GetString(flags.Erc20Symbol)
+			recipient, _ := cmd.Flags().GetString(flags.Account)
+			unit, _ := cmd.Flags().GetInt(flags.Amount)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 
 			c := &swapCommand{}
 
-			if len(src) == 0 {
-				panic("src chain cannot be empty")
-			}
-
-			if len(srcUrl) == 0 {
-				srcUrl = getDefaultChainUrl(src)
+			if len(recipient) == 0 {
+				panic(flags.Account + " cannot be empty")
 			}
 
 			log.Info("srcUrl = ", srcUrl)
@@ -72,19 +70,20 @@ transfer params.
 			amount = new(big.Int).Mul(amount, utils.EthToWei)
 
 			gateway := c.getGatewayAddresses(cmd.Context(), src, sisuRpc)
-			c.swap(client, gateway, dst, srcToken, dstToken, recipient, amount)
+			c.swap(client, mnemonic, gateway, dst, srcToken, dstToken, recipient, amount)
 
 			return nil
 		},
 	}
 
-	cmd.Flags().String(flagSrc, "ganache1", "Source chain where the token is transferred from")
-	cmd.Flags().String(flagSrcUrl, "", "Source chain url")
+	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
+	cmd.Flags().String(flags.Src, "ganache1", "Source chain where the token is transferred from")
+	cmd.Flags().String(flags.SrcUrl, "http://127.0.0.1:7545", "Source chain url")
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
-	cmd.Flags().String(flagDst, "ganache2", "Destination chain where the token is transferred to")
-	cmd.Flags().String(flagToken, "SISU", "ID of the ERC20 to transferred")
-	cmd.Flags().String(flagRecipient, "", "Recipient address in the destination chain")
-	cmd.Flags().Int(flagAmount, 1, "The amount of token to be transferred")
+	cmd.Flags().String(flags.Dst, "ganache2", "Destination chain where the token is transferred to")
+	cmd.Flags().String(flags.Erc20Symbol, "SISU", "ID of the ERC20 to transferred")
+	cmd.Flags().String(flags.Account, "", "Recipient address in the destination chain")
+	cmd.Flags().Int(flags.Amount, 1, "The amount of token to be transferred")
 
 	return cmd
 }
@@ -116,37 +115,6 @@ func (c *swapCommand) getTokenAddrs(tokenId string, srcChain string, dstChain st
 	return token.GetAddressForChain(srcChain), token.GetAddressForChain(dstChain)
 }
 
-func (c *swapCommand) getAuthTransactor(client *ethclient.Client, address common.Address) (*bind.TransactOpts, error) {
-	nonce, err := client.PendingNonceAt(context.Background(), address)
-	if err != nil {
-		return nil, err
-	}
-
-	gasPrice, err := client.SuggestGasPrice(context.Background())
-	if err != nil {
-		return nil, err
-	}
-
-	// This is the private key of the accounts0
-	privateKey := helper.GetDevPrivateKey()
-
-	chainId, err := client.ChainID(context.Background())
-	if err != nil {
-		return nil, err
-	}
-	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainId)
-	if err != nil {
-		return nil, err
-	}
-	auth.Nonce = big.NewInt(int64(nonce))
-	auth.Value = big.NewInt(0)
-	auth.GasPrice = gasPrice
-
-	auth.GasLimit = uint64(10_000_000)
-
-	return auth, nil
-}
-
 func (c *swapCommand) getGatewayAddresses(context context.Context, chain string, sisuRpc string) string {
 	grpcConn, err := grpc.Dial(
 		sisuRpc,
@@ -175,7 +143,7 @@ func (c *swapCommand) getGatewayAddresses(context context.Context, chain string,
 	return res.Contract.Address
 }
 
-func (c *swapCommand) swap(client *ethclient.Client, gateway string, dstChain string,
+func (c *swapCommand) swap(client *ethclient.Client, mnemonic string, gateway string, dstChain string,
 	srcToken string, dstToken string, recipient string, amount *big.Int) {
 	gatewayAddr := common.HexToAddress(gateway)
 	contract, err := erc20gateway.NewErc20gateway(gatewayAddr, client)
@@ -183,7 +151,7 @@ func (c *swapCommand) swap(client *ethclient.Client, gateway string, dstChain st
 		panic(err)
 	}
 
-	opts, err := c.getAuthTransactor(client, account0.Address)
+	opts, err := getAuthTransactor(client, mnemonic)
 	if err != nil {
 		panic(err)
 	}
@@ -196,6 +164,9 @@ func (c *swapCommand) swap(client *ethclient.Client, gateway string, dstChain st
 		dstChain, recipientAddr.String(), srcTokenAddr.String(), dstTokenAddr.String(), amount)
 
 	tx, err := contract.TransferOut(opts, dstChain, recipientAddr, srcTokenAddr, dstTokenAddr, amount)
+	if err != nil {
+		panic(err)
+	}
 	bind.WaitDeployed(context.Background(), client, tx)
 
 	time.Sleep(time.Second * 3)

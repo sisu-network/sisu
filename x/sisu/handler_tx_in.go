@@ -78,7 +78,7 @@ func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, signerMsg *types.TxInWithSigne
 func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner) ([]byte, error) {
 	msg := msgWithSigner.Data
 
-	log.Info("Deliverying TxIn, hash = ", msg.TxHash)
+	log.Info("Deliverying TxIn, hash = ", msg.TxHash, " on chain ", msg.Chain)
 
 	// Save this to KVStore & private db.
 	h.keeper.SaveTxIn(ctx, msg)
