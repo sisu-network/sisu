@@ -76,7 +76,7 @@ func (p *Processor) ChangeValidatorSet(ctx sdk.Context) {
 
 func (p *Processor) GetPendingValidatorUpdates(ctx sdk.Context) []abci.ValidatorUpdate {
 	incomingValUpdate := p.keeper.GetIncomingValidatorUpdates(ctx)
-	log.Debug("len of incomingValUpdate is", len(incomingValUpdate))
+	log.Debug("len of incomingValUpdate = ", len(incomingValUpdate))
 
 	if len(incomingValUpdate) == 0 {
 		return []abci.ValidatorUpdate{}

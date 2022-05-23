@@ -3,6 +3,7 @@ package keeper
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -658,8 +659,7 @@ func setTokenPrices(store cstypes.KVStore, blockHeight uint64, msg *types.Update
 		record = new(types.TokenPriceRecords)
 		record.Records = make([]*types.TokenPriceRecord, 0)
 	} else {
-		err := record.Unmarshal(value)
-		if err != nil {
+		if err := json.Unmarshal(value, &record); err != nil {
 			log.Error("cannot unmarshal record for signer ", msg.Signer)
 			return
 		}
@@ -683,7 +683,7 @@ func setTokenPrices(store cstypes.KVStore, blockHeight uint64, msg *types.Update
 		}
 	}
 
-	bz, err := record.Marshal()
+	bz, err := json.Marshal(record)
 	if err != nil {
 		log.Error("cannot unmarshal token price record for signer ", msg.Signer)
 		return
@@ -701,7 +701,7 @@ func getAllTokenPrices(store cstypes.KVStore) map[string]*types.TokenPriceRecord
 		signer := string(iter.Key())
 		bz := iter.Value()
 		record := new(types.TokenPriceRecords)
-		err := record.Unmarshal(bz)
+		err := json.Unmarshal(bz, record)
 		if err != nil {
 			log.Error("cannot unmarshal token price record for signer ", signer, " err = ", err)
 			continue

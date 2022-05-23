@@ -57,7 +57,7 @@ func (h *HandlerKeygen) DeliverMsg(ctx sdk.Context, signerMsg *types.KeygenWithS
 		for _, v := range voters {
 			a, err := h.keeper.GetSlashToken(ctx, v)
 			if err != nil {
-				panic(err)
+				return &sdk.Result{}, err
 			}
 
 			log.Debug("before dec slash. v = ", v.String(), " slash = ", a)
@@ -72,7 +72,7 @@ func (h *HandlerKeygen) DeliverMsg(ctx sdk.Context, signerMsg *types.KeygenWithS
 		for _, v := range voters {
 			a, err := h.keeper.GetSlashToken(ctx, v)
 			if err != nil {
-				panic(err)
+				return &sdk.Result{}, err
 			}
 
 			log.Debug("after dec slash. v = ", v.String(), " slash = ", a)
