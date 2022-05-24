@@ -3,7 +3,6 @@ package keeper
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -671,7 +670,8 @@ func setTokenPrices(store cstypes.KVStore, blockHeight uint64, msg *types.Update
 
 	record := &types.TokenPriceRecords{Records: make([]*types.TokenPriceRecord, 0)}
 	if len(value) > 0 {
-		if err := json.Unmarshal(value, &record); err != nil {
+		err := record.Unmarshal(value)
+		if err != nil {
 			log.Error("cannot unmarshal record for signer ", msg.Signer)
 			return
 		}
