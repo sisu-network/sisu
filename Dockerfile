@@ -16,9 +16,6 @@ COPY go.sum .
 
 RUN go mod download
 
-COPY temp/baseapp.go /go/pkg/mod/github.com/cosmos/cosmos-sdk@v0.42.1/baseapp/baseapp.go
-COPY temp/execution.go /go/pkg/mod/github.com/tendermint/tendermint@v0.34.13/state/execution.go
-
 COPY . .
 
 RUN go build -o ./out/sisu ./cmd/sisud/main.go
