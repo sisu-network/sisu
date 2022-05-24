@@ -31,7 +31,11 @@ func NewHandlerContractSetLiquidityAddress(mc ManagerContainer) *HandlerContract
 }
 
 func (h *HandlerContractSetLiquidityAddress) DeliverMsg(ctx sdk.Context, msg *types.ChangeLiquidPoolAddressMsg) (*sdk.Result, error) {
-	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
+	if process, hash, err := h.pmm.ProcessMsg(ctx, msg); process {
+		if err != nil {
+			return &sdk.Result{}, err
+		}
+
 		data, err := newHandlerContractSetLiquidityAddress(h.mc).doSetLiquidityAddress(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.NewLiquidAddress)
 		h.keeper.ProcessTxRecord(ctx, hash)
 

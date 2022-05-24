@@ -283,9 +283,8 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		}()
 	}
 
-	//am.processor.ChangeValidatorSet(ctx)
-	//validators := am.processor.GetPendingValidatorUpdates(ctx)
-	//
-	//return validators
-	return []abci.ValidatorUpdate{}
+	am.processor.ChangeValidatorSet(ctx)
+	validators := am.processor.GetPendingValidatorUpdates(ctx)
+
+	return validators
 }

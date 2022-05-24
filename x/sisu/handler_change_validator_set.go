@@ -2,6 +2,7 @@ package sisu
 
 import (
 	"encoding/base64"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
@@ -28,7 +29,11 @@ func NewHandlerChangeValidatorSet(mc ManagerContainer) *HandlerChangeValidatorSe
 }
 
 func (h *HandlerChangeValidatorSet) DeliverMsg(ctx sdk.Context, msg *types.ChangeValidatorSetMsg) (*sdk.Result, error) {
-	shouldProcess, rcHash := h.pmm.ShouldProcessMsg(ctx, msg)
+	shouldProcess, rcHash, err := h.pmm.ProcessMsg(ctx, msg)
+	if err != nil {
+		return &sdk.Result{}, err
+	}
+
 	if !shouldProcess {
 		return &sdk.Result{}, nil
 	}

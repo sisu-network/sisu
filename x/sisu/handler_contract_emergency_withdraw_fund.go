@@ -38,7 +38,11 @@ func NewHandlerContractLiquidityWithdrawFund(mc ManagerContainer) *HandlerContra
 }
 
 func (h *HandlerContractLiquidityWithdrawFund) DeliverMsg(ctx sdk.Context, msg *types.LiquidityWithdrawFundMsg) (*sdk.Result, error) {
-	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
+	if process, hash, err := h.pmm.ProcessMsg(ctx, msg); process {
+		if err != nil {
+			return &sdk.Result{}, err
+		}
+	
 		data, err := h.doWithdrawFund(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.TokenAddresses, msg.Data.NewOwner)
 		h.keeper.ProcessTxRecord(ctx, hash)
 

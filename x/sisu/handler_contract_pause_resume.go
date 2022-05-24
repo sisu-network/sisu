@@ -30,7 +30,11 @@ func NewHandlerPauseContract(mc ManagerContainer) *HandlerPauseContract {
 }
 
 func (h *HandlerPauseContract) DeliverMsg(ctx sdk.Context, msg *types.PauseContractMsg) (*sdk.Result, error) {
-	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
+	if process, hash, err := h.pmm.ProcessMsg(ctx, msg); process {
+		if err != nil {
+			return &sdk.Result{}, err
+		}
+
 		data, err := newHandlerPauseResumeContract(h.mc).doPauseOrResume(ctx, msg.Data.Chain, msg.Data.Hash, true)
 		h.keeper.ProcessTxRecord(ctx, hash)
 
@@ -61,7 +65,11 @@ func NewHandlerResumeContract(mc ManagerContainer) *HandlerResumeContract {
 }
 
 func (h *HandlerResumeContract) DeliverMsg(ctx sdk.Context, msg *types.ResumeContractMsg) (*sdk.Result, error) {
-	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
+	if process, hash, err := h.pmm.ProcessMsg(ctx, msg); process {
+		if err != nil {
+			return &sdk.Result{}, err
+		}
+
 		newHandlerPauseResumeContract(h.mc).doPauseOrResume(ctx, msg.Data.Chain, msg.Data.Hash, false)
 		h.keeper.ProcessTxRecord(ctx, hash)
 	} else {

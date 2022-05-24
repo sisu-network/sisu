@@ -49,7 +49,11 @@ func (h *HandlerTxOut) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutWithSig
 		return &sdk.Result{}, nil
 	}
 
-	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
+	if process, hash, err := h.pmm.ProcessMsg(ctx, signerMsg); process {
+		if err != nil {
+			return &sdk.Result{}, err
+		}
+	
 		data, err := h.doTxOut(ctx, signerMsg)
 		h.keeper.ProcessTxRecord(ctx, hash)
 

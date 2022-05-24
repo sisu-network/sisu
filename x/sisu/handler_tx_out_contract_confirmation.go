@@ -27,14 +27,13 @@ func (h *HandlerTxOutContractConfirmation) DeliverMsg(ctx sdk.Context, signerMsg
 		return &sdk.Result{}, nil
 	}
 
-	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
-		data, err := h.doTxOutContractConfirm(ctx, signerMsg)
-		h.keeper.ProcessTxRecord(ctx, hash)
-
-		voters := h.keeper.GetVotersInAccAddress(ctx, hash)
-		if err := h.keeper.DecSlashToken(ctx, types.ObserveSlashPoint, voters...); err != nil {
+	if process, hash, err := h.pmm.ProcessMsg(ctx, signerMsg); process {
+		if err != nil {
 			return &sdk.Result{}, err
 		}
+
+		data, err := h.doTxOutContractConfirm(ctx, signerMsg)
+		h.keeper.ProcessTxRecord(ctx, hash)
 
 		return &sdk.Result{Data: data}, err
 	}
