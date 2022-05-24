@@ -517,7 +517,7 @@ func (k *DefaultKeeper) GetIncomingValidatorUpdates(ctx sdk.Context) abci.Valida
 }
 
 func (k *DefaultKeeper) GetValidatorUpdateIndex(ctx sdk.Context) int {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixValidatorUpdate)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixValidatorUpdateIndex)
 	return increaseValidatorUpdateIndex(store)
 }
 

@@ -39,7 +39,8 @@ var (
 	prefixSlash                  = []byte{0x14}
 	prefixNodeBalance            = []byte{0x15}
 	prefixValidatorUpdate        = []byte{0x16}
-	prefixDheartIPAddress        = []byte{0x17}
+	prefixValidatorUpdateIndex   = []byte{0x17}
+	prefixDheartIPAddress        = []byte{0x18}
 )
 
 func getKeygenKey(keyType string, index int) []byte {

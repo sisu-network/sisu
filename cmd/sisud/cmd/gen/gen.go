@@ -348,7 +348,7 @@ func collectGenFiles(
 		nodeDirName := fmt.Sprintf("%s%d", nodeDirPrefix, i)
 		nodeDir := filepath.Join(outputDir, nodeDirName, nodeDaemonHome)
 		nodeConfig.Moniker = nodeDirName
-		nodeConfig.LogLevel = ""
+		nodeConfig.LogLevel = "info"
 
 		nodeConfig.SetRoot(nodeDir)
 
