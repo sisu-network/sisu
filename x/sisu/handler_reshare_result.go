@@ -44,7 +44,7 @@ func (h *HandlerReshareResult) DeliverMsg(ctx sdk.Context, msg *types.ReshareRes
 		return &sdk.Result{}, nil
 	}
 
-	if err := h.keeper.IncSlashToken(ctx, types.ObserveSlashPoint, msg.GetSender()); err != nil {
+	if err := h.keeper.IncSlashToken(ctx, getSlashToken(msg), msg.GetSender()); err != nil {
 		return &sdk.Result{}, nil
 	}
 
@@ -54,7 +54,7 @@ func (h *HandlerReshareResult) DeliverMsg(ctx sdk.Context, msg *types.ReshareRes
 	}
 
 	voters := h.keeper.GetVotersInAccAddress(ctx, rcHash)
-	if err := h.keeper.DecSlashToken(ctx, types.ObserveSlashPoint, voters...); err != nil {
+	if err := h.keeper.DecSlashToken(ctx, getSlashToken(msg), voters...); err != nil {
 		return &sdk.Result{}, err
 	}
 

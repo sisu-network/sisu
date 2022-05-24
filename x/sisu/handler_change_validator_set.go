@@ -29,7 +29,7 @@ func NewHandlerChangeValidatorSet(mc ManagerContainer) *HandlerChangeValidatorSe
 }
 
 func (h *HandlerChangeValidatorSet) DeliverMsg(ctx sdk.Context, msg *types.ChangeValidatorSetMsg) (*sdk.Result, error) {
-	shouldProcess, rcHash, err := h.pmm.ProcessMsg(ctx, msg)
+	shouldProcess, rcHash, err := h.pmm.PreProcessingMsg(ctx, msg)
 	if err != nil {
 		return &sdk.Result{}, err
 	}

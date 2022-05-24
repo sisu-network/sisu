@@ -31,20 +31,20 @@ func NewHandlerContractChangeOwnership(mc ManagerContainer) *HandlerContractChan
 }
 
 func (h *HandlerContractChangeOwnership) DeliverMsg(ctx sdk.Context, msg *types.ChangeOwnershipContractMsg) (*sdk.Result, error) {
-	if process, hash, err := h.pmm.ProcessMsg(ctx, msg); process {
-		if err != nil {
-			return &sdk.Result{}, err
-		}
-
-		data, err := newHandlerContractChangeOwnership(h.mc).doChangeOwner(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.NewOwner)
-		h.keeper.ProcessTxRecord(ctx, hash)
-
-		return &sdk.Result{Data: data}, err
-	} else {
-		log.Verbose("HandlerContractChangeOwnership: didn't not reach consensus or transaction has been processed")
+	process, hash, err := h.pmm.PreProcessingMsg(ctx, msg)
+	if err != nil {
+		return &sdk.Result{}, err
 	}
 
-	return &sdk.Result{}, nil
+	if !process {
+		log.Verbose("HandlerContractChangeOwnership: didn't not reach consensus or transaction has been processed")
+		return &sdk.Result{}, nil
+	}
+
+	data, err := newHandlerContractChangeOwnership(h.mc).doChangeOwner(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.NewOwner)
+	h.keeper.ProcessTxRecord(ctx, hash)
+
+	return &sdk.Result{Data: data}, err
 }
 
 type handlerContractChangeOwnership struct {

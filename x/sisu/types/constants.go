@@ -23,7 +23,3 @@ const (
 	MsgTypeTxOut         = "TxOut"
 	MsgTypeKeysignResult = "KeysignResult"
 )
-
-const (
-	ObserveSlashPoint = 1
-)

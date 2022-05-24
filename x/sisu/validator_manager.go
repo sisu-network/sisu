@@ -10,7 +10,7 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-const SlashPointThreshold = 100
+const SlashPointThreshold = 10000
 
 type ValidatorManager interface {
 	AddNode(ctx sdk.Context, node *types.Node)

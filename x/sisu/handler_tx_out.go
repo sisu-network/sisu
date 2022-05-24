@@ -36,36 +36,19 @@ func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
 }
 
 func (h *HandlerTxOut) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutWithSigner) (*sdk.Result, error) {
-	rcHash, _, err := keeper.GetTxRecordHash(signerMsg)
+	process, hash, err := h.pmm.PreProcessingMsg(ctx, signerMsg)
 	if err != nil {
 		return &sdk.Result{}, err
 	}
 
-	if h.keeper.IsTxRecordProcessed(ctx, rcHash) {
+	if !process {
 		return &sdk.Result{}, nil
 	}
 
-	if err := h.keeper.IncSlashToken(ctx, types.ObserveSlashPoint, signerMsg.GetSender()); err != nil {
-		return &sdk.Result{}, nil
-	}
+	data, err := h.doTxOut(ctx, signerMsg)
+	h.keeper.ProcessTxRecord(ctx, hash)
 
-	if process, hash, err := h.pmm.ProcessMsg(ctx, signerMsg); process {
-		if err != nil {
-			return &sdk.Result{}, err
-		}
-	
-		data, err := h.doTxOut(ctx, signerMsg)
-		h.keeper.ProcessTxRecord(ctx, hash)
-
-		voters := h.keeper.GetVotersInAccAddress(ctx, hash)
-		if err := h.keeper.DecSlashToken(ctx, types.ObserveSlashPoint, voters...); err != nil {
-			return &sdk.Result{}, err
-		}
-
-		return &sdk.Result{Data: data}, err
-	}
-
-	return &sdk.Result{}, nil
+	return &sdk.Result{Data: data}, err
 }
 
 // deliverTxOut executes a TxOut transaction after it's included in Sisu block. If this node is

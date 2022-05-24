@@ -30,7 +30,7 @@ func NewHandlerPauseContract(mc ManagerContainer) *HandlerPauseContract {
 }
 
 func (h *HandlerPauseContract) DeliverMsg(ctx sdk.Context, msg *types.PauseContractMsg) (*sdk.Result, error) {
-	if process, hash, err := h.pmm.ProcessMsg(ctx, msg); process {
+	if process, hash, err := h.pmm.PreProcessingMsg(ctx, msg); process {
 		if err != nil {
 			return &sdk.Result{}, err
 		}
@@ -65,17 +65,18 @@ func NewHandlerResumeContract(mc ManagerContainer) *HandlerResumeContract {
 }
 
 func (h *HandlerResumeContract) DeliverMsg(ctx sdk.Context, msg *types.ResumeContractMsg) (*sdk.Result, error) {
-	if process, hash, err := h.pmm.ProcessMsg(ctx, msg); process {
-		if err != nil {
-			return &sdk.Result{}, err
-		}
-
-		newHandlerPauseResumeContract(h.mc).doPauseOrResume(ctx, msg.Data.Chain, msg.Data.Hash, false)
-		h.keeper.ProcessTxRecord(ctx, hash)
-	} else {
-		log.Verbose("HandlerResumeContract: transaction has been processed")
+	process, hash, err := h.pmm.PreProcessingMsg(ctx, msg)
+	if err != nil {
+		return &sdk.Result{}, err
 	}
 
+	if !process {
+		log.Verbose("HandlerResumeContract: didn't not reach consensus or transaction has been processed")
+		return &sdk.Result{}, nil
+	}
+
+	newHandlerPauseResumeContract(h.mc).doPauseOrResume(ctx, msg.Data.Chain, msg.Data.Hash, false)
+	h.keeper.ProcessTxRecord(ctx, hash)
 	return &sdk.Result{}, nil
 }
 

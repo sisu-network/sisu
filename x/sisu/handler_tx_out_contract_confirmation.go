@@ -23,22 +23,19 @@ func NewHandlerTxOutContractConfirmation(mc ManagerContainer) *HandlerTxOutContr
 }
 
 func (h *HandlerTxOutContractConfirmation) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutContractConfirmWithSigner) (*sdk.Result, error) {
-	if err := h.keeper.IncSlashToken(ctx, types.ObserveSlashPoint, signerMsg.GetSender()); err != nil {
+	process, hash, err := h.pmm.PreProcessingMsg(ctx, signerMsg)
+	if err != nil {
+		return &sdk.Result{}, err
+	}
+
+	if !process {
 		return &sdk.Result{}, nil
 	}
 
-	if process, hash, err := h.pmm.ProcessMsg(ctx, signerMsg); process {
-		if err != nil {
-			return &sdk.Result{}, err
-		}
+	data, err := h.doTxOutContractConfirm(ctx, signerMsg)
+	h.keeper.ProcessTxRecord(ctx, hash)
 
-		data, err := h.doTxOutContractConfirm(ctx, signerMsg)
-		h.keeper.ProcessTxRecord(ctx, hash)
-
-		return &sdk.Result{Data: data}, err
-	}
-
-	return &sdk.Result{}, nil
+	return &sdk.Result{Data: data}, err
 }
 
 func (h *HandlerTxOutContractConfirmation) doTxOutContractConfirm(ctx sdk.Context, msgWithSigner *types.TxOutContractConfirmWithSigner) ([]byte, error) {

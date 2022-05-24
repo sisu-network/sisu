@@ -31,20 +31,20 @@ func NewHandlerContractSetLiquidityAddress(mc ManagerContainer) *HandlerContract
 }
 
 func (h *HandlerContractSetLiquidityAddress) DeliverMsg(ctx sdk.Context, msg *types.ChangeLiquidPoolAddressMsg) (*sdk.Result, error) {
-	if process, hash, err := h.pmm.ProcessMsg(ctx, msg); process {
-		if err != nil {
-			return &sdk.Result{}, err
-		}
-
-		data, err := newHandlerContractSetLiquidityAddress(h.mc).doSetLiquidityAddress(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.NewLiquidAddress)
-		h.keeper.ProcessTxRecord(ctx, hash)
-
-		return &sdk.Result{Data: data}, err
-	} else {
-		log.Verbose("HandlerContractSetLiquidityAddress: didn't not reach consensus or transaction has been processed")
+	process, hash, err := h.pmm.PreProcessingMsg(ctx, msg)
+	if err != nil {
+		return &sdk.Result{}, err
 	}
 
-	return &sdk.Result{}, nil
+	if !process {
+		log.Verbose("HandlerContractSetLiquidityAddress: didn't not reach consensus or transaction has been processed")
+		return &sdk.Result{}, nil
+	}
+
+	data, err := newHandlerContractSetLiquidityAddress(h.mc).doSetLiquidityAddress(ctx, msg.Data.Chain, msg.Data.Hash, msg.Data.NewLiquidAddress)
+	h.keeper.ProcessTxRecord(ctx, hash)
+
+	return &sdk.Result{Data: data}, err
 }
 
 type handlerContractSetLiquidityAddress struct {

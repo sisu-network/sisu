@@ -10,7 +10,7 @@ var _ PostedMessageManager = (*DefaultPostedMessageManager)(nil)
 
 //go:generate mockgen -source=./x/sisu/posted_message_manager.go -destination=./tests/mock/x/sisu/posted_message_manager.go -package=mock
 type PostedMessageManager interface {
-	ProcessMsg(ctx sdk.Context, msg sdk.Msg) (bool, []byte, error)
+	PreProcessingMsg(ctx sdk.Context, msg sdk.Msg) (bool, []byte, error)
 }
 
 type DefaultPostedMessageManager struct {
@@ -28,7 +28,7 @@ func NewPostedMessageManager(keeper keeper.Keeper, valManager ValidatorManager) 
 // ProcessMsg returns true if this message should be processed
 // If this message is processed before, do nothing
 // else if this message reached consensus, payback the slash tokens to voters
-func (m *DefaultPostedMessageManager) ProcessMsg(ctx sdk.Context, msg sdk.Msg) (bool, []byte, error) {
+func (m *DefaultPostedMessageManager) PreProcessingMsg(ctx sdk.Context, msg sdk.Msg) (bool, []byte, error) {
 	hash, signer, err := keeper.GetTxRecordHash(msg)
 	if err != nil {
 		log.Error("failed to get tx hash, err = ", err)
@@ -56,7 +56,7 @@ func (m *DefaultPostedMessageManager) ProcessMsg(ctx sdk.Context, msg sdk.Msg) (
 			continue
 		}
 
-		log.Debugf("AFTER INC: addr %s with slash point = %s", v.String(), b)
+		log.Debugf("AFTER INC: addr %s with slash point = %d", v.String(), b)
 	}
 
 	m.keeper.SaveTxRecord(ctx, hash, signer)

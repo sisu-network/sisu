@@ -38,7 +38,7 @@ func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, signerMsg *types.TxInWithSigne
 		return &sdk.Result{}, nil
 	}
 
-	if process, hash, err := h.pmm.ProcessMsg(ctx, signerMsg); process {
+	if process, hash, err := h.pmm.PreProcessingMsg(ctx, signerMsg); process {
 		if err != nil {
 			return &sdk.Result{}, err
 		}

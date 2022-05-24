@@ -20,7 +20,7 @@ func NewHandlerContract(mc ManagerContainer) *HandlerContract {
 }
 
 func (h *HandlerContract) DeliverMsg(ctx sdk.Context, signerMsg *types.ContractsWithSigner) (*sdk.Result, error) {
-	if process, hash, err := h.pmm.ProcessMsg(ctx, signerMsg); process {
+	if process, hash, err := h.pmm.PreProcessingMsg(ctx, signerMsg); process {
 		if err != nil {
 			return &sdk.Result{}, err
 		}

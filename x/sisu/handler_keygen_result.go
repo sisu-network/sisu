@@ -35,26 +35,18 @@ func NewHandlerKeygenResult(mc ManagerContainer) *HandlerKeygenResult {
 }
 
 func (h *HandlerKeygenResult) DeliverMsg(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) (*sdk.Result, error) {
-	rcHash, _, err := keeper.GetTxRecordHash(signerMsg)
+	process, hash, err := h.pmm.PreProcessingMsg(ctx, signerMsg)
 	if err != nil {
 		return &sdk.Result{}, err
 	}
 
-	if h.keeper.IsTxRecordProcessed(ctx, rcHash) {
-		return &sdk.Result{}, err
+	if !process {
+		return &sdk.Result{}, nil
 	}
 
-	if process, hash, err := h.pmm.ProcessMsg(ctx, signerMsg); process {
-		if err != nil {
-			return &sdk.Result{}, err
-		}
-
-		data, err := h.doKeygenResult(ctx, signerMsg)
-		h.keeper.ProcessTxRecord(ctx, hash)
-		return &sdk.Result{Data: data}, err
-	}
-
-	return &sdk.Result{}, nil
+	data, err := h.doKeygenResult(ctx, signerMsg)
+	h.keeper.ProcessTxRecord(ctx, hash)
+	return &sdk.Result{Data: data}, err
 }
 
 func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) ([]byte, error) {
