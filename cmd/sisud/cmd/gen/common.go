@@ -70,7 +70,7 @@ log_local = {{ .LogDNA.LogLocal }}
   block_time = {{ $chain.BlockTime }}
   adjust_time = {{ $chain.AdjustTime }}
   starting_block = 0
-  rpc_url = "{{ $chain.RpcUrl }}"{{ end }}
+  rpcs = [{{ range $j, $rpc := $chain.Rpcs }} "{{ $rpc }}" {{end}}]{{ end }}
 `
 
 	tmpl := template.New("eyesToml")

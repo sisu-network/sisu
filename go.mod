@@ -36,7 +36,7 @@ require (
 	github.com/pseudomuto/protokit v0.2.1 // indirect
 	github.com/regen-network/cosmos-proto v0.3.1 // indirect
 	github.com/rjeczalik/notify v0.9.2 // indirect
-	github.com/sisu-network/deyes v0.1.8-0.20220525063438-0e864bbab5d7
+	github.com/sisu-network/deyes v0.1.8-0.20220525071914-26cf7cf77674
 	github.com/sisu-network/dheart v0.1.6
 	github.com/sisu-network/lib v0.0.1-alpha9.0.20220515002326-586a33045ac5
 	github.com/spf13/afero v1.6.0 // indirect
