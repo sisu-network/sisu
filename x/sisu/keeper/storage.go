@@ -12,7 +12,6 @@ import (
 // go:generate mockgen -source x/sisu/keeper/storage.go -destination=tests/mock/tss/storage.go -package=mock
 type Storage interface {
 	// TxOutSig
-	// TODO: Add unconfirmed tx store
 	SaveTxOutSig(msg *types.TxOutSig)
 	GetTxOutSig(outChain, hashWithSig string) *types.TxOutSig
 }

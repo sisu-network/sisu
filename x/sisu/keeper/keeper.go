@@ -58,7 +58,6 @@ type Keeper interface {
 	GetTxOut(ctx sdk.Context, outChain, hash string) *types.TxOut
 
 	// TxOutSig
-	// TODO: Add unconfirmed tx store
 	SaveTxOutSig(ctx sdk.Context, msg *types.TxOutSig)
 	GetTxOutSig(ctx sdk.Context, outChain, hashWithSig string) *types.TxOutSig
 

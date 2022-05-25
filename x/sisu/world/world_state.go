@@ -205,8 +205,7 @@ func (ws *DefaultWorldState) GetGasCostInToken(tokenId, chainId string) (int64, 
 		return -1, err
 	}
 
-	// TODO: correct gasUnit here
-	gasUnit := big.NewInt(60_000) // Estimated cost for swapping.
+	gasUnit := big.NewInt(80_000) // Estimated cost for swapping is 60k. We add some redundancy here.
 	tokenPrice, err := ws.GetTokenPrice(tokenId)
 	if err != nil {
 		log.Error(err)

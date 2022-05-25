@@ -478,7 +478,6 @@ func (p *Processor) confirmTx(ctx sdk.Context, tx *eyesTypes.Tx, chain string, b
 
 	log.Info("confirming tx: chain, hash, type = ", chain, " ", tx.Hash, " ", txOut.TxType)
 
-	// TODO: Verify that the transaction is successful and does contain some event by checking transaction receipt.
 	p.txTracker.RemoveTransaction(chain, txOut.OutHash)
 
 	contractAddress := ""
