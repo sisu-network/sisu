@@ -349,12 +349,12 @@ func (g *localDockerGenerator) generateEyesToml(index int, dir string) {
 	deyesConfig := DeyesConfiguration{
 		Chains: []econfig.Chain{
 			{
-				Chain:  "ganache1",
-				RpcUrl: "http://ganache1:7545",
+				Chain: "ganache1",
+				Rpcs:  []string{"http://ganache1:7545"},
 			},
 			{
-				Chain:  "ganache2",
-				RpcUrl: "http://ganache2:7545",
+				Chain: "ganache2",
+				Rpcs:  []string{"http://ganache1:8545"},
 			},
 		},
 
