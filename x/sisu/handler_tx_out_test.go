@@ -10,18 +10,15 @@ import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	htypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/sisu/common"
-	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
 
 func mockForHandlerTxOut() (sdk.Context, ManagerContainer) {
+	ctx := testContext()
+	k := keeperTestGenesis(ctx)
 	txTracker := &MockTxTracker{}
-	k, ctx := keeper.GetTestKeeperAndContext()
-	k.SaveParams(ctx, &types.Params{
-		MajorityThreshold: 1,
-	})
 	globalData := &common.MockGlobalData{}
 	pmm := NewPostedMessageManager(k)
 
