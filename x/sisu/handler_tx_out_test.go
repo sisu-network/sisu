@@ -6,38 +6,39 @@ import (
 
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/ethereum/go-ethereum/common"
+	ecommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/golang/mock/gomock"
-	mockcommon "github.com/sisu-network/sisu/tests/mock/common"
-	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
-	mock "github.com/sisu-network/sisu/tests/mock/x/sisu"
-	mockkeeper "github.com/sisu-network/sisu/tests/mock/x/sisu/keeper"
-	mocktssclients "github.com/sisu-network/sisu/tests/mock/x/sisu/tssclients"
+	htypes "github.com/sisu-network/dheart/types"
+	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu"
+	"github.com/sisu-network/sisu/x/sisu/keeper"
+	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
 
+func mockForHandlerTxOut() (sdk.Context, sisu.ManagerContainer) {
+	txTracker := &sisu.MockTxTracker{}
+	k, ctx := keeper.GetTestKeeperAndContext()
+	k.SaveParams(ctx, &types.Params{
+		MajorityThreshold: 1,
+	})
+	globalData := &common.MockGlobalData{}
+	pmm := sisu.NewPostedMessageManager(k)
+
+	partyManager := &sisu.MockPartyManager{}
+	partyManager.GetActivePartyPubkeysFunc = func() []ctypes.PubKey {
+		return []ctypes.PubKey{}
+	}
+
+	dheartClient := &tssclients.MockDheartClient{}
+
+	mc := sisu.MockManagerContainer(k, pmm, globalData, txTracker, partyManager, dheartClient)
+	return ctx, mc
+}
+
 func TestHandlerTxOut_TransferOut(t *testing.T) {
 	t.Parallel()
-
-	ctrl := gomock.NewController(t)
-	t.Cleanup(func() {
-		ctrl.Finish()
-	})
-
-	mockPmm := mock.NewMockPostedMessageManager(ctrl)
-	mockPmm.EXPECT().ShouldProcessMsg(gomock.Any(), gomock.Any()).Return(true, []byte("")).Times(1)
-
-	mockPartyManager := mocktss.NewMockPartyManager(ctrl)
-	mockPartyManager.EXPECT().GetActivePartyPubkeys().Return([]ctypes.PubKey{}).Times(1)
-
-	mockDheartClient := mocktssclients.NewMockDheartClient(ctrl)
-	mockDheartClient.EXPECT().KeySign(gomock.Any(), gomock.Any()).Return(nil).Times(1)
-
-	mockTracker := mock.NewMockTxTracker(ctrl)
-	mockTracker.EXPECT().UpdateStatus(gomock.Any(), gomock.Any(), gomock.Any()).Times(1)
 
 	amount := big.NewInt(100)
 	gasLimit := uint64(100)
@@ -45,7 +46,7 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 	ethTransaction := ethTypes.NewTx(&ethTypes.LegacyTx{
 		GasPrice: gasPrice,
 		Gas:      gasLimit,
-		To:       &common.Address{},
+		To:       &ecommon.Address{},
 		Value:    amount,
 	})
 	binary, err := ethTransaction.MarshalBinary()
@@ -59,16 +60,23 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 		},
 	}
 
-	mockKeeper := mockkeeper.NewMockKeeper(ctrl)
-	mockKeeper.EXPECT().SaveTxOut(gomock.Any(), gomock.Any()).Times(1)
-	mockKeeper.EXPECT().ProcessTxRecord(gomock.Any(), gomock.Any()).Times(1)
-
-	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
-	mockGlobalData.EXPECT().IsCatchingUp().Return(false).Times(1)
-
-	mc := sisu.MockManagerContainer(mockPmm, mockGlobalData, mockDheartClient, mockPartyManager, mockKeeper, mockTracker)
+	keysignCount := 0
+	trackerCount := 0
+	ctx, mc := mockForHandlerTxOut()
+	dheartClient := mc.DheartClient().(*tssclients.MockDheartClient)
+	dheartClient.KeySignFunc = func(req *htypes.KeysignRequest, pubKeys []ctypes.PubKey) error {
+		keysignCount = 1
+		return nil
+	}
+	txTracker := mc.TxTracker().(*sisu.MockTxTracker)
+	txTracker.UpdateStatusFunc = func(chain, hash string, status types.TxStatus) {
+		require.Equal(t, types.TxStatusDelivered, status)
+		trackerCount = 1
+	}
 
 	handler := sisu.NewHandlerTxOut(mc)
-	_, err = handler.DeliverMsg(sdk.Context{}, txOutWithSigner)
+	_, err = handler.DeliverMsg(ctx, txOutWithSigner)
 	require.NoError(t, err)
+	require.Equal(t, 1, keysignCount)
+	require.Equal(t, 1, trackerCount)
 }
