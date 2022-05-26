@@ -268,9 +268,7 @@ func New(
 		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
 		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, app.tssKeeper, cfg.Tss), worldState, txTracker, app.tssKeeper)
 
-	tssProcessor := tss.NewProcessor(app.tssKeeper, privateDb, tssConfig,
-		app.appKeys, app.txSubmitter, app.globalData, dheartClient, deyesClient, worldState,
-		txTracker, mc)
+	tssProcessor := tss.NewProcessor(privateDb, mc)
 	app.apiHandler.SetAppLogicListener(tssProcessor)
 
 	valsMgr := tss.NewValidatorManager(app.tssKeeper)

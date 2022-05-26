@@ -64,31 +64,22 @@ type Processor struct {
 }
 
 func NewProcessor(
-	k keeper.Keeper,
 	privateDb keeper.Storage,
-	config config.TssConfig,
-	appKeys common.AppKeys,
-	txSubmit common.TxSubmit,
-	globalData common.GlobalData,
-	dheartClient tssclients.DheartClient,
-	deyesClient tssclients.DeyesClient,
-	worldState world.WorldState,
-	txTracker TxTracker,
 	mc ManagerContainer,
 ) *Processor {
 	p := &Processor{
-		keeper:     k,
+		keeper:     mc.Keeper(),
 		privateDb:  privateDb,
-		appKeys:    appKeys,
-		config:     config,
-		txSubmit:   txSubmit,
-		globalData: globalData,
+		appKeys:    mc.AppKeys(),
+		config:     mc.Config(),
+		txSubmit:   mc.TxSubmit(),
+		globalData: mc.GlobalData(),
 		// And array that stores block numbers where we should do final vote count.
 		keygenBlockPairs: make([]BlockSymbolPair, 0),
-		dheartClient:     dheartClient,
-		deyesClient:      deyesClient,
-		worldState:       worldState,
-		txTracker:        txTracker,
+		dheartClient:     mc.DheartClient(),
+		deyesClient:      mc.DeyesClient(),
+		worldState:       mc.WorldState(),
+		txTracker:        mc.TxTracker(),
 		mc:               mc,
 	}
 

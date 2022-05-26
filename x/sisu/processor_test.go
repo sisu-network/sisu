@@ -8,7 +8,6 @@ import (
 
 	eyesTypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/sisu/common"
-	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
@@ -22,6 +21,7 @@ func mockForProcessorTest() (sdk.Context, ManagerContainer) {
 	globalData := &common.MockGlobalData{}
 	pmm := NewPostedMessageManager(k)
 	txSubmit := &common.MockTxSubmit{}
+	txTracker := &MockTxTracker{}
 
 	partyManager := &MockPartyManager{}
 	partyManager.GetActivePartyPubkeysFunc = func() []ctypes.PubKey {
@@ -31,7 +31,7 @@ func mockForProcessorTest() (sdk.Context, ManagerContainer) {
 	dheartClient := &tssclients.MockDheartClient{}
 	appKeys := common.NewMockAppKeys()
 
-	mc := MockManagerContainer(k, pmm, globalData, partyManager, dheartClient, txSubmit, appKeys, ctx)
+	mc := MockManagerContainer(k, pmm, globalData, partyManager, dheartClient, txSubmit, appKeys, ctx, txTracker)
 	return ctx, mc
 }
 
@@ -42,7 +42,7 @@ func TestProcessor_OnTxIns(t *testing.T) {
 		t.Parallel()
 
 		_, mc := mockForProcessorTest()
-		processor := NewProcessor(mc.Keeper(), nil, config.TssConfig{}, nil, nil, nil, nil, nil, nil, nil, mc)
+		processor := NewProcessor(nil, mc)
 
 		require.NoError(t, processor.OnTxIns(&eyesTypes.Txs{}))
 	})
@@ -73,12 +73,37 @@ func TestProcessor_OnTxIns(t *testing.T) {
 			}},
 		}
 
-		// Init processor with mocks
-		processor := NewProcessor(k, nil, config.TssConfig{}, mc.AppKeys(), mc.TxSubmit(), nil, nil, nil, nil, nil, mc)
+		submitCount := 0
+		txSubmit := mc.TxSubmit().(*common.MockTxSubmit)
+		txSubmit.SubmitMessageAsyncFunc = func(msg sdk.Msg) error {
+			submitCount = 1
+			return nil
+		}
 
+		processor := NewProcessor(nil, mc)
 		err := processor.OnTxIns(txs)
-		// <-done
 
 		require.NoError(t, err)
+		require.Equal(t, 1, submitCount)
+	})
+
+	t.Run("failed_transaction", func(t *testing.T) {
+		txs := &eyesTypes.Txs{
+			Arr: []*eyesTypes.Tx{{
+				Success: false,
+			}},
+		}
+
+		trackerCount := 0
+		_, mc := mockForProcessorTest()
+		txTracker := mc.TxTracker().(*MockTxTracker)
+		txTracker.OnTxFailedFunc = func(chain, hash string, status types.TxStatus) {
+			trackerCount = 1
+		}
+
+		processor := NewProcessor(nil, mc)
+		err := processor.OnTxIns(txs)
+		require.NoError(t, err)
+		require.Equal(t, 1, trackerCount)
 	})
 }
