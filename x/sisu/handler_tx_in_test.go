@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func mockForHandlerTxIn() ManagerContainer {
+func mockForHandlerTxIn() (sdk.Context, ManagerContainer) {
 	txSubmit := &common.MockTxSubmit{}
 	txTracker := &MockTxTracker{}
 
@@ -32,7 +32,7 @@ func mockForHandlerTxIn() ManagerContainer {
 
 	mc := MockManagerContainer(txSubmit, txTracker, txOutputProducer, ctx, k, pmm, globalData)
 
-	return mc
+	return ctx, mc
 }
 
 func TestHandlerTxIn_HappyCase(t *testing.T) {
@@ -41,7 +41,7 @@ func TestHandlerTxIn_HappyCase(t *testing.T) {
 		t.Parallel()
 
 		submitCount := 0
-		mc := mockForHandlerTxIn()
+		ctx, mc := mockForHandlerTxIn()
 		txSubmit := mc.TxSubmit().(*common.MockTxSubmit)
 		txSubmit.SubmitMessageAsyncFunc = func(msg sdk.Msg) error {
 			submitCount = 1
@@ -52,7 +52,7 @@ func TestHandlerTxIn_HappyCase(t *testing.T) {
 
 		msg := types.NewTxInWithSigner("signer", "ganache1", "", 0, []byte{})
 
-		_, err := handler.DeliverMsg(mc.GetReadOnlyContext(), msg)
+		_, err := handler.DeliverMsg(ctx, msg)
 		require.Nil(t, err)
 
 		require.Equal(t, 1, submitCount)
@@ -62,7 +62,7 @@ func TestHandlerTxIn_HappyCase(t *testing.T) {
 		t.Parallel()
 
 		submitCount := 0
-		mc := mockForHandlerTxIn()
+		ctx, mc := mockForHandlerTxIn()
 		globalData := mc.GlobalData().(*common.MockGlobalData)
 		globalData.IsCatchingUpFunc = func() bool {
 			return true
@@ -78,7 +78,7 @@ func TestHandlerTxIn_HappyCase(t *testing.T) {
 
 		msg := types.NewTxInWithSigner("signer", "ganache1", "", 0, []byte{})
 
-		_, err := handler.DeliverMsg(mc.GetReadOnlyContext(), msg)
+		_, err := handler.DeliverMsg(ctx, msg)
 		require.Nil(t, err)
 
 		require.Equal(t, 0, submitCount)

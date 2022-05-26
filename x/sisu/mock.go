@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
@@ -14,6 +15,7 @@ func checkMock() {
 	var _ TxOutputProducer = new(MockTxOutputProducer)
 	var _ TxTracker = new(MockTxTracker)
 	var _ PostedMessageManager = new(MockPostedMessageManager)
+	var _ PartyManager = new(MockPartyManager)
 }
 
 ///// ManagerContainer
@@ -164,4 +166,18 @@ func (m *MockPostedMessageManager) ShouldProcessMsg(ctx sdk.Context, msg sdk.Msg
 	}
 
 	return false, nil
+}
+
+///// PartyManager
+
+type MockPartyManager struct {
+	GetActivePartyPubkeysFunc func() []ctypes.PubKey
+}
+
+func (m *MockPartyManager) GetActivePartyPubkeys() []ctypes.PubKey {
+	if m.GetActivePartyPubkeysFunc != nil {
+		return m.GetActivePartyPubkeysFunc()
+	}
+
+	return nil
 }
