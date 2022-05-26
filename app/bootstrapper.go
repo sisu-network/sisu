@@ -19,7 +19,7 @@ const (
 type Bootstrapper interface {
 	BootstrapInternalNetwork(
 		tssConfig config.TssConfig,
-		apiHandler *tss.ApiHandler,
+		apiHandler *tss.ApiEndPoint,
 		encryptedAes []byte,
 		tendermintKeyType string,
 	) (tssclients.DheartClient, tssclients.DeyesClient)
@@ -36,7 +36,7 @@ func NewBootstrapper() Bootstrapper {
 
 func (b *DefaultBootstrapper) BootstrapInternalNetwork(
 	tssConfig config.TssConfig,
-	apiHandler *tss.ApiHandler,
+	apiHandler *tss.ApiEndPoint,
 	encryptedAes []byte,
 	tendermintKeyType string,
 ) (tssclients.DheartClient, tssclients.DeyesClient) {

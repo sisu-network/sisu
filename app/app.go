@@ -125,7 +125,7 @@ type App struct {
 	internalApiServer server.Server
 	tssProcessor      *tss.Processor
 	txDecoder         sdk.TxDecoder
-	apiHandler        *tss.ApiHandler
+	apiHandler        *tss.ApiEndPoint
 	externalHandler   *rest.ExternalHandler
 
 	///////////////////////////////////////////////////////////////

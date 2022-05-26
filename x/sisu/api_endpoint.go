@@ -23,55 +23,55 @@ type AppLogicListener interface {
 }
 
 // TODO: Rename this to API endPoint.
-type ApiHandler struct {
+type ApiEndPoint struct {
 	lock                  *sync.RWMutex
 	networkHealthListener NetworkHealthListener
 	appLogicListener      AppLogicListener
 }
 
-func NewApi(appLogicHandler AppLogicListener) *ApiHandler {
-	return &ApiHandler{
+func NewApi(appLogicHandler AppLogicListener) *ApiEndPoint {
+	return &ApiEndPoint{
 		appLogicListener: appLogicHandler,
 		lock:             &sync.RWMutex{},
 	}
 }
 
-func (a *ApiHandler) getAppLogicListener() AppLogicListener {
+func (a *ApiEndPoint) getAppLogicListener() AppLogicListener {
 	a.lock.RLock()
 	defer a.lock.RUnlock()
 
 	return a.appLogicListener
 }
 
-func (a *ApiHandler) SetAppLogicListener(handler AppLogicListener) {
+func (a *ApiEndPoint) SetAppLogicListener(handler AppLogicListener) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
 	a.appLogicListener = handler
 }
 
-func (a *ApiHandler) getNetworkHealthListener() NetworkHealthListener {
+func (a *ApiEndPoint) getNetworkHealthListener() NetworkHealthListener {
 	a.lock.RLock()
 	defer a.lock.RUnlock()
 
 	return a.networkHealthListener
 }
 
-func (a *ApiHandler) SetNetworkHealthListener(listener NetworkHealthListener) {
+func (a *ApiEndPoint) SetNetworkHealthListener(listener NetworkHealthListener) {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 
 	a.networkHealthListener = listener
 }
 
-func (a *ApiHandler) Version() string {
+func (a *ApiEndPoint) Version() string {
 	return "1.0"
 }
 
 ///// Network health
 
 // Empty function for checking health only.
-func (a *ApiHandler) Ping(source string) error {
+func (a *ApiEndPoint) Ping(source string) error {
 	listener := a.getNetworkHealthListener()
 	if listener != nil {
 		listener.OnPing(source)
@@ -82,7 +82,7 @@ func (a *ApiHandler) Ping(source string) error {
 
 ///// Application logic
 
-func (a *ApiHandler) KeygenResult(result htypes.KeygenResult) bool {
+func (a *ApiEndPoint) KeygenResult(result htypes.KeygenResult) bool {
 	log.Info("There is a Keygen Result")
 
 	listener := a.getAppLogicListener()
@@ -94,7 +94,7 @@ func (a *ApiHandler) KeygenResult(result htypes.KeygenResult) bool {
 }
 
 // This is a API endpoint to receive transactions with To address we are interested in.
-func (a *ApiHandler) PostObservedTxs(txs *etypes.Txs) {
+func (a *ApiEndPoint) PostObservedTxs(txs *etypes.Txs) {
 	log.Debug("There is new list of transactions from deyes from chain ", txs.Chain)
 
 	// There is a new transaction that we are interested in.
@@ -104,7 +104,7 @@ func (a *ApiHandler) PostObservedTxs(txs *etypes.Txs) {
 	}
 }
 
-func (a *ApiHandler) KeysignResult(result *htypes.KeysignResult) {
+func (a *ApiEndPoint) KeysignResult(result *htypes.KeysignResult) {
 	log.Info("There is keysign result")
 	handler := a.getAppLogicListener()
 	if handler != nil {
@@ -112,14 +112,14 @@ func (a *ApiHandler) KeysignResult(result *htypes.KeysignResult) {
 	}
 }
 
-func (a *ApiHandler) PostDeploymentResult(result *etypes.DispatchedTxResult) {
+func (a *ApiEndPoint) PostDeploymentResult(result *etypes.DispatchedTxResult) {
 	listener := a.getAppLogicListener()
 	if listener != nil {
 		go listener.OnTxDeploymentResult(result)
 	}
 }
 
-func (a *ApiHandler) UpdateTokenPrices(prices []*etypes.TokenPrice) {
+func (a *ApiEndPoint) UpdateTokenPrices(prices []*etypes.TokenPrice) {
 	log.Info("Received token prices update")
 
 	listener := a.getAppLogicListener()
