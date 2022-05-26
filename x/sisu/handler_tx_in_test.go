@@ -5,7 +5,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/common"
-	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
@@ -22,7 +21,8 @@ func mockForHandlerTxIn() (sdk.Context, ManagerContainer) {
 		return []*types.TxOutWithSigner{txout}
 	}
 
-	k, ctx := keeper.GetTestKeeperAndContext()
+	ctx := testContext()
+	k := keeperTestGenesis(ctx)
 	pmm := NewPostedMessageManager(k)
 	k.SaveParams(ctx, &types.Params{
 		MajorityThreshold: 1,

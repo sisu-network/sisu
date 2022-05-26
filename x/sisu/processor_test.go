@@ -9,14 +9,14 @@ import (
 	eyesTypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/utils"
-	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
 
 func mockForProcessorTest() (sdk.Context, ManagerContainer) {
-	k, ctx := keeper.GetTestKeeperAndContext()
+	ctx := testContext()
+	k := keeperTestGenesis(ctx)
 
 	globalData := &common.MockGlobalData{}
 	pmm := NewPostedMessageManager(k)
