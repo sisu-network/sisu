@@ -36,7 +36,6 @@ var (
 
 // This is an interface of a struct that stores all data of the world data. Examples of world state
 // data are token price, nonce of addresses, network gas fee, etc.
-// go:generate mockgen -source x/sisu/world/world_state.go -destination=tests/mock/x/sisu/world_state.go -package=mock
 type WorldState interface {
 	IsDataInitialized() bool
 	InitData(ctx sdk.Context)

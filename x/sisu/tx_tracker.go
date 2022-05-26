@@ -37,7 +37,6 @@ func newTxObject(txOut *types.TxOut, txIn *types.TxIn) *txObject {
 	}
 }
 
-//go:generate mockgen -source=./x/sisu/transaction_tracker.go -destination=./tests/mock/x/sisu/transaction_tracker.go -package=mock
 // TxTracker is used to track failed transaction. This includes both TxIn and TxOut. The tracked txs
 // are in-memory only.
 type TxTracker interface {

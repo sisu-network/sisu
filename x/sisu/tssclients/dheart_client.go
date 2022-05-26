@@ -9,8 +9,6 @@ import (
 	"github.com/sisu-network/lib/log"
 )
 
-//go:generate mockgen -source=x/sisu/tssclients/dheart_client.go -destination=tests/mock/x/sisu/tssclients/dheart_client.go -package=mock
-
 type DheartClient interface {
 	SetPrivKey(encodedKey string, keyType string) error
 	Ping(string) error

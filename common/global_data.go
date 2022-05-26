@@ -21,7 +21,6 @@ import (
 )
 
 // TODO: Refactor this interface.
-// go:generate mockgen -source common/global_data.go -destination=tests/mock/common/global_data.go -package=mock
 type GlobalData interface {
 	Init()
 	UpdateCatchingUp() bool

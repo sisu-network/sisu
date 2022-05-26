@@ -9,7 +9,6 @@ import (
 	dbm "github.com/tendermint/tm-db"
 )
 
-// go:generate mockgen -source x/sisu/keeper/storage.go -destination=tests/mock/tss/storage.go -package=mock
 type Storage interface {
 	// TxOutSig
 	SaveTxOutSig(msg *types.TxOutSig)

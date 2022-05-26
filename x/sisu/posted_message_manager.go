@@ -6,7 +6,6 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 )
 
-//go:generate mockgen -source=./x/sisu/posted_message_manager.go -destination=./tests/mock/x/sisu/posted_message_manager.go -package=mock
 type PostedMessageManager interface {
 	ShouldProcessMsg(ctx sdk.Context, msg sdk.Msg) (bool, []byte)
 }
