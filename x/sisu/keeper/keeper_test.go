@@ -3,43 +3,15 @@ package keeper
 import (
 	"testing"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/types"
-
-	"github.com/cosmos/cosmos-sdk/store"
-	"github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-	dbm "github.com/tendermint/tm-db"
 
 	"github.com/stretchr/testify/require"
 )
 
-func defaultContext(key sdk.StoreKey, tkey sdk.StoreKey) sdk.Context {
-	db := dbm.NewMemDB()
-	cms := store.NewCommitMultiStore(db)
-	cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, db)
-	cms.MountStoreWithDB(tkey, sdk.StoreTypeTransient, db)
-	err := cms.LoadLatestVersion()
-	if err != nil {
-		panic(err)
-	}
-	ctx := sdk.NewContext(cms, tmproto.Header{}, false, log.NewNopLogger())
-	return ctx
-}
-
-func getTestKeeperAndContext() (*DefaultKeeper, sdk.Context) {
-	storeKey := sdk.NewKVStoreKey("store_key")
-	transientKey := sdk.NewTransientStoreKey("transient_key")
-	ctx := defaultContext(storeKey, transientKey)
-	keeper := NewKeeper(storeKey).(*DefaultKeeper)
-
-	return keeper, ctx
-}
-
 func TestKeeper_SaveAndGetObservedTx(t *testing.T) {
 	t.Parallel()
-	keeper, ctx := getTestKeeperAndContext()
+	keeper, ctx := GetTestKeeperAndContext()
 
 	observedTx := &types.TxIn{
 		Chain:       "eth",
@@ -75,7 +47,7 @@ func TestKeeper_SaveAndGetObservedTx(t *testing.T) {
 
 func TestKeeper_SaveAndGetTxOut(t *testing.T) {
 	t.Parallel()
-	keeper, ctx := getTestKeeperAndContext()
+	keeper, ctx := GetTestKeeperAndContext()
 
 	txOutWithSigner := &types.TxOutWithSigner{
 		Signer: "signer",

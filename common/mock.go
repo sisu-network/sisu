@@ -3,6 +3,7 @@ package common
 import (
 	"encoding/hex"
 
+	"github.com/cosmos/cosmos-sdk/client/rpc"
 	keyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/utils"
@@ -54,4 +55,81 @@ func (ak *MockAppKeys) GetEncryptedPrivKey() ([]byte, error) {
 
 func (ak *MockAppKeys) GetAesEncrypted(msg []byte) ([]byte, error) {
 	return utils.AESDEncrypt(msg, ak.privKey.Bytes())
+}
+
+///// TxSubmit
+type MockTxSubmit struct {
+	SubmitMessageAsyncFunc func(msg sdk.Msg) error
+	SubmitMessageSyncFunc  func(msg sdk.Msg) error
+}
+
+func (m *MockTxSubmit) SubmitMessageAsync(msg sdk.Msg) error {
+	if m.SubmitMessageAsyncFunc != nil {
+		return m.SubmitMessageAsyncFunc(msg)
+	}
+
+	return nil
+}
+
+func (m *MockTxSubmit) SubmitMessageSync(msg sdk.Msg) error {
+	if m.SubmitMessageSyncFunc != nil {
+		return m.SubmitMessageSyncFunc(msg)
+	}
+
+	return nil
+}
+
+///// GlobalData
+
+type MockGlobalData struct {
+	InitFunc                func()
+	UpdateCatchingUpFunc    func() bool
+	UpdateValidatorSetsFunc func()
+	IsCatchingUpFunc        func() bool
+	GetValidatorSetFunc     func() []rpc.ValidatorOutput
+	GetMyValidatorAddrFunc  func() string
+}
+
+func (m *MockGlobalData) Init() {
+	if m.InitFunc != nil {
+		m.InitFunc()
+	}
+}
+
+func (m *MockGlobalData) UpdateCatchingUp() bool {
+	if m.UpdateCatchingUpFunc != nil {
+		return m.UpdateCatchingUpFunc()
+	}
+
+	return false
+}
+
+func (m *MockGlobalData) UpdateValidatorSets() {
+	if m.UpdateValidatorSetsFunc != nil {
+		m.UpdateValidatorSetsFunc()
+	}
+}
+
+func (m *MockGlobalData) IsCatchingUp() bool {
+	if m.IsCatchingUpFunc != nil {
+		return m.IsCatchingUpFunc()
+	}
+
+	return false
+}
+
+func (m *MockGlobalData) GetValidatorSet() []rpc.ValidatorOutput {
+	if m.GetValidatorSetFunc != nil {
+		return m.GetValidatorSetFunc()
+	}
+
+	return nil
+}
+
+func (m *MockGlobalData) GetMyValidatorAddr() string {
+	if m.GetMyValidatorAddrFunc != nil {
+		return m.GetMyValidatorAddrFunc()
+	}
+
+	return ""
 }

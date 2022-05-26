@@ -312,11 +312,7 @@ func (p *Processor) OnKeysignResult(result *dhtypes.KeysignResult) {
 		return
 	}
 
-	ctx, err := p.mc.GetReadOnlyContext()
-	if err != nil {
-		log.Error("OnKeysignResult read context is not available, err = ", err)
-		return
-	}
+	ctx := p.mc.GetReadOnlyContext()
 
 	// Post the keysign result to cosmos chain.
 	request := result.Request
@@ -422,10 +418,7 @@ func (p *Processor) deploySignedTx(ctx sdk.Context, bz []byte, outChain string, 
 func (p *Processor) OnTxIns(txs *eyesTypes.Txs) error {
 	log.Verbose("There is a new list of txs from deyes, len =", len(txs.Arr))
 
-	ctx, err := p.mc.GetReadOnlyContext()
-	if err != nil {
-		return err
-	}
+	ctx := p.mc.GetReadOnlyContext()
 
 	// Create TxIn messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
