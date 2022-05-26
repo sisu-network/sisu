@@ -1,4 +1,4 @@
-package sisu_test
+package sisu
 
 import (
 	"testing"
@@ -7,29 +7,28 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/common"
-	"github.com/sisu-network/sisu/x/sisu"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
 
-func mockForHandlerKeygen() (sdk.Context, sisu.ManagerContainer) {
+func mockForHandlerKeygen() (sdk.Context, ManagerContainer) {
 	k, ctx := keeper.GetTestKeeperAndContext()
 	k.SaveParams(ctx, &types.Params{
 		MajorityThreshold: 1,
 	})
 	globalData := &common.MockGlobalData{}
-	pmm := sisu.NewPostedMessageManager(k)
+	pmm := NewPostedMessageManager(k)
 
-	partyManager := &sisu.MockPartyManager{}
+	partyManager := &MockPartyManager{}
 	partyManager.GetActivePartyPubkeysFunc = func() []ctypes.PubKey {
 		return []ctypes.PubKey{}
 	}
 
 	dheartClient := &tssclients.MockDheartClient{}
 
-	mc := sisu.MockManagerContainer(k, pmm, globalData, partyManager, dheartClient)
+	mc := MockManagerContainer(k, pmm, globalData, partyManager, dheartClient)
 
 	return ctx, mc
 }
@@ -54,7 +53,7 @@ func TestHandlerKeygen_normal(t *testing.T) {
 		},
 	}
 
-	handler := sisu.NewHandlerKeygen(mc)
+	handler := NewHandlerKeygen(mc)
 	_, err := handler.DeliverMsg(ctx, msg)
 
 	require.NoError(t, err)
@@ -85,7 +84,7 @@ func TestHandlerKeygen_CatchingUp(t *testing.T) {
 		},
 	}
 
-	handler := sisu.NewHandlerKeygen(mc)
+	handler := NewHandlerKeygen(mc)
 	_, err := handler.DeliverMsg(ctx, msg)
 
 	require.NoError(t, err)

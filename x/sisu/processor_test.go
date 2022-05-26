@@ -1,4 +1,4 @@
-package sisu_test
+package sisu
 
 import (
 	"testing"
@@ -10,21 +10,20 @@ import (
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
-	"github.com/sisu-network/sisu/x/sisu"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
 
-func mockForProcessorTest() (sdk.Context, sisu.ManagerContainer) {
+func mockForProcessorTest() (sdk.Context, ManagerContainer) {
 	k, ctx := keeper.GetTestKeeperAndContext()
 
 	globalData := &common.MockGlobalData{}
-	pmm := sisu.NewPostedMessageManager(k)
+	pmm := NewPostedMessageManager(k)
 	txSubmit := &common.MockTxSubmit{}
 
-	partyManager := &sisu.MockPartyManager{}
+	partyManager := &MockPartyManager{}
 	partyManager.GetActivePartyPubkeysFunc = func() []ctypes.PubKey {
 		return []ctypes.PubKey{}
 	}
@@ -32,7 +31,7 @@ func mockForProcessorTest() (sdk.Context, sisu.ManagerContainer) {
 	dheartClient := &tssclients.MockDheartClient{}
 	appKeys := common.NewMockAppKeys()
 
-	mc := sisu.MockManagerContainer(k, pmm, globalData, partyManager, dheartClient, txSubmit, appKeys, ctx)
+	mc := MockManagerContainer(k, pmm, globalData, partyManager, dheartClient, txSubmit, appKeys, ctx)
 	return ctx, mc
 }
 
@@ -43,7 +42,7 @@ func TestProcessor_OnTxIns(t *testing.T) {
 		t.Parallel()
 
 		_, mc := mockForProcessorTest()
-		processor := sisu.NewProcessor(mc.Keeper(), nil, config.TssConfig{}, nil, nil, nil, nil, nil, nil, nil, mc)
+		processor := NewProcessor(mc.Keeper(), nil, config.TssConfig{}, nil, nil, nil, nil, nil, nil, nil, mc)
 
 		require.NoError(t, processor.OnTxIns(&eyesTypes.Txs{}))
 	})
@@ -75,7 +74,7 @@ func TestProcessor_OnTxIns(t *testing.T) {
 		}
 
 		// Init processor with mocks
-		processor := sisu.NewProcessor(k, nil, config.TssConfig{}, mc.AppKeys(), mc.TxSubmit(), nil, nil, nil, nil, nil, mc)
+		processor := NewProcessor(k, nil, config.TssConfig{}, mc.AppKeys(), mc.TxSubmit(), nil, nil, nil, nil, nil, mc)
 
 		err := processor.OnTxIns(txs)
 		// <-done
