@@ -67,7 +67,7 @@ func NewProcessor(
 	k keeper.Keeper,
 	privateDb keeper.Storage,
 	config config.TssConfig,
-	appKeys *common.DefaultAppKeys,
+	appKeys common.AppKeys,
 	txSubmit common.TxSubmit,
 	globalData common.GlobalData,
 	dheartClient tssclients.DheartClient,

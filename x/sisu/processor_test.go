@@ -1,19 +1,40 @@
-package sisu
+package sisu_test
 
 import (
 	"testing"
 
+	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/golang/mock/gomock"
 	eyesTypes "github.com/sisu-network/deyes/types"
-	libchain "github.com/sisu-network/lib/chain"
-	mock "github.com/sisu-network/sisu/tests/mock/common"
-	mockkeeper "github.com/sisu-network/sisu/tests/mock/x/sisu/keeper"
+	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu"
+	"github.com/sisu-network/sisu/x/sisu/keeper"
+	"github.com/sisu-network/sisu/x/sisu/tssclients"
+	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
-	"github.com/tendermint/tendermint/crypto/ed25519"
 )
+
+func mockForProcessorTest() (sdk.Context, sisu.ManagerContainer) {
+	k, ctx := keeper.GetTestKeeperAndContext()
+
+	globalData := &common.MockGlobalData{}
+	pmm := sisu.NewPostedMessageManager(k)
+	txSubmit := &common.MockTxSubmit{}
+
+	partyManager := &sisu.MockPartyManager{}
+	partyManager.GetActivePartyPubkeysFunc = func() []ctypes.PubKey {
+		return []ctypes.PubKey{}
+	}
+
+	dheartClient := &tssclients.MockDheartClient{}
+	appKeys := common.NewMockAppKeys()
+
+	mc := sisu.MockManagerContainer(k, pmm, globalData, partyManager, dheartClient, txSubmit, appKeys, ctx)
+	return ctx, mc
+}
 
 func TestProcessor_OnTxIns(t *testing.T) {
 	t.Parallel()
@@ -21,36 +42,25 @@ func TestProcessor_OnTxIns(t *testing.T) {
 	t.Run("empty_tx", func(t *testing.T) {
 		t.Parallel()
 
-		mc := MockManagerContainer(sdk.Context{})
+		_, mc := mockForProcessorTest()
+		processor := sisu.NewProcessor(mc.Keeper(), nil, config.TssConfig{}, nil, nil, nil, nil, nil, nil, nil, mc)
 
-		processor := &Processor{
-			mc: mc,
-		}
 		require.NoError(t, processor.OnTxIns(&eyesTypes.Txs{}))
 	})
 
 	t.Run("success_to_our_key", func(t *testing.T) {
 		t.Parallel()
 
-		ctrl := gomock.NewController(t)
-		t.Cleanup(func() {
-			ctrl.Finish()
-		})
+		ctx, mc := mockForProcessorTest()
 
-		mockTxSubmit := mock.NewMockTxSubmit(ctrl)
-		mockTxSubmit.EXPECT().SubmitMessageAsync(gomock.Any()).Return(nil).Times(1)
+		k := mc.Keeper()
+		k.SaveKeygen(ctx, &types.Keygen{})
+
+		k.IsKeygenAddress(ctx, "ecdsa", "123")
 
 		observedChain := "eth"
 		toAddress := utils.RandomHeximalString(64)
 		fromAddres := utils.RandomHeximalString(64)
-
-		mockKeeper := mockkeeper.NewMockKeeper(ctrl)
-		mockKeeper.EXPECT().IsKeygenAddress(gomock.Any(), libchain.KEY_TYPE_ECDSA, fromAddres).Return(false).Times(1)
-
-		priv := ed25519.GenPrivKey()
-		addr := sdk.AccAddress(priv.PubKey().Address())
-		appKeysMock := mock.NewMockAppKeys(ctrl)
-		appKeysMock.EXPECT().GetSignerAddress().Return(addr).MinTimes(1)
 
 		txs := &eyesTypes.Txs{
 			Chain: observedChain,
@@ -64,15 +74,8 @@ func TestProcessor_OnTxIns(t *testing.T) {
 			}},
 		}
 
-		mc := MockManagerContainer(mockKeeper, sdk.Context{})
-
 		// Init processor with mocks
-		processor := &Processor{
-			mc:       mc,
-			keeper:   mockKeeper,
-			appKeys:  appKeysMock,
-			txSubmit: mockTxSubmit,
-		}
+		processor := sisu.NewProcessor(k, nil, config.TssConfig{}, mc.AppKeys(), mc.TxSubmit(), nil, nil, nil, nil, nil, mc)
 
 		err := processor.OnTxIns(txs)
 		// <-done
