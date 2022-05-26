@@ -86,6 +86,7 @@ func NewApiHandler(
 	return a
 }
 
+// TODO: Move this function to module.go
 func (a *ApiHandler) BeginBlock(ctx sdk.Context, blockHeight int64) {
 	// Check keygen proposal
 	if blockHeight > 1 {
@@ -190,6 +191,7 @@ func (a *ApiHandler) calculateTokenPrices(ctx sdk.Context) {
 	a.worldState.SetTokens(savedTokens)
 }
 
+// TODO: Move this function to module.go
 func (a *ApiHandler) EndBlock(ctx sdk.Context) {
 	if !a.globalData.IsCatchingUp() {
 		// Inform dheart that we have reached end of block so that dheart could run presign works.
