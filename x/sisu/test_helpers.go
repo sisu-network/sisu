@@ -78,6 +78,9 @@ func keeperTestGenesis(ctx sdk.Context) keeper.Keeper {
 			Addresses: []string{testErc20TokenAddress, testErc20TokenAddress},
 		},
 	})
+	keeper.SaveParams(ctx, &types.Params{
+		MajorityThreshold: 1,
+	})
 	return keeper
 }
 

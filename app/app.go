@@ -123,9 +123,9 @@ type App struct {
 	appKeys           *common.DefaultAppKeys
 	globalData        common.GlobalData
 	internalApiServer server.Server
-	tssProcessor      *tss.Processor
+	tssProcessor      *tss.ApiHandler
 	txDecoder         sdk.TxDecoder
-	apiHandler        *tss.ApiHandler
+	apiHandler        *tss.ApiEndPoint
 	externalHandler   *rest.ExternalHandler
 
 	///////////////////////////////////////////////////////////////
@@ -268,9 +268,7 @@ func New(
 		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
 		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, app.tssKeeper, cfg.Tss), worldState, txTracker, app.tssKeeper)
 
-	tssProcessor := tss.NewProcessor(app.tssKeeper, privateDb, tssConfig,
-		app.appKeys, app.txSubmitter, app.globalData, dheartClient, deyesClient, worldState,
-		txTracker, mc)
+	tssProcessor := tss.NewApiHandler(privateDb, mc)
 	app.apiHandler.SetAppLogicListener(tssProcessor)
 
 	valsMgr := tss.NewValidatorManager(app.tssKeeper)

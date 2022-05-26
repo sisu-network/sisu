@@ -1,47 +1,46 @@
-package sisu_test
+package sisu
 
 import (
 	"testing"
 
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/golang/mock/gomock"
 	libchain "github.com/sisu-network/lib/chain"
-	mock "github.com/sisu-network/sisu/tests/mock/x/sisu"
-	"github.com/sisu-network/sisu/x/sisu"
+	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
-
-	mockcommon "github.com/sisu-network/sisu/tests/mock/common"
-	mocktss "github.com/sisu-network/sisu/tests/mock/tss"
-	mockkeeper "github.com/sisu-network/sisu/tests/mock/x/sisu/keeper"
-	mocktssclients "github.com/sisu-network/sisu/tests/mock/x/sisu/tssclients"
 )
+
+func mockForHandlerKeygen() (sdk.Context, ManagerContainer) {
+	ctx := testContext()
+	k := keeperTestGenesis(ctx)
+	globalData := &common.MockGlobalData{}
+	pmm := NewPostedMessageManager(k)
+
+	partyManager := &MockPartyManager{}
+	partyManager.GetActivePartyPubkeysFunc = func() []ctypes.PubKey {
+		return []ctypes.PubKey{}
+	}
+
+	dheartClient := &tssclients.MockDheartClient{}
+
+	mc := MockManagerContainer(k, pmm, globalData, partyManager, dheartClient)
+
+	return ctx, mc
+}
 
 func TestHandlerKeygen_normal(t *testing.T) {
 	t.Parallel()
-	ctrl := gomock.NewController(t)
-	t.Cleanup(func() {
-		ctrl.Finish()
-	})
 
-	mockKeeper := mockkeeper.NewMockKeeper(ctrl)
-	mockKeeper.EXPECT().SaveKeygen(gomock.Any(), gomock.Any()).Times(1)
-	mockKeeper.EXPECT().ProcessTxRecord(gomock.Any(), gomock.Any()).Times(1)
+	submitCount := 0
 
-	mockPmm := mock.NewMockPostedMessageManager(ctrl)
-	mockPmm.EXPECT().ShouldProcessMsg(gomock.Any(), gomock.Any()).Return(true, []byte("")).Times(1)
-
-	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
-	mockGlobalData.EXPECT().IsCatchingUp().Return(false).Times(1)
-
-	mockDheartClient := mocktssclients.NewMockDheartClient(ctrl)
-	mockDheartClient.EXPECT().KeyGen(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(1)
-
-	mockPartyManager := mocktss.NewMockPartyManager(ctrl)
-	mockPartyManager.EXPECT().GetActivePartyPubkeys().Return([]ctypes.PubKey{}).Times(1)
-
-	mc := sisu.MockManagerContainer(mockPmm, mockGlobalData, mockDheartClient, mockPartyManager, mockKeeper)
+	ctx, mc := mockForHandlerKeygen()
+	dheartClient := mc.DheartClient().(*tssclients.MockDheartClient)
+	dheartClient.KeyGenFunc = func(keygenId, chain string, pubKeys []ctypes.PubKey) error {
+		submitCount = 1
+		return nil
+	}
 
 	msg := &types.KeygenWithSigner{
 		Signer: "signer",
@@ -51,33 +50,28 @@ func TestHandlerKeygen_normal(t *testing.T) {
 		},
 	}
 
-	handler := sisu.NewHandlerKeygen(mc)
-	_, err := handler.DeliverMsg(sdk.Context{}, msg)
+	handler := NewHandlerKeygen(mc)
+	_, err := handler.DeliverMsg(ctx, msg)
 
 	require.NoError(t, err)
+	require.Equal(t, 1, submitCount)
 }
 
 func TestHandlerKeygen_CatchingUp(t *testing.T) {
 	t.Parallel()
-	ctrl := gomock.NewController(t)
-	t.Cleanup(func() {
-		ctrl.Finish()
-	})
 
-	mockKeeper := mockkeeper.NewMockKeeper(ctrl)
-	mockKeeper.EXPECT().SaveKeygen(gomock.Any(), gomock.Any()).Times(1)
-	mockKeeper.EXPECT().ProcessTxRecord(gomock.Any(), gomock.Any()).Times(1)
+	submitCount := 0
+	ctx, mc := mockForHandlerKeygen()
 
-	mockPmm := mock.NewMockPostedMessageManager(ctrl)
-	mockPmm.EXPECT().ShouldProcessMsg(gomock.Any(), gomock.Any()).Return(true, []byte("")).Times(1)
-
-	mockGlobalData := mockcommon.NewMockGlobalData(ctrl)
-	mockGlobalData.EXPECT().IsCatchingUp().Return(true).Times(1) // We are catching up
-
-	mockDheartClient := mocktssclients.NewMockDheartClient(ctrl)
-	mockDheartClient.EXPECT().KeyGen(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil).Times(0) // We don't do keygen
-
-	mc := sisu.MockManagerContainer(mockPmm, mockGlobalData, mockDheartClient, mockKeeper)
+	globalData := mc.GlobalData().(*common.MockGlobalData)
+	globalData.IsCatchingUpFunc = func() bool {
+		return true
+	}
+	dheartClient := mc.DheartClient().(*tssclients.MockDheartClient)
+	dheartClient.KeyGenFunc = func(keygenId, chain string, pubKeys []ctypes.PubKey) error {
+		submitCount = 1
+		return nil
+	}
 
 	msg := &types.KeygenWithSigner{
 		Signer: "signer",
@@ -87,8 +81,9 @@ func TestHandlerKeygen_CatchingUp(t *testing.T) {
 		},
 	}
 
-	handler := sisu.NewHandlerKeygen(mc)
-	_, err := handler.DeliverMsg(sdk.Context{}, msg)
+	handler := NewHandlerKeygen(mc)
+	_, err := handler.DeliverMsg(ctx, msg)
 
 	require.NoError(t, err)
+	require.Equal(t, 0, submitCount)
 }

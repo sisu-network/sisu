@@ -4,30 +4,33 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 
-	mocksisu "github.com/sisu-network/sisu/tests/mock/x/sisu"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/helper"
+	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 func TestTxOutProducerErc20_getGasCostInToken(t *testing.T) {
-	ctrl := gomock.NewController(t)
+	ctx := testContext()
+	k := keeperTestGenesis(ctx)
+	deyesClient := &tssclients.MockDeyesClient{}
 
-	mockWorldState := mocksisu.NewMockWorldState(ctrl)
+	worldState := defaultWorldStateTest(ctx, k, deyesClient)
 
 	chain := "ganache1"
 	token := &types.Token{
 		Id:    "SISU",
 		Price: int64(4 * utils.DecinmalUnit),
 	}
-	mockWorldState.EXPECT().GetNativeTokenPriceForChain(chain).Return(int64(2*utils.DecinmalUnit), nil).Times(1)
+	worldState.SetTokens(map[string]*types.Token{
+		"SISU": token,
+	})
 
 	gas := big.NewInt(8_000_000)
 	gasPrice := big.NewInt(10 * 1_000_000_000) // 10 gwei
-	nativeTokenPrice, err := mockWorldState.GetNativeTokenPriceForChain(chain)
+	nativeTokenPrice, err := worldState.GetNativeTokenPriceForChain(chain)
 	require.NoError(t, err)
 	amount, err := helper.GetGasCostInToken(gas, gasPrice, big.NewInt(token.Price), big.NewInt(nativeTokenPrice))
 

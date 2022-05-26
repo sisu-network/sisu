@@ -16,6 +16,7 @@ func NewHandlerTokenPrice(mc ManagerContainer) *HandlerTokenPrice {
 	}
 }
 
+// TODO: Finish this implementation
 func (h *HandlerTokenPrice) DeliverMsg(ctx sdk.Context, msg *types.UpdateTokenPrice) (*sdk.Result, error) {
 	h.keeper.SetTokenPrices(ctx, uint64(ctx.BlockHeight()), msg)
 

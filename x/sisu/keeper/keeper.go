@@ -10,7 +10,6 @@ import (
 
 var _ Keeper = (*DefaultKeeper)(nil)
 
-// go:generate mockgen -source x/sisu/keeper/keeper.go -destination=tests/mock/x/sisu/keeper/keeper.go -package=mock
 type Keeper interface {
 	// Debug
 	PrintStore(ctx sdk.Context, name string)
@@ -58,7 +57,6 @@ type Keeper interface {
 	GetTxOut(ctx sdk.Context, outChain, hash string) *types.TxOut
 
 	// TxOutSig
-	// TODO: Add unconfirmed tx store
 	SaveTxOutSig(ctx sdk.Context, msg *types.TxOutSig)
 	GetTxOutSig(ctx sdk.Context, outChain, hashWithSig string) *types.TxOutSig
 

@@ -71,7 +71,6 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigne
 	if !h.globalData.IsCatchingUp() && len(txOutWithSigners) > 0 {
 		log.Info("Broadcasting txout....")
 
-		// Creates TxOut. TODO: Only do this for top validator nodes.
 		for _, txOutWithSigner := range txOutWithSigners {
 			h.txSubmit.SubmitMessageAsync(txOutWithSigner)
 

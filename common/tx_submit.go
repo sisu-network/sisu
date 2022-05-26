@@ -41,7 +41,6 @@ var (
 	ErrNone   = errors.New("This is not an error")
 )
 
-//go:generate mockgen -source=common/tx_submit.go -destination=tests/mock/common/tx_submit.go -package=mock
 type TxSubmit interface {
 	SubmitMessageAsync(msg sdk.Msg) error
 	SubmitMessageSync(msg sdk.Msg) error
