@@ -42,7 +42,7 @@ func TestProcessor_OnTxIns(t *testing.T) {
 		t.Parallel()
 
 		_, mc := mockForProcessorTest()
-		processor := NewProcessor(nil, mc)
+		processor := NewApiHandler(nil, mc)
 
 		require.NoError(t, processor.OnTxIns(&eyesTypes.Txs{}))
 	})
@@ -80,7 +80,7 @@ func TestProcessor_OnTxIns(t *testing.T) {
 			return nil
 		}
 
-		processor := NewProcessor(nil, mc)
+		processor := NewApiHandler(nil, mc)
 		err := processor.OnTxIns(txs)
 
 		require.NoError(t, err)
@@ -101,7 +101,7 @@ func TestProcessor_OnTxIns(t *testing.T) {
 			trackerCount = 1
 		}
 
-		processor := NewProcessor(nil, mc)
+		processor := NewApiHandler(nil, mc)
 		err := processor.OnTxIns(txs)
 		require.NoError(t, err)
 		require.Equal(t, 1, trackerCount)

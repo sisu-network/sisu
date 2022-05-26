@@ -109,7 +109,7 @@ type AppModule struct {
 	sisuHandler     *SisuHandler
 	externalHandler *rest.ExternalHandler
 	keeper          keeper.Keeper
-	processor       *Processor
+	processor       *ApiHandler
 	appKeys         common.AppKeys
 	txSubmit        common.TxSubmit
 	globalData      common.GlobalData
@@ -122,7 +122,7 @@ type AppModule struct {
 func NewAppModule(cdc codec.Marshaler,
 	sisuHandler *SisuHandler,
 	keeper keeper.Keeper,
-	processor *Processor,
+	processor *ApiHandler,
 	valsManager ValidatorManager,
 	mc ManagerContainer,
 ) AppModule {

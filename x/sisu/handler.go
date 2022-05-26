@@ -19,7 +19,7 @@ func NewSisuHandler(mc ManagerContainer) *SisuHandler {
 	}
 }
 
-func (sh *SisuHandler) NewHandler(processor *Processor, valsManager ValidatorManager) sdk.Handler {
+func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorManager) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		signers := msg.GetSigners()
 		if len(signers) != 1 {
