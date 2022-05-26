@@ -60,23 +60,51 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 		},
 	}
 
-	keysignCount := 0
-	trackerCount := 0
-	ctx, mc := mockForHandlerTxOut()
-	dheartClient := mc.DheartClient().(*tssclients.MockDheartClient)
-	dheartClient.KeySignFunc = func(req *htypes.KeysignRequest, pubKeys []ctypes.PubKey) error {
-		keysignCount = 1
-		return nil
-	}
-	txTracker := mc.TxTracker().(*sisu.MockTxTracker)
-	txTracker.UpdateStatusFunc = func(chain, hash string, status types.TxStatus) {
-		require.Equal(t, types.TxStatusDelivered, status)
-		trackerCount = 1
-	}
+	t.Run("transfer_out_successful", func(t *testing.T) {
+		keysignCount := 0
+		trackerCount := 0
+		ctx, mc := mockForHandlerTxOut()
+		dheartClient := mc.DheartClient().(*tssclients.MockDheartClient)
+		dheartClient.KeySignFunc = func(req *htypes.KeysignRequest, pubKeys []ctypes.PubKey) error {
+			keysignCount = 1
+			return nil
+		}
+		txTracker := mc.TxTracker().(*sisu.MockTxTracker)
+		txTracker.UpdateStatusFunc = func(chain, hash string, status types.TxStatus) {
+			require.Equal(t, types.TxStatusDelivered, status)
+			trackerCount = 1
+		}
 
-	handler := sisu.NewHandlerTxOut(mc)
-	_, err = handler.DeliverMsg(ctx, txOutWithSigner)
-	require.NoError(t, err)
-	require.Equal(t, 1, keysignCount)
-	require.Equal(t, 1, trackerCount)
+		handler := sisu.NewHandlerTxOut(mc)
+		_, err = handler.DeliverMsg(ctx, txOutWithSigner)
+		require.NoError(t, err)
+		require.Equal(t, 1, keysignCount)
+		require.Equal(t, 1, trackerCount)
+	})
+
+	t.Run("node_is_catching_up", func(t *testing.T) {
+		keysignCount := 0
+		trackerCount := 0
+		ctx, mc := mockForHandlerTxOut()
+		dheartClient := mc.DheartClient().(*tssclients.MockDheartClient)
+		dheartClient.KeySignFunc = func(req *htypes.KeysignRequest, pubKeys []ctypes.PubKey) error {
+			keysignCount = 1
+			return nil
+		}
+		txTracker := mc.TxTracker().(*sisu.MockTxTracker)
+		txTracker.UpdateStatusFunc = func(chain, hash string, status types.TxStatus) {
+			require.Equal(t, types.TxStatusDelivered, status)
+			trackerCount = 1
+		}
+		globalData := mc.GlobalData().(*common.MockGlobalData)
+		globalData.IsCatchingUpFunc = func() bool {
+			return true
+		}
+
+		handler := sisu.NewHandlerTxOut(mc)
+		_, err = handler.DeliverMsg(ctx, txOutWithSigner)
+		require.NoError(t, err)
+		require.Equal(t, 0, keysignCount)
+		require.Equal(t, 0, trackerCount)
+	})
 }
