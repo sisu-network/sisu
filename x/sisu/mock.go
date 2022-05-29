@@ -8,6 +8,7 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
+	"github.com/sisu-network/sisu/x/sisu/world"
 )
 
 // A function to make sure that all mocks implement its designated interface.
@@ -49,6 +50,8 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.readOnlyContext.Store(t)
 		case TxOutputProducer:
 			mc.txOutProducer = t
+		case world.WorldState:
+			mc.worldState = t
 		}
 	}
 
