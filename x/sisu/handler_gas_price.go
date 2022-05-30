@@ -65,15 +65,17 @@ func (h *HandlerGasPrice) DeliverMsg(ctx sdk.Context, msg *types.GasPriceMsg) (*
 			log.Verbose("Median gas price for chain ", chain, " is ", median)
 
 			// Save to db
-			chain := h.keeper.GetChain(ctx, chain)
-			if chain == nil {
-				chain = new(types.Chain)
+			savedChain := h.keeper.GetChain(ctx, chain)
+			if savedChain == nil {
+				savedChain = &types.Chain{
+					Id: chain,
+				}
 			}
-			chain.GasPrice = median
-			h.keeper.SaveChain(ctx, chain)
+			savedChain.GasPrice = median
+			h.keeper.SaveChain(ctx, savedChain)
 
 			// Save to the world state
-			h.worldState.SetChain(chain)
+			h.worldState.SetChain(savedChain)
 		}
 	}
 
