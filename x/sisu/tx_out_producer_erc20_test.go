@@ -1,7 +1,6 @@
 package sisu
 
 import (
-	"fmt"
 	"math/big"
 	"strings"
 	"testing"
@@ -12,8 +11,6 @@ import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sisu-network/sisu/common"
-	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/helper"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -22,21 +19,11 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/world"
 )
 
-func mockTxOutputProducer(ctx sdk.Context, k keeper.Keeper, worldState world.WorldState) DefaultTxOutputProducer {
-	appKeys := common.NewMockAppKeys()
+func mockTxOutputProducer(ctx sdk.Context, keeper keeper.Keeper, worldState world.WorldState) DefaultTxOutputProducer {
 
 	txOutputProducer := DefaultTxOutputProducer{
 		worldState: worldState,
-		tssConfig: config.TssConfig{
-			DeyesUrl: "https://0.0.0.0:1234",
-			SupportedChains: map[string]config.TssChainConfig{
-				"ganache1": {
-					Id: "ganache1",
-				},
-			},
-		},
-		keeper:  k,
-		appKeys: appKeys,
+		keeper:     keeper,
 	}
 
 	return txOutputProducer
@@ -122,7 +109,7 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 		require.NoError(t, err)
 
 		// gasPriceInToken = 0.00008 * 10 * 2 / 0.01 ~ 0.16. Since 1 ETH = 10^18 wei, 0.16 ETH is 160_000_000_000_000_000 wei.
-		require.Equal(t, txIn.amount, amount.Sub(amount, big.NewInt(160_000_000_000_000_000)))
+		require.Equal(t, amount.Sub(amount, big.NewInt(160_000_000_000_000_000)), txIn.amount)
 	})
 
 	t.Run("token_has_high_price", func(t *testing.T) {
@@ -152,7 +139,7 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 		require.NoError(t, err)
 
 		// gasPriceInToken = 0.00008 * 10 * 2 / 100 ~ 0.000016. Since 1 ETH = 10^18 wei, 0.000016 ETH is 16_000_000_000_000 wei.
-		require.Equal(t, txIn.amount, amount.Sub(amount, big.NewInt(16_000_000_000_000)))
+		require.Equal(t, amount.Sub(amount, big.NewInt(16_000_000_000_000)), txIn.amount)
 	})
 
 	t.Run("insufficient_fund", func(t *testing.T) {
@@ -179,7 +166,7 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 
 		// gasPriceInToken = 0.00008 * 10 * 2 / 8 ~ 0.0002. Since 1 ETH = 10^18 wei, 0.0002 ETH is 200_000_000_000_000 wei.
 		// gasPriceInToken > amountIn
-		require.EqualError(t, err, fmt.Sprint(world.ErrInsufficientFund))
+		require.Error(t, err)
 		require.Nil(t, txResponse)
 	})
 
@@ -203,10 +190,9 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 
 		ethTx := mockEthTx(t, txOutputProducer, destChain, tokenAddr, amount)
 
-		//panic: division by zero
-		require.Panics(t, func() {
-			txOutputProducer.processERC20TransferOut(ctx, ethTx)
-		})
+		txResponse, err := txOutputProducer.processERC20TransferOut(ctx, ethTx)
+		require.Error(t, err)
+		require.Nil(t, txResponse)
 	})
 
 	t.Run("token_has_negative_price", func(t *testing.T) {
