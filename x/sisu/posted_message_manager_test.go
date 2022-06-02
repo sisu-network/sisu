@@ -4,6 +4,7 @@ import (
 	"math/big"
 	"testing"
 
+	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ecommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -13,11 +14,47 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func mockForPostedMessageManager() (sdk.Context, ManagerContainer) {
+	ctx := testContext()
+	k := keeperTestGenesis(ctx)
+	pmm := NewPostedMessageManager(k)
+	globalData := &common.MockGlobalData{}
+	dheartClient := &tssclients.MockDheartClient{}
+	partyManager := &MockPartyManager{}
+	partyManager.GetActivePartyPubkeysFunc = func() []ctypes.PubKey {
+		return []ctypes.PubKey{}
+	}
+	txOutProducer := &MockTxOutputProducer{}
+	mc := MockManagerContainer(k, pmm, globalData, txOutProducer, partyManager, dheartClient)
+
+	return ctx, mc
+}
+
+func mockTxOutWithSignerForPostedMessageManager() *types.TxOutWithSigner {
+	ethTx := ethTypes.NewTx(&ethTypes.LegacyTx{
+		GasPrice: big.NewInt(100),
+		Gas:      uint64(100),
+		To:       &ecommon.Address{},
+		Value:    big.NewInt(100),
+	})
+	binary, _ := ethTx.MarshalBinary()
+
+	txOutWithSigner := &types.TxOutWithSigner{
+		Signer: "signer",
+		Data: &types.TxOut{
+			OutChain: "ganache1",
+			OutBytes: binary,
+		},
+	}
+
+	return txOutWithSigner
+}
+
 func TestPostedMessageManager(t *testing.T) {
 	t.Parallel()
 
 	t.Run("keygen_with_signer", func(t *testing.T) {
-		ctx, mc := mockForHandlerKeygen()
+		ctx, mc := mockForPostedMessageManager()
 		pmm := mc.PostedMessageManager()
 
 		msg := &types.KeygenWithSigner{
@@ -38,7 +75,7 @@ func TestPostedMessageManager(t *testing.T) {
 	})
 
 	t.Run("keygen_result_with_signer", func(t *testing.T) {
-		ctx, mc := mockForHandlerKeygen()
+		ctx, mc := mockForPostedMessageManager()
 		pmm := mc.PostedMessageManager()
 
 		msg := &types.KeygenResultWithSigner{
@@ -60,7 +97,7 @@ func TestPostedMessageManager(t *testing.T) {
 	})
 
 	t.Run("tx_in_with_signer", func(t *testing.T) {
-		ctx, mc := mockForHandlerTxIn()
+		ctx, mc := mockForPostedMessageManager()
 		pmm := mc.PostedMessageManager()
 
 		msg := &types.TxInWithSigner{
@@ -81,7 +118,7 @@ func TestPostedMessageManager(t *testing.T) {
 	})
 
 	t.Run("tx_out_with_signer", func(t *testing.T) {
-		ctx, mc := mockForHandlerTxOut()
+		ctx, mc := mockForPostedMessageManager()
 		pmm := mc.PostedMessageManager()
 
 		msg := &types.TxOutWithSigner{
@@ -102,7 +139,7 @@ func TestPostedMessageManager(t *testing.T) {
 	})
 
 	t.Run("tx_out_contract_confirm_with_signer", func(t *testing.T) {
-		ctx, mc := mockForHandlerTxOut()
+		ctx, mc := mockForPostedMessageManager()
 		pmm := mc.PostedMessageManager()
 
 		msg := &types.TxOutContractConfirmWithSigner{
@@ -123,10 +160,8 @@ func TestPostedMessageManager(t *testing.T) {
 	})
 
 	t.Run("contract_with_signer", func(t *testing.T) {
-		ctx := testContext()
-		k := keeperTestGenesis(ctx)
-		pmm := NewPostedMessageManager(k)
-		mc := MockManagerContainer(k, pmm)
+		ctx, mc := mockForPostedMessageManager()
+		pmm := mc.PostedMessageManager()
 
 		msg := &types.ContractsWithSigner{
 			Signer: "signer",
@@ -145,31 +180,12 @@ func TestPostedMessageManager(t *testing.T) {
 		require.False(t, process)
 	})
 
-	t.Run("pause_contract_msg", func(t *testing.T) {
-		ctx := testContext()
-		k := keeperTestGenesis(ctx)
-		pmm := NewPostedMessageManager(k)
-		globalData := &common.MockGlobalData{}
-		dheartClient := &tssclients.MockDheartClient{}
-		partyManager := &MockPartyManager{}
-		txOutProducer := &MockTxOutputProducer{}
+	t.Run("pause_contract", func(t *testing.T) {
+		ctx, mc := mockForPostedMessageManager()
+		pmm := mc.PostedMessageManager()
+		txOutProducer := mc.TxOutProducer().(*MockTxOutputProducer)
 		txOutProducer.PauseContractFunc = func(ctx sdk.Context, chain, hash string) (*types.TxOutWithSigner, error) {
-			ethTx := ethTypes.NewTx(&ethTypes.LegacyTx{
-				GasPrice: big.NewInt(100),
-				Gas:      uint64(100),
-				To:       &ecommon.Address{},
-				Value:    big.NewInt(100),
-			})
-			binary, err := ethTx.MarshalBinary()
-			require.NoError(t, err)
-
-			txOutWithSigner := &types.TxOutWithSigner{
-				Signer: "signer",
-				Data: &types.TxOut{
-					OutChain: "ganache1",
-					OutBytes: binary,
-				},
-			}
+			txOutWithSigner := mockTxOutWithSignerForPostedMessageManager()
 
 			return txOutWithSigner, nil
 		}
@@ -182,7 +198,6 @@ func TestPostedMessageManager(t *testing.T) {
 			},
 		}
 
-		mc := MockManagerContainer(k, pmm, globalData, txOutProducer, partyManager, dheartClient)
 		process, hash := pmm.ShouldProcessMsg(ctx, msg)
 		require.True(t, process)
 
@@ -195,31 +210,12 @@ func TestPostedMessageManager(t *testing.T) {
 		require.False(t, process)
 	})
 
-	t.Run("resume_contract_msg", func(t *testing.T) {
-		ctx := testContext()
-		k := keeperTestGenesis(ctx)
-		pmm := NewPostedMessageManager(k)
-		globalData := &common.MockGlobalData{}
-		dheartClient := &tssclients.MockDheartClient{}
-		partyManager := &MockPartyManager{}
-		txOutProducer := &MockTxOutputProducer{}
+	t.Run("resume_contract", func(t *testing.T) {
+		ctx, mc := mockForPostedMessageManager()
+		pmm := mc.PostedMessageManager()
+		txOutProducer := mc.TxOutProducer().(*MockTxOutputProducer)
 		txOutProducer.ResumeContractFunc = func(ctx sdk.Context, chain, hash string) (*types.TxOutWithSigner, error) {
-			ethTx := ethTypes.NewTx(&ethTypes.LegacyTx{
-				GasPrice: big.NewInt(100),
-				Gas:      uint64(100),
-				To:       &ecommon.Address{},
-				Value:    big.NewInt(100),
-			})
-			binary, err := ethTx.MarshalBinary()
-			require.NoError(t, err)
-
-			txOutWithSigner := &types.TxOutWithSigner{
-				Signer: "signer",
-				Data: &types.TxOut{
-					OutChain: "ganache1",
-					OutBytes: binary,
-				},
-			}
+			txOutWithSigner := mockTxOutWithSignerForPostedMessageManager()
 
 			return txOutWithSigner, nil
 		}
@@ -232,7 +228,6 @@ func TestPostedMessageManager(t *testing.T) {
 			},
 		}
 
-		mc := MockManagerContainer(k, pmm, globalData, txOutProducer, partyManager, dheartClient)
 		process, hash := pmm.ShouldProcessMsg(ctx, msg)
 		require.True(t, process)
 
@@ -245,31 +240,12 @@ func TestPostedMessageManager(t *testing.T) {
 		require.False(t, process)
 	})
 
-	t.Run("change_ownership_contract_msg", func(t *testing.T) {
-		ctx := testContext()
-		k := keeperTestGenesis(ctx)
-		pmm := NewPostedMessageManager(k)
-		globalData := &common.MockGlobalData{}
-		dheartClient := &tssclients.MockDheartClient{}
-		partyManager := &MockPartyManager{}
-		txOutProducer := &MockTxOutputProducer{}
+	t.Run("change_ownership_contract", func(t *testing.T) {
+		ctx, mc := mockForPostedMessageManager()
+		pmm := mc.PostedMessageManager()
+		txOutProducer := mc.TxOutProducer().(*MockTxOutputProducer)
 		txOutProducer.ContractChangeOwnershipFunc = func(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutWithSigner, error) {
-			ethTx := ethTypes.NewTx(&ethTypes.LegacyTx{
-				GasPrice: big.NewInt(100),
-				Gas:      uint64(100),
-				To:       &ecommon.Address{},
-				Value:    big.NewInt(100),
-			})
-			binary, err := ethTx.MarshalBinary()
-			require.NoError(t, err)
-
-			txOutWithSigner := &types.TxOutWithSigner{
-				Signer: "signer",
-				Data: &types.TxOut{
-					OutChain: "ganache1",
-					OutBytes: binary,
-				},
-			}
+			txOutWithSigner := mockTxOutWithSignerForPostedMessageManager()
 
 			return txOutWithSigner, nil
 		}
@@ -282,7 +258,6 @@ func TestPostedMessageManager(t *testing.T) {
 			},
 		}
 
-		mc := MockManagerContainer(k, pmm, globalData, txOutProducer, partyManager, dheartClient)
 		process, hash := pmm.ShouldProcessMsg(ctx, msg)
 		require.True(t, process)
 
@@ -295,31 +270,45 @@ func TestPostedMessageManager(t *testing.T) {
 		require.False(t, process)
 	})
 
-	t.Run("change_liquid_pool_address_msg", func(t *testing.T) {
-		ctx := testContext()
-		k := keeperTestGenesis(ctx)
-		pmm := NewPostedMessageManager(k)
-		globalData := &common.MockGlobalData{}
-		dheartClient := &tssclients.MockDheartClient{}
-		partyManager := &MockPartyManager{}
-		txOutProducer := &MockTxOutputProducer{}
-		txOutProducer.ContractSetLiquidPoolAddressFunc = func(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutWithSigner, error) {
-			ethTx := ethTypes.NewTx(&ethTypes.LegacyTx{
-				GasPrice: big.NewInt(100),
-				Gas:      uint64(100),
-				To:       &ecommon.Address{},
-				Value:    big.NewInt(100),
-			})
-			binary, err := ethTx.MarshalBinary()
-			require.NoError(t, err)
+	t.Run("change_ownership_contract_with_multi_signer", func(t *testing.T) {
+		ctx, mc := mockForPostedMessageManager()
+		pmm := mc.PostedMessageManager()
 
-			txOutWithSigner := &types.TxOutWithSigner{
-				Signer: "signer",
-				Data: &types.TxOut{
-					OutChain: "ganache1",
-					OutBytes: binary,
-				},
-			}
+		keeper := mc.Keeper()
+		keeper.SaveParams(ctx, &types.Params{
+			MajorityThreshold: 2,
+		})
+
+		msg1 := &types.ChangeOwnershipContractMsg{
+			Signer: "signer1",
+			Data: &types.ChangeOwnership{
+				Chain: "ganache1",
+				Hash:  SupportedContracts[ContractErc20Gateway].AbiHash,
+			},
+		}
+
+		msg2 := &types.ChangeOwnershipContractMsg{
+			Signer: "signer2",
+			Data: &types.ChangeOwnership{
+				Chain: "ganache1",
+				Hash:  SupportedContracts[ContractErc20Gateway].AbiHash,
+			},
+		}
+
+		process, _ := pmm.ShouldProcessMsg(ctx, msg1)
+		require.False(t, process)
+
+		process, _ = pmm.ShouldProcessMsg(ctx, msg2)
+		require.True(t, process)
+
+	})
+
+	t.Run("change_liquid_pool_address_msg", func(t *testing.T) {
+		ctx, mc := mockForPostedMessageManager()
+		pmm := mc.PostedMessageManager()
+		txOutProducer := mc.TxOutProducer().(*MockTxOutputProducer)
+		txOutProducer.ContractSetLiquidPoolAddressFunc = func(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutWithSigner, error) {
+			txOutWithSigner := mockTxOutWithSignerForPostedMessageManager()
 
 			return txOutWithSigner, nil
 		}
@@ -332,7 +321,6 @@ func TestPostedMessageManager(t *testing.T) {
 			},
 		}
 
-		mc := MockManagerContainer(k, pmm, globalData, txOutProducer, partyManager, dheartClient)
 		process, hash := pmm.ShouldProcessMsg(ctx, msg)
 		require.True(t, process)
 
@@ -346,30 +334,11 @@ func TestPostedMessageManager(t *testing.T) {
 	})
 
 	t.Run("liquidity_withdraw_fund_msg", func(t *testing.T) {
-		ctx := testContext()
-		k := keeperTestGenesis(ctx)
-		pmm := NewPostedMessageManager(k)
-		globalData := &common.MockGlobalData{}
-		dheartClient := &tssclients.MockDheartClient{}
-		partyManager := &MockPartyManager{}
-		txOutProducer := &MockTxOutputProducer{}
+		ctx, mc := mockForPostedMessageManager()
+		pmm := mc.PostedMessageManager()
+		txOutProducer := mc.TxOutProducer().(*MockTxOutputProducer)
 		txOutProducer.ContractEmergencyWithdrawFundFunc = func(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutWithSigner, error) {
-			ethTx := ethTypes.NewTx(&ethTypes.LegacyTx{
-				GasPrice: big.NewInt(100),
-				Gas:      uint64(100),
-				To:       &ecommon.Address{},
-				Value:    big.NewInt(100),
-			})
-			binary, err := ethTx.MarshalBinary()
-			require.NoError(t, err)
-
-			txOutWithSigner := &types.TxOutWithSigner{
-				Signer: "signer",
-				Data: &types.TxOut{
-					OutChain: "ganache1",
-					OutBytes: binary,
-				},
-			}
+			txOutWithSigner := mockTxOutWithSignerForPostedMessageManager()
 
 			return txOutWithSigner, nil
 		}
@@ -382,7 +351,6 @@ func TestPostedMessageManager(t *testing.T) {
 			},
 		}
 
-		mc := MockManagerContainer(k, pmm, globalData, txOutProducer, partyManager, dheartClient)
 		process, hash := pmm.ShouldProcessMsg(ctx, msg)
 		require.True(t, process)
 
