@@ -211,6 +211,10 @@ func (ws *DefaultWorldState) GetGasCostInToken(tokenId, chainId string) (int64, 
 		return -1, err
 	}
 
+	if tokenPrice == 0 {
+		return 0, fmt.Errorf("Token %s has price 0", tokenId)
+	}
+
 	if tokenPrice < 0 {
 		return 0, fmt.Errorf("Token price is negative, token id = %s, token price = %d", tokenId, tokenPrice)
 	}
