@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"io"
 	"path/filepath"
 
@@ -264,8 +265,10 @@ func New(
 	worldState := world.NewWorldState(app.tssKeeper, deyesClient)
 	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert, worldState)
 
+	cardanoClient := tssclients.NewDefaultCardanoClient("")
+
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.tssKeeper),
-		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
+		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, cardanoClient, app.globalData, app.txSubmitter, cfg.Tss,
 		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, app.tssKeeper, cfg.Tss), worldState, txTracker, app.tssKeeper)
 
 	tssProcessor := tss.NewApiHandler(privateDb, mc)

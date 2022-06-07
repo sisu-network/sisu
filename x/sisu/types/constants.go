@@ -14,6 +14,7 @@ const (
 	MsgTypeContractChangeOwnership        = "ContractChangeOwnership"
 	MsgTypeContractChangeLiquidityAddress = "ContractChangeLiquidityAddress"
 	MsgTypeContractLiquidityWithdrawFund  = "ContractLiquidityWithdrawFund"
+	MsgTypeCardanoMintMultiAsset          = "CardanoMintMultiAsset"
 
 	MsgTypeTxOut         = "TxOut"
 	MsgTypeKeysignResult = "KeysignResult"

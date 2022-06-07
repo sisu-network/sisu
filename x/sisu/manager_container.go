@@ -17,6 +17,7 @@ type ManagerContainer interface {
 	PartyManager() PartyManager
 	DheartClient() tssclients.DheartClient
 	DeyesClient() tssclients.DeyesClient
+	CardanoClient() tssclients.CardanoClient
 	GlobalData() common.GlobalData
 	TxSubmit() common.TxSubmit
 	Config() config.TssConfig
@@ -35,6 +36,7 @@ type DefaultManagerContainer struct {
 	partyManager  PartyManager
 	dheartClient  tssclients.DheartClient
 	deyesClient   tssclients.DeyesClient
+	cardanoClient tssclients.CardanoClient
 	globalData    common.GlobalData
 	txSubmit      common.TxSubmit
 	config        config.TssConfig
@@ -48,7 +50,7 @@ type DefaultManagerContainer struct {
 }
 
 func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
-	dheartClient tssclients.DheartClient, deyesClient tssclients.DeyesClient,
+	dheartClient tssclients.DheartClient, deyesClient tssclients.DeyesClient, cardanoClient tssclients.CardanoClient,
 	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.TssConfig,
 	appKeys common.AppKeys, txOutProducer TxOutputProducer, worldState world.WorldState, txTracker TxTracker, keeper keeper.Keeper) ManagerContainer {
 	return &DefaultManagerContainer{
@@ -56,6 +58,7 @@ func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 		partyManager:  partyManager,
 		dheartClient:  dheartClient,
 		deyesClient:   deyesClient,
+		cardanoClient: cardanoClient,
 		globalData:    globalData,
 		txSubmit:      txSubmit,
 		config:        cfg,
@@ -101,6 +104,10 @@ func (mc *DefaultManagerContainer) TxOutProducer() TxOutputProducer {
 
 func (mc *DefaultManagerContainer) DeyesClient() tssclients.DeyesClient {
 	return mc.deyesClient
+}
+
+func (mc *DefaultManagerContainer) CardanoClient() tssclients.CardanoClient {
+	return mc.cardanoClient
 }
 
 func (mc *DefaultManagerContainer) WorldState() world.WorldState {

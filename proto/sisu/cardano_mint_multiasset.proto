@@ -1,0 +1,18 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message CardanoMintMultiAssetMsg {
+  string signer = 1;
+  CardanoMintMultiAssetData data = 2;
+}
+
+message CardanoMintMultiAssetData {
+  int64 lovelace = 1;
+  string assetName = 2;
+  int64 assetAmount = 3;
+  string tssPubkey = 4;
+
+  int32 index = 5;
+}
