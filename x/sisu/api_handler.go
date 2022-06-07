@@ -216,7 +216,7 @@ func (a *ApiHandler) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
 	}
 
 	// Check ECDSA only (for now)
-	keyTypes := []string{libchain.KEY_TYPE_ECDSA}
+	keyTypes := []string{libchain.KEY_TYPE_ECDSA, libchain.KEY_TYPE_EDDSA}
 	for _, keyType := range keyTypes {
 		if a.keeper.IsKeygenExisted(ctx, keyType, 0) {
 			continue
