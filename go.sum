@@ -922,8 +922,8 @@ github.com/sisu-network/cardano-go v0.1.12-fork h1:39Y9Y7ef7QLM0nQCNzOsZJ5b3Onb1
 github.com/sisu-network/cardano-go v0.1.12-fork/go.mod h1:SiAHRy61YsBam0+7S875aA5wyJA1gJz8uoMJoPSzpEk=
 github.com/sisu-network/deyes v0.1.7-0.20220606052026-f07e1eda0b54 h1:CYBDAX4m0CZ5rUgL9gRRkf0Z3n6jG5/3oEPmcPvHwC0=
 github.com/sisu-network/deyes v0.1.7-0.20220606052026-f07e1eda0b54/go.mod h1:W4euJSCX9Q/zL2jJLwr5p2TEDm+YMiorISzqcHzZK1w=
-github.com/sisu-network/dheart v0.1.7-0.20220609014959-2e29b299c57e h1:YyL47H4Z3Ev30twVLBKcz7zfbmyUzxgMFY00PEUOOJQ=
-github.com/sisu-network/dheart v0.1.7-0.20220609014959-2e29b299c57e/go.mod h1:gk1ayOfgfB6rMu1J61eQiJzDUvtzFSaKl56O8Ei+AQI=
+github.com/sisu-network/dheart v0.1.7-0.20220609103335-2bfd73851311 h1:xAYXye8xiXDRrTTR44VVYMHoE2TvKMKVG9i4AKb303Q=
+github.com/sisu-network/dheart v0.1.7-0.20220609103335-2bfd73851311/go.mod h1:oOtN1uod3a5yXq+P/Y75Ivmn63WnWljCjImeTIYmBL4=
 github.com/sisu-network/lib v0.0.1-alpha9.0.20220607090913-7a74c077ee70 h1:TajPWOgqztOmGg0ihGMVvNCer5HEUudsodVjvyTiET8=
 github.com/sisu-network/lib v0.0.1-alpha9.0.20220607090913-7a74c077ee70/go.mod h1:kJKc5vnG+vxGsYTeRbgxjG7QgVX2sLUne+qVMrn/hq8=
 github.com/sisu-network/tss-lib v0.1.3-0.20220602042956-0a991a4b5046 h1:SVxFTtflzZktK5YeWi4tTWVtf5dJU/Zhco77WedOW1I=

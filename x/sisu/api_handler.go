@@ -252,23 +252,12 @@ func (a *ApiHandler) OnKeygenResult(result dhtypes.KeygenResult) {
 		return
 	}
 
-	var pubkeyBytes []byte
-	switch result.KeyType {
-	case libchain.KEY_TYPE_ECDSA:
-		pubkeyBytes = ethcrypto.FromECDSAPub(result.EcdsaPubkey)
-	case libchain.KEY_TYPE_EDDSA:
-		pubkeyBytes = result.EddsaPubkey.Serialize()
-	default:
-		log.Critical("Unknown keygen type: ", result.KeyType)
-		return
-	}
-
 	signerMsg := types.NewKeygenResultWithSigner(
 		a.appKeys.GetSignerAddress().String(),
 		result.KeyType,
 		result.KeygenIndex,
 		resultEnum,
-		pubkeyBytes,
+		result.PubKeyBytes,
 		result.Address,
 	)
 
