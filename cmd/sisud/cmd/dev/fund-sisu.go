@@ -34,6 +34,8 @@ const (
 	ExpectedErc20Address      = "0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"
 	ExpectedLiquidPoolAddress = "0xf0D676183dD5ae6b370adDdbE770235F23546f9d"
 	CardanoDecimals           = 1000 * 1000
+	DefaultCardanoWalletName  = "sisu"
+	DefaultCardanoPassword    = "12345678910"
 )
 
 type fundAccountCmd struct{}
@@ -160,12 +162,12 @@ func (c *fundAccountCmd) fundCardano(receiverMnemonic string, funderMnemonic str
 	}
 	client := wallet.NewClient(opts)
 
-	funderWallet, err := c.getWalletFromMnemonic(client, "sisu", "12345678910", funderMnemonic)
+	funderWallet, err := c.getWalletFromMnemonic(client, DefaultCardanoWalletName, DefaultCardanoPassword, funderMnemonic)
 	if err != nil {
 		panic(err)
 	}
 
-	receiverWallet, err := c.getWalletFromMnemonic(client, "sisu", "12345678910", receiverMnemonic)
+	receiverWallet, err := c.getWalletFromMnemonic(client, DefaultCardanoWalletName, DefaultCardanoPassword, receiverMnemonic)
 	if err != nil {
 		panic(err)
 	}
