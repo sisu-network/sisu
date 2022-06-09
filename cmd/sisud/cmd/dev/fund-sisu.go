@@ -162,6 +162,8 @@ func (c *fundAccountCmd) fundCardano(receiverMnemonic string, funderMnemonic str
 	}
 	client := wallet.NewClient(opts)
 
+	// funder address: addr_test1vqyqp03az6w8xuknzpfup3h7ghjwu26z7xa6gk7l9j7j2gs8zfwcy
+	// Please request faucet testnet tokens for this address
 	funderWallet, err := c.getWalletFromMnemonic(client, DefaultCardanoWalletName, DefaultCardanoPassword, funderMnemonic)
 	if err != nil {
 		panic(err)
