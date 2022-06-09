@@ -279,5 +279,5 @@ func (t *DefaultTxTracker) getEthTransferIn(bz []byte) (*transferInData, error) 
 		return nil, err
 	}
 
-	return parseTransferInData(ethTx, t.worldState)
+	return parseTransferInData(ethTx)
 }
