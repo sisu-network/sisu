@@ -27,6 +27,7 @@ func DeployAndFund() *cobra.Command {
 			expectedErc20String, _ := cmd.Flags().GetString(flags.ExpectedErc20Addrs)
 			expectedLiquidityString, _ := cmd.Flags().GetString(flags.ExpectedLiquidityAddrs)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
+			cardanoFunderMnemonic, _ := cmd.Flags().GetString(flags.CardanoFunderMnemonic)
 
 			log.Info("chainUrls = ", chainUrls)
 
@@ -58,7 +59,7 @@ func DeployAndFund() *cobra.Command {
 			// Fund Sisu's account
 			fundSisuCmd := &fundAccountCmd{}
 			fundSisuCmd.fundSisuAccounts(cmd.Context(), chainString, chainUrls, mnemonic, "SISU",
-				liquidityAddrString, sisuRpc, cardanoSecret)
+				liquidityAddrString, sisuRpc, cardanoSecret, cardanoFunderMnemonic)
 
 			return nil
 		},
@@ -72,6 +73,7 @@ func DeployAndFund() *cobra.Command {
 	cmd.Flags().String(flags.ExpectedErc20Addrs, fmt.Sprintf("%s,%s", ExpectedErc20Address, ExpectedErc20Address), "Expected addressed of the erc20 contract after deployment. Empty string means do not check for address match.")
 	cmd.Flags().String(flags.ExpectedLiquidityAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "Expected addressed of the liquidity contract after deployment. Empty string means do not check for address match.")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
+	cmd.Flags().String(flags.CardanoFunderMnemonic, "", "Mnemonic of funder wallet which already has a lot of test tokens")
 
 	return cmd
 }
