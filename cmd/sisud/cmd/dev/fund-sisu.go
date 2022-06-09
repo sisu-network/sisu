@@ -144,6 +144,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	wg.Wait()
 
 	// TODO: Fund cardano address generated from mnemonic using wallet in cardano go.
+
 }
 
 func (c *fundAccountCmd) waitForGatewayCreationInSisuDb(goCtx context.Context, chains []string, sisuRpc string) []string {
