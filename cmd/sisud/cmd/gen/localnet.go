@@ -81,7 +81,7 @@ Example:
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 			algo, _ := cmd.Flags().GetString(flags.Algo)
 			genesisFolder, _ := cmd.Flags().GetString(flagGenesisFolder)
-			cardanoNetwork, _ := cmd.Flags().GetString(flags.CardanoNetwork)
+			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 
 			// Get Chain id and keyring backend from .env file.
 			chainID := "eth-sisu-local"
@@ -112,7 +112,15 @@ Example:
 			}
 
 			deyesChains := generator.readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
-			if cardanoNetwork != "" {
+
+			if cardanoSecret != "" {
+				// Add cardano configuration
+				deyesChains = append(deyesChains, econfig.Chain{
+					Chain:      "cardano-testnet",
+					BlockTime:  10000,
+					AdjustTime: 1000,
+					RpcSecret:  cardanoSecret,
+				})
 			}
 
 			generator.generateEyesToml("../deyes", deyesChains)
@@ -152,7 +160,6 @@ Example:
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.Algo, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
 	cmd.Flags().String(flags.KeyringBackend, keyring.BackendTest, "Keyring backend. file|os|kwallet|pass|test|memory")
-	cmd.Flags().String(flags.CardanoNetwork, "", "Name of the cardano network used for the chain. Default value is empty which means no cardano network.")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 	cmd.Flags().String(flagGenesisFolder, "./misc/dev", "Relative path to the folder that contains genesis configuration.")
 
