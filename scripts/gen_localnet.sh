@@ -8,7 +8,6 @@ else
 fi
 
 args="$*"
-echo "$args"
 
 ./sisu localnet $args
 rm -rf ~/.sisu

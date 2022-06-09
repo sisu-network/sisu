@@ -46,11 +46,13 @@ func FundSisu() *cobra.Command {
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
 			tokenString, _ := cmd.Flags().GetString(flags.Erc20Symbols)
 			liquidityAddrString, _ := cmd.Flags().GetString(flags.LiquidityAddrs)
+			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 
 			c := &fundAccountCmd{}
-			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokenString, liquidityAddrString, sisuRpc)
+			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokenString,
+				liquidityAddrString, sisuRpc, cardanoSecret)
 
 			return nil
 		},
@@ -62,12 +64,13 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
 	cmd.Flags().String(flags.LiquidityAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "List of liquidity pool addresses")
 	cmd.Flags().String(flags.Erc20Symbols, "SISU", "List of ERC20 to approve")
+	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 
 	return cmd
 }
 
 func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic,
-	tokenString, liquidityAddrString, sisuRpc string) {
+	tokenString, liquidityAddrString, sisuRpc string, cardanoSecret string) {
 	chains := strings.Split(chainString, ",")
 	liquidityAddrs := strings.Split(liquidityAddrString, ",")
 
@@ -139,6 +142,8 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 		}(i, client)
 	}
 	wg.Wait()
+
+	// TODO: Fund cardano address generated from mnemonic using wallet in cardano go.
 }
 
 func (c *fundAccountCmd) waitForGatewayCreationInSisuDb(goCtx context.Context, chains []string, sisuRpc string) []string {
