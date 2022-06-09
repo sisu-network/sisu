@@ -60,7 +60,10 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, signerMsg *types.K
 		h.keeper.SaveKeygenResult(ctx, signerMsg)
 
 		if !h.globalData.IsCatchingUp() {
-			h.createContracts(ctx, signerMsg.Keygen)
+			switch signerMsg.Keygen.KeyType {
+			case libchain.KEY_TYPE_ECDSA:
+				h.createContracts(ctx, signerMsg.Keygen)
+			}
 		}
 	} else {
 		// TODO: handle failure case
@@ -71,6 +74,9 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, signerMsg *types.K
 
 func (h *HandlerKeygenResult) getKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) types.KeygenResult_Result {
 	results := h.keeper.GetAllKeygenResult(ctx, signerMsg.Keygen.KeyType, signerMsg.Keygen.Index)
+
+	// TODO: Rewrite this logic. We need to make sure that all nodes have reported successful keygen
+	// in order to proceed.
 
 	// Check the majority of the results
 	successCount := 0
