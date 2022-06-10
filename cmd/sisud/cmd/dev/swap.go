@@ -2,7 +2,6 @@ package dev
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 	"time"
 
@@ -109,10 +108,11 @@ func (c *swapCommand) getTokenAddrs(tokenId string, srcChain string, dstChain st
 	token := res.Token
 	if len(token.GetAddressForChain(srcChain)) == 0 || len(token.GetAddressForChain(dstChain)) == 0 {
 		log.Info("source chain = ", srcChain, " dest chain = ", dstChain)
-		panic(fmt.Errorf("cannot find token address, available token addresses = %v", token.Addresses))
+		//panic(fmt.Errorf("cannot find token address, available token addresses = %v", token.Addresses))
 	}
 
-	return token.GetAddressForChain(srcChain), token.GetAddressForChain(dstChain)
+	//return token.GetAddressForChain(srcChain), token.GetAddressForChain(dstChain)
+	return token.GetAddressForChain(srcChain), ""
 }
 
 func (c *swapCommand) getGatewayAddresses(context context.Context, chain string, sisuRpc string) string {
@@ -163,7 +163,7 @@ func (c *swapCommand) swap(client *ethclient.Client, mnemonic string, gateway st
 	log.Verbosef("destination = %s, recipientAddr %s, srcTokenAddr = %s, dstTokenAddr = %s, amount = %s",
 		dstChain, recipientAddr.String(), srcTokenAddr.String(), dstTokenAddr.String(), amount)
 
-	tx, err := contract.TransferOut(opts, dstChain, recipientAddr, srcTokenAddr, dstTokenAddr, amount)
+	tx, err := contract.TransferOut(opts, dstChain, recipient, srcTokenAddr, dstTokenAddr, amount)
 	if err != nil {
 		panic(err)
 	}

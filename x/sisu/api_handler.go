@@ -261,7 +261,7 @@ func (a *ApiHandler) OnKeygenResult(result dhtypes.KeygenResult) {
 		result.Address,
 	)
 
-	log.Info("There is keygen result from dheart, resultEnum = ", resultEnum)
+	log.Info("There is keygen result from dheart, resultEnum = ", resultEnum, " keyType = ", result.KeyType)
 
 	a.txSubmit.SubmitMessageAsync(signerMsg)
 
