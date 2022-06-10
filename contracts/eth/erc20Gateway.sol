@@ -545,7 +545,7 @@ contract ERC20Gateway is Ownable {
 
     event TransferOutEvent(
         string indexed destChain,
-        address indexed recipient,
+        string indexed recipient,
         address indexed tokenOut,
         address tokenIn,
         address sender,
@@ -569,7 +569,7 @@ contract ERC20Gateway is Ownable {
     // Anyone can call TransferOut
     function transferOut(
         string memory _destChain,
-        address _recipient,
+        string memory _recipient,
         address _tokenOut,
         address _tokenIn,
         uint256 _amount
