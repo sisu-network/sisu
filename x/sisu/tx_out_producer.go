@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	"encoding/json"
 	"math/big"
 	"sort"
 	"strings"
@@ -140,14 +141,18 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 	// 2. Check if this is a tx sent to one of our contracts.
 	if ethTx.To() != nil &&
 		p.keeper.IsContractExistedAtAddress(ctx, tx.Chain, ethTx.To().String()) && len(ethTx.Data()) >= 4 {
-		// TODO: compare method name to trigger corresponding contract method
-		responseTx, err := p.processERC20TransferOut(ctx, ethTx)
+		data, err := parseEthTransferOut(ethTx, p.worldState)
 		if err != nil {
-			log.Error("cannot get response for erc20 tx, err = ", err)
+			log.Error(err)
 			return nil, err
 		}
 
-		if libchain.IsETHBasedChain(responseTx.OutChain) {
+		if libchain.IsETHBasedChain(data.destChain) {
+			responseTx, err := p.buildERC20TransferIn(ctx, data.token, data.tokenAddr, ecommon.HexToAddress(data.recipient), data.amount, data.destChain)
+			if err != nil {
+				log.Error(err)
+				return nil, err
+			}
 			outMsg := types.NewMsgTxOutWithSigner(
 				p.appKeys.GetSignerAddress().String(),
 				types.TxOutType_TRANSFER_OUT,
@@ -163,18 +168,19 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 			outMsgs = append(outMsgs, outMsg)
 		}
 
-		if libchain.IsCardanoChain(responseTx.OutChain) {
-			inData, err := parseEthTransferOut(ethTx, p.worldState)
-			if err != nil {
-				return nil, err
-			}
-
-			cardanoTx, err := p.getCardanoTx(ctx, inData.recipient, inData.amount.Uint64())
+		if libchain.IsCardanoChain(data.destChain) {
+			log.Debug("This is swapping from ETH-family to Cardano")
+			cardanoTx, err := p.getCardanoTx(ctx, data.recipient, data.amount.Uint64())
 			if err != nil {
 				return nil, err
 			}
 
 			cardanoTxHash, err := cardanoTx.Hash()
+			if err != nil {
+				return nil, err
+			}
+
+			bz, err := json.Marshal(cardanoTx)
 			if err != nil {
 				return nil, err
 			}
@@ -185,9 +191,9 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 				tx.BlockHeight,
 				tx.Chain,
 				tx.TxHash,
-				inData.destChain,
+				data.destChain,
 				cardanoTxHash.String(),
-				cardanoTx.Bytes(),
+				bz,
 				"",
 			)
 
@@ -204,6 +210,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, receiver string, lovelace uint64) (*cardano.Tx, error) {
 	pubkey := p.keeper.GetKeygenPubkey(ctx, libchain.KEY_TYPE_EDDSA)
 	senderAddr := utils.GetAddressFromCardanoPubkey(pubkey)
+	log.Info("cardano sender address = ", senderAddr.String())
 
 	receiverAddr, err := cardano.NewAddress(receiver)
 	if err != nil {

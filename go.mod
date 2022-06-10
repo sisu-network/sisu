@@ -183,9 +183,9 @@ require (
 
 replace (
 	github.com/agl/ed25519 => github.com/binance-chain/edwards25519 v0.0.0-20200305024217-f36fc4b53d43
-	github.com/echovl/cardano-go => github.com/sisu-network/cardano-go v0.1.12-fork
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
 	github.com/sisu-network/dheart => ../dheart
 	github.com/sisu-network/deyes => ../deyes
+	github.com/echovl/cardano-go => ../cardano-go
 )

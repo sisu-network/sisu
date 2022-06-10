@@ -1,7 +1,9 @@
 package sisu
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/echovl/cardano-go"
 	"sort"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -284,10 +286,10 @@ func (a *ApiHandler) addWatchAddress(chain string, address string) {
 }
 
 // OnTxDeploymentResult is a callback after there is a deployment result from deyes.
-func (p *ApiHandler) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
+func (a *ApiHandler) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 	log.Info("The transaction has been sent to blockchain (but not included in a block yet). chain = ",
 		result.Chain, ", address = ", result.DeployedAddr)
-	p.txTracker.UpdateStatus(result.Chain, result.TxHash, types.TxStatusDepoyed)
+	a.txTracker.UpdateStatus(result.Chain, result.TxHash, types.TxStatusDepoyed)
 }
 
 // This function is called after dheart sends Sisu keysign result.
@@ -322,57 +324,19 @@ func (a *ApiHandler) OnKeysignResult(result *dhtypes.KeysignResult) {
 
 		// Sends it to deyes for deployment.
 		if result.Outcome == dhtypes.OutcomeSuccess {
-			// Find the tx in txout table
-			txOut := a.keeper.GetTxOut(ctx, keysignMsg.OutChain, keysignMsg.OutHash)
-			if txOut == nil {
-				log.Error("Cannot find tx out with hash", keysignMsg.OutHash)
+			// TODO: clean code here
+			if libchain.IsETHBasedChain(keysignMsg.OutChain) {
+				a.processETHSigningResult(ctx, result, keysignMsg, i)
 			}
 
-			tx := &ethtypes.Transaction{}
-			if err := tx.UnmarshalBinary(txOut.OutBytes); err != nil {
-				log.Error("cannot unmarshal tx, err =", err)
-				return
-			}
-
-			// Create full tx with signature.
-			chainId := libchain.GetChainIntFromId(keysignMsg.OutChain)
-			if len(result.Signatures[i]) != 65 {
-				log.Error("Signature length is not 65 for chain: ", chainId)
-			}
-			signedTx, err := tx.WithSignature(ethtypes.NewEIP2930Signer(chainId), result.Signatures[i])
-			if err != nil {
-				log.Error("cannot set signature for tx, err =", err)
-				return
-			}
-
-			bz, err := signedTx.MarshalBinary()
-			if err != nil {
-				log.Error("cannot marshal tx")
-				return
-			}
-
-			// // TODO: Broadcast the keysign result that includes this TxOutSig.
-			// // Save this to TxOutSig
-			a.privateDb.SaveTxOutSig(&types.TxOutSig{
-				Chain:       keysignMsg.OutChain,
-				HashWithSig: signedTx.Hash().String(),
-				HashNoSig:   keysignMsg.OutHash,
-			})
-
-			log.Info("signedTx hash = ", signedTx.Hash().String())
-
-			// If this is a contract deployment transaction, update the contract table with the hash of the
-			// deployment tx bytes.
-			isContractDeployment := chain.IsETHBasedChain(keysignMsg.OutChain) && txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT
-			err = a.deploySignedTx(ctx, bz, keysignMsg.OutChain, result.Request.KeysignMessages[i].OutHash, isContractDeployment)
-			if err != nil {
-				log.Error("deployment error: ", err)
-				return
+			if libchain.IsCardanoChain(keysignMsg.OutChain) {
+				if err := a.processCardanoSigningResult(ctx, result, keysignMsg, i); err != nil {
+					return
+				}
 			}
 
 			// Mark the tx as signed
 			a.txTracker.UpdateStatus(keysignMsg.OutChain, keysignMsg.OutHash, types.TxStatusSigned)
-
 			// TODO: Check if we have any pending confirm tx that is waiting for this tx.
 		} else {
 			// TODO: handle failure case here.
@@ -382,6 +346,116 @@ func (a *ApiHandler) OnKeysignResult(result *dhtypes.KeysignResult) {
 			a.txTracker.OnTxFailed(keysignMsg.OutChain, keysignMsg.OutHash, types.TxStatusSignFailed)
 		}
 	}
+}
+
+func (a *ApiHandler) processETHSigningResult(ctx sdk.Context, result *dhtypes.KeysignResult, signMsg *dhtypes.KeysignMessage, index int) {
+	// Find the tx in txout table
+	txOut := a.keeper.GetTxOut(ctx, signMsg.OutChain, signMsg.OutHash)
+	if txOut == nil {
+		log.Error("Cannot find tx out with hash", signMsg.OutHash)
+		return
+	}
+
+	tx := &ethtypes.Transaction{}
+	if err := tx.UnmarshalBinary(txOut.OutBytes); err != nil {
+		log.Error("cannot unmarshal tx, err =", err)
+		return
+	}
+
+	// Create full tx with signature.
+	chainId := libchain.GetChainIntFromId(signMsg.OutChain)
+	if len(result.Signatures[index]) != 65 {
+		log.Error("Signature length is not 65 for chain: ", chainId)
+	}
+	signedTx, err := tx.WithSignature(ethtypes.NewEIP2930Signer(chainId), result.Signatures[index])
+	if err != nil {
+		log.Error("cannot set signature for tx, err =", err)
+		return
+	}
+
+	bz, err := signedTx.MarshalBinary()
+	if err != nil {
+		log.Error("cannot marshal tx")
+		return
+	}
+
+	// // TODO: Broadcast the keysign result that includes this TxOutSig.
+	// // Save this to TxOutSig
+	a.privateDb.SaveTxOutSig(&types.TxOutSig{
+		Chain:       signMsg.OutChain,
+		HashWithSig: signedTx.Hash().String(),
+		HashNoSig:   signMsg.OutHash,
+	})
+
+	log.Info("signedTx hash = ", signedTx.Hash().String())
+
+	// If this is a contract deployment transaction, update the contract table with the hash of the
+	// deployment tx bytes.
+	isContractDeployment := chain.IsETHBasedChain(signMsg.OutChain) && txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT
+	err = a.deploySignedTx(ctx, bz, signMsg.OutChain, result.Request.KeysignMessages[index].OutHash, isContractDeployment)
+	if err != nil {
+		log.Error("deployment error: ", err)
+		return
+	}
+}
+
+func (a *ApiHandler) processCardanoSigningResult(ctx sdk.Context, result *dhtypes.KeysignResult, signMsg *dhtypes.KeysignMessage, index int) error {
+	log.Info("Processing Cardano signing result ...")
+	txOut := a.keeper.GetTxOut(ctx, signMsg.OutChain, signMsg.OutHash)
+	if txOut == nil {
+		err := fmt.Errorf("cannot find tx out with hash %s", signMsg.OutHash)
+		log.Error(err)
+		return err
+	}
+
+	tx := cardano.Tx{}
+	if err := json.Unmarshal(txOut.OutBytes, &tx); err != nil {
+		log.Error("error when unmarshalling cardano tx: ", err)
+		return err
+	}
+
+	pubkey := a.keeper.GetKeygenPubkey(ctx, libchain.GetKeyTypeForChain(signMsg.OutChain))
+	if len(pubkey) == 0 {
+		err := fmt.Errorf("cannot find pubkey for type %s", libchain.GetKeyTypeForChain(signMsg.OutChain))
+		log.Error(err)
+		return err
+	}
+
+	log.Debug("length of tx.WitnessSet.VKeyWitnessSet =  ", len(tx.WitnessSet.VKeyWitnessSet))
+	for i := range tx.WitnessSet.VKeyWitnessSet {
+		signature := result.Signatures[index]
+		log.Debug("signature = ", string(signature))
+		tx.WitnessSet.VKeyWitnessSet[i] = cardano.VKeyWitness{VKey: pubkey, Signature: result.Signatures[index]}
+	}
+
+	hashWSig, err := tx.Hash()
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	a.privateDb.SaveTxOutSig(&types.TxOutSig{
+		Chain:       signMsg.OutChain,
+		HashWithSig: hashWSig.String(),
+		HashNoSig:   signMsg.OutHash,
+	})
+
+	// TODO: temporary use json to encode/decode. In the future, should use cbor instead
+	txBytes, err := json.Marshal(tx)
+	if err != nil {
+		log.Error("error when marshal cardano tx: ", err)
+		return err
+	}
+
+	err = a.deploySignedTx(ctx, txBytes, signMsg.OutChain, result.Request.KeysignMessages[index].OutHash, false)
+	if err != nil {
+		log.Error("deployment error: ", err)
+		return err
+	}
+
+	log.Info("Sent signed cardano tx to deyes")
+
+	return nil
 }
 
 // deploySignedTx creates a deployment request and sends it to deyes.

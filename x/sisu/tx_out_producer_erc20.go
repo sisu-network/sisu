@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/sisu-network/sisu/x/sisu/world"
@@ -70,7 +71,7 @@ func parseEthTransferOut(ethTx *ethTypes.Transaction, worldState world.WorldStat
 	}
 
 	token := worldState.GetTokenFromAddress(destChain, tokenAddr.String())
-	if token == nil {
+	if token == nil && libchain.IsETHBasedChain(destChain) {
 		return nil, fmt.Errorf("invalid address %s on chain %s", tokenAddr, destChain)
 	}
 
@@ -129,17 +130,7 @@ func parseTransferInData(ethTx *ethTypes.Transaction) (*transferInData, error) {
 	}, nil
 }
 
-func (p *DefaultTxOutputProducer) processERC20TransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction) (*types.TxResponse, error) {
-	data, err := parseEthTransferOut(ethTx, p.worldState)
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-
-	return p.callERC20TransferIn(ctx, data.token, data.tokenAddr, ethcommon.HexToAddress(data.recipient), data.amount, data.destChain)
-}
-
-func (p *DefaultTxOutputProducer) callERC20TransferIn(
+func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	ctx sdk.Context,
 	token *types.Token,
 	tokenAddress,
