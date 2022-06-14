@@ -326,10 +326,12 @@ func (a *ApiHandler) OnKeysignResult(result *dhtypes.KeysignResult) {
 		if result.Outcome == dhtypes.OutcomeSuccess {
 			// TODO: clean code here
 			if libchain.IsETHBasedChain(keysignMsg.OutChain) {
+				log.Debug("keysign result for ETH-based chain")
 				a.processETHSigningResult(ctx, result, keysignMsg, i)
 			}
 
 			if libchain.IsCardanoChain(keysignMsg.OutChain) {
+				log.Debug("keysign result for Cardano chain")
 				if err := a.processCardanoSigningResult(ctx, result, keysignMsg, i); err != nil {
 					return
 				}

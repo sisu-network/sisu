@@ -19,8 +19,8 @@ require (
 	github.com/joho/godotenv v1.3.0
 	github.com/libp2p/go-libp2p-core v0.8.0
 	github.com/logdna/logdna-go v1.0.2
-	github.com/sisu-network/deyes v0.1.7-0.20220606052026-f07e1eda0b54
-	github.com/sisu-network/dheart v0.1.7-0.20220609103335-2bfd73851311
+	github.com/sisu-network/deyes v0.1.7-0.20220613080622-6d7dbe10508c
+	github.com/sisu-network/dheart v0.1.7-0.20220614092423-fa65d4f300a5
 	github.com/sisu-network/lib v0.0.1-alpha9.0.20220607090913-7a74c077ee70
 	github.com/spf13/cast v1.5.0
 	github.com/spf13/cobra v1.4.0
@@ -82,7 +82,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/google/btree v1.0.1 // indirect
-	github.com/google/flatbuffers v1.12.1 // indirect
+	github.com/google/flatbuffers v2.0.0+incompatible // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/orderedcode v0.0.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
@@ -101,7 +101,7 @@ require (
 	github.com/ipfs/go-log/v2 v2.1.3 // indirect
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/keybase/go-keychain v0.0.0-20190712205309-48d3d31d256d // indirect
-	github.com/klauspost/compress v1.12.3 // indirect
+	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/lib/pq v1.10.0 // indirect
 	github.com/libp2p/go-buffer-pool v0.0.2 // indirect
 	github.com/libp2p/go-openssl v0.0.7 // indirect
@@ -183,9 +183,9 @@ require (
 
 replace (
 	github.com/agl/ed25519 => github.com/binance-chain/edwards25519 v0.0.0-20200305024217-f36fc4b53d43
+	github.com/echovl/cardano-go => github.com/sisu-network/cardano-go v0.1.13-0.20220613071927-adeae695a9ef
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
+	github.com/sisu-network/deyes => github.com/sisu-network/deyes v0.1.7-0.20220613080622-6d7dbe10508c
+	github.com/sisu-network/dheart => github.com/sisu-network/dheart v0.1.7-0.20220614092423-fa65d4f300a5
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
-	github.com/sisu-network/dheart => ../dheart
-	github.com/sisu-network/deyes => ../deyes
-	github.com/echovl/cardano-go => ../cardano-go
 )
