@@ -252,6 +252,9 @@ func (g *localDockerGenerator) getNodeSettings(chainID, keyringBackend string, i
 				"ganache2": {
 					Id: "ganache2",
 				},
+				"cardano-testnet": {
+					Id: "cardano-testnet",
+				},
 			},
 		},
 	}
@@ -359,6 +362,12 @@ func (g *localDockerGenerator) generateEyesToml(index int, dir string) {
 				BlockTime:  3000,
 				AdjustTime: 100,
 				Rpcs:       []string{"http://ganache2:7545"},
+			},
+			{
+				Chain:      "cardano-testnet",
+				BlockTime:  10000,
+				AdjustTime: 1000,
+				RpcSecret:  "testnetxeSFTv3sePzbqnpd39HGDZ4Nts9egblj",
 			},
 		},
 

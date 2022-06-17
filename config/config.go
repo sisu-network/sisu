@@ -11,9 +11,10 @@ import (
 type Config struct {
 	Mode string
 
-	Sisu   SisuConfig       `toml:"sisu"`
-	Tss    TssConfig        `toml:"tss"`
-	LogDNA log.LogDNAConfig `toml:"log_dna"`
+	Sisu    SisuConfig       `toml:"sisu"`
+	Tss     TssConfig        `toml:"tss"`
+	LogDNA  log.LogDNAConfig `toml:"log_dna"`
+	Cardano CardanoConfig    `toml:"cardano"`
 }
 
 type SisuConfig struct {
@@ -28,6 +29,10 @@ type SisuConfig struct {
 
 type TssChainConfig struct {
 	Id string `toml:"id"`
+}
+
+type CardanoConfig struct {
+	BlockfrostSecret string `toml:"block_frost_secret"`
 }
 
 // Example of supported chains in the toml config file.
@@ -75,6 +80,9 @@ func ReadConfig() (Config, error) {
 	if err != nil {
 		return cfg, err
 	}
+
+	log.Debug("config = ", cfg)
+	cfg.Cardano.BlockfrostSecret = "testnetxeSFTv3sePzbqnpd39HGDZ4Nts9egblj"
 
 	return cfg, nil
 }

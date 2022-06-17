@@ -228,7 +228,7 @@ func (t *DefaultTxTracker) getEmailBodyString(txo *txObject) (string, error) {
 				txInData := TxInData{
 					Chain:        txIn.Chain,
 					TokenAddress: data.tokenAddr.String(),
-					Recipient:    data.recipient.String(),
+					Recipient:    data.recipient,
 					Amount:       data.amount.String(),
 				}
 				body.TxInData = txInData
@@ -250,7 +250,7 @@ func (t *DefaultTxTracker) getEmailBodyString(txo *txObject) (string, error) {
 			Type:         "TRANSFER_OUT",
 			Chain:        txo.txOut.OutChain,
 			TokenAddress: data.token.String(),
-			Recipient:    data.recipient.String(),
+			Recipient:    data.recipient,
 			Amount:       data.amount.String(),
 		}
 	case types.TxOutType_CONTRACT_DEPLOYMENT:
@@ -279,5 +279,5 @@ func (t *DefaultTxTracker) getEthTransferIn(bz []byte) (*transferInData, error) 
 		return nil, err
 	}
 
-	return parseTransferInData(ethTx, t.worldState)
+	return parseTransferInData(ethTx)
 }

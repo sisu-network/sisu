@@ -164,17 +164,22 @@ func isKeygenAddress(store cstypes.KVStore, keyType string, address string) bool
 }
 
 func getKeygenPubkey(store cstypes.KVStore, keyType string) []byte {
-	begin := []byte(fmt.Sprintf("%s__", keyType))
+	log.Debug("key type for getKeygenPubkey ", keyType)
 
-	iter := store.ReverseIterator(begin, nil)
+	// TODO: debug why reverseIterator with "begin" is incorrect
+	iter := store.ReverseIterator(nil, nil)
 	for ; iter.Valid(); iter.Next() {
+		if !strings.HasPrefix(string(iter.Key()), keyType) {
+			continue
+		}
+
 		msg := &types.Keygen{}
 		if err := msg.Unmarshal(iter.Value()); err != nil {
 			log.Error("IsKeygenAddress: cannot unmarshal keygen")
 			continue
 		}
 
-		if msg.PubKeyBytes != nil && len(msg.PubKeyBytes) > 0 {
+		if len(msg.PubKeyBytes) > 0 {
 			return msg.PubKeyBytes
 		}
 	}

@@ -19,6 +19,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	hutils "github.com/sisu-network/dheart/utils"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
@@ -60,7 +61,6 @@ func FundSisu() *cobra.Command {
 			c := &fundAccountCmd{}
 			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokenString,
 				liquidityAddrString, sisuRpc, cardanoSecret, cardanoFunderMnemonic)
-			c.fundCardano(mnemonic, cardanoFunderMnemonic, cardanoSecret)
 
 			return nil
 		},
@@ -153,10 +153,16 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	wg.Wait()
 
 	// TODO: Fund cardano address generated from mnemonic using wallet in cardano go.
-	c.fundCardano(mnemonic, cardanoFunderMnemonic, cardanoSecret)
+	cardanoKey, ok := allPubKeys[libchain.KEY_TYPE_EDDSA]
+	if !ok {
+		panic("can not find cardano pub key")
+	}
+
+	cardanoAddr := hutils.GetAddressFromCardanoPubkey(cardanoKey)
+	c.fundCardano(cardanoAddr, cardanoFunderMnemonic, cardanoSecret)
 }
 
-func (c *fundAccountCmd) fundCardano(receiverMnemonic string, funderMnemonic string, blockfrostSecret string) {
+func (c *fundAccountCmd) fundCardano(receiver cardano.Address, funderMnemonic string, blockfrostSecret string) {
 	node := blockfrost.NewNode(cardano.Testnet, blockfrostSecret)
 	opts := &wallet.Options{
 		Node: node,
@@ -170,23 +176,13 @@ func (c *fundAccountCmd) fundCardano(receiverMnemonic string, funderMnemonic str
 		panic(err)
 	}
 
-	receiverWallet, err := c.getWalletFromMnemonic(client, DefaultCardanoWalletName, DefaultCardanoPassword, receiverMnemonic)
-	if err != nil {
-		panic(err)
-	}
-
-	recipient, err := receiverWallet.Addresses()
-	if err != nil || len(recipient) == 0 {
-		panic(err)
-	}
-
-	txHash, err := funderWallet.Transfer(recipient[0], cardano.NewValue(100*CardanoDecimals)) // 100 ADA
+	txHash, err := funderWallet.Transfer(receiver, cardano.NewValue(10*CardanoDecimals)) // 10 ADA
 	if err != nil {
 		panic(err)
 	}
 
 	log.Infof("Funded 100 ADA for address %s, txHash = %s, "+
-		"explorer: https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=%s\n", recipient[0].String(), txHash.String(), txHash.String())
+		"explorer: https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=%s\n", receiver, txHash.String(), txHash.String())
 }
 
 func (c *fundAccountCmd) getWalletFromMnemonic(client *wallet.Client, name, password, mnemonic string) (*wallet.Wallet, error) {

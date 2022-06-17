@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	"encoding/json"
 	"math/big"
 	"sort"
 	"strings"
@@ -9,7 +10,9 @@ import (
 	ecommon "github.com/ethereum/go-ethereum/common"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/echovl/cardano-go"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/sisu-network/dheart/utils"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
@@ -44,15 +47,19 @@ type DefaultTxOutputProducer struct {
 	appKeys    common.AppKeys
 	keeper     keeper.Keeper
 	tssConfig  config.TssConfig
+
+	// Only use for cardano chain
+	cardanoNode cardano.Node
 }
 
 func NewTxOutputProducer(worldState world.WorldState, appKeys common.AppKeys,
-	keeper keeper.Keeper, tssConfig config.TssConfig) TxOutputProducer {
+	keeper keeper.Keeper, tssConfig config.TssConfig, cardanoNode cardano.Node) TxOutputProducer {
 	return &DefaultTxOutputProducer{
-		keeper:     keeper,
-		worldState: worldState,
-		appKeys:    appKeys,
-		tssConfig:  tssConfig,
+		keeper:      keeper,
+		worldState:  worldState,
+		appKeys:     appKeys,
+		tssConfig:   tssConfig,
+		cardanoNode: cardanoNode,
 	}
 }
 
@@ -134,31 +141,90 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 	// 2. Check if this is a tx sent to one of our contracts.
 	if ethTx.To() != nil &&
 		p.keeper.IsContractExistedAtAddress(ctx, tx.Chain, ethTx.To().String()) && len(ethTx.Data()) >= 4 {
-		// TODO: compare method name to trigger corresponding contract method
-		responseTx, err := p.processERC20TransferOut(ctx, ethTx)
+		data, err := parseEthTransferOut(ethTx, p.worldState)
 		if err != nil {
-			log.Error("cannot get response for erc20 tx, err = ", err)
+			log.Error(err)
 			return nil, err
 		}
 
-		outMsg := types.NewMsgTxOutWithSigner(
-			p.appKeys.GetSignerAddress().String(),
-			types.TxOutType_TRANSFER_OUT,
-			tx.BlockHeight,
-			tx.Chain,
-			tx.TxHash,
-			responseTx.OutChain, // Could be different chain
-			responseTx.EthTx.Hash().String(),
-			responseTx.RawBytes,
-			"",
-		)
+		if libchain.IsETHBasedChain(data.destChain) {
+			responseTx, err := p.buildERC20TransferIn(ctx, data.token, data.tokenAddr, ecommon.HexToAddress(data.recipient), data.amount, data.destChain)
+			if err != nil {
+				log.Error(err)
+				return nil, err
+			}
+			outMsg := types.NewMsgTxOutWithSigner(
+				p.appKeys.GetSignerAddress().String(),
+				types.TxOutType_TRANSFER_OUT,
+				tx.BlockHeight,
+				tx.Chain,
+				tx.TxHash,
+				responseTx.OutChain, // Could be different chain
+				responseTx.EthTx.Hash().String(),
+				responseTx.RawBytes,
+				"",
+			)
 
-		outMsgs = append(outMsgs, outMsg)
+			outMsgs = append(outMsgs, outMsg)
+		}
+
+		if libchain.IsCardanoChain(data.destChain) {
+			log.Debug("This is swapping from ETH-family to Cardano")
+			cardanoTx, err := p.getCardanoTx(ctx, data.recipient, data.amount.Uint64())
+			if err != nil {
+				return nil, err
+			}
+
+			cardanoTxHash, err := cardanoTx.Hash()
+			if err != nil {
+				return nil, err
+			}
+
+			bz, err := json.Marshal(cardanoTx)
+			if err != nil {
+				return nil, err
+			}
+
+			outMsg := types.NewMsgTxOutWithSigner(
+				p.appKeys.GetSignerAddress().String(),
+				types.TxOutType_TRANSFER_OUT,
+				tx.BlockHeight,
+				tx.Chain,
+				tx.TxHash,
+				data.destChain,
+				cardanoTxHash.String(),
+				bz,
+				"",
+			)
+
+			outMsgs = append(outMsgs, outMsg)
+		}
 	}
 
 	// 3. Check other types of transaction.
 
 	return outMsgs, nil
+}
+
+// TODO: build cardano tx for transferring multi-asset. Need to test with native token (ADA) first
+func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, receiver string, lovelace uint64) (*cardano.Tx, error) {
+	pubkey := p.keeper.GetKeygenPubkey(ctx, libchain.KEY_TYPE_EDDSA)
+	senderAddr := utils.GetAddressFromCardanoPubkey(pubkey)
+	log.Info("cardano sender address = ", senderAddr.String())
+
+	receiverAddr, err := cardano.NewAddress(receiver)
+	if err != nil {
+		log.Error("error when parsing receiver addr: ", err)
+		return nil, err
+	}
+
+	tx, err := BuildTx(p.cardanoNode, cardano.Testnet, senderAddr, receiverAddr, cardano.NewValue(cardano.Coin(lovelace)))
+	if err != nil {
+		log.Error("error when building tx: ", err)
+		return nil, err
+	}
+
+	return tx, nil
 }
 
 // Check if we can deploy contract after seeing some ETH being sent to our ethereum address.

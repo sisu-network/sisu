@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/sisu-network/sisu/x/sisu/world"
@@ -18,13 +19,13 @@ type transferOutData struct {
 	tokenAddr ethcommon.Address
 	destChain string
 	token     *types.Token
-	recipient ethcommon.Address
+	recipient string
 	amount    *big.Int
 }
 
 type transferInData struct {
 	token     ethcommon.Address
-	recipient ethcommon.Address
+	recipient string
 	amount    *big.Int
 }
 
@@ -70,11 +71,11 @@ func parseEthTransferOut(ethTx *ethTypes.Transaction, worldState world.WorldStat
 	}
 
 	token := worldState.GetTokenFromAddress(destChain, tokenAddr.String())
-	if token == nil {
+	if token == nil && libchain.IsETHBasedChain(destChain) {
 		return nil, fmt.Errorf("invalid address %s on chain %s", tokenAddr, destChain)
 	}
 
-	recipient, ok := txParams["_recipient"].(ethcommon.Address)
+	recipient, ok := txParams["_recipient"].(string)
 	if !ok {
 		err := fmt.Errorf("cannot convert _recipient to type ethcommon.Address: %v", txParams)
 		return nil, err
@@ -95,7 +96,7 @@ func parseEthTransferOut(ethTx *ethTypes.Transaction, worldState world.WorldStat
 	}, nil
 }
 
-func parseTransferInData(ethTx *ethTypes.Transaction, worldState world.WorldState) (*transferInData, error) {
+func parseTransferInData(ethTx *ethTypes.Transaction) (*transferInData, error) {
 	erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
 	gwAbi := erc20gatewayContract.Abi
 	callData := ethTx.Data()
@@ -110,7 +111,7 @@ func parseTransferInData(ethTx *ethTypes.Transaction, worldState world.WorldStat
 		return nil, err
 	}
 
-	recipient, ok := txParams["_recipient"].(ethcommon.Address)
+	recipient, ok := txParams["_recipient"].(string)
 	if !ok {
 		err := fmt.Errorf("parseTransferInData: cannot convert _recipient to type ethcommon.Address: %v", txParams)
 		return nil, err
@@ -129,17 +130,7 @@ func parseTransferInData(ethTx *ethTypes.Transaction, worldState world.WorldStat
 	}, nil
 }
 
-func (p *DefaultTxOutputProducer) processERC20TransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction) (*types.TxResponse, error) {
-	data, err := parseEthTransferOut(ethTx, p.worldState)
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-
-	return p.callERC20TransferIn(ctx, data.token, data.tokenAddr, data.recipient, data.amount, data.destChain)
-}
-
-func (p *DefaultTxOutputProducer) callERC20TransferIn(
+func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	ctx sdk.Context,
 	token *types.Token,
 	tokenAddress,

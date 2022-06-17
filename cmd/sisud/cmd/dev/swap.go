@@ -2,11 +2,8 @@ package dev
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 	"time"
-
-	"github.com/sisu-network/sisu/utils"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -67,7 +64,8 @@ transfer params.
 			srcToken, dstToken := c.getTokenAddrs(token, src, dst, sisuRpc)
 
 			amount := big.NewInt(int64(unit))
-			amount = new(big.Int).Mul(amount, utils.EthToWei)
+			// TODO: correct amount here to work with Cardano
+			//amount = new(big.Int).Mul(amount, utils.EthToWei)
 
 			gateway := c.getGatewayAddresses(cmd.Context(), src, sisuRpc)
 			c.swap(client, mnemonic, gateway, dst, srcToken, dstToken, recipient, amount)
@@ -109,10 +107,11 @@ func (c *swapCommand) getTokenAddrs(tokenId string, srcChain string, dstChain st
 	token := res.Token
 	if len(token.GetAddressForChain(srcChain)) == 0 || len(token.GetAddressForChain(dstChain)) == 0 {
 		log.Info("source chain = ", srcChain, " dest chain = ", dstChain)
-		panic(fmt.Errorf("cannot find token address, available token addresses = %v", token.Addresses))
+		//panic(fmt.Errorf("cannot find token address, available token addresses = %v", token.Addresses))
 	}
 
-	return token.GetAddressForChain(srcChain), token.GetAddressForChain(dstChain)
+	//return token.GetAddressForChain(srcChain), token.GetAddressForChain(dstChain)
+	return token.GetAddressForChain(srcChain), ""
 }
 
 func (c *swapCommand) getGatewayAddresses(context context.Context, chain string, sisuRpc string) string {
@@ -156,18 +155,22 @@ func (c *swapCommand) swap(client *ethclient.Client, mnemonic string, gateway st
 		panic(err)
 	}
 
-	recipientAddr := common.HexToAddress(recipient)
 	srcTokenAddr := common.HexToAddress(srcToken)
 	dstTokenAddr := common.HexToAddress(dstToken)
 
 	log.Verbosef("destination = %s, recipientAddr %s, srcTokenAddr = %s, dstTokenAddr = %s, amount = %s",
-		dstChain, recipientAddr.String(), srcTokenAddr.String(), dstTokenAddr.String(), amount)
+		dstChain, recipient, srcTokenAddr.String(), dstTokenAddr.String(), amount)
 
-	tx, err := contract.TransferOut(opts, dstChain, recipientAddr, srcTokenAddr, dstTokenAddr, amount)
+	tx, err := contract.TransferOut(opts, dstChain, recipient, srcTokenAddr, dstTokenAddr, amount)
 	if err != nil {
 		panic(err)
 	}
-	bind.WaitDeployed(context.Background(), client, tx)
+	waitTx, err := bind.WaitMined(context.Background(), client, tx)
+	if err != nil {
+		panic(err)
+	}
+
+	log.Debug("txHash = ", waitTx.TxHash.Hex())
 
 	time.Sleep(time.Second * 3)
 }
