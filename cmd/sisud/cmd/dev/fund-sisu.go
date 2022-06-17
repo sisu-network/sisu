@@ -12,6 +12,9 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 
+	"github.com/echovl/cardano-go"
+	"github.com/echovl/cardano-go/blockfrost"
+	"github.com/echovl/cardano-go/wallet"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -30,6 +33,9 @@ import (
 const (
 	ExpectedErc20Address      = "0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"
 	ExpectedLiquidPoolAddress = "0xf0D676183dD5ae6b370adDdbE770235F23546f9d"
+	CardanoDecimals           = 1000 * 1000
+	DefaultCardanoWalletName  = "sisu"
+	DefaultCardanoPassword    = "12345678910"
 )
 
 type fundAccountCmd struct{}
@@ -47,12 +53,14 @@ func FundSisu() *cobra.Command {
 			tokenString, _ := cmd.Flags().GetString(flags.Erc20Symbols)
 			liquidityAddrString, _ := cmd.Flags().GetString(flags.LiquidityAddrs)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
+			cardanoFunderMnemonic, _ := cmd.Flags().GetString(flags.CardanoFunderMnemonic)
 
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 
 			c := &fundAccountCmd{}
 			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokenString,
-				liquidityAddrString, sisuRpc, cardanoSecret)
+				liquidityAddrString, sisuRpc, cardanoSecret, cardanoFunderMnemonic)
+			c.fundCardano(mnemonic, cardanoFunderMnemonic, cardanoSecret)
 
 			return nil
 		},
@@ -65,12 +73,13 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.LiquidityAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "List of liquidity pool addresses")
 	cmd.Flags().String(flags.Erc20Symbols, "SISU", "List of ERC20 to approve")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
+	cmd.Flags().String(flags.CardanoFunderMnemonic, "", "Mnemonic of funder wallet which already has a lot of test tokens")
 
 	return cmd
 }
 
 func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic,
-	tokenString, liquidityAddrString, sisuRpc string, cardanoSecret string) {
+	tokenString, liquidityAddrString, sisuRpc, cardanoSecret, cardanoFunderMnemonic string) {
 	chains := strings.Split(chainString, ",")
 	liquidityAddrs := strings.Split(liquidityAddrString, ",")
 
@@ -133,7 +142,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	log.Info("Gateway approval done!")
 
 	// Set gateway for the liquidity
-	log.Info("Set gateway address for liqiuitidy pool")
+	log.Info("Set gateway address for liquidity pool")
 	wg.Add(len(gateways))
 	for i, client := range clients {
 		go func(i int, client *ethclient.Client) {
@@ -144,7 +153,49 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	wg.Wait()
 
 	// TODO: Fund cardano address generated from mnemonic using wallet in cardano go.
+	c.fundCardano(mnemonic, cardanoFunderMnemonic, cardanoSecret)
+}
 
+func (c *fundAccountCmd) fundCardano(receiverMnemonic string, funderMnemonic string, blockfrostSecret string) {
+	node := blockfrost.NewNode(cardano.Testnet, blockfrostSecret)
+	opts := &wallet.Options{
+		Node: node,
+	}
+	client := wallet.NewClient(opts)
+
+	// funder address: addr_test1vqyqp03az6w8xuknzpfup3h7ghjwu26z7xa6gk7l9j7j2gs8zfwcy
+	// Please request faucet testnet tokens for this address
+	funderWallet, err := c.getWalletFromMnemonic(client, DefaultCardanoWalletName, DefaultCardanoPassword, funderMnemonic)
+	if err != nil {
+		panic(err)
+	}
+
+	receiverWallet, err := c.getWalletFromMnemonic(client, DefaultCardanoWalletName, DefaultCardanoPassword, receiverMnemonic)
+	if err != nil {
+		panic(err)
+	}
+
+	recipient, err := receiverWallet.Addresses()
+	if err != nil || len(recipient) == 0 {
+		panic(err)
+	}
+
+	txHash, err := funderWallet.Transfer(recipient[0], cardano.NewValue(100*CardanoDecimals)) // 100 ADA
+	if err != nil {
+		panic(err)
+	}
+
+	log.Infof("Funded 100 ADA for address %s, txHash = %s, "+
+		"explorer: https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=%s\n", recipient[0].String(), txHash.String(), txHash.String())
+}
+
+func (c *fundAccountCmd) getWalletFromMnemonic(client *wallet.Client, name, password, mnemonic string) (*wallet.Wallet, error) {
+	w, err := client.RestoreWallet(name, password, mnemonic)
+	if err != nil {
+		return nil, err
+	}
+
+	return w, nil
 }
 
 func (c *fundAccountCmd) waitForGatewayCreationInSisuDb(goCtx context.Context, chains []string, sisuRpc string) []string {

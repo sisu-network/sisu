@@ -34,4 +34,5 @@ const (
 	Algo                   = "algo"
 	MinimumGasPrices       = "minimum-gas-prices"
 	CardanoSecret          = "cardano-secret"
+	CardanoFunderMnemonic  = "cardano-funder-mnemonic"
 )
