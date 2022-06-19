@@ -4,6 +4,7 @@ import (
 	"crypto"
 	"encoding/hex"
 	"fmt"
+	"github.com/echovl/cardano-go"
 	"math/big"
 
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -29,4 +30,19 @@ func GetGasCostInToken(gas, gasPrice, tokenPrice, nativeTokenPrice *big.Int) (*b
 	gasInToken = new(big.Int).Div(gasInToken, tokenPrice)
 
 	return gasInToken, nil
+}
+
+func GetCardanoAddressFromPubKey(bz []byte) (cardano.Address, error) {
+	keyHash, err := cardano.Blake224Hash(bz)
+	if err != nil {
+		return cardano.Address{}, err
+	}
+
+	payment := cardano.StakeCredential{Type: cardano.KeyCredential, KeyHash: keyHash}
+	addr, err := cardano.NewEnterpriseAddress(cardano.Testnet, payment)
+	if err != nil {
+		return cardano.Address{}, err
+	}
+
+	return addr, nil
 }

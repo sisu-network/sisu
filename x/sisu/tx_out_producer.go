@@ -2,6 +2,7 @@ package sisu
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"sort"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/echovl/cardano-go"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
+	etypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/dheart/utils"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
@@ -73,7 +75,19 @@ func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *t
 
 		if err != nil {
 			log.Error("Cannot get response for an eth tx, err = ", err)
+			return nil
 		}
+	}
+
+	if libchain.IsCardanoChain(tx.Chain) {
+		log.Info("Found tx in request from Cardano to Ethereum")
+		outMsg, err := p.extractCardanoTxIn(ctx, tx)
+		if err != nil {
+			return nil
+		}
+
+		outMsgs = append(outMsgs, outMsg)
+
 	}
 
 	return outMsgs
@@ -316,6 +330,44 @@ func (p *DefaultTxOutputProducer) getContractTx(ctx sdk.Context, contract *types
 	}
 
 	return nil
+}
+
+func (p *DefaultTxOutputProducer) extractCardanoTxIn(ctx sdk.Context, tx *types.TxIn) (*types.TxOutWithSigner, error) {
+	txIn := &etypes.CardanoTxInItem{}
+	if err := json.Unmarshal(tx.Serialized, txIn); err != nil {
+		log.Error("error when marshaling cardano tx in item: ", err)
+		return nil, err
+	}
+
+	extraInfo := txIn.TxAdditionInfo
+	token := p.worldState.GetTokenFromAddress(extraInfo.DestinationChain, extraInfo.DestinationTokenAddress)
+	if token == nil && libchain.IsETHBasedChain(extraInfo.DestinationChain) {
+		err := fmt.Errorf("invalid address %s on chain %s", extraInfo.DestinationTokenAddress, extraInfo.DestinationChain)
+		log.Error(err)
+		return nil, err
+	}
+
+	amount := new(big.Int).SetUint64(uint64(extraInfo.Amount.Coin))
+	recipient := ecommon.HexToAddress(extraInfo.DestinationRecipient)
+	tokenAddr := ecommon.HexToAddress(extraInfo.DestinationTokenAddress)
+	responseTx, err := p.buildERC20TransferIn(ctx, token, tokenAddr, recipient, amount, extraInfo.DestinationChain)
+	if err != nil {
+		return nil, err
+	}
+
+	outMsg := types.NewMsgTxOutWithSigner(
+		p.appKeys.GetSignerAddress().String(),
+		types.TxOutType_TRANSFER_OUT,
+		tx.BlockHeight,
+		tx.Chain,
+		tx.TxHash,
+		responseTx.OutChain,
+		responseTx.EthTx.Hash().String(),
+		responseTx.RawBytes,
+		"",
+	)
+
+	return outMsg, nil
 }
 
 func (p *DefaultTxOutputProducer) getGasLimit(chain string) uint64 {

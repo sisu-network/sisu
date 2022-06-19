@@ -32,7 +32,7 @@ Usage:
 			account, _ := cmd.Flags().GetString(flags.Account)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 
-			log.Infof("Querying token at address %s on chain %s", tokenSymbol, chain)
+			log.Infof("Querying token at address %s on chain %s", tokenSymbol, chainUrl)
 
 			client, err := ethclient.Dial(chainUrl)
 			if err != nil {
@@ -45,7 +45,7 @@ Usage:
 				panic(flags.Account + " cannot be empty")
 			}
 
-			token := queryToken(cmd.Context(), sisuRpc, tokenSymbol, chain)
+			token := queryToken(cmd.Context(), sisuRpc, tokenSymbol)
 			if token == nil {
 				panic("cannot find token " + tokenSymbol)
 			}
