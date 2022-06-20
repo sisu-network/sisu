@@ -21,9 +21,6 @@ jobs:
           GOOS: ${{ matrix.targetos }}
           GOARCH: ${{ matrix.arch }}
 
-      - name: Setting go
-        run: git config --global url."https://${{ secrets.ACCESS_TOKEN }}:@github.com".insteadOf "https://github.com"
-
       - name: Download dependencies
         env:
           GO111MODULE: on
