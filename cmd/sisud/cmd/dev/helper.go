@@ -190,7 +190,7 @@ func approveAddress(client *ethclient.Client, mnemonic string, erc20Addr string,
 	time.Sleep(time.Second * 3)
 }
 
-func queryToken(ctx context.Context, sisuRpc, tokenId string, chain string) *tssTypes.Token {
+func queryToken(ctx context.Context, sisuRpc, tokenId string) *tssTypes.Token {
 	grpcConn, err := grpc.Dial(
 		sisuRpc,
 		grpc.WithInsecure(),
