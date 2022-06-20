@@ -111,7 +111,7 @@ func parseTransferInData(ethTx *ethTypes.Transaction) (*transferInData, error) {
 		return nil, err
 	}
 
-	recipient, ok := txParams["_recipient"].(string)
+	recipient, ok := txParams["_recipient"].(ethcommon.Address)
 	if !ok {
 		err := fmt.Errorf("parseTransferInData: cannot convert _recipient to type ethcommon.Address: %v", txParams)
 		return nil, err
@@ -125,7 +125,7 @@ func parseTransferInData(ethTx *ethTypes.Transaction) (*transferInData, error) {
 
 	return &transferInData{
 		token:     token,
-		recipient: recipient,
+		recipient: recipient.String(),
 		amount:    amount,
 	}, nil
 }
