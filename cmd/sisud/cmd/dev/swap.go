@@ -2,14 +2,17 @@ package dev
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/contracts/eth/erc20gateway"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu"
 	tssTypes "github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
@@ -64,8 +67,10 @@ transfer params.
 			srcToken, dstToken := c.getTokenAddrs(token, src, dst, sisuRpc)
 
 			amount := big.NewInt(int64(unit))
-			// TODO: correct amount here to work with Cardano
-			//amount = new(big.Int).Mul(amount, utils.EthToWei)
+			amount = new(big.Int).Mul(amount, utils.EthToWei)
+			if libchain.IsCardanoChain(dst) {
+				amount = utils.ETHTokensToLovelace(amount)
+			}
 
 			gateway := c.getGatewayAddresses(cmd.Context(), src, sisuRpc)
 			c.swap(client, mnemonic, gateway, dst, srcToken, dstToken, recipient, amount)
@@ -105,13 +110,19 @@ func (c *swapCommand) getTokenAddrs(tokenId string, srcChain string, dstChain st
 	}
 
 	token := res.Token
-	if len(token.GetAddressForChain(srcChain)) == 0 || len(token.GetAddressForChain(dstChain)) == 0 {
-		log.Info("source chain = ", srcChain, " dest chain = ", dstChain)
-		//panic(fmt.Errorf("cannot find token address, available token addresses = %v", token.Addresses))
+	src, dest := token.GetAddressForChain(srcChain), token.GetAddressForChain(dstChain)
+
+	if len(src) == 0 && !libchain.IsCardanoChain(srcChain) {
+		log.Info("source chain = ", srcChain)
+		panic(fmt.Errorf("cannot find token address, available token addresses = %v", token.Addresses))
 	}
 
-	//return token.GetAddressForChain(srcChain), token.GetAddressForChain(dstChain)
-	return token.GetAddressForChain(srcChain), ""
+	if len(dest) == 0 && !libchain.IsCardanoChain(dstChain) {
+		log.Info("dest chain = ", dstChain)
+		panic(fmt.Errorf("cannot find token address, available token addresses = %v", token.Addresses))
+	}
+
+	return src, dest
 }
 
 func (c *swapCommand) getGatewayAddresses(context context.Context, chain string, sisuRpc string) string {
