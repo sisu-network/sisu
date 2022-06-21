@@ -15,7 +15,6 @@ import (
 	tmos "github.com/tendermint/tendermint/libs/os"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -25,6 +24,7 @@ import (
 	econfig "github.com/sisu-network/deyes/config"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -78,9 +78,9 @@ Example:
 			minGasPrices, _ := cmd.Flags().GetString(server.FlagMinGasPrices)
 			nodeDirPrefix, _ := cmd.Flags().GetString(flagNodeDirPrefix)
 			nodeDaemonHome, _ := cmd.Flags().GetString(flagNodeDaemonHome)
-			// startingIPAddress, _ := cmd.Flags().GetString(flagStartingIPAddress)
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
-			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
+			algo, _ := cmd.Flags().GetString(flags.Algo)
+			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 
 			g := &localDockerGenerator{}
 
@@ -116,10 +116,10 @@ Example:
 					panic(err)
 				}
 
-				nodeConfig := g.getNodeSettings(chainID, keyringBackend, i, mysqlIp, ips)
+				nodeConfig := g.getNodeSettings(chainID, keyringBackend, i, mysqlIp, ips, cardanoSecret)
 				nodeConfigs[i] = nodeConfig
 
-				g.generateEyesToml(i, dir)
+				g.generateEyesToml(i, dir, cardanoSecret)
 			}
 
 			g.generateDockerCompose(filepath.Join(outputDir, "docker-compose.yml"), ips, dockerConfig)
@@ -170,9 +170,10 @@ Example:
 	cmd.Flags().StringP(flagOutputDir, "o", "./output", "Directory to store initialization data for the localnet")
 	cmd.Flags().String(flagNodeDirPrefix, "node", "Prefix the directory name for each node with (node results in node0, node1, ...)")
 	cmd.Flags().String(flagNodeDaemonHome, "main", "Home directory of the node's daemon configuration")
-	cmd.Flags().String(flagStartingIPAddress, "127.0.0.1", "Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
-	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
-	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
+	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom),
+		"Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
+	cmd.Flags().String(flags.Algo, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
+	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 
 	return cmd
 }
@@ -232,7 +233,8 @@ func (g *localDockerGenerator) getDockerConfig(ganacheIps []string, chainIds []*
 	return docker
 }
 
-func (g *localDockerGenerator) getNodeSettings(chainID, keyringBackend string, index int, mysqlIp string, ips []string) config.Config {
+func (g *localDockerGenerator) getNodeSettings(chainID, keyringBackend string, index int,
+	mysqlIp string, ips []string, cardanoSecret string) config.Config {
 	return config.Config{
 		Mode: "dev",
 		Sisu: config.SisuConfig{
@@ -257,7 +259,7 @@ func (g *localDockerGenerator) getNodeSettings(chainID, keyringBackend string, i
 				},
 			},
 		},
-		Cardano: config.CardanoConfig{BlockfrostSecret: "testnetxeSFTv3sePzbqnpd39HGDZ4Nts9egblj"},
+		Cardano: config.CardanoConfig{BlockfrostSecret: cardanoSecret},
 	}
 }
 
@@ -349,7 +351,7 @@ services:
 	tmos.MustWriteFile(outputPath, buffer.Bytes(), 0644)
 }
 
-func (g *localDockerGenerator) generateEyesToml(index int, dir string) {
+func (g *localDockerGenerator) generateEyesToml(index int, dir string, cardanoSecret string) {
 	deyesConfig := DeyesConfiguration{
 		Chains: []econfig.Chain{
 			{
@@ -368,7 +370,7 @@ func (g *localDockerGenerator) generateEyesToml(index int, dir string) {
 				Chain:      "cardano-testnet",
 				BlockTime:  10000,
 				AdjustTime: 1000,
-				RpcSecret:  "testnetxeSFTv3sePzbqnpd39HGDZ4Nts9egblj",
+				RpcSecret:  cardanoSecret,
 			},
 		},
 
