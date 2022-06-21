@@ -170,7 +170,7 @@ func (c *swapCommand) swap(client *ethclient.Client, mnemonic string, gateway st
 		panic(err)
 	}
 
-	log.Debug("txHash = ", waitTx.TxHash.Hex())
+	log.Info("txHash = ", waitTx.TxHash.Hex())
 
 	time.Sleep(time.Second * 3)
 }

@@ -145,6 +145,7 @@ Example:
 				chains:         chains,
 				liquidities:    getLiquidity(filepath.Join(genesisFolder, "liquid.json")),
 				params:         &types.Params{MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3))},
+				cardanoSecret:  cardanoSecret,
 			}
 
 			_, err = InitNetwork(settings)

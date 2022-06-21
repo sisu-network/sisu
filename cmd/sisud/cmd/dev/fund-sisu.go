@@ -152,14 +152,15 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	}
 	wg.Wait()
 
-	// TODO: Fund cardano address generated from mnemonic using wallet in cardano go.
-	cardanoKey, ok := allPubKeys[libchain.KEY_TYPE_EDDSA]
-	if !ok {
-		panic("can not find cardano pub key")
-	}
+	if len(cardanoFunderMnemonic) > 0 && len(cardanoSecret) > 0 {
+		cardanoKey, ok := allPubKeys[libchain.KEY_TYPE_EDDSA]
+		if !ok {
+			panic("can not find cardano pub key")
+		}
 
-	cardanoAddr := hutils.GetAddressFromCardanoPubkey(cardanoKey)
-	c.fundCardano(cardanoAddr, cardanoFunderMnemonic, cardanoSecret)
+		cardanoAddr := hutils.GetAddressFromCardanoPubkey(cardanoKey)
+		c.fundCardano(cardanoAddr, cardanoFunderMnemonic, cardanoSecret)
+	}
 }
 
 func (c *fundAccountCmd) fundCardano(receiver cardano.Address, funderMnemonic string, blockfrostSecret string) {
@@ -170,7 +171,6 @@ func (c *fundAccountCmd) fundCardano(receiver cardano.Address, funderMnemonic st
 	client := wallet.NewClient(opts)
 
 	// funder address: addr_test1vqyqp03az6w8xuknzpfup3h7ghjwu26z7xa6gk7l9j7j2gs8zfwcy
-	// Please request faucet testnet tokens for this address
 	funderWallet, err := c.getWalletFromMnemonic(client, DefaultCardanoWalletName, DefaultCardanoPassword, funderMnemonic)
 	if err != nil {
 		panic(err)

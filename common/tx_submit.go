@@ -113,8 +113,7 @@ func (t *TxSubmitter) SubmitMessageSync(msg sdk.Msg) error {
 }
 
 func (t *TxSubmitter) submitMessage(msg sdk.Msg) error {
-	log.Debug("Submitting tx ....")
-
+	log.Verbose("Submitting tx ....")
 	t.addMessage(msg)
 
 	// Delay a short period to accumulate more transactions before sending.
@@ -209,7 +208,6 @@ func (t *TxSubmitter) trySubmitTx(msgs []sdk.Msg) (*sdk.TxResponse, error) {
 	if res, err := t.submitMsgs(msgs); err != nil || (res != nil && res.Code != 0) {
 		return res, err
 	} else {
-		log.Debug("Tx submitted successfully")
 		t.incSequence()
 
 		return res, err

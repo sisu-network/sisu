@@ -50,6 +50,7 @@ type Setting struct {
 	keyringPassphrase string
 	algoStr           string
 	numValidators     int
+	cardanoSecret     string
 
 	nodeConfigs []config.Config
 	tokens      []*types.Token // tokens in the genesis data
