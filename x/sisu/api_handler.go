@@ -3,8 +3,9 @@ package sisu
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/echovl/cardano-go"
 	"sort"
+
+	"github.com/echovl/cardano-go"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -326,13 +327,12 @@ func (a *ApiHandler) OnKeysignResult(result *dhtypes.KeysignResult) {
 		if result.Outcome == dhtypes.OutcomeSuccess {
 			// TODO: clean code here
 			if libchain.IsETHBasedChain(keysignMsg.OutChain) {
-				log.Debug("keysign result for ETH-based chain")
 				a.processETHSigningResult(ctx, result, keysignMsg, i)
 			}
 
 			if libchain.IsCardanoChain(keysignMsg.OutChain) {
-				log.Debug("keysign result for Cardano chain")
 				if err := a.processCardanoSigningResult(ctx, result, keysignMsg, i); err != nil {
+					log.Error("Failed to process cardano signing result, err = ", err)
 					return
 				}
 			}
