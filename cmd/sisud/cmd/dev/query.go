@@ -78,7 +78,7 @@ Usage:
 
 	cmd.Flags().String(flags.Chain, "ganache2", "Source chain where the token is transferred from")
 	cmd.Flags().String(flags.ChainUrl, "http://127.0.0.1:8545", "Source chain url")
-	cmd.Flags().String(flags.Erc20Symbol, ExpectedErc20Address, "Id of the token to be queried")
+	cmd.Flags().String(flags.Erc20Symbol, ExpectedSisuAddress, "Id of the token to be queried")
 	cmd.Flags().String(flags.Account, "", "account address that we want to query")
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
 

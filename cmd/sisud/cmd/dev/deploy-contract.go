@@ -56,6 +56,11 @@ Example:
 	return cmd
 }
 
+// doDeployment deploys a contract on multiple ETH chains (defined by urlString) and returns an
+// array of deployed addresses.
+//
+// If a contract has been deployed (defined by an element in expAddrString string), it will not be
+// deployed again.
 func (c *DeployContractCmd) doDeployment(urlString, contract, mnemonic, expAddrString, tokenName, tokenSymbol string) []string {
 	urls := strings.Split(urlString, ",")
 	expectedAddrs := strings.Split(expAddrString, ",")

@@ -33,12 +33,12 @@ Short:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			urlString, _ := cmd.Flags().GetString(flags.ChainUrls)
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
-			tokenSymbolString, _ := cmd.Flags().GetString(flags.Erc20Symbols)
+			tokenSymbol, _ := cmd.Flags().GetString(flags.Erc20Symbol)
 			tokenAddrString, _ := cmd.Flags().GetString(flags.Erc20Addrs)
 			liquidityAddrString, _ := cmd.Flags().GetString(flags.LiquidityAddrs)
 
 			c := &AddPoolTokenCommand{}
-			c.addToken(urlString, mnemonic, tokenSymbolString, tokenAddrString, liquidityAddrString)
+			c.addToken(urlString, mnemonic, tokenSymbol, tokenAddrString, liquidityAddrString)
 
 			return nil
 		},
@@ -46,9 +46,9 @@ Short:
 
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
 	cmd.Flags().String(flags.ChainUrls, "http://0.0.0.0:7545,http://0.0.0.0:8545", "RPCs of all the chains we want to fund.")
-	cmd.Flags().String(flags.Erc20Symbols, "SISU,SISU", "Token symbol.")
+	cmd.Flags().String(flags.Erc20Symbol, "SISU", "Token symbol.")
 	cmd.Flags().String(flags.LiquidityAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "Token symbol.")
-	cmd.Flags().String(flags.Erc20Addrs, fmt.Sprintf("%s,%s", ExpectedErc20Address, ExpectedErc20Address), "Token address.")
+	cmd.Flags().String(flags.Erc20Addrs, fmt.Sprintf("%s,%s", ExpectedSisuAddress, ExpectedSisuAddress), "Token address.")
 
 	return cmd
 }
@@ -64,7 +64,7 @@ func (c *AddPoolTokenCommand) addToken(urlString, mnemonic, tokenSymbol, tokenAd
 		}
 	}()
 
-	log.Infof("Adding pool token %s (address %s) for the pool %s", tokenSymbol, tokenAddrs[0], liquidityAddrString)
+	log.Infof("Adding token %s (address %s) for the pool %s", tokenSymbol, tokenAddrs[0], liquidityAddrString)
 
 	wg := &sync.WaitGroup{}
 	wg.Add(len(clients))

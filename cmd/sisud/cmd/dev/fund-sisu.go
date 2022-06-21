@@ -32,8 +32,9 @@ import (
 )
 
 const (
-	ExpectedErc20Address      = "0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"
-	ExpectedLiquidPoolAddress = "0xf0D676183dD5ae6b370adDdbE770235F23546f9d"
+	ExpectedSisuAddress       = "0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"
+	ExpectedAdaAddress        = "0xf0D676183dD5ae6b370adDdbE770235F23546f9d"
+	ExpectedLiquidPoolAddress = "0x3DeaCe7E9C8b6ee632bb71663315d6330914f915"
 	CardanoDecimals           = 1000 * 1000
 	DefaultCardanoWalletName  = "sisu"
 	DefaultCardanoPassword    = "12345678910"
@@ -57,9 +58,10 @@ func FundSisu() *cobra.Command {
 			cardanoFunderMnemonic, _ := cmd.Flags().GetString(flags.CardanoFunderMnemonic)
 
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
+			tokens := strings.Split(tokenString, ",")
 
 			c := &fundAccountCmd{}
-			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokenString,
+			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokens,
 				liquidityAddrString, sisuRpc, cardanoSecret, cardanoFunderMnemonic)
 
 			return nil
@@ -71,15 +73,15 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
 	cmd.Flags().String(flags.LiquidityAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "List of liquidity pool addresses")
-	cmd.Flags().String(flags.Erc20Symbols, "SISU", "List of ERC20 to approve")
+	cmd.Flags().String(flags.Erc20Symbols, "SISU,ADA", "List of ERC20 to approve")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 	cmd.Flags().String(flags.CardanoFunderMnemonic, "", "Mnemonic of funder wallet which already has a lot of test tokens")
 
 	return cmd
 }
 
-func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic,
-	tokenString, liquidityAddrString, sisuRpc, cardanoSecret, cardanoFunderMnemonic string) {
+func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic string,
+	tokens []string, liquidityAddrString, sisuRpc, cardanoSecret, cardanoFunderMnemonic string) {
 	chains := strings.Split(chainString, ",")
 	liquidityAddrs := strings.Split(liquidityAddrString, ",")
 
@@ -129,12 +131,12 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	wg.Add(len(clients))
 	for i, client := range clients {
 		go func(i int, client *ethclient.Client) {
-			addrs := c.getTokenAddrs(ctx, sisuRpc, tokenString, chains[i])
-
+			addrs := c.getTokenAddrs(ctx, sisuRpc, tokens, chains[i])
 			for _, addr := range addrs {
 				log.Infof("Approve token with address %s for gateway %s", addr, gateways[i])
 				approveAddress(client, mnemonic, addr, gateways[i])
 			}
+
 			wg.Done()
 		}(i, client)
 	}
@@ -152,6 +154,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	}
 	wg.Wait()
 
+	// Fund native cardano.
 	if len(cardanoFunderMnemonic) > 0 && len(cardanoSecret) > 0 {
 		cardanoKey, ok := allPubKeys[libchain.KEY_TYPE_EDDSA]
 		if !ok {
@@ -181,7 +184,7 @@ func (c *fundAccountCmd) fundCardano(receiver cardano.Address, funderMnemonic st
 		panic(err)
 	}
 
-	log.Infof("Funded 100 ADA for address %s, txHash = %s, "+
+	log.Infof("Funded 10 ADA for address %s, txHash = %s, "+
 		"explorer: https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=%s\n", receiver, txHash.String(), txHash.String())
 }
 
@@ -453,8 +456,7 @@ func (c *fundAccountCmd) transferLiquidityOwnership(
 	return nil
 }
 
-func (c *fundAccountCmd) getTokenAddrs(ctx context.Context, sisuRpc, tokenString, chain string) []string {
-	tokenSymbols := strings.Split(tokenString, ",")
+func (c *fundAccountCmd) getTokenAddrs(ctx context.Context, sisuRpc string, tokenSymbols []string, chain string) []string {
 	addrs := make([]string, len(tokenSymbols))
 
 	for i, tokenSymbol := range tokenSymbols {

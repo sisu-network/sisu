@@ -47,7 +47,7 @@ Short:
 
 	cmd.Flags().String(flags.ChainUrls, "http://0.0.0.0:7545,http://0.0.0.0:8545", "RPCs of all the chains we want to fund.")
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
-	cmd.Flags().String(flags.Erc20Addrs, fmt.Sprintf("%s,%s", ExpectedErc20Address, ExpectedErc20Address), "Token address.")
+	cmd.Flags().String(flags.Erc20Addrs, fmt.Sprintf("%s,%s", ExpectedSisuAddress, ExpectedSisuAddress), "Token address.")
 	cmd.Flags().String(flags.LiquidityAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "Liquidity addresses.")
 
 	return cmd
@@ -56,6 +56,7 @@ Short:
 func (c *AddLiquidityCmd) approveAndAddLiquidity(urlString, mnemonic, tokenAddrString, liquidityAddrString string) {
 	tokenAddrs := strings.Split(tokenAddrString, ",")
 	liquidityAddrs := strings.Split(liquidityAddrString, ",")
+	urls := strings.Split(urlString, ",")
 	clients := getEthClients(urlString)
 	defer func() {
 		for _, client := range clients {
@@ -89,7 +90,7 @@ func (c *AddLiquidityCmd) approveAndAddLiquidity(urlString, mnemonic, tokenAddrS
 			}
 
 			if balance.Cmp(big.NewInt(0)) == 0 {
-				log.Infof("Adding liquidity of token %s to the pool at %s", tokenAddrs[i], liquidityAddrs[i])
+				log.Infof("Adding liquidity of token %s to the pool at %s for chain url %s", tokenAddrs[i], liquidityAddrs[i], urls[i])
 				c.addLiquidity(client, mnemonic, liquidityAddrs[i], tokenAddrs[i])
 			} else {
 				log.Infof("Liquidity pool has received %s tokens (%s) \n", balance.String(), tokenAddrs[i])
