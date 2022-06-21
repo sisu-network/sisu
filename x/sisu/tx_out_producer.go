@@ -14,12 +14,12 @@ import (
 	"github.com/echovl/cardano-go"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	etypes "github.com/sisu-network/deyes/types"
-	"github.com/sisu-network/dheart/utils"
+	hutils "github.com/sisu-network/dheart/utils"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
-	conv "github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/sisu-network/sisu/x/sisu/world"
@@ -46,23 +46,37 @@ type DefaultTxOutputProducer struct {
 	// Map from: chain -> address -> bool.
 	ethKeyAddrs map[string]map[string]bool
 
-	worldState world.WorldState
-	appKeys    common.AppKeys
-	keeper     keeper.Keeper
-	tssConfig  config.TssConfig
+	worldState     world.WorldState
+	appKeys        common.AppKeys
+	keeper         keeper.Keeper
+	tssConfig      config.TssConfig
+	cardanoConfig  config.CardanoConfig
+	cardanoNetwork cardano.Network
 
 	// Only use for cardano chain
 	cardanoNode cardano.Node
 }
 
 func NewTxOutputProducer(worldState world.WorldState, appKeys common.AppKeys,
-	keeper keeper.Keeper, tssConfig config.TssConfig, cardanoNode cardano.Node) TxOutputProducer {
+	keeper keeper.Keeper, tssConfig config.TssConfig, cardanoConfig config.CardanoConfig, cardanoNode cardano.Node) TxOutputProducer {
+	// Get Cardano network
+	var cardanoNetwork cardano.Network
+	switch cardanoConfig.Network {
+	case 0:
+		cardanoNetwork = cardano.Testnet
+	case 1:
+		cardanoNetwork = cardano.Mainnet
+	default:
+		panic(fmt.Errorf("Unknown cardano network: %d", cardanoConfig.Network))
+	}
+
 	return &DefaultTxOutputProducer{
-		keeper:      keeper,
-		worldState:  worldState,
-		appKeys:     appKeys,
-		tssConfig:   tssConfig,
-		cardanoNode: cardanoNode,
+		keeper:         keeper,
+		worldState:     worldState,
+		appKeys:        appKeys,
+		tssConfig:      tssConfig,
+		cardanoNetwork: cardanoNetwork,
+		cardanoNode:    cardanoNode,
 	}
 }
 
@@ -163,6 +177,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 		}
 
 		if libchain.IsETHBasedChain(data.destChain) {
+			// This is a swap from ETH -> ETH
 			responseTx, err := p.buildERC20TransferIn(ctx, data.token, data.tokenAddr, ecommon.HexToAddress(data.recipient), data.amount, data.destChain)
 			if err != nil {
 				log.Error(err)
@@ -184,8 +199,12 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 		}
 
 		if libchain.IsCardanoChain(data.destChain) {
-			log.Debug("This is swapping from ETH-family to Cardano")
-			cardanoTx, err := p.getCardanoTx(ctx, data.recipient, data.amount.Uint64())
+			// This is a swap from ETH -> Cardano
+			fmt.Println("This is swapping from ETH-family to Cardano")
+			// Convert the ETH big.Int amount to lovelace. Most ERC20 has 18 decimals while lovelace has
+			// only 6 decimals.
+			lovelace := utils.ETHTokensToLovelace(data.amount)
+			cardanoTx, err := p.getCardanoTx(ctx, data.recipient, lovelace.Uint64())
 			if err != nil {
 				return nil, err
 			}
@@ -224,7 +243,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 // TODO: build cardano tx for transferring multi-asset. Need to test with native token (ADA) first
 func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, receiver string, lovelace uint64) (*cardano.Tx, error) {
 	pubkey := p.keeper.GetKeygenPubkey(ctx, libchain.KEY_TYPE_EDDSA)
-	senderAddr := utils.GetAddressFromCardanoPubkey(pubkey)
+	senderAddr := hutils.GetAddressFromCardanoPubkey(pubkey)
 	log.Info("cardano sender address = ", senderAddr.String())
 
 	receiverAddr, err := cardano.NewAddress(receiver)
@@ -233,7 +252,7 @@ func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, receiver string,
 		return nil, err
 	}
 
-	tx, err := BuildTx(p.cardanoNode, cardano.Testnet, senderAddr, receiverAddr, cardano.NewValue(cardano.Coin(lovelace)))
+	tx, err := BuildTx(p.cardanoNode, p.cardanoNetwork, senderAddr, receiverAddr, cardano.NewValue(cardano.Coin(lovelace)))
 	if err != nil {
 		log.Error("error when building tx: ", err)
 		return nil, err
@@ -351,7 +370,8 @@ func (p *DefaultTxOutputProducer) extractCardanoTxIn(ctx sdk.Context, tx *types.
 	amount := new(big.Int).SetUint64(uint64(extraInfo.Amount.Coin))
 	recipient := ecommon.HexToAddress(extraInfo.DestinationRecipient)
 	tokenAddr := ecommon.HexToAddress(extraInfo.DestinationTokenAddress)
-	responseTx, err := p.buildERC20TransferIn(ctx, token, tokenAddr, recipient, conv.LovelaceToETHTokens(amount), extraInfo.DestinationChain)
+	responseTx, err := p.buildERC20TransferIn(ctx, token, tokenAddr, recipient,
+		utils.LovelaceToETHTokens(amount), extraInfo.DestinationChain)
 	if err != nil {
 		return nil, err
 	}

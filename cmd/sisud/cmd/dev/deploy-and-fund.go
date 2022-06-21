@@ -35,6 +35,7 @@ func DeployAndFund() *cobra.Command {
 
 			// Deploy ERC20 And liquidity pool
 			deployContractCmd := &DeployContractCmd{}
+			// Deploy Sisu and ADA tokens
 			erc20Addrs := deployContractCmd.doDeployment(chainUrls, "erc20", mnemonic, expectedErc20String, "Sisu Token", "SISU")
 			liquidityAddrs := deployContractCmd.doDeployment(chainUrls, "liquidity", mnemonic, expectedLiquidityString, "", "")
 

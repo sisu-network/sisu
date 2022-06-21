@@ -68,9 +68,6 @@ transfer params.
 
 			amount := big.NewInt(int64(unit))
 			amount = new(big.Int).Mul(amount, utils.EthToWei)
-			if libchain.IsCardanoChain(dst) {
-				amount = utils.ETHTokensToLovelace(amount)
-			}
 
 			gateway := c.getGatewayAddresses(cmd.Context(), src, sisuRpc)
 			c.swap(client, mnemonic, gateway, dst, srcToken, dstToken, recipient, amount)

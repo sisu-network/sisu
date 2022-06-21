@@ -33,6 +33,7 @@ type TssChainConfig struct {
 
 type CardanoConfig struct {
 	BlockfrostSecret string `toml:"block_frost_secret"`
+	Network          int    `toml:"network"`
 }
 
 // Example of supported chains in the toml config file.

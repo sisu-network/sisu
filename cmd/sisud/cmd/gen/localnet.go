@@ -95,6 +95,12 @@ Example:
 				}
 			}
 
+			if len(cardanoSecret) > 0 {
+				supportedChains["cardano-testnet"] = config.TssChainConfig{
+					Id: "cardano-testnet",
+				}
+			}
+
 			nodeConfig := config.Config{
 				Mode: "dev",
 				Sisu: config.SisuConfig{

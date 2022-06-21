@@ -42,6 +42,7 @@ log_local = {{ .LogDNA.LogLocal }}
 ###############################################################################
 [cardano]
 block_frost_secret = "{{ .Cardano.BlockfrostSecret }}"
+network = {{ .Cardano.Network }}
 
 ###############################################################################
 ###                         Siu TSS Configuration                          ###
