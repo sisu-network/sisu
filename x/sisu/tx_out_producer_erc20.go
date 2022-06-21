@@ -161,6 +161,12 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 		return nil, err
 	}
 
+	if gasPrice.Cmp(big.NewInt(0)) <= 0 {
+		gasPrice = p.getDefaultGasPrice(destChain)
+	}
+
+	log.Debug("Gas price for swapping  = ", gasPrice)
+
 	// Calculate the output amount
 	amountOut := new(big.Int).Set(amountIn)
 

@@ -457,7 +457,7 @@ func (c *fundAccountCmd) getTokenAddrs(ctx context.Context, sisuRpc, tokenString
 	addrs := make([]string, len(tokenSymbols))
 
 	for i, tokenSymbol := range tokenSymbols {
-		token := queryToken(ctx, sisuRpc, tokenSymbol, chain)
+		token := queryToken(ctx, sisuRpc, tokenSymbol)
 		for j, addr := range token.Addresses {
 			if token.Chains[j] == chain {
 				addrs[i] = addr

@@ -19,6 +19,7 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
+	conv "github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/sisu-network/sisu/x/sisu/world"
@@ -350,7 +351,7 @@ func (p *DefaultTxOutputProducer) extractCardanoTxIn(ctx sdk.Context, tx *types.
 	amount := new(big.Int).SetUint64(uint64(extraInfo.Amount.Coin))
 	recipient := ecommon.HexToAddress(extraInfo.DestinationRecipient)
 	tokenAddr := ecommon.HexToAddress(extraInfo.DestinationTokenAddress)
-	responseTx, err := p.buildERC20TransferIn(ctx, token, tokenAddr, recipient, amount, extraInfo.DestinationChain)
+	responseTx, err := p.buildERC20TransferIn(ctx, token, tokenAddr, recipient, conv.LovelaceToETHTokens(amount), extraInfo.DestinationChain)
 	if err != nil {
 		return nil, err
 	}

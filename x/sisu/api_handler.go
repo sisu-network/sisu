@@ -423,10 +423,7 @@ func (a *ApiHandler) processCardanoSigningResult(ctx sdk.Context, result *dhtype
 		return err
 	}
 
-	log.Debug("length of tx.WitnessSet.VKeyWitnessSet =  ", len(tx.WitnessSet.VKeyWitnessSet))
 	for i := range tx.WitnessSet.VKeyWitnessSet {
-		signature := result.Signatures[index]
-		log.Debug("signature = ", string(signature))
 		tx.WitnessSet.VKeyWitnessSet[i] = cardano.VKeyWitness{VKey: pubkey, Signature: result.Signatures[index]}
 	}
 

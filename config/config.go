@@ -81,8 +81,5 @@ func ReadConfig() (Config, error) {
 		return cfg, err
 	}
 
-	log.Debug("config = ", cfg)
-	cfg.Cardano.BlockfrostSecret = "testnetxeSFTv3sePzbqnpd39HGDZ4Nts9egblj"
-
 	return cfg, nil
 }

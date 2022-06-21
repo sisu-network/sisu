@@ -257,6 +257,7 @@ func (g *localDockerGenerator) getNodeSettings(chainID, keyringBackend string, i
 				},
 			},
 		},
+		Cardano: config.CardanoConfig{BlockfrostSecret: "testnetxeSFTv3sePzbqnpd39HGDZ4Nts9egblj"},
 	}
 }
 
