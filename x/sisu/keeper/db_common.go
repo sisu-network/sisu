@@ -135,6 +135,7 @@ func saveKeygen(store cstypes.KVStore, msg *types.Keygen) {
 	if err != nil {
 		log.Error("SaveKeygenProposal: cannot marshal keygen proposal, err = ", err)
 	}
+
 	store.Set(key, bz)
 }
 
@@ -164,22 +165,18 @@ func isKeygenAddress(store cstypes.KVStore, keyType string, address string) bool
 }
 
 func getKeygenPubkey(store cstypes.KVStore, keyType string) []byte {
-	log.Debug("key type for getKeygenPubkey ", keyType)
+	begin := append([]byte(keyType), byte(255))
+	end := []byte(keyType)
 
-	// TODO: debug why reverseIterator with "begin" is incorrect
-	iter := store.ReverseIterator(nil, nil)
+	iter := store.ReverseIterator(end, begin)
 	for ; iter.Valid(); iter.Next() {
-		if !strings.HasPrefix(string(iter.Key()), keyType) {
-			continue
-		}
-
 		msg := &types.Keygen{}
 		if err := msg.Unmarshal(iter.Value()); err != nil {
 			log.Error("IsKeygenAddress: cannot unmarshal keygen")
 			continue
 		}
 
-		if len(msg.PubKeyBytes) > 0 {
+		if msg.PubKeyBytes != nil && len(msg.PubKeyBytes) > 0 {
 			return msg.PubKeyBytes
 		}
 	}

@@ -182,3 +182,35 @@ func Test_SaveNode(t *testing.T) {
 	require.Equal(t, vals[0].AccAddress, "addr1")
 	require.Equal(t, vals[1].AccAddress, "addr2")
 }
+
+func TestDb_KeygenPubkey(t *testing.T) {
+	store := memstore.NewStore()
+
+	saveKeygen(store, &types.Keygen{
+		KeyType:     libchain.KEY_TYPE_ECDSA,
+		Index:       0,
+		PubKeyBytes: []byte("ec_key"),
+	})
+	saveKeygen(store, &types.Keygen{
+		KeyType:     libchain.KEY_TYPE_EDDSA,
+		Index:       0,
+		PubKeyBytes: []byte("ed_key"),
+	})
+
+	// Get Ecdsa pubkey
+	pubkeyBytes := getKeygenPubkey(store, libchain.KEY_TYPE_ECDSA)
+	require.Equal(t, []byte("ec_key"), pubkeyBytes)
+
+	// Get Eddsa pubkey
+	pubkeyBytes = getKeygenPubkey(store, libchain.KEY_TYPE_EDDSA)
+	require.Equal(t, []byte("ed_key"), pubkeyBytes)
+
+	// Test that if there are multiple keygen, the getKeygenPubkey returns pubkey of the latest.
+	saveKeygen(store, &types.Keygen{
+		KeyType:     libchain.KEY_TYPE_ECDSA,
+		Index:       1,
+		PubKeyBytes: []byte("ec_key_1"),
+	})
+	pubkeyBytes = getKeygenPubkey(store, libchain.KEY_TYPE_ECDSA)
+	require.Equal(t, []byte("ec_key_1"), pubkeyBytes)
+}
