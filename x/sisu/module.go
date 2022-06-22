@@ -174,8 +174,6 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	// Initialize global index to index in genesis state
 	cdc.MustUnmarshalJSON(gs, &genState)
 
-	valsMgr := am.valsManager
-
 	// Saves initial token configs from genesis file.
 	tokenIds := make([]string, 0)
 	m := make(map[string]*types.Token)
@@ -214,6 +212,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	log.Info("Tss params: ", savedParams)
 
 	// Create validator nodes
+	valsMgr := am.valsManager
 	validators := make([]abci.ValidatorUpdate, len(genState.Nodes))
 	for i, node := range genState.Nodes {
 		if !node.IsValidator {
