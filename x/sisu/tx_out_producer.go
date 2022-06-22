@@ -59,23 +59,12 @@ type DefaultTxOutputProducer struct {
 
 func NewTxOutputProducer(worldState world.WorldState, appKeys common.AppKeys,
 	keeper keeper.Keeper, tssConfig config.TssConfig, cardanoConfig config.CardanoConfig, cardanoNode cardano.Node) TxOutputProducer {
-	// Get Cardano network
-	var cardanoNetwork cardano.Network
-	switch cardanoConfig.Network {
-	case 0:
-		cardanoNetwork = cardano.Testnet
-	case 1:
-		cardanoNetwork = cardano.Mainnet
-	default:
-		panic(fmt.Errorf("Unknown cardano network: %d", cardanoConfig.Network))
-	}
-
 	return &DefaultTxOutputProducer{
 		keeper:         keeper,
 		worldState:     worldState,
 		appKeys:        appKeys,
 		tssConfig:      tssConfig,
-		cardanoNetwork: cardanoNetwork,
+		cardanoNetwork: cardanoConfig.GetCardanoNetwork(),
 		cardanoNode:    cardanoNode,
 	}
 }
@@ -200,7 +189,6 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 		if libchain.IsCardanoChain(data.destChain) {
 			// This is a swap from ETH -> Cardano
-			fmt.Println("This is swapping from ETH-family to Cardano")
 			// Convert the ETH big.Int amount to lovelace. Most ERC20 has 18 decimals while lovelace has
 			// only 6 decimals.
 			lovelace := utils.ETHTokensToLovelace(data.amount)

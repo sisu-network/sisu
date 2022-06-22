@@ -8,7 +8,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec/types"
-	"github.com/echovl/cardano-go"
 	"github.com/echovl/cardano-go/blockfrost"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmos "github.com/tendermint/tendermint/libs/os"
@@ -266,7 +265,7 @@ func New(
 	worldState := world.NewWorldState(app.tssKeeper, deyesClient)
 	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert, worldState)
 
-	cardanoNode := blockfrost.NewNode(cardano.Testnet, cfg.Cardano.BlockfrostSecret)
+	cardanoNode := blockfrost.NewNode(cfg.Cardano.GetCardanoNetwork(), cfg.Cardano.BlockfrostSecret)
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.tssKeeper),
 		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
 		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, app.tssKeeper, cfg.Tss, cfg.Cardano, cardanoNode), worldState, txTracker, app.tssKeeper)

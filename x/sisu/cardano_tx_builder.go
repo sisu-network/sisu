@@ -12,19 +12,21 @@ func Balance(node cardano.Node, address cardano.Address) (*cardano.Value, error)
 	if err != nil {
 		return nil, err
 	}
+
 	for _, utxo := range utxos {
 		balance = balance.Add(utxo.Amount)
 	}
+
 	return balance, nil
 }
 
 func findUtxos(node cardano.Node, address cardano.Address) ([]cardano.UTxO, error) {
 	walletUtxos := make([]cardano.UTxO, 0)
-
 	addrUtxos, err := node.UTxOs(address)
 	if err != nil {
 		return nil, err
 	}
+
 	walletUtxos = append(walletUtxos, addrUtxos...)
 	return walletUtxos, nil
 }

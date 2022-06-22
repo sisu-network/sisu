@@ -2,9 +2,11 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/BurntSushi/toml"
+	"github.com/echovl/cardano-go"
 	"github.com/sisu-network/lib/log"
 )
 
@@ -34,6 +36,17 @@ type TssChainConfig struct {
 type CardanoConfig struct {
 	BlockfrostSecret string `toml:"block_frost_secret"`
 	Network          int    `toml:"network"`
+}
+
+func (c *CardanoConfig) GetCardanoNetwork() cardano.Network {
+	switch c.Network {
+	case 0:
+		return cardano.Testnet
+	case 1:
+		return cardano.Mainnet
+	}
+
+	panic(fmt.Errorf("Unkwown network %d", c.Network))
 }
 
 // Example of supported chains in the toml config file.
