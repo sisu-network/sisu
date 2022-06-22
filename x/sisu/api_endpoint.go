@@ -5,7 +5,6 @@ import (
 
 	etypes "github.com/sisu-network/deyes/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
-	dhtypes "github.com/sisu-network/dheart/types"
 	htypes "github.com/sisu-network/dheart/types"
 	"github.com/sisu-network/lib/log"
 )
@@ -15,7 +14,7 @@ type NetworkHealthListener interface {
 }
 
 type AppLogicListener interface {
-	OnKeygenResult(result dhtypes.KeygenResult)
+	OnKeygenResult(result htypes.KeygenResult)
 	OnTxIns(txs *eyesTypes.Txs) error
 	OnKeysignResult(result *htypes.KeysignResult)
 	OnTxDeploymentResult(result *etypes.DispatchedTxResult)

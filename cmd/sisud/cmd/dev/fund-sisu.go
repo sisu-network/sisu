@@ -162,7 +162,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 		}
 
 		cardanoAddr := hutils.GetAddressFromCardanoPubkey(cardanoKey)
-		log.Info("Sisu cardano Address = ", cardanoAddr)
+		log.Info("Sisu Cardano Gateway = ", cardanoAddr)
 		c.fundCardano(cardanoAddr, cardanoFunderMnemonic, cardanoSecret)
 	}
 }

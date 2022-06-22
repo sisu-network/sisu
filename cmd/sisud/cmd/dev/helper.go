@@ -183,8 +183,18 @@ func approveAddress(client *ethclient.Client, mnemonic string, erc20Addr string,
 		log.Error("cannot get balance for owner: ", owner, " err = ", err)
 	}
 
-	log.Verbose("Approving address ", target, " token = ", erc20Addr, "owner balance = ", ownerBalance)
+	// Check the allowance to see if we can quit early.
+	allowance, err := contract.Allowance(nil, owner, common.HexToAddress(target))
+	if err != nil {
+		log.Error("cannot get allowance, err = ", err)
+	}
+	if allowance.Cmp(ownerBalance) >= 0 {
+		log.Verbose("The target has enough balance. No need to approve.")
+		return
+	}
 
+	// Make a tx to approve.
+	log.Verbose("Approving address ", target, " token = ", erc20Addr, " owner balance = ", ownerBalance)
 	tx, err := contract.Approve(opts, common.HexToAddress(target), ownerBalance)
 	bind.WaitDeployed(context.Background(), client, tx)
 	time.Sleep(time.Second * 3)
