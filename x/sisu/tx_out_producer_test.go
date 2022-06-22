@@ -81,6 +81,7 @@ func TestTxOutProducer_getEthResponse2(t *testing.T) {
 					},
 				},
 			},
+			config.CardanoConfig{},
 			&MockCardanoNode{},
 		).(*DefaultTxOutputProducer)
 
