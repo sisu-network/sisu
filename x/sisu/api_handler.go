@@ -409,8 +409,8 @@ func (a *ApiHandler) processCardanoSigningResult(ctx sdk.Context, result *dhtype
 		return err
 	}
 
-	tx := cardano.Tx{}
-	if err := json.Unmarshal(txOut.OutBytes, &tx); err != nil {
+	tx := &cardano.Tx{}
+	if err := tx.UnmarshalCBOR(txOut.OutBytes); err != nil {
 		log.Error("error when unmarshalling cardano tx: ", err)
 		return err
 	}

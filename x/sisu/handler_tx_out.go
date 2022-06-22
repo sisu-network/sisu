@@ -1,7 +1,7 @@
 package sisu
 
 import (
-	"encoding/json"
+	"encoding/base64"
 	"fmt"
 	"strconv"
 
@@ -122,11 +122,14 @@ func (h *HandlerTxOut) signCardanoTx(ctx sdk.Context, txOut *types.TxOut) {
 	// Update the txOut to be delivered.
 	h.txTracker.UpdateStatus(txOut.OutChain, txOut.OutHash, types.TxStatusDelivered)
 
-	tx := cardano.Tx{}
-	if err := json.Unmarshal(txOut.OutBytes, &tx); err != nil {
+	tx := &cardano.Tx{}
+	if err := tx.UnmarshalCBOR(txOut.OutBytes); err != nil {
 		log.Error("error when unmarshalling cardano tx out: ", err)
 		return
 	}
+
+	bz := base64.StdEncoding.EncodeToString(txOut.OutBytes)
+	log.Debug("bz in signCardanoTx = ", bz)
 
 	txHash, err := tx.Hash()
 	if err != nil {

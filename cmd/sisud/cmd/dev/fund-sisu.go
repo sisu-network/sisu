@@ -40,6 +40,10 @@ const (
 	DefaultCardanoPassword    = "12345678910"
 )
 
+var (
+	WrapADA = cardano.NewAssetName("WRAP_ADA")
+)
+
 type fundAccountCmd struct{}
 
 func FundSisu() *cobra.Command {
@@ -167,6 +171,21 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	}
 }
 
+// Get WRAP_SISU(hex: 575241505f414441) token.
+// PolicyID (dc89700b3adf88f6b520aba2f3cfa4c26fa7a19bd8eadf430d73b9d4) got from there:
+// https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=31c019b737edc7b54ae60a87f372f860715e8bb02b979ed853395ccbf4bf0209
+func getMultiAsset(amt uint64) *cardano.MultiAsset {
+	policyHash, err := cardano.NewHash28("dc89700b3adf88f6b520aba2f3cfa4c26fa7a19bd8eadf430d73b9d4")
+	if err != nil {
+		err := fmt.Errorf("error when parsing policyID hash: %v", err)
+		panic(err)
+	}
+
+	policyID := cardano.NewPolicyIDFromHash(policyHash)
+	asset := cardano.NewAssets().Set(WrapADA, cardano.BigNum(amt))
+	return cardano.NewMultiAsset().Set(policyID, asset)
+}
+
 func (c *fundAccountCmd) fundCardano(receiver cardano.Address, funderMnemonic string, blockfrostSecret string) {
 	node := blockfrost.NewNode(cardano.Testnet, blockfrostSecret)
 	opts := &wallet.Options{
@@ -180,12 +199,13 @@ func (c *fundAccountCmd) fundCardano(receiver cardano.Address, funderMnemonic st
 		panic(err)
 	}
 
-	txHash, err := funderWallet.Transfer(receiver, cardano.NewValue(10*CardanoDecimals), nil) // 10 ADA
+	// fund 10 ADA and 1000 WRAP_ADA
+	txHash, err := funderWallet.Transfer(receiver, cardano.NewValueWithAssets(10*CardanoDecimals, getMultiAsset(1e3)), nil) // 10 ADA
 	if err != nil {
 		panic(err)
 	}
 
-	log.Infof("Funded 10 ADA for address %s, txHash = %s, "+
+	log.Infof("Funded 10 ADA and 1000 WRAP_ADA for address %s, txHash = %s, "+
 		"explorer: https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=%s\n", receiver, txHash.String(), txHash.String())
 }
 
