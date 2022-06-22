@@ -348,18 +348,18 @@ func (p *DefaultTxOutputProducer) extractCardanoTxIn(ctx sdk.Context, tx *types.
 	}
 
 	extraInfo := txIn.TxAdditionInfo
-	token := p.worldState.GetTokenFromAddress(extraInfo.DestinationChain, extraInfo.DestinationTokenAddress)
-	if token == nil && libchain.IsETHBasedChain(extraInfo.DestinationChain) {
-		err := fmt.Errorf("invalid address %s on chain %s", extraInfo.DestinationTokenAddress, extraInfo.DestinationChain)
+	token := p.worldState.GetTokenFromAddress(extraInfo.Chain, extraInfo.TokenAddress)
+	if token == nil && libchain.IsETHBasedChain(extraInfo.Chain) {
+		err := fmt.Errorf("invalid address %s on chain %s", extraInfo.TokenAddress, extraInfo.Chain)
 		log.Error(err)
 		return nil, err
 	}
 
 	amount := new(big.Int).SetUint64(uint64(extraInfo.Amount.Coin))
-	recipient := ecommon.HexToAddress(extraInfo.DestinationRecipient)
-	tokenAddr := ecommon.HexToAddress(extraInfo.DestinationTokenAddress)
+	recipient := ecommon.HexToAddress(extraInfo.Recipient)
+	tokenAddr := ecommon.HexToAddress(extraInfo.TokenAddress)
 	responseTx, err := p.buildERC20TransferIn(ctx, token, tokenAddr, recipient,
-		utils.LovelaceToETHTokens(amount), extraInfo.DestinationChain)
+		utils.LovelaceToETHTokens(amount), extraInfo.Chain)
 	if err != nil {
 		return nil, err
 	}

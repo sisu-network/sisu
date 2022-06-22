@@ -180,7 +180,7 @@ func (c *fundAccountCmd) fundCardano(receiver cardano.Address, funderMnemonic st
 		panic(err)
 	}
 
-	txHash, err := funderWallet.Transfer(receiver, cardano.NewValue(10*CardanoDecimals)) // 10 ADA
+	txHash, err := funderWallet.Transfer(receiver, cardano.NewValue(10*CardanoDecimals), nil) // 10 ADA
 	if err != nil {
 		panic(err)
 	}
