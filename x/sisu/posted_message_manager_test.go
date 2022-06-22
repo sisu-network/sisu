@@ -24,8 +24,15 @@ func mockForPostedMessageManager() (sdk.Context, ManagerContainer) {
 	partyManager.GetActivePartyPubkeysFunc = func() []ctypes.PubKey {
 		return []ctypes.PubKey{}
 	}
+	valsMgr := NewValidatorManager(k)
+	valsMgr.AddValidator(ctx, &types.Node{
+		ConsensusKey: &types.Pubkey{
+			Type:  "ed25519",
+			Bytes: []byte("some_key"),
+		},
+	})
 	txOutProducer := &MockTxOutputProducer{}
-	mc := MockManagerContainer(k, pmm, globalData, txOutProducer, partyManager, dheartClient)
+	mc := MockManagerContainer(k, pmm, globalData, txOutProducer, partyManager, dheartClient, valsMgr)
 
 	return ctx, mc
 }

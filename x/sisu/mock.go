@@ -54,6 +54,8 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.txOutProducer = t
 		case world.WorldState:
 			mc.worldState = t
+		case ValidatorManager:
+			mc.valsManager = t
 		}
 	}
 
