@@ -198,9 +198,9 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 			}
 			log.Verbosef("data.amount = %v, multiAssetAmt = %v", data.amount, multiAssetAmt)
 
-			// TODO: research why 1 ADA is not enough?
+			// In real, this transaction transfers at least <1 ADA + additional tx fee>
 			cardanoTx, err := p.getCardanoTx(ctx, data.tokenAddr, data.recipient,
-				2*utils.ONE_ADA_IN_LOVELACE.Uint64(), multiAssetAmt.Uint64())
+				utils.ONE_ADA_IN_LOVELACE.Uint64(), multiAssetAmt.Uint64())
 
 			if err != nil {
 				return nil, err
