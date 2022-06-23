@@ -193,7 +193,8 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 			// Convert the ETH big.Int amount to lovelace. Most ERC20 has 18 decimals while lovelace has
 			// only 6 decimals.
 			//multiAssetAmt := utils.ETHTokensToLovelace(data.amount)
-			cardanoTx, err := p.getCardanoTx(ctx, data.tokenAddr, data.recipient, utils.ONE_ADA_IN_LOVELACE.Uint64(), uint64(1))
+			// TODO: research why 1 ADA is not enough?
+			cardanoTx, err := p.getCardanoTx(ctx, data.tokenAddr, data.recipient, 2*utils.ONE_ADA_IN_LOVELACE.Uint64(), uint64(1))
 			if err != nil {
 				return nil, err
 			}

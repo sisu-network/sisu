@@ -1,7 +1,7 @@
 package sisu
 
 import (
-	"encoding/json"
+	"encoding/base64"
 	"fmt"
 	"sort"
 
@@ -438,12 +438,14 @@ func (a *ApiHandler) processCardanoSigningResult(ctx sdk.Context, result *dhtype
 		HashNoSig:   signMsg.OutHash,
 	})
 
-	// TODO: temporary use json to encode/decode. In the future, should use cbor instead
-	txBytes, err := json.Marshal(tx)
+	txBytes, err := tx.MarshalCBOR()
 	if err != nil {
 		log.Error("error when marshal cardano tx: ", err)
 		return err
 	}
+
+	bz := base64.StdEncoding.EncodeToString(txBytes)
+	log.Debug("tx bz to deploy = ", bz)
 
 	err = a.deploySignedTx(ctx, txBytes, signMsg.OutChain, result.Request.KeysignMessages[index].OutHash, false)
 	if err != nil {
