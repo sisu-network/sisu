@@ -74,9 +74,8 @@ func BuildTx(node cardano.Node, network cardano.Network, sender, receiver cardan
 	}
 	builder.SetTTL(tip.Slot + 1200)
 	changeAddress := pickedUtxos[0].Spender
-	if err = builder.AddChangeIfNeeded(changeAddress); err != nil {
-		return nil, err
-	}
+
+	builder.AddChangeIfNeeded(changeAddress)
 
 	tx, err := builder.Build2()
 	if err != nil {
