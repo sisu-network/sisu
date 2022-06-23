@@ -84,7 +84,7 @@ transfer params.
 				c.swapFromEth(client, mnemonic, gateway, dst, srcToken, dstToken, recipient, amount)
 			} else if libchain.IsCardanoChain(src) {
 				gateway := c.getCardanoGateway(cmd.Context(), sisuRpc)
-				fmt.Println("Cardano gateway = ", gateway)
+				log.Info("Cardano gateway = ", gateway)
 
 				amount := big.NewInt(int64(unit))
 				amount = new(big.Int).Mul(amount, utils.ONE_ADA_IN_LOVELACE)
@@ -236,7 +236,7 @@ func (c *swapCommand) swapFromCardano(destChain, destToken, destRecipient, carda
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("sender = ", sender)
+	log.Info("sender = ", sender)
 
 	receiver, err := cardano.NewAddress(cardanoGwAddr)
 	if err != nil {

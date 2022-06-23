@@ -110,11 +110,6 @@ func (ws *DefaultWorldState) UseAndIncreaseNonce(ctx sdk.Context, chain string) 
 	keyType := libchain.GetKeyTypeForChain(chain)
 	log.Debugf("key type = %s, chain = %s\n", keyType, chain)
 
-	pubs := ws.keeper.GetAllKeygenPubkeys(ctx)
-	for k, v := range pubs {
-		log.Debugf("key type = %s, bytes = ", k, base64.StdEncoding.EncodeToString(v))
-	}
-
 	pubKeyBytes := ws.keeper.GetKeygenPubkey(ctx, keyType)
 	if pubKeyBytes == nil {
 		log.Error("cannot find pub key for keyType", chain)

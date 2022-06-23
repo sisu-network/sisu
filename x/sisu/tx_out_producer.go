@@ -1,7 +1,6 @@
 package sisu
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -168,7 +167,8 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 
 		if libchain.IsETHBasedChain(data.destChain) {
 			// This is a swap from ETH -> ETH
-			responseTx, err := p.buildERC20TransferIn(ctx, data.token, data.tokenAddr, ecommon.HexToAddress(data.recipient), data.amount, data.destChain)
+			responseTx, err := p.buildERC20TransferIn(ctx, data.token, data.tokenAddr, ecommon.HexToAddress(data.recipient),
+				data.amount, data.destChain)
 			if err != nil {
 				log.Error(err)
 				return nil, err
@@ -192,8 +192,16 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 			// This is a swap from ETH -> Cardano
 			// Convert the ETH big.Int amount to lovelace. Most ERC20 has 18 decimals while lovelace has
 			// only 6 decimals.
-			//multiAssetAmt := utils.ETHTokensToLovelace(data.amount)
-			cardanoTx, err := p.getCardanoTx(ctx, data.tokenAddr, data.recipient, utils.ONE_ADA_IN_LOVELACE.Uint64(), uint64(1))
+			multiAssetAmt, err := utils.SourceAmountToLovelace(tx.Chain, data.amount)
+			if err != nil {
+				return nil, err
+			}
+			log.Verbosef("data.amount = %v, multiAssetAmt = %v", data.amount, multiAssetAmt)
+
+			// TODO: research why 1 ADA is not enough?
+			cardanoTx, err := p.getCardanoTx(ctx, data.tokenAddr, data.recipient,
+				2*utils.ONE_ADA_IN_LOVELACE.Uint64(), multiAssetAmt.Uint64())
+
 			if err != nil {
 				return nil, err
 			}
@@ -207,9 +215,6 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 			if err != nil {
 				return nil, err
 			}
-
-			ss := base64.StdEncoding.EncodeToString(bz)
-			log.Debug("bz = ", ss)
 
 			outMsg := types.NewMsgTxOutWithSigner(
 				p.appKeys.GetSignerAddress().String(),
@@ -233,7 +238,8 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 }
 
 // In Cardano chain, transferring multi-asset required at least 1 ADA (10^6 lovelace)
-func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, tokenAddr ecommon.Address, receiver string, lovelace, assetAmount uint64) (*cardano.Tx, error) {
+func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, tokenAddr ecommon.Address,
+	receiver string, lovelace, assetAmount uint64) (*cardano.Tx, error) {
 	if lovelace < utils.ONE_ADA_IN_LOVELACE.Uint64() {
 		err := fmt.Errorf("require at least 1 ADA. Got %d", lovelace)
 		log.Error(err)
@@ -242,7 +248,7 @@ func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, tokenAddr ecommo
 
 	pubkey := p.keeper.GetKeygenPubkey(ctx, libchain.KEY_TYPE_EDDSA)
 	senderAddr := hutils.GetAddressFromCardanoPubkey(pubkey)
-	log.Info("cardano sender address = ", senderAddr.String())
+	log.Debug("cardano sender address = ", senderAddr.String())
 
 	receiverAddr, err := cardano.NewAddress(receiver)
 	if err != nil {
@@ -255,6 +261,7 @@ func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, tokenAddr ecommo
 	multiAsset := cardano.NewMultiAsset().Set(policyID, asset)
 
 	tx, err := BuildTx(p.cardanoNode, p.cardanoNetwork, senderAddr, receiverAddr, cardano.NewValueWithAssets(cardano.Coin(lovelace), multiAsset))
+
 	if err != nil {
 		log.Error("error when building tx: ", err)
 		return nil, err

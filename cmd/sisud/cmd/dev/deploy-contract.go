@@ -99,11 +99,12 @@ func (c *DeployContractCmd) doDeployment(urlString, contract, mnemonic, expAddrS
 
 	for i, client := range clients {
 		go func(i int, client *ethclient.Client) {
+			defer wg.Done()
+
 			// If liquidity contract has been deployed, do nothing.
 			if len(expectedAddrs[i]) > 0 && c.isContractDeployed(client, common.HexToAddress(expectedAddrs[i])) {
 				log.Verbose("Contract ", i, " has been deployed")
 				deployedAddrs[i] = expectedAddrs[i]
-				wg.Done()
 				return
 			}
 
@@ -120,7 +121,6 @@ func (c *DeployContractCmd) doDeployment(urlString, contract, mnemonic, expAddrS
 			}
 
 			deployedAddrs[i] = addr.String()
-			wg.Done()
 		}(i, client)
 	}
 	wg.Wait()

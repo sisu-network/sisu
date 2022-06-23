@@ -171,7 +171,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	}
 }
 
-// Get WRAP_SISU(hex: 575241505f414441) token.
+// Get WRAP_ADA (hex: 575241505f414441) token.
 // PolicyID (dc89700b3adf88f6b520aba2f3cfa4c26fa7a19bd8eadf430d73b9d4) got from there:
 // https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=31c019b737edc7b54ae60a87f372f860715e8bb02b979ed853395ccbf4bf0209
 func getMultiAsset(amt uint64) *cardano.MultiAsset {
@@ -182,7 +182,8 @@ func getMultiAsset(amt uint64) *cardano.MultiAsset {
 	}
 
 	policyID := cardano.NewPolicyIDFromHash(policyHash)
-	asset := cardano.NewAssets().Set(WrapADA, cardano.BigNum(amt))
+	asset := cardano.NewAssets().Set(WrapADA, cardano.BigNum(amt*CardanoDecimals))
+
 	return cardano.NewMultiAsset().Set(policyID, asset)
 }
 
@@ -198,6 +199,12 @@ func (c *fundAccountCmd) fundCardano(receiver cardano.Address, funderMnemonic st
 	if err != nil {
 		panic(err)
 	}
+
+	funderAddr, err := funderWallet.AddAddress()
+	if err != nil {
+		panic(err)
+	}
+	log.Info("Cardano funder address = ", funderAddr.String())
 
 	// fund 10 ADA and 1000 WRAP_ADA
 	txHash, err := funderWallet.Transfer(receiver, cardano.NewValueWithAssets(10*CardanoDecimals, getMultiAsset(1e3)), nil) // 10 ADA
@@ -450,31 +457,6 @@ func (c *fundAccountCmd) queryAllownace(client *ethclient.Client,
 	}
 
 	return balance
-}
-
-func (c *fundAccountCmd) transferLiquidityOwnership(
-	client *ethclient.Client, mnemonic string, liquidAddr, newOwner string) error {
-	liquidInstance, err := liquidity.NewLiquiditypool(common.HexToAddress(liquidAddr), client)
-	if err != nil {
-		return err
-	}
-
-	auth, err := getAuthTransactor(client, mnemonic)
-	if err != nil {
-		panic(err)
-	}
-
-	tx, err := liquidInstance.TransferOwnership(auth, common.HexToAddress(newOwner))
-	if err != nil {
-		return err
-	}
-
-	_, err = bind.WaitMined(context.Background(), client, tx)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (c *fundAccountCmd) getTokenAddrs(ctx context.Context, sisuRpc string, tokenSymbols []string, chain string) []string {

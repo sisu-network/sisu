@@ -31,7 +31,8 @@ func findUtxos(node cardano.Node, address cardano.Address) ([]cardano.UTxO, erro
 	return walletUtxos, nil
 }
 
-func BuildTx(node cardano.Node, network cardano.Network, sender, receiver cardano.Address, amount *cardano.Value) (*cardano.Tx, error) {
+func BuildTx(node cardano.Node, network cardano.Network, sender, receiver cardano.Address,
+	amount *cardano.Value) (*cardano.Tx, error) {
 	// Calculate if the account has enough balance
 	balance, err := Balance(node, sender)
 	if err != nil {
@@ -76,6 +77,7 @@ func BuildTx(node cardano.Node, network cardano.Network, sender, receiver cardan
 	changeAddress := pickedUtxos[0].Spender
 
 	builder.AddChangeIfNeeded(changeAddress)
+	builder.Sign([]byte{}) // Use zoombie private key as the key holder.
 
 	tx, err := builder.Build2()
 	if err != nil {
