@@ -256,7 +256,7 @@ func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, data *transferOu
 
 	// We need at least 1 ada to send multi assets.
 	tx, err := scardano.BuildTx(p.cardanoNode, p.cardanoNetwork, senderAddr, receiverAddr,
-		cardano.NewValueWithAssets(cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()), multiAsset))
+		cardano.NewValueWithAssets(cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()), multiAsset), nil)
 
 	if err != nil {
 		log.Error("error when building tx: ", err)

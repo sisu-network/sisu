@@ -32,8 +32,9 @@ func findUtxos(node cardano.Node, address cardano.Address) ([]cardano.UTxO, erro
 	return walletUtxos, nil
 }
 
+// BuildTx contructs a cardano transaction that sends from sender address to receive address.
 func BuildTx(node cardano.Node, network cardano.Network, sender, receiver cardano.Address,
-	amount *cardano.Value) (*cardano.Tx, error) {
+	amount *cardano.Value, metadata cardano.Metadata) (*cardano.Tx, error) {
 	// Calculate if the account has enough balance
 	balance, err := Balance(node, sender)
 	if err != nil {
@@ -90,6 +91,10 @@ func BuildTx(node cardano.Node, network cardano.Network, sender, receiver cardan
 		builder.AddInputs(&cardano.TxInput{TxHash: utxo.TxHash, Index: utxo.Index, Amount: utxo.Amount})
 	}
 	builder.AddOutputs(&cardano.TxOutput{Address: receiver, Amount: amount})
+
+	if len(metadata) > 0 {
+		builder.AddAuxiliaryData(&cardano.AuxiliaryData{Metadata: metadata})
+	}
 
 	tip, err := node.Tip()
 	if err != nil {
