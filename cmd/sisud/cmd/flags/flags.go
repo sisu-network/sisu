@@ -33,6 +33,7 @@ const (
 	KeyringBackend         = "keyring-backend"
 	Algo                   = "algo"
 	MinimumGasPrices       = "minimum-gas-prices"
+	CardanoNetwork         = "cardano-network"
 	CardanoSecret          = "cardano-secret"
 	CardanoFunderMnemonic  = "cardano-funder-mnemonic"
 )

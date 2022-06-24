@@ -223,7 +223,7 @@ func (t *DefaultTxTracker) getEmailBodyString(txo *txObject) (string, error) {
 	if txIn != nil {
 		if txo.txOut.TxType == types.TxOutType_TRANSFER_OUT {
 			// Trying its best to Deserialize the txIn
-			data, err := t.getEThTransferIn(txIn.Serialized)
+			data, err := t.getEThTransferIn(txIn.Chain, txIn.Serialized)
 			if err == nil {
 				txInData := TxInData{
 					Chain:        txIn.Chain,
@@ -260,7 +260,7 @@ func (t *DefaultTxTracker) getEmailBodyString(txo *txObject) (string, error) {
 	return utils.PrettyStruct(body)
 }
 
-func (t *DefaultTxTracker) getEThTransferIn(bz []byte) (*transferOutData, error) {
+func (t *DefaultTxTracker) getEThTransferIn(chain string, bz []byte) (*transferOutData, error) {
 	ethTx := &ethTypes.Transaction{}
 
 	err := ethTx.UnmarshalBinary(bz)
@@ -268,7 +268,7 @@ func (t *DefaultTxTracker) getEThTransferIn(bz []byte) (*transferOutData, error)
 		return nil, err
 	}
 
-	return parseEthTransferOut(ethTx, t.worldState)
+	return parseEthTransferOut(ethTx, chain, t.worldState)
 }
 
 func (t *DefaultTxTracker) getEthTransferIn(bz []byte) (*transferInData, error) {

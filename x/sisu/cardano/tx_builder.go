@@ -1,4 +1,4 @@
-package sisu
+package cardano
 
 import (
 	"fmt"

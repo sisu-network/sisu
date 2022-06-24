@@ -9,7 +9,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/sisu-network/sisu/x/sisu/world"
@@ -49,7 +48,7 @@ func decodeTxParams(abi abi.ABI, callData []byte) (map[string]interface{}, error
 	return txParams, nil
 }
 
-func parseEthTransferOut(ethTx *ethTypes.Transaction, worldState world.WorldState) (*transferOutData, error) {
+func parseEthTransferOut(ethTx *ethTypes.Transaction, srcChain string, worldState world.WorldState) (*transferOutData, error) {
 	erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
 	gwAbi := erc20gatewayContract.Abi
 	callData := ethTx.Data()
@@ -58,9 +57,9 @@ func parseEthTransferOut(ethTx *ethTypes.Transaction, worldState world.WorldStat
 		return nil, err
 	}
 
-	tokenAddr, ok := txParams["_tokenIn"].(ethcommon.Address)
+	tokenAddr, ok := txParams["_tokenOut"].(ethcommon.Address)
 	if !ok {
-		err := fmt.Errorf("cannot convert _tokenIn to type ethcommon.Address: %v", txParams)
+		err := fmt.Errorf("cannot convert _tokenOut to type ethcommon.Address: %v", txParams)
 		return nil, err
 	}
 
@@ -70,9 +69,9 @@ func parseEthTransferOut(ethTx *ethTypes.Transaction, worldState world.WorldStat
 		return nil, err
 	}
 
-	token := worldState.GetTokenFromAddress(destChain, tokenAddr.String())
-	if token == nil && libchain.IsETHBasedChain(destChain) {
-		return nil, fmt.Errorf("invalid address %s on chain %s", tokenAddr, destChain)
+	token := worldState.GetTokenFromAddress(srcChain, tokenAddr.String())
+	if token == nil {
+		return nil, fmt.Errorf("invalid address %s on chain %s", tokenAddr, srcChain)
 	}
 
 	recipient, ok := txParams["_recipient"].(string)

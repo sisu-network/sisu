@@ -20,6 +20,7 @@ import (
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
+	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/sisu-network/sisu/x/sisu/world"
@@ -159,7 +160,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 	// 2. Check if this is a tx sent to one of our contracts.
 	if ethTx.To() != nil &&
 		p.keeper.IsContractExistedAtAddress(ctx, tx.Chain, ethTx.To().String()) && len(ethTx.Data()) >= 4 {
-		data, err := parseEthTransferOut(ethTx, p.worldState)
+		data, err := parseEthTransferOut(ethTx, tx.Chain, p.worldState)
 		if err != nil {
 			log.Error(err)
 			return nil, err
@@ -199,7 +200,7 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 			log.Verbosef("data.amount = %v, multiAssetAmt = %v", data.amount, multiAssetAmt)
 
 			// In real, this transaction transfers at least <1 ADA + additional tx fee>
-			cardanoTx, err := p.getCardanoTx(ctx, data.tokenAddr, data.recipient, multiAssetAmt.Uint64())
+			cardanoTx, err := p.getCardanoTx(ctx, data, multiAssetAmt.Uint64())
 
 			if err != nil {
 				return nil, err
@@ -237,24 +238,24 @@ func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, 
 }
 
 // In Cardano chain, transferring multi-asset required at least 1 ADA (10^6 lovelace)
-func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, tokenAddr ecommon.Address,
-	receiver string, assetAmount uint64) (*cardano.Tx, error) {
+func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, data *transferOutData, assetAmount uint64) (*cardano.Tx, error) {
 	pubkey := p.keeper.GetKeygenPubkey(ctx, libchain.KEY_TYPE_EDDSA)
 	senderAddr := hutils.GetAddressFromCardanoPubkey(pubkey)
 	log.Debug("cardano sender address = ", senderAddr.String())
 
-	receiverAddr, err := cardano.NewAddress(receiver)
+	receiverAddr, err := cardano.NewAddress(data.recipient)
 	if err != nil {
 		log.Error("error when parsing receiver addr: ", err)
 		return nil, err
 	}
 
-	policyID, assetName := p.FromETHTokenToCardanoMultiAsset(tokenAddr)
-	asset := cardano.NewAssets().Set(assetName, cardano.BigNum(assetAmount))
-	multiAsset := cardano.NewMultiAsset().Set(policyID, asset)
+	multiAsset, err := scardano.GetCardanoMultiAsset(data.destChain, data.token, assetAmount)
+	if err != nil {
+		return nil, err
+	}
 
 	// We need at least 1 ada to send multi assets.
-	tx, err := BuildTx(p.cardanoNode, p.cardanoNetwork, senderAddr, receiverAddr,
+	tx, err := scardano.BuildTx(p.cardanoNode, p.cardanoNetwork, senderAddr, receiverAddr,
 		cardano.NewValueWithAssets(cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()), multiAsset))
 
 	if err != nil {
@@ -373,17 +374,25 @@ func (p *DefaultTxOutputProducer) extractCardanoTxIn(ctx sdk.Context, tx *types.
 		return nil, err
 	}
 
-	extraInfo := txIn.TxAdditionInfo
-	token := p.worldState.GetTokenFromAddress(extraInfo.Chain, extraInfo.TokenAddress)
-	if token == nil && libchain.IsETHBasedChain(extraInfo.Chain) {
-		err := fmt.Errorf("invalid address %s on chain %s", extraInfo.TokenAddress, extraInfo.Chain)
-		log.Error(err)
-		return nil, err
+	extraInfo := txIn.Metadata
+	tokenName := txIn.Asset
+	if tokenName != "ADA" {
+		tokenName = tokenName[5:] // Remove the WRAP_ prefix
+	}
+	if len(tokenName) == 0 {
+		return nil, fmt.Errorf("Invalid token: %s", tokenName)
 	}
 
-	amount := new(big.Int).SetUint64(uint64(extraInfo.Amount.Coin))
+	tokens := p.keeper.GetTokens(ctx, []string{tokenName})
+	token := tokens[tokenName]
+	if token == nil {
+		return nil, fmt.Errorf("Cannot find token in the keeper")
+	}
+	dstTokenAddress := token.GetAddressForChain(txIn.Metadata.Chain)
+
+	amount := new(big.Int).SetUint64(txIn.Amount)
 	recipient := ecommon.HexToAddress(extraInfo.Recipient)
-	tokenAddr := ecommon.HexToAddress(extraInfo.TokenAddress)
+	tokenAddr := ecommon.HexToAddress(dstTokenAddress)
 
 	responseTx, err := p.buildERC20TransferIn(ctx, token, tokenAddr, recipient,
 		utils.LovelaceToETHTokens(amount), extraInfo.Chain)
@@ -437,25 +446,4 @@ func (p *DefaultTxOutputProducer) getDefaultGasPrice(chain string) *big.Int {
 		return big.NewInt(75_000_000_000)
 	}
 	return big.NewInt(100_000_000_000)
-}
-
-// FromETHTokenToCardanoMultiAsset convert from ETH token address to corresponding cardano multi asset
-// Used for dev only
-// Cardano multi-asset = policyID + asset nam
-func (p *DefaultTxOutputProducer) FromETHTokenToCardanoMultiAsset(ethTokenAddr ecommon.Address) (cardano.PolicyID, cardano.AssetName) {
-	// TODO: We should load this from keeper.
-	switch ethTokenAddr.String() {
-	case "0xf0D676183dD5ae6b370adDdbE770235F23546f9d":
-		p, err := cardano.NewHash28("dc89700b3adf88f6b520aba2f3cfa4c26fa7a19bd8eadf430d73b9d4")
-		if err != nil {
-			log.Error(err)
-			return cardano.PolicyID{}, cardano.AssetName{}
-		}
-
-		return cardano.NewPolicyIDFromHash(p), cardano.NewAssetName("WRAP_ADA")
-	default:
-		log.Error("unknown token address: ", ethTokenAddr.String())
-	}
-
-	return cardano.PolicyID{}, cardano.AssetName{}
 }
