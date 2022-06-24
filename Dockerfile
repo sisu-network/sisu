@@ -1,4 +1,4 @@
-FROM golang:1.16-alpine as builder
+FROM golang:1.18-alpine as builder
 
 # This file is used in local dev with debugging purpose.
 

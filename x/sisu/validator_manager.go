@@ -11,6 +11,7 @@ import (
 type ValidatorManager interface {
 	AddValidator(ctx sdk.Context, node *types.Node)
 	IsValidator(ctx sdk.Context, signer string) bool
+	GetValidatorLength(ctx sdk.Context) int
 }
 
 type DefaultValidatorManager struct {
@@ -48,6 +49,14 @@ func (m *DefaultValidatorManager) getVals(ctx sdk.Context) map[string]*types.Nod
 	m.valLock.Unlock()
 
 	return vals
+}
+
+func (m *DefaultValidatorManager) GetValidatorLength(ctx sdk.Context) int {
+	vals := m.getVals(ctx)
+	m.valLock.RLock()
+	defer m.valLock.RUnlock()
+
+	return len(vals)
 }
 
 func (m *DefaultValidatorManager) AddValidator(ctx sdk.Context, node *types.Node) {

@@ -21,6 +21,7 @@ type HandlerKeygenResult struct {
 	config      config.TssConfig
 	txSubmit    common.TxSubmit
 	appKeys     common.AppKeys
+	valsMgr     ValidatorManager
 }
 
 func NewHandlerKeygenResult(mc ManagerContainer) *HandlerKeygenResult {
@@ -31,10 +32,14 @@ func NewHandlerKeygenResult(mc ManagerContainer) *HandlerKeygenResult {
 		config:     mc.Config(),
 		txSubmit:   mc.TxSubmit(),
 		appKeys:    mc.AppKeys(),
+		valsMgr:    mc.ValidatorManager(),
 	}
 }
 
 func (h *HandlerKeygenResult) DeliverMsg(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) (*sdk.Result, error) {
+	// Save result to KVStore & private db
+	h.keeper.SaveKeygenResult(ctx, signerMsg)
+
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
 		data, err := h.doKeygenResult(ctx, signerMsg)
 		h.keeper.ProcessTxRecord(ctx, hash)
@@ -48,48 +53,41 @@ func (h *HandlerKeygenResult) DeliverMsg(ctx sdk.Context, signerMsg *types.Keyge
 func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) ([]byte, error) {
 	msg := signerMsg.Data
 
-	log.Info("Delivering keygen result, result = ", msg.Result)
+	log.Infof("Delivering keygen result of type %s, result = %v", signerMsg.Keygen.KeyType, msg.Result)
 
-	result := h.getKeygenResult(ctx, signerMsg)
-
-	// TODO: Get majority of the votes here.
-	if result == types.KeygenResult_SUCCESS {
-		log.Info("Keygen succeeded")
-
-		// Save result to KVStore & private db
-		h.keeper.SaveKeygenResult(ctx, signerMsg)
-
-		if !h.globalData.IsCatchingUp() {
-			h.createContracts(ctx, signerMsg.Keygen)
+	// Get the majority of of votes
+	// TODO: Only count result from validator node. Otherwise, anyone could post fake result.
+	results := h.keeper.GetAllKeygenResult(ctx, signerMsg.Keygen.KeyType, signerMsg.Keygen.Index)
+	if len(results) == h.valsMgr.GetValidatorLength(ctx) {
+		// Check the majority of the results
+		successCount := 0
+		for _, result := range results {
+			if result.Data.Result == types.KeygenResult_SUCCESS {
+				successCount += 1
+			}
 		}
-	} else {
-		// TODO: handle failure case
+
+		if successCount == h.valsMgr.GetValidatorLength(ctx) {
+			// TODO: Make sure that everyone has the same address and pubkey.
+			// Save keygen Address
+			log.Info("Saving keygen...")
+			h.keeper.SaveKeygen(ctx, signerMsg.Keygen)
+
+			log.Infof("Keygen %s succeeded", signerMsg.Keygen.KeyType)
+
+			if !h.globalData.IsCatchingUp() {
+				switch signerMsg.Keygen.KeyType {
+				case libchain.KEY_TYPE_ECDSA:
+					h.createContracts(ctx, signerMsg.Keygen)
+				}
+			}
+		} else {
+			// TODO: handle failure case
+			return nil, nil
+		}
 	}
 
 	return nil, nil
-}
-
-func (h *HandlerKeygenResult) getKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) types.KeygenResult_Result {
-	results := h.keeper.GetAllKeygenResult(ctx, signerMsg.Keygen.KeyType, signerMsg.Keygen.Index)
-
-	// Check the majority of the results
-	successCount := 0
-	for _, result := range results {
-		if result.Data.Result == types.KeygenResult_SUCCESS {
-			successCount += 1
-		}
-	}
-
-	if successCount >= (len(results)+1)/2 {
-		// TODO: Choose the address with most vote.
-		// Save keygen Address
-		log.Info("Saving keygen...")
-		h.keeper.SaveKeygen(ctx, signerMsg.Keygen)
-
-		return types.KeygenResult_SUCCESS
-	}
-
-	return types.KeygenResult_FAILURE
 }
 
 // createContracts creates and broadcast pending contracts. All nodes need to agree what

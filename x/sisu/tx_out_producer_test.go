@@ -81,6 +81,8 @@ func TestTxOutProducer_getEthResponse2(t *testing.T) {
 					},
 				},
 			},
+			config.CardanoConfig{},
+			&MockCardanoNode{},
 		).(*DefaultTxOutputProducer)
 
 		txOuts, err := txOutProducer.getEthResponse(ctx, 1, &txIn)
@@ -112,8 +114,9 @@ func TestTxOutProducer_getEthResponse2(t *testing.T) {
 		require.NoError(t, err)
 		amount := new(big.Int).Mul(big.NewInt(1), utils.EthToWei)
 		tokenAddr := ecommon.HexToAddress(testErc20TokenAddress)
-		data, err := abi.Pack(MethodTransferOut, "ganache2", contractAddress, tokenAddr, tokenAddr, amount)
+		data, err := abi.Pack(MethodTransferOut, "ganache2", contractAddress.String(), tokenAddr, tokenAddr, amount)
 		require.NoError(t, err)
+
 		gasLimit := uint64(100)
 		gasPrice := big.NewInt(100)
 		ethTransaction := ethTypes.NewTx(&ethTypes.LegacyTx{

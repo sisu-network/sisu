@@ -50,6 +50,7 @@ type Setting struct {
 	keyringPassphrase string
 	algoStr           string
 	numValidators     int
+	cardanoSecret     string
 
 	nodeConfigs []config.Config
 	tokens      []*types.Token // tokens in the genesis data
@@ -364,6 +365,10 @@ func generateSisuToml(settings *Setting, index int, nodeDir string) {
 	cfg := settings.nodeConfigs[index]
 	if index == 0 {
 		cfg.Sisu.EmailAlert = settings.emailAlert
+	}
+
+	if len(settings.cardanoSecret) > 0 {
+		cfg.Cardano.BlockfrostSecret = settings.cardanoSecret
 	}
 
 	config.WriteConfigFile(filepath.Join(configDir, "sisu.toml"), &cfg)

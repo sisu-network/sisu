@@ -135,6 +135,7 @@ func saveKeygen(store cstypes.KVStore, msg *types.Keygen) {
 	if err != nil {
 		log.Error("SaveKeygenProposal: cannot marshal keygen proposal, err = ", err)
 	}
+
 	store.Set(key, bz)
 }
 
@@ -164,9 +165,10 @@ func isKeygenAddress(store cstypes.KVStore, keyType string, address string) bool
 }
 
 func getKeygenPubkey(store cstypes.KVStore, keyType string) []byte {
-	begin := []byte(fmt.Sprintf("%s__", keyType))
+	begin := append([]byte(keyType), byte(255))
+	end := []byte(keyType)
 
-	iter := store.ReverseIterator(begin, nil)
+	iter := store.ReverseIterator(end, begin)
 	for ; iter.Valid(); iter.Next() {
 		msg := &types.Keygen{}
 		if err := msg.Unmarshal(iter.Value()); err != nil {

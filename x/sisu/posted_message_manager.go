@@ -30,6 +30,7 @@ func (m *DefaultPostedMessageManager) ShouldProcessMsg(ctx sdk.Context, msg sdk.
 	count := m.keeper.SaveTxRecord(ctx, hash, signer)
 	tssParams := m.keeper.GetParams(ctx)
 	if tssParams == nil {
+		log.Warn("tssParams is nil")
 		return false, nil
 	}
 

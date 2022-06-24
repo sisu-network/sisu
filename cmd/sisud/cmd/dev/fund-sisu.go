@@ -12,10 +12,14 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 
+	"github.com/echovl/cardano-go"
+	"github.com/echovl/cardano-go/blockfrost"
+	"github.com/echovl/cardano-go/wallet"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	hutils "github.com/sisu-network/dheart/utils"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
@@ -28,8 +32,16 @@ import (
 )
 
 const (
-	ExpectedErc20Address      = "0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"
-	ExpectedLiquidPoolAddress = "0xf0D676183dD5ae6b370adDdbE770235F23546f9d"
+	ExpectedSisuAddress       = "0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"
+	ExpectedAdaAddress        = "0xf0D676183dD5ae6b370adDdbE770235F23546f9d"
+	ExpectedLiquidPoolAddress = "0x3DeaCe7E9C8b6ee632bb71663315d6330914f915"
+	CardanoDecimals           = 1000 * 1000
+	DefaultCardanoWalletName  = "sisu"
+	DefaultCardanoPassword    = "12345678910"
+)
+
+var (
+	WrapADA = cardano.NewAssetName("WRAP_ADA")
 )
 
 type fundAccountCmd struct{}
@@ -46,11 +58,15 @@ func FundSisu() *cobra.Command {
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
 			tokenString, _ := cmd.Flags().GetString(flags.Erc20Symbols)
 			liquidityAddrString, _ := cmd.Flags().GetString(flags.LiquidityAddrs)
+			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
+			cardanoFunderMnemonic, _ := cmd.Flags().GetString(flags.CardanoFunderMnemonic)
 
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
+			tokens := strings.Split(tokenString, ",")
 
 			c := &fundAccountCmd{}
-			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokenString, liquidityAddrString, sisuRpc)
+			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokens,
+				liquidityAddrString, sisuRpc, cardanoSecret, cardanoFunderMnemonic)
 
 			return nil
 		},
@@ -61,13 +77,15 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
 	cmd.Flags().String(flags.LiquidityAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "List of liquidity pool addresses")
-	cmd.Flags().String(flags.Erc20Symbols, "SISU", "List of ERC20 to approve")
+	cmd.Flags().String(flags.Erc20Symbols, "SISU,ADA", "List of ERC20 to approve")
+	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
+	cmd.Flags().String(flags.CardanoFunderMnemonic, "", "Mnemonic of funder wallet which already has a lot of test tokens")
 
 	return cmd
 }
 
-func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic,
-	tokenString, liquidityAddrString, sisuRpc string) {
+func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic string,
+	tokens []string, liquidityAddrString, sisuRpc, cardanoSecret, cardanoFunderMnemonic string) {
 	chains := strings.Split(chainString, ",")
 	liquidityAddrs := strings.Split(liquidityAddrString, ",")
 
@@ -117,12 +135,12 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	wg.Add(len(clients))
 	for i, client := range clients {
 		go func(i int, client *ethclient.Client) {
-			addrs := c.getTokenAddrs(ctx, sisuRpc, tokenString, chains[i])
-
+			addrs := c.getTokenAddrs(ctx, sisuRpc, tokens, chains[i])
 			for _, addr := range addrs {
 				log.Infof("Approve token with address %s for gateway %s", addr, gateways[i])
 				approveAddress(client, mnemonic, addr, gateways[i])
 			}
+
 			wg.Done()
 		}(i, client)
 	}
@@ -130,7 +148,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	log.Info("Gateway approval done!")
 
 	// Set gateway for the liquidity
-	log.Info("Set gateway address for liqiuitidy pool")
+	log.Info("Set gateway address for liquidity pool")
 	wg.Add(len(gateways))
 	for i, client := range clients {
 		go func(i int, client *ethclient.Client) {
@@ -139,6 +157,72 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 		}(i, client)
 	}
 	wg.Wait()
+
+	// Fund native cardano.
+	if len(cardanoFunderMnemonic) > 0 && len(cardanoSecret) > 0 {
+		cardanoKey, ok := allPubKeys[libchain.KEY_TYPE_EDDSA]
+		if !ok {
+			panic("can not find cardano pub key")
+		}
+
+		cardanoAddr := hutils.GetAddressFromCardanoPubkey(cardanoKey)
+		log.Info("Sisu Cardano Gateway = ", cardanoAddr)
+		c.fundCardano(cardanoAddr, cardanoFunderMnemonic, cardanoSecret)
+	}
+}
+
+// Get WRAP_ADA (hex: 575241505f414441) token.
+// PolicyID (dc89700b3adf88f6b520aba2f3cfa4c26fa7a19bd8eadf430d73b9d4) got from there:
+// https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=31c019b737edc7b54ae60a87f372f860715e8bb02b979ed853395ccbf4bf0209
+func getMultiAsset(amt uint64) *cardano.MultiAsset {
+	policyHash, err := cardano.NewHash28("dc89700b3adf88f6b520aba2f3cfa4c26fa7a19bd8eadf430d73b9d4")
+	if err != nil {
+		err := fmt.Errorf("error when parsing policyID hash: %v", err)
+		panic(err)
+	}
+
+	policyID := cardano.NewPolicyIDFromHash(policyHash)
+	asset := cardano.NewAssets().Set(WrapADA, cardano.BigNum(amt*CardanoDecimals))
+
+	return cardano.NewMultiAsset().Set(policyID, asset)
+}
+
+func (c *fundAccountCmd) fundCardano(receiver cardano.Address, funderMnemonic string, blockfrostSecret string) {
+	node := blockfrost.NewNode(cardano.Testnet, blockfrostSecret)
+	opts := &wallet.Options{
+		Node: node,
+	}
+	client := wallet.NewClient(opts)
+
+	// funder address: addr_test1vqyqp03az6w8xuknzpfup3h7ghjwu26z7xa6gk7l9j7j2gs8zfwcy
+	funderWallet, err := c.getWalletFromMnemonic(client, DefaultCardanoWalletName, DefaultCardanoPassword, funderMnemonic)
+	if err != nil {
+		panic(err)
+	}
+
+	funderAddr, err := funderWallet.AddAddress()
+	if err != nil {
+		panic(err)
+	}
+	log.Info("Cardano funder address = ", funderAddr.String())
+
+	// fund 10 ADA and 1000 WRAP_ADA
+	txHash, err := funderWallet.Transfer(receiver, cardano.NewValueWithAssets(10*CardanoDecimals, getMultiAsset(1e3)), nil) // 10 ADA
+	if err != nil {
+		panic(err)
+	}
+
+	log.Infof("Funded 10 ADA and 1000 WRAP_ADA for address %s, txHash = %s, "+
+		"explorer: https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=%s\n", receiver, txHash.String(), txHash.String())
+}
+
+func (c *fundAccountCmd) getWalletFromMnemonic(client *wallet.Client, name, password, mnemonic string) (*wallet.Wallet, error) {
+	w, err := client.RestoreWallet(name, password, mnemonic)
+	if err != nil {
+		return nil, err
+	}
+
+	return w, nil
 }
 
 func (c *fundAccountCmd) waitForGatewayCreationInSisuDb(goCtx context.Context, chains []string, sisuRpc string) []string {
@@ -375,37 +459,11 @@ func (c *fundAccountCmd) queryAllownace(client *ethclient.Client,
 	return balance
 }
 
-func (c *fundAccountCmd) transferLiquidityOwnership(
-	client *ethclient.Client, mnemonic string, liquidAddr, newOwner string) error {
-	liquidInstance, err := liquidity.NewLiquiditypool(common.HexToAddress(liquidAddr), client)
-	if err != nil {
-		return err
-	}
-
-	auth, err := getAuthTransactor(client, mnemonic)
-	if err != nil {
-		panic(err)
-	}
-
-	tx, err := liquidInstance.TransferOwnership(auth, common.HexToAddress(newOwner))
-	if err != nil {
-		return err
-	}
-
-	_, err = bind.WaitMined(context.Background(), client, tx)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (c *fundAccountCmd) getTokenAddrs(ctx context.Context, sisuRpc, tokenString, chain string) []string {
-	tokenSymbols := strings.Split(tokenString, ",")
+func (c *fundAccountCmd) getTokenAddrs(ctx context.Context, sisuRpc string, tokenSymbols []string, chain string) []string {
 	addrs := make([]string, len(tokenSymbols))
 
 	for i, tokenSymbol := range tokenSymbols {
-		token := queryToken(ctx, sisuRpc, tokenSymbol, chain)
+		token := queryToken(ctx, sisuRpc, tokenSymbol)
 		for j, addr := range token.Addresses {
 			if token.Chains[j] == chain {
 				addrs[i] = addr

@@ -32,7 +32,7 @@ Usage:
 			account, _ := cmd.Flags().GetString(flags.Account)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 
-			log.Infof("Querying token at address %s on chain %s", tokenSymbol, chain)
+			log.Infof("Querying token at address %s on chain %s", tokenSymbol, chainUrl)
 
 			client, err := ethclient.Dial(chainUrl)
 			if err != nil {
@@ -45,7 +45,7 @@ Usage:
 				panic(flags.Account + " cannot be empty")
 			}
 
-			token := queryToken(cmd.Context(), sisuRpc, tokenSymbol, chain)
+			token := queryToken(cmd.Context(), sisuRpc, tokenSymbol)
 			if token == nil {
 				panic("cannot find token " + tokenSymbol)
 			}
@@ -78,7 +78,7 @@ Usage:
 
 	cmd.Flags().String(flags.Chain, "ganache2", "Source chain where the token is transferred from")
 	cmd.Flags().String(flags.ChainUrl, "http://127.0.0.1:8545", "Source chain url")
-	cmd.Flags().String(flags.Erc20Symbol, ExpectedErc20Address, "Id of the token to be queried")
+	cmd.Flags().String(flags.Erc20Symbol, ExpectedSisuAddress, "Id of the token to be queried")
 	cmd.Flags().String(flags.Account, "", "account address that we want to query")
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
 

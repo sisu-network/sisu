@@ -18,13 +18,13 @@ type transferOutData struct {
 	tokenAddr ethcommon.Address
 	destChain string
 	token     *types.Token
-	recipient ethcommon.Address
+	recipient string
 	amount    *big.Int
 }
 
 type transferInData struct {
 	token     ethcommon.Address
-	recipient ethcommon.Address
+	recipient string
 	amount    *big.Int
 }
 
@@ -48,7 +48,7 @@ func decodeTxParams(abi abi.ABI, callData []byte) (map[string]interface{}, error
 	return txParams, nil
 }
 
-func parseEthTransferOut(ethTx *ethTypes.Transaction, worldState world.WorldState) (*transferOutData, error) {
+func parseEthTransferOut(ethTx *ethTypes.Transaction, srcChain string, worldState world.WorldState) (*transferOutData, error) {
 	erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
 	gwAbi := erc20gatewayContract.Abi
 	callData := ethTx.Data()
@@ -57,9 +57,9 @@ func parseEthTransferOut(ethTx *ethTypes.Transaction, worldState world.WorldStat
 		return nil, err
 	}
 
-	tokenAddr, ok := txParams["_tokenIn"].(ethcommon.Address)
+	tokenAddr, ok := txParams["_tokenOut"].(ethcommon.Address)
 	if !ok {
-		err := fmt.Errorf("cannot convert _tokenIn to type ethcommon.Address: %v", txParams)
+		err := fmt.Errorf("cannot convert _tokenOut to type ethcommon.Address: %v", txParams)
 		return nil, err
 	}
 
@@ -69,12 +69,12 @@ func parseEthTransferOut(ethTx *ethTypes.Transaction, worldState world.WorldStat
 		return nil, err
 	}
 
-	token := worldState.GetTokenFromAddress(destChain, tokenAddr.String())
+	token := worldState.GetTokenFromAddress(srcChain, tokenAddr.String())
 	if token == nil {
-		return nil, fmt.Errorf("invalid address %s on chain %s", tokenAddr, destChain)
+		return nil, fmt.Errorf("invalid address %s on chain %s", tokenAddr, srcChain)
 	}
 
-	recipient, ok := txParams["_recipient"].(ethcommon.Address)
+	recipient, ok := txParams["_recipient"].(string)
 	if !ok {
 		err := fmt.Errorf("cannot convert _recipient to type ethcommon.Address: %v", txParams)
 		return nil, err
@@ -95,7 +95,7 @@ func parseEthTransferOut(ethTx *ethTypes.Transaction, worldState world.WorldStat
 	}, nil
 }
 
-func parseTransferInData(ethTx *ethTypes.Transaction, worldState world.WorldState) (*transferInData, error) {
+func parseTransferInData(ethTx *ethTypes.Transaction) (*transferInData, error) {
 	erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
 	gwAbi := erc20gatewayContract.Abi
 	callData := ethTx.Data()
@@ -124,22 +124,12 @@ func parseTransferInData(ethTx *ethTypes.Transaction, worldState world.WorldStat
 
 	return &transferInData{
 		token:     token,
-		recipient: recipient,
+		recipient: recipient.String(),
 		amount:    amount,
 	}, nil
 }
 
-func (p *DefaultTxOutputProducer) processERC20TransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction) (*types.TxResponse, error) {
-	data, err := parseEthTransferOut(ethTx, p.worldState)
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-
-	return p.callERC20TransferIn(ctx, data.token, data.tokenAddr, data.recipient, data.amount, data.destChain)
-}
-
-func (p *DefaultTxOutputProducer) callERC20TransferIn(
+func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	ctx sdk.Context,
 	token *types.Token,
 	tokenAddress,
@@ -170,6 +160,12 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(
 		return nil, err
 	}
 
+	if gasPrice.Cmp(big.NewInt(0)) <= 0 {
+		gasPrice = p.getDefaultGasPrice(destChain)
+	}
+
+	log.Debug("Gas price for swapping  = ", gasPrice)
+
 	// Calculate the output amount
 	amountOut := new(big.Int).Set(amountIn)
 
@@ -195,7 +191,7 @@ func (p *DefaultTxOutputProducer) callERC20TransferIn(
 		return nil, world.ErrInsufficientFund
 	}
 
-	log.Debugf("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, gasPriceInToken: %d, amountIn: %s, amountOut: %s",
+	log.Verbosef("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, gasPriceInToken: %d, amountIn: %s, amountOut: %s",
 		destChain, gatewayAddress.String(), tokenAddress, recipient, gasPriceInToken, amountIn.String(), amountOut.String(),
 	)
 

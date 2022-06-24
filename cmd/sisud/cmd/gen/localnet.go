@@ -19,8 +19,9 @@ import (
 
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
+	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
+
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -78,8 +79,9 @@ Example:
 			nodeDaemonHome, _ := cmd.Flags().GetString(flagNodeDaemonHome)
 			startingIPAddress, _ := cmd.Flags().GetString(flagStartingIPAddress)
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
-			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
+			algo, _ := cmd.Flags().GetString(flags.Algo)
 			genesisFolder, _ := cmd.Flags().GetString(flagGenesisFolder)
+			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 
 			// Get Chain id and keyring backend from .env file.
 			chainID := "eth-sisu-local"
@@ -90,6 +92,12 @@ Example:
 			for _, chain := range chains {
 				supportedChains[chain.Id] = config.TssChainConfig{
 					Id: chain.Id,
+				}
+			}
+
+			if len(cardanoSecret) > 0 {
+				supportedChains["cardano-testnet"] = config.TssChainConfig{
+					Id: "cardano-testnet",
 				}
 			}
 
@@ -110,6 +118,17 @@ Example:
 			}
 
 			deyesChains := generator.readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
+
+			if cardanoSecret != "" {
+				// Add cardano configuration
+				deyesChains = append(deyesChains, econfig.Chain{
+					Chain:      "cardano-testnet",
+					BlockTime:  10000,
+					AdjustTime: 1000,
+					RpcSecret:  cardanoSecret,
+				})
+			}
+
 			generator.generateEyesToml("../deyes", deyesChains)
 
 			settings := &Setting{
@@ -132,6 +151,7 @@ Example:
 				chains:         chains,
 				liquidities:    getLiquidity(filepath.Join(genesisFolder, "liquid.json")),
 				params:         &types.Params{MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3))},
+				cardanoSecret:  cardanoSecret,
 			}
 
 			_, err = InitNetwork(settings)
@@ -145,8 +165,9 @@ Example:
 	cmd.Flags().String(flagNodeDaemonHome, "main", "Home directory of the node's daemon configuration")
 	cmd.Flags().String(flagStartingIPAddress, "127.0.0.1", "Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:46656, ID1@192.168.0.2:46656, ...)")
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
-	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
-	cmd.Flags().String(flags.FlagKeyringBackend, keyring.BackendTest, "Keyring backend. file|os|kwallet|pass|test|memory")
+	cmd.Flags().String(flags.Algo, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
+	cmd.Flags().String(flags.KeyringBackend, keyring.BackendTest, "Keyring backend. file|os|kwallet|pass|test|memory")
+	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 	cmd.Flags().String(flagGenesisFolder, "./misc/dev", "Relative path to the folder that contains genesis configuration.")
 
 	return cmd
@@ -226,6 +247,10 @@ func (g *localnetGenerator) getAuthTransactor(client *ethclient.Client, address 
 	auth.GasLimit = uint64(10_000_000)
 
 	return auth, nil
+}
+
+func (g *localnetGenerator) addCardanoDeyesConfigs() {
+
 }
 
 func (g *localnetGenerator) readDeyesChainConfigs(path string) []econfig.Chain {

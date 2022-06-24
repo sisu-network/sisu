@@ -25,6 +25,7 @@ type ManagerContainer interface {
 	WorldState() world.WorldState
 	TxTracker() TxTracker
 	Keeper() keeper.Keeper
+	ValidatorManager() ValidatorManager
 
 	SetReadOnlyContext(ctx sdk.Context)
 	GetReadOnlyContext() sdk.Context
@@ -43,6 +44,7 @@ type DefaultManagerContainer struct {
 	worldState    world.WorldState
 	txTracker     TxTracker
 	keeper        keeper.Keeper
+	valsManager   ValidatorManager
 
 	readOnlyContext atomic.Value
 }
@@ -50,7 +52,8 @@ type DefaultManagerContainer struct {
 func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 	dheartClient tssclients.DheartClient, deyesClient tssclients.DeyesClient,
 	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.TssConfig,
-	appKeys common.AppKeys, txOutProducer TxOutputProducer, worldState world.WorldState, txTracker TxTracker, keeper keeper.Keeper) ManagerContainer {
+	appKeys common.AppKeys, txOutProducer TxOutputProducer, worldState world.WorldState, txTracker TxTracker,
+	keeper keeper.Keeper, valsManager ValidatorManager) ManagerContainer {
 	return &DefaultManagerContainer{
 		pmm:           pmm,
 		partyManager:  partyManager,
@@ -64,6 +67,7 @@ func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 		worldState:    worldState,
 		txTracker:     txTracker,
 		keeper:        keeper,
+		valsManager:   valsManager,
 	}
 }
 
@@ -113,6 +117,10 @@ func (mc *DefaultManagerContainer) TxTracker() TxTracker {
 
 func (mc *DefaultManagerContainer) Keeper() keeper.Keeper {
 	return mc.keeper
+}
+
+func (mc *DefaultManagerContainer) ValidatorManager() ValidatorManager {
+	return mc.valsManager
 }
 
 func (mc *DefaultManagerContainer) SetReadOnlyContext(ctx sdk.Context) {

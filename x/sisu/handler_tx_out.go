@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/echovl/cardano-go"
 	etypes "github.com/ethereum/go-ethereum/core/types"
 	hTypes "github.com/sisu-network/dheart/types"
 	libchain "github.com/sisu-network/lib/chain"
@@ -62,6 +63,10 @@ func (h *HandlerTxOut) doTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWithSi
 		if libchain.IsETHBasedChain(txOut.OutChain) {
 			h.signTx(ctx, txOut)
 		}
+
+		if libchain.IsCardanoChain(txOut.OutChain) {
+			h.signCardanoTx(ctx, txOut)
+		}
 	}
 
 	return nil, nil
@@ -107,6 +112,42 @@ func (h *HandlerTxOut) signTx(ctx sdk.Context, tx *types.TxOut) {
 	pubKeys := h.partyManager.GetActivePartyPubkeys()
 
 	err := h.dheartClient.KeySign(keysignReq, pubKeys)
+	if err != nil {
+		log.Error("Keysign: err =", err)
+	}
+}
+
+func (h *HandlerTxOut) signCardanoTx(ctx sdk.Context, txOut *types.TxOut) {
+	// Update the txOut to be delivered.
+	h.txTracker.UpdateStatus(txOut.OutChain, txOut.OutHash, types.TxStatusDelivered)
+
+	tx := &cardano.Tx{}
+	if err := tx.UnmarshalCBOR(txOut.OutBytes); err != nil {
+		log.Error("error when unmarshalling cardano tx out: ", err)
+		return
+	}
+
+	txHash, err := tx.Hash()
+	if err != nil {
+		log.Error("error when getting cardano tx hash: ", err)
+		return
+	}
+
+	signRequest := &hTypes.KeysignRequest{
+		KeyType: libchain.KEY_TYPE_EDDSA,
+		KeysignMessages: []*hTypes.KeysignMessage{
+			{
+				Id:          h.getKeysignRequestId(txOut.OutChain, ctx.BlockHeight(), txOut.OutHash),
+				InChain:     txOut.InChain,
+				OutChain:    txOut.OutChain,
+				OutHash:     txOut.OutHash,
+				BytesToSign: txHash[:],
+			},
+		},
+	}
+
+	pubKeys := h.partyManager.GetActivePartyPubkeys()
+	err = h.dheartClient.KeySign(signRequest, pubKeys)
 	if err != nil {
 		log.Error("Keysign: err =", err)
 	}

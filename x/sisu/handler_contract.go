@@ -39,7 +39,7 @@ func (h *HandlerContract) doContracts(ctx sdk.Context, wrappedMsg *types.Contrac
 			return nil, nil
 		}
 
-		log.Info("Saving contarct ", contract.Name, " on chain ", contract.Chain)
+		log.Info("Saving contract ", contract.Name, " on chain ", contract.Chain)
 	}
 
 	// Save into KVStore & private db

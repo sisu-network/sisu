@@ -62,6 +62,7 @@ func Test_saveKeygenResult(t *testing.T) {
 	store := memstore.NewStore()
 
 	node := "node0"
+	node1 := "node1"
 	keyType := libchain.KEY_TYPE_ECDSA
 	index := int32(0)
 
@@ -79,8 +80,21 @@ func Test_saveKeygenResult(t *testing.T) {
 
 	saveKeygenResult(store, signer)
 
+	signer1 := &types.KeygenResultWithSigner{
+		Signer: node,
+		Keygen: &types.Keygen{
+			KeyType: keyType,
+			Index:   index,
+		},
+		Data: &types.KeygenResult{
+			From:   node1,
+			Result: types.KeygenResult_SUCCESS,
+		},
+	}
+	saveKeygenResult(store, signer1)
+
 	results := getAllKeygenResult(store, keyType, index)
-	require.Equal(t, 1, len(results))
+	require.Equal(t, 2, len(results))
 }
 
 ///// Token Prices
@@ -181,4 +195,36 @@ func Test_SaveNode(t *testing.T) {
 	require.Equal(t, 2, len(vals), "there should be 2 validators")
 	require.Equal(t, vals[0].AccAddress, "addr1")
 	require.Equal(t, vals[1].AccAddress, "addr2")
+}
+
+func TestDb_KeygenPubkey(t *testing.T) {
+	store := memstore.NewStore()
+
+	saveKeygen(store, &types.Keygen{
+		KeyType:     libchain.KEY_TYPE_ECDSA,
+		Index:       0,
+		PubKeyBytes: []byte("ec_key"),
+	})
+	saveKeygen(store, &types.Keygen{
+		KeyType:     libchain.KEY_TYPE_EDDSA,
+		Index:       0,
+		PubKeyBytes: []byte("ed_key"),
+	})
+
+	// Get Ecdsa pubkey
+	pubkeyBytes := getKeygenPubkey(store, libchain.KEY_TYPE_ECDSA)
+	require.Equal(t, []byte("ec_key"), pubkeyBytes)
+
+	// Get Eddsa pubkey
+	pubkeyBytes = getKeygenPubkey(store, libchain.KEY_TYPE_EDDSA)
+	require.Equal(t, []byte("ed_key"), pubkeyBytes)
+
+	// Test that if there are multiple keygen, the getKeygenPubkey returns pubkey of the latest.
+	saveKeygen(store, &types.Keygen{
+		KeyType:     libchain.KEY_TYPE_ECDSA,
+		Index:       1,
+		PubKeyBytes: []byte("ec_key_1"),
+	})
+	pubkeyBytes = getKeygenPubkey(store, libchain.KEY_TYPE_ECDSA)
+	require.Equal(t, []byte("ec_key_1"), pubkeyBytes)
 }

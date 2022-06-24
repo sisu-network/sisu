@@ -13,7 +13,7 @@ const defaultConfigTemplate = `# This is a TOML config file.
 mode = "{{ .Mode }}"
 
 ###############################################################################
-###                     Siu Main App Connfiguration                         ###
+###                     Siu Main App Configuration                         ###
 ###############################################################################
 [sisu]
 chain-id = "{{ .Sisu.ChainId}}"
@@ -27,7 +27,7 @@ api-port = {{ .Sisu.ApiPort }}
 	email = "{{ .Sisu.EmailAlert.Email }}"
 
 ###############################################################################
-###                     Siu Main LogDNA Connfiguration                      ###
+###                     Siu Main LogDNA Configuration                      ###
 ###############################################################################
 [log_dna]
 secret = "{{ .LogDNA.Secret }}"
@@ -38,7 +38,14 @@ max_buffer_len = {{ .LogDNA.MaxBufferLen }}
 log_local = {{ .LogDNA.LogLocal }}
 
 ###############################################################################
-###                         Siu TSS Connfiguration                          ###
+###                     Siu Cardano Configuration                           ###
+###############################################################################
+[cardano]
+block_frost_secret = "{{ .Cardano.BlockfrostSecret }}"
+network = {{ .Cardano.Network }}
+
+###############################################################################
+###                         Siu TSS Configuration                          ###
 ###############################################################################
 [tss]
 dheart-host = "{{ .Tss.DheartHost }}"

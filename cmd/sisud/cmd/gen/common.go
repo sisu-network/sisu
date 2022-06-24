@@ -70,7 +70,8 @@ log_local = {{ .LogDNA.LogLocal }}
   block_time = {{ $chain.BlockTime }}
   adjust_time = {{ $chain.AdjustTime }}
   starting_block = 0
-  rpcs = [{{ range $j, $rpc := $chain.Rpcs }} "{{ $rpc }}" {{end}}]{{ end }}
+  rpcs = [{{ range $j, $rpc := $chain.Rpcs }} "{{ $rpc }}" {{end}}]
+  rpc_secret = "{{ $chain.RpcSecret }}"{{ end }}
 `
 
 	tmpl := template.New("eyesToml")

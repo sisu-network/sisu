@@ -30,4 +30,10 @@ const (
 	SrcUrl                 = "src-url"
 	Dst                    = "dst"
 	GenesisFolder          = "genesis-folder"
+	KeyringBackend         = "keyring-backend"
+	Algo                   = "algo"
+	MinimumGasPrices       = "minimum-gas-prices"
+	CardanoNetwork         = "cardano-network"
+	CardanoSecret          = "cardano-secret"
+	CardanoFunderMnemonic  = "cardano-funder-mnemonic"
 )

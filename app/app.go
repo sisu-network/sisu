@@ -8,6 +8,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec/types"
+	"github.com/echovl/cardano-go/blockfrost"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/p2p"
@@ -264,14 +265,16 @@ func New(
 	worldState := world.NewWorldState(app.tssKeeper, deyesClient)
 	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert, worldState)
 
+	cardanoNode := blockfrost.NewNode(cfg.Cardano.GetCardanoNetwork(), cfg.Cardano.BlockfrostSecret)
+	valsMgr := tss.NewValidatorManager(app.tssKeeper)
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.tssKeeper),
 		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
-		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, app.tssKeeper, cfg.Tss), worldState, txTracker, app.tssKeeper)
+		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, app.tssKeeper, cfg.Tss, cfg.Cardano, cardanoNode),
+		worldState, txTracker, app.tssKeeper, valsMgr)
 
 	tssProcessor := tss.NewApiHandler(privateDb, mc)
 	app.apiHandler.SetAppLogicListener(tssProcessor)
 
-	valsMgr := tss.NewValidatorManager(app.tssKeeper)
 	sisuHandler := tss.NewSisuHandler(mc)
 	externalHandler := rest.NewExternalHandler(worldState)
 	app.externalHandler = externalHandler

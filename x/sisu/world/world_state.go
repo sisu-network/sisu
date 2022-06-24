@@ -1,6 +1,7 @@
 package world
 
 import (
+	"encoding/base64"
 	"fmt"
 	"math/big"
 	"sync"
@@ -107,12 +108,15 @@ func (ws *DefaultWorldState) InitData(ctx sdk.Context) {
 
 func (ws *DefaultWorldState) UseAndIncreaseNonce(ctx sdk.Context, chain string) int64 {
 	keyType := libchain.GetKeyTypeForChain(chain)
+	log.Debugf("key type = %s, chain = %s\n", keyType, chain)
 
 	pubKeyBytes := ws.keeper.GetKeygenPubkey(ctx, keyType)
 	if pubKeyBytes == nil {
 		log.Error("cannot find pub key for keyType", chain)
 		return -1
 	}
+
+	log.Debug("pubkey bytes = ", base64.StdEncoding.EncodeToString(pubKeyBytes))
 
 	pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
 	if err != nil {
