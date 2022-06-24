@@ -37,6 +37,9 @@ func NewHandlerKeygenResult(mc ManagerContainer) *HandlerKeygenResult {
 }
 
 func (h *HandlerKeygenResult) DeliverMsg(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) (*sdk.Result, error) {
+	// Save result to KVStore & private db
+	h.keeper.SaveKeygenResult(ctx, signerMsg)
+
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
 		data, err := h.doKeygenResult(ctx, signerMsg)
 		h.keeper.ProcessTxRecord(ctx, hash)
@@ -49,8 +52,6 @@ func (h *HandlerKeygenResult) DeliverMsg(ctx sdk.Context, signerMsg *types.Keyge
 
 func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) ([]byte, error) {
 	msg := signerMsg.Data
-	// Save result to KVStore & private db
-	h.keeper.SaveKeygenResult(ctx, signerMsg)
 
 	log.Infof("Delivering keygen result of type %s, result = %v", signerMsg.Keygen.KeyType, msg.Result)
 

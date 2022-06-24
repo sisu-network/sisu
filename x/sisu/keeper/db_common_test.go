@@ -62,6 +62,7 @@ func Test_saveKeygenResult(t *testing.T) {
 	store := memstore.NewStore()
 
 	node := "node0"
+	node1 := "node1"
 	keyType := libchain.KEY_TYPE_ECDSA
 	index := int32(0)
 
@@ -79,8 +80,21 @@ func Test_saveKeygenResult(t *testing.T) {
 
 	saveKeygenResult(store, signer)
 
+	signer1 := &types.KeygenResultWithSigner{
+		Signer: node,
+		Keygen: &types.Keygen{
+			KeyType: keyType,
+			Index:   index,
+		},
+		Data: &types.KeygenResult{
+			From:   node1,
+			Result: types.KeygenResult_SUCCESS,
+		},
+	}
+	saveKeygenResult(store, signer1)
+
 	results := getAllKeygenResult(store, keyType, index)
-	require.Equal(t, 1, len(results))
+	require.Equal(t, 2, len(results))
 }
 
 ///// Token Prices
