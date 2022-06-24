@@ -1,7 +1,6 @@
 package sisu
 
 import (
-	"encoding/base64"
 	"fmt"
 	"strconv"
 
@@ -127,9 +126,6 @@ func (h *HandlerTxOut) signCardanoTx(ctx sdk.Context, txOut *types.TxOut) {
 		log.Error("error when unmarshalling cardano tx out: ", err)
 		return
 	}
-
-	bz := base64.StdEncoding.EncodeToString(txOut.OutBytes)
-	log.Debug("bz in signCardanoTx = ", bz)
 
 	txHash, err := tx.Hash()
 	if err != nil {
