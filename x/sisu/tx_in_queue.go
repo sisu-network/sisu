@@ -1,7 +1,6 @@
 package sisu
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/sisu-network/lib/log"
@@ -15,7 +14,7 @@ import (
 type TxInQueue interface {
 	Start()
 	AddTxIn(txIn *types.TxIn)
-	ProcessTxIn()
+	ProcessTxIns()
 }
 
 type defaultTxInQueue struct {
@@ -62,7 +61,7 @@ func (q *defaultTxInQueue) AddTxIn(txIn *types.TxIn) {
 	q.queue = append(q.queue, txIn)
 }
 
-func (q *defaultTxInQueue) ProcessTxIn() {
+func (q *defaultTxInQueue) ProcessTxIns() {
 	q.newTaskCh <- true
 }
 
@@ -84,7 +83,6 @@ func (q *defaultTxInQueue) loop() {
 		ctx := q.globalData.GetReadOnlyContext()
 
 		for _, txIn := range queue {
-			fmt.Println("Processing txIn: ", *txIn)
 			// Creates and broadcast TxOuts. This has to be deterministic based on all the data that the
 			// processor has.
 			txOutWithSigners := q.txOutputProducer.GetTxOuts(ctx, ctx.BlockHeight(), txIn)

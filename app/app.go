@@ -266,12 +266,15 @@ func New(
 
 	cardanoNode := blockfrost.NewNode(cfg.Cardano.GetCardanoNetwork(), cfg.Cardano.BlockfrostSecret)
 	valsMgr := tss.NewValidatorManager(app.k)
+	partyManager := tss.NewPartyManager(app.globalData)
 	txOutProducer := tss.NewTxOutputProducer(worldState, app.appKeys, app.k, cfg.Tss, cfg.Cardano, cardanoNode)
 	txInQueue := sisu.NewTxInQueue(app.k, txOutProducer, app.globalData, app.txSubmitter, txTracker)
 	txInQueue.Start()
+	txOutQueue := sisu.NewTxOutQueue(app.k, app.globalData, partyManager, dheartClient, txTracker)
+	txOutQueue.Start()
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.k),
-		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
-		app.appKeys, txOutProducer, worldState, txTracker, app.k, valsMgr, txInQueue)
+		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
+		app.appKeys, txOutProducer, worldState, txTracker, app.k, valsMgr, txInQueue, txOutQueue)
 
 	tssProcessor := tss.NewApiHandler(privateDb, mc)
 	app.apiHandler.SetAppLogicListener(tssProcessor)
