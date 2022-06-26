@@ -88,6 +88,8 @@ type MockGlobalData struct {
 	IsCatchingUpFunc        func() bool
 	GetValidatorSetFunc     func() []rpc.ValidatorOutput
 	GetMyValidatorAddrFunc  func() string
+	SetReadOnlyContextFunc  func(ctx sdk.Context)
+	GetReadOnlyContextFunc  func() sdk.Context
 }
 
 func (m *MockGlobalData) Init() {
@@ -132,4 +134,18 @@ func (m *MockGlobalData) GetMyValidatorAddr() string {
 	}
 
 	return ""
+}
+
+func (m *MockGlobalData) SetReadOnlyContext(ctx sdk.Context) {
+	if m.SetReadOnlyContextFunc != nil {
+		m.SetReadOnlyContextFunc(ctx)
+	}
+}
+
+func (m *MockGlobalData) GetReadOnlyContext() sdk.Context {
+	if m.GetReadOnlyContextFunc != nil {
+		return m.GetReadOnlyContext()
+	}
+
+	return sdk.Context{}
 }

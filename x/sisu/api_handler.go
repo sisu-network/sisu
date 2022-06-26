@@ -306,7 +306,7 @@ func (a *ApiHandler) OnKeysignResult(result *dhtypes.KeysignResult) {
 		return
 	}
 
-	ctx := a.mc.GetReadOnlyContext()
+	ctx := a.globalData.GetReadOnlyContext()
 
 	// Post the keysign result to cosmos chain.
 	request := result.Request
@@ -484,7 +484,7 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	log.Verbose("There is a new list of txs from deyes, len =", len(txs.Arr))
 
-	ctx := a.mc.GetReadOnlyContext()
+	ctx := a.globalData.GetReadOnlyContext()
 
 	// Create TxIn messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {

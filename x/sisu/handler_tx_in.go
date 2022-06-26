@@ -3,28 +3,21 @@ package sisu
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type HandlerTxIn struct {
-	pmm              PostedMessageManager
-	keeper           keeper.Keeper
-	txOutputProducer TxOutputProducer
-	globalData       common.GlobalData
-	txSubmit         common.TxSubmit
-	txTracker        TxTracker
+	pmm       PostedMessageManager
+	keeper    keeper.Keeper
+	txInQueue TxInQueue
 }
 
 func NewHandlerTxIn(mc ManagerContainer) *HandlerTxIn {
 	return &HandlerTxIn{
-		keeper:           mc.Keeper(),
-		pmm:              mc.PostedMessageManager(),
-		txOutputProducer: mc.TxOutProducer(),
-		globalData:       mc.GlobalData(),
-		txSubmit:         mc.TxSubmit(),
-		txTracker:        mc.TxTracker(),
+		keeper:    mc.Keeper(),
+		pmm:       mc.PostedMessageManager(),
+		txInQueue: mc.TxInQueue(),
 	}
 }
 
@@ -45,42 +38,11 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigne
 
 	log.Info("Deliverying TxIn, hash = ", msg.TxHash, " on chain ", msg.Chain)
 
-	// Save this to KVStore & private db.
+	// Save this to db.
 	h.keeper.SaveTxIn(ctx, msg)
 
-	// Creates and broadcast TxOuts. This has to be deterministic based on all the data that the
-	// processor has.
-	txOutWithSigners := h.txOutputProducer.GetTxOuts(ctx, ctx.BlockHeight(), msg)
-
-	// Save this TxOut to database
-	log.Verbose("len(txOut) = ", len(txOutWithSigners))
-	if len(txOutWithSigners) > 0 {
-		txOuts := make([]*types.TxOut, len(txOutWithSigners))
-		for i, outWithSigner := range txOutWithSigners {
-			txOut := outWithSigner.Data
-			txOuts[i] = txOut
-
-			// If this is a txOut deployment, mark the contract as being deployed.
-			if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
-				h.keeper.UpdateContractsStatus(ctx, txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
-			}
-		}
-	}
-
-	// If this node is not catching up, broadcast the tx.
-	if !h.globalData.IsCatchingUp() && len(txOutWithSigners) > 0 {
-		log.Info("Broadcasting txout....")
-
-		for _, txOutWithSigner := range txOutWithSigners {
-			h.txSubmit.SubmitMessageAsync(txOutWithSigner)
-
-			// Track the txout
-			h.txTracker.AddTransaction(
-				txOutWithSigner.Data,
-				msg,
-			)
-		}
-	}
+	// Add the message to the queue for later processing.
+	h.txInQueue.AddTxIn(msg)
 
 	return nil, nil
 }
