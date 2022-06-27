@@ -2,9 +2,11 @@ package cardano
 
 import (
 	"fmt"
-
 	"github.com/echovl/cardano-go"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/x/sisu/helper"
+	"github.com/sisu-network/sisu/x/sisu/types"
+	"math/big"
 )
 
 func Balance(node cardano.Node, address cardano.Address) (*cardano.Value, error) {
@@ -32,9 +34,9 @@ func findUtxos(node cardano.Node, address cardano.Address) ([]cardano.UTxO, erro
 	return walletUtxos, nil
 }
 
-// BuildTx contructs a cardano transaction that sends from sender address to receive address.
+// BuildTx constructs a cardano transaction that sends from sender address to receive address.
 func BuildTx(node cardano.Node, network cardano.Network, sender, receiver cardano.Address,
-	amount *cardano.Value, metadata cardano.Metadata) (*cardano.Tx, error) {
+	amount *cardano.Value, metadata cardano.Metadata, adaPrice int64, token *types.Token, destChain string) (*cardano.Tx, error) {
 	// Calculate if the account has enough balance
 	balance, err := Balance(node, sender)
 	if err != nil {
@@ -58,6 +60,24 @@ func BuildTx(node cardano.Node, network cardano.Network, sender, receiver cardan
 	minUTXO := builder.MinCoinsForTxOut(txOut)
 	amount.Coin = minUTXO
 	log.Debug("amount.Coin = ", amount.Coin)
+
+	// Subtract transaction fee from multi-asset amount
+	log.Debugf("token price for token %s = %d ", token.Id, token.Price)
+	txFeeInToken := helper.GetCardanoTxFeeInToken(big.NewInt(adaPrice), big.NewInt(token.Price), new(big.Int).SetUint64(uint64(minUTXO)))
+	if txFeeInToken.Cmp(big.NewInt(0)) < 0 {
+		log.Error("tx fee is negative")
+		return nil, err
+	}
+
+	log.Debug("tx fee (unit token) = ", txFeeInToken.Uint64())
+
+	fee, err := GetCardanoMultiAsset(destChain, token, txFeeInToken.Uint64())
+	if err != nil {
+		log.Error("error when get cardano multi-asset: ", err)
+		return nil, err
+	}
+	amount = amount.Sub(cardano.NewValueWithAssets(0, fee))
+	log.Debug("real amount = ", amount)
 
 	// Find utxos that cover the amount to transfer
 	pickedUtxos := []cardano.UTxO{}

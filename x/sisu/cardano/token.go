@@ -13,7 +13,7 @@ import (
 )
 
 // GetCardanoMultiAsset gets Cardano policy address and asset name from transfer out data.
-// Cardano multi-asset = policyID + asset nam
+// Cardano multi-asset = policyID + asset name
 func GetCardanoMultiAsset(chain string, token *types.Token, assetAmount uint64) (*cardanogo.MultiAsset, error) {
 	// Find the address of the cardano token
 	for i, addr := range token.Addresses {

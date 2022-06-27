@@ -254,9 +254,17 @@ func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, data *transferOu
 		return nil, err
 	}
 
+	adaPrice, err := p.worldState.GetNativeTokenPriceForChain(data.destChain)
+	if err != nil {
+		log.Error("error when getting ada price: ", err)
+		return nil, err
+	}
+	log.Debug("ADA price = ", adaPrice)
+
 	// We need at least 1 ada to send multi assets.
 	tx, err := scardano.BuildTx(p.cardanoNode, p.cardanoNetwork, senderAddr, receiverAddr,
-		cardano.NewValueWithAssets(cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()), multiAsset), nil)
+		cardano.NewValueWithAssets(cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()), multiAsset), nil,
+		adaPrice, data.token, data.destChain)
 
 	if err != nil {
 		log.Error("error when building tx: ", err)

@@ -30,3 +30,8 @@ func GetGasCostInToken(gas, gasPrice, tokenPrice, nativeTokenPrice *big.Int) (*b
 
 	return gasInToken, nil
 }
+
+func GetCardanoTxFeeInToken(adaPrice, tokenPrice, adaForTxFee *big.Int) *big.Int {
+	txFeeInAda := new(big.Int).Mul(adaPrice, adaForTxFee)
+	return new(big.Int).Div(txFeeInAda, tokenPrice)
+}
