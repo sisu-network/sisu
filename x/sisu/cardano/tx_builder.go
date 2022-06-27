@@ -37,7 +37,7 @@ func findUtxos(node cardano.Node, address cardano.Address) ([]cardano.UTxO, erro
 
 // BuildTx constructs a cardano transaction that sends from sender address to receive address.
 func BuildTx(node cardano.Node, network cardano.Network, sender, receiver cardano.Address,
-	amount *cardano.Value, metadata cardano.Metadata, adaPrice int64, token *types.Token, destChain string) (*cardano.Tx, error) {
+	amount *cardano.Value, metadata cardano.Metadata, adaPrice int64, token *types.Token, destChain string, assetAmount uint64) (*cardano.Tx, error) {
 	// Calculate if the account has enough balance
 	balance, err := Balance(node, sender)
 	if err != nil {
@@ -71,6 +71,11 @@ func BuildTx(node cardano.Node, network cardano.Network, sender, receiver cardan
 	}
 
 	log.Debug("tx fee (unit token) = ", txFeeInToken.Uint64())
+	if assetAmount <= txFeeInToken.Uint64() {
+		err := fmt.Errorf("token amount can not cover transaction fee. Expect %d, got %d", txFeeInToken.Uint64(), assetAmount)
+		log.Error(err)
+		return nil, err
+	}
 
 	fee, err := GetCardanoMultiAsset(destChain, token, txFeeInToken.Uint64())
 	if err != nil {
