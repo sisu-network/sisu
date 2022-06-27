@@ -2,11 +2,12 @@ package cardano
 
 import (
 	"fmt"
+	"math/big"
+
 	"github.com/echovl/cardano-go"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/helper"
 	"github.com/sisu-network/sisu/x/sisu/types"
-	"math/big"
 )
 
 func Balance(node cardano.Node, address cardano.Address) (*cardano.Value, error) {
