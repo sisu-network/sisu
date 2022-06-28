@@ -144,7 +144,7 @@ func (m *MockGlobalData) SetReadOnlyContext(ctx sdk.Context) {
 
 func (m *MockGlobalData) GetReadOnlyContext() sdk.Context {
 	if m.GetReadOnlyContextFunc != nil {
-		return m.GetReadOnlyContext()
+		return m.GetReadOnlyContextFunc()
 	}
 
 	return sdk.Context{}

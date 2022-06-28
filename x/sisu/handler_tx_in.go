@@ -3,21 +3,24 @@ package sisu
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type HandlerTxIn struct {
-	pmm       PostedMessageManager
-	keeper    keeper.Keeper
-	txInQueue TxInQueue
+	pmm        PostedMessageManager
+	keeper     keeper.Keeper
+	globalData common.GlobalData
+	txInQueue  TxInQueue
 }
 
 func NewHandlerTxIn(mc ManagerContainer) *HandlerTxIn {
 	return &HandlerTxIn{
-		keeper:    mc.Keeper(),
-		pmm:       mc.PostedMessageManager(),
-		txInQueue: mc.TxInQueue(),
+		keeper:     mc.Keeper(),
+		pmm:        mc.PostedMessageManager(),
+		txInQueue:  mc.TxInQueue(),
+		globalData: mc.GlobalData(),
 	}
 }
 
@@ -41,8 +44,10 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigne
 	// Save this to db.
 	h.keeper.SaveTxIn(ctx, msg)
 
-	// Add the message to the queue for later processing.
-	h.txInQueue.AddTxIn(msg)
+	if !h.globalData.IsCatchingUp() {
+		// Add the message to the queue for later processing.
+		h.txInQueue.AddTxIn(msg)
+	}
 
 	return nil, nil
 }

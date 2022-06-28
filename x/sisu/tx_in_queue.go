@@ -22,7 +22,6 @@ type defaultTxInQueue struct {
 	txOutputProducer TxOutputProducer
 	globalData       common.GlobalData
 	txSubmit         common.TxSubmit
-	txTracker        TxTracker
 
 	newTaskCh chan bool
 	queue     []*types.TxIn
@@ -41,7 +40,6 @@ func NewTxInQueue(
 		txOutputProducer: txOutputProducer,
 		globalData:       globalData,
 		txSubmit:         txSubmit,
-		txTracker:        txTracker,
 		newTaskCh:        make(chan bool, 5),
 		queue:            make([]*types.TxIn, 0),
 		lock:             &sync.RWMutex{},
@@ -82,39 +80,30 @@ func (q *defaultTxInQueue) loop() {
 
 		ctx := q.globalData.GetReadOnlyContext()
 
-		for _, txIn := range queue {
-			// Creates and broadcast TxOuts. This has to be deterministic based on all the data that the
-			// processor has.
-			txOutWithSigners := q.txOutputProducer.GetTxOuts(ctx, ctx.BlockHeight(), txIn)
+		// Creates and broadcast TxOuts. This has to be deterministic based on all the data that the
+		// processor has.
+		txOutWithSigners := q.txOutputProducer.GetTxOuts(ctx, ctx.BlockHeight(), queue)
+		// Save this TxOut to database
+		log.Verbose("len(txOut) = ", len(txOutWithSigners))
+		if len(txOutWithSigners) > 0 {
+			txOuts := make([]*types.TxOut, len(txOutWithSigners))
+			for i, outWithSigner := range txOutWithSigners {
+				txOut := outWithSigner.Data
+				txOuts[i] = txOut
 
-			// Save this TxOut to database
-			log.Verbose("len(txOut) = ", len(txOutWithSigners))
-			if len(txOutWithSigners) > 0 {
-				txOuts := make([]*types.TxOut, len(txOutWithSigners))
-				for i, outWithSigner := range txOutWithSigners {
-					txOut := outWithSigner.Data
-					txOuts[i] = txOut
-
-					// If this is a txOut deployment, mark the contract as being deployed.
-					if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
-						q.keeper.UpdateContractsStatus(ctx, txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
-					}
+				// If this is a txOut deployment, mark the contract as being deployed.
+				if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
+					q.keeper.UpdateContractsStatus(ctx, txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
 				}
 			}
+		}
 
-			// If this node is not catching up, broadcast the tx.
-			if !q.globalData.IsCatchingUp() && len(txOutWithSigners) > 0 {
-				log.Info("Broadcasting txout....")
+		// If this node is not catching up, broadcast the tx.
+		if !q.globalData.IsCatchingUp() && len(txOutWithSigners) > 0 {
+			log.Info("Broadcasting txout....")
 
-				for _, txOutWithSigner := range txOutWithSigners {
-					q.txSubmit.SubmitMessageAsync(txOutWithSigner)
-
-					// Track the txout
-					q.txTracker.AddTransaction(
-						txOutWithSigner.Data,
-						txIn,
-					)
-				}
+			for _, txOutWithSigner := range txOutWithSigners {
+				q.txSubmit.SubmitMessageAsync(txOutWithSigner)
 			}
 		}
 	}

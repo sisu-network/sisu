@@ -89,8 +89,6 @@ func (q *defaultTxOutQueue) loop() {
 
 		ctx := q.globalData.GetReadOnlyContext()
 
-		fmt.Println("Processing TxOut...")
-
 		for _, txOut := range queue {
 			// Update the txOut to be delivered.
 			q.txTracker.UpdateStatus(txOut.OutChain, txOut.OutHash, types.TxStatusDelivered)
@@ -108,7 +106,7 @@ func (q *defaultTxOutQueue) loop() {
 
 // signEthTx sends a TxOut to dheart for TSS signing.
 func (q *defaultTxOutQueue) signEthTx(ctx sdk.Context, tx *types.TxOut) {
-	log.Info("Delivering TXOUT for chain", tx.OutChain, " tx hash = ", tx.OutHash)
+	log.Info("Delivering TXOUT for chain ", tx.OutChain, " tx hash = ", tx.OutHash)
 	if tx.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
 		log.Info("This TxOut is a contract deployment")
 	}

@@ -65,7 +65,7 @@ func TestTxOutProducer_getEthResponse2(t *testing.T) {
 		binary, err := ethTx.MarshalBinary()
 		require.NoError(t, err)
 
-		txIn := types.TxIn{
+		txIn := &types.TxIn{
 			BlockHeight: 1,
 			Serialized:  binary,
 			Chain:       "ganache1",
@@ -83,10 +83,10 @@ func TestTxOutProducer_getEthResponse2(t *testing.T) {
 			},
 			config.CardanoConfig{},
 			&MockCardanoNode{},
+			&MockTxTracker{},
 		).(*DefaultTxOutputProducer)
 
-		txOuts, err := txOutProducer.getEthResponse(ctx, 1, &txIn)
-		require.NoError(t, err)
+		txOuts := txOutProducer.GetTxOuts(ctx, 1, []*types.TxIn{txIn})
 		require.Len(t, txOuts, 1)
 
 		// TODO Check the output of txOut to make sure that they are correct.
@@ -129,7 +129,7 @@ func TestTxOutProducer_getEthResponse2(t *testing.T) {
 		binary, err := ethTransaction.MarshalBinary()
 		require.NoError(t, err)
 
-		observedTx := types.TxIn{
+		observedTx := &types.TxIn{
 			BlockHeight: 1,
 			Chain:       "ganache1",
 			Serialized:  binary,
@@ -145,12 +145,12 @@ func TestTxOutProducer_getEthResponse2(t *testing.T) {
 					},
 				},
 			},
-			keeper:  keeper,
-			appKeys: appKeys,
+			keeper:    keeper,
+			appKeys:   appKeys,
+			txTracker: &MockTxTracker{},
 		}
 
-		txOuts, err := txOutProducer.getEthResponse(ctx, 1, &observedTx)
-		require.NoError(t, err)
+		txOuts := txOutProducer.GetTxOuts(ctx, 1, []*types.TxIn{observedTx})
 		require.Len(t, txOuts, 1)
 
 		// TODO Check the output of txOut to make sure that they are correct.

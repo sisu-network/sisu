@@ -3,6 +3,7 @@ package sisu
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -10,6 +11,7 @@ import (
 type HandlerTxOut struct {
 	pmm        PostedMessageManager
 	keeper     keeper.Keeper
+	globalData common.GlobalData
 	txOutQueue TxOutQueue
 }
 
@@ -18,6 +20,7 @@ func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
 		keeper:     mc.Keeper(),
 		pmm:        mc.PostedMessageManager(),
 		txOutQueue: mc.TxOutQueue(),
+		globalData: mc.GlobalData(),
 	}
 }
 
@@ -42,7 +45,9 @@ func (h *HandlerTxOut) doTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWithSi
 	// Save this to KVStore
 	h.keeper.SaveTxOut(ctx, txOut)
 
-	h.txOutQueue.AddTxOut(txOut)
+	if !h.globalData.IsCatchingUp() {
+		h.txOutQueue.AddTxOut(txOut)
+	}
 
 	return nil, nil
 }

@@ -56,6 +56,10 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.worldState = t
 		case ValidatorManager:
 			mc.valsManager = t
+		case TxInQueue:
+			mc.txInQueue = t
+		case TxOutQueue:
+			mc.txOutQueue = t
 		}
 	}
 
@@ -105,7 +109,7 @@ func (m *MockTxTracker) CheckExpiredTransaction() {
 ////// TxOutputProducer
 
 type MockTxOutputProducer struct {
-	GetTxOutsFunc                     func(ctx sdk.Context, height int64, tx *types.TxIn) []*types.TxOutWithSigner
+	GetTxOutsFunc                     func(ctx sdk.Context, height int64, tx []*types.TxIn) []*types.TxOutWithSigner
 	PauseContractFunc                 func(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
 	ResumeContractFunc                func(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
 	ContractChangeOwnershipFunc       func(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutWithSigner, error)
@@ -113,7 +117,7 @@ type MockTxOutputProducer struct {
 	ContractEmergencyWithdrawFundFunc func(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutWithSigner, error)
 }
 
-func (m *MockTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *types.TxIn) []*types.TxOutWithSigner {
+func (m *MockTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx []*types.TxIn) []*types.TxOutWithSigner {
 	if m.GetTxOutsFunc != nil {
 		return m.GetTxOutsFunc(ctx, height, tx)
 	}
@@ -251,4 +255,56 @@ func (m *MockCardanoNode) Network() cardano.Network {
 	}
 
 	return cardano.Testnet
+}
+
+///// TxInQueue
+
+type MockTxInQueue struct {
+	StartFunc        func()
+	AddTxInFunc      func(txIn *types.TxIn)
+	ProcessTxInsFunc func()
+}
+
+func (m *MockTxInQueue) Start() {
+	if m.StartFunc != nil {
+		m.StartFunc()
+	}
+}
+
+func (m *MockTxInQueue) AddTxIn(txIn *types.TxIn) {
+	if m.AddTxInFunc != nil {
+		m.AddTxInFunc(txIn)
+	}
+}
+
+func (m *MockTxInQueue) ProcessTxIns() {
+	if m.ProcessTxInsFunc != nil {
+		m.ProcessTxInsFunc()
+	}
+}
+
+///// TxOutQueue
+
+type MockTxOutQueue struct {
+	StartFunc         func()
+	AddTxOutFunc      func(txOut *types.TxOut)
+	ProcessTxOutsFunc func()
+}
+
+func (m *MockTxOutQueue) Start() {
+	if m.StartFunc != nil {
+		m.StartFunc()
+	}
+}
+
+func (m *MockTxOutQueue) AddTxOut(txOut *types.TxOut) {
+	if m.AddTxOutFunc != nil {
+		m.AddTxOutFunc(txOut)
+	}
+}
+
+func (m *MockTxOutQueue) ProcessTxOuts() {
+	if m.ProcessTxOutsFunc != nil {
+		m.ProcessTxOutsFunc()
+	}
 }
