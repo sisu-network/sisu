@@ -46,7 +46,7 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigne
 
 	if !h.globalData.IsCatchingUp() {
 		// Add the message to the queue for later processing.
-		h.txInQueue.AddTxIn(msg)
+		h.txInQueue.AddTxIn(ctx.BlockHeight(), msg)
 	}
 
 	return nil, nil

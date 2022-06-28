@@ -43,7 +43,7 @@ func TestHandlerTxIn_HappyCase(t *testing.T) {
 		addTxCount := 0
 		ctx, mc := mockForHandlerTxIn()
 		txInQueue := mc.TxInQueue()
-		txInQueue.(*MockTxInQueue).AddTxInFunc = func(txIn *types.TxIn) {
+		txInQueue.(*MockTxInQueue).AddTxInFunc = func(height int64, txIn *types.TxIn) {
 			addTxCount = 1
 		}
 
@@ -66,7 +66,7 @@ func TestHandlerTxIn_HappyCase(t *testing.T) {
 		}
 
 		txInQueue := mc.TxInQueue()
-		txInQueue.(*MockTxInQueue).AddTxInFunc = func(txIn *types.TxIn) {
+		txInQueue.(*MockTxInQueue).AddTxInFunc = func(height int64, txIn *types.TxIn) {
 			addTxCount = 1
 		}
 

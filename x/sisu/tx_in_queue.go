@@ -3,6 +3,7 @@ package sisu
 import (
 	"sync"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -13,8 +14,8 @@ import (
 // output.
 type TxInQueue interface {
 	Start()
-	AddTxIn(txIn *types.TxIn)
-	ProcessTxIns()
+	AddTxIn(height int64, txIn *types.TxIn)
+	ProcessTxIns(ctx sdk.Context)
 }
 
 type defaultTxInQueue struct {
@@ -23,9 +24,12 @@ type defaultTxInQueue struct {
 	globalData       common.GlobalData
 	txSubmit         common.TxSubmit
 
-	newTaskCh chan bool
-	queue     []*types.TxIn
-	lock      *sync.RWMutex
+	// queues stores list of TxIn by block height. We have to classify all incoming txs by their block
+	// height so that all nodes will process the same list. If we have only single queue for all
+	// TxIns, it's possible for different nodes to process different TxIn queues.
+	queues     map[int64][]*types.TxIn
+	newContext chan sdk.Context
+	lock       *sync.RWMutex
 }
 
 func NewTxInQueue(
@@ -39,9 +43,9 @@ func NewTxInQueue(
 		txOutputProducer: txOutputProducer,
 		globalData:       globalData,
 		txSubmit:         txSubmit,
-		newTaskCh:        make(chan bool, 5),
-		queue:            make([]*types.TxIn, 0),
+		newContext:       make(chan sdk.Context, 5),
 		lock:             &sync.RWMutex{},
+		queues:           make(map[int64][]*types.TxIn),
 	}
 }
 
@@ -51,37 +55,38 @@ func (q *defaultTxInQueue) Start() {
 	log.Info("TxInQueue started")
 }
 
-func (q *defaultTxInQueue) AddTxIn(txIn *types.TxIn) {
+func (q *defaultTxInQueue) AddTxIn(height int64, txIn *types.TxIn) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
-	q.queue = append(q.queue, txIn)
+	if q.queues[height] == nil {
+		q.queues[height] = make([]*types.TxIn, 0, 10)
+	}
+
+	q.queues[height] = append(q.queues[height], txIn)
 }
 
-func (q *defaultTxInQueue) ProcessTxIns() {
-	q.newTaskCh <- true
+func (q *defaultTxInQueue) ProcessTxIns(ctx sdk.Context) {
+	q.newContext <- ctx
 }
 
 func (q *defaultTxInQueue) loop() {
 	for {
 		// Wait for new tx in to process
-		<-q.newTaskCh
-		q.processTxIns()
+		ctx := <-q.newContext
+		q.processTxIns(ctx)
 	}
 }
 
-func (q *defaultTxInQueue) processTxIns() {
+func (q *defaultTxInQueue) processTxIns(ctx sdk.Context) {
 	// Read the queue
 	q.lock.RLock()
-	queue := q.queue
-	q.queue = make([]*types.TxIn, 0)
+	queue := q.queues[ctx.BlockHeight()]
 	q.lock.RUnlock()
 
 	if len(queue) == 0 {
 		return
 	}
-
-	ctx := q.globalData.GetReadOnlyContext()
 
 	// Creates and broadcast TxOuts. This has to be deterministic based on all the data that the
 	// processor has.

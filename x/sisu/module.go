@@ -282,8 +282,8 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		}()
 	}
 
-	// Process new incoming transactions
-	am.mc.TxInQueue().ProcessTxIns()
+	// Process new incoming transactions. We use read only context to process incoming txs.
+	am.mc.TxInQueue().ProcessTxIns(cloneCtx)
 
 	// Process new outgoing transactions
 	am.mc.TxOutQueue().ProcessTxOuts()

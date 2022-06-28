@@ -261,8 +261,8 @@ func (m *MockCardanoNode) Network() cardano.Network {
 
 type MockTxInQueue struct {
 	StartFunc        func()
-	AddTxInFunc      func(txIn *types.TxIn)
-	ProcessTxInsFunc func()
+	AddTxInFunc      func(height int64, txIn *types.TxIn)
+	ProcessTxInsFunc func(ctx sdk.Context)
 }
 
 func (m *MockTxInQueue) Start() {
@@ -271,15 +271,15 @@ func (m *MockTxInQueue) Start() {
 	}
 }
 
-func (m *MockTxInQueue) AddTxIn(txIn *types.TxIn) {
+func (m *MockTxInQueue) AddTxIn(height int64, txIn *types.TxIn) {
 	if m.AddTxInFunc != nil {
-		m.AddTxInFunc(txIn)
+		m.AddTxInFunc(height, txIn)
 	}
 }
 
-func (m *MockTxInQueue) ProcessTxIns() {
+func (m *MockTxInQueue) ProcessTxIns(ctx sdk.Context) {
 	if m.ProcessTxInsFunc != nil {
-		m.ProcessTxInsFunc()
+		m.ProcessTxInsFunc(ctx)
 	}
 }
 
