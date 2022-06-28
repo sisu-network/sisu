@@ -239,20 +239,21 @@ func (t *DefaultTxTracker) getEmailBodyString(txo *txObject) (string, error) {
 	}
 
 	switch txo.txOut.TxType {
-	case types.TxOutType_TRANSFER_OUT:
-		data, err := t.getEthTransferIn(txo.txOut.OutBytes)
-		if err != nil {
-			log.Error("Cannot parse transfer in data, err = ", err)
-			return "", err
-		}
+	// TODO: Fix this tracking
+	// case types.TxOutType_TRANSFER_OUT:
+	// 	data, err := t.getEthTransferIn(txo.txOut.OutBytes)
+	// 	if err != nil {
+	// 		log.Error("Cannot parse transfer in data, err = ", err)
+	// 		return "", err
+	// 	}
 
-		body.TxOutData = TxOutData{
-			Type:         "TRANSFER_OUT",
-			Chain:        txo.txOut.OutChain,
-			TokenAddress: data.token.String(),
-			Recipient:    data.recipient,
-			Amount:       data.amount.String(),
-		}
+	// 	body.TxOutData = TxOutData{
+	// 		Type:         "TRANSFER_OUT",
+	// 		Chain:        txo.txOut.OutChain,
+	// 		TokenAddress: data.token.String(),
+	// 		Recipient:    data.recipient,
+	// 		Amount:       data.amount.String(),
+	// 	}
 	case types.TxOutType_CONTRACT_DEPLOYMENT:
 		return fmt.Sprintf("contract deployment failed, hash = %s", txo.txOut.OutHash), nil
 	}
@@ -271,13 +272,13 @@ func (t *DefaultTxTracker) getEThTransferIn(chain string, bz []byte) (*transferO
 	return parseEthTransferOut(ethTx, chain, t.worldState)
 }
 
-func (t *DefaultTxTracker) getEthTransferIn(bz []byte) (*transferInData, error) {
-	ethTx := &ethTypes.Transaction{}
+// func (t *DefaultTxTracker) getEthTransferIn(bz []byte) (*transferInData, error) {
+// 	ethTx := &ethTypes.Transaction{}
 
-	err := ethTx.UnmarshalBinary(bz)
-	if err != nil {
-		return nil, err
-	}
+// 	err := ethTx.UnmarshalBinary(bz)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	return parseTransferInData(ethTx)
-}
+// 	return parseTransferInData(ethTx)
+// }

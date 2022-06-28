@@ -217,7 +217,7 @@ func parseEthTransferOut(ethTx *ethTypes.Transaction, srcChain string, worldStat
 	}, nil
 }
 
-func parseTransferInData(ethTx *ethTypes.Transaction) (*transferInData, error) {
+func parseTransferInData(ethTx *ethTypes.Transaction) ([]*transferInData, error) {
 	erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
 	gwAbi := erc20gatewayContract.Abi
 	callData := ethTx.Data()
@@ -226,29 +226,34 @@ func parseTransferInData(ethTx *ethTypes.Transaction) (*transferInData, error) {
 		return nil, err
 	}
 
-	token, ok := txParams["_token"].(ethcommon.Address)
+	tokens, ok := txParams["tokens"].([]ethcommon.Address)
 	if !ok {
 		err := fmt.Errorf("parseTransferInData: cannot convert _token to type ethcommon.Address: %v", txParams)
 		return nil, err
 	}
 
-	recipient, ok := txParams["_recipient"].(ethcommon.Address)
+	recipients, ok := txParams["recipients"].([]ethcommon.Address)
 	if !ok {
 		err := fmt.Errorf("parseTransferInData: cannot convert _recipient to type ethcommon.Address: %v", txParams)
 		return nil, err
 	}
 
-	amount, ok := txParams["_amount"].(*big.Int)
+	amounts, ok := txParams["amounts"].([]*big.Int)
 	if !ok {
 		err := fmt.Errorf("parseTransferInData: cannot convert _amount to type *big.Int: %v", txParams)
 		return nil, err
 	}
 
-	return &transferInData{
-		token:     token,
-		recipient: recipient.String(),
-		amount:    amount,
-	}, nil
+	txIns := make([]*transferInData, len(tokens))
+	for i := range tokens {
+		txIns[i] = &transferInData{
+			token:     tokens[i],
+			recipient: recipients[i].String(),
+			amount:    amounts[i],
+		}
+	}
+
+	return txIns, nil
 }
 
 func (p *DefaultTxOutputProducer) buildERC20TransferIn(
@@ -342,10 +347,14 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 		gasPrices = append(gasPrices, gasPriceInToken)
 	}
 
+	if len(finalTokenAddrs) == 0 {
+		return nil, fmt.Errorf("No txOut is produced (might be due to insufficient fund")
+	}
+
 	log.Verbosef("destChain: %s, gateway address on destChain: %s", destChain, gatewayAddress.String())
 	for i := range finalTokenAddrs {
 		log.Verbosef("tokenAddr: %s, recipient: %s, gasPriceInToken: %d, amountIn: %s, amountOut: %s",
-			finalTokenAddrs[i], finalRecipients[i], gasPrices[i], amountIns[i].String, finalAmounts[i].String(),
+			finalTokenAddrs[i], finalRecipients[i], gasPrices[i], amountIns[i].String(), finalAmounts[i].String(),
 		)
 	}
 

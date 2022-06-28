@@ -112,8 +112,9 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 			[]ecommon.Address{ecommon.HexToAddress(data.recipient)}, []*big.Int{data.amount}, data.destChain)
 		require.Nil(t, err)
 
-		txIn, err := parseTransferInData(txResponse.EthTx)
+		txIns, err := parseTransferInData(txResponse.EthTx)
 		require.NoError(t, err)
+		txIn := txIns[0]
 
 		// gasPriceInToken = 0.00008 * 10 * 2 / 0.01 ~ 0.16. Since 1 ETH = 10^18 wei, 0.16 ETH is 160_000_000_000_000_000 wei.
 		require.Equal(t, amount.Sub(amount, big.NewInt(160_000_000_000_000_000)), txIn.amount)
@@ -146,8 +147,9 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 			[]ecommon.Address{ecommon.HexToAddress(data.recipient)}, []*big.Int{data.amount}, data.destChain)
 		require.Nil(t, err)
 
-		txIn, err := parseTransferInData(txResponse.EthTx)
+		txIns, err := parseTransferInData(txResponse.EthTx)
 		require.NoError(t, err)
+		txIn := txIns[0]
 
 		// gasPriceInToken = 0.00008 * 10 * 2 / 100 ~ 0.000016. Since 1 ETH = 10^18 wei, 0.000016 ETH is 16_000_000_000_000 wei.
 		require.Equal(t, amount.Sub(amount, big.NewInt(16_000_000_000_000)), txIn.amount)
