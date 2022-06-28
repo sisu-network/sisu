@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"sync/atomic"
 
 	"github.com/cosmos/cosmos-sdk/client/rpc"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -28,15 +29,18 @@ type GlobalData interface {
 	IsCatchingUp() bool
 	GetValidatorSet() []rpc.ValidatorOutput
 	GetMyValidatorAddr() string
+	SetReadOnlyContext(ctx sdk.Context)
+	GetReadOnlyContext() sdk.Context
 }
 
 type GlobalDataDefault struct {
-	isCatchingUp  bool
-	catchUpLock   *sync.RWMutex
-	httpClient    *retryablehttp.Client
-	cfg           config.Config
-	myTmtConsAddr sdk.ConsAddress
-	cdc           *codec.LegacyAmino
+	isCatchingUp    bool
+	catchUpLock     *sync.RWMutex
+	httpClient      *retryablehttp.Client
+	cfg             config.Config
+	myTmtConsAddr   sdk.ConsAddress
+	cdc             *codec.LegacyAmino
+	readOnlyContext atomic.Value
 
 	validatorSets *rpc.ResultValidatorsOutput
 }
@@ -167,4 +171,18 @@ func (a *GlobalDataDefault) ValidatorSize() int {
 
 func (a *GlobalDataDefault) GetMyValidatorAddr() string {
 	return a.myTmtConsAddr.String()
+}
+
+func (a *GlobalDataDefault) SetReadOnlyContext(ctx sdk.Context) {
+	a.readOnlyContext.Store(ctx)
+}
+
+func (a *GlobalDataDefault) GetReadOnlyContext() sdk.Context {
+	val := a.readOnlyContext.Load()
+	if val == nil {
+		log.Error(("Read only context is not set"))
+		return sdk.Context{}
+	}
+
+	return val.(sdk.Context)
 }

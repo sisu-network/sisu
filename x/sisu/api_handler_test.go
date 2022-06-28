@@ -14,11 +14,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func mockForProcessorTest() (sdk.Context, ManagerContainer) {
+func mockForApiHandlerTest() (sdk.Context, ManagerContainer) {
 	ctx := testContext()
 	k := keeperTestGenesis(ctx)
 
-	globalData := &common.MockGlobalData{}
+	globalData := &common.MockGlobalData{
+		GetReadOnlyContextFunc: func() sdk.Context {
+			return ctx
+		},
+	}
 	pmm := NewPostedMessageManager(k)
 	txSubmit := &common.MockTxSubmit{}
 	txTracker := &MockTxTracker{}
@@ -35,13 +39,13 @@ func mockForProcessorTest() (sdk.Context, ManagerContainer) {
 	return ctx, mc
 }
 
-func TestProcessor_OnTxIns(t *testing.T) {
+func TestApiHandler_OnTxIns(t *testing.T) {
 	t.Parallel()
 
 	t.Run("empty_tx", func(t *testing.T) {
 		t.Parallel()
 
-		_, mc := mockForProcessorTest()
+		_, mc := mockForApiHandlerTest()
 		processor := NewApiHandler(nil, mc)
 
 		require.NoError(t, processor.OnTxIns(&eyesTypes.Txs{}))
@@ -50,7 +54,7 @@ func TestProcessor_OnTxIns(t *testing.T) {
 	t.Run("success_to_our_key", func(t *testing.T) {
 		t.Parallel()
 
-		ctx, mc := mockForProcessorTest()
+		ctx, mc := mockForApiHandlerTest()
 
 		k := mc.Keeper()
 		k.SaveKeygen(ctx, &types.Keygen{})
@@ -95,7 +99,7 @@ func TestProcessor_OnTxIns(t *testing.T) {
 		}
 
 		trackerCount := 0
-		_, mc := mockForProcessorTest()
+		_, mc := mockForApiHandlerTest()
 		txTracker := mc.TxTracker().(*MockTxTracker)
 		txTracker.OnTxFailedFunc = func(chain, hash string, status types.TxStatus) {
 			trackerCount = 1
