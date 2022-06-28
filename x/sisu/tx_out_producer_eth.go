@@ -18,6 +18,47 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/world"
 )
 
+func (p *DefaultTxOutputProducer) getContractDeploymentTx(ctx sdk.Context, height int64, tx *types.TxIn) ([]*types.TxOutWithSigner, error) {
+	outMsgs := make([]*types.TxOutWithSigner, 0)
+
+	contracts := p.keeper.GetPendingContracts(ctx, tx.Chain)
+	log.Verbose("len(contracts) = ", len(contracts))
+
+	if len(contracts) > 0 {
+		// TODO: Check balance required to deploy all these contracts. Also check if we are deploying
+		// a contract to avoid duplication.
+
+		// Get the list of deploy transactions. Those txs need to posted and verified (by validators)
+		// to the Sisu chain.
+		outEthTxs := p.getEthContractDeploymentTx(ctx, height, tx.Chain, contracts)
+
+		for i, outTx := range outEthTxs {
+			bz, err := outTx.MarshalBinary()
+			if err != nil {
+				return nil, err
+			}
+
+			outMsg := types.NewMsgTxOutWithSigner(
+				p.appKeys.GetSignerAddress().String(),
+				types.TxOutType_CONTRACT_DEPLOYMENT,
+				tx.BlockHeight,
+				tx.Chain,
+				tx.TxHash,
+				tx.Chain,
+				outTx.Hash().String(),
+				bz,
+				contracts[i].Hash,
+			)
+
+			log.Verbose("ETH Tx Out hash = ", outTx.Hash().String(), " on chain ", tx.Chain)
+
+			outMsgs = append(outMsgs, outMsg)
+		}
+	}
+
+	return outMsgs, nil
+}
+
 // Check if we can deploy contract after seeing some ETH being sent to our ethereum address.
 func (p *DefaultTxOutputProducer) getEthContractDeploymentTx(ctx sdk.Context, height int64, chain string, contracts []*types.Contract) []*ethTypes.Transaction {
 	txs := make([]*ethTypes.Transaction, 0)
@@ -212,10 +253,9 @@ func parseTransferInData(ethTx *ethTypes.Transaction) (*transferInData, error) {
 
 func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	ctx sdk.Context,
-	token *types.Token,
-	tokenAddress,
-	recipient ethcommon.Address,
-	amountIn *big.Int,
+	tokens []*types.Token,
+	recipients []ethcommon.Address,
+	amounts []*big.Int,
 	destChain string,
 ) (*types.TxResponse, error) {
 	targetContractName := ContractErc20Gateway
@@ -247,40 +287,73 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 
 	log.Debug("Gas price for swapping  = ", gasPrice)
 
-	// Calculate the output amount
-	amountOut := new(big.Int).Set(amountIn)
+	finalTokenAddrs := make([]ethcommon.Address, 0)
+	finalRecipients := make([]ethcommon.Address, 0)
+	finalAmounts := make([]*big.Int, 0)
+	amountIns := make([]*big.Int, 0)
+	gasPrices := make([]int64, 0)
 
-	// 1. TODO: Subtract the commission fee.
+	for i := range amounts {
+		if tokens[i].Price == 0 {
+			return nil, fmt.Errorf("token %s has price 0", tokens[i].Id)
+		}
 
-	if token.Price == 0 {
-		return nil, fmt.Errorf("token %s has price 0", token.Id)
+		// 1. TODO: Subtract the commission fee.
+		gasPriceInToken, err := p.worldState.GetGasCostInToken(tokens[i].Id, destChain)
+		if err != nil {
+			return nil, err
+		}
+
+		if gasPriceInToken < 0 {
+			log.Errorf("Gas price in token is negative: token id = %s", tokens[i].Id)
+			gasPriceInToken = 0
+		}
+
+		// Calculate the output amount
+		amountOut := new(big.Int).Set(amounts[i])
+		amountOut.Sub(amountOut, big.NewInt(gasPriceInToken))
+
+		if amountOut.Cmp(big.NewInt(0)) < 0 {
+			log.Error("Insufficient fund for transfer ", i)
+			continue
+		}
+
+		// Find the address of the token.
+		var tokenAddr string
+		for _, token := range tokens {
+			for j, chain := range token.Chains {
+				if chain == destChain {
+					tokenAddr = token.Addresses[j]
+					break
+				}
+			}
+			if len(tokenAddr) > 0 {
+				break
+			}
+		}
+		if len(tokenAddr) == 0 {
+			continue
+		}
+
+		finalTokenAddrs = append(finalTokenAddrs, ecommon.HexToAddress(tokenAddr))
+		finalAmounts = append(finalAmounts, amountOut)
+		finalRecipients = append(finalRecipients, recipients[i])
+		amountIns = append(amountIns, amounts[i])
+		gasPrices = append(gasPrices, gasPriceInToken)
 	}
 
-	gasPriceInToken, err := p.worldState.GetGasCostInToken(token.Id, destChain)
-	if err != nil {
-		return nil, err
+	log.Verbosef("destChain: %s, gateway address on destChain: %s", destChain, gatewayAddress.String())
+	for i := range finalTokenAddrs {
+		log.Verbosef("tokenAddr: %s, recipient: %s, gasPriceInToken: %d, amountIn: %s, amountOut: %s",
+			finalTokenAddrs[i], finalRecipients[i], gasPrices[i], amountIns[i].String, finalAmounts[i].String(),
+		)
 	}
-
-	if gasPriceInToken < 0 {
-		log.Errorf("Gas price in token is negative: token id = %s", token.Id)
-		gasPriceInToken = 0
-	}
-
-	amountOut.Sub(amountOut, big.NewInt(gasPriceInToken))
-
-	if amountOut.Cmp(big.NewInt(0)) < 0 {
-		return nil, world.ErrInsufficientFund
-	}
-
-	log.Verbosef("destChain: %s, gateway address on destChain: %s, tokenAddr: %s, recipient: %s, gasPriceInToken: %d, amountIn: %s, amountOut: %s",
-		destChain, gatewayAddress.String(), tokenAddress, recipient, gasPriceInToken, amountIn.String(), amountOut.String(),
-	)
 
 	input, err := erc20gatewayContract.Abi.Pack(
 		MethodTransferIn,
-		[]ethcommon.Address{tokenAddress},
-		[]ethcommon.Address{recipient},
-		[]*big.Int{amountOut},
+		finalTokenAddrs,
+		finalRecipients,
+		finalAmounts,
 	)
 	if err != nil {
 		log.Error(err)

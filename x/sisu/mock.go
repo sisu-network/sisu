@@ -288,7 +288,7 @@ func (m *MockTxInQueue) ProcessTxIns(ctx sdk.Context) {
 type MockTxOutQueue struct {
 	StartFunc         func()
 	AddTxOutFunc      func(txOut *types.TxOut)
-	ProcessTxOutsFunc func()
+	ProcessTxOutsFunc func(ctx sdk.Context)
 }
 
 func (m *MockTxOutQueue) Start() {
@@ -303,8 +303,8 @@ func (m *MockTxOutQueue) AddTxOut(txOut *types.TxOut) {
 	}
 }
 
-func (m *MockTxOutQueue) ProcessTxOuts() {
+func (m *MockTxOutQueue) ProcessTxOuts(ctx sdk.Context) {
 	if m.ProcessTxOutsFunc != nil {
-		m.ProcessTxOutsFunc()
+		m.ProcessTxOutsFunc(ctx)
 	}
 }

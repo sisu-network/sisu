@@ -108,7 +108,8 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 		ethTx := mockEthTx(t, txOutputProducer, destChain, tokenAddr, amount)
 		data, err := parseEthTransferOut(ethTx, "ganache1", worldState)
 		require.Nil(t, err)
-		txResponse, err := txOutputProducer.buildERC20TransferIn(ctx, data.token, data.tokenAddr, ecommon.HexToAddress(data.recipient), data.amount, data.destChain)
+		txResponse, err := txOutputProducer.buildERC20TransferIn(ctx, []*types.Token{data.token},
+			[]ecommon.Address{ecommon.HexToAddress(data.recipient)}, []*big.Int{data.amount}, data.destChain)
 		require.Nil(t, err)
 
 		txIn, err := parseTransferInData(txResponse.EthTx)
@@ -141,7 +142,8 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 		ethTx := mockEthTx(t, txOutputProducer, destChain, tokenAddr, amount)
 		data, err := parseEthTransferOut(ethTx, "ganache1", worldState)
 		require.Nil(t, err)
-		txResponse, err := txOutputProducer.buildERC20TransferIn(ctx, data.token, data.tokenAddr, ecommon.HexToAddress(data.recipient), data.amount, data.destChain)
+		txResponse, err := txOutputProducer.buildERC20TransferIn(ctx, []*types.Token{data.token},
+			[]ecommon.Address{ecommon.HexToAddress(data.recipient)}, []*big.Int{data.amount}, data.destChain)
 		require.Nil(t, err)
 
 		txIn, err := parseTransferInData(txResponse.EthTx)
@@ -174,7 +176,8 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 		ethTx := mockEthTx(t, txOutputProducer, destChain, tokenAddr, amount)
 		data, err := parseEthTransferOut(ethTx, "ganache1", worldState)
 		require.Nil(t, err)
-		txResponse, err := txOutputProducer.buildERC20TransferIn(ctx, data.token, data.tokenAddr, ecommon.HexToAddress(data.recipient), data.amount, data.destChain)
+		txResponse, err := txOutputProducer.buildERC20TransferIn(ctx, []*types.Token{data.token},
+			[]ecommon.Address{ecommon.HexToAddress(data.recipient)}, []*big.Int{data.amount}, data.destChain)
 
 		// gasPriceInToken = 0.00008 * 10 * 2 / 8 ~ 0.0002. Since 1 ETH = 10^18 wei, 0.0002 ETH is 200_000_000_000_000 wei.
 		// gasPriceInToken > amountIn
@@ -205,7 +208,8 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 		ethTx := mockEthTx(t, txOutputProducer, destChain, tokenAddr, amount)
 		data, err := parseEthTransferOut(ethTx, "ganache1", worldState)
 		require.Nil(t, err)
-		txResponse, err := txOutputProducer.buildERC20TransferIn(ctx, data.token, data.tokenAddr, ecommon.HexToAddress(data.recipient), data.amount, data.destChain)
+		txResponse, err := txOutputProducer.buildERC20TransferIn(ctx, []*types.Token{data.token},
+			[]ecommon.Address{ecommon.HexToAddress(data.recipient)}, []*big.Int{data.amount}, data.destChain)
 		require.Error(t, err)
 		require.Nil(t, txResponse)
 	})
@@ -233,7 +237,8 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 		ethTx := mockEthTx(t, txOutputProducer, destChain, tokenAddr, amount)
 		data, err := parseEthTransferOut(ethTx, "ganache1", worldState)
 		require.Nil(t, err)
-		txResponse, err := txOutputProducer.buildERC20TransferIn(ctx, data.token, data.tokenAddr, ecommon.HexToAddress(data.recipient), data.amount, data.destChain)
+		txResponse, err := txOutputProducer.buildERC20TransferIn(ctx, []*types.Token{data.token},
+			[]ecommon.Address{ecommon.HexToAddress(data.recipient)}, []*big.Int{data.amount}, data.destChain)
 		require.Error(t, err)
 		require.Nil(t, txResponse)
 	})

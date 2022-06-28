@@ -286,7 +286,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	am.mc.TxInQueue().ProcessTxIns(cloneCtx)
 
 	// Process new outgoing transactions
-	am.mc.TxOutQueue().ProcessTxOuts()
+	am.mc.TxOutQueue().ProcessTxOuts(cloneCtx)
 
 	return []abci.ValidatorUpdate{}
 }

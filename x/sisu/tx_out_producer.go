@@ -147,47 +147,6 @@ func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, txIns
 	return outMsgs
 }
 
-func (p *DefaultTxOutputProducer) getContractDeploymentTx(ctx sdk.Context, height int64, tx *types.TxIn) ([]*types.TxOutWithSigner, error) {
-	outMsgs := make([]*types.TxOutWithSigner, 0)
-
-	contracts := p.keeper.GetPendingContracts(ctx, tx.Chain)
-	log.Verbose("len(contracts) = ", len(contracts))
-
-	if len(contracts) > 0 {
-		// TODO: Check balance required to deploy all these contracts. Also check if we are deploying
-		// a contract to avoid duplication.
-
-		// Get the list of deploy transactions. Those txs need to posted and verified (by validators)
-		// to the Sisu chain.
-		outEthTxs := p.getEthContractDeploymentTx(ctx, height, tx.Chain, contracts)
-
-		for i, outTx := range outEthTxs {
-			bz, err := outTx.MarshalBinary()
-			if err != nil {
-				return nil, err
-			}
-
-			outMsg := types.NewMsgTxOutWithSigner(
-				p.appKeys.GetSignerAddress().String(),
-				types.TxOutType_CONTRACT_DEPLOYMENT,
-				tx.BlockHeight,
-				tx.Chain,
-				tx.TxHash,
-				tx.Chain,
-				outTx.Hash().String(),
-				bz,
-				contracts[i].Hash,
-			)
-
-			log.Verbose("ETH Tx Out hash = ", outTx.Hash().String(), " on chain ", tx.Chain)
-
-			outMsgs = append(outMsgs, outMsg)
-		}
-	}
-
-	return outMsgs, nil
-}
-
 // In Cardano chain, transferring multi-asset required at least 1 ADA (10^6 lovelace)
 func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, data *transferOutData, assetAmount uint64) (*cardano.Tx, error) {
 	pubkey := p.keeper.GetKeygenPubkey(ctx, libchain.KEY_TYPE_EDDSA)
@@ -263,22 +222,24 @@ func (p *DefaultTxOutputProducer) parseCardanoTxIn(ctx sdk.Context, tx *types.Tx
 func (p *DefaultTxOutputProducer) processTransferOut(ctx sdk.Context, transfers []*transferOutData) []*types.TxOutWithSigner {
 	outMsgs := make([]*types.TxOutWithSigner, 0)
 
+	params := p.keeper.GetParams(ctx)
+
+	// Categories txs by their destination chains.
+	transfersByChains := p.categorizeTransfer(transfers)
+	for _, transfersInOneChain := range transfersByChains {
+		dstChain := transfersInOneChain[0].destChain
+		batchSize := params.GetMaxTransferOutBatch(dstChain)
+		batches := splitTransfers(transfersInOneChain, batchSize)
+
+		if libchain.IsETHBasedChain(dstChain) {
+			msgs := p.processEthBatches(ctx, batches)
+			outMsgs = append(outMsgs, msgs...)
+		}
+	}
+
 	for _, transfer := range transfers {
 		var bz []byte
 		var txHash string
-
-		// ETH chain
-		if libchain.IsETHBasedChain(transfer.destChain) {
-			responseTx, err := p.buildERC20TransferIn(ctx, transfer.token, transfer.tokenAddr, ecommon.HexToAddress(transfer.recipient),
-				transfer.amount, transfer.destChain)
-			if err != nil {
-				log.Error("Failed to build erc20 transfer in, err = ", err)
-				continue
-			}
-
-			bz = responseTx.RawBytes
-			txHash = responseTx.EthTx.Hash().String()
-		}
 
 		// Cardano chain
 		if libchain.IsCardanoChain(transfer.destChain) {
@@ -321,17 +282,105 @@ func (p *DefaultTxOutputProducer) processTransferOut(ctx sdk.Context, transfers 
 				"",
 			)
 
-			// Track the txout
-			p.txTracker.AddTransaction(
-				outMsg.Data,
-				transfer.txIn,
-			)
+			// TODO: Make this track multiple transactions.
+			// // Track the txout
+			// p.txTracker.AddTransaction(
+			// 	outMsg.Data,
+			// 	transfer.txIn,
+			// )
 
 			outMsgs = append(outMsgs, outMsg)
 		}
 	}
 
 	return outMsgs
+}
+
+func splitTransfers(transfers []*transferOutData, batchSize int) [][]*transferOutData {
+	allBatches := make([][]*transferOutData, 0)
+	var batch []*transferOutData
+	for i := range transfers {
+		if i%batchSize == 0 {
+			if i > 0 {
+				allBatches = append(allBatches, batch)
+			}
+			batch = make([]*transferOutData, 0)
+		}
+		batch = append(batch, transfers[i])
+	}
+
+	allBatches = append(allBatches, batch)
+
+	return allBatches
+}
+
+// categorizeTransfer divides all transfer request by their destination chains.
+func (p *DefaultTxOutputProducer) categorizeTransfer(transfers []*transferOutData) [][]*transferOutData {
+	m := make(map[string][]*transferOutData)
+	// We need to use an ordered array because map iteration is not deterministic and can result in
+	// inconsistent data between nodes.
+	orders := make([]string, 0)
+
+	for _, transfer := range transfers {
+		if m[transfer.destChain] == nil {
+			m[transfer.destChain] = make([]*transferOutData, 0)
+			orders = append(orders, transfer.destChain)
+		}
+
+		arr := m[transfer.destChain]
+		arr = append(arr, transfer)
+		m[transfer.destChain] = arr
+	}
+
+	ret := make([][]*transferOutData, 0)
+	for _, chain := range orders {
+		ret = append(ret, m[chain])
+	}
+
+	return ret
+}
+
+func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context, batches [][]*transferOutData) []*types.TxOutWithSigner {
+	dstChain := batches[0][0].destChain
+	blockHeight := batches[0][0].blockHeight
+	outMsgs := make([]*types.TxOutWithSigner, 0)
+
+	for _, batch := range batches {
+		tokens := make([]*types.Token, len(batch))
+		recipients := make([]ethcommon.Address, len(batch))
+		amounts := make([]*big.Int, len(batch))
+
+		for k, transfer := range batch {
+			tokens[k] = transfer.token
+			recipients[k] = ecommon.HexToAddress(transfer.recipient)
+			amounts[k] = transfer.amount
+		}
+
+		responseTx, err := p.buildERC20TransferIn(ctx, tokens, recipients, amounts, dstChain)
+		if err != nil {
+			log.Error("Failed to build erc20 transfer in, err = ", err)
+			continue
+		}
+
+		outMsg := types.NewMsgTxOutWithSigner(
+			p.appKeys.GetSignerAddress().String(),
+			types.TxOutType_TRANSFER_OUT,
+			blockHeight,
+			"",
+			"",
+			dstChain,
+			responseTx.EthTx.Hash().String(),
+			responseTx.RawBytes,
+			"",
+		)
+		outMsgs = append(outMsgs, outMsg)
+	}
+
+	return outMsgs
+}
+
+func (p *DefaultTxOutputProducer) processCardanoBatches(ctx sdk.Context, batches [][]*transferOutData) []*types.TxOutWithSigner {
+	return nil
 }
 
 func (p *DefaultTxOutputProducer) getGasLimit(chain string) uint64 {

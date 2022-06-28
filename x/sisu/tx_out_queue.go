@@ -21,7 +21,7 @@ import (
 type TxOutQueue interface {
 	Start()
 	AddTxOut(txOut *types.TxOut)
-	ProcessTxOuts()
+	ProcessTxOuts(ctx sdk.Context)
 }
 
 type defaultTxOutQueue struct {
@@ -31,7 +31,7 @@ type defaultTxOutQueue struct {
 	txTracker    TxTracker
 	dheartClient tssclients.DheartClient
 
-	newTaskCh chan bool
+	newTaskCh chan sdk.Context
 	queue     []*types.TxOut
 	lock      *sync.RWMutex
 }
@@ -44,7 +44,7 @@ func NewTxOutQueue(keeper keeper.Keeper, globalData common.GlobalData, partyMana
 		partyManager: partyManager,
 		dheartClient: dheartClient,
 		txTracker:    txTracker,
-		newTaskCh:    make(chan bool, 5),
+		newTaskCh:    make(chan sdk.Context, 5),
 		queue:        make([]*types.TxOut, 0),
 		lock:         &sync.RWMutex{},
 	}
@@ -63,15 +63,15 @@ func (q *defaultTxOutQueue) AddTxOut(txOut *types.TxOut) {
 	q.queue = append(q.queue, txOut)
 }
 
-func (q *defaultTxOutQueue) ProcessTxOuts() {
+func (q *defaultTxOutQueue) ProcessTxOuts(ctx sdk.Context) {
 
-	q.newTaskCh <- true
+	q.newTaskCh <- ctx
 }
 
 func (q *defaultTxOutQueue) loop() {
 	for {
 		// Wait for new tx in to process
-		<-q.newTaskCh
+		ctx := <-q.newTaskCh
 
 		// Read the queue
 		q.lock.RLock()
@@ -86,8 +86,6 @@ func (q *defaultTxOutQueue) loop() {
 		if q.globalData.IsCatchingUp() {
 			continue
 		}
-
-		ctx := q.globalData.GetReadOnlyContext()
 
 		for _, txOut := range queue {
 			// Update the txOut to be delivered.
