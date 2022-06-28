@@ -552,9 +552,9 @@ contract ERC20Gateway is Ownable {
         uint256 amount
     );
     event TransferInEvent(
-        address indexed token,
-        address indexed recipient,
-        uint256 amount
+        address[] token,
+        address[] recipient,
+        uint256[] amount
     );
     event RemoveSupportedChainEvent(string indexed chain);
     event AddSupportedChainEvent(string indexed chain);
@@ -593,19 +593,35 @@ contract ERC20Gateway is Ownable {
     // Pool owner call TransferIn to release user's ERC20 token in destination chain
     // Triggered by bridge's backend
     function transferIn(
-        address _token,
-        address _recipient,
-        uint256 _amount
+        address[] memory tokens,
+        address[] memory recipients,
+        uint256[] memory amounts
     ) public onlyOwner isNotPaused {
-        uint256 gwBalance = IERC20(_token).balanceOf(lpPool);
         require(
-            gwBalance >= _amount,
-            "Gateway balance is less than required amount"
+            tokens.length == recipients.length,
+            "tokens and recipients must have the same length"
+        );
+        require(
+            tokens.length == amounts.length,
+            "tokens and amounts must have the same length"
         );
 
-        ILiquidityPool(lpPool).transfer(_token, _recipient, _amount);
+        for (uint256 i = 0; i < tokens.length; i++) {
+            address token = tokens[i];
+            uint256 gwBalance = IERC20(token).balanceOf(lpPool);
+            require(
+                gwBalance >= amounts[i],
+                "Gateway balance is less than required amount"
+            );
 
-        emit TransferInEvent(_token, _recipient, _amount);
+            ILiquidityPool(lpPool).transfer(
+                tokens[i],
+                recipients[i],
+                amounts[i]
+            );
+        }
+
+        emit TransferInEvent(tokens, recipients, amounts);
     }
 
     function pauseGateway() public onlyOwner {

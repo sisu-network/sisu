@@ -139,6 +139,8 @@ func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, txIns
 		}
 	}
 
+	// 2. Converts all transferOut request to TxOuts. Multiple transferOut requests can be batched
+	// into a TxOut message.
 	transferOutMsgs := p.processTransferOut(ctx, transferOuts)
 	outMsgs = append(outMsgs, transferOutMsgs...)
 

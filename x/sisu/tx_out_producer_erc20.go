@@ -276,7 +276,12 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 		destChain, gatewayAddress.String(), tokenAddress, recipient, gasPriceInToken, amountIn.String(), amountOut.String(),
 	)
 
-	input, err := erc20gatewayContract.Abi.Pack(MethodTransferIn, tokenAddress, recipient, amountOut)
+	input, err := erc20gatewayContract.Abi.Pack(
+		MethodTransferIn,
+		[]ethcommon.Address{tokenAddress},
+		[]ethcommon.Address{recipient},
+		[]*big.Int{amountOut},
+	)
 	if err != nil {
 		log.Error(err)
 		return nil, err
