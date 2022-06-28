@@ -33,7 +33,6 @@ func NewTxInQueue(
 	txOutputProducer TxOutputProducer,
 	globalData common.GlobalData,
 	txSubmit common.TxSubmit,
-	txTracker TxTracker,
 ) TxInQueue {
 	return &defaultTxInQueue{
 		keeper:           keeper,
@@ -67,44 +66,44 @@ func (q *defaultTxInQueue) loop() {
 	for {
 		// Wait for new tx in to process
 		<-q.newTaskCh
+		q.processTxIns()
+	}
+}
 
-		// Read the queue
-		q.lock.RLock()
-		queue := q.queue
-		q.queue = make([]*types.TxIn, 0)
-		q.lock.RUnlock()
+func (q *defaultTxInQueue) processTxIns() {
+	// Read the queue
+	q.lock.RLock()
+	queue := q.queue
+	q.queue = make([]*types.TxIn, 0)
+	q.lock.RUnlock()
 
-		if len(queue) == 0 {
-			continue
-		}
+	if len(queue) == 0 {
+		return
+	}
 
-		ctx := q.globalData.GetReadOnlyContext()
+	ctx := q.globalData.GetReadOnlyContext()
 
-		// Creates and broadcast TxOuts. This has to be deterministic based on all the data that the
-		// processor has.
-		txOutWithSigners := q.txOutputProducer.GetTxOuts(ctx, ctx.BlockHeight(), queue)
-		// Save this TxOut to database
-		log.Verbose("len(txOut) = ", len(txOutWithSigners))
-		if len(txOutWithSigners) > 0 {
-			txOuts := make([]*types.TxOut, len(txOutWithSigners))
-			for i, outWithSigner := range txOutWithSigners {
-				txOut := outWithSigner.Data
-				txOuts[i] = txOut
+	// Creates and broadcast TxOuts. This has to be deterministic based on all the data that the
+	// processor has.
+	txOutWithSigners := q.txOutputProducer.GetTxOuts(ctx, ctx.BlockHeight(), queue)
+	// Save this TxOut to database
+	log.Verbose("len(txOut) = ", len(txOutWithSigners))
+	if len(txOutWithSigners) > 0 {
+		txOuts := make([]*types.TxOut, len(txOutWithSigners))
+		for i, outWithSigner := range txOutWithSigners {
+			txOut := outWithSigner.Data
+			txOuts[i] = txOut
 
-				// If this is a txOut deployment, mark the contract as being deployed.
-				if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
-					q.keeper.UpdateContractsStatus(ctx, txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
-				}
+			// If this is a txOut deployment, mark the contract as being deployed.
+			if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
+				q.keeper.UpdateContractsStatus(ctx, txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
 			}
 		}
+	}
 
-		// If this node is not catching up, broadcast the tx.
-		if !q.globalData.IsCatchingUp() && len(txOutWithSigners) > 0 {
-			log.Info("Broadcasting txout....")
+	log.Info("Broadcasting txout....")
 
-			for _, txOutWithSigner := range txOutWithSigners {
-				q.txSubmit.SubmitMessageAsync(txOutWithSigner)
-			}
-		}
+	for _, txOutWithSigner := range txOutWithSigners {
+		q.txSubmit.SubmitMessageAsync(txOutWithSigner)
 	}
 }
