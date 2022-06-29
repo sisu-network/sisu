@@ -10,12 +10,12 @@ message ExternalInfoMsg {
 
 message ExternalInfoData {
   GasPrice gasPrice = 1;
-  repeated BlockHeight blockHeights = 2;
+  repeated BlockHeight block_heights = 2;
 }
 
 message GasPrice {
   repeated string chains = 2;
-  int64 blockHeight = 3;
+  int64 block_height = 3;
   repeated int64 prices = 4;
 }
 
@@ -26,6 +26,5 @@ message BlockHeight {
 }
 
 message BlockHeightRecord {
-  repeated string signers = 1;
-
+  repeated BlockHeight block_heights = 2;
 }

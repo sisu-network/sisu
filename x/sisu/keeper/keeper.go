@@ -94,6 +94,10 @@ type Keeper interface {
 	// Params
 	SaveParams(ctx sdk.Context, params *types.Params)
 	GetParams(ctx sdk.Context) *types.Params
+
+	// BlockHeights
+	SaveBlockHeights(ctx sdk.Context, signer string, record *types.BlockHeightRecord)
+	GetBlockHeightRecord(ctx sdk.Context, signer string) *types.BlockHeightRecord
 }
 
 type DefaultKeeper struct {
@@ -385,6 +389,17 @@ func (k *DefaultKeeper) SaveParams(ctx sdk.Context, params *types.Params) {
 func (k *DefaultKeeper) GetParams(ctx sdk.Context) *types.Params {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixParams)
 	return getParams(store)
+}
+
+// BlockHeights
+func (k *DefaultKeeper) SaveBlockHeights(ctx sdk.Context, signer string, record *types.BlockHeightRecord) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixBlockHeight)
+	saveBlockHeightRecord(store, signer, record)
+}
+
+func (k *DefaultKeeper) GetBlockHeightRecord(ctx sdk.Context, signer string) *types.BlockHeightRecord {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixBlockHeight)
+	return getBlockHeightRecord(store, signer)
 }
 
 ///// Debug

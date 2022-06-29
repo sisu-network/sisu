@@ -30,6 +30,7 @@ var (
 	prefixNode                   = []byte{0x11}
 	prefixLiquidity              = []byte{0x12}
 	prefixParams                 = []byte{0x13}
+	prefixBlockHeight            = []byte{0x14}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -862,6 +863,33 @@ func getParams(store cstypes.KVStore) *types.Params {
 	}
 
 	return params
+}
+
+///// External Info
+func saveBlockHeightRecord(store cstypes.KVStore, signer string, record *types.BlockHeightRecord) {
+	bz, err := record.Marshal()
+	if err != nil {
+		log.Error("Failed to marshal BlockHeightRecord, err = ", err)
+		return
+	}
+
+	store.Set([]byte(signer), bz)
+}
+
+func getBlockHeightRecord(store cstypes.KVStore, signer string) *types.BlockHeightRecord {
+	bz := store.Get([]byte(signer))
+	if bz == nil {
+		return nil
+	}
+
+	record := &types.BlockHeightRecord{}
+	err := record.Unmarshal(bz)
+	if err != nil {
+		log.Error("Failed to unmarshal BlockHeightRecord, err = ", err)
+		return nil
+	}
+
+	return record
 }
 
 ///// Debug functions

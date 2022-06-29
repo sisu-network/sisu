@@ -10,6 +10,6 @@ func NewExternalInfoMsg(signer string, gasPrice *GasPrice, block *BlockHeight) *
 	}
 }
 
-func NewExternalInfoObservedBlockHeight(signer string, block *BlockHeight) *ExternalInfoMsg {
+func NewExternalInfoBlockHeight(signer string, block *BlockHeight) *ExternalInfoMsg {
 	return NewExternalInfoMsg(signer, nil, block)
 }
