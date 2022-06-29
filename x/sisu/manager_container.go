@@ -3,8 +3,6 @@ package sisu
 import (
 	"sync/atomic"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -26,12 +24,13 @@ type ManagerContainer interface {
 	TxTracker() TxTracker
 	Keeper() keeper.Keeper
 	ValidatorManager() ValidatorManager
-
-	SetReadOnlyContext(ctx sdk.Context)
-	GetReadOnlyContext() sdk.Context
+	TxInQueue() TxInQueue
+	TxOutQueue() TxOutQueue
 }
 
 type DefaultManagerContainer struct {
+	readOnlyContext atomic.Value
+
 	pmm           PostedMessageManager
 	partyManager  PartyManager
 	dheartClient  tssclients.DheartClient
@@ -45,15 +44,15 @@ type DefaultManagerContainer struct {
 	txTracker     TxTracker
 	keeper        keeper.Keeper
 	valsManager   ValidatorManager
-
-	readOnlyContext atomic.Value
+	txInQueue     TxInQueue
+	txOutQueue    TxOutQueue
 }
 
 func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 	dheartClient tssclients.DheartClient, deyesClient tssclients.DeyesClient,
 	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.TssConfig,
 	appKeys common.AppKeys, txOutProducer TxOutputProducer, worldState world.WorldState, txTracker TxTracker,
-	keeper keeper.Keeper, valsManager ValidatorManager) ManagerContainer {
+	keeper keeper.Keeper, valsManager ValidatorManager, txInQueue TxInQueue, txOutQueue TxOutQueue) ManagerContainer {
 	return &DefaultManagerContainer{
 		pmm:           pmm,
 		partyManager:  partyManager,
@@ -68,6 +67,8 @@ func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 		txTracker:     txTracker,
 		keeper:        keeper,
 		valsManager:   valsManager,
+		txInQueue:     txInQueue,
+		txOutQueue:    txOutQueue,
 	}
 }
 
@@ -123,16 +124,10 @@ func (mc *DefaultManagerContainer) ValidatorManager() ValidatorManager {
 	return mc.valsManager
 }
 
-func (mc *DefaultManagerContainer) SetReadOnlyContext(ctx sdk.Context) {
-	mc.readOnlyContext.Store(ctx)
+func (mc *DefaultManagerContainer) TxInQueue() TxInQueue {
+	return mc.txInQueue
 }
 
-func (mc *DefaultManagerContainer) GetReadOnlyContext() sdk.Context {
-	val := mc.readOnlyContext.Load()
-	if val == nil {
-		log.Error(("Read only context is not set"))
-		return sdk.Context{}
-	}
-
-	return val.(sdk.Context)
+func (mc *DefaultManagerContainer) TxOutQueue() TxOutQueue {
+	return mc.txOutQueue
 }

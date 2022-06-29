@@ -4,11 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"sort"
-	"strings"
 
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	ecommon "github.com/ethereum/go-ethereum/common"
+	ethcommon "github.com/ethereum/go-ethereum/common"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/echovl/cardano-go"
@@ -29,7 +27,7 @@ import (
 // This structs produces transaction output based on input. For a given tx input, this struct
 // produces a list (could contain only one element) of transaction output.
 type TxOutputProducer interface {
-	GetTxOuts(ctx sdk.Context, height int64, tx *types.TxIn) []*types.TxOutWithSigner
+	GetTxOuts(ctx sdk.Context, height int64, txIns []*types.TxIn) []*types.TxOutWithSigner
 
 	PauseContract(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
 
@@ -43,196 +41,147 @@ type TxOutputProducer interface {
 }
 
 type DefaultTxOutputProducer struct {
-	// List of key addresses in all eth based chain.
-	// Map from: chain -> address -> bool.
-	ethKeyAddrs map[string]map[string]bool
-
-	worldState     world.WorldState
-	appKeys        common.AppKeys
-	keeper         keeper.Keeper
-	tssConfig      config.TssConfig
-	cardanoConfig  config.CardanoConfig
-	cardanoNetwork cardano.Network
+	worldState world.WorldState
+	appKeys    common.AppKeys
+	keeper     keeper.Keeper
+	tssConfig  config.TssConfig
+	txTracker  TxTracker
 
 	// Only use for cardano chain
-	cardanoNode cardano.Node
+	cardanoConfig  config.CardanoConfig
+	cardanoNetwork cardano.Network
+	cardanoNode    cardano.Node
 }
 
-func NewTxOutputProducer(worldState world.WorldState, appKeys common.AppKeys,
-	keeper keeper.Keeper, tssConfig config.TssConfig, cardanoConfig config.CardanoConfig, cardanoNode cardano.Node) TxOutputProducer {
+type transferOutData struct {
+	tokenAddr   ethcommon.Address
+	blockHeight int64
+	destChain   string
+	token       *types.Token
+	recipient   string
+	amount      *big.Int
+
+	// For tx_tracker
+	txIn *types.TxIn
+}
+
+type transferInData struct {
+	token     ethcommon.Address
+	recipient string
+	amount    *big.Int
+}
+
+func NewTxOutputProducer(worldState world.WorldState, appKeys common.AppKeys, keeper keeper.Keeper,
+	tssConfig config.TssConfig, cardanoConfig config.CardanoConfig, cardanoNode cardano.Node,
+	txTracker TxTracker) TxOutputProducer {
 	return &DefaultTxOutputProducer{
 		keeper:         keeper,
 		worldState:     worldState,
 		appKeys:        appKeys,
 		tssConfig:      tssConfig,
+		txTracker:      txTracker,
 		cardanoNetwork: cardanoConfig.GetCardanoNetwork(),
 		cardanoNode:    cardanoNode,
 	}
 }
 
-func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx *types.TxIn) []*types.TxOutWithSigner {
+func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, txIns []*types.TxIn) []*types.TxOutWithSigner {
 	outMsgs := make([]*types.TxOutWithSigner, 0)
-	var err error
+	transferOuts := make([]*transferOutData, 0)
 
-	if libchain.IsETHBasedChain(tx.Chain) {
-		log.Info("Getting tx out for chain ", tx.Chain)
-		outMsgs, err = p.getEthResponse(ctx, height, tx)
+	// 1. Extracts all the transfers requests from the incoming transactions.
+	for _, txIn := range txIns {
+		// ETH chain
+		if libchain.IsETHBasedChain(txIn.Chain) {
+			ethTx := &ethTypes.Transaction{}
 
-		if err != nil {
-			log.Error("Cannot get response for an eth tx, err = ", err)
-			return nil
+			err := ethTx.UnmarshalBinary(txIn.Serialized)
+			if err != nil {
+				log.Error("Failed to unmarshall eth tx. err =", err)
+				continue
+			}
+
+			// Check if this is a transaction that fund our account.
+			if ethTx.To() != nil && p.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
+				txOuts, err := p.getContractDeploymentTx(ctx, txIn.BlockHeight, txIn)
+				if err != nil {
+					log.Error("Failed to get contract deployment tx, err = ", err)
+				} else {
+					outMsgs = append(outMsgs, txOuts...)
+				}
+
+				continue
+			}
+
+			// Check if this is a transaction to transfer
+			if p.keeper.IsContractExistedAtAddress(ctx, txIn.Chain, ethTx.To().String()) && len(ethTx.Data()) >= 4 {
+				transfer, err := parseEthTransferOut(ethTx, txIn.Chain, p.worldState)
+				if err != nil {
+					log.Error("faield to parse parseEthTransferOut, err = ", parseEthTransferOut)
+					continue
+				}
+				transfer.txIn = txIn
+
+				transferOuts = append(transferOuts, transfer)
+			}
+		}
+
+		// Cardano chain
+		if libchain.IsCardanoChain(txIn.Chain) {
+			transfer, err := p.parseCardanoTxIn(ctx, txIn)
+			if err != nil {
+				log.Error("Failed to parse cardano transaction, err = ", err)
+				continue
+			}
+			transfer.txIn = txIn
+
+			transferOuts = append(transferOuts, transfer)
 		}
 	}
 
-	if libchain.IsCardanoChain(tx.Chain) {
-		log.Info("Found tx in request from Cardano to Ethereum")
-		outMsg, err := p.extractCardanoTxIn(ctx, tx)
-		if err != nil {
-			return nil
-		}
-
-		outMsgs = append(outMsgs, outMsg)
-
-	}
+	transferOutMsgs := p.processTransferOut(ctx, transferOuts)
+	outMsgs = append(outMsgs, transferOutMsgs...)
 
 	return outMsgs
 }
 
-// Get ETH out from an observed tx. Only do this if this is a validator node.
-func (p *DefaultTxOutputProducer) getEthResponse(ctx sdk.Context, height int64, tx *types.TxIn) ([]*types.TxOutWithSigner, error) {
-	ethTx := &ethTypes.Transaction{}
-
-	err := ethTx.UnmarshalBinary(tx.Serialized)
-	if err != nil {
-		log.Error("Failed to unmarshall eth tx. err =", err)
-		return nil, err
-	}
-
+func (p *DefaultTxOutputProducer) getContractDeploymentTx(ctx sdk.Context, height int64, tx *types.TxIn) ([]*types.TxOutWithSigner, error) {
 	outMsgs := make([]*types.TxOutWithSigner, 0)
 
-	log.Verbose("ethTx.To() = ", ethTx.To())
+	contracts := p.keeper.GetPendingContracts(ctx, tx.Chain)
+	log.Verbose("len(contracts) = ", len(contracts))
 
-	// 1. Check if this is a transaction sent to our key address. If this is true, it's likely a tx
-	// that funds our account.
-	if ethTx.To() != nil && p.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
-		contracts := p.keeper.GetPendingContracts(ctx, tx.Chain)
-		log.Verbose("len(contracts) = ", len(contracts))
+	if len(contracts) > 0 {
+		// TODO: Check balance required to deploy all these contracts. Also check if we are deploying
+		// a contract to avoid duplication.
 
-		if len(contracts) > 0 {
-			// TODO: Check balance required to deploy all these contracts.
+		// Get the list of deploy transactions. Those txs need to posted and verified (by validators)
+		// to the Sisu chain.
+		outEthTxs := p.getEthContractDeploymentTx(ctx, height, tx.Chain, contracts)
 
-			// Get the list of deploy transactions. Those txs need to posted and verified (by validators)
-			// to the Sisu chain.
-			outEthTxs := p.getEthContractDeploymentTx(ctx, height, tx.Chain, contracts)
-
-			for i, outTx := range outEthTxs {
-				bz, err := outTx.MarshalBinary()
-				if err != nil {
-					log.Error("Cannot marshall binary", err)
-					continue
-				}
-
-				outMsg := types.NewMsgTxOutWithSigner(
-					p.appKeys.GetSignerAddress().String(),
-					types.TxOutType_CONTRACT_DEPLOYMENT,
-					tx.BlockHeight,
-					tx.Chain,
-					tx.TxHash,
-					tx.Chain,
-					outTx.Hash().String(),
-					bz,
-					contracts[i].Hash,
-				)
-
-				log.Verbose("ETH Tx Out hash = ", outTx.Hash().String(), " on chain ", tx.Chain)
-
-				outMsgs = append(outMsgs, outMsg)
-			}
-
-			if len(outMsgs) > 0 {
-				return outMsgs, nil
-			}
-		}
-	}
-
-	log.Verbose("len(ethTx.Data()) ", len(ethTx.Data()))
-
-	// 2. Check if this is a tx sent to one of our contracts.
-	if ethTx.To() != nil &&
-		p.keeper.IsContractExistedAtAddress(ctx, tx.Chain, ethTx.To().String()) && len(ethTx.Data()) >= 4 {
-		data, err := parseEthTransferOut(ethTx, tx.Chain, p.worldState)
-		if err != nil {
-			log.Error(err)
-			return nil, err
-		}
-
-		if libchain.IsETHBasedChain(data.destChain) {
-			// This is a swap from ETH -> ETH
-			responseTx, err := p.buildERC20TransferIn(ctx, data.token, data.tokenAddr, ecommon.HexToAddress(data.recipient),
-				data.amount, data.destChain)
-			if err != nil {
-				log.Error(err)
-				return nil, err
-			}
-			outMsg := types.NewMsgTxOutWithSigner(
-				p.appKeys.GetSignerAddress().String(),
-				types.TxOutType_TRANSFER_OUT,
-				tx.BlockHeight,
-				tx.Chain,
-				tx.TxHash,
-				responseTx.OutChain, // Could be different chain
-				responseTx.EthTx.Hash().String(),
-				responseTx.RawBytes,
-				"",
-			)
-
-			outMsgs = append(outMsgs, outMsg)
-		}
-
-		if libchain.IsCardanoChain(data.destChain) {
-			// This is a swap from ETH -> Cardano
-			// Convert the ETH big.Int amount to lovelace. Most ERC20 has 18 decimals while lovelace has
-			// only 6 decimals.
-			multiAssetAmt, err := utils.SourceAmountToLovelace(tx.Chain, data.amount)
-			if err != nil {
-				return nil, err
-			}
-			log.Verbosef("data.amount = %v, multiAssetAmt = %v", data.amount, multiAssetAmt)
-
-			// In real, this transaction transfers at least <1 ADA + additional tx fee>
-			cardanoTx, err := p.getCardanoTx(ctx, data, multiAssetAmt.Uint64())
-
-			if err != nil {
-				return nil, err
-			}
-
-			cardanoTxHash, err := cardanoTx.Hash()
-			if err != nil {
-				return nil, err
-			}
-
-			bz, err := cardanoTx.MarshalCBOR()
+		for i, outTx := range outEthTxs {
+			bz, err := outTx.MarshalBinary()
 			if err != nil {
 				return nil, err
 			}
 
 			outMsg := types.NewMsgTxOutWithSigner(
 				p.appKeys.GetSignerAddress().String(),
-				types.TxOutType_TRANSFER_OUT,
+				types.TxOutType_CONTRACT_DEPLOYMENT,
 				tx.BlockHeight,
 				tx.Chain,
 				tx.TxHash,
-				data.destChain,
-				cardanoTxHash.String(),
+				tx.Chain,
+				outTx.Hash().String(),
 				bz,
-				"",
+				contracts[i].Hash,
 			)
+
+			log.Verbose("ETH Tx Out hash = ", outTx.Hash().String(), " on chain ", tx.Chain)
 
 			outMsgs = append(outMsgs, outMsg)
 		}
 	}
-
-	// 3. Check other types of transaction.
 
 	return outMsgs, nil
 }
@@ -284,98 +233,7 @@ func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, data *transferOu
 	return tx, nil
 }
 
-// Check if we can deploy contract after seeing some ETH being sent to our ethereum address.
-func (p *DefaultTxOutputProducer) getEthContractDeploymentTx(ctx sdk.Context, height int64, chain string, contracts []*types.Contract) []*ethTypes.Transaction {
-	txs := make([]*ethTypes.Transaction, 0)
-
-	for _, contract := range contracts {
-		nonce := p.worldState.UseAndIncreaseNonce(ctx, chain)
-		log.Verbose("nonce for deploying contract:", nonce, " on chain ", chain)
-		if nonce < 0 {
-			log.Error("cannot get nonce for contract")
-			continue
-		}
-
-		rawTx := p.getContractTx(ctx, contract, nonce)
-		if rawTx == nil {
-			log.Warn("raw Tx is nil")
-			continue
-		}
-
-		txs = append(txs, rawTx)
-	}
-
-	return txs
-}
-
-func (p *DefaultTxOutputProducer) getContractTx(ctx sdk.Context, contract *types.Contract, nonce int64) *ethTypes.Transaction {
-	erc20 := SupportedContracts[ContractErc20Gateway]
-	switch contract.Hash {
-	case erc20.AbiHash:
-		// This is erc20gw contract.
-		parsedAbi, err := abi.JSON(strings.NewReader(erc20.AbiString))
-		if err != nil {
-			log.Error("cannot parse erc20 abi. abi = ", erc20.AbiString, "err =", err)
-			return nil
-		}
-
-		// Get all allowed chains
-		supportedChains := make([]string, 0)
-		for chain := range p.tssConfig.SupportedChains {
-			if chain != contract.Chain {
-				supportedChains = append(supportedChains, chain)
-			}
-		}
-
-		sort.Strings(supportedChains)
-
-		log.Info("Allowed chains for chain ", contract.Chain, " are: ", supportedChains)
-
-		lp := p.keeper.GetLiquidity(ctx, contract.Chain)
-		if lp == nil {
-			log.Warn("Lp is nil for chain ", contract.Chain)
-			return nil
-		}
-
-		log.Infof("Liquidity pool addr for chain %s is %s", contract.Chain, lp.Address)
-		input, err := parsedAbi.Pack("", supportedChains, ecommon.HexToAddress(lp.Address))
-		if err != nil {
-			log.Error("cannot pack supportedChains, err =", err)
-			return nil
-		}
-
-		byteCode := ecommon.FromHex(erc20.Bin)
-		input = append(byteCode, input...)
-		chain := p.keeper.GetChain(ctx, contract.Chain)
-		if chain == nil {
-			log.Error("getContractTx: chain is nil with id ", contract.Chain)
-			return nil
-		}
-
-		gasPrice := chain.GasPrice
-		if gasPrice <= 0 {
-			gasPrice = p.getDefaultGasPrice(contract.Chain).Int64()
-		}
-		gasLimit := p.getGasLimit(contract.Chain)
-
-		log.Verbose("Gas price = ", gasPrice, " on chain ", contract.Chain)
-		log.Verbose("gasLimit = ", gasLimit, " on chain ", contract.Chain)
-
-		rawTx := ethTypes.NewContractCreation(
-			uint64(nonce),
-			big.NewInt(0),
-			gasLimit,
-			big.NewInt(gasPrice),
-			input,
-		)
-
-		return rawTx
-	}
-
-	return nil
-}
-
-func (p *DefaultTxOutputProducer) extractCardanoTxIn(ctx sdk.Context, tx *types.TxIn) (*types.TxOutWithSigner, error) {
+func (p *DefaultTxOutputProducer) parseCardanoTxIn(ctx sdk.Context, tx *types.TxIn) (*transferOutData, error) {
 	txIn := &etypes.CardanoTxInItem{}
 	if err := json.Unmarshal(tx.Serialized, txIn); err != nil {
 		log.Error("error when marshaling cardano tx in item: ", err)
@@ -396,31 +254,90 @@ func (p *DefaultTxOutputProducer) extractCardanoTxIn(ctx sdk.Context, tx *types.
 	if token == nil {
 		return nil, fmt.Errorf("Cannot find token in the keeper")
 	}
-	dstTokenAddress := token.GetAddressForChain(txIn.Metadata.Chain)
 
 	amount := new(big.Int).SetUint64(txIn.Amount)
-	recipient := ecommon.HexToAddress(extraInfo.Recipient)
-	tokenAddr := ecommon.HexToAddress(dstTokenAddress)
 
-	responseTx, err := p.buildERC20TransferIn(ctx, token, tokenAddr, recipient,
-		utils.LovelaceToETHTokens(amount), extraInfo.Chain)
-	if err != nil {
-		return nil, err
+	return &transferOutData{
+		blockHeight: tx.BlockHeight,
+		destChain:   extraInfo.Chain,
+		recipient:   extraInfo.Recipient,
+		token:       token,
+		amount:      utils.LovelaceToWei(amount),
+	}, nil
+}
+
+func (p *DefaultTxOutputProducer) processTransferOut(ctx sdk.Context, transfers []*transferOutData) []*types.TxOutWithSigner {
+	outMsgs := make([]*types.TxOutWithSigner, 0)
+
+	for _, transfer := range transfers {
+		var bz []byte
+		var txHash string
+
+		// ETH chain
+		if libchain.IsETHBasedChain(transfer.destChain) {
+			responseTx, err := p.buildERC20TransferIn(ctx, transfer.token, transfer.tokenAddr, ecommon.HexToAddress(transfer.recipient),
+				transfer.amount, transfer.destChain)
+			if err != nil {
+				log.Error("Failed to build erc20 transfer in, err = ", err)
+				continue
+			}
+
+			bz = responseTx.RawBytes
+			txHash = responseTx.EthTx.Hash().String()
+		}
+
+		// Cardano chain
+		if libchain.IsCardanoChain(transfer.destChain) {
+			multiAssetAmt := utils.WeiToLovelace(transfer.amount)
+			log.Verbosef("data.amount = %v, multiAssetAmt = %v", transfer.amount, multiAssetAmt)
+
+			// In real, this transaction transfers at least <1 ADA + additional tx fee>
+			cardanoTx, err := p.getCardanoTx(ctx, transfer, multiAssetAmt.Uint64())
+			if err != nil {
+				log.Error("Failed to get cardano tx, err  = ", err)
+				continue
+			}
+
+			cardanoTxHash, err := cardanoTx.Hash()
+			if err != nil {
+				log.Error("Failed to get cardano hash, err = ", err)
+				continue
+			}
+
+			bz, err = cardanoTx.MarshalCBOR()
+			if err != nil {
+				log.Error("Faield to marshalcbor cardano tx, err = ", err)
+				continue
+			}
+
+			txHash = cardanoTxHash.String()
+		}
+
+		// Add to the output array
+		if bz != nil {
+			outMsg := types.NewMsgTxOutWithSigner(
+				p.appKeys.GetSignerAddress().String(),
+				types.TxOutType_TRANSFER_OUT,
+				transfer.blockHeight,
+				transfer.destChain,
+				"",
+				transfer.destChain,
+				txHash,
+				bz,
+				"",
+			)
+
+			// Track the txout
+			p.txTracker.AddTransaction(
+				outMsg.Data,
+				transfer.txIn,
+			)
+
+			outMsgs = append(outMsgs, outMsg)
+		}
 	}
 
-	outMsg := types.NewMsgTxOutWithSigner(
-		p.appKeys.GetSignerAddress().String(),
-		types.TxOutType_TRANSFER_OUT,
-		tx.BlockHeight,
-		tx.Chain,
-		tx.TxHash,
-		responseTx.OutChain,
-		responseTx.EthTx.Hash().String(),
-		responseTx.RawBytes,
-		"",
-	)
-
-	return outMsg, nil
+	return outMsgs
 }
 
 func (p *DefaultTxOutputProducer) getGasLimit(chain string) uint64 {

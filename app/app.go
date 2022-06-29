@@ -65,7 +65,6 @@ import (
 	tss "github.com/sisu-network/sisu/x/sisu"
 	"github.com/sisu-network/sisu/x/sisu/client/rest"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
-	tssKeeper "github.com/sisu-network/sisu/x/sisu/keeper"
 	sisutypes "github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/sisu-network/sisu/x/sisu/world"
 	tmjson "github.com/tendermint/tendermint/libs/json"
@@ -159,7 +158,7 @@ type App struct {
 	ScopedIBCKeeper      capabilitykeeper.ScopedKeeper
 	ScopedTransferKeeper capabilitykeeper.ScopedKeeper
 
-	tssKeeper tssKeeper.Keeper
+	k keeper.Keeper
 
 	// the module manager
 	mm *module.Manager
@@ -231,7 +230,7 @@ func New(
 	tssConfig := cfg.Tss
 	log.Info("tssConfig = ", tssConfig)
 
-	app.tssKeeper = tssKeeper.NewKeeper(keys[sisutypes.StoreKey])
+	app.k = keeper.NewKeeper(keys[sisutypes.StoreKey])
 
 	//////////////////////////////////////////////////////////////////////
 
@@ -262,15 +261,20 @@ func New(
 	// storage that contains common data for all the nodes
 	privateDb := keeper.NewStorageDb(filepath.Join(cfg.Sisu.Dir, "private"))
 
-	worldState := world.NewWorldState(app.tssKeeper, deyesClient)
+	worldState := world.NewWorldState(app.k, deyesClient)
 	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert, worldState)
 
 	cardanoNode := blockfrost.NewNode(cfg.Cardano.GetCardanoNetwork(), cfg.Cardano.BlockfrostSecret)
-	valsMgr := tss.NewValidatorManager(app.tssKeeper)
-	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.tssKeeper),
-		tss.NewPartyManager(app.globalData), dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
-		app.appKeys, tss.NewTxOutputProducer(worldState, app.appKeys, app.tssKeeper, cfg.Tss, cfg.Cardano, cardanoNode),
-		worldState, txTracker, app.tssKeeper, valsMgr)
+	valsMgr := tss.NewValidatorManager(app.k)
+	partyManager := tss.NewPartyManager(app.globalData)
+	txOutProducer := tss.NewTxOutputProducer(worldState, app.appKeys, app.k, cfg.Tss, cfg.Cardano, cardanoNode, txTracker)
+	txInQueue := sisu.NewTxInQueue(app.k, txOutProducer, app.globalData, app.txSubmitter)
+	txInQueue.Start()
+	txOutQueue := sisu.NewTxOutQueue(app.k, app.globalData, partyManager, dheartClient, txTracker)
+	txOutQueue.Start()
+	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.k),
+		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
+		app.appKeys, txOutProducer, worldState, txTracker, app.k, valsMgr, txInQueue, txOutQueue)
 
 	tssProcessor := tss.NewApiHandler(privateDb, mc)
 	app.apiHandler.SetAppLogicListener(tssProcessor)
@@ -292,7 +296,7 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
 
-		tss.NewAppModule(appCodec, sisuHandler, app.tssKeeper, tssProcessor, valsMgr, mc),
+		tss.NewAppModule(appCodec, sisuHandler, app.k, tssProcessor, valsMgr, mc),
 	}
 
 	app.tssProcessor = tssProcessor

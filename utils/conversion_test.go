@@ -15,7 +15,7 @@ func TestLovelaceToETHTokens(t *testing.T) {
 		// 2 ADA = 2*10^6 lovelace
 		twoAda := big.NewInt(2_000_000)
 
-		tokens := LovelaceToETHTokens(twoAda)
+		tokens := LovelaceToWei(twoAda)
 		require.Equal(t, big.NewInt(2_000_000_000_000_000_000), tokens)
 	})
 
@@ -23,7 +23,7 @@ func TestLovelaceToETHTokens(t *testing.T) {
 		t.Parallel()
 
 		halfAda := big.NewInt(500_000)
-		tokens := LovelaceToETHTokens(halfAda)
+		tokens := LovelaceToWei(halfAda)
 		require.Equal(t, big.NewInt(500_000_000_000_000_000), tokens)
 	})
 
@@ -31,7 +31,7 @@ func TestLovelaceToETHTokens(t *testing.T) {
 		t.Parallel()
 
 		zero := big.NewInt(0)
-		require.Equal(t, zero, LovelaceToETHTokens(zero))
+		require.Equal(t, zero, LovelaceToWei(zero))
 	})
 }
 
@@ -41,6 +41,6 @@ func TestETHTokensToLovelace(t *testing.T) {
 	t.Run("10^18 tokens to 1 ada", func(t *testing.T) {
 		n := big.NewInt(1_000_000_000_000_000_000)
 
-		require.Equal(t, ONE_ADA_IN_LOVELACE, ETHTokensToLovelace(n))
+		require.Equal(t, ONE_ADA_IN_LOVELACE, WeiToLovelace(n))
 	})
 }

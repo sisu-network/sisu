@@ -262,7 +262,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	am.txTracker.CheckExpiredTransaction()
 
 	cloneCtx := utils.CloneSdkContext(ctx)
-	am.mc.SetReadOnlyContext(cloneCtx)
+	am.globalData.SetReadOnlyContext(cloneCtx)
 
 	// Update gas price
 	if ctx.BlockHeight()%UpdateGasPriceFrequency == 1 {
@@ -281,6 +281,12 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 			}
 		}()
 	}
+
+	// Process new incoming transactions
+	am.mc.TxInQueue().ProcessTxIns()
+
+	// Process new outgoing transactions
+	am.mc.TxOutQueue().ProcessTxOuts()
 
 	return []abci.ValidatorUpdate{}
 }
