@@ -13,6 +13,7 @@ import (
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/contracts/eth/erc20gateway"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/cardano"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/sisu-network/sisu/x/sisu/world"
@@ -82,7 +83,7 @@ func TestTxOutProducer_getEthResponse2(t *testing.T) {
 				},
 			},
 			config.CardanoConfig{},
-			&MockCardanoNode{},
+			&cardano.MockCardanoNode{},
 		).(*DefaultTxOutputProducer)
 
 		txOuts, err := txOutProducer.getEthResponse(ctx, 1, &txIn)
