@@ -25,7 +25,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 type TransferOutParams struct {
 	// Id of the chain
 	Chain string `protobuf:"bytes,1,opt,name=chain,proto3" json:"chain,omitempty"`
-	// The number of maximum batched transfer in a single transaction.
+	// The number of maximum transfer in a single transaction.
 	MaxBatching int32 `protobuf:"varint,2,opt,name=maxBatching,proto3" json:"maxBatching,omitempty"`
 }
 

@@ -22,6 +22,7 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+// TODO: Deprecated this and use ExternalData instead.
 type GasPriceMsg struct {
 	Signer      string   `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
 	Chains      []string `protobuf:"bytes,2,rep,name=chains,proto3" json:"chains,omitempty"`
