@@ -2,9 +2,12 @@ package cardano
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/echovl/cardano-go"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/x/sisu/helper"
+	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 func Balance(node cardano.Node, address cardano.Address) (*cardano.Value, error) {
@@ -32,9 +35,9 @@ func findUtxos(node cardano.Node, address cardano.Address) ([]cardano.UTxO, erro
 	return walletUtxos, nil
 }
 
-// BuildTx contructs a cardano transaction that sends from sender address to receive address.
+// BuildTx constructs a cardano transaction that sends from sender address to receive address.
 func BuildTx(node cardano.Node, network cardano.Network, sender, receiver cardano.Address,
-	amount *cardano.Value, metadata cardano.Metadata) (*cardano.Tx, error) {
+	amount *cardano.Value, metadata cardano.Metadata, adaPrice int64, token *types.Token, destChain string, assetAmount uint64) (*cardano.Tx, error) {
 	// Calculate if the account has enough balance
 	balance, err := Balance(node, sender)
 	if err != nil {
@@ -57,22 +60,35 @@ func BuildTx(node cardano.Node, network cardano.Network, sender, receiver cardan
 	// Details: https://github.com/input-output-hk/cardano-ledger/blob/master/doc/explanations/min-utxo-alonzo.rst#example-min-ada-value-calculations-and-current-constants
 	minUTXO := builder.MinCoinsForTxOut(txOut)
 	amount.Coin = minUTXO
-	log.Debug("amount.Coin = ", amount.Coin)
+
+	// Subtract required ADA (around 1,3 ADA) from multi-asset amount
+	requiredAdaFeeInToken := helper.GetCardanoTxFeeInToken(big.NewInt(adaPrice), big.NewInt(token.Price), new(big.Int).SetUint64(uint64(minUTXO)))
+	if requiredAdaFeeInToken.Cmp(big.NewInt(0)) < 0 {
+		log.Error("tx fee is negative")
+		return nil, err
+	}
+
+	if assetAmount <= requiredAdaFeeInToken.Uint64() {
+		err := fmt.Errorf("token amount can not cover transaction fee. Expect %d, got %d", requiredAdaFeeInToken.Uint64(), assetAmount)
+		log.Error(err)
+		return nil, err
+	}
+
+	fee, err := GetCardanoMultiAsset(destChain, token, requiredAdaFeeInToken.Uint64())
+	if err != nil {
+		log.Error("error when getting cardano multi-asset: ", err)
+		return nil, err
+	}
+	amount = amount.Sub(cardano.NewValueWithAssets(0, fee))
 
 	// Find utxos that cover the amount to transfer
 	pickedUtxos := []cardano.UTxO{}
 	utxos, err := findUtxos(node, sender)
-	log.Debug("all utxos: ")
-	for _, utxo := range utxos {
-		log.Debug("txHash = ", utxo.TxHash.String(), " coin amount = ", utxo.Amount.Coin)
-	}
-	log.Debug("--------------------------")
 
 	// Pick at least <MinUTXO * 2> lovelace because we will produce at least 2 new utxos which contains multi-asset:
 	// 1. Transfer coin + multi-asset for user
 	// 2. Transfer remain coin + multi-asset for Cardano gateway (change address)
 	targetUtxoBalance := cardano.NewValueWithAssets(amount.Coin*2, amount.MultiAsset)
-	log.Debug("Target utxo balance = ", targetUtxoBalance.Coin, targetUtxoBalance.MultiAsset.String())
 	pickedUtxosAmount := cardano.NewValue(0)
 	for _, utxo := range utxos {
 		if pickedUtxosAmount.Cmp(targetUtxoBalance) == 1 {
@@ -80,11 +96,6 @@ func BuildTx(node cardano.Node, network cardano.Network, sender, receiver cardan
 		}
 		pickedUtxos = append(pickedUtxos, utxo)
 		pickedUtxosAmount = pickedUtxosAmount.Add(utxo.Amount)
-	}
-
-	log.Debug("picked utxo: ")
-	for _, p := range pickedUtxos {
-		log.Debug("txHash = ", p.TxHash.String(), " coin amount = ", p.Amount.Coin)
 	}
 
 	for _, utxo := range pickedUtxos {
@@ -105,9 +116,49 @@ func BuildTx(node cardano.Node, network cardano.Network, sender, receiver cardan
 	builder.AddChangeIfNeeded(changeAddress)
 	builder.Sign([]byte{}) // Use zoombie private key as the key holder.
 
+	// Tx fee is calculated based on tx body, so we have to call the first build to construct the body
 	tx, err := builder.Build2()
 	if err != nil {
 		return nil, err
 	}
+
+	// Subtract transaction fee from multi-asset amount
+	txFeeInToken := helper.GetCardanoTxFeeInToken(big.NewInt(adaPrice), big.NewInt(token.Price), new(big.Int).SetUint64(uint64(tx.Body.Fee)))
+	log.Debug("tx fee (unit token) = ", txFeeInToken.Uint64())
+	fee, err = GetCardanoMultiAsset(destChain, token, txFeeInToken.Uint64())
+	if err != nil {
+		log.Error("error when getting cardano multi-asset: ", err)
+		return nil, err
+	}
+	amount = amount.Sub(cardano.NewValueWithAssets(0, fee))
+
+	clonedBuilder := CloneTxBuilder(pparams, pickedUtxos, receiver, amount, changeAddress, metadata, tip)
+
+	// Second build here
+	tx, err = clonedBuilder.Build2()
+	if err != nil {
+		log.Error("error when build cardano tx: ", err)
+		return nil, err
+	}
+
 	return tx, nil
+}
+
+func CloneTxBuilder(pparams *cardano.ProtocolParams, inputUtxo []cardano.UTxO, receiver cardano.Address,
+	amount *cardano.Value, changeAddress cardano.Address, metadata cardano.Metadata, tip *cardano.NodeTip) *cardano.TxBuilderV2 {
+	builder := cardano.NewTxBuilderV2(pparams)
+
+	for _, utxo := range inputUtxo {
+		builder.AddInputs(&cardano.TxInput{TxHash: utxo.TxHash, Index: utxo.Index, Amount: utxo.Amount})
+	}
+	builder.AddOutputs(&cardano.TxOutput{Address: receiver, Amount: amount})
+	if len(metadata) > 0 {
+		builder.AddAuxiliaryData(&cardano.AuxiliaryData{Metadata: metadata})
+	}
+
+	builder.SetTTL(tip.Slot + 1200)
+	builder.AddChangeIfNeeded(changeAddress)
+	builder.Sign([]byte{}) // Use zoombie private key as the key holder.
+
+	return builder
 }

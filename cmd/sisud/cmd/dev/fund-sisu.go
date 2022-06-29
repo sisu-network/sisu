@@ -41,7 +41,8 @@ const (
 )
 
 var (
-	WrapADA = cardano.NewAssetName("WRAP_ADA")
+	WrapADA  = cardano.NewAssetName("WRAP_ADA")
+	WrapSISU = cardano.NewAssetName("WRAP_SISU")
 )
 
 type fundAccountCmd struct{}
@@ -183,6 +184,7 @@ func getMultiAsset(amt uint64) *cardano.MultiAsset {
 
 	policyID := cardano.NewPolicyIDFromHash(policyHash)
 	asset := cardano.NewAssets().Set(WrapADA, cardano.BigNum(amt*CardanoDecimals))
+	asset.Set(WrapSISU, cardano.BigNum(amt*CardanoDecimals))
 
 	return cardano.NewMultiAsset().Set(policyID, asset)
 }
@@ -200,19 +202,24 @@ func (c *fundAccountCmd) fundCardano(receiver cardano.Address, funderMnemonic st
 		panic(err)
 	}
 
-	funderAddr, err := funderWallet.AddAddress()
+	addrs, err := funderWallet.Addresses()
 	if err != nil {
 		panic(err)
 	}
-	log.Info("Cardano funder address = ", funderAddr.String())
 
-	// fund 10 ADA and 1000 WRAP_ADA
+	if len(addrs) < 1 {
+		panic("can not found base address")
+	}
+
+	log.Info("Cardano funder address = ", addrs[0].String())
+
+	// fund 10 ADA and 1000 WRAP_ADA and 1000 WRAP SISU
 	txHash, err := funderWallet.Transfer(receiver, cardano.NewValueWithAssets(10*CardanoDecimals, getMultiAsset(1e3)), nil) // 10 ADA
 	if err != nil {
 		panic(err)
 	}
 
-	log.Infof("Funded 10 ADA and 1000 WRAP_ADA for address %s, txHash = %s, "+
+	log.Infof("Funded 10 ADA and 1000 WRAP_ADA and 1000 WRAP_SISU for address %s, txHash = %s, "+
 		"explorer: https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=%s\n", receiver, txHash.String(), txHash.String())
 }
 

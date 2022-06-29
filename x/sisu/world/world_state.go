@@ -32,6 +32,8 @@ var (
 		"goerli-testnet":   "ETH",
 		"arbitrum-testnet": "ETH",
 		"fantom-testnet":   "FTM",
+		"cardano-testnet":  "ADA",
+		"cardano-mainnet":  "ADA",
 	}
 )
 
