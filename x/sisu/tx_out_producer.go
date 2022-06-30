@@ -188,6 +188,14 @@ func (p *DefaultTxOutputProducer) getContractDeploymentTx(ctx sdk.Context, heigh
 
 // In Cardano chain, transferring multi-asset required at least 1 ADA (10^6 lovelace)
 func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, data *transferOutData, assetAmount uint64) (*cardano.Tx, error) {
+	// Subtract commission fee
+	commissionFeeRate := float32(0)
+	params := p.keeper.GetParams(ctx)
+	if params != nil {
+		commissionFeeRate = params.CommissionFeeRate
+	}
+	assetAmount = assetAmount - getCommissionFee(big.NewInt(int64(assetAmount)), commissionFeeRate).Uint64()
+
 	pubkey := p.keeper.GetKeygenPubkey(ctx, libchain.KEY_TYPE_EDDSA)
 	senderAddr := hutils.GetAddressFromCardanoPubkey(pubkey)
 	log.Debug("cardano sender address = ", senderAddr.String())
@@ -208,7 +216,6 @@ func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, data *transferOu
 		log.Error("error when getting ada price: ", err)
 		return nil, err
 	}
-	log.Debug("ADA price = ", adaPrice)
 
 	// We need at least 1 ada to send multi assets.
 	tx, err := scardano.BuildTx(p.cardanoNode, p.cardanoNetwork, senderAddr, receiverAddr,
@@ -216,19 +223,8 @@ func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, data *transferOu
 		adaPrice, data.token, data.destChain, assetAmount)
 
 	if err != nil {
-		log.Error("error when building tx: ", err)
 		return nil, err
 	}
-
-	for _, i := range tx.Body.Inputs {
-		log.Debugf("tx input = %v\n", i)
-	}
-
-	for _, o := range tx.Body.Outputs {
-		log.Debugf("tx output = %v\n", o)
-	}
-
-	log.Debug("tx fee = ", tx.Body.Fee)
 
 	return tx, nil
 }

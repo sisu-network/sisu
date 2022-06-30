@@ -177,8 +177,11 @@ Example:
 				tokens:      getTokens(filepath.Join(testnetConfig.GenesisFolder, "tokens.json")),
 				chains:      chains,
 				liquidities: getLiquidity(filepath.Join(testnetConfig.GenesisFolder, "liquid.json")),
-				params:      &types.Params{MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3))},
-				emailAlert:  testnetConfig.EmailAlert,
+				params: &types.Params{
+					MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3)),
+					CommissionFeeRate: float32(2),
+				},
+				emailAlert: testnetConfig.EmailAlert,
 			}
 
 			valPubKeys, err := InitNetwork(settings)

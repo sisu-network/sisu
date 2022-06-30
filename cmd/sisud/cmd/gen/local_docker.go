@@ -144,7 +144,10 @@ Example:
 				tokens:      getTokens("./misc/dev/tokens.json"),
 				chains:      getChains("./misc/dev/chains.json"),
 				liquidities: getLiquidity("./misc/dev/liquid.json"),
-				params:      &types.Params{MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3))},
+				params: &types.Params{
+					MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3)),
+					CommissionFeeRate: float32(2),
+				},
 			}
 
 			valPubKeys, err := InitNetwork(settings)

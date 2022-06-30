@@ -150,8 +150,11 @@ Example:
 				tokens:         getTokens(filepath.Join(genesisFolder, "tokens.json")),
 				chains:         chains,
 				liquidities:    getLiquidity(filepath.Join(genesisFolder, "liquid.json")),
-				params:         &types.Params{MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3))},
-				cardanoSecret:  cardanoSecret,
+				params: &types.Params{
+					MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3)),
+					CommissionFeeRate: float32(2),
+				},
+				cardanoSecret: cardanoSecret,
 			}
 
 			_, err = InitNetwork(settings)

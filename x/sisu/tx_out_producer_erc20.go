@@ -250,7 +250,13 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	// Calculate the output amount
 	amountOut := new(big.Int).Set(amountIn)
 
-	// 1. TODO: Subtract the commission fee.
+	// Subtract the commission fee.
+	commissionFeeRate := float32(0)
+	params := p.keeper.GetParams(ctx)
+	if params != nil {
+		commissionFeeRate = params.CommissionFeeRate
+	}
+	amountOut = amountOut.Sub(amountOut, getCommissionFee(amountOut, commissionFeeRate))
 
 	if token.Price == 0 {
 		return nil, fmt.Errorf("token %s has price 0", token.Id)
@@ -302,4 +308,20 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 		EthTx:    rawTx,
 		RawBytes: bz,
 	}, nil
+}
+
+func getCommissionFee(amount *big.Int, commissionFeeRate float32) *big.Int {
+	if commissionFeeRate >= 100 {
+		return amount
+	}
+
+	if commissionFeeRate == 0 {
+		return big.NewInt(0)
+	}
+
+	// Multiply with 10_000 to process float number
+	// X/100 = (X*10_000)/(100*10_000)
+	commissionFeeRate = commissionFeeRate * 10_000
+	r := big.NewInt(int64(commissionFeeRate))
+	return new(big.Int).Div(new(big.Int).Mul(amount, r), big.NewInt(1_000_000)) // 100 * 10_000
 }
