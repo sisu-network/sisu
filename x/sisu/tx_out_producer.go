@@ -195,6 +195,9 @@ func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, data *transferOu
 		commissionFeeRate = params.CommissionFeeRate
 	}
 	assetAmount = assetAmount - getCommissionFee(big.NewInt(int64(assetAmount)), commissionFeeRate).Uint64()
+	if assetAmount <= 0 {
+		return nil, world.ErrInsufficientFund
+	}
 
 	pubkey := p.keeper.GetKeygenPubkey(ctx, libchain.KEY_TYPE_EDDSA)
 	senderAddr := hutils.GetAddressFromCardanoPubkey(pubkey)

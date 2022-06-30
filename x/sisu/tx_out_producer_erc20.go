@@ -257,6 +257,9 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 		commissionFeeRate = params.CommissionFeeRate
 	}
 	amountOut = amountOut.Sub(amountOut, getCommissionFee(amountOut, commissionFeeRate))
+	if amountOut.Cmp(big.NewInt(0)) < 0 {
+		return nil, world.ErrInsufficientFund
+	}
 
 	if token.Price == 0 {
 		return nil, fmt.Errorf("token %s has price 0", token.Id)
