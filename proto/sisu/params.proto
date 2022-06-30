@@ -5,4 +5,5 @@ option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 
 message Params {
   int32 majority_threshold = 1;
+  float commission_fee_rate = 2;
 }

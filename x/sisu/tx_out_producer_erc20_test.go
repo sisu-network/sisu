@@ -238,3 +238,28 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 		require.Nil(t, txResponse)
 	})
 }
+
+func TestGetCommissionFee(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Commission fee rate 0", func(t *testing.T) {
+		t.Parallel()
+
+		fee := getCommissionFee(big.NewInt(1_000_000), float32(0))
+		require.Equal(t, uint64(0), fee.Uint64())
+	})
+
+	t.Run("Commission rate 4.25", func(t *testing.T) {
+		t.Parallel()
+
+		fee := getCommissionFee(big.NewInt(500), float32(4.25))
+		require.Equal(t, uint64(21), fee.Uint64())
+	})
+
+	t.Run("Commission rate over 100", func(t *testing.T) {
+		t.Parallel()
+
+		fee := getCommissionFee(big.NewInt(500), float32(100))
+		require.Equal(t, uint64(500), fee.Uint64())
+	})
+}

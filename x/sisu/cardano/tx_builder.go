@@ -70,7 +70,6 @@ func BuildTx(node cardano.Node, network cardano.Network, sender, receiver cardan
 
 	if assetAmount <= requiredAdaFeeInToken.Uint64() {
 		err := fmt.Errorf("token amount can not cover transaction fee. Expect %d, got %d", requiredAdaFeeInToken.Uint64(), assetAmount)
-		log.Error(err)
 		return nil, err
 	}
 
