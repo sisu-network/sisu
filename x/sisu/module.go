@@ -3,7 +3,10 @@ package sisu
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
+
+	libchain "github.com/sisu-network/lib/chain"
 
 	// this line is used by starport scaffolding # 1
 
@@ -22,6 +25,7 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/utils"
+	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
 	"github.com/sisu-network/sisu/x/sisu/client/cli"
 	"github.com/sisu-network/sisu/x/sisu/client/rest"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -282,11 +286,61 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		}()
 	}
 
+	txInRequest := TxInRequest{
+		Ctx: cloneCtx,
+	}
+
+	for chain := range am.processor.config.SupportedChains {
+		if libchain.IsCardanoChain(chain) {
+			blockHeight, hasNewBlock := am.updateObservedChainHeight(ctx, chain)
+			txInRequest.HasNewCarnadoBlock = hasNewBlock
+			txInRequest.CarnadoBlockHeight = blockHeight
+			break
+		}
+	}
+
 	// Process new incoming transactions. We use read only context to process incoming txs.
-	am.mc.TxInQueue().ProcessTxIns(cloneCtx)
+	am.mc.TxInQueue().ProcessTxIns(txInRequest)
 
 	// Process new outgoing transactions
 	am.mc.TxOutQueue().ProcessTxOuts(cloneCtx)
 
 	return []abci.ValidatorUpdate{}
+}
+
+// updateObservedChainHeight updates the last observed block by the majority of the nodes. This makes
+// sure that we always have the same data when we produce transaction outputs. It returns true if
+// there is a change in consensus observed block height compared to the value saved in the db.
+func (am AppModule) updateObservedChainHeight(ctx sdk.Context, chain string) (int64, bool) {
+	currentVals := am.valsManager.GetValAccAddrs()
+	blockHeightsMap := am.keeper.GetBlockHeightsForChain(ctx, chain, currentVals)
+	blockHeights := make([]*types.BlockHeight, 0, len(blockHeightsMap))
+	for _, blockHeight := range blockHeightsMap {
+		blockHeights = append(blockHeights, blockHeight)
+	}
+
+	// Sort by block heights.
+	sort.Slice(blockHeights, func(i, j int) bool {
+		return blockHeights[i].Height > blockHeights[j].Height
+	})
+
+	tssParams := am.keeper.GetParams(ctx)
+	majority := int(tssParams.MajorityThreshold)
+	savedChain := am.keeper.GetChain(ctx, chain)
+
+	var maxHeight int64
+	if majority >= len(blockHeights) {
+		maxHeight = scardano.MaxBlockHeight
+	} else {
+		maxHeight = blockHeights[majority].Height
+	}
+
+	update := false
+	if savedChain.LastObservedBlockHeight < maxHeight {
+		savedChain.LastObservedBlockHeight = maxHeight
+		update = true
+		am.keeper.SaveChain(ctx, savedChain)
+	}
+
+	return maxHeight, update
 }

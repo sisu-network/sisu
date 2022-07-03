@@ -35,7 +35,7 @@ type GlobalData interface {
 
 type GlobalDataDefault struct {
 	isCatchingUp    bool
-	catchUpLock     *sync.RWMutex
+	lock            *sync.RWMutex
 	httpClient      *retryablehttp.Client
 	cfg             config.Config
 	myTmtConsAddr   sdk.ConsAddress
@@ -43,6 +43,7 @@ type GlobalDataDefault struct {
 	readOnlyContext atomic.Value
 
 	validatorSets *rpc.ResultValidatorsOutput
+	usedUtxos     map[string]bool
 }
 
 func NewGlobalData(cfg config.Config) GlobalData {
@@ -54,10 +55,11 @@ func NewGlobalData(cfg config.Config) GlobalData {
 	return &GlobalDataDefault{
 		httpClient:    httpClient,
 		isCatchingUp:  true,
-		catchUpLock:   &sync.RWMutex{},
+		lock:          &sync.RWMutex{},
 		cdc:           cdc,
 		validatorSets: new(rpc.ResultValidatorsOutput),
 		cfg:           cfg,
+		usedUtxos:     make(map[string]bool),
 	}
 }
 
@@ -120,9 +122,9 @@ func (a *GlobalDataDefault) UpdateCatchingUp() bool {
 		return oldValue
 	}
 
-	a.catchUpLock.Lock()
+	a.lock.Lock()
 	a.isCatchingUp = resp.Result.SyncInfo.CatchingUp
-	a.catchUpLock.Unlock()
+	a.lock.Unlock()
 
 	return resp.Result.SyncInfo.CatchingUp
 }
@@ -153,19 +155,24 @@ func (a *GlobalDataDefault) UpdateValidatorSets() {
 
 // Returns the latest validator set.
 func (a *GlobalDataDefault) GetValidatorSet() []rpc.ValidatorOutput {
+	a.lock.RLock()
+	defer a.lock.RUnlock()
+
 	copy := a.validatorSets.Validators
 	return copy
 }
 
 func (a *GlobalDataDefault) IsCatchingUp() bool {
-	a.catchUpLock.RLock()
-	defer a.catchUpLock.RUnlock()
+	a.lock.RLock()
+	defer a.lock.RUnlock()
 
 	return a.isCatchingUp
 }
 
 func (a *GlobalDataDefault) ValidatorSize() int {
-	// TODO: make this atomic
+	a.lock.RLock()
+	defer a.lock.RUnlock()
+
 	return len(a.validatorSets.Validators)
 }
 
@@ -185,4 +192,8 @@ func (a *GlobalDataDefault) GetReadOnlyContext() sdk.Context {
 	}
 
 	return val.(sdk.Context)
+}
+
+func (a *GlobalDataDefault) MarkUtxoAsUsed() {
+
 }

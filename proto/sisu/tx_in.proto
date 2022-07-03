@@ -3,6 +3,7 @@ package types;
 
 option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 
+// Deprecated
 // Note: all new fields in this proto MUST be included in SerializeWithoutSigner in the go file.
 message TxInWithSigner {
   string signer = 1;

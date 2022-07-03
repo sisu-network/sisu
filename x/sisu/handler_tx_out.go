@@ -2,6 +2,7 @@ package sisu
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -42,8 +43,15 @@ func (h *HandlerTxOut) doTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWithSi
 
 	log.Info("Delivering TxOut")
 
+	// TODO: Remove TxIn in the tx in queue.
+
 	// Save this to KVStore
 	h.keeper.SaveTxOut(ctx, txOut)
+
+	// If this is a cardano chain, we need to save this as the last Tx transaction.
+	if libchain.IsCardanoChain(txOut.OutChain) {
+
+	}
 
 	if !h.globalData.IsCatchingUp() {
 		h.txOutQueue.AddTxOut(txOut)

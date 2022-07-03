@@ -885,11 +885,43 @@ func getBlockHeightRecord(store cstypes.KVStore, signer string) *types.BlockHeig
 	record := &types.BlockHeightRecord{}
 	err := record.Unmarshal(bz)
 	if err != nil {
-		log.Error("Failed to unmarshal BlockHeightRecord, err = ", err)
+		log.Error("getBlockHeightRecord: Failed to unmarshal BlockHeightRecord, err = ", err)
 		return nil
 	}
 
 	return record
+}
+
+func getBlockHeightsForChain(store cstypes.KVStore, chain string, signers []string) map[string]*types.BlockHeight {
+	signersMap := make(map[string]bool)
+	for _, signer := range signers {
+		signersMap[signer] = true
+	}
+
+	ret := make(map[string]*types.BlockHeight)
+	iter := store.Iterator(nil, nil)
+
+	for ; iter.Valid(); iter.Next() {
+		if !signersMap[string(iter.Key())] {
+			continue
+		}
+
+		record := &types.BlockHeightRecord{}
+		err := record.Unmarshal(iter.Value())
+		if err != nil {
+			log.Error("getBlockHeightsForChain: cannot unmarshal BlockHeightRecord, err = ", err)
+			continue
+		}
+
+		for _, blockHeight := range record.BlockHeights {
+			if blockHeight.Chain == chain {
+				ret[string(iter.Key())] = blockHeight
+				break
+			}
+		}
+	}
+
+	return ret
 }
 
 ///// Debug functions

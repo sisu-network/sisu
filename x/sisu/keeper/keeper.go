@@ -98,6 +98,7 @@ type Keeper interface {
 	// BlockHeights
 	SaveBlockHeights(ctx sdk.Context, signer string, record *types.BlockHeightRecord)
 	GetBlockHeightRecord(ctx sdk.Context, signer string) *types.BlockHeightRecord
+	GetBlockHeightsForChain(ctx sdk.Context, chain string, signers []string) map[string]*types.BlockHeight
 }
 
 type DefaultKeeper struct {
@@ -400,6 +401,11 @@ func (k *DefaultKeeper) SaveBlockHeights(ctx sdk.Context, signer string, record 
 func (k *DefaultKeeper) GetBlockHeightRecord(ctx sdk.Context, signer string) *types.BlockHeightRecord {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixBlockHeight)
 	return getBlockHeightRecord(store, signer)
+}
+
+func (k *DefaultKeeper) GetBlockHeightsForChain(ctx sdk.Context, chain string, signers []string) map[string]*types.BlockHeight {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixBlockHeight)
+	return getBlockHeightsForChain(store, chain, signers)
 }
 
 ///// Debug

@@ -10,12 +10,19 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
+type TxInRequest struct {
+	Ctx sdk.Context
+
+	HasNewCarnadoBlock bool
+	CarnadoBlockHeight int64
+}
+
 // TxInQueue is an interface that processes incoming transactions, produces corresponding transaction
 // output.
 type TxInQueue interface {
 	Start()
 	AddTxIn(height int64, txIn *types.TxIn)
-	ProcessTxIns(ctx sdk.Context)
+	ProcessTxIns(request TxInRequest)
 }
 
 type defaultTxInQueue struct {
@@ -28,7 +35,7 @@ type defaultTxInQueue struct {
 	// height so that all nodes will process the same list. If we have only single queue for all
 	// TxIns, it's possible for different nodes to process different TxIn queues.
 	queues     map[int64][]*types.TxIn
-	newContext chan sdk.Context
+	newContext chan TxInRequest
 	lock       *sync.RWMutex
 }
 
@@ -43,7 +50,7 @@ func NewTxInQueue(
 		txOutputProducer: txOutputProducer,
 		globalData:       globalData,
 		txSubmit:         txSubmit,
-		newContext:       make(chan sdk.Context, 5),
+		newContext:       make(chan TxInRequest, 5),
 		lock:             &sync.RWMutex{},
 		queues:           make(map[int64][]*types.TxIn),
 	}
@@ -66,8 +73,8 @@ func (q *defaultTxInQueue) AddTxIn(height int64, txIn *types.TxIn) {
 	q.queues[height] = append(q.queues[height], txIn)
 }
 
-func (q *defaultTxInQueue) ProcessTxIns(ctx sdk.Context) {
-	q.newContext <- ctx
+func (q *defaultTxInQueue) ProcessTxIns(request TxInRequest) {
+	q.newContext <- request
 }
 
 func (q *defaultTxInQueue) loop() {
@@ -78,10 +85,13 @@ func (q *defaultTxInQueue) loop() {
 	}
 }
 
-func (q *defaultTxInQueue) processTxIns(ctx sdk.Context) {
+func (q *defaultTxInQueue) processTxIns(request TxInRequest) {
+	ctx := request.Ctx
+
 	// Read the queue
 	q.lock.RLock()
 	queue := q.queues[ctx.BlockHeight()]
+	delete(q.queues, ctx.BlockHeight())
 	q.lock.RUnlock()
 
 	if len(queue) == 0 {
@@ -90,7 +100,21 @@ func (q *defaultTxInQueue) processTxIns(ctx sdk.Context) {
 
 	// Creates and broadcast TxOuts. This has to be deterministic based on all the data that the
 	// processor has.
-	txOutWithSigners := q.txOutputProducer.GetTxOuts(ctx, ctx.BlockHeight(), queue)
+	txOutWithSigners, notProcessed := q.txOutputProducer.GetTxOuts(request, queue)
+
+	if len(notProcessed) > 0 {
+		// Add the not processed txs back to the queue to be processed in the next block
+		q.lock.Lock()
+		queue = q.queues[ctx.BlockHeight()+1]
+		if queue == nil {
+			queue = notProcessed
+		} else {
+			// prepend to the beginning of the array
+			queue = append(notProcessed, queue...)
+		}
+		q.lock.Unlock()
+	}
+
 	// Save this TxOut to database
 	log.Verbose("len(txOut) = ", len(txOutWithSigners))
 	if len(txOutWithSigners) > 0 {

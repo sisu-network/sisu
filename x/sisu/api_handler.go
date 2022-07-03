@@ -18,6 +18,7 @@ import (
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/eth"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -484,37 +485,82 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	log.Verbose("There is a new list of txs from deyes, len =", len(txs.Arr))
 
-	ctx := a.globalData.GetReadOnlyContext()
+	blockRequests := &types.TransferRequests{
+		Chain:    txs.Chain,
+		Hash:     txs.Hash,
+		Height:   txs.Block,
+		Requests: make([]*types.TransferRequest, 0),
+	}
 
 	// Create TxIn messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
-		if !tx.Success {
-			// TODO: Have a mechanism to handle failed transaction.
-			a.txTracker.OnTxFailed(txs.Chain, tx.Hash, types.TxStatusReverted)
-			continue
-		}
+		// // 1. Check if this tx is from one of our key. If it is, update the status of TxOut to confirmed.
+		// if a.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, tx.From) {
+		// 	return a.confirmTx(ctx, tx, txs.Chain, txs.Block)
+		// } else if len(tx.To) > 0 {
+		// 	// 2. This is a transaction to our key account or one of our contracts. Create a message to
+		// 	// indicate that we have observed this transaction and broadcast it to cosmos chain.
+		// 	// TODO: handle error correctly
+		// 	hash := utils.GetTxInHash(txs.Block, txs.Chain, tx.Serialized)
+		// 	signerMsg := types.NewTxInWithSigner(
+		// 		a.appKeys.GetSignerAddress().String(),
+		// 		txs.Chain,
+		// 		hash,
+		// 		txs.Block,
+		// 		tx.Serialized,
+		// 	)
 
-		// 1. Check if this tx is from one of our key. If it is, update the status of TxOut to confirmed.
-		if a.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, tx.From) {
-			return a.confirmTx(ctx, tx, txs.Chain, txs.Block)
-		} else if len(tx.To) > 0 {
-			// 2. This is a transaction to our key account or one of our contracts. Create a message to
-			// indicate that we have observed this transaction and broadcast it to cosmos chain.
-			// TODO: handle error correctly
-			hash := utils.GetTxInHash(txs.Block, txs.Chain, tx.Serialized)
-			signerMsg := types.NewTxInWithSigner(
-				a.appKeys.GetSignerAddress().String(),
-				txs.Chain,
-				hash,
-				txs.Block,
-				tx.Serialized,
-			)
+		// 	a.txSubmit.SubmitMessageAsync(signerMsg)
+		// }
 
-			a.txSubmit.SubmitMessageAsync(signerMsg)
+		transfer := a.parseTransferRequest(txs.Chain, tx)
+		if transfer != nil {
+			blockRequests.Requests = append(blockRequests.Requests, transfer)
 		}
 	}
 
+	if len(blockRequests.Requests) > 0 {
+		msg := types.NewBlockTransfersMsg(a.appKeys.GetSignerAddress().String(), blockRequests)
+		a.txSubmit.SubmitMessageAsync(msg)
+	}
+
 	return nil
+}
+
+func (a *ApiHandler) parseTransferRequest(chain string, tx *eyesTypes.Tx) *types.TransferRequest {
+	if libchain.IsETHBasedChain(chain) {
+		erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
+		gwAbi := erc20gatewayContract.Abi
+
+		ethTx := &ethTypes.Transaction{}
+		err := ethTx.UnmarshalBinary(tx.Serialized)
+		if err != nil {
+			log.Error("Failed to unmarshall eth tx. err =", err)
+			return nil
+		}
+
+		transfer, err := eth.ParseEthTransferOut(ethTx, chain, gwAbi, a.worldState)
+		if err != nil {
+			return nil
+		}
+
+		return transfer
+	}
+
+	if libchain.IsCardanoChain(chain) {
+	}
+
+	return nil
+}
+
+func (a *ApiHandler) ConfirmTx(chain string, bz []byte) {
+	// TODO: Confirm or report failure for transaction here.
+
+	// if !tx.Success {
+	// 	// TODO: Have a mechanism to handle failed transaction.
+	// 	a.txTracker.OnTxFailed(txs.Chain, tx.Hash, types.TxStatusReverted)
+	// 	continue
+	// }
 }
 
 // confirmTx confirms that a tx has been included in a block on the blockchain.

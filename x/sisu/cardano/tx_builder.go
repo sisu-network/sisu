@@ -7,36 +7,11 @@ import (
 	"github.com/sisu-network/lib/log"
 )
 
-func Balance(node cardano.Node, address cardano.Address) (*cardano.Value, error) {
-	balance := cardano.NewValue(0)
-	utxos, err := findUtxos(node, address)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, utxo := range utxos {
-		balance = balance.Add(utxo.Amount)
-	}
-
-	return balance, nil
-}
-
-func findUtxos(node cardano.Node, address cardano.Address) ([]cardano.UTxO, error) {
-	walletUtxos := make([]cardano.UTxO, 0)
-	addrUtxos, err := node.UTxOs(address)
-	if err != nil {
-		return nil, err
-	}
-
-	walletUtxos = append(walletUtxos, addrUtxos...)
-	return walletUtxos, nil
-}
-
 // BuildTx contructs a cardano transaction that sends from sender address to receive address.
-func BuildTx(node cardano.Node, network cardano.Network, sender, receiver cardano.Address,
-	amount *cardano.Value, metadata cardano.Metadata) (*cardano.Tx, error) {
+func BuildTx(node CardanoClient, sender, receiver cardano.Address,
+	amount *cardano.Value, metadata cardano.Metadata, maxBlock uint64) (*cardano.Tx, error) {
 	// Calculate if the account has enough balance
-	balance, err := Balance(node, sender)
+	balance, err := node.Balance(sender)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +36,7 @@ func BuildTx(node cardano.Node, network cardano.Network, sender, receiver cardan
 
 	// Find utxos that cover the amount to transfer
 	pickedUtxos := []cardano.UTxO{}
-	utxos, err := findUtxos(node, sender)
+	utxos, err := node.UTxOs(sender, maxBlock)
 	log.Debug("all utxos: ")
 	for _, utxo := range utxos {
 		log.Debug("txHash = ", utxo.TxHash.String(), " coin amount = ", utxo.Amount.Coin)
@@ -74,12 +49,18 @@ func BuildTx(node cardano.Node, network cardano.Network, sender, receiver cardan
 	targetUtxoBalance := cardano.NewValueWithAssets(amount.Coin*2, amount.MultiAsset)
 	log.Debug("Target utxo balance = ", targetUtxoBalance.Coin, targetUtxoBalance.MultiAsset.String())
 	pickedUtxosAmount := cardano.NewValue(0)
+	ok := false
 	for _, utxo := range utxos {
 		if pickedUtxosAmount.Cmp(targetUtxoBalance) == 1 {
+			ok = true
 			break
 		}
 		pickedUtxos = append(pickedUtxos, utxo)
 		pickedUtxosAmount = pickedUtxosAmount.Add(utxo.Amount)
+	}
+
+	if !ok {
+		return nil, InsufficientFundErr
 	}
 
 	log.Debug("picked utxo: ")

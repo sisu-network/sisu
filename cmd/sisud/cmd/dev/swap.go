@@ -10,6 +10,8 @@ import (
 
 	cgblockfrost "github.com/echovl/cardano-go/blockfrost"
 
+	cardanocrypto "github.com/echovl/cardano-go/crypto"
+
 	"github.com/echovl/cardano-go"
 	"github.com/echovl/cardano-go/wallet"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -222,27 +224,13 @@ func (c *swapCommand) getCardanoGateway(ctx context.Context, sisuRpc string) str
 	return hutils.GetAddressFromCardanoPubkey(cardanoKey).String()
 }
 
-func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *types.Token, destRecipient, cardanoGwAddr string,
-	value *big.Int, network cardano.Network, blockfrostSecret, cardanoMnemonic string) {
-	node := cgblockfrost.NewNode(cardano.Testnet, blockfrostSecret)
-	opts := &wallet.Options{Node: node}
-	client := wallet.NewClient(opts)
-
-	wallet, err := client.RestoreWallet(DefaultCardanoWalletName, DefaultCardanoPassword, cardanoMnemonic)
-	if err != nil {
-		panic(err)
-	}
-
+func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *types.Token,
+	destRecipient, cardanoGwAddr string, value *big.Int, network cardano.Network, blockfrostSecret, cardanoMnemonic string) {
+	privateKey, senderAddress := c.getSenderAddress(blockfrostSecret, cardanoMnemonic)
 	receiver, err := cardano.NewAddress(cardanoGwAddr)
 	if err != nil {
 		panic(err)
 	}
-
-	walletAddrs, err := wallet.Addresses()
-	if err != nil {
-		panic(err)
-	}
-	log.Info("sender = ", walletAddrs[0])
 
 	multiAsset, err := scardano.GetCardanoMultiAsset(srcChain, token, value.Uint64())
 	if err != nil {
@@ -256,8 +244,11 @@ func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *
 		},
 	}
 
-	tx, err := scardano.BuildTx(node, network, walletAddrs[0], receiver,
-		cardano.NewValueWithAssets(cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()), multiAsset), metadata)
+	node := scardano.NewBlockfrostClient(cardano.Testnet, blockfrostSecret)
+	tip, _ := node.Tip()
+
+	tx, err := scardano.BuildTx(node, senderAddress, receiver,
+		cardano.NewValueWithAssets(cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()), multiAsset), metadata, tip.Block)
 	if err != nil {
 		panic(err)
 	}
@@ -265,7 +256,6 @@ func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *
 		panic(fmt.Errorf("VKeyWitnessSet is expected to have length 1 but has length %d", len(tx.WitnessSet.VKeyWitnessSet)))
 	}
 
-	key, _ := wallet.Keys()
 	txHash, err := tx.Hash()
 	if err != nil {
 		panic(err)
@@ -274,8 +264,8 @@ func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *
 	// Sign tx
 	tx.WitnessSet.VKeyWitnessSet = make([]cardano.VKeyWitness, 1)
 	tx.WitnessSet.VKeyWitnessSet[0] = cardano.VKeyWitness{
-		VKey:      key.PubKey(),
-		Signature: key.Sign(txHash),
+		VKey:      privateKey.PubKey(),
+		Signature: privateKey.Sign(txHash),
 	}
 
 	submitedHash, err := node.SubmitTx(tx)
@@ -288,4 +278,25 @@ func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *
 	}
 
 	log.Info("Cardano tx hash = ", txHash.String())
+}
+
+func (c *swapCommand) getSenderAddress(blockfrostSecret, cardanoMnemonic string) (cardanocrypto.PrvKey, cardano.Address) {
+	node := cgblockfrost.NewNode(cardano.Testnet, blockfrostSecret)
+	opts := &wallet.Options{Node: node}
+	client := wallet.NewClient(opts)
+
+	wallet, err := client.RestoreWallet(DefaultCardanoWalletName, DefaultCardanoPassword, cardanoMnemonic)
+	if err != nil {
+		panic(err)
+	}
+
+	walletAddrs, err := wallet.Addresses()
+	if err != nil {
+		panic(err)
+	}
+	log.Info("sender = ", walletAddrs[0])
+
+	key, _ := wallet.Keys()
+
+	return key, walletAddrs[0]
 }

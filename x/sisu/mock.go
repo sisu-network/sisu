@@ -69,16 +69,16 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 ///// TxTracker
 
 type MockTxTracker struct {
-	AddTransactionFunc          func(txOut *types.TxOut, txIn *types.TxIn)
+	AddTransactionFunc          func(txOut *types.TxOut)
 	UpdateStatusFunc            func(chain string, hash string, status types.TxStatus)
 	RemoveTransactionFunc       func(chain string, hash string)
 	OnTxFailedFunc              func(chain string, hash string, status types.TxStatus)
 	CheckExpiredTransactionFunc func()
 }
 
-func (m *MockTxTracker) AddTransaction(txOut *types.TxOut, txIn *types.TxIn) {
+func (m *MockTxTracker) AddTransaction(txOut *types.TxOut) {
 	if m.AddTransactionFunc != nil {
-		m.AddTransactionFunc(txOut, txIn)
+		m.AddTransactionFunc(txOut)
 	}
 }
 
@@ -109,7 +109,7 @@ func (m *MockTxTracker) CheckExpiredTransaction() {
 ////// TxOutputProducer
 
 type MockTxOutputProducer struct {
-	GetTxOutsFunc                     func(ctx sdk.Context, height int64, tx []*types.TxIn) []*types.TxOutWithSigner
+	GetTxOutsFunc                     func(txInRequest TxInRequest, txIns []*types.TxIn) ([]*types.TxOutWithSigner, []*types.TxIn)
 	PauseContractFunc                 func(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
 	ResumeContractFunc                func(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
 	ContractChangeOwnershipFunc       func(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutWithSigner, error)
@@ -117,12 +117,12 @@ type MockTxOutputProducer struct {
 	ContractEmergencyWithdrawFundFunc func(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutWithSigner, error)
 }
 
-func (m *MockTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx []*types.TxIn) []*types.TxOutWithSigner {
+func (m *MockTxOutputProducer) GetTxOuts(txInRequest TxInRequest, txIns []*types.TxIn) ([]*types.TxOutWithSigner, []*types.TxIn) {
 	if m.GetTxOutsFunc != nil {
-		return m.GetTxOutsFunc(ctx, height, tx)
+		return m.GetTxOutsFunc(txInRequest, txIns)
 	}
 
-	return nil
+	return nil, nil
 }
 
 func (m *MockTxOutputProducer) PauseContract(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error) {
