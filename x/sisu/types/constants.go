@@ -15,6 +15,7 @@ const (
 	MsgTypeContractChangeLiquidityAddress = "ContractChangeLiquidityAddress"
 	MsgTypeContractLiquidityWithdrawFund  = "ContractLiquidityWithdrawFund"
 	MsgTypeTransferRequestsMsg            = "TransferRequestsMsg"
+	MsgTypeFundGatewayMsg                 = "FundGatewayMsg"
 
 	MsgTypeTxOut         = "TxOut"
 	MsgTypeKeysignResult = "KeysignResult"

@@ -30,7 +30,7 @@ func (p *DefaultTxOutputProducer) getContractDeploymentTx(ctx sdk.Context, heigh
 
 		// Get the list of deploy transactions. Those txs need to posted and verified (by validators)
 		// to the Sisu chain.
-		outEthTxs := p.getEthContractDeploymentTx(ctx, height, tx.Chain, contracts)
+		outEthTxs := p.getEthContractDeploymentTx(ctx, tx.Chain, contracts)
 
 		for i, outTx := range outEthTxs {
 			bz, err := outTx.MarshalBinary()
@@ -60,7 +60,7 @@ func (p *DefaultTxOutputProducer) getContractDeploymentTx(ctx sdk.Context, heigh
 }
 
 // Check if we can deploy contract after seeing some ETH being sent to our ethereum address.
-func (p *DefaultTxOutputProducer) getEthContractDeploymentTx(ctx sdk.Context, height int64, chain string, contracts []*types.Contract) []*ethTypes.Transaction {
+func (p *DefaultTxOutputProducer) getEthContractDeploymentTx(ctx sdk.Context, chain string, contracts []*types.Contract) []*ethTypes.Transaction {
 	txs := make([]*ethTypes.Transaction, 0)
 
 	for _, contract := range contracts {

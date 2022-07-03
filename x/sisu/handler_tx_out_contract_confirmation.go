@@ -76,7 +76,7 @@ func (h *HandlerTxOutContractConfirmation) doTxOutContractConfirm(ctx sdk.Contex
 	h.keeper.CreateContractAddress(ctx, txOut.OutChain, txOut.OutHash, msg.ContractAddress)
 
 	// Add the address to deyes to watch
-	h.deyesClient.AddWatchAddresses(msg.OutChain, []string{msg.ContractAddress})
+	h.deyesClient.SetGatewayAddress(msg.OutChain, msg.ContractAddress)
 
 	return nil, nil
 }

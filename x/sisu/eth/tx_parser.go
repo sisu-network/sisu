@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"math/big"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
-	"github.com/sisu-network/sisu/x/sisu/world"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -15,8 +17,8 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
-func ParseEthTransferOut(ethTx *ethTypes.Transaction, srcChain string, gwAbi abi.ABI,
-	worldState world.WorldState) (*types.TransferRequest, error) {
+func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain string, gwAbi abi.ABI,
+	keeper keeper.Keeper) (*types.TransferRequest, error) {
 	callData := ethTx.Data()
 	txParams, err := decodeTxParams(gwAbi, callData)
 	if err != nil {
@@ -34,15 +36,29 @@ func ParseEthTransferOut(ethTx *ethTypes.Transaction, srcChain string, gwAbi abi
 		return nil, err
 	}
 
+	var token *types.Token
+	// TODO: Optimize getting tokens
+	allTokens := keeper.GetAllTokens(ctx)
+	for _, t := range allTokens {
+		for j, chain := range token.Chains {
+			if chain == srcChain && t.Addresses[j] == tokenAddr.String() {
+				token = t
+				break
+			}
+		}
+
+		if token != nil {
+			break
+		}
+	}
+	if token == nil {
+		return nil, fmt.Errorf("Cannot find token on chain %s with address %s", srcChain, tokenAddr)
+	}
+
 	destChain, ok := txParams["_destChain"].(string)
 	if !ok {
 		err := fmt.Errorf("cannot convert _destChain to type string: %v", txParams)
 		return nil, err
-	}
-
-	token := worldState.GetTokenFromAddress(srcChain, tokenAddr.String())
-	if token == nil {
-		return nil, fmt.Errorf("invalid address %s on chain %s", tokenAddr, srcChain)
 	}
 
 	recipient, ok := txParams["_recipient"].(string)

@@ -165,6 +165,8 @@ func (t *TxSubmitter) Start() {
 			log.Info("Sequence = ", seq)
 			t.factory = t.factory.WithSequence(seq)
 
+			fmt.Println("copy length = ", len(copy))
+
 			// 3. Send all messages
 			res, err := t.trySubmitTx(copy)
 			if err != nil || (res != nil && res.Code != 0) {

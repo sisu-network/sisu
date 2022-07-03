@@ -235,6 +235,8 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	// Reload data after reading the genesis
 	am.worldState.InitData(ctx)
 
+	fmt.Println("AAAAA 0000")
+
 	return validators
 }
 

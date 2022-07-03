@@ -275,14 +275,10 @@ func (a *ApiHandler) OnKeygenResult(result dhtypes.KeygenResult) {
 			continue
 		}
 
-		log.Verbose("adding watcher address ", result.Address, " for chain ", chain)
+		log.Verbose("adding chain account address ", result.Address, " for chain ", chain)
 
-		a.addWatchAddress(chain, result.Address)
+		a.deyesClient.SetChainAccount(chain, result.Address)
 	}
-}
-
-func (a *ApiHandler) addWatchAddress(chain string, address string) {
-	a.deyesClient.AddWatchAddresses(chain, []string{address})
 }
 
 // OnTxDeploymentResult is a callback after there is a deployment result from deyes.
@@ -492,6 +488,8 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 		Requests: make([]*types.TransferRequest, 0),
 	}
 
+	ctx := a.globalData.GetReadOnlyContext()
+
 	// Create TxIn messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
 		// // 1. Check if this tx is from one of our key. If it is, update the status of TxOut to confirmed.
@@ -513,9 +511,31 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 		// 	a.txSubmit.SubmitMessageAsync(signerMsg)
 		// }
 
-		transfer := a.parseTransferRequest(txs.Chain, tx)
+		transfer := a.parseTransferRequest(ctx, txs.Chain, tx)
 		if transfer != nil {
 			blockRequests.Requests = append(blockRequests.Requests, transfer)
+		} else {
+			// Check if this is a transaciton that fund ETH gateway
+			if libchain.IsETHBasedChain(txs.Chain) {
+				ethTx := &ethTypes.Transaction{}
+				err := ethTx.UnmarshalBinary(tx.Serialized)
+				if err != nil {
+					log.Error("Failed to unmarshall eth tx. err =", err)
+					continue
+				}
+
+				if ethTx.To() != nil && a.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
+					msg := types.NewFundGatewayMsg(a.appKeys.GetSignerAddress().String(), &types.FundGateway{
+						Chain:  txs.Chain,
+						TxHash: utils.KeccakHash32Bytes(tx.Serialized),
+						Amount: ethTx.Value().Bytes(),
+					})
+
+					fmt.Println("Submitting fund gateway message.")
+
+					a.txSubmit.SubmitMessageAsync(msg)
+				}
+			}
 		}
 	}
 
@@ -527,7 +547,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	return nil
 }
 
-func (a *ApiHandler) parseTransferRequest(chain string, tx *eyesTypes.Tx) *types.TransferRequest {
+func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eyesTypes.Tx) *types.TransferRequest {
 	if libchain.IsETHBasedChain(chain) {
 		erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
 		gwAbi := erc20gatewayContract.Abi
@@ -539,7 +559,7 @@ func (a *ApiHandler) parseTransferRequest(chain string, tx *eyesTypes.Tx) *types
 			return nil
 		}
 
-		transfer, err := eth.ParseEthTransferOut(ethTx, chain, gwAbi, a.worldState)
+		transfer, err := eth.ParseEthTransferOut(ctx, ethTx, chain, gwAbi, a.keeper)
 		if err != nil {
 			return nil
 		}
