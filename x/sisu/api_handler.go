@@ -25,7 +25,6 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/sisu-network/sisu/x/sisu/world"
 
-	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -483,37 +482,21 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	log.Verbose("There is a new list of txs from deyes, len =", len(txs.Arr))
 
-	blockRequests := &types.TransferRequests{
+	fmt.Println("txs = ", *txs)
+
+	blockRequests := &types.TxsIn{
 		Chain:    txs.Chain,
 		Hash:     txs.Hash,
 		Height:   txs.Block,
-		Requests: make([]*types.TransferRequest, 0),
+		Requests: make([]*types.TxIn, 0),
 	}
 
 	ctx := a.globalData.GetReadOnlyContext()
 
 	// Create TxIn messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
-		// // 1. Check if this tx is from one of our key. If it is, update the status of TxOut to confirmed.
-		// if a.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, tx.From) {
-		// 	return a.confirmTx(ctx, tx, txs.Chain, txs.Block)
-		// } else if len(tx.To) > 0 {
-		// 	// 2. This is a transaction to our key account or one of our contracts. Create a message to
-		// 	// indicate that we have observed this transaction and broadcast it to cosmos chain.
-		// 	// TODO: handle error correctly
-		// 	hash := utils.GetTxInHash(txs.Block, txs.Chain, tx.Serialized)
-		// 	signerMsg := types.NewTxInWithSigner(
-		// 		a.appKeys.GetSignerAddress().String(),
-		// 		txs.Chain,
-		// 		hash,
-		// 		txs.Block,
-		// 		tx.Serialized,
-		// 	)
-
-		// 	a.txSubmit.SubmitMessageAsync(signerMsg)
-		// }
-
 		transfer := a.parseTransferRequest(ctx, txs.Chain, tx)
+		fmt.Println("AAAAA transfer = ", *transfer)
 		if transfer != nil {
 			blockRequests.Requests = append(blockRequests.Requests, transfer)
 		} else {
@@ -542,14 +525,14 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	}
 
 	if len(blockRequests.Requests) > 0 {
-		msg := types.NewBlockTransfersMsg(a.appKeys.GetSignerAddress().String(), blockRequests)
+		msg := types.NewTxsInMsg(a.appKeys.GetSignerAddress().String(), blockRequests)
 		a.txSubmit.SubmitMessageAsync(msg)
 	}
 
 	return nil
 }
 
-func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eyesTypes.Tx) *types.TransferRequest {
+func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eyesTypes.Tx) *types.TxIn {
 	if libchain.IsETHBasedChain(chain) {
 		erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
 		gwAbi := erc20gatewayContract.Abi
@@ -576,6 +559,7 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 	return nil
 }
 
+// ConfirmTx implements AppLogicListener
 func (a *ApiHandler) ConfirmTx(txTrack *chainstypes.TrackUpdate) {
 	ctx := a.globalData.GetReadOnlyContext()
 	hash := utils.KeccakHash32Bytes(txTrack.Bytes)
@@ -627,64 +611,6 @@ func (a *ApiHandler) ConfirmTx(txTrack *chainstypes.TrackUpdate) {
 		)
 		a.txSubmit.SubmitMessageAsync(msg)
 	}
-}
-
-// confirmTx confirms that a tx has been included in a block on the blockchain.
-func (a *ApiHandler) confirmTx(ctx sdk.Context, tx *eyesTypes.Tx, chain string, blockHeight int64) error {
-	log.Verbose("This is a transaction from us. We need to confirm it. Chain = ", chain)
-
-	// The txOutSig is in private db while txOut should come from common db.
-	txOutSig := a.privateDb.GetTxOutSig(chain, tx.Hash)
-	if txOutSig == nil {
-		// TODO: Add this to pending tx to confirm.
-		log.Verbose("cannot find txOutSig with full signature hash: ", tx.Hash)
-		return nil
-	}
-
-	txOut := a.keeper.GetTxOut(ctx, chain, txOutSig.HashNoSig)
-	if txOut == nil {
-		log.Verbose("cannot find txOut with hash (with no sig): ", txOutSig.HashNoSig)
-		return nil
-	}
-
-	log.Info("confirming tx: chain, hash, type = ", chain, " ", tx.Hash, " ", txOut.TxType)
-
-	a.txTracker.RemoveTransaction(chain, txOut.OutHash)
-
-	contractAddress := ""
-	if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT && libchain.IsETHBasedChain(chain) {
-		ethTx := &ethTypes.Transaction{}
-		err := ethTx.UnmarshalBinary(tx.Serialized)
-		if err != nil {
-			log.Error("cannot unmarshal eth transaction, err = ", err)
-			return err
-		}
-
-		contractAddress = ethcrypto.CreateAddress(ethcommon.HexToAddress(tx.From), ethTx.Nonce()).String()
-		log.Info("contractAddress = ", contractAddress)
-
-		txConfirm := &types.TxOutContractConfirm{
-			OutChain:        txOut.OutChain,
-			OutHash:         txOut.OutHash,
-			BlockHeight:     blockHeight,
-			ContractAddress: contractAddress,
-		}
-
-		msg := types.NewTxOutContractConfirmWithSigner(
-			a.appKeys.GetSignerAddress().String(),
-			txConfirm,
-		)
-		a.txSubmit.SubmitMessageAsync(msg)
-	}
-
-	// We can assume that other tx transactions will succeed in majority of the time. Instead
-	// broadcasting the tx confirmation to Sisu blockchain, we should only record missing or failed
-	// transaction.
-	// We only confirm if the tx out is a contract deployment to save the smart contract address.
-	// TODO: Implement missing/ failed message and broadcast that to everyone after we have not seen
-	// a tx for some blocks.
-
-	return nil
 }
 
 // OnUpdateTokenPrice is called when there is a token price update from deyes. Post to the network

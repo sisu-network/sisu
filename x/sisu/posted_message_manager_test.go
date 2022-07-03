@@ -104,27 +104,6 @@ func TestPostedMessageManager(t *testing.T) {
 		require.False(t, process)
 	})
 
-	t.Run("tx_in_with_signer", func(t *testing.T) {
-		ctx, mc := mockForPostedMessageManager()
-		pmm := mc.PostedMessageManager()
-
-		msg := &types.TxInWithSigner{
-			Signer: "signer",
-			Data:   &types.TxIn{},
-		}
-
-		process, hash := pmm.ShouldProcessMsg(ctx, msg)
-		require.True(t, process)
-
-		h := NewHandlerTxIn(mc)
-		_, err := h.doTxIn(ctx, msg)
-		require.NoError(t, err)
-
-		h.keeper.ProcessTxRecord(ctx, hash)
-		process, _ = pmm.ShouldProcessMsg(ctx, msg)
-		require.False(t, process)
-	})
-
 	t.Run("tx_out_with_signer", func(t *testing.T) {
 		ctx, mc := mockForPostedMessageManager()
 		pmm := mc.PostedMessageManager()

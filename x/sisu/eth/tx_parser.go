@@ -18,7 +18,7 @@ import (
 )
 
 func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain string, gwAbi abi.ABI,
-	keeper keeper.Keeper) (*types.TransferRequest, error) {
+	keeper keeper.Keeper) (*types.TxIn, error) {
 	callData := ethTx.Data()
 	txParams, err := decodeTxParams(gwAbi, callData)
 	if err != nil {
@@ -39,8 +39,10 @@ func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain 
 	var token *types.Token
 	// TODO: Optimize getting tokens
 	allTokens := keeper.GetAllTokens(ctx)
+	fmt.Println("allTokens = ", allTokens)
+
 	for _, t := range allTokens {
-		for j, chain := range token.Chains {
+		for j, chain := range t.Chains {
 			if chain == srcChain && t.Addresses[j] == tokenAddr.String() {
 				token = t
 				break
@@ -51,6 +53,7 @@ func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain 
 			break
 		}
 	}
+
 	if token == nil {
 		return nil, fmt.Errorf("Cannot find token on chain %s with address %s", srcChain, tokenAddr)
 	}
@@ -73,7 +76,7 @@ func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain 
 		return nil, err
 	}
 
-	return &types.TransferRequest{
+	return &types.TxIn{
 		Sender:    msg.From().Hex(),
 		ToChain:   destChain,
 		Token:     token.Id,

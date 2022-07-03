@@ -42,7 +42,7 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 			return NewHandlerKeygenResult(mc).DeliverMsg(ctx, msg)
 		case *types.ContractsWithSigner:
 			return NewHandlerContract(mc).DeliverMsg(ctx, msg)
-		case *types.TxInWithSigner:
+		case *types.TxsInMsg:
 			return NewHandlerTxIn(mc).DeliverMsg(ctx, msg)
 		case *types.TxOutWithSigner:
 			return NewHandlerTxOut(mc).DeliverMsg(ctx, msg)

@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"sort"
-	"strings"
 
 	ecommon "github.com/ethereum/go-ethereum/common"
 
@@ -17,138 +15,6 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/sisu-network/sisu/x/sisu/world"
 )
-
-func (p *DefaultTxOutputProducer) getContractDeploymentTx(ctx sdk.Context, height int64, tx *types.TxIn) ([]*types.TxOutWithSigner, error) {
-	outMsgs := make([]*types.TxOutWithSigner, 0)
-
-	contracts := p.keeper.GetPendingContracts(ctx, tx.Chain)
-	log.Verbose("len(contracts) = ", len(contracts))
-
-	if len(contracts) > 0 {
-		// TODO: Check balance required to deploy all these contracts. Also check if we are deploying
-		// a contract to avoid duplication.
-
-		// Get the list of deploy transactions. Those txs need to posted and verified (by validators)
-		// to the Sisu chain.
-		outEthTxs := p.getEthContractDeploymentTx(ctx, tx.Chain, contracts)
-
-		for i, outTx := range outEthTxs {
-			bz, err := outTx.MarshalBinary()
-			if err != nil {
-				return nil, err
-			}
-
-			outMsg := types.NewMsgTxOutWithSigner(
-				p.appKeys.GetSignerAddress().String(),
-				types.TxOutType_CONTRACT_DEPLOYMENT,
-				tx.BlockHeight,
-				tx.Chain,
-				tx.TxHash,
-				tx.Chain,
-				outTx.Hash().String(),
-				bz,
-				contracts[i].Hash,
-			)
-
-			log.Verbose("ETH Tx Out hash = ", outTx.Hash().String(), " on chain ", tx.Chain)
-
-			outMsgs = append(outMsgs, outMsg)
-		}
-	}
-
-	return outMsgs, nil
-}
-
-// Check if we can deploy contract after seeing some ETH being sent to our ethereum address.
-func (p *DefaultTxOutputProducer) getEthContractDeploymentTx(ctx sdk.Context, chain string, contracts []*types.Contract) []*ethTypes.Transaction {
-	txs := make([]*ethTypes.Transaction, 0)
-
-	for _, contract := range contracts {
-		nonce := p.worldState.UseAndIncreaseNonce(ctx, chain)
-		log.Verbose("nonce for deploying contract:", nonce, " on chain ", chain)
-		if nonce < 0 {
-			log.Error("cannot get nonce for contract")
-			continue
-		}
-
-		rawTx := p.getContractTx(ctx, contract, nonce)
-		if rawTx == nil {
-			log.Warn("raw Tx is nil")
-			continue
-		}
-
-		txs = append(txs, rawTx)
-	}
-
-	return txs
-}
-
-func (p *DefaultTxOutputProducer) getContractTx(ctx sdk.Context, contract *types.Contract, nonce int64) *ethTypes.Transaction {
-	erc20 := SupportedContracts[ContractErc20Gateway]
-	switch contract.Hash {
-	case erc20.AbiHash:
-		// This is erc20gw contract.
-		parsedAbi, err := abi.JSON(strings.NewReader(erc20.AbiString))
-		if err != nil {
-			log.Error("cannot parse erc20 abi. abi = ", erc20.AbiString, "err =", err)
-			return nil
-		}
-
-		// Get all allowed chains
-		supportedChains := make([]string, 0)
-		for chain := range p.tssConfig.SupportedChains {
-			if chain != contract.Chain {
-				supportedChains = append(supportedChains, chain)
-			}
-		}
-
-		sort.Strings(supportedChains)
-
-		log.Info("Allowed chains for chain ", contract.Chain, " are: ", supportedChains)
-
-		lp := p.keeper.GetLiquidity(ctx, contract.Chain)
-		if lp == nil {
-			log.Warn("Lp is nil for chain ", contract.Chain)
-			return nil
-		}
-
-		log.Infof("Liquidity pool addr for chain %s is %s", contract.Chain, lp.Address)
-		input, err := parsedAbi.Pack("", supportedChains, ecommon.HexToAddress(lp.Address))
-		if err != nil {
-			log.Error("cannot pack supportedChains, err =", err)
-			return nil
-		}
-
-		byteCode := ecommon.FromHex(erc20.Bin)
-		input = append(byteCode, input...)
-		chain := p.keeper.GetChain(ctx, contract.Chain)
-		if chain == nil {
-			log.Error("getContractTx: chain is nil with id ", contract.Chain)
-			return nil
-		}
-
-		gasPrice := chain.GasPrice
-		if gasPrice <= 0 {
-			gasPrice = p.getDefaultGasPrice(contract.Chain).Int64()
-		}
-		gasLimit := p.getGasLimit(contract.Chain)
-
-		log.Verbose("Gas price = ", gasPrice, " on chain ", contract.Chain)
-		log.Verbose("gasLimit = ", gasLimit, " on chain ", contract.Chain)
-
-		rawTx := ethTypes.NewContractCreation(
-			uint64(nonce),
-			big.NewInt(0),
-			gasLimit,
-			big.NewInt(gasPrice),
-			input,
-		)
-
-		return rawTx
-	}
-
-	return nil
-}
 
 func decodeTxParams(abi abi.ABI, callData []byte) (map[string]interface{}, error) {
 	if len(callData) < 4 {
@@ -209,7 +75,6 @@ func parseEthTransferOut(ethTx *ethTypes.Transaction, srcChain string, worldStat
 	}
 
 	return &transferOutData{
-		tokenAddr: tokenAddr,
 		destChain: destChain,
 		token:     token,
 		recipient: recipient,
@@ -299,6 +164,8 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	gasPrices := make([]int64, 0)
 
 	for i := range amounts {
+		fmt.Println("tokens = ", tokens)
+		fmt.Println("i = ", i)
 		if tokens[i].Price == 0 {
 			return nil, fmt.Errorf("token %s has price 0", tokens[i].Id)
 		}

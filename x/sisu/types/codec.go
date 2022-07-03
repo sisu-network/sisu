@@ -21,7 +21,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil), &KeygenWithSigner{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &KeygenResultWithSigner{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &ContractsWithSigner{})
-	registry.RegisterImplementations((*sdk.Msg)(nil), &TxInWithSigner{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &TxsInMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TxOutWithSigner{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TxOutContractConfirmWithSigner{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &GasPriceMsg{})
@@ -32,7 +32,6 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil), &ChangeOwnershipContractMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &ChangeLiquidPoolAddressMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &LiquidityWithdrawFundMsg{})
-	registry.RegisterImplementations((*sdk.Msg)(nil), &TransferRequestsMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &FundGatewayMsg{})
 
 	registry.RegisterInterface("cosmos.crypto.PubKey", (*ctypes.PubKey)(nil))

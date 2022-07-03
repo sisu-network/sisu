@@ -441,24 +441,6 @@ func isContractExistedAtAddress(store cstypes.KVStore, chain, address string) bo
 	return store.Has(key)
 }
 
-///// TxIn
-func saveTxIn(store cstypes.KVStore, msg *types.TxIn) {
-	key := getTxInKey(msg.Chain, msg.BlockHeight, msg.TxHash)
-
-	bz, err := msg.Marshal()
-	if err != nil {
-		log.Error("Cannot marshal TxIn")
-		return
-	}
-
-	store.Set(key, bz)
-}
-
-func isTxInExisted(store cstypes.KVStore, msg *types.TxIn) bool {
-	key := getTxInKey(msg.GetChain(), msg.GetBlockHeight(), msg.GetTxHash())
-	return store.Has(key)
-}
-
 ///// TxOut
 func saveTxOut(store cstypes.KVStore, msg *types.TxOut) {
 	key := getTxOutKey(msg.OutChain, msg.OutHash)

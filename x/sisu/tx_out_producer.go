@@ -1,8 +1,10 @@
 package sisu
 
 import (
+	"fmt"
 	"math/big"
 
+	"github.com/sisu-network/sisu/utils"
 	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
 
 	ecommon "github.com/ethereum/go-ethereum/common"
@@ -10,7 +12,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/echovl/cardano-go"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
@@ -23,7 +24,9 @@ import (
 // This structs produces transaction output based on input. For a given tx input, this struct
 // produces a list (could contain only one element) of transaction output.
 type TxOutputProducer interface {
-	GetTxOuts(txInRequest TxInRequest, txIns []*types.TxIn) ([]*types.TxOutWithSigner, []*types.TxIn)
+	// GetTxOuts returns a list of TxOut message and a list of un-processed transfer out request that
+	// needs to be processed next time.
+	GetTxOuts(ctx sdk.Context, transfers []*transferOutData) ([]*types.TxOutWithSigner, []*transferOutData)
 
 	PauseContract(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
 
@@ -52,7 +55,6 @@ type DefaultTxOutputProducer struct {
 }
 
 type transferOutData struct {
-	tokenAddr   ethcommon.Address
 	blockHeight int64
 	destChain   string
 	token       *types.Token
@@ -82,78 +84,6 @@ func NewTxOutputProducer(worldState world.WorldState, appKeys common.AppKeys, ke
 		cardanoNetwork: cardanoConfig.GetCardanoNetwork(),
 		cardanoClient:  cardanoClient,
 	}
-}
-
-func (p *DefaultTxOutputProducer) GetTxOuts(txInRequest TxInRequest, txIns []*types.TxIn) ([]*types.TxOutWithSigner, []*types.TxIn) {
-	ctx := txInRequest.Ctx
-	outMsgs := make([]*types.TxOutWithSigner, 0)
-	transferOuts := make([]*transferOutData, 0)
-	notProcessed := make([]*types.TxIn, 0)
-
-	// 1. Extracts all the transfers requests from the incoming transactions.
-	for _, txIn := range txIns {
-		// ETH chain
-		if libchain.IsETHBasedChain(txIn.Chain) {
-			ethTx := &ethTypes.Transaction{}
-
-			err := ethTx.UnmarshalBinary(txIn.Serialized)
-			if err != nil {
-				log.Error("Failed to unmarshall eth tx. err =", err)
-				continue
-			}
-
-			// Check if this is a transaction that fund our account.
-			if ethTx.To() != nil && p.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
-				txOuts, err := p.getContractDeploymentTx(ctx, txIn.BlockHeight, txIn)
-				if err != nil {
-					log.Error("Failed to get contract deployment tx, err = ", err)
-				} else {
-					outMsgs = append(outMsgs, txOuts...)
-				}
-
-				continue
-			}
-
-			// Check if this is a transaction to transfer
-			if p.keeper.IsContractExistedAtAddress(ctx, txIn.Chain, ethTx.To().String()) && len(ethTx.Data()) >= 4 {
-				transfer, err := parseEthTransferOut(ethTx, txIn.Chain, p.worldState)
-				if err != nil {
-					log.Error("faield to parse parseEthTransferOut, err = ", parseEthTransferOut)
-					continue
-				}
-				transfer.txIn = txIn
-
-				transferOuts = append(transferOuts, transfer)
-			}
-		}
-
-		// Cardano chain
-		if libchain.IsCardanoChain(txIn.Chain) {
-			// Check to see the new block includes our last utxo. If it does, we can process new
-			// transactions. Otherwise, keep waiting.
-			if txInRequest.HasNewCarnadoBlock {
-				transfer, err := p.parseCardanoTxIn(ctx, txIn)
-				if err != nil {
-					log.Error("Failed to parse cardano transaction, err = ", err)
-					continue
-				}
-				transfer.txIn = txIn
-
-				transferOuts = append(transferOuts, transfer)
-			} else {
-				// The network has not observed a new cardano block yet. We have to wait till the last utxo
-				// is confirmed.
-				notProcessed = append(notProcessed, txIn)
-			}
-		}
-	}
-
-	// 2. Converts all transferOut request to TxOuts. Multiple transferOut requests can be batched
-	// into a TxOut message.
-	transferOutMsgs := p.processTransferOut(ctx, transferOuts)
-	outMsgs = append(outMsgs, transferOutMsgs...)
-
-	return outMsgs, nil
 }
 
 func (p *DefaultTxOutputProducer) parseCardanoTxIn(ctx sdk.Context, tx *types.TxIn) (*transferOutData, error) {
@@ -191,7 +121,7 @@ func (p *DefaultTxOutputProducer) parseCardanoTxIn(ctx sdk.Context, tx *types.Tx
 	// }, nil
 }
 
-func (p *DefaultTxOutputProducer) processTransferOut(ctx sdk.Context, transfers []*transferOutData) []*types.TxOutWithSigner {
+func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, transfers []*transferOutData) ([]*types.TxOutWithSigner, []*transferOutData) {
 	outMsgs := make([]*types.TxOutWithSigner, 0)
 
 	params := p.keeper.GetParams(ctx)
@@ -199,6 +129,7 @@ func (p *DefaultTxOutputProducer) processTransferOut(ctx sdk.Context, transfers 
 	// Categories txs by their destination chains.
 	transfersByChains := p.categorizeTransfer(transfers)
 	for _, transfersInOneChain := range transfersByChains {
+		// TODO: Don't use fixed batch size. Let the batch size dependent on the current data on-chain.
 		dstChain := transfersInOneChain[0].destChain
 		batchSize := params.GetMaxTransferOutBatch(dstChain)
 		batches := splitTransfers(transfersInOneChain, batchSize)
@@ -213,6 +144,29 @@ func (p *DefaultTxOutputProducer) processTransferOut(ctx sdk.Context, transfers 
 			outMsgs = append(outMsgs, msgs...)
 		}
 	}
+
+	// 		// Cardano chain
+	// 		if libchain.IsCardanoChain(txIn.Chain) {
+	// 			// Check to see the new block includes our last utxo. If it does, we can process new
+	// 			// transactions. Otherwise, keep waiting.
+	// 			if txInRequest.HasNewCarnadoBlock {
+	// 				transfer, err := p.parseCardanoTxIn(ctx, txIn)
+	// 				if err != nil {
+	// 					log.Error("Failed to parse cardano transaction, err = ", err)
+	// 					continue
+	// 				}
+	// 				transfer.txIn = txIn
+
+	// 				transferOuts = append(transferOuts, transfer)
+	// 			} else {
+	// 				// The network has not observed a new cardano block yet. We have to wait till the last utxo
+	// 				// is confirmed.
+	// 				notProcessed = append(notProcessed, txIn)
+	// 			}
+	// 		}
+	// 	}
+
+	return outMsgs, nil
 
 	// for _, transfer := range transfers {
 	// 	var bz []byte
@@ -270,7 +224,7 @@ func (p *DefaultTxOutputProducer) processTransferOut(ctx sdk.Context, transfers 
 	// 	}
 	// }
 
-	return outMsgs
+	// return outMsgs
 }
 
 func splitTransfers(transfers []*transferOutData, batchSize int) [][]*transferOutData {
@@ -318,6 +272,8 @@ func (p *DefaultTxOutputProducer) categorizeTransfer(transfers []*transferOutDat
 }
 
 func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context, batches [][]*transferOutData) []*types.TxOutWithSigner {
+	fmt.Println("AAAAA processEthBatches")
+
 	dstChain := batches[0][0].destChain
 	blockHeight := batches[0][0].blockHeight
 	outMsgs := make([]*types.TxOutWithSigner, 0)
@@ -328,14 +284,23 @@ func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context, batches [][
 		amounts := make([]*big.Int, len(batch))
 
 		for k, transfer := range batch {
+			fmt.Println("transfer = ", *transfer)
 			tokens[k] = transfer.token
 			recipients[k] = ecommon.HexToAddress(transfer.recipient)
 			amounts[k] = transfer.amount
 		}
 
+		fmt.Println("len(tokens) = ", len(tokens), len(recipients), len(amounts))
+
 		responseTx, err := p.buildERC20TransferIn(ctx, tokens, recipients, amounts, dstChain)
 		if err != nil {
 			log.Error("Failed to build erc20 transfer in, err = ", err)
+			continue
+		}
+
+		bz, err := responseTx.EthTx.MarshalBinary()
+		if err != nil {
+			log.Error("processEthBatches: Failed to unmarshal eth tx, err = ", err)
 			continue
 		}
 
@@ -346,7 +311,7 @@ func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context, batches [][
 			"",
 			"",
 			dstChain,
-			responseTx.EthTx.Hash().String(),
+			utils.KeccakHash32Bytes(bz),
 			responseTx.RawBytes,
 			"",
 		)

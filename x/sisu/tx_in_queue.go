@@ -1,6 +1,8 @@
 package sisu
 
 import (
+	"fmt"
+	"math/big"
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -21,7 +23,7 @@ type TxInRequest struct {
 // output.
 type TxInQueue interface {
 	Start()
-	AddTxIn(height int64, txIn *types.TxIn)
+	AddTxIn(ctx sdk.Context, txIn *types.TxsIn)
 	ProcessTxIns(request TxInRequest)
 }
 
@@ -34,7 +36,7 @@ type defaultTxInQueue struct {
 	// queues stores list of TxIn by block height. We have to classify all incoming txs by their block
 	// height so that all nodes will process the same list. If we have only single queue for all
 	// TxIns, it's possible for different nodes to process different TxIn queues.
-	queues     map[int64][]*types.TxIn
+	queues     map[int64][]*transferOutData
 	newContext chan TxInRequest
 	lock       *sync.RWMutex
 }
@@ -52,7 +54,7 @@ func NewTxInQueue(
 		txSubmit:         txSubmit,
 		newContext:       make(chan TxInRequest, 5),
 		lock:             &sync.RWMutex{},
-		queues:           make(map[int64][]*types.TxIn),
+		queues:           make(map[int64][]*transferOutData),
 	}
 }
 
@@ -62,15 +64,47 @@ func (q *defaultTxInQueue) Start() {
 	log.Info("TxInQueue started")
 }
 
-func (q *defaultTxInQueue) AddTxIn(height int64, txIn *types.TxIn) {
+func (q *defaultTxInQueue) AddTxIn(ctx sdk.Context, txsInput *types.TxsIn) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
+	fmt.Println("AAAA 00000 0000000")
+
+	height := ctx.BlockHeight()
+
 	if q.queues[height] == nil {
-		q.queues[height] = make([]*types.TxIn, 0, 10)
+		q.queues[height] = make([]*transferOutData, 0, len(txsInput.Requests))
 	}
 
-	q.queues[height] = append(q.queues[height], txIn)
+	fmt.Println("AAAA 00000 1111111")
+
+	fmt.Println("AAAA 00000")
+
+	for _, request := range txsInput.Requests {
+		// Get token from keeper.
+		tokens := q.keeper.GetTokens(ctx, []string{request.Token})
+		token := tokens[request.Token]
+		if token == nil {
+			log.Warn("AddTxIn: cannot find token ", request.Token)
+			continue
+		}
+
+		amount, ok := new(big.Int).SetString(request.Amount, 10)
+		if !ok {
+			log.Error("Cannot set string for big integer")
+			continue
+		}
+
+		q.queues[height] = append(q.queues[height], &transferOutData{
+			blockHeight: txsInput.Height,
+			destChain:   request.ToChain,
+			recipient:   request.Recipient,
+			token:       token,
+			amount:      amount,
+		})
+	}
+
+	fmt.Println("AAAA 11111")
 }
 
 func (q *defaultTxInQueue) ProcessTxIns(request TxInRequest) {
@@ -100,7 +134,7 @@ func (q *defaultTxInQueue) processTxIns(request TxInRequest) {
 
 	// Creates and broadcast TxOuts. This has to be deterministic based on all the data that the
 	// processor has.
-	txOutWithSigners, notProcessed := q.txOutputProducer.GetTxOuts(request, queue)
+	txOutWithSigners, notProcessed := q.txOutputProducer.GetTxOuts(ctx, queue)
 
 	if len(notProcessed) > 0 {
 		// Add the not processed txs back to the queue to be processed in the next block
