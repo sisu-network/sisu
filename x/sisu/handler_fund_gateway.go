@@ -10,6 +10,7 @@ import (
 	ecommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -65,7 +66,7 @@ func (h *HandlerFundGateway) doContractDeployment(ctx sdk.Context, data *types.F
 				data.Chain,
 				data.TxHash,
 				data.Chain,
-				outTx.Hash().String(),
+				utils.KeccakHash32Bytes(bz),
 				bz,
 				contracts[i].Hash,
 			)

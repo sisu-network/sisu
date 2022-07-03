@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	chainstypes "github.com/sisu-network/deyes/chains/types"
 	etypes "github.com/sisu-network/deyes/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	dhtypes "github.com/sisu-network/dheart/types"
@@ -378,13 +379,14 @@ func (a *ApiHandler) processETHSigningResult(ctx sdk.Context, result *dhtypes.Ke
 
 	// // TODO: Broadcast the keysign result that includes this TxOutSig.
 	// // Save this to TxOutSig
+	fmt.Println("signMsg.OutHash = ", signMsg.OutHash)
 	a.privateDb.SaveTxOutSig(&types.TxOutSig{
 		Chain:       signMsg.OutChain,
-		HashWithSig: signedTx.Hash().String(),
+		HashWithSig: utils.KeccakHash32Bytes(bz),
 		HashNoSig:   signMsg.OutHash,
 	})
 
-	log.Info("signedTx hash = ", signedTx.Hash().String())
+	log.Info("signedTx hash = ", utils.KeccakHash32Bytes(bz))
 
 	// If this is a contract deployment transaction, update the contract table with the hash of the
 	// deployment tx bytes.
@@ -568,19 +570,63 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 	}
 
 	if libchain.IsCardanoChain(chain) {
+		// TODO: Complete this.
 	}
 
 	return nil
 }
 
-func (a *ApiHandler) ConfirmTx(chain string, bz []byte) {
-	// TODO: Confirm or report failure for transaction here.
+func (a *ApiHandler) ConfirmTx(txTrack *chainstypes.TrackUpdate) {
+	ctx := a.globalData.GetReadOnlyContext()
+	hash := utils.KeccakHash32Bytes(txTrack.Bytes)
 
-	// if !tx.Success {
-	// 	// TODO: Have a mechanism to handle failed transaction.
-	// 	a.txTracker.OnTxFailed(txs.Chain, tx.Hash, types.TxStatusReverted)
-	// 	continue
-	// }
+	// The txOutSig is in private db while txOut should come from common db.
+	txOutSig := a.privateDb.GetTxOutSig(txTrack.Chain, utils.KeccakHash32Bytes(txTrack.Bytes))
+	if txOutSig == nil {
+		// TODO: Add this to pending tx to confirm.
+		log.Verbose("cannot find txOutSig with full signature hash: ", hash)
+		return
+	}
+
+	txOut := a.keeper.GetTxOut(ctx, txTrack.Chain, txOutSig.HashNoSig)
+	if txOut == nil {
+		log.Verbose("cannot find txOut with hash (with no sig): ", txOutSig.HashNoSig)
+		return
+	}
+	log.Info("confirming tx: chain, hash, type = ", txTrack.Chain, " ", hash, " ", txOut.TxType)
+	a.txTracker.RemoveTransaction(txTrack.Chain, txOut.OutHash)
+
+	// Check if this is a contract deployment on ETH Chain.
+	if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT && libchain.IsETHBasedChain(txTrack.Chain) {
+		ethTx := &ethTypes.Transaction{}
+		err := ethTx.UnmarshalBinary(txTrack.Bytes)
+		if err != nil {
+			log.Error("cannot unmarshal eth transaction, err = ", err)
+			return
+		}
+
+		sender, err := utils.GetEthSender(ethTx)
+		if err != nil {
+			log.Error("cannot get eth sender, err = ", err)
+			return
+		}
+
+		contractAddress := ethcrypto.CreateAddress(sender, ethTx.Nonce()).String()
+		log.Info("contractAddress = ", contractAddress)
+
+		txConfirm := &types.TxOutContractConfirm{
+			OutChain:        txOut.OutChain,
+			OutHash:         txOut.OutHash,
+			BlockHeight:     txTrack.BlockHeight,
+			ContractAddress: contractAddress,
+		}
+
+		msg := types.NewTxOutContractConfirmWithSigner(
+			a.appKeys.GetSignerAddress().String(),
+			txConfirm,
+		)
+		a.txSubmit.SubmitMessageAsync(msg)
+	}
 }
 
 // confirmTx confirms that a tx has been included in a block on the blockchain.

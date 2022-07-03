@@ -3,6 +3,8 @@ package sisu
 import (
 	"sync"
 
+	chainstypes "github.com/sisu-network/deyes/chains/types"
+
 	etypes "github.com/sisu-network/deyes/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	htypes "github.com/sisu-network/dheart/types"
@@ -19,6 +21,7 @@ type AppLogicListener interface {
 	OnKeysignResult(result *htypes.KeysignResult)
 	OnTxDeploymentResult(result *etypes.DispatchedTxResult)
 	OnUpdateTokenPrice(tokenPrices []*etypes.TokenPrice)
+	ConfirmTx(txTrack *chainstypes.TrackUpdate)
 }
 
 // TODO: Rename this to API endPoint.
@@ -123,5 +126,12 @@ func (a *ApiEndPoint) UpdateTokenPrices(prices []*etypes.TokenPrice) {
 	listener := a.getAppLogicListener()
 	if listener != nil {
 		go listener.OnUpdateTokenPrice(prices)
+	}
+}
+
+func (a *ApiEndPoint) ConfirmTx(txTrack *chainstypes.TrackUpdate) {
+	listener := a.getAppLogicListener()
+	if listener != nil {
+		go listener.ConfirmTx(txTrack)
 	}
 }
