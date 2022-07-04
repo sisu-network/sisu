@@ -119,6 +119,7 @@ func TestKeeper_BlockHeights(t *testing.T) {
 
 	blockHeightsMap := keeper.GetBlockHeightsForChain(ctx, "ganache1", []string{"ganache1", "ganache2"})
 	_, blockHeights := types.ConvertBlockHeightsMapToArray(blockHeightsMap)
+
 	sort.Slice(blockHeights, func(i, j int) bool {
 		return strings.Compare(blockHeights[i].Chain, blockHeights[j].Chain) < 0
 	})

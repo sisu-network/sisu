@@ -269,7 +269,7 @@ func New(
 
 	valsMgr := tss.NewValidatorManager(app.k)
 	partyManager := tss.NewPartyManager(app.globalData)
-	txOutProducer := tss.NewTxOutputProducer(worldState, app.appKeys, app.k, valsMgr, cfg.Tss, cfg.Cardano, cardanoNode, txTracker)
+	txOutProducer := tss.NewTxOutputProducer(worldState, app.appKeys, app.k, valsMgr, cfg.Tss, cfg.Cardano, privateDb, cardanoNode, txTracker)
 	txInQueue := sisu.NewTxInQueue(app.k, txOutProducer, app.globalData, app.txSubmitter)
 	txInQueue.Start()
 	txOutQueue := sisu.NewTxOutQueue(app.k, app.globalData, partyManager, dheartClient, txTracker)
@@ -278,8 +278,8 @@ func New(
 		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
 		app.appKeys, txOutProducer, worldState, txTracker, app.k, valsMgr, txInQueue, txOutQueue)
 
-	tssProcessor := tss.NewApiHandler(privateDb, mc)
-	app.apiHandler.SetAppLogicListener(tssProcessor)
+	apiHandler := tss.NewApiHandler(privateDb, mc)
+	app.apiHandler.SetAppLogicListener(apiHandler)
 
 	sisuHandler := tss.NewSisuHandler(mc)
 	externalHandler := rest.NewExternalHandler(worldState)
@@ -298,10 +298,10 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
 
-		tss.NewAppModule(appCodec, sisuHandler, app.k, tssProcessor, valsMgr, mc),
+		tss.NewAppModule(appCodec, sisuHandler, app.k, apiHandler, valsMgr, mc),
 	}
 
-	app.tssProcessor = tssProcessor
+	app.tssProcessor = apiHandler
 
 	app.mm = module.NewManager(modules...)
 

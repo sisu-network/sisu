@@ -162,11 +162,10 @@ func (q *defaultTxInQueue) processTxIns(request TxInRequest) {
 				q.keeper.UpdateContractsStatus(ctx, txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
 			}
 		}
-	}
 
-	log.Info("Broadcasting txout....")
-
-	for _, txOutWithSigner := range txOutWithSigners {
-		q.txSubmit.SubmitMessageAsync(txOutWithSigner)
+		log.Info("Broadcasting txout....")
+		for _, txOutWithSigner := range txOutWithSigners {
+			q.txSubmit.SubmitMessageAsync(txOutWithSigner)
+		}
 	}
 }

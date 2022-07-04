@@ -9,12 +9,14 @@ import (
 
 // BuildTx contructs a cardano transaction that sends from sender address to receive address.
 func BuildTx(node CardanoClient, sender, receiver cardano.Address,
-	amount *cardano.Value, metadata cardano.Metadata, maxBlock uint64) (*cardano.Tx, error) {
+	amount *cardano.Value, metadata cardano.Metadata, utxos []cardano.UTxO, maxBlock uint64) (*cardano.Tx, error) {
 	// Calculate if the account has enough balance
 	balance, err := node.Balance(sender)
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("balance = ", balance.MultiAsset.String())
 
 	if cmp := balance.Cmp(amount); cmp == -1 || cmp == 2 {
 		return nil, fmt.Errorf("Not enough balance, %v > %v", amount, balance)
@@ -36,27 +38,32 @@ func BuildTx(node CardanoClient, sender, receiver cardano.Address,
 
 	// Find utxos that cover the amount to transfer
 	pickedUtxos := []cardano.UTxO{}
-	utxos, err := node.UTxOs(sender, maxBlock)
-	log.Debug("all utxos: ")
-	for _, utxo := range utxos {
-		log.Debug("txHash = ", utxo.TxHash.String(), " coin amount = ", utxo.Amount.Coin)
-	}
+	// utxos, err := node.UTxOs(sender, maxBlock)
+	// log.Debug("all utxos: ")
+	// for _, utxo := range utxos {
+	// 	log.Debug("txHash = ", utxo.TxHash.String(), " coin amount = ", utxo.Amount.Coin)
+	// }
 	log.Debug("--------------------------")
 
 	// Pick at least <MinUTXO * 2> lovelace because we will produce at least 2 new utxos which contains multi-asset:
 	// 1. Transfer coin + multi-asset for user
 	// 2. Transfer remain coin + multi-asset for Cardano gateway (change address)
 	targetUtxoBalance := cardano.NewValueWithAssets(amount.Coin*2, amount.MultiAsset)
-	log.Debug("Target utxo balance = ", targetUtxoBalance.Coin, targetUtxoBalance.MultiAsset.String())
+	log.Debug("Target utxo balance = ", targetUtxoBalance.Coin, " ", targetUtxoBalance.MultiAsset.String())
 	pickedUtxosAmount := cardano.NewValue(0)
 	ok := false
 	for _, utxo := range utxos {
+		fmt.Println("utxo balance = ", utxo.Amount)
+
 		if pickedUtxosAmount.Cmp(targetUtxoBalance) == 1 {
 			ok = true
 			break
 		}
 		pickedUtxos = append(pickedUtxos, utxo)
 		pickedUtxosAmount = pickedUtxosAmount.Add(utxo.Amount)
+	}
+	if pickedUtxosAmount.Cmp(targetUtxoBalance) == 1 {
+		ok = true
 	}
 
 	if !ok {

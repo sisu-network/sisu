@@ -13,6 +13,10 @@ type Storage interface {
 	// TxOutSig
 	SaveTxOutSig(msg *types.TxOutSig)
 	GetTxOutSig(outChain, hashWithSig string) *types.TxOutSig
+
+	// Used Utxo
+	AddUtxo(chain, hash string, index int)
+	IsUtxoExisted(chain, hash string, index int) bool
 }
 
 type defaultStorage struct {
@@ -42,6 +46,7 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 
 	// prefixTxOutSig
 	prefixes[string(prefixTxOutSig)] = prefix.NewStore(parent, prefixTxOutSig)
+	prefixes[string(prefixUsedUtxo)] = prefix.NewStore(parent, prefixUsedUtxo)
 
 	return prefixes
 }
@@ -57,4 +62,15 @@ func (db *defaultStorage) GetTxOutSig(outChain, hashWithSig string) *types.TxOut
 func (db *defaultStorage) SaveTxOutSig(msg *types.TxOutSig) {
 	store := db.prefixes[string(prefixTxOutSig)]
 	saveTxOutSig(store, msg)
+}
+
+///// Utxo
+func (db *defaultStorage) AddUtxo(chain, hash string, index int) {
+	store := db.prefixes[string(prefixUsedUtxo)]
+	addUsedUtxo(store, chain, hash, index)
+}
+
+func (db *defaultStorage) IsUtxoExisted(chain, hash string, index int) bool {
+	store := db.prefixes[string(prefixUsedUtxo)]
+	return isUtxoExisted(store, chain, hash, index)
 }

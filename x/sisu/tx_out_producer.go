@@ -46,6 +46,7 @@ type DefaultTxOutputProducer struct {
 	tssConfig   config.TssConfig
 	txTracker   TxTracker
 	valsManager ValidatorManager
+	privateDb   keeper.Storage
 
 	// Only use for cardano chain
 	cardanoConfig        config.CardanoConfig
@@ -72,7 +73,8 @@ type transferInData struct {
 }
 
 func NewTxOutputProducer(worldState world.WorldState, appKeys common.AppKeys, keeper keeper.Keeper,
-	valsManager ValidatorManager, tssConfig config.TssConfig, cardanoConfig config.CardanoConfig, cardanoClient scardano.CardanoClient,
+	valsManager ValidatorManager, tssConfig config.TssConfig, cardanoConfig config.CardanoConfig,
+	privateDb keeper.Storage, cardanoClient scardano.CardanoClient,
 	txTracker TxTracker) TxOutputProducer {
 	return &DefaultTxOutputProducer{
 		keeper:         keeper,
@@ -80,6 +82,7 @@ func NewTxOutputProducer(worldState world.WorldState, appKeys common.AppKeys, ke
 		appKeys:        appKeys,
 		valsManager:    valsManager,
 		tssConfig:      tssConfig,
+		privateDb:      privateDb,
 		txTracker:      txTracker,
 		cardanoNetwork: cardanoConfig.GetCardanoNetwork(),
 		cardanoClient:  cardanoClient,
@@ -145,86 +148,7 @@ func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, transfers []*transf
 		}
 	}
 
-	// 		// Cardano chain
-	// 		if libchain.IsCardanoChain(txIn.Chain) {
-	// 			// Check to see the new block includes our last utxo. If it does, we can process new
-	// 			// transactions. Otherwise, keep waiting.
-	// 			if txInRequest.HasNewCarnadoBlock {
-	// 				transfer, err := p.parseCardanoTxIn(ctx, txIn)
-	// 				if err != nil {
-	// 					log.Error("Failed to parse cardano transaction, err = ", err)
-	// 					continue
-	// 				}
-	// 				transfer.txIn = txIn
-
-	// 				transferOuts = append(transferOuts, transfer)
-	// 			} else {
-	// 				// The network has not observed a new cardano block yet. We have to wait till the last utxo
-	// 				// is confirmed.
-	// 				notProcessed = append(notProcessed, txIn)
-	// 			}
-	// 		}
-	// 	}
-
 	return outMsgs, nil
-
-	// for _, transfer := range transfers {
-	// 	var bz []byte
-	// 	var txHash string
-
-	// 	// Cardano chain
-	// 	if libchain.IsCardanoChain(transfer.destChain) {
-	// 		multiAssetAmt := utils.WeiToLovelace(transfer.amount)
-	// 		log.Verbosef("data.amount = %v, multiAssetAmt = %v", transfer.amount, multiAssetAmt)
-
-	// 		// In real, this transaction transfers at least <1 ADA + additional tx fee>
-	// 		cardanoTx, err := p.getCardanoTx(ctx, transfer, multiAssetAmt.Uint64())
-	// 		if err != nil {
-	// 			log.Error("Failed to get cardano tx, err  = ", err)
-	// 			continue
-	// 		}
-
-	// 		cardanoTxHash, err := cardanoTx.Hash()
-	// 		if err != nil {
-	// 			log.Error("Failed to get cardano hash, err = ", err)
-	// 			continue
-	// 		}
-
-	// 		bz, err = cardanoTx.MarshalCBOR()
-	// 		if err != nil {
-	// 			log.Error("Faield to marshalcbor cardano tx, err = ", err)
-	// 			continue
-	// 		}
-
-	// 		txHash = cardanoTxHash.String()
-	// 	}
-
-	// 	// Add to the output array
-	// 	if bz != nil {
-	// 		outMsg := types.NewMsgTxOutWithSigner(
-	// 			p.appKeys.GetSignerAddress().String(),
-	// 			types.TxOutType_TRANSFER_OUT,
-	// 			transfer.blockHeight,
-	// 			transfer.destChain,
-	// 			"",
-	// 			transfer.destChain,
-	// 			txHash,
-	// 			bz,
-	// 			"",
-	// 		)
-
-	// 		// TODO: Make this track multiple transactions.
-	// 		// // Track the txout
-	// 		// p.txTracker.AddTransaction(
-	// 		// 	outMsg.Data,
-	// 		// 	transfer.txIn,
-	// 		// )
-
-	// 		outMsgs = append(outMsgs, outMsg)
-	// 	}
-	// }
-
-	// return outMsgs
 }
 
 func splitTransfers(transfers []*transferOutData, batchSize int) [][]*transferOutData {

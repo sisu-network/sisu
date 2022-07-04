@@ -99,6 +99,9 @@ Example:
 				supportedChains["cardano-testnet"] = config.TssChainConfig{
 					Id: "cardano-testnet",
 				}
+				chains = append(chains, &types.Chain{
+					Id: "cardano-testnet",
+				})
 			}
 
 			nodeConfig := config.Config{

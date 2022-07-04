@@ -66,6 +66,8 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 			return NewHandlerContractLiquidityWithdrawFund(mc).DeliverMsg(ctx, msg)
 		case *types.FundGatewayMsg:
 			return NewHandlerFundGateway(mc).DeliverMsg(ctx, msg)
+		case *types.BlockHeightMsg:
+			return NewHandlerBlockHeight(mc.Keeper()).DeliverMsg(ctx, msg)
 
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)

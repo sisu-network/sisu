@@ -1,7 +1,9 @@
 package sisu
 
 import (
+	"encoding/json"
 	"fmt"
+	"math/big"
 	"sort"
 
 	"github.com/echovl/cardano-go"
@@ -495,10 +497,9 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 
 	// Create TxIn messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
-		transfer := a.parseTransferRequest(ctx, txs.Chain, tx)
-		fmt.Println("AAAAA transfer = ", *transfer)
-		if transfer != nil {
-			blockRequests.Requests = append(blockRequests.Requests, transfer)
+		txIns := a.parseTransferRequest(ctx, txs.Chain, tx)
+		if txIns != nil {
+			blockRequests.Requests = append(blockRequests.Requests, txIns...)
 		} else {
 			// Check if this is a transaciton that fund ETH gateway
 			if libchain.IsETHBasedChain(txs.Chain) {
@@ -529,10 +530,21 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 		a.txSubmit.SubmitMessageAsync(msg)
 	}
 
+	if libchain.IsCardanoChain(txs.Chain) {
+		fmt.Println("Updating block height for cardano")
+		// Broadcast blockheight update
+		msg := types.NewBlockHeightMsg(a.appKeys.GetSignerAddress().String(), &types.BlockHeight{
+			Chain:  txs.Chain,
+			Height: txs.Block,
+			Hash:   txs.Hash,
+		})
+		a.txSubmit.SubmitMessageAsync(msg)
+	}
+
 	return nil
 }
 
-func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eyesTypes.Tx) *types.TxIn {
+func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eyesTypes.Tx) []*types.TxIn {
 	if libchain.IsETHBasedChain(chain) {
 		erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
 		gwAbi := erc20gatewayContract.Abi
@@ -549,11 +561,50 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 			return nil
 		}
 
-		return transfer
+		return []*types.TxIn{transfer}
 	}
 
 	if libchain.IsCardanoChain(chain) {
+		ret := make([]*types.TxIn, 0)
+
 		// TODO: Complete this.
+		cardanoTx := &etypes.CardanoTransactionUtxo{}
+		err := json.Unmarshal(tx.Serialized, cardanoTx)
+		if err != nil {
+			return nil
+		}
+
+		if cardanoTx.Metadata != nil {
+			// Convert from ADA unit (10^6) to our standard unit (10^18)
+			for _, amount := range cardanoTx.Amount {
+				quantity, ok := new(big.Int).SetString(amount.Quantity, 10)
+				if !ok {
+					log.Error("Failed to get amount quantity in cardano tx")
+					continue
+				}
+				quantity = utils.LovelaceToWei(quantity)
+
+				// Remove the word wrap
+				token := amount.Unit
+				if token != "lovelace" {
+					if token[:5] != "WRAP_" {
+						log.Error("Invalid ADA token name. It should start with WRAP_, token = ", token)
+						continue
+					}
+
+					token = token[5:]
+				} else {
+					token = "ADA"
+				}
+
+				ret = append(ret, &types.TxIn{
+					ToChain:   cardanoTx.Metadata.Chain,
+					Token:     token,
+					Recipient: cardanoTx.Metadata.Recipient,
+					Amount:    quantity.String(),
+				})
+			}
+		}
 	}
 
 	return nil

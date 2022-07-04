@@ -31,6 +31,7 @@ var (
 	prefixLiquidity              = []byte{0x12}
 	prefixParams                 = []byte{0x13}
 	prefixBlockHeight            = []byte{0x14}
+	prefixUsedUtxo               = []byte{0x15}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -904,6 +905,23 @@ func getBlockHeightsForChain(store cstypes.KVStore, chain string, signers []stri
 	}
 
 	return ret
+}
+
+///// Used utxo
+
+func getUsedUtxoKey(chain, hash string, index int) string {
+	return fmt.Sprintf("%s__%s__%d", chain, hash, index)
+}
+
+func addUsedUtxo(store cstypes.KVStore, chain, hash string, index int) {
+	key := getUsedUtxoKey(chain, hash, index)
+	store.Set([]byte(key), []byte{1})
+}
+
+func isUtxoExisted(store cstypes.KVStore, chain, hash string, index int) bool {
+	key := getUsedUtxoKey(chain, hash, index)
+	fmt.Println("store = ", store)
+	return store.Get([]byte(key)) != nil
 }
 
 ///// Debug functions
