@@ -29,10 +29,12 @@ func BuildTx(node CardanoClient, sender, receiver cardano.Address,
 
 	builder := cardano.NewTxBuilderV2(pparams)
 
-	txOut := &cardano.TxOutput{Address: receiver, Amount: amount}
 	// For multi-asset utxo, required minimum <1 ADA + additional fee>
 	// Details: https://github.com/input-output-hk/cardano-ledger/blob/master/doc/explanations/min-utxo-alonzo.rst#example-min-ada-value-calculations-and-current-constants
-	minUTXO := builder.MinCoinsForTxOut(txOut)
+	// txOut := &cardano.TxOutput{Address: receiver, Amount: amount}
+	// minUTXO := builder.MinCoinsForTxOut(txOut)
+	minUTXO := cardano.Coin(1_600_000)
+
 	amount.Coin = minUTXO
 	log.Debug("amount.Coin = ", amount.Coin)
 
