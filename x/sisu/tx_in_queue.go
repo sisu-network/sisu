@@ -14,9 +14,6 @@ import (
 
 type TxInRequest struct {
 	Ctx sdk.Context
-
-	HasNewCarnadoBlock bool
-	CarnadoBlockHeight int64
 }
 
 // TxInQueue is an interface that processes incoming transactions, produces corresponding transaction
@@ -33,10 +30,8 @@ type defaultTxInQueue struct {
 	globalData       common.GlobalData
 	txSubmit         common.TxSubmit
 
-	// queues stores list of TxIn by block height. We have to classify all incoming txs by their block
-	// height so that all nodes will process the same list. If we have only single queue for all
-	// TxIns, it's possible for different nodes to process different TxIn queues.
-	queues     map[int64][]*transferOutData
+	// queues stores list of TxIn by chain.
+	queues     map[string][]*transferOutData
 	newContext chan TxInRequest
 	lock       *sync.RWMutex
 }
@@ -54,7 +49,7 @@ func NewTxInQueue(
 		txSubmit:         txSubmit,
 		newContext:       make(chan TxInRequest, 5),
 		lock:             &sync.RWMutex{},
-		queues:           make(map[int64][]*transferOutData),
+		queues:           make(map[string][]*transferOutData),
 	}
 }
 
@@ -70,10 +65,8 @@ func (q *defaultTxInQueue) AddTxIn(ctx sdk.Context, txsInput *types.TxsIn) {
 
 	fmt.Println("AAAA 00000 0000000")
 
-	height := ctx.BlockHeight()
-
-	if q.queues[height] == nil {
-		q.queues[height] = make([]*transferOutData, 0, len(txsInput.Requests))
+	if q.queues[txsInput.Chain] == nil {
+		q.queues[txsInput.Chain] = make([]*transferOutData, 0, len(txsInput.Requests))
 	}
 
 	fmt.Println("AAAA 00000 1111111")
@@ -95,7 +88,7 @@ func (q *defaultTxInQueue) AddTxIn(ctx sdk.Context, txsInput *types.TxsIn) {
 			continue
 		}
 
-		q.queues[height] = append(q.queues[height], &transferOutData{
+		q.queues[txsInput.Chain] = append(q.queues[txsInput.Chain], &transferOutData{
 			blockHeight: txsInput.Height,
 			destChain:   request.ToChain,
 			recipient:   request.Recipient,
@@ -103,8 +96,6 @@ func (q *defaultTxInQueue) AddTxIn(ctx sdk.Context, txsInput *types.TxsIn) {
 			amount:      amount,
 		})
 	}
-
-	fmt.Println("AAAA 11111")
 }
 
 func (q *defaultTxInQueue) ProcessTxIns(request TxInRequest) {
@@ -124,8 +115,6 @@ func (q *defaultTxInQueue) processTxIns(request TxInRequest) {
 
 	// Read the queue
 	q.lock.RLock()
-	queue := q.queues[ctx.BlockHeight()]
-	delete(q.queues, ctx.BlockHeight())
 	q.lock.RUnlock()
 
 	if len(queue) == 0 {
@@ -168,4 +157,30 @@ func (q *defaultTxInQueue) processTxIns(request TxInRequest) {
 			q.txSubmit.SubmitMessageAsync(txOutWithSigner)
 		}
 	}
+}
+
+// categorizeTransfer divides all transfer request by their destination chains.
+func (q *defaultTxInQueue) categorizeTransfer(transfers []*transferOutData) [][]*transferOutData {
+	m := make(map[string][]*transferOutData)
+	// We need to use an ordered array because map iteration is not deterministic and can result in
+	// inconsistent data between nodes.
+	orders := make([]string, 0)
+
+	for _, transfer := range transfers {
+		if m[transfer.destChain] == nil {
+			m[transfer.destChain] = make([]*transferOutData, 0)
+			orders = append(orders, transfer.destChain)
+		}
+
+		arr := m[transfer.destChain]
+		arr = append(arr, transfer)
+		m[transfer.destChain] = arr
+	}
+
+	ret := make([][]*transferOutData, 0)
+	for _, chain := range orders {
+		ret = append(ret, m[chain])
+	}
+
+	return ret
 }

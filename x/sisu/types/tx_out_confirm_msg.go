@@ -5,27 +5,27 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-var _ sdk.Msg = &TxOutContractConfirmWithSigner{}
+var _ sdk.Msg = &TxOutConfirmMsg{}
 
-func NewTxOutContractConfirmWithSigner(signer string, data *TxOutContractConfirm) *TxOutContractConfirmWithSigner {
-	return &TxOutContractConfirmWithSigner{
+func NewTxOutConfirmMsg(signer string, data *TxOutConfirm) *TxOutConfirmMsg {
+	return &TxOutConfirmMsg{
 		Signer: signer,
 		Data:   data,
 	}
 }
 
 // Route ...
-func (msg *TxOutContractConfirmWithSigner) Route() string {
+func (msg *TxOutConfirmMsg) Route() string {
 	return RouterKey
 }
 
 // Type ...
-func (msg *TxOutContractConfirmWithSigner) Type() string {
-	return MsgTypeContractConfirmWithSigner
+func (msg *TxOutConfirmMsg) Type() string {
+	return MsgTypeTxOutConfirmMsg
 }
 
 // GetSigners ...
-func (msg *TxOutContractConfirmWithSigner) GetSigners() []sdk.AccAddress {
+func (msg *TxOutConfirmMsg) GetSigners() []sdk.AccAddress {
 	author, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		panic(err)
@@ -33,18 +33,18 @@ func (msg *TxOutContractConfirmWithSigner) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{author}
 }
 
-func (msg *TxOutContractConfirmWithSigner) GetMsgs() []sdk.Msg {
+func (msg *TxOutConfirmMsg) GetMsgs() []sdk.Msg {
 	return []sdk.Msg{msg}
 }
 
 // GetSignBytes ...
-func (msg *TxOutContractConfirmWithSigner) GetSignBytes() []byte {
+func (msg *TxOutConfirmMsg) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
 // ValidateBasic ...
-func (msg *TxOutContractConfirmWithSigner) ValidateBasic() error {
+func (msg *TxOutConfirmMsg) ValidateBasic() error {
 	_, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid creator address (%s)", err)

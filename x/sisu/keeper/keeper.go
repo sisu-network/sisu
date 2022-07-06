@@ -57,7 +57,7 @@ type Keeper interface {
 	GetTxOutSig(ctx sdk.Context, outChain, hashWithSig string) *types.TxOutSig
 
 	// TxOutConfirm
-	SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutContractConfirm)
+	SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutConfirm)
 	IsTxOutConfirmExisted(ctx sdk.Context, outChain, hash string) bool
 
 	// Gas Price Record
@@ -91,10 +91,9 @@ type Keeper interface {
 	SaveParams(ctx sdk.Context, params *types.Params)
 	GetParams(ctx sdk.Context) *types.Params
 
-	// BlockHeights
-	SaveBlockHeights(ctx sdk.Context, signer string, record *types.BlockHeightRecord)
-	GetBlockHeightRecord(ctx sdk.Context, signer string) *types.BlockHeightRecord
-	GetBlockHeightsForChain(ctx sdk.Context, chain string, signers []string) map[string]*types.BlockHeight
+	// Gateway checkpoint
+	AddGatewayCheckPoint(ctx sdk.Context, checkPoint *types.GatewayCheckPoint)
+	GetGatewayCheckPoint(ctx sdk.Context, chain string) *types.GatewayCheckPoint
 }
 
 type DefaultKeeper struct {
@@ -269,7 +268,7 @@ func (k *DefaultKeeper) SaveTxOutSig(ctx sdk.Context, msg *types.TxOutSig) {
 }
 
 ///// TxOutConfirm
-func (k *DefaultKeeper) SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutContractConfirm) {
+func (k *DefaultKeeper) SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutConfirm) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutContractConfirm)
 	saveTxOutConfirm(store, msg)
 }
@@ -377,20 +376,15 @@ func (k *DefaultKeeper) GetParams(ctx sdk.Context) *types.Params {
 	return getParams(store)
 }
 
-// BlockHeights
-func (k *DefaultKeeper) SaveBlockHeights(ctx sdk.Context, signer string, record *types.BlockHeightRecord) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixBlockHeight)
-	saveBlockHeightRecord(store, signer, record)
+///// Gateway Checkpoint
+func (k *DefaultKeeper) AddGatewayCheckPoint(ctx sdk.Context, checkPoint *types.GatewayCheckPoint) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGatewayCheckPoint)
+	addCheckPoint(store, checkPoint)
 }
 
-func (k *DefaultKeeper) GetBlockHeightRecord(ctx sdk.Context, signer string) *types.BlockHeightRecord {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixBlockHeight)
-	return getBlockHeightRecord(store, signer)
-}
-
-func (k *DefaultKeeper) GetBlockHeightsForChain(ctx sdk.Context, chain string, signers []string) map[string]*types.BlockHeight {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixBlockHeight)
-	return getBlockHeightsForChain(store, chain, signers)
+func (k *DefaultKeeper) GetGatewayCheckPoint(ctx sdk.Context, chain string) *types.GatewayCheckPoint {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGatewayCheckPoint)
+	return getCheckPoint(store, chain)
 }
 
 ///// Debug

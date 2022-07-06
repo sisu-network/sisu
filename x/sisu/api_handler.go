@@ -634,8 +634,13 @@ func (a *ApiHandler) ConfirmTx(txTrack *chainstypes.TrackUpdate) {
 	log.Info("confirming tx: chain, hash, type = ", txTrack.Chain, " ", hash, " ", txOut.TxType)
 	a.txTracker.RemoveTransaction(txTrack.Chain, txOut.OutHash)
 
-	// Check if this is a contract deployment on ETH Chain.
-	if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT && libchain.IsETHBasedChain(txTrack.Chain) {
+	txConfirm := &types.TxOutConfirm{
+		OutChain:    txOut.OutChain,
+		OutHash:     txOut.OutHash,
+		BlockHeight: txTrack.BlockHeight,
+	}
+
+	if libchain.IsETHBasedChain(txTrack.Chain) {
 		ethTx := &ethTypes.Transaction{}
 		err := ethTx.UnmarshalBinary(txTrack.Bytes)
 		if err != nil {
@@ -643,28 +648,26 @@ func (a *ApiHandler) ConfirmTx(txTrack *chainstypes.TrackUpdate) {
 			return
 		}
 
-		sender, err := utils.GetEthSender(ethTx)
-		if err != nil {
-			log.Error("cannot get eth sender, err = ", err)
-			return
+		txConfirm.Nonce = int64(ethTx.Nonce())
+		if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
+			sender, err := utils.GetEthSender(ethTx)
+			if err != nil {
+				log.Error("cannot get eth sender, err = ", err)
+				return
+			}
+
+			contractAddress := ethcrypto.CreateAddress(sender, ethTx.Nonce()).String()
+			log.Info("contractAddress = ", contractAddress)
+
+			txConfirm.ContractAddress = contractAddress
 		}
-
-		contractAddress := ethcrypto.CreateAddress(sender, ethTx.Nonce()).String()
-		log.Info("contractAddress = ", contractAddress)
-
-		txConfirm := &types.TxOutContractConfirm{
-			OutChain:        txOut.OutChain,
-			OutHash:         txOut.OutHash,
-			BlockHeight:     txTrack.BlockHeight,
-			ContractAddress: contractAddress,
-		}
-
-		msg := types.NewTxOutContractConfirmWithSigner(
-			a.appKeys.GetSignerAddress().String(),
-			txConfirm,
-		)
-		a.txSubmit.SubmitMessageAsync(msg)
 	}
+
+	msg := types.NewTxOutConfirmMsg(
+		a.appKeys.GetSignerAddress().String(),
+		txConfirm,
+	)
+	a.txSubmit.SubmitMessageAsync(msg)
 }
 
 // OnUpdateTokenPrice is called when there is a token price update from deyes. Post to the network

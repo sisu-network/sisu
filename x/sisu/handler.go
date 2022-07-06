@@ -46,8 +46,8 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 			return NewHandlerTxIn(mc).DeliverMsg(ctx, msg)
 		case *types.TxOutWithSigner:
 			return NewHandlerTxOut(mc).DeliverMsg(ctx, msg)
-		case *types.TxOutContractConfirmWithSigner:
-			return NewHandlerTxOutContractConfirmation(mc).DeliverMsg(ctx, msg)
+		case *types.TxOutConfirmMsg:
+			return NewHandlerTxOutConfirm(mc).DeliverMsg(ctx, msg)
 		case *types.KeysignResult:
 			return NewHandlerKeysignResult(mc).DeliverMsg(ctx, msg)
 		case *types.GasPriceMsg:

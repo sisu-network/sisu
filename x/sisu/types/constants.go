@@ -5,7 +5,7 @@ const (
 	MsgTypeKeygenResultWithSigner         = "KeygenResultWithSigner"
 	MsgTypeContractsWithSigner            = "ContractsWithSigner"
 	MsgTypeTxOutWithSigner                = "TxOutWithSigner"
-	MsgTypeContractConfirmWithSigner      = "ContractConfirmWithSigner"
+	MsgTypeTxOutConfirmMsg                = "TxOutConfirmMsg"
 	MsgTypeTxsInMsg                       = "TxsInMsg"
 	MsgTypeGasPriceWithSigner             = "GasPriceWithSigner"
 	MsgTypeUpdateTokenPrice               = "UpdateTokenPrice"

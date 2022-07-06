@@ -28,7 +28,6 @@ func NewHandlerTxIn(mc ManagerContainer) *HandlerTxIn {
 
 func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, signerMsg *types.TxsInMsg) (*sdk.Result, error) {
 	fmt.Println("AAAAAA DeliverMsg, data = ", *signerMsg.Data)
-
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
 		data, err := h.doTxIn(ctx, signerMsg)
 		h.keeper.ProcessTxRecord(ctx, hash)

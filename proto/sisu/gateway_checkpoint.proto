@@ -1,0 +1,11 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+// This meessage represents a data point where majority of nodes in Sisu network agrees to observe.
+message GatewayCheckPoint {
+  string chain = 1;
+  int64 blockHeight = 2;
+  int64 nonce = 3; // for eth only
+}

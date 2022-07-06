@@ -75,6 +75,9 @@ func (c *blockFrostClient) UTxOs(addr cardano.Address, maxBlock uint64) ([]carda
 		return utxos, err
 	}
 
+	fmt.Println("maxBlock = ", maxBlock)
+	fmt.Println("len(utxos) = ", len(utxos))
+
 	if maxBlock == MaxBlockHeight {
 		return utxos, nil
 	}
@@ -86,12 +89,15 @@ func (c *blockFrostClient) UTxOs(addr cardano.Address, maxBlock uint64) ([]carda
 	for _, utxo := range utxos {
 		tx, ok := cached[utxo.TxHash.String()]
 		if !ok {
-			tx, err = c.bfClient.Transaction(context.Background(), string(utxo.TxHash))
+			tx, err = c.bfClient.Transaction(context.Background(), utxo.TxHash.String())
 			if err != nil {
+				fmt.Println("EERRRRR")
 				continue
 			}
 			cached[utxo.TxHash.String()] = tx
 		}
+
+		fmt.Println("tx.BlockHeight = ", tx.BlockHeight, maxBlock)
 
 		if tx.BlockHeight > int(maxBlock) {
 			continue

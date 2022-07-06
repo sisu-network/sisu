@@ -64,7 +64,6 @@ func (q *defaultTxOutQueue) AddTxOut(txOut *types.TxOut) {
 }
 
 func (q *defaultTxOutQueue) ProcessTxOuts(ctx sdk.Context) {
-
 	q.newTaskCh <- ctx
 }
 

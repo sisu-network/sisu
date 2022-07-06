@@ -37,14 +37,15 @@ message TxOutSig {
   string hashNoSig = 3;
 }
 
-message TxOutContractConfirmWithSigner {
+message TxOutConfirmMsg {
   string signer = 1;
-  TxOutContractConfirm data = 2;
+  TxOutConfirm data = 2;
 }
 
-message TxOutContractConfirm {
+message TxOutConfirm {
   string outChain = 1;
   string outHash = 2;
   int64 blockHeight = 3;
   string contractAddress = 4;
+  int64 nonce = 5;
 }

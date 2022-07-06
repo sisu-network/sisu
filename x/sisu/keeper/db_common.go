@@ -30,8 +30,7 @@ var (
 	prefixNode                   = []byte{0x11}
 	prefixLiquidity              = []byte{0x12}
 	prefixParams                 = []byte{0x13}
-	prefixBlockHeight            = []byte{0x14}
-	prefixUsedUtxo               = []byte{0x15}
+	prefixGatewayCheckPoint      = []byte{0x14}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -615,7 +614,7 @@ func getAllChains(store cstypes.KVStore) map[string]*types.Chain {
 }
 
 ///// TxOutConfirm
-func saveTxOutConfirm(store cstypes.KVStore, msg *types.TxOutContractConfirm) {
+func saveTxOutConfirm(store cstypes.KVStore, msg *types.TxOutConfirm) {
 	key := getTxOutConfirmKey(msg.OutChain, msg.OutHash)
 	bz, err := msg.Marshal()
 	if err != nil {
@@ -848,80 +847,31 @@ func getParams(store cstypes.KVStore) *types.Params {
 	return params
 }
 
-///// External Info
-func saveBlockHeightRecord(store cstypes.KVStore, signer string, record *types.BlockHeightRecord) {
-	bz, err := record.Marshal()
+///// Gateway Checkpoint
+
+func addCheckPoint(store cstypes.KVStore, checkPoint *types.GatewayCheckPoint) {
+	bz, err := checkPoint.Marshal()
 	if err != nil {
-		log.Error("Failed to marshal BlockHeightRecord, err = ", err)
-		return
+		log.Error("cannot marshal checkpoint")
 	}
 
-	store.Set([]byte(signer), bz)
+	store.Set([]byte(checkPoint.Chain), bz)
 }
 
-func getBlockHeightRecord(store cstypes.KVStore, signer string) *types.BlockHeightRecord {
-	bz := store.Get([]byte(signer))
+func getCheckPoint(store cstypes.KVStore, chain string) *types.GatewayCheckPoint {
+	bz := store.Get([]byte(chain))
 	if bz == nil {
 		return nil
 	}
 
-	record := &types.BlockHeightRecord{}
-	err := record.Unmarshal(bz)
+	checkPoint := &types.GatewayCheckPoint{}
+	err := checkPoint.Unmarshal(bz)
 	if err != nil {
-		log.Error("getBlockHeightRecord: Failed to unmarshal BlockHeightRecord, err = ", err)
+		log.Error("Failed to unmarshal gateway checkpoint, err = ", err)
 		return nil
 	}
 
-	return record
-}
-
-func getBlockHeightsForChain(store cstypes.KVStore, chain string, signers []string) map[string]*types.BlockHeight {
-	signersMap := make(map[string]bool)
-	for _, signer := range signers {
-		signersMap[signer] = true
-	}
-
-	ret := make(map[string]*types.BlockHeight)
-	iter := store.Iterator(nil, nil)
-
-	for ; iter.Valid(); iter.Next() {
-		if !signersMap[string(iter.Key())] {
-			continue
-		}
-
-		record := &types.BlockHeightRecord{}
-		err := record.Unmarshal(iter.Value())
-		if err != nil {
-			log.Error("getBlockHeightsForChain: cannot unmarshal BlockHeightRecord, err = ", err)
-			continue
-		}
-
-		for _, blockHeight := range record.BlockHeights {
-			if blockHeight.Chain == chain {
-				ret[string(iter.Key())] = blockHeight
-				break
-			}
-		}
-	}
-
-	return ret
-}
-
-///// Used utxo
-
-func getUsedUtxoKey(chain, hash string, index int) string {
-	return fmt.Sprintf("%s__%s__%d", chain, hash, index)
-}
-
-func addUsedUtxo(store cstypes.KVStore, chain, hash string, index int) {
-	key := getUsedUtxoKey(chain, hash, index)
-	store.Set([]byte(key), []byte{1})
-}
-
-func isUtxoExisted(store cstypes.KVStore, chain, hash string, index int) bool {
-	key := getUsedUtxoKey(chain, hash, index)
-	fmt.Println("store = ", store)
-	return store.Get([]byte(key)) != nil
+	return checkPoint
 }
 
 ///// Debug functions
