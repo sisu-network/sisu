@@ -52,17 +52,21 @@ func (h *HandlerTxOutConfirm) doTxOutConfirm(ctx sdk.Context, msgWithSigner *typ
 		h.confirmContractDeployment(ctx, txOut, msg.ContractAddress)
 	}
 
-	checkPoint := &types.GatewayCheckPoint{
-		Chain:       msg.OutChain,
-		BlockHeight: msg.BlockHeight,
-	}
+	savedCheckPoint := h.keeper.GetGatewayCheckPoint(ctx, msg.OutChain)
+	if savedCheckPoint == nil || savedCheckPoint.BlockHeight < msg.BlockHeight {
+		// Save checkpoint
+		checkPoint := &types.GatewayCheckPoint{
+			Chain:       msg.OutChain,
+			BlockHeight: msg.BlockHeight,
+		}
 
-	if libchain.IsETHBasedChain(msg.OutChain) {
-		checkPoint.Nonce = msg.Nonce
-	}
+		if libchain.IsETHBasedChain(msg.OutChain) {
+			checkPoint.Nonce = msg.Nonce
+		}
 
-	// Update observed block height and nonce.
-	h.keeper.AddGatewayCheckPoint(ctx, checkPoint)
+		// Update observed block height and nonce.
+		h.keeper.AddGatewayCheckPoint(ctx, checkPoint)
+	}
 
 	return nil, nil
 }

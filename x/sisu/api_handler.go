@@ -491,7 +491,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 
 	blockRequests := &types.TxsIn{
 		Chain:    txs.Chain,
-		Hash:     txs.Hash,
+		Hash:     txs.BlockHash,
 		Height:   txs.Block,
 		Requests: make([]*types.TxIn, 0),
 	}
@@ -539,7 +539,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 		msg := types.NewBlockHeightMsg(a.appKeys.GetSignerAddress().String(), &types.BlockHeight{
 			Chain:  txs.Chain,
 			Height: txs.Block,
-			Hash:   txs.Hash,
+			Hash:   txs.BlockHash,
 		})
 		a.txSubmit.SubmitMessageAsync(msg)
 	}

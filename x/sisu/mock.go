@@ -109,7 +109,7 @@ func (m *MockTxTracker) CheckExpiredTransaction() {
 ////// TxOutputProducer
 
 type MockTxOutputProducer struct {
-	GetTxOutsFucn                     func(ctx sdk.Context, transfers []*transferOutData) ([]*types.TxOutWithSigner, []*transferOutData)
+	GetTxOutsFucn                     func(ctx sdk.Context, chain string, transfers []*types.TransferOutData) ([]*types.TxOutWithSigner, []*types.TransferOutData)
 	PauseContractFunc                 func(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
 	ResumeContractFunc                func(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
 	ContractChangeOwnershipFunc       func(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutWithSigner, error)
@@ -117,9 +117,9 @@ type MockTxOutputProducer struct {
 	ContractEmergencyWithdrawFundFunc func(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutWithSigner, error)
 }
 
-func (m *MockTxOutputProducer) GetTxOuts(ctx sdk.Context, transfers []*transferOutData) ([]*types.TxOutWithSigner, []*transferOutData) {
+func (m *MockTxOutputProducer) GetTxOuts(ctx sdk.Context, chain string, transfers []*types.TransferOutData) ([]*types.TxOutWithSigner, []*types.TransferOutData) {
 	if m.GetTxOutsFucn != nil {
-		return m.GetTxOutsFucn(ctx, transfers)
+		return m.GetTxOutsFucn(ctx, chain, transfers)
 	}
 
 	return nil, nil

@@ -26,7 +26,7 @@ import (
 type TxOutputProducer interface {
 	// GetTxOuts returns a list of TxOut message and a list of un-processed transfer out request that
 	// needs to be processed next time.
-	GetTxOuts(ctx sdk.Context, transfers []*transferOutData) ([]*types.TxOutWithSigner, []*transferOutData)
+	GetTxOuts(ctx sdk.Context, chain string, transfers []*types.TransferOutData) ([]*types.TxOutWithSigner, []*types.TransferOutData)
 
 	PauseContract(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
 
@@ -55,17 +55,6 @@ type DefaultTxOutputProducer struct {
 	minCaranoBlockHeight int64
 }
 
-type transferOutData struct {
-	blockHeight int64
-	destChain   string
-	token       *types.Token
-	recipient   string
-	amount      *big.Int
-
-	// For tx_tracker
-	txIn *types.TxIn
-}
-
 type transferInData struct {
 	token     ethcommon.Address
 	recipient string
@@ -89,7 +78,7 @@ func NewTxOutputProducer(worldState world.WorldState, appKeys common.AppKeys, ke
 	}
 }
 
-func (p *DefaultTxOutputProducer) parseCardanoTxIn(ctx sdk.Context, tx *types.TxIn) (*transferOutData, error) {
+func (p *DefaultTxOutputProducer) parseCardanoTxIn(ctx sdk.Context, tx *types.TxIn) (*types.TransferOutData, error) {
 	return nil, nil
 
 	// txIn := &etypes.CardanoTxInItem{}
@@ -124,70 +113,55 @@ func (p *DefaultTxOutputProducer) parseCardanoTxIn(ctx sdk.Context, tx *types.Tx
 	// }, nil
 }
 
-func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, transfers []*transferOutData) ([]*types.TxOutWithSigner, []*transferOutData) {
-	outMsgs := make([]*types.TxOutWithSigner, 0)
-
+func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, chain string,
+	transfers []*types.TransferOutData) ([]*types.TxOutWithSigner, []*types.TransferOutData) {
 	params := p.keeper.GetParams(ctx)
 
-	// Categories txs by their destination chains.
-	transfersByChains := p.categorizeTransfer(transfers)
-	for _, transfersInOneChain := range transfersByChains {
-		// TODO: Don't use fixed batch size. Let the batch size dependent on the current data on-chain.
-		dstChain := transfersInOneChain[0].destChain
-		batchSize := params.GetMaxTransferOutBatch(dstChain)
-		batches := splitTransfers(transfersInOneChain, batchSize)
+	// TODO: Don't use fixed batch size. Let the batch size dependent on the current data on-chain.
+	batchSize := params.GetMaxTransferOutBatch(chain)
 
-		if libchain.IsETHBasedChain(dstChain) {
-			msgs := p.processEthBatches(ctx, batches)
-			outMsgs = append(outMsgs, msgs...)
+	if libchain.IsETHBasedChain(chain) {
+		msgs, notProcessed, err := p.processEthBatches(ctx, transfers[:batchSize])
+		if err != nil {
+			return nil, transfers
 		}
 
-		if libchain.IsCardanoChain(dstChain) {
-			msgs := p.processCardanoBatches(ctx, dstChain, batches)
-			outMsgs = append(outMsgs, msgs...)
-		}
+		return msgs, append(notProcessed, transfers[batchSize:]...)
 	}
 
-	return outMsgs, nil
-}
-
-func splitTransfers(transfers []*transferOutData, batchSize int) [][]*transferOutData {
-	allBatches := make([][]*transferOutData, 0)
-	var batch []*transferOutData
-	for i := range transfers {
-		if i%batchSize == 0 {
-			if i > 0 {
-				allBatches = append(allBatches, batch)
-			}
-			batch = make([]*transferOutData, 0)
+	if libchain.IsCardanoChain(chain) {
+		msgs, notProcessed, err := p.processCardanoBatches(ctx, p.keeper, chain, transfers[:batchSize])
+		if err != nil {
+			return nil, transfers
 		}
-		batch = append(batch, transfers[i])
+
+		return msgs, append(notProcessed, transfers[batchSize:]...)
 	}
 
-	allBatches = append(allBatches, batch)
+	log.Error("Unknown chain type: ", chain)
 
-	return allBatches
+	return nil, nil
 }
 
 // categorizeTransfer divides all transfer request by their destination chains.
-func (p *DefaultTxOutputProducer) categorizeTransfer(transfers []*transferOutData) [][]*transferOutData {
-	m := make(map[string][]*transferOutData)
+func (p *DefaultTxOutputProducer) categorizeTransfer(transfers []*types.TransferOutData) [][]*types.TransferOutData {
+	m := make(map[string][]*types.TransferOutData)
 	// We need to use an ordered array because map iteration is not deterministic and can result in
 	// inconsistent data between nodes.
 	orders := make([]string, 0)
 
 	for _, transfer := range transfers {
-		if m[transfer.destChain] == nil {
-			m[transfer.destChain] = make([]*transferOutData, 0)
-			orders = append(orders, transfer.destChain)
+		if m[transfer.DestChain] == nil {
+			m[transfer.DestChain] = make([]*types.TransferOutData, 0)
+			orders = append(orders, transfer.DestChain)
 		}
 
-		arr := m[transfer.destChain]
+		arr := m[transfer.DestChain]
 		arr = append(arr, transfer)
-		m[transfer.destChain] = arr
+		m[transfer.DestChain] = arr
 	}
 
-	ret := make([][]*transferOutData, 0)
+	ret := make([][]*types.TransferOutData, 0)
 	for _, chain := range orders {
 		ret = append(ret, m[chain])
 	}
@@ -195,54 +169,48 @@ func (p *DefaultTxOutputProducer) categorizeTransfer(transfers []*transferOutDat
 	return ret
 }
 
-func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context, batches [][]*transferOutData) []*types.TxOutWithSigner {
-	fmt.Println("AAAAA processEthBatches")
+func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context,
+	transfers []*types.TransferOutData) ([]*types.TxOutWithSigner, []*types.TransferOutData, error) {
+	dstChain := transfers[0].DestChain
 
-	dstChain := batches[0][0].destChain
-	blockHeight := batches[0][0].blockHeight
-	outMsgs := make([]*types.TxOutWithSigner, 0)
+	inChains := make([]string, len(transfers))
+	inHashes := make([]string, len(transfers))
+	tokens := make([]*types.Token, len(transfers))
+	recipients := make([]ethcommon.Address, len(transfers))
+	amounts := make([]*big.Int, len(transfers))
 
-	for _, batch := range batches {
-		tokens := make([]*types.Token, len(batch))
-		recipients := make([]ethcommon.Address, len(batch))
-		amounts := make([]*big.Int, len(batch))
-
-		for k, transfer := range batch {
-			fmt.Println("transfer = ", *transfer)
-			tokens[k] = transfer.token
-			recipients[k] = ecommon.HexToAddress(transfer.recipient)
-			amounts[k] = transfer.amount
-		}
-
-		fmt.Println("len(tokens) = ", len(tokens), len(recipients), len(amounts))
-
-		responseTx, err := p.buildERC20TransferIn(ctx, tokens, recipients, amounts, dstChain)
-		if err != nil {
-			log.Error("Failed to build erc20 transfer in, err = ", err)
-			continue
-		}
-
-		bz, err := responseTx.EthTx.MarshalBinary()
-		if err != nil {
-			log.Error("processEthBatches: Failed to unmarshal eth tx, err = ", err)
-			continue
-		}
-
-		outMsg := types.NewMsgTxOutWithSigner(
-			p.appKeys.GetSignerAddress().String(),
-			types.TxOutType_TRANSFER_OUT,
-			blockHeight,
-			"",
-			"",
-			dstChain,
-			utils.KeccakHash32Bytes(bz),
-			responseTx.RawBytes,
-			"",
-		)
-		outMsgs = append(outMsgs, outMsg)
+	for k, transfer := range transfers {
+		fmt.Println("transfer = ", *transfer)
+		tokens[k] = transfer.Token
+		recipients[k] = ecommon.HexToAddress(transfer.Recipient)
+		amounts[k] = transfer.Amount
 	}
 
-	return outMsgs
+	fmt.Println("len(tokens) = ", len(tokens), len(recipients), len(amounts))
+
+	responseTx, err := p.buildERC20TransferIn(ctx, p.keeper, tokens, recipients, amounts, dstChain)
+	if err != nil {
+		log.Error("Failed to build erc20 transfer in, err = ", err)
+		return nil, nil, err
+	}
+
+	bz, err := responseTx.EthTx.MarshalBinary()
+	if err != nil {
+		log.Error("processEthBatches: Failed to unmarshal eth tx, err = ", err)
+		return nil, nil, err
+	}
+
+	outMsg := types.NewMsgTxOutWithSigner(
+		p.appKeys.GetSignerAddress().String(),
+		types.TxOutType_TRANSFER_OUT,
+		inChains,
+		inHashes,
+		dstChain,
+		utils.KeccakHash32Bytes(bz),
+		responseTx.RawBytes,
+		"",
+	)
+	return []*types.TxOutWithSigner{outMsg}, nil, nil
 }
 
 func (p *DefaultTxOutputProducer) getGasLimit(chain string) uint64 {

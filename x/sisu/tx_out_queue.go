@@ -127,7 +127,6 @@ func (q *defaultTxOutQueue) signEthTx(ctx sdk.Context, tx *types.TxOut) {
 		KeysignMessages: []*hTypes.KeysignMessage{
 			{
 				Id:          q.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), tx.OutHash),
-				InChain:     tx.InChain,
 				OutChain:    tx.OutChain,
 				OutHash:     tx.OutHash,
 				BytesToSign: hash[:],
@@ -161,7 +160,6 @@ func (q *defaultTxOutQueue) signCardanoTx(ctx sdk.Context, txOut *types.TxOut) {
 		KeysignMessages: []*hTypes.KeysignMessage{
 			{
 				Id:          q.getKeysignRequestId(txOut.OutChain, ctx.BlockHeight(), txOut.OutHash),
-				InChain:     txOut.InChain,
 				OutChain:    txOut.OutChain,
 				OutHash:     txOut.OutHash,
 				BytesToSign: txHash[:],

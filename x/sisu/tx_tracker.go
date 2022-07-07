@@ -237,7 +237,7 @@ func (t *DefaultTxTracker) getEmailBodyString(txo *txObject) (string, error) {
 	return utils.PrettyStruct(body)
 }
 
-func (t *DefaultTxTracker) getEThTransferIn(chain string, bz []byte) (*transferOutData, error) {
+func (t *DefaultTxTracker) getEThTransferIn(chain string, bz []byte) (*types.TransferOutData, error) {
 	ethTx := &ethTypes.Transaction{}
 
 	err := ethTx.UnmarshalBinary(bz)

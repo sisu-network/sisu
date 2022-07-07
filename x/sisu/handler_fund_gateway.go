@@ -62,9 +62,8 @@ func (h *HandlerFundGateway) doContractDeployment(ctx sdk.Context, data *types.F
 			outMsg := types.NewMsgTxOutWithSigner(
 				h.mc.AppKeys().GetSignerAddress().String(),
 				types.TxOutType_CONTRACT_DEPLOYMENT,
-				data.BlockHeight,
-				data.Chain,
-				data.TxHash,
+				[]string{data.Chain},
+				[]string{data.TxHash},
 				data.Chain,
 				utils.KeccakHash32Bytes(bz),
 				bz,

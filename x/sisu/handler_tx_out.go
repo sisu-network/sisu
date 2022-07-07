@@ -2,26 +2,30 @@ package sisu
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/eth"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type HandlerTxOut struct {
-	pmm        PostedMessageManager
-	keeper     keeper.Keeper
-	globalData common.GlobalData
-	txOutQueue TxOutQueue
+	pmm           PostedMessageManager
+	keeper        keeper.Keeper
+	globalData    common.GlobalData
+	transferQueue TxInQueue
+	txOutQueue    TxOutQueue
 }
 
 func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
 	return &HandlerTxOut{
-		keeper:     mc.Keeper(),
-		pmm:        mc.PostedMessageManager(),
-		txOutQueue: mc.TxOutQueue(),
-		globalData: mc.GlobalData(),
+		keeper:        mc.Keeper(),
+		pmm:           mc.PostedMessageManager(),
+		txOutQueue:    mc.TxOutQueue(),
+		globalData:    mc.GlobalData(),
+		transferQueue: mc.TxInQueue(),
 	}
 }
 
@@ -43,19 +47,43 @@ func (h *HandlerTxOut) doTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWithSi
 
 	log.Info("Delivering TxOut")
 
-	// TODO: Remove TxIn in the tx in queue.
-
 	// Save this to KVStore
 	h.keeper.SaveTxOut(ctx, txOut)
-
-	// If this is a cardano chain, we need to save this as the last Tx transaction.
-	if libchain.IsCardanoChain(txOut.OutChain) {
-
-	}
 
 	if !h.globalData.IsCatchingUp() {
 		h.txOutQueue.AddTxOut(txOut)
 	}
 
+	// Remove all the transfer request in the tx in queue.
+
 	return nil, nil
+}
+
+func (h *HandlerTxOut) removeTransfers(ctx sdk.Context, txOut *types.TxOut) {
+	var transfers []*types.TransferOutData
+
+	if libchain.IsETHBasedChain(txOut.OutChain) {
+		erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
+		gwAbi := erc20gatewayContract.Abi
+
+		ethTx := &ethTypes.Transaction{}
+		err := ethTx.UnmarshalBinary(txOut.OutBytes)
+		if err != nil {
+			log.Error("Failed to unmarshall eth tx. err =", err)
+			return
+		}
+
+		transfers, err = eth.ParseEthTransferIn(ctx, ethTx, txOut.OutChain, gwAbi, h.keeper)
+		if err != nil {
+			log.Error("removeTransfers: cannot parse transfer out")
+			return
+		}
+
+		if len(transfers) != len(txOut.InChains) || len(transfers) != len(txOut.InHashes) {
+			log.Error("transfers size does not match in chains or in hashes size")
+			return
+		}
+	}
+
+	h.transferQueue.RemoveTransfers(ctx, transfers)
 }

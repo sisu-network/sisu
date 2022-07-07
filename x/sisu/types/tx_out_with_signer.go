@@ -15,19 +15,18 @@ const (
 
 var _ sdk.Msg = &TxOutWithSigner{}
 
-func NewMsgTxOutWithSigner(signer string, txType TxOutType, inBlockHeight int64,
-	inChain string, inHash string, outChain string, outHash string, outBytes []byte, contractHash string) *TxOutWithSigner {
+func NewMsgTxOutWithSigner(signer string, txType TxOutType, inChains []string, inHashes []string,
+	outChain string, outHash string, outBytes []byte, contractHash string) *TxOutWithSigner {
 	return &TxOutWithSigner{
 		Signer: signer,
 		Data: &TxOut{
-			TxType:        txType,
-			OutChain:      outChain,
-			OutHash:       outHash,
-			InBlockHeight: inBlockHeight,
-			InChain:       inChain,
-			InHash:        inHash,
-			OutBytes:      outBytes,
-			ContractHash:  contractHash,
+			TxType:       txType,
+			OutChain:     outChain,
+			OutHash:      outHash,
+			InChains:     inChains,
+			InHashes:     inHashes,
+			OutBytes:     outBytes,
+			ContractHash: contractHash,
 		},
 	}
 }

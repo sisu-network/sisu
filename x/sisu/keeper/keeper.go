@@ -94,6 +94,7 @@ type Keeper interface {
 	// Gateway checkpoint
 	AddGatewayCheckPoint(ctx sdk.Context, checkPoint *types.GatewayCheckPoint)
 	GetGatewayCheckPoint(ctx sdk.Context, chain string) *types.GatewayCheckPoint
+	GetAllGatewayCheckPoints(ctx sdk.Context) map[string]*types.GatewayCheckPoint
 }
 
 type DefaultKeeper struct {
@@ -385,6 +386,11 @@ func (k *DefaultKeeper) AddGatewayCheckPoint(ctx sdk.Context, checkPoint *types.
 func (k *DefaultKeeper) GetGatewayCheckPoint(ctx sdk.Context, chain string) *types.GatewayCheckPoint {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGatewayCheckPoint)
 	return getCheckPoint(store, chain)
+}
+
+func (k *DefaultKeeper) GetAllGatewayCheckPoints(ctx sdk.Context) map[string]*types.GatewayCheckPoint {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGatewayCheckPoint)
+	return getAllGatewayCheckPoints(store)
 }
 
 ///// Debug

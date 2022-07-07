@@ -252,8 +252,9 @@ func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *
 		fmt.Println("utxo = ", utxo.Amount)
 	}
 
-	tx, err := scardano.BuildTx(node, senderAddress, receiver,
-		cardano.NewValueWithAssets(cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()), multiAsset), metadata, utxos, tip.Block)
+	amount := cardano.NewValueWithAssets(cardano.Coin(1_600_000), multiAsset)
+	tx, err := scardano.BuildTx(node, senderAddress, []cardano.Address{receiver},
+		[]*cardano.Value{amount}, metadata, utxos, tip.Block)
 	if err != nil {
 		panic(err)
 	}

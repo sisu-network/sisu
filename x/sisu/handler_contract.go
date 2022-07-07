@@ -1,6 +1,8 @@
 package sisu
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -44,6 +46,8 @@ func (h *HandlerContract) doContracts(ctx sdk.Context, wrappedMsg *types.Contrac
 
 	// Save into KVStore & private db
 	h.keeper.SaveContracts(ctx, wrappedMsg.Data.Contracts, true)
+
+	fmt.Println("AAAAA Done!")
 
 	return nil, nil
 }

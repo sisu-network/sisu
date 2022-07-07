@@ -3,6 +3,7 @@ package cardano
 import (
 	"context"
 	"fmt"
+	"math"
 
 	"github.com/blockfrost/blockfrost-go"
 	"github.com/echovl/cardano-go"
@@ -78,7 +79,7 @@ func (c *blockFrostClient) UTxOs(addr cardano.Address, maxBlock uint64) ([]carda
 	fmt.Println("maxBlock = ", maxBlock)
 	fmt.Println("len(utxos) = ", len(utxos))
 
-	if maxBlock == MaxBlockHeight {
+	if maxBlock == math.MaxUint64 {
 		return utxos, nil
 	}
 

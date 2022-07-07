@@ -23,4 +23,5 @@ message TxIn {
   string token = 3;
   string recipient = 4;
   string amount = 5;
+  string hash = 6;
 }

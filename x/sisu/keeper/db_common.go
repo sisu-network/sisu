@@ -874,6 +874,23 @@ func getCheckPoint(store cstypes.KVStore, chain string) *types.GatewayCheckPoint
 	return checkPoint
 }
 
+func getAllGatewayCheckPoints(store cstypes.KVStore) map[string]*types.GatewayCheckPoint {
+	ret := make(map[string]*types.GatewayCheckPoint)
+	iter := store.Iterator(nil, nil)
+	for ; iter.Valid(); iter.Next() {
+		bz := iter.Value()
+		checkPoint := &types.GatewayCheckPoint{}
+		err := checkPoint.Unmarshal(bz)
+		if err != nil {
+			log.Error("Failed to unmarshal checkpoint, err = ", err)
+			continue
+		}
+		ret[string(iter.Key())] = checkPoint
+	}
+
+	return ret
+}
+
 ///// Debug functions
 func printStore(store cstypes.KVStore) {
 	iter := store.Iterator(nil, nil)

@@ -93,7 +93,6 @@ func (h *HandlerContractLiquidityWithdrawFund) signTx(ctx sdk.Context, tx *types
 		KeysignMessages: []*hTypes.KeysignMessage{
 			{
 				Id:          h.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), tx.OutHash),
-				InChain:     tx.InChain,
 				OutChain:    tx.OutChain,
 				OutHash:     tx.OutHash,
 				BytesToSign: hash[:],

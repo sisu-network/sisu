@@ -1,7 +1,6 @@
 package sisu
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 
@@ -12,6 +11,7 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/sisu-network/sisu/x/sisu/world"
 )
@@ -36,7 +36,7 @@ func decodeTxParams(abi abi.ABI, callData []byte) (map[string]interface{}, error
 	return txParams, nil
 }
 
-func parseEthTransferOut(ethTx *ethTypes.Transaction, srcChain string, worldState world.WorldState) (*transferOutData, error) {
+func parseEthTransferOut(ethTx *ethTypes.Transaction, srcChain string, worldState world.WorldState) (*types.TransferOutData, error) {
 	erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
 	gwAbi := erc20gatewayContract.Abi
 	callData := ethTx.Data()
@@ -74,11 +74,11 @@ func parseEthTransferOut(ethTx *ethTypes.Transaction, srcChain string, worldStat
 		return nil, err
 	}
 
-	return &transferOutData{
-		destChain: destChain,
-		token:     token,
-		recipient: recipient,
-		amount:    amount,
+	return &types.TransferOutData{
+		DestChain: destChain,
+		Token:     token,
+		Recipient: recipient,
+		Amount:    amount,
 	}, nil
 }
 
@@ -123,6 +123,7 @@ func parseTransferInData(ethTx *ethTypes.Transaction) ([]*transferInData, error)
 
 func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	ctx sdk.Context,
+	k keeper.Keeper,
 	tokens []*types.Token,
 	recipients []ethcommon.Address,
 	amounts []*big.Int,
@@ -139,12 +140,12 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	gatewayAddress := ethcommon.HexToAddress(gw)
 	erc20gatewayContract := SupportedContracts[targetContractName]
 
-	nonce := p.worldState.UseAndIncreaseNonce(ctx, destChain)
-	if nonce < 0 {
-		err := errors.New("cannot find nonce for chain " + destChain)
-		log.Error(err)
-		return nil, err
+	checkPoint := k.GetGatewayCheckPoint(ctx, destChain)
+	if checkPoint == nil {
+		return nil, fmt.Errorf("cannot find gateway checkout for chain %s", destChain)
 	}
+
+	nonce := checkPoint.Nonce
 
 	gasPrice, err := p.worldState.GetGasPrice(destChain)
 	if err != nil {

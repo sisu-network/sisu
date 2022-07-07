@@ -36,24 +36,11 @@ func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain 
 		return nil, err
 	}
 
-	var token *types.Token
 	// TODO: Optimize getting tokens
 	allTokens := keeper.GetAllTokens(ctx)
 	fmt.Println("allTokens = ", allTokens)
 
-	for _, t := range allTokens {
-		for j, chain := range t.Chains {
-			if chain == srcChain && t.Addresses[j] == tokenAddr.String() {
-				token = t
-				break
-			}
-		}
-
-		if token != nil {
-			break
-		}
-	}
-
+	token := getTokenOnChain(allTokens, tokenAddr.String(), srcChain)
 	if token == nil {
 		return nil, fmt.Errorf("Cannot find token on chain %s with address %s", srcChain, tokenAddr)
 	}
@@ -83,6 +70,63 @@ func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain 
 		Recipient: recipient,
 		Amount:    amount.String(),
 	}, nil
+}
+
+func ParseEthTransferIn(ctx sdk.Context, ethTx *ethTypes.Transaction, destChain string, gwAbi abi.ABI,
+	keeper keeper.Keeper) ([]*types.TransferOutData, error) {
+	callData := ethTx.Data()
+	txParams, err := decodeTxParams(gwAbi, callData)
+	if err != nil {
+		return nil, err
+	}
+
+	tokensAddrs, ok := txParams["tokens"].([]ethcommon.Address)
+	if !ok {
+		err := fmt.Errorf("cannot convert tokens to type eth address]: %v", txParams)
+		return nil, err
+	}
+
+	recipients, ok := txParams["recipients"].([]ethcommon.Address)
+	if !ok {
+		err := fmt.Errorf("cannot convert recipients to type eth address]: %v", txParams)
+		return nil, err
+	}
+
+	amounts, ok := txParams["amounts"].([]*big.Int)
+	if !ok {
+		err := fmt.Errorf("cannot convert amounts to type []*big.Int: %v", txParams)
+		return nil, err
+	}
+
+	allTokens := keeper.GetAllTokens(ctx)
+	transfers := make([]*types.TransferOutData, 0)
+	for i, tokenAddr := range tokensAddrs {
+		token := getTokenOnChain(allTokens, tokenAddr.String(), destChain)
+		if token == nil {
+			return nil, fmt.Errorf("ParseEthTransferIn: Cannot find token on chain %s with address %s", destChain, tokenAddr)
+		}
+
+		transfers = append(transfers, &types.TransferOutData{
+			DestChain: destChain,
+			Token:     token,
+			Recipient: recipients[i].String(),
+			Amount:    amounts[i],
+		})
+	}
+
+	return transfers, nil
+}
+
+func getTokenOnChain(allTokens map[string]*types.Token, tokenAddr, chain string) *types.Token {
+	for _, t := range allTokens {
+		for j, chain := range t.Chains {
+			if chain == chain && t.Addresses[j] == tokenAddr {
+				return t
+			}
+		}
+	}
+
+	return nil
 }
 
 func decodeTxParams(abi abi.ABI, callData []byte) (map[string]interface{}, error) {
