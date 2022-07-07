@@ -49,7 +49,7 @@ func TestKeeper_SaveAndGetTxOut(t *testing.T) {
 	t.Parallel()
 	keeper, ctx := GetTestKeeperAndContext()
 
-	txOutWithSigner := &types.TxOutWithSigner{
+	txOutWithSigner := &types.TxOutMsg{
 		Signer: "signer",
 		Data: &types.TxOut{
 			InChains: []string{"eth"},

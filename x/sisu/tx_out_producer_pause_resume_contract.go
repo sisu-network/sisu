@@ -13,7 +13,7 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-func (p *DefaultTxOutputProducer) PauseContract(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error) {
+func (p *DefaultTxOutputProducer) PauseContract(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error) {
 	if libchain.IsETHBasedChain(chain) {
 		return p.PauseOrResumeEthContract(ctx, chain, hash, true)
 	}
@@ -21,7 +21,7 @@ func (p *DefaultTxOutputProducer) PauseContract(ctx sdk.Context, chain string, h
 	return nil, fmt.Errorf("unsupported chain %s", chain)
 }
 
-func (p *DefaultTxOutputProducer) ResumeContract(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error) {
+func (p *DefaultTxOutputProducer) ResumeContract(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error) {
 	if libchain.IsETHBasedChain(chain) {
 		return p.PauseOrResumeEthContract(ctx, chain, hash, false)
 	}
@@ -29,7 +29,7 @@ func (p *DefaultTxOutputProducer) ResumeContract(ctx sdk.Context, chain string, 
 	return nil, fmt.Errorf("unsupported chain %s", chain)
 }
 
-func (p *DefaultTxOutputProducer) PauseOrResumeEthContract(ctx sdk.Context, chain string, hash string, isPause bool) (*types.TxOutWithSigner, error) {
+func (p *DefaultTxOutputProducer) PauseOrResumeEthContract(ctx sdk.Context, chain string, hash string, isPause bool) (*types.TxOutMsg, error) {
 	if !libchain.IsETHBasedChain(chain) {
 		return nil, fmt.Errorf("unsupported chain %s", chain)
 	}
@@ -80,7 +80,7 @@ func (p *DefaultTxOutputProducer) PauseOrResumeEthContract(ctx sdk.Context, chai
 		return nil, err
 	}
 
-	return types.NewMsgTxOutWithSigner(
+	return types.NewTxOutMsg(
 		p.appKeys.GetSignerAddress().String(),
 		types.TxOutType_TRANSFER_OUT,
 		[]string{""},          // in chain

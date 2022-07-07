@@ -114,7 +114,7 @@ func (h *handlerPauseResumeContract) doPauseOrResume(ctx sdk.Context, chain, has
 		return nil, err
 	}
 
-	var txOutMsg *types.TxOutWithSigner
+	var txOutMsg *types.TxOutMsg
 	var err error
 	if isPause {
 		log.Info("Creating pause transaction...")

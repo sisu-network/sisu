@@ -29,7 +29,7 @@ func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
 	}
 }
 
-func (h *HandlerTxOut) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutWithSigner) (*sdk.Result, error) {
+func (h *HandlerTxOut) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutMsg) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
 		data, err := h.doTxOut(ctx, signerMsg)
 		h.keeper.ProcessTxRecord(ctx, hash)
@@ -42,7 +42,7 @@ func (h *HandlerTxOut) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutWithSig
 
 // deliverTxOut executes a TxOut transaction after it's included in Sisu block. If this node is
 // catching up with the network, we would not send the tx to TSS for signing.
-func (h *HandlerTxOut) doTxOut(ctx sdk.Context, msgWithSigner *types.TxOutWithSigner) ([]byte, error) {
+func (h *HandlerTxOut) doTxOut(ctx sdk.Context, msgWithSigner *types.TxOutMsg) ([]byte, error) {
 	txOut := msgWithSigner.Data
 
 	log.Info("Delivering TxOut")

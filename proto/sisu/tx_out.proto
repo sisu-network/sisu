@@ -10,7 +10,7 @@ enum TxOutType {
   LIQUIDITY_WITHDRAW_FUND = 3;
 }
 
-message TxOutWithSigner {
+message TxOutMsg {
   string signer = 1;
   TxOut data = 2;
 }

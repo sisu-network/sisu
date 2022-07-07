@@ -18,9 +18,9 @@ import (
 )
 
 func (p *DefaultTxOutputProducer) processCardanoBatches(ctx sdk.Context, k keeper.Keeper, destChain string,
-	transfers []*types.TransferOutData) ([]*types.TxOutWithSigner, []*types.TransferOutData, error) {
+	transfers []*types.TransferOutData) ([]*types.TxOutMsg, []*types.TransferOutData, error) {
 	// Find the highest block where majority of the validator nodes has reach to.
-	outMgs := make([]*types.TxOutWithSigner, 0)
+	outMgs := make([]*types.TxOutMsg, 0)
 	inChains := make([]string, len(transfers))
 	inHashes := make([]string, len(transfers))
 
@@ -54,7 +54,7 @@ func (p *DefaultTxOutputProducer) processCardanoBatches(ctx sdk.Context, k keepe
 		return nil, nil, err
 	}
 
-	outMsg := types.NewMsgTxOutWithSigner(
+	outMsg := types.NewTxOutMsg(
 		p.appKeys.GetSignerAddress().String(),
 		types.TxOutType_TRANSFER_OUT,
 		inChains,

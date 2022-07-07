@@ -4,7 +4,7 @@ const (
 	MsgTypeKeygenWithSigner               = "KeygenWithSigner"
 	MsgTypeKeygenResultWithSigner         = "KeygenResultWithSigner"
 	MsgTypeContractsWithSigner            = "ContractsWithSigner"
-	MsgTypeTxOutWithSigner                = "TxOutWithSigner"
+	MsgTypeTxOutMsg                       = "TxOutMsg"
 	MsgTypeTxOutConfirmMsg                = "TxOutConfirmMsg"
 	MsgTypeTxsInMsg                       = "TxsInMsg"
 	MsgTypeGasPriceWithSigner             = "GasPriceWithSigner"

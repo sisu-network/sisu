@@ -26,17 +26,17 @@ import (
 type TxOutputProducer interface {
 	// GetTxOuts returns a list of TxOut message and a list of un-processed transfer out request that
 	// needs to be processed next time.
-	GetTxOuts(ctx sdk.Context, chain string, transfers []*types.TransferOutData) ([]*types.TxOutWithSigner, []*types.TransferOutData)
+	GetTxOuts(ctx sdk.Context, chain string, transfers []*types.TransferOutData) ([]*types.TxOutMsg, []*types.TransferOutData)
 
-	PauseContract(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
+	PauseContract(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error)
 
-	ResumeContract(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
+	ResumeContract(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error)
 
-	ContractChangeOwnership(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutWithSigner, error)
+	ContractChangeOwnership(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutMsg, error)
 
-	ContractSetLiquidPoolAddress(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutWithSigner, error)
+	ContractSetLiquidPoolAddress(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutMsg, error)
 
-	ContractEmergencyWithdrawFund(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutWithSigner, error)
+	ContractEmergencyWithdrawFund(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutMsg, error)
 }
 
 type DefaultTxOutputProducer struct {
@@ -114,7 +114,7 @@ func (p *DefaultTxOutputProducer) parseCardanoTxIn(ctx sdk.Context, tx *types.Tx
 }
 
 func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, chain string,
-	transfers []*types.TransferOutData) ([]*types.TxOutWithSigner, []*types.TransferOutData) {
+	transfers []*types.TransferOutData) ([]*types.TxOutMsg, []*types.TransferOutData) {
 	params := p.keeper.GetParams(ctx)
 
 	// TODO: Don't use fixed batch size. Let the batch size dependent on the current data on-chain.
@@ -170,7 +170,7 @@ func (p *DefaultTxOutputProducer) categorizeTransfer(transfers []*types.Transfer
 }
 
 func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context,
-	transfers []*types.TransferOutData) ([]*types.TxOutWithSigner, []*types.TransferOutData, error) {
+	transfers []*types.TransferOutData) ([]*types.TxOutMsg, []*types.TransferOutData, error) {
 	dstChain := transfers[0].DestChain
 
 	inChains := make([]string, len(transfers))
@@ -200,7 +200,7 @@ func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context,
 		return nil, nil, err
 	}
 
-	outMsg := types.NewMsgTxOutWithSigner(
+	outMsg := types.NewTxOutMsg(
 		p.appKeys.GetSignerAddress().String(),
 		types.TxOutType_TRANSFER_OUT,
 		inChains,
@@ -210,7 +210,7 @@ func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context,
 		responseTx.RawBytes,
 		"",
 	)
-	return []*types.TxOutWithSigner{outMsg}, nil, nil
+	return []*types.TxOutMsg{outMsg}, nil, nil
 }
 
 func (p *DefaultTxOutputProducer) getGasLimit(chain string) uint64 {

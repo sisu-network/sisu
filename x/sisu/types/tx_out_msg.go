@@ -13,11 +13,11 @@ const (
 	TxOutStatusSigning TxOutStatus = "signing"
 )
 
-var _ sdk.Msg = &TxOutWithSigner{}
+var _ sdk.Msg = &TxOutMsg{}
 
-func NewMsgTxOutWithSigner(signer string, txType TxOutType, inChains []string, inHashes []string,
-	outChain string, outHash string, outBytes []byte, contractHash string) *TxOutWithSigner {
-	return &TxOutWithSigner{
+func NewTxOutMsg(signer string, txType TxOutType, inChains []string, inHashes []string,
+	outChain string, outHash string, outBytes []byte, contractHash string) *TxOutMsg {
+	return &TxOutMsg{
 		Signer: signer,
 		Data: &TxOut{
 			TxType:       txType,
@@ -32,17 +32,17 @@ func NewMsgTxOutWithSigner(signer string, txType TxOutType, inChains []string, i
 }
 
 // Route ...
-func (msg *TxOutWithSigner) Route() string {
+func (msg *TxOutMsg) Route() string {
 	return RouterKey
 }
 
 // Type ...
-func (msg *TxOutWithSigner) Type() string {
-	return MsgTypeTxOutWithSigner
+func (msg *TxOutMsg) Type() string {
+	return MsgTypeTxOutMsg
 }
 
 // GetSigners ...
-func (msg *TxOutWithSigner) GetSigners() []sdk.AccAddress {
+func (msg *TxOutMsg) GetSigners() []sdk.AccAddress {
 	author, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		panic(err)
@@ -50,18 +50,18 @@ func (msg *TxOutWithSigner) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{author}
 }
 
-func (msg *TxOutWithSigner) GetMsgs() []sdk.Msg {
+func (msg *TxOutMsg) GetMsgs() []sdk.Msg {
 	return []sdk.Msg{msg}
 }
 
 // GetSignBytes ...
-func (msg *TxOutWithSigner) GetSignBytes() []byte {
+func (msg *TxOutMsg) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
 // ValidateBasic ...
-func (msg *TxOutWithSigner) ValidateBasic() error {
+func (msg *TxOutMsg) ValidateBasic() error {
 	_, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid creator address (%s)", err)

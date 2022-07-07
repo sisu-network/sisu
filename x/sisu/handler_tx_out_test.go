@@ -47,7 +47,7 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 	binary, err := ethTransaction.MarshalBinary()
 	require.NoError(t, err)
 
-	txOutWithSigner := &types.TxOutWithSigner{
+	txOutWithSigner := &types.TxOutMsg{
 		Signer: "signer",
 		Data: &types.TxOut{
 			OutChain: "eth",

@@ -109,15 +109,15 @@ func (m *MockTxTracker) CheckExpiredTransaction() {
 ////// TxOutputProducer
 
 type MockTxOutputProducer struct {
-	GetTxOutsFucn                     func(ctx sdk.Context, chain string, transfers []*types.TransferOutData) ([]*types.TxOutWithSigner, []*types.TransferOutData)
-	PauseContractFunc                 func(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
-	ResumeContractFunc                func(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
-	ContractChangeOwnershipFunc       func(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutWithSigner, error)
-	ContractSetLiquidPoolAddressFunc  func(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutWithSigner, error)
-	ContractEmergencyWithdrawFundFunc func(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutWithSigner, error)
+	GetTxOutsFucn                     func(ctx sdk.Context, chain string, transfers []*types.TransferOutData) ([]*types.TxOutMsg, []*types.TransferOutData)
+	PauseContractFunc                 func(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error)
+	ResumeContractFunc                func(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error)
+	ContractChangeOwnershipFunc       func(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutMsg, error)
+	ContractSetLiquidPoolAddressFunc  func(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutMsg, error)
+	ContractEmergencyWithdrawFundFunc func(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutMsg, error)
 }
 
-func (m *MockTxOutputProducer) GetTxOuts(ctx sdk.Context, chain string, transfers []*types.TransferOutData) ([]*types.TxOutWithSigner, []*types.TransferOutData) {
+func (m *MockTxOutputProducer) GetTxOuts(ctx sdk.Context, chain string, transfers []*types.TransferOutData) ([]*types.TxOutMsg, []*types.TransferOutData) {
 	if m.GetTxOutsFucn != nil {
 		return m.GetTxOutsFucn(ctx, chain, transfers)
 	}
@@ -125,7 +125,7 @@ func (m *MockTxOutputProducer) GetTxOuts(ctx sdk.Context, chain string, transfer
 	return nil, nil
 }
 
-func (m *MockTxOutputProducer) PauseContract(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error) {
+func (m *MockTxOutputProducer) PauseContract(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error) {
 	if m.PauseContractFunc != nil {
 		return m.PauseContractFunc(ctx, chain, hash)
 	}
@@ -133,7 +133,7 @@ func (m *MockTxOutputProducer) PauseContract(ctx sdk.Context, chain string, hash
 	return nil, nil
 }
 
-func (m *MockTxOutputProducer) ResumeContract(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error) {
+func (m *MockTxOutputProducer) ResumeContract(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error) {
 	if m.ResumeContractFunc != nil {
 		return m.ResumeContractFunc(ctx, chain, hash)
 	}
@@ -141,7 +141,7 @@ func (m *MockTxOutputProducer) ResumeContract(ctx sdk.Context, chain string, has
 	return nil, nil
 }
 
-func (m *MockTxOutputProducer) ContractChangeOwnership(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutWithSigner, error) {
+func (m *MockTxOutputProducer) ContractChangeOwnership(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutMsg, error) {
 	if m.ContractChangeOwnershipFunc != nil {
 		return m.ContractChangeOwnershipFunc(ctx, chain, contractHash, newOwner)
 	}
@@ -149,7 +149,7 @@ func (m *MockTxOutputProducer) ContractChangeOwnership(ctx sdk.Context, chain, c
 	return nil, nil
 }
 
-func (m *MockTxOutputProducer) ContractSetLiquidPoolAddress(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutWithSigner, error) {
+func (m *MockTxOutputProducer) ContractSetLiquidPoolAddress(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutMsg, error) {
 	if m.ContractSetLiquidPoolAddressFunc != nil {
 		return m.ContractSetLiquidPoolAddressFunc(ctx, chain, contractHash, newAddress)
 	}
@@ -157,7 +157,7 @@ func (m *MockTxOutputProducer) ContractSetLiquidPoolAddress(ctx sdk.Context, cha
 	return nil, nil
 }
 
-func (m *MockTxOutputProducer) ContractEmergencyWithdrawFund(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutWithSigner, error) {
+func (m *MockTxOutputProducer) ContractEmergencyWithdrawFund(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutMsg, error) {
 	if m.ContractEmergencyWithdrawFundFunc != nil {
 		return m.ContractEmergencyWithdrawFundFunc(ctx, chain, contractHash, tokens, newOwner)
 	}

@@ -41,7 +41,7 @@ func (h *HandlerFundGateway) DeliverMsg(ctx sdk.Context, msg *types.FundGatewayM
 
 func (h *HandlerFundGateway) doContractDeployment(ctx sdk.Context, data *types.FundGateway) {
 	log.Info("Create txout to deploy a contract")
-	outMsgs := make([]*types.TxOutWithSigner, 0)
+	outMsgs := make([]*types.TxOutMsg, 0)
 	contracts := h.keeper.GetPendingContracts(ctx, data.Chain)
 	log.Verbose("len(contracts) = ", len(contracts))
 
@@ -59,7 +59,7 @@ func (h *HandlerFundGateway) doContractDeployment(ctx sdk.Context, data *types.F
 				return
 			}
 
-			outMsg := types.NewMsgTxOutWithSigner(
+			outMsg := types.NewTxOutMsg(
 				h.mc.AppKeys().GetSignerAddress().String(),
 				types.TxOutType_CONTRACT_DEPLOYMENT,
 				[]string{data.Chain},

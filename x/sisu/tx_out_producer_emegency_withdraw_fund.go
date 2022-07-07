@@ -14,7 +14,7 @@ import (
 )
 
 func (p *DefaultTxOutputProducer) ContractEmergencyWithdrawFund(ctx sdk.Context, chain, contractHash string,
-	tokens []string, newOwner string) (*types.TxOutWithSigner, error) {
+	tokens []string, newOwner string) (*types.TxOutMsg, error) {
 
 	if !libchain.IsETHBasedChain(chain) {
 		return nil, fmt.Errorf("unsupported chain %s", chain)
@@ -59,7 +59,7 @@ func (p *DefaultTxOutputProducer) ContractEmergencyWithdrawFund(ctx sdk.Context,
 		return nil, err
 	}
 
-	return types.NewMsgTxOutWithSigner(
+	return types.NewTxOutMsg(
 		p.appKeys.GetSignerAddress().String(),
 		types.TxOutType_LIQUIDITY_WITHDRAW_FUND,
 		[]string{""},          // in chain
