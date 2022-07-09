@@ -54,13 +54,18 @@ func (p *DefaultTxOutputProducer) processCardanoBatches(ctx sdk.Context, k keepe
 		return nil, nil, err
 	}
 
+	hash, err := tx.Hash()
+	if err != nil {
+		return nil, nil, err
+	}
+
 	outMsg := types.NewTxOutMsg(
 		p.appKeys.GetSignerAddress().String(),
 		types.TxOutType_TRANSFER_OUT,
 		inChains,
 		inHashes,
 		destChain,
-		utils.KeccakHash32Bytes(bz),
+		hash.String(),
 		bz,
 		"",
 	)

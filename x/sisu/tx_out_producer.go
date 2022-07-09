@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/sisu-network/sisu/utils"
 	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
 
 	ecommon "github.com/ethereum/go-ethereum/common"
@@ -194,19 +193,13 @@ func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context,
 		return nil, nil, err
 	}
 
-	bz, err := responseTx.EthTx.MarshalBinary()
-	if err != nil {
-		log.Error("processEthBatches: Failed to unmarshal eth tx, err = ", err)
-		return nil, nil, err
-	}
-
 	outMsg := types.NewTxOutMsg(
 		p.appKeys.GetSignerAddress().String(),
 		types.TxOutType_TRANSFER_OUT,
 		inChains,
 		inHashes,
 		dstChain,
-		utils.KeccakHash32Bytes(bz),
+		responseTx.EthTx.Hash().String(),
 		responseTx.RawBytes,
 		"",
 	)
