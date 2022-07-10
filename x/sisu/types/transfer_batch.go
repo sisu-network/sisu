@@ -5,31 +5,27 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-var _ sdk.Msg = &ContractsWithSigner{}
+var _ sdk.Msg = &TransferBatchMsg{}
 
-func NewContractsMsg(signer string, contracts []*Contract) *ContractsWithSigner {
-	data := &Contracts{
-		Contracts: contracts,
-	}
-
-	return &ContractsWithSigner{
+func NewTransferBatchMsg(signer string, data *TransferBatch) *TransferBatchMsg {
+	return &TransferBatchMsg{
 		Signer: signer,
 		Data:   data,
 	}
 }
 
 // Route ...
-func (msg *ContractsWithSigner) Route() string {
+func (msg *TransferBatchMsg) Route() string {
 	return RouterKey
 }
 
 // Type ...
-func (msg *ContractsWithSigner) Type() string {
-	return MsgTypeContractsWithSigner
+func (msg *TransferBatchMsg) Type() string {
+	return MsgTypeTransferBatchMsg
 }
 
 // GetSigners ...
-func (msg *ContractsWithSigner) GetSigners() []sdk.AccAddress {
+func (msg *TransferBatchMsg) GetSigners() []sdk.AccAddress {
 	author, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		panic(err)
@@ -37,21 +33,22 @@ func (msg *ContractsWithSigner) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{author}
 }
 
-func (msg *ContractsWithSigner) GetMsgs() []sdk.Msg {
+func (msg *TransferBatchMsg) GetMsgs() []sdk.Msg {
 	return []sdk.Msg{msg}
 }
 
 // GetSignBytes ...
-func (msg *ContractsWithSigner) GetSignBytes() []byte {
+func (msg *TransferBatchMsg) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
 // ValidateBasic ...
-func (msg *ContractsWithSigner) ValidateBasic() error {
+func (msg *TransferBatchMsg) ValidateBasic() error {
 	_, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid creator address (%s)", err)
 	}
+
 	return nil
 }

@@ -164,6 +164,9 @@ func (c *swapCommand) getEthGatewayAddresses(context context.Context, chain stri
 
 	queryClient := tssTypes.NewTssQueryClient(grpcConn)
 
+	fmt.Println("Chain = ", chain)
+	fmt.Println("Swap, contract hash = ", sisu.SupportedContracts[sisu.ContractErc20Gateway].AbiHash)
+
 	res, err := queryClient.QueryContract(context, &tssTypes.QueryContractRequest{
 		Chain: chain,
 		Hash:  sisu.SupportedContracts[sisu.ContractErc20Gateway].AbiHash,

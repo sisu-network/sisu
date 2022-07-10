@@ -95,6 +95,14 @@ type Keeper interface {
 	AddGatewayCheckPoint(ctx sdk.Context, checkPoint *types.GatewayCheckPoint)
 	GetGatewayCheckPoint(ctx sdk.Context, chain string) *types.GatewayCheckPoint
 	GetAllGatewayCheckPoints(ctx sdk.Context) map[string]*types.GatewayCheckPoint
+
+	// Transfer Queue
+	SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.Transfer)
+	GetTransferQueue(ctx sdk.Context, chain string) []*types.Transfer
+
+	// Pending Transfer
+	SetPendingTransfers(ctx sdk.Context, chain string, transfers []*types.Transfer)
+	GetPendingTransfers(ctx sdk.Context, chain string) []*types.Transfer
 }
 
 type DefaultKeeper struct {
@@ -391,6 +399,29 @@ func (k *DefaultKeeper) GetGatewayCheckPoint(ctx sdk.Context, chain string) *typ
 func (k *DefaultKeeper) GetAllGatewayCheckPoints(ctx sdk.Context) map[string]*types.GatewayCheckPoint {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGatewayCheckPoint)
 	return getAllGatewayCheckPoints(store)
+}
+
+///// Transfer Queue
+func (k *DefaultKeeper) SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.Transfer) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferQueue)
+	setTranfers(store, chain, transfers)
+}
+
+func (k *DefaultKeeper) GetTransferQueue(ctx sdk.Context, chain string) []*types.Transfer {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferQueue)
+	return getTransfers(store, chain)
+}
+
+///// Pending queue
+
+func (k *DefaultKeeper) SetPendingTransfers(ctx sdk.Context, chain string, transfers []*types.Transfer) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPendingTransfers)
+	setTranfers(store, chain, transfers)
+}
+
+func (k *DefaultKeeper) GetPendingTransfers(ctx sdk.Context, chain string) []*types.Transfer {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPendingTransfers)
+	return getTransfers(store, chain)
 }
 
 ///// Debug

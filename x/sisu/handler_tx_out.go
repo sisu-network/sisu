@@ -42,13 +42,18 @@ func (h *HandlerTxOut) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutMsg) (*
 
 // deliverTxOut executes a TxOut transaction after it's included in Sisu block. If this node is
 // catching up with the network, we would not send the tx to TSS for signing.
-func (h *HandlerTxOut) doTxOut(ctx sdk.Context, msgWithSigner *types.TxOutMsg) ([]byte, error) {
-	txOut := msgWithSigner.Data
+func (h *HandlerTxOut) doTxOut(ctx sdk.Context, txOutMsg *types.TxOutMsg) ([]byte, error) {
+	txOut := txOutMsg.Data
 
 	log.Info("Delivering TxOut")
 
 	// Save this to KVStore
 	h.keeper.SaveTxOut(ctx, txOut)
+
+	// If this is a txOut deployment, mark the contract as being deployed.
+	if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
+		h.keeper.UpdateContractsStatus(ctx, txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
+	}
 
 	if !h.globalData.IsCatchingUp() {
 		h.txOutQueue.AddTxOut(txOut)
@@ -84,6 +89,4 @@ func (h *HandlerTxOut) removeTransfers(ctx sdk.Context, txOut *types.TxOut) {
 			return
 		}
 	}
-
-	h.transferQueue.RemoveTransfers(ctx, transfers)
 }

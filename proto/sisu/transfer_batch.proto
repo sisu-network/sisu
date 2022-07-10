@@ -1,0 +1,20 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message TransferBatchMsg {
+  string signer = 1;
+  TransferBatch data = 2;
+}
+
+message TransferBatch {
+  string chain = 1;
+  repeated Transfer transfers = 2;
+}
+
+message Transfer {
+  string recipient = 1;
+  string token = 2;
+  string amount = 3;
+}

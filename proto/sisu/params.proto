@@ -13,4 +13,5 @@ message TransferOutParams {
 message Params {
   int32 majority_threshold = 1;
   repeated TransferOutParams transfer_out_params = 2;
+  repeated string supported_chains = 3;
 }

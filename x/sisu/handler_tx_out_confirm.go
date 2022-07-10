@@ -26,6 +26,7 @@ func NewHandlerTxOutConfirm(mc ManagerContainer) *HandlerTxOutConfirm {
 }
 
 func (h *HandlerTxOutConfirm) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutConfirmMsg) (*sdk.Result, error) {
+	fmt.Println("There is a txout confirm")
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
 		data, err := h.doTxOutConfirm(ctx, signerMsg)
 		h.keeper.ProcessTxRecord(ctx, hash)
@@ -53,6 +54,7 @@ func (h *HandlerTxOutConfirm) doTxOutConfirm(ctx sdk.Context, msgWithSigner *typ
 	}
 
 	savedCheckPoint := h.keeper.GetGatewayCheckPoint(ctx, msg.OutChain)
+	fmt.Println("savedCheckPoint = ", savedCheckPoint)
 	if savedCheckPoint == nil || savedCheckPoint.BlockHeight < msg.BlockHeight {
 		// Save checkpoint
 		checkPoint := &types.GatewayCheckPoint{
@@ -63,6 +65,8 @@ func (h *HandlerTxOutConfirm) doTxOutConfirm(ctx sdk.Context, msgWithSigner *typ
 		if libchain.IsETHBasedChain(msg.OutChain) {
 			checkPoint.Nonce = msg.Nonce
 		}
+
+		fmt.Println("Saving checkpoint, nonce = ", checkPoint.Nonce)
 
 		// Update observed block height and nonce.
 		h.keeper.AddGatewayCheckPoint(ctx, checkPoint)

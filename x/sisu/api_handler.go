@@ -268,11 +268,10 @@ func (a *ApiHandler) OnKeygenResult(result dhtypes.KeygenResult) {
 	log.Info("There is keygen result from dheart, resultEnum = ", resultEnum, " keyType = ", result.KeyType)
 
 	a.txSubmit.SubmitMessageAsync(signerMsg)
-
+	ctx := a.globalData.GetReadOnlyContext()
+	params := a.keeper.GetParams(ctx)
 	// Add list the public key address to watch.
-	for _, chainConfig := range a.config.SupportedChains {
-		chain := chainConfig.Id
-
+	for _, chain := range params.SupportedChains {
 		if libchain.GetKeyTypeForChain(chain) != result.KeyType {
 			continue
 		}
@@ -395,7 +394,7 @@ func (a *ApiHandler) processETHSigningResult(ctx sdk.Context, result *dhtypes.Ke
 	// If this is a contract deployment transaction, update the contract table with the hash of the
 	// deployment tx bytes.
 	isContractDeployment := chain.IsETHBasedChain(signMsg.OutChain) && txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT
-	err = a.deploySignedTx(ctx, bz, signMsg.OutChain, result.Request.KeysignMessages[index].OutHash, isContractDeployment)
+	err = a.deploySignedTx(ctx, bz, signMsg.OutChain, signedTx.Hash().String(), isContractDeployment)
 	if err != nil {
 		log.Error("deployment error: ", err)
 		return
@@ -618,6 +617,9 @@ func (a *ApiHandler) ConfirmTx(txTrack *chainstypes.TrackUpdate) {
 	ctx := a.globalData.GetReadOnlyContext()
 	hash := utils.KeccakHash32Bytes(txTrack.Bytes)
 
+	log.Verbose("Confirming tx height = %d, chain = %s, hash = %s, nonce = %df",
+		txTrack.BlockHeight, txTrack.Chain, txTrack.Hash, txTrack.Nonce)
+
 	// The txOutSig is in private db while txOut should come from common db.
 	txOutSig := a.privateDb.GetTxOutSig(txTrack.Chain, utils.KeccakHash32Bytes(txTrack.Bytes))
 	if txOutSig == nil {
@@ -648,7 +650,7 @@ func (a *ApiHandler) ConfirmTx(txTrack *chainstypes.TrackUpdate) {
 			return
 		}
 
-		txConfirm.Nonce = int64(ethTx.Nonce())
+		txConfirm.Nonce = int64(ethTx.Nonce()) + 1
 		if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
 			sender, err := utils.GetEthSender(ethTx)
 			if err != nil {

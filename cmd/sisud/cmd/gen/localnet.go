@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"net"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -89,11 +90,14 @@ Example:
 
 			chains := getChains(filepath.Join(genesisFolder, "chains.json"))
 			supportedChains := make(map[string]config.TssChainConfig)
+			supportedChainsArr := make([]string, 0)
 			for _, chain := range chains {
 				supportedChains[chain.Id] = config.TssChainConfig{
 					Id: chain.Id,
 				}
+				supportedChainsArr = append(supportedChainsArr, chain.Id)
 			}
+			sort.Strings(supportedChainsArr)
 
 			if len(cardanoSecret) > 0 {
 				supportedChains["cardano-testnet"] = config.TssChainConfig{
@@ -134,6 +138,11 @@ Example:
 
 			generator.generateEyesToml("../deyes", deyesChains)
 
+			params := &types.Params{
+				MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3)),
+				SupportedChains:   supportedChainsArr,
+			}
+
 			settings := &Setting{
 				clientCtx:      clientCtx,
 				cmd:            cmd,
@@ -153,7 +162,7 @@ Example:
 				tokens:         getTokens(filepath.Join(genesisFolder, "tokens.json")),
 				chains:         chains,
 				liquidities:    getLiquidity(filepath.Join(genesisFolder, "liquid.json")),
-				params:         &types.Params{MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3))},
+				params:         params,
 				cardanoSecret:  cardanoSecret,
 			}
 

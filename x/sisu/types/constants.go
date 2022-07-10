@@ -17,6 +17,7 @@ const (
 	MsgTypeTransferRequestsMsg            = "TransferRequestsMsg"
 	MsgTypeFundGatewayMsg                 = "FundGatewayMsg"
 	MsgTypeBlockHeightMsg                 = "BlockHeightMsg"
+	MsgTypeTransferBatchMsg               = "TransferBatchMsg"
 
 	MsgTypeTxOut         = "TxOut"
 	MsgTypeKeysignResult = "KeysignResult"

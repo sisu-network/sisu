@@ -3,6 +3,7 @@ package sisu
 import (
 	"fmt"
 	"math"
+	"math/big"
 
 	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -18,16 +19,16 @@ import (
 )
 
 func (p *DefaultTxOutputProducer) processCardanoBatches(ctx sdk.Context, k keeper.Keeper, destChain string,
-	transfers []*types.TransferOutData) ([]*types.TxOutMsg, []*types.TransferOutData, error) {
+	transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
 	// Find the highest block where majority of the validator nodes has reach to.
 	outMgs := make([]*types.TxOutMsg, 0)
-	inChains := make([]string, len(transfers))
-	inHashes := make([]string, len(transfers))
+	// inChains := make([]string, len(transfers))
+	// inHashes := make([]string, len(transfers))
 
-	for _, transfer := range transfers {
-		inChains = append(inChains, transfer.InChain)
-		inHashes = append(inHashes, transfer.InHash)
-	}
+	// for _, transfer := range transfers {
+	// 	inChains = append(inChains, transfer.InChain)
+	// 	inHashes = append(inHashes, transfer.InHash)
+	// }
 
 	pubkey := p.keeper.GetKeygenPubkey(ctx, libchain.KEY_TYPE_EDDSA)
 	senderAddr := hutils.GetAddressFromCardanoPubkey(pubkey)
@@ -41,29 +42,31 @@ func (p *DefaultTxOutputProducer) processCardanoBatches(ctx sdk.Context, k keepe
 	}
 	utxos, err := p.cardanoClient.UTxOs(senderAddr, maxBlockHeight)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	tx, err := p.getCardanoTx(ctx, transfers, utxos, maxBlockHeight)
+	tx, err := p.getCardanoTx(ctx, destChain, transfers, utxos, maxBlockHeight)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	bz, err := tx.MarshalCBOR()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	hash, err := tx.Hash()
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	outMsg := types.NewTxOutMsg(
 		p.appKeys.GetSignerAddress().String(),
 		types.TxOutType_TRANSFER_OUT,
-		inChains,
-		inHashes,
+		// inChains,
+		// inHashes,
+		[]string{},
+		[]string{},
 		destChain,
 		hash.String(),
 		bz,
@@ -78,7 +81,7 @@ func (p *DefaultTxOutputProducer) processCardanoBatches(ctx sdk.Context, k keepe
 	// 	transfer.txIn,
 	// )
 
-	return outMgs, make([]*types.TransferOutData, 0), nil
+	return outMgs, nil
 }
 
 func (p *DefaultTxOutputProducer) getUtxos(ctx sdk.Context, chain string, height int64) ([]cardano.UTxO, error) {
@@ -89,12 +92,13 @@ func (p *DefaultTxOutputProducer) getUtxos(ctx sdk.Context, chain string, height
 }
 
 // In Cardano chain, transferring multi-asset required at least 1 ADA (10^6 lovelace)
-func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, transfers []*types.TransferOutData,
+func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.Transfer,
 	utxos []cardano.UTxO, maxBlock uint64) (*cardano.Tx, error) {
 	pubkey := p.keeper.GetKeygenPubkey(ctx, libchain.KEY_TYPE_EDDSA)
 	senderAddr := hutils.GetAddressFromCardanoPubkey(pubkey)
 	log.Debug("cardano sender address = ", senderAddr.String())
 
+	allTokens := p.keeper.GetAllTokens(ctx)
 	receiverAddrs := make([]cardano.Address, 0)
 	amounts := make([]*cardano.Value, 0, len(transfers))
 	for _, transfer := range transfers {
@@ -102,13 +106,24 @@ func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, transfers []*typ
 		receiverAddr, err := cardano.NewAddress(transfer.Recipient)
 		if err != nil {
 			log.Error("error when parsing receiver addr: ", err)
-			return nil, err
+			continue
 		}
 		receiverAddrs = append(receiverAddrs, receiverAddr)
 
+		token := allTokens[transfer.Token]
+		if token == nil {
+			continue
+		}
+
+		amountInt, ok := new(big.Int).SetString(transfer.Amount, 10)
+		if !ok {
+			log.Warnf("Cannot create big.Int value from amount %s on chain %s", transfer.Amount, chain)
+			continue
+		}
+
 		// amounts
-		lovelaceAmount := utils.WeiToLovelace(transfer.Amount)
-		multiAsset, err := scardano.GetCardanoMultiAsset(transfer.DestChain, transfer.Token, lovelaceAmount.Uint64())
+		lovelaceAmount := utils.WeiToLovelace(amountInt)
+		multiAsset, err := scardano.GetCardanoMultiAsset(chain, token, lovelaceAmount.Uint64())
 		if err != nil {
 			return nil, err
 		}

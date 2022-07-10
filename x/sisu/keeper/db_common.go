@@ -31,6 +31,8 @@ var (
 	prefixLiquidity              = []byte{0x12}
 	prefixParams                 = []byte{0x13}
 	prefixGatewayCheckPoint      = []byte{0x14}
+	prefixTransferQueue          = []byte{0x15}
+	prefixPendingTransfers       = []byte{0x16}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -889,6 +891,38 @@ func getAllGatewayCheckPoints(store cstypes.KVStore) map[string]*types.GatewayCh
 	}
 
 	return ret
+}
+
+///// Transfer Queue
+func setTranfers(store cstypes.KVStore, chain string, transfers []*types.Transfer) {
+	transferBatch := &types.TransferBatch{
+		Chain:     chain,
+		Transfers: transfers,
+	}
+
+	bz, err := transferBatch.Marshal()
+	if err != nil {
+		log.Error("saveTranferQueue: faield to marshal transfer batch")
+		return
+	}
+
+	store.Set([]byte(chain), bz)
+}
+
+func getTransfers(store cstypes.KVStore, chain string) []*types.Transfer {
+	bz := store.Get([]byte(chain))
+	if bz == nil {
+		return nil
+	}
+
+	batch := &types.TransferBatch{}
+	err := batch.Unmarshal(bz)
+	if err != nil {
+		log.Error("getTransferQueue: failed to unmarshal batch")
+		return nil
+	}
+
+	return batch.Transfers
 }
 
 ///// Debug functions

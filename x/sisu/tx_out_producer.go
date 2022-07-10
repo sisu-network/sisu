@@ -25,7 +25,7 @@ import (
 type TxOutputProducer interface {
 	// GetTxOuts returns a list of TxOut message and a list of un-processed transfer out request that
 	// needs to be processed next time.
-	GetTxOuts(ctx sdk.Context, chain string, transfers []*types.TransferOutData) ([]*types.TxOutMsg, []*types.TransferOutData)
+	GetTxOuts(ctx sdk.Context, chain string, transfers []*types.Transfer) ([]*types.TxOutMsg, error)
 
 	PauseContract(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error)
 
@@ -113,28 +113,24 @@ func (p *DefaultTxOutputProducer) parseCardanoTxIn(ctx sdk.Context, tx *types.Tx
 }
 
 func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, chain string,
-	transfers []*types.TransferOutData) ([]*types.TxOutMsg, []*types.TransferOutData) {
-	params := p.keeper.GetParams(ctx)
-
-	// TODO: Don't use fixed batch size. Let the batch size dependent on the current data on-chain.
-	batchSize := params.GetMaxTransferOutBatch(chain)
+	transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
 
 	if libchain.IsETHBasedChain(chain) {
-		msgs, notProcessed, err := p.processEthBatches(ctx, transfers[:batchSize])
+		msgs, err := p.processEthBatches(ctx, chain, transfers)
 		if err != nil {
-			return nil, transfers
+			return nil, err
 		}
 
-		return msgs, append(notProcessed, transfers[batchSize:]...)
+		return msgs, nil
 	}
 
 	if libchain.IsCardanoChain(chain) {
-		msgs, notProcessed, err := p.processCardanoBatches(ctx, p.keeper, chain, transfers[:batchSize])
+		msgs, err := p.processCardanoBatches(ctx, p.keeper, chain, transfers)
 		if err != nil {
-			return nil, transfers
+			return nil, err
 		}
 
-		return msgs, append(notProcessed, transfers[batchSize:]...)
+		return msgs, nil
 	}
 
 	log.Error("Unknown chain type: ", chain)
@@ -169,20 +165,33 @@ func (p *DefaultTxOutputProducer) categorizeTransfer(transfers []*types.Transfer
 }
 
 func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context,
-	transfers []*types.TransferOutData) ([]*types.TxOutMsg, []*types.TransferOutData, error) {
-	dstChain := transfers[0].DestChain
+	dstChain string, transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
+	inChains := make([]string, 0, len(transfers))
+	inHashes := make([]string, 0, len(transfers))
+	tokens := make([]*types.Token, 0, len(transfers))
+	recipients := make([]ethcommon.Address, 0, len(transfers))
+	amounts := make([]*big.Int, 0, len(transfers))
 
-	inChains := make([]string, len(transfers))
-	inHashes := make([]string, len(transfers))
-	tokens := make([]*types.Token, len(transfers))
-	recipients := make([]ethcommon.Address, len(transfers))
-	amounts := make([]*big.Int, len(transfers))
+	allTokens := p.keeper.GetAllTokens(ctx)
+	for _, transfer := range transfers {
+		token := allTokens[transfer.Token]
+		if token == nil {
+			log.Warn("cannot find token", transfer.Token)
+			continue
+		}
 
-	for k, transfer := range transfers {
-		fmt.Println("transfer = ", *transfer)
-		tokens[k] = transfer.Token
-		recipients[k] = ecommon.HexToAddress(transfer.Recipient)
-		amounts[k] = transfer.Amount
+		amount, ok := new(big.Int).SetString(transfer.Amount, 10)
+		if !ok {
+			log.Warn("Cannot create big.Int value from amout ", transfer.Amount)
+			continue
+		}
+
+		tokens = append(tokens, token)
+		recipients = append(recipients, ecommon.HexToAddress(transfer.Recipient))
+		amounts = append(amounts, amount)
+
+		log.Verbosef("Processing transfer in: id = %s, recipient = %s, amount = %s",
+			token.Id, transfer.Recipient, amount)
 	}
 
 	fmt.Println("len(tokens) = ", len(tokens), len(recipients), len(amounts))
@@ -190,7 +199,7 @@ func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context,
 	responseTx, err := p.buildERC20TransferIn(ctx, p.keeper, tokens, recipients, amounts, dstChain)
 	if err != nil {
 		log.Error("Failed to build erc20 transfer in, err = ", err)
-		return nil, nil, err
+		return nil, err
 	}
 
 	outMsg := types.NewTxOutMsg(
@@ -203,7 +212,7 @@ func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context,
 		responseTx.RawBytes,
 		"",
 	)
-	return []*types.TxOutMsg{outMsg}, nil, nil
+	return []*types.TxOutMsg{outMsg}, nil
 }
 
 func (p *DefaultTxOutputProducer) getGasLimit(chain string) uint64 {
