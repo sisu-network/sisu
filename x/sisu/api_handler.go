@@ -21,6 +21,7 @@ import (
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
+	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
 	"github.com/sisu-network/sisu/x/sisu/eth"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
@@ -385,7 +386,7 @@ func (a *ApiHandler) processETHSigningResult(ctx sdk.Context, result *dhtypes.Ke
 	fmt.Println("signMsg.OutHash = ", signMsg.OutHash)
 	a.privateDb.SaveTxOutSig(&types.TxOutSig{
 		Chain:       signMsg.OutChain,
-		HashWithSig: utils.KeccakHash32Bytes(bz),
+		HashWithSig: signedTx.Hash().String(),
 		HashNoSig:   signMsg.OutHash,
 	})
 
@@ -568,8 +569,6 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 
 	if libchain.IsCardanoChain(chain) {
 		ret := make([]*types.TxIn, 0)
-
-		// TODO: Complete this.
 		cardanoTx := &etypes.CardanoTransactionUtxo{}
 		err := json.Unmarshal(tx.Serialized, cardanoTx)
 		if err != nil {
@@ -587,21 +586,26 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 				quantity = utils.LovelaceToWei(quantity)
 
 				// Remove the word wrap
-				token := amount.Unit
-				if token != "lovelace" {
-					if token[:5] != "WRAP_" {
-						log.Error("Invalid ADA token name. It should start with WRAP_, token = ", token)
-						continue
-					}
+				tokenUnit := amount.Unit
+				if tokenUnit != "lovelace" {
+					// if tokenUnit[:5] != "WRAP_" {
+					// 	log.Error("Invalid ADA token name. It should start with WRAP_, token = ", tokenUnit)
+					// 	continue
+					// }
 
-					token = token[5:]
+					// tokenUnit = tokenUnit[5:]
+
+					token := scardano.GetTokenFromCardanoAsset(ctx, a.keeper, tokenUnit, chain)
+					tokenUnit = token.Id
 				} else {
-					token = "ADA"
+					tokenUnit = "ADA"
 				}
+
+				fmt.Println("tokenUnit = ", tokenUnit)
 
 				ret = append(ret, &types.TxIn{
 					ToChain:   cardanoTx.Metadata.Chain,
-					Token:     token,
+					Token:     tokenUnit,
 					Recipient: cardanoTx.Metadata.Recipient,
 					Amount:    quantity.String(),
 				})
@@ -615,15 +619,14 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 // ConfirmTx implements AppLogicListener
 func (a *ApiHandler) ConfirmTx(txTrack *chainstypes.TrackUpdate) {
 	ctx := a.globalData.GetReadOnlyContext()
-	hash := utils.KeccakHash32Bytes(txTrack.Bytes)
 
-	log.Verbose("Confirming tx height = %d, chain = %s, hash = %s, nonce = %df",
+	log.Verbose("Confirming tx height = %d, chain = %s, hash = %s, nonce = %d",
 		txTrack.BlockHeight, txTrack.Chain, txTrack.Hash, txTrack.Nonce)
 
 	// The txOutSig is in private db while txOut should come from common db.
-	txOutSig := a.privateDb.GetTxOutSig(txTrack.Chain, utils.KeccakHash32Bytes(txTrack.Bytes))
+	txOutSig := a.privateDb.GetTxOutSig(txTrack.Chain, txTrack.Hash)
 	if txOutSig == nil {
-		log.Error("cannot find txOutSig with full signature hash: ", hash)
+		log.Error("cannot find txOutSig with full signature hash: ", txTrack.Hash)
 		return
 	}
 
@@ -632,7 +635,7 @@ func (a *ApiHandler) ConfirmTx(txTrack *chainstypes.TrackUpdate) {
 		log.Verbose("cannot find txOut with hash (with no sig): ", txOutSig.HashNoSig)
 		return
 	}
-	log.Info("confirming tx: chain, hash, type = ", txTrack.Chain, " ", hash, " ", txOut.TxType)
+	log.Info("confirming tx: chain, hash, type = ", txTrack.Chain, " ", txTrack.Hash, " ", txOut.TxType)
 	a.txTracker.RemoveTransaction(txTrack.Chain, txOut.OutHash)
 
 	txConfirm := &types.TxOutConfirm{

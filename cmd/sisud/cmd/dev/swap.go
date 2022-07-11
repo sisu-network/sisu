@@ -248,7 +248,11 @@ func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *
 	}
 
 	node := scardano.NewBlockfrostClient(cardano.Testnet, blockfrostSecret)
-	tip, _ := node.Tip()
+	tip, err := node.Tip()
+	if err != nil {
+		panic(err)
+	}
+
 	utxos, err := node.UTxOs(senderAddress, tip.Block+1000)
 
 	for _, utxo := range utxos {
