@@ -9,12 +9,10 @@ import (
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
-	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-type TransferBatchRequest struct {
-	ctx     sdk.Context
-	batches []*types.TransferBatch
+type TransferRequest struct {
+	ctx sdk.Context
 }
 
 type TransferQueue interface {
@@ -23,58 +21,50 @@ type TransferQueue interface {
 	ClearInMemoryPendingTransfers(chain string)
 }
 
-type defaultTxInQueue struct {
+type defaultTransferQueue struct {
 	keeper           keeper.Keeper
 	txOutputProducer TxOutputProducer
-	globalData       common.GlobalData
 	txSubmit         common.TxSubmit
 
 	// In-memory list that stores all newly added transfer in a block (grouped by chain)
 	chainsWithSubmission map[string]bool
-	lastCheckPoints      map[string]*types.GatewayCheckPoint
-	newRequestCh         chan TransferBatchRequest
+	newRequestCh         chan TransferRequest
 	lock                 *sync.RWMutex
 }
 
 func NewTxInQueue(
 	keeper keeper.Keeper,
 	txOutputProducer TxOutputProducer,
-	globalData common.GlobalData,
 	txSubmit common.TxSubmit,
 	tssConfig config.TssConfig,
 ) TransferQueue {
-	return &defaultTxInQueue{
+	return &defaultTransferQueue{
 		keeper:               keeper,
 		txOutputProducer:     txOutputProducer,
-		globalData:           globalData,
 		txSubmit:             txSubmit,
-		newRequestCh:         make(chan TransferBatchRequest, 10),
+		newRequestCh:         make(chan TransferRequest, 10),
 		lock:                 &sync.RWMutex{},
 		chainsWithSubmission: make(map[string]bool),
-		lastCheckPoints:      make(map[string]*types.GatewayCheckPoint),
 	}
 }
 
-func (q *defaultTxInQueue) Start(ctx sdk.Context) {
-	// Load all last checkpoints
-	q.lastCheckPoints = q.keeper.GetAllGatewayCheckPoints(ctx)
-
+func (q *defaultTransferQueue) Start(ctx sdk.Context) {
 	// Start the loop
 	go q.loop()
 	log.Info("TxInQueue started")
 }
 
-func (q *defaultTxInQueue) ProcessTransfers(ctx sdk.Context) {
-	q.newRequestCh <- TransferBatchRequest{
+func (q *defaultTransferQueue) ProcessTransfers(ctx sdk.Context) {
+	q.newRequestCh <- TransferRequest{
 		ctx: ctx,
 	}
 }
 
-func (q *defaultTxInQueue) ClearInMemoryPendingTransfers(chain string) {
+func (q *defaultTransferQueue) ClearInMemoryPendingTransfers(chain string) {
 	q.chainsWithSubmission[chain] = false
 }
 
-func (q *defaultTxInQueue) loop() {
+func (q *defaultTransferQueue) loop() {
 	for {
 		// Wait for new tx in to process
 		request := <-q.newRequestCh
@@ -82,7 +72,7 @@ func (q *defaultTxInQueue) loop() {
 	}
 }
 
-func (q *defaultTxInQueue) processBatch(request TransferBatchRequest) {
+func (q *defaultTransferQueue) processBatch(request TransferRequest) {
 	ctx := request.ctx
 
 	params := q.keeper.GetParams(ctx)

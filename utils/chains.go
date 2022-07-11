@@ -2,28 +2,11 @@ package utils
 
 import (
 	"encoding/hex"
-	"fmt"
 
 	"github.com/ethereum/go-ethereum/common"
 	etypes "github.com/ethereum/go-ethereum/core/types"
-	libchain "github.com/sisu-network/lib/chain"
 	"golang.org/x/crypto/sha3"
 )
-
-func GetTxHash(chain string, serialized []byte) (string, error) {
-	if libchain.IsETHBasedChain(chain) {
-		tx := &etypes.Transaction{}
-		err := tx.UnmarshalBinary(serialized)
-		if err != nil {
-			return "", err
-		}
-
-		return KeccakHash32(string(serialized)), nil
-	}
-
-	// TODO: Support more chain other than ETH family.
-	return "", fmt.Errorf("Unknwon chain: %s", chain)
-}
 
 func PublicKeyBytesToAddress(publicKey []byte) common.Address {
 	var buf []byte

@@ -623,8 +623,7 @@ func (a *ApiHandler) ConfirmTx(txTrack *chainstypes.TrackUpdate) {
 	// The txOutSig is in private db while txOut should come from common db.
 	txOutSig := a.privateDb.GetTxOutSig(txTrack.Chain, utils.KeccakHash32Bytes(txTrack.Bytes))
 	if txOutSig == nil {
-		// TODO: Add this to pending tx to confirm.
-		log.Verbose("cannot find txOutSig with full signature hash: ", hash)
+		log.Error("cannot find txOutSig with full signature hash: ", hash)
 		return
 	}
 

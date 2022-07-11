@@ -9,7 +9,6 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-// TODO: Move txout's byte into separate store.
 var (
 	prefixTxRecord               = []byte{0x01} // Vote for a tx by different nodes
 	prefixTxRecordProcessed      = []byte{0x02}
@@ -18,22 +17,20 @@ var (
 	prefixContract               = []byte{0x05}
 	prefixContractByteCode       = []byte{0x06}
 	prefixContractAddress        = []byte{0x07}
-	prefixTxIn                   = []byte{0x08}
-	prefixTxOut                  = []byte{0x09}
-	prefixTxOutSig               = []byte{0x0A}
-	prefixTxOutContractConfirm   = []byte{0x0B}
-	prefixContractName           = []byte{0x0C}
-	prefixGasPrice               = []byte{0x0D}
-	prefixChain                  = []byte{0x0E}
-	prefixToken                  = []byte{0x0F}
-	prefixTokenPrices            = []byte{0x10}
-	prefixNode                   = []byte{0x11}
-	prefixLiquidity              = []byte{0x12}
-	prefixParams                 = []byte{0x13}
-	prefixGatewayCheckPoint      = []byte{0x14}
-	prefixTransferQueue          = []byte{0x15}
-	prefixPendingTransfers       = []byte{0x16}
-	prefixNewTxIns               = []byte{0x16}
+	prefixTxOut                  = []byte{0x08}
+	prefixTxOutSig               = []byte{0x09}
+	prefixTxOutContractConfirm   = []byte{0x0A}
+	prefixContractName           = []byte{0x0B}
+	prefixGasPrice               = []byte{0x0C}
+	prefixChain                  = []byte{0x0D}
+	prefixToken                  = []byte{0x0E}
+	prefixTokenPrices            = []byte{0x0F}
+	prefixNode                   = []byte{0x10}
+	prefixLiquidity              = []byte{0x11}
+	prefixParams                 = []byte{0x12}
+	prefixGatewayCheckPoint      = []byte{0x13}
+	prefixTransferQueue          = []byte{0x14}
+	prefixPendingTransfers       = []byte{0x15}
 )
 
 func getKeygenKey(keyType string, index int) []byte {

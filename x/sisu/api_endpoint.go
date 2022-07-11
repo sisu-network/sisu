@@ -24,7 +24,6 @@ type AppLogicListener interface {
 	ConfirmTx(txTrack *chainstypes.TrackUpdate)
 }
 
-// TODO: Rename this to API endPoint.
 type ApiEndPoint struct {
 	lock                  *sync.RWMutex
 	networkHealthListener NetworkHealthListener
