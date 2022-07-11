@@ -20,12 +20,11 @@ message TxOut {
   string outHash = 2; // Id that identifies the txOut in the outChain
 
   TxOutType txType = 3;
-  repeated string inChains = 4;
-  repeated string inHashes = 5;
-  bytes outBytes = 6;
+  repeated string inHashes = 4;
+  bytes outBytes = 5;
 
   // optional contract hash
-  string contractHash = 7;
+  string contractHash = 6;
 }
 
 // TxOut with and full transaction hash (including signature) to look up TxOut when a new tx comes in.

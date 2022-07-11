@@ -12,16 +12,18 @@ import (
 )
 
 type HandlerTxOutConfirm struct {
-	pmm         PostedMessageManager
-	keeper      keeper.Keeper
-	deyesClient tssclients.DeyesClient
+	pmm           PostedMessageManager
+	keeper        keeper.Keeper
+	deyesClient   tssclients.DeyesClient
+	transferQueue TransferQueue
 }
 
 func NewHandlerTxOutConfirm(mc ManagerContainer) *HandlerTxOutConfirm {
 	return &HandlerTxOutConfirm{
-		keeper:      mc.Keeper(),
-		pmm:         mc.PostedMessageManager(),
-		deyesClient: mc.DeyesClient(),
+		keeper:        mc.Keeper(),
+		pmm:           mc.PostedMessageManager(),
+		deyesClient:   mc.DeyesClient(),
+		transferQueue: mc.TxInQueue(),
 	}
 }
 
@@ -51,6 +53,10 @@ func (h *HandlerTxOutConfirm) doTxOutConfirm(ctx sdk.Context, msgWithSigner *typ
 
 	if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
 		h.confirmContractDeployment(ctx, txOut, msg.ContractAddress)
+	} else {
+		// Clear the pending queue on dest chain
+		h.keeper.SetPendingTransfers(ctx, txOut.OutChain, make([]*types.Transfer, 0))
+		h.transferQueue.ClearInMemoryPendingTransfers(txOut.OutChain)
 	}
 
 	savedCheckPoint := h.keeper.GetGatewayCheckPoint(ctx, msg.OutChain)

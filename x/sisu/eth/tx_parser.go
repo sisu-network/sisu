@@ -69,6 +69,7 @@ func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain 
 		Token:     token.Id,
 		Recipient: recipient,
 		Amount:    amount.String(),
+		Hash:      ethTx.Hash().String(),
 	}, nil
 }
 

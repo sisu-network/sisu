@@ -255,8 +255,6 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 		am.worldState.InitData(cloneCtx)
 	}
 
-	am.mc.TxInQueue().ClearTransferQueue(ctx)
-
 	am.processor.BeginBlock(ctx, req.Header.Height)
 }
 
@@ -290,20 +288,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		}()
 	}
 
-	if !am.globalData.IsCatchingUp() {
-		// Get all new transfers created in this block.
-		newTransfers := am.mc.TxInQueue().GetTransfer(ctx)
-		params := am.keeper.GetParams(ctx)
-		for _, chain := range params.SupportedChains {
-			// Save new transfer
-			transfers := am.keeper.GetTransferQueue(ctx, chain)
-			transfers = append(transfers, newTransfers[chain]...)
-			am.keeper.SetTransferQueue(ctx, chain, transfers)
-		}
-
-		// Process new incoming transactions. We use read only context to process incoming txs.
-		am.mc.TxInQueue().ProcessTxIns(ctx)
-	}
+	am.mc.TxInQueue().ProcessTransfers(ctx)
 
 	// Process new outgoing transactions
 	am.mc.TxOutQueue().ProcessTxOuts(cloneCtx)

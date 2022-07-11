@@ -15,7 +15,7 @@ type HandlerTxOut struct {
 	pmm           PostedMessageManager
 	keeper        keeper.Keeper
 	globalData    common.GlobalData
-	transferQueue TxInQueue
+	transferQueue TransferQueue
 	txOutQueue    TxOutQueue
 }
 
@@ -55,11 +55,32 @@ func (h *HandlerTxOut) doTxOut(ctx sdk.Context, txOutMsg *types.TxOutMsg) ([]byt
 		h.keeper.UpdateContractsStatus(ctx, txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
 	}
 
+	// Move the the transfers associated with this tx_out to pending.
+	queue := h.keeper.GetTransferQueue(ctx, txOut.OutChain)
+	newQueue := make([]*types.Transfer, 0)
+	pending := make([]*types.Transfer, 0)
+	for _, transfer := range queue {
+		found := false
+		for _, inHash := range txOut.InHashes {
+			if transfer.Id == inHash {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			newQueue = append(newQueue, transfer)
+		} else {
+			pending = append(pending, transfer)
+		}
+	}
+
+	h.keeper.SetTransferQueue(ctx, txOut.OutChain, newQueue)
+	h.keeper.SetPendingTransfers(ctx, txOut.OutChain, pending)
+
 	if !h.globalData.IsCatchingUp() {
 		h.txOutQueue.AddTxOut(txOut)
 	}
-
-	// Remove all the transfer request in the tx in queue.
 
 	return nil, nil
 }
@@ -84,7 +105,7 @@ func (h *HandlerTxOut) removeTransfers(ctx sdk.Context, txOut *types.TxOut) {
 			return
 		}
 
-		if len(transfers) != len(txOut.InChains) || len(transfers) != len(txOut.InHashes) {
+		if len(transfers) != len(txOut.InHashes) {
 			log.Error("transfers size does not match in chains or in hashes size")
 			return
 		}

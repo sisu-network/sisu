@@ -52,7 +52,6 @@ func TestKeeper_SaveAndGetTxOut(t *testing.T) {
 	txOutWithSigner := &types.TxOutMsg{
 		Signer: "signer",
 		Data: &types.TxOut{
-			InChains: []string{"eth"},
 			OutChain: "bitcoin",
 			OutHash:  utils.RandomHeximalString(32),
 			OutBytes: []byte("Hash"),

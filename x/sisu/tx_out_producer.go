@@ -138,35 +138,8 @@ func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, chain string,
 	return nil, nil
 }
 
-// categorizeTransfer divides all transfer request by their destination chains.
-func (p *DefaultTxOutputProducer) categorizeTransfer(transfers []*types.TransferOutData) [][]*types.TransferOutData {
-	m := make(map[string][]*types.TransferOutData)
-	// We need to use an ordered array because map iteration is not deterministic and can result in
-	// inconsistent data between nodes.
-	orders := make([]string, 0)
-
-	for _, transfer := range transfers {
-		if m[transfer.DestChain] == nil {
-			m[transfer.DestChain] = make([]*types.TransferOutData, 0)
-			orders = append(orders, transfer.DestChain)
-		}
-
-		arr := m[transfer.DestChain]
-		arr = append(arr, transfer)
-		m[transfer.DestChain] = arr
-	}
-
-	ret := make([][]*types.TransferOutData, 0)
-	for _, chain := range orders {
-		ret = append(ret, m[chain])
-	}
-
-	return ret
-}
-
 func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context,
 	dstChain string, transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
-	inChains := make([]string, 0, len(transfers))
 	inHashes := make([]string, 0, len(transfers))
 	tokens := make([]*types.Token, 0, len(transfers))
 	recipients := make([]ethcommon.Address, 0, len(transfers))
@@ -189,9 +162,10 @@ func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context,
 		tokens = append(tokens, token)
 		recipients = append(recipients, ecommon.HexToAddress(transfer.Recipient))
 		amounts = append(amounts, amount)
+		inHashes = append(inHashes, transfer.Id)
 
-		log.Verbosef("Processing transfer in: id = %s, recipient = %s, amount = %s",
-			token.Id, transfer.Recipient, amount)
+		log.Verbosef("Processing transfer in: id = %s, recipient = %s, amount = %s, inHash = %s",
+			token.Id, transfer.Recipient, amount, transfer.Id)
 	}
 
 	fmt.Println("len(tokens) = ", len(tokens), len(recipients), len(amounts))
@@ -205,7 +179,6 @@ func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context,
 	outMsg := types.NewTxOutMsg(
 		p.appKeys.GetSignerAddress().String(),
 		types.TxOutType_TRANSFER_OUT,
-		inChains,
 		inHashes,
 		dstChain,
 		responseTx.EthTx.Hash().String(),

@@ -11,10 +11,13 @@ message TransferBatchMsg {
 message TransferBatch {
   string chain = 1;
   repeated Transfer transfers = 2;
+  int64 startBlock = 3;
+  int32 attemp = 4;
 }
 
 message Transfer {
-  string recipient = 1;
-  string token = 2;
-  string amount = 3;
+  string id = 1;
+  string recipient = 2;
+  string token = 3;
+  string amount = 4;
 }

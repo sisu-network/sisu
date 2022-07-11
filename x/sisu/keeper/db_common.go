@@ -33,6 +33,7 @@ var (
 	prefixGatewayCheckPoint      = []byte{0x14}
 	prefixTransferQueue          = []byte{0x15}
 	prefixPendingTransfers       = []byte{0x16}
+	prefixNewTxIns               = []byte{0x16}
 )
 
 func getKeygenKey(keyType string, index int) []byte {

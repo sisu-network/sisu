@@ -62,7 +62,6 @@ func (p *DefaultTxOutputProducer) ContractSetLiquidPoolAddress(ctx sdk.Context, 
 	return types.NewTxOutMsg(
 		p.appKeys.GetSignerAddress().String(),
 		types.TxOutType_CHANGE_LIQUIDITY,
-		[]string{""},          // in chain
 		[]string{""},          // in hash
 		chain,                 // out chain
 		rawTx.Hash().String(), // out hash

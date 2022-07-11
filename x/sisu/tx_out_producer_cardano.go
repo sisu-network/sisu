@@ -22,13 +22,11 @@ func (p *DefaultTxOutputProducer) processCardanoBatches(ctx sdk.Context, k keepe
 	transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
 	// Find the highest block where majority of the validator nodes has reach to.
 	outMgs := make([]*types.TxOutMsg, 0)
-	// inChains := make([]string, len(transfers))
-	// inHashes := make([]string, len(transfers))
+	inHashes := make([]string, len(transfers))
 
-	// for _, transfer := range transfers {
-	// 	inChains = append(inChains, transfer.InChain)
-	// 	inHashes = append(inHashes, transfer.InHash)
-	// }
+	for _, transfer := range transfers {
+		inHashes = append(inHashes, transfer.Id)
+	}
 
 	pubkey := p.keeper.GetKeygenPubkey(ctx, libchain.KEY_TYPE_EDDSA)
 	senderAddr := hutils.GetAddressFromCardanoPubkey(pubkey)
@@ -63,10 +61,7 @@ func (p *DefaultTxOutputProducer) processCardanoBatches(ctx sdk.Context, k keepe
 	outMsg := types.NewTxOutMsg(
 		p.appKeys.GetSignerAddress().String(),
 		types.TxOutType_TRANSFER_OUT,
-		// inChains,
-		// inHashes,
-		[]string{},
-		[]string{},
+		inHashes,
 		destChain,
 		hash.String(),
 		bz,
