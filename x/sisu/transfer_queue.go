@@ -17,6 +17,7 @@ type TransferRequest struct {
 
 type TransferQueue interface {
 	Start(ctx sdk.Context)
+	Stop()
 	ProcessTransfers(ctx sdk.Context)
 	ClearInMemoryPendingTransfers(chain string)
 }
@@ -25,6 +26,7 @@ type defaultTransferQueue struct {
 	keeper           keeper.Keeper
 	txOutputProducer TxOutputProducer
 	txSubmit         common.TxSubmit
+	stopCh           chan bool
 
 	// In-memory list that stores all newly added transfer in a block (grouped by chain)
 	chainsWithSubmission map[string]bool
@@ -32,7 +34,7 @@ type defaultTransferQueue struct {
 	lock                 *sync.RWMutex
 }
 
-func NewTxInQueue(
+func NewTransferQueue(
 	keeper keeper.Keeper,
 	txOutputProducer TxOutputProducer,
 	txSubmit common.TxSubmit,
@@ -45,6 +47,7 @@ func NewTxInQueue(
 		newRequestCh:         make(chan TransferRequest, 10),
 		lock:                 &sync.RWMutex{},
 		chainsWithSubmission: make(map[string]bool),
+		stopCh:               make(chan bool),
 	}
 }
 
@@ -52,6 +55,10 @@ func (q *defaultTransferQueue) Start(ctx sdk.Context) {
 	// Start the loop
 	go q.loop()
 	log.Info("TxInQueue started")
+}
+
+func (q *defaultTransferQueue) Stop() {
+	q.stopCh <- true
 }
 
 func (q *defaultTransferQueue) ProcessTransfers(ctx sdk.Context) {
@@ -66,15 +73,17 @@ func (q *defaultTransferQueue) ClearInMemoryPendingTransfers(chain string) {
 
 func (q *defaultTransferQueue) loop() {
 	for {
-		// Wait for new tx in to process
-		request := <-q.newRequestCh
-		q.processBatch(request)
+		select {
+		case request := <-q.newRequestCh:
+			// Wait for new tx in to process
+			q.processBatch(request.ctx)
+		case <-q.stopCh:
+			return
+		}
 	}
 }
 
-func (q *defaultTransferQueue) processBatch(request TransferRequest) {
-	ctx := request.ctx
-
+func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 	params := q.keeper.GetParams(ctx)
 	for _, chain := range params.SupportedChains {
 		queue := q.keeper.GetTransferQueue(ctx, chain)
@@ -94,6 +103,8 @@ func (q *defaultTransferQueue) processBatch(request TransferRequest) {
 		}
 
 		batchSize := params.GetMaxTransferOutBatch(chain)
+		fmt.Println("batchSize = ", batchSize)
+
 		txOutMsgs, err := q.txOutputProducer.GetTxOuts(ctx, chain, queue[:batchSize])
 		if err != nil {
 			log.Error(err)

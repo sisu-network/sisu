@@ -87,6 +87,7 @@ func keeperTestGenesis(ctx sdk.Context) keeper.Keeper {
 	})
 	keeper.SaveParams(ctx, &types.Params{
 		MajorityThreshold: 1,
+		SupportedChains:   []string{"ganache1", "ganache2"},
 	})
 	return keeper
 }
