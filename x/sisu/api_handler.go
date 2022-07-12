@@ -528,6 +528,8 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 		}
 	}
 
+	fmt.Println("len(blockRequests.Requests) = ", len(blockRequests.Requests))
+
 	if len(blockRequests.Requests) > 0 {
 		msg := types.NewTxsInMsg(a.appKeys.GetSignerAddress().String(), blockRequests)
 		a.txSubmit.SubmitMessageAsync(msg)
@@ -576,8 +578,10 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 		}
 
 		if cardanoTx.Metadata != nil {
+			fmt.Println("cardanoTx.Amount = ", cardanoTx.Amount)
 			// Convert from ADA unit (10^6) to our standard unit (10^18)
 			for _, amount := range cardanoTx.Amount {
+				fmt.Println("AAAAAAA 0000000, amount = ", amount)
 				quantity, ok := new(big.Int).SetString(amount.Quantity, 10)
 				if !ok {
 					log.Error("Failed to get amount quantity in cardano tx")
@@ -588,20 +592,18 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 				// Remove the word wrap
 				tokenUnit := amount.Unit
 				if tokenUnit != "lovelace" {
-					// if tokenUnit[:5] != "WRAP_" {
-					// 	log.Error("Invalid ADA token name. It should start with WRAP_, token = ", tokenUnit)
-					// 	continue
-					// }
-
-					// tokenUnit = tokenUnit[5:]
-
 					token := scardano.GetTokenFromCardanoAsset(ctx, a.keeper, tokenUnit, chain)
+					if token == nil {
+						log.Error("Failed to find token with id: ", tokenUnit)
+						continue
+					}
 					tokenUnit = token.Id
 				} else {
 					tokenUnit = "ADA"
 				}
 
-				fmt.Println("tokenUnit = ", tokenUnit)
+				fmt.Println("tokenUnit = ", tokenUnit, " quantity = ", quantity)
+				fmt.Println("cardanoTx.Metadata = ", cardanoTx.Metadata)
 
 				ret = append(ret, &types.TxIn{
 					ToChain:   cardanoTx.Metadata.Chain,
@@ -611,6 +613,10 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 				})
 			}
 		}
+
+		fmt.Println("Cardano ret size = ", len(ret))
+
+		return ret
 	}
 
 	return nil
