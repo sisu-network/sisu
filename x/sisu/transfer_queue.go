@@ -94,17 +94,13 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 		// Check if this chain has some pending tx.
 		pendings := q.keeper.GetPendingTransfers(ctx, chain)
 		if len(pendings) > 0 {
-			fmt.Println("PEnding 1 is not empty")
 			continue
 		}
 		if q.chainsWithSubmission[chain] {
-			fmt.Println("PEnding 2 is not empty")
 			continue
 		}
 
 		batchSize := params.GetMaxTransferOutBatch(chain)
-		fmt.Println("batchSize = ", batchSize)
-
 		txOutMsgs, err := q.txOutputProducer.GetTxOuts(ctx, chain, queue[:batchSize])
 		if err != nil {
 			log.Error(err)
