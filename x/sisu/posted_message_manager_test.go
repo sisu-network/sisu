@@ -110,7 +110,9 @@ func TestPostedMessageManager(t *testing.T) {
 
 		msg := &types.TxOutMsg{
 			Signer: "signer",
-			Data:   &types.TxOut{},
+			Data: &types.TxOut{
+				OutChain: "ganache1",
+			},
 		}
 
 		process, hash := pmm.ShouldProcessMsg(ctx, msg)

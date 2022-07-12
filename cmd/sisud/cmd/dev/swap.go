@@ -207,6 +207,7 @@ func (c *swapCommand) swapFromEth(client *ethclient.Client, mnemonic string, gat
 	if err != nil {
 		panic(err)
 	}
+
 	waitTx, err := bind.WaitMined(context.Background(), client, tx)
 	if err != nil {
 		panic(err)

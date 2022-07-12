@@ -36,10 +36,10 @@ func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain 
 		return nil, err
 	}
 
+	fmt.Println("tokenAddr = ", tokenAddr)
+
 	// TODO: Optimize getting tokens
 	allTokens := keeper.GetAllTokens(ctx)
-	fmt.Println("allTokens = ", allTokens)
-
 	token := getTokenOnChain(allTokens, tokenAddr.String(), srcChain)
 	if token == nil {
 		return nil, fmt.Errorf("Cannot find token on chain %s with address %s", srcChain, tokenAddr)

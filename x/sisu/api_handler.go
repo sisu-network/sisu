@@ -501,6 +501,8 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	// Create TxIn messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
 		txIns := a.parseTransferRequest(ctx, txs.Chain, tx)
+		fmt.Println("txIns length = ", len(txIns))
+
 		if txIns != nil {
 			blockRequests.Requests = append(blockRequests.Requests, txIns...)
 		} else {
