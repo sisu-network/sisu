@@ -14,7 +14,7 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-func (p *DefaultTxOutputProducer) ContractChangeOwnership(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutWithSigner, error) {
+func (p *DefaultTxOutputProducer) ContractChangeOwnership(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutMsg, error) {
 	if !libchain.IsETHBasedChain(chain) {
 		return nil, fmt.Errorf("unsupported chain %s", chain)
 	}
@@ -59,12 +59,10 @@ func (p *DefaultTxOutputProducer) ContractChangeOwnership(ctx sdk.Context, chain
 		return nil, err
 	}
 
-	return types.NewMsgTxOutWithSigner(
+	return types.NewTxOutMsg(
 		p.appKeys.GetSignerAddress().String(),
 		types.TxOutType_TRANSFER_OUT,
-		0,
-		"",                    // in chain
-		"",                    // in hash
+		[]string{""},          // in hash
 		chain,                 // out chain
 		rawTx.Hash().String(), // out hash
 		bz,

@@ -33,12 +33,12 @@ func mockForPostedMessageManager() (sdk.Context, ManagerContainer) {
 	})
 	txOutProducer := &MockTxOutputProducer{}
 	mc := MockManagerContainer(k, pmm, globalData, txOutProducer, partyManager, dheartClient, valsMgr,
-		&MockTxInQueue{}, &MockTxOutQueue{})
+		&MockTransferQueue{}, &MockTxOutQueue{})
 
 	return ctx, mc
 }
 
-func mockTxOutWithSignerForPostedMessageManager() *types.TxOutWithSigner {
+func mockTxOutWithSignerForPostedMessageManager() *types.TxOutMsg {
 	ethTx := ethTypes.NewTx(&ethTypes.LegacyTx{
 		GasPrice: big.NewInt(100),
 		Gas:      uint64(100),
@@ -47,7 +47,7 @@ func mockTxOutWithSignerForPostedMessageManager() *types.TxOutWithSigner {
 	})
 	binary, _ := ethTx.MarshalBinary()
 
-	txOutWithSigner := &types.TxOutWithSigner{
+	txOutWithSigner := &types.TxOutMsg{
 		Signer: "signer",
 		Data: &types.TxOut{
 			OutChain: "ganache1",
@@ -104,34 +104,15 @@ func TestPostedMessageManager(t *testing.T) {
 		require.False(t, process)
 	})
 
-	t.Run("tx_in_with_signer", func(t *testing.T) {
-		ctx, mc := mockForPostedMessageManager()
-		pmm := mc.PostedMessageManager()
-
-		msg := &types.TxInWithSigner{
-			Signer: "signer",
-			Data:   &types.TxIn{},
-		}
-
-		process, hash := pmm.ShouldProcessMsg(ctx, msg)
-		require.True(t, process)
-
-		h := NewHandlerTxIn(mc)
-		_, err := h.doTxIn(ctx, msg)
-		require.NoError(t, err)
-
-		h.keeper.ProcessTxRecord(ctx, hash)
-		process, _ = pmm.ShouldProcessMsg(ctx, msg)
-		require.False(t, process)
-	})
-
 	t.Run("tx_out_with_signer", func(t *testing.T) {
 		ctx, mc := mockForPostedMessageManager()
 		pmm := mc.PostedMessageManager()
 
-		msg := &types.TxOutWithSigner{
+		msg := &types.TxOutMsg{
 			Signer: "signer",
-			Data:   &types.TxOut{},
+			Data: &types.TxOut{
+				OutChain: "ganache1",
+			},
 		}
 
 		process, hash := pmm.ShouldProcessMsg(ctx, msg)
@@ -150,16 +131,16 @@ func TestPostedMessageManager(t *testing.T) {
 		ctx, mc := mockForPostedMessageManager()
 		pmm := mc.PostedMessageManager()
 
-		msg := &types.TxOutContractConfirmWithSigner{
+		msg := &types.TxOutConfirmMsg{
 			Signer: "signer",
-			Data:   &types.TxOutContractConfirm{},
+			Data:   &types.TxOutConfirm{},
 		}
 
 		process, hash := pmm.ShouldProcessMsg(ctx, msg)
 		require.True(t, process)
 
-		h := NewHandlerTxOutContractConfirmation(mc)
-		_, err := h.doTxOutContractConfirm(ctx, msg)
+		h := NewHandlerTxOutConfirm(mc)
+		_, err := h.doTxOutConfirm(ctx, msg)
 		require.NoError(t, err)
 
 		h.keeper.ProcessTxRecord(ctx, hash)
@@ -192,7 +173,7 @@ func TestPostedMessageManager(t *testing.T) {
 		ctx, mc := mockForPostedMessageManager()
 		pmm := mc.PostedMessageManager()
 		txOutProducer := mc.TxOutProducer().(*MockTxOutputProducer)
-		txOutProducer.PauseContractFunc = func(ctx sdk.Context, chain, hash string) (*types.TxOutWithSigner, error) {
+		txOutProducer.PauseContractFunc = func(ctx sdk.Context, chain, hash string) (*types.TxOutMsg, error) {
 			txOutWithSigner := mockTxOutWithSignerForPostedMessageManager()
 
 			return txOutWithSigner, nil
@@ -222,7 +203,7 @@ func TestPostedMessageManager(t *testing.T) {
 		ctx, mc := mockForPostedMessageManager()
 		pmm := mc.PostedMessageManager()
 		txOutProducer := mc.TxOutProducer().(*MockTxOutputProducer)
-		txOutProducer.ResumeContractFunc = func(ctx sdk.Context, chain, hash string) (*types.TxOutWithSigner, error) {
+		txOutProducer.ResumeContractFunc = func(ctx sdk.Context, chain, hash string) (*types.TxOutMsg, error) {
 			txOutWithSigner := mockTxOutWithSignerForPostedMessageManager()
 
 			return txOutWithSigner, nil
@@ -252,7 +233,7 @@ func TestPostedMessageManager(t *testing.T) {
 		ctx, mc := mockForPostedMessageManager()
 		pmm := mc.PostedMessageManager()
 		txOutProducer := mc.TxOutProducer().(*MockTxOutputProducer)
-		txOutProducer.ContractChangeOwnershipFunc = func(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutWithSigner, error) {
+		txOutProducer.ContractChangeOwnershipFunc = func(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutMsg, error) {
 			txOutWithSigner := mockTxOutWithSignerForPostedMessageManager()
 
 			return txOutWithSigner, nil
@@ -315,7 +296,7 @@ func TestPostedMessageManager(t *testing.T) {
 		ctx, mc := mockForPostedMessageManager()
 		pmm := mc.PostedMessageManager()
 		txOutProducer := mc.TxOutProducer().(*MockTxOutputProducer)
-		txOutProducer.ContractSetLiquidPoolAddressFunc = func(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutWithSigner, error) {
+		txOutProducer.ContractSetLiquidPoolAddressFunc = func(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutMsg, error) {
 			txOutWithSigner := mockTxOutWithSignerForPostedMessageManager()
 
 			return txOutWithSigner, nil
@@ -345,7 +326,7 @@ func TestPostedMessageManager(t *testing.T) {
 		ctx, mc := mockForPostedMessageManager()
 		pmm := mc.PostedMessageManager()
 		txOutProducer := mc.TxOutProducer().(*MockTxOutputProducer)
-		txOutProducer.ContractEmergencyWithdrawFundFunc = func(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutWithSigner, error) {
+		txOutProducer.ContractEmergencyWithdrawFundFunc = func(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutMsg, error) {
 			txOutWithSigner := mockTxOutWithSignerForPostedMessageManager()
 
 			return txOutWithSigner, nil

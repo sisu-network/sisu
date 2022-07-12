@@ -42,12 +42,12 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 			return NewHandlerKeygenResult(mc).DeliverMsg(ctx, msg)
 		case *types.ContractsWithSigner:
 			return NewHandlerContract(mc).DeliverMsg(ctx, msg)
-		case *types.TxInWithSigner:
+		case *types.TxsInMsg:
 			return NewHandlerTxIn(mc).DeliverMsg(ctx, msg)
-		case *types.TxOutWithSigner:
+		case *types.TxOutMsg:
 			return NewHandlerTxOut(mc).DeliverMsg(ctx, msg)
-		case *types.TxOutContractConfirmWithSigner:
-			return NewHandlerTxOutContractConfirmation(mc).DeliverMsg(ctx, msg)
+		case *types.TxOutConfirmMsg:
+			return NewHandlerTxOutConfirm(mc).DeliverMsg(ctx, msg)
 		case *types.KeysignResult:
 			return NewHandlerKeysignResult(mc).DeliverMsg(ctx, msg)
 		case *types.GasPriceMsg:
@@ -64,6 +64,10 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 			return NewHandlerContractSetLiquidityAddress(mc).DeliverMsg(ctx, msg)
 		case *types.LiquidityWithdrawFundMsg:
 			return NewHandlerContractLiquidityWithdrawFund(mc).DeliverMsg(ctx, msg)
+		case *types.FundGatewayMsg:
+			return NewHandlerFundGateway(mc).DeliverMsg(ctx, msg)
+		case *types.BlockHeightMsg:
+			return NewHandlerBlockHeight(mc.Keeper()).DeliverMsg(ctx, msg)
 
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)

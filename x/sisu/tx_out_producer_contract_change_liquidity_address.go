@@ -14,7 +14,7 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-func (p *DefaultTxOutputProducer) ContractSetLiquidPoolAddress(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutWithSigner, error) {
+func (p *DefaultTxOutputProducer) ContractSetLiquidPoolAddress(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutMsg, error) {
 	if !libchain.IsETHBasedChain(chain) {
 		return nil, fmt.Errorf("unsupported chain %s", chain)
 	}
@@ -59,12 +59,10 @@ func (p *DefaultTxOutputProducer) ContractSetLiquidPoolAddress(ctx sdk.Context, 
 		return nil, err
 	}
 
-	return types.NewMsgTxOutWithSigner(
+	return types.NewTxOutMsg(
 		p.appKeys.GetSignerAddress().String(),
 		types.TxOutType_CHANGE_LIQUIDITY,
-		0,
-		"",                    // in chain
-		"",                    // in hash
+		[]string{""},          // in hash
 		chain,                 // out chain
 		rawTx.Hash().String(), // out hash
 		bz,

@@ -133,7 +133,7 @@ func (h *HandlerKeygenResult) createContracts(ctx sdk.Context, msg *types.Keygen
 					ByteCodes: []byte(c.Bin),
 				}
 
-				h.txSubmit.SubmitMessageAsync(types.NewContractsWithSigner(
+				h.txSubmit.SubmitMessageAsync(types.NewContractsMsg(
 					h.appKeys.GetSignerAddress().String(),
 					[]*types.Contract{contract},
 				))

@@ -1,32 +1,29 @@
 package sisu
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type HandlerTxIn struct {
-	pmm        PostedMessageManager
-	keeper     keeper.Keeper
-	globalData common.GlobalData
-	txInQueue  TxInQueue
+	pmm    PostedMessageManager
+	keeper keeper.Keeper
 }
 
 func NewHandlerTxIn(mc ManagerContainer) *HandlerTxIn {
 	return &HandlerTxIn{
-		keeper:     mc.Keeper(),
-		pmm:        mc.PostedMessageManager(),
-		txInQueue:  mc.TxInQueue(),
-		globalData: mc.GlobalData(),
+		keeper: mc.Keeper(),
+		pmm:    mc.PostedMessageManager(),
 	}
 }
 
-func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, signerMsg *types.TxInWithSigner) (*sdk.Result, error) {
+func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, signerMsg *types.TxsInMsg) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
-		data, err := h.doTxIn(ctx, signerMsg)
+		data, err := h.doTxIn(ctx, signerMsg.Data)
 		h.keeper.ProcessTxRecord(ctx, hash)
 
 		return &sdk.Result{Data: data}, err
@@ -36,17 +33,37 @@ func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, signerMsg *types.TxInWithSigne
 }
 
 // Delivers observed Txs.
-func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msgWithSigner *types.TxInWithSigner) ([]byte, error) {
-	msg := msgWithSigner.Data
+func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msg *types.TxsIn) ([]byte, error) {
+	log.Info("Deliverying TxIn on chain ", msg.Chain)
 
-	log.Info("Deliverying TxIn, hash = ", msg.TxHash, " on chain ", msg.Chain)
+	allTransfers := make(map[string][]*types.Transfer)
+	// Add the message to the queue for later processing.
+	for _, request := range msg.Requests {
+		transfer := &types.Transfer{
+			Id:        fmt.Sprintf("%s__%s", msg.Chain, request.Hash),
+			Recipient: request.Recipient,
+			Token:     request.Token,
+			Amount:    request.Amount,
+		}
 
-	// Save this to db.
-	h.keeper.SaveTxIn(ctx, msg)
+		if allTransfers[request.ToChain] == nil {
+			allTransfers[request.ToChain] = h.keeper.GetTransferQueue(ctx, request.ToChain)
+			if allTransfers[request.ToChain] == nil {
+				allTransfers[request.ToChain] = make([]*types.Transfer, 0)
+			}
+		}
 
-	if !h.globalData.IsCatchingUp() {
-		// Add the message to the queue for later processing.
-		h.txInQueue.AddTxIn(msg)
+		allTransfers[request.ToChain] = append(allTransfers[request.ToChain], transfer)
+	}
+
+	// Save all of transfer to the transfer queue
+	for _, request := range msg.Requests {
+		if allTransfers[request.ToChain] == nil {
+			continue
+		}
+
+		h.keeper.SetTransferQueue(ctx, request.ToChain, allTransfers[request.ToChain])
+		allTransfers[request.ToChain] = nil
 	}
 
 	return nil, nil

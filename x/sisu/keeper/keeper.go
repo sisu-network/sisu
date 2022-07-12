@@ -47,10 +47,6 @@ type Keeper interface {
 	CreateContractAddress(ctx sdk.Context, chain string, txOutHash string, address string)
 	IsContractExistedAtAddress(ctx sdk.Context, chain string, address string) bool
 
-	// TxIn
-	SaveTxIn(ctx sdk.Context, msg *types.TxIn)
-	IsTxInExisted(ctx sdk.Context, msg *types.TxIn) bool
-
 	// TxOut
 	SaveTxOut(ctx sdk.Context, msg *types.TxOut)
 	IsTxOutExisted(ctx sdk.Context, msg *types.TxOut) bool
@@ -61,7 +57,7 @@ type Keeper interface {
 	GetTxOutSig(ctx sdk.Context, outChain, hashWithSig string) *types.TxOutSig
 
 	// TxOutConfirm
-	SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutContractConfirm)
+	SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutConfirm)
 	IsTxOutConfirmExisted(ctx sdk.Context, outChain, hash string) bool
 
 	// Gas Price Record
@@ -94,6 +90,19 @@ type Keeper interface {
 	// Params
 	SaveParams(ctx sdk.Context, params *types.Params)
 	GetParams(ctx sdk.Context) *types.Params
+
+	// Gateway checkpoint
+	AddGatewayCheckPoint(ctx sdk.Context, checkPoint *types.GatewayCheckPoint)
+	GetGatewayCheckPoint(ctx sdk.Context, chain string) *types.GatewayCheckPoint
+	GetAllGatewayCheckPoints(ctx sdk.Context) map[string]*types.GatewayCheckPoint
+
+	// Transfer Queue
+	SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.Transfer)
+	GetTransferQueue(ctx sdk.Context, chain string) []*types.Transfer
+
+	// Pending Transfer
+	SetPendingTransfers(ctx sdk.Context, chain string, transfers []*types.Transfer)
+	GetPendingTransfers(ctx sdk.Context, chain string) []*types.Transfer
 }
 
 type DefaultKeeper struct {
@@ -238,17 +247,6 @@ func (k *DefaultKeeper) IsContractExistedAtAddress(ctx sdk.Context, chain string
 	return isContractExistedAtAddress(caStore, chain, address)
 }
 
-///// TxIn
-func (k *DefaultKeeper) SaveTxIn(ctx sdk.Context, msg *types.TxIn) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxIn)
-	saveTxIn(store, msg)
-}
-
-func (k *DefaultKeeper) IsTxInExisted(ctx sdk.Context, msg *types.TxIn) bool {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxIn)
-	return isTxInExisted(store, msg)
-}
-
 ///// TxOut
 func (k *DefaultKeeper) SaveTxOut(ctx sdk.Context, msg *types.TxOut) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
@@ -279,7 +277,7 @@ func (k *DefaultKeeper) SaveTxOutSig(ctx sdk.Context, msg *types.TxOutSig) {
 }
 
 ///// TxOutConfirm
-func (k *DefaultKeeper) SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutContractConfirm) {
+func (k *DefaultKeeper) SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutConfirm) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutContractConfirm)
 	saveTxOutConfirm(store, msg)
 }
@@ -385,6 +383,45 @@ func (k *DefaultKeeper) SaveParams(ctx sdk.Context, params *types.Params) {
 func (k *DefaultKeeper) GetParams(ctx sdk.Context) *types.Params {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixParams)
 	return getParams(store)
+}
+
+///// Gateway Checkpoint
+func (k *DefaultKeeper) AddGatewayCheckPoint(ctx sdk.Context, checkPoint *types.GatewayCheckPoint) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGatewayCheckPoint)
+	addCheckPoint(store, checkPoint)
+}
+
+func (k *DefaultKeeper) GetGatewayCheckPoint(ctx sdk.Context, chain string) *types.GatewayCheckPoint {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGatewayCheckPoint)
+	return getCheckPoint(store, chain)
+}
+
+func (k *DefaultKeeper) GetAllGatewayCheckPoints(ctx sdk.Context) map[string]*types.GatewayCheckPoint {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGatewayCheckPoint)
+	return getAllGatewayCheckPoints(store)
+}
+
+///// Transfer Queue
+func (k *DefaultKeeper) SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.Transfer) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferQueue)
+	setTranfers(store, chain, transfers)
+}
+
+func (k *DefaultKeeper) GetTransferQueue(ctx sdk.Context, chain string) []*types.Transfer {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferQueue)
+	return getTransfers(store, chain)
+}
+
+///// Pending queue
+
+func (k *DefaultKeeper) SetPendingTransfers(ctx sdk.Context, chain string, transfers []*types.Transfer) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPendingTransfers)
+	setTranfers(store, chain, transfers)
+}
+
+func (k *DefaultKeeper) GetPendingTransfers(ctx sdk.Context, chain string) []*types.Transfer {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPendingTransfers)
+	return getTransfers(store, chain)
 }
 
 ///// Debug

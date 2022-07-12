@@ -56,8 +56,9 @@ func (c *CardanoConfig) GetCardanoNetwork() cardano.Network {
 // 	 id = 1
 // 	 deyes_url = "http://localhost:31001"
 type TssConfig struct {
-	DheartHost      string                    `toml:"dheart-host"`
-	DheartPort      int                       `toml:"dheart-port"`
+	DheartHost string `toml:"dheart-host"`
+	DheartPort int    `toml:"dheart-port"`
+	// TODO: Move the supported chains to genesis file.
 	SupportedChains map[string]TssChainConfig `toml:"supported-chains"`
 
 	DeyesUrl string `toml:"deyes-url"`

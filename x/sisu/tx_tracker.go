@@ -23,16 +23,14 @@ const (
 type txObject struct {
 	txOut  *types.TxOut
 	status types.TxStatus
-	txIn   *types.TxIn
 
 	addedTime time.Time
 }
 
-func newTxObject(txOut *types.TxOut, txIn *types.TxIn) *txObject {
+func newTxObject(txOut *types.TxOut) *txObject {
 	return &txObject{
 		txOut:     txOut,
 		status:    types.TxStatusCreated,
-		txIn:      txIn,
 		addedTime: time.Now(),
 	}
 }
@@ -40,7 +38,7 @@ func newTxObject(txOut *types.TxOut, txIn *types.TxIn) *txObject {
 // TxTracker is used to track failed transaction. This includes both TxIn and TxOut. The tracked txs
 // are in-memory only.
 type TxTracker interface {
-	AddTransaction(txOut *types.TxOut, txIn *types.TxIn)
+	AddTransaction(txOut *types.TxOut)
 	UpdateStatus(chain string, hash string, status types.TxStatus)
 	RemoveTransaction(chain string, hash string)
 	OnTxFailed(chain string, hash string, status types.TxStatus)
@@ -68,7 +66,7 @@ func (t *DefaultTxTracker) getTxoKey(chain string, hash string) string {
 	return fmt.Sprintf("%s__%s", chain, hash)
 }
 
-func (t *DefaultTxTracker) AddTransaction(txOut *types.TxOut, txIn *types.TxIn) {
+func (t *DefaultTxTracker) AddTransaction(txOut *types.TxOut) {
 	chain := txOut.OutChain
 	hash := txOut.OutHash
 	key := t.getTxoKey(chain, hash)
@@ -81,7 +79,7 @@ func (t *DefaultTxTracker) AddTransaction(txOut *types.TxOut, txIn *types.TxIn) 
 	} else {
 		log.Verbosef("Adding tx to tracking %s %s", chain, hash)
 
-		t.txs[key] = newTxObject(txOut, txIn)
+		t.txs[key] = newTxObject(txOut)
 	}
 }
 
@@ -154,10 +152,7 @@ func (t *DefaultTxTracker) checkExpiredTransaction() {
 func (t *DefaultTxTracker) processFailedTx(txo *txObject) {
 	inChain := ""
 	inHash := ""
-	if txo.txIn != nil {
-		inChain = txo.txIn.Chain
-		inHash = txo.txIn.TxHash
-	}
+
 	log.Warnf("Processing failed transaction. outChain: %s, outHash :%s, status: %v, inChain: %s, inHash: %s",
 		txo.txOut.OutChain, txo.txOut.OutHash, txo.status, inChain, inHash)
 
@@ -219,40 +214,22 @@ func (t *DefaultTxTracker) getEmailBodyString(txo *txObject) (string, error) {
 	body.Hash = txo.txOut.OutHash
 	body.LastStatus = types.StatusStrings[txo.status]
 
-	txIn := txo.txIn
-	if txIn != nil {
-		if txo.txOut.TxType == types.TxOutType_TRANSFER_OUT {
-			// Trying its best to Deserialize the txIn
-			data, err := t.getEThTransferIn(txIn.Chain, txIn.Serialized)
-			if err == nil {
-				txInData := TxInData{
-					Chain:        txIn.Chain,
-					TokenAddress: data.tokenAddr.String(),
-					Recipient:    data.recipient,
-					Amount:       data.amount.String(),
-				}
-				body.TxInData = txInData
-			} else {
-				log.Error("cannot parse eth transfer in, err = ", err)
-			}
-		}
-	}
-
 	switch txo.txOut.TxType {
-	case types.TxOutType_TRANSFER_OUT:
-		data, err := t.getEthTransferIn(txo.txOut.OutBytes)
-		if err != nil {
-			log.Error("Cannot parse transfer in data, err = ", err)
-			return "", err
-		}
+	// TODO: Fix this tracking
+	// case types.TxOutType_TRANSFER_OUT:
+	// 	data, err := t.getEthTransferIn(txo.txOut.OutBytes)
+	// 	if err != nil {
+	// 		log.Error("Cannot parse transfer in data, err = ", err)
+	// 		return "", err
+	// 	}
 
-		body.TxOutData = TxOutData{
-			Type:         "TRANSFER_OUT",
-			Chain:        txo.txOut.OutChain,
-			TokenAddress: data.token.String(),
-			Recipient:    data.recipient,
-			Amount:       data.amount.String(),
-		}
+	// 	body.TxOutData = TxOutData{
+	// 		Type:         "TRANSFER_OUT",
+	// 		Chain:        txo.txOut.OutChain,
+	// 		TokenAddress: data.token.String(),
+	// 		Recipient:    data.recipient,
+	// 		Amount:       data.amount.String(),
+	// 	}
 	case types.TxOutType_CONTRACT_DEPLOYMENT:
 		return fmt.Sprintf("contract deployment failed, hash = %s", txo.txOut.OutHash), nil
 	}
@@ -260,7 +237,7 @@ func (t *DefaultTxTracker) getEmailBodyString(txo *txObject) (string, error) {
 	return utils.PrettyStruct(body)
 }
 
-func (t *DefaultTxTracker) getEThTransferIn(chain string, bz []byte) (*transferOutData, error) {
+func (t *DefaultTxTracker) getEThTransferIn(chain string, bz []byte) (*types.TransferOutData, error) {
 	ethTx := &ethTypes.Transaction{}
 
 	err := ethTx.UnmarshalBinary(bz)
@@ -271,13 +248,13 @@ func (t *DefaultTxTracker) getEThTransferIn(chain string, bz []byte) (*transferO
 	return parseEthTransferOut(ethTx, chain, t.worldState)
 }
 
-func (t *DefaultTxTracker) getEthTransferIn(bz []byte) (*transferInData, error) {
-	ethTx := &ethTypes.Transaction{}
+// func (t *DefaultTxTracker) getEthTransferIn(bz []byte) (*transferInData, error) {
+// 	ethTx := &ethTypes.Transaction{}
 
-	err := ethTx.UnmarshalBinary(bz)
-	if err != nil {
-		return nil, err
-	}
+// 	err := ethTx.UnmarshalBinary(bz)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	return parseTransferInData(ethTx)
-}
+// 	return parseTransferInData(ethTx)
+// }

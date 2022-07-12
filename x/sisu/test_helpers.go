@@ -77,9 +77,17 @@ func keeperTestGenesis(ctx sdk.Context) keeper.Keeper {
 			Chains:    []string{"ganache1", "ganache2"},
 			Addresses: []string{testErc20TokenAddress, testErc20TokenAddress},
 		},
+		"ADA": {
+			Id:        "ADA",
+			Price:     4000000000,
+			Decimals:  6,
+			Chains:    []string{"ganache1", "ganache2"},
+			Addresses: []string{"0xf0D676183dD5ae6b370adDdbE770235F23546f9d", "0xf0D676183dD5ae6b370adDdbE770235F23546f9d"},
+		},
 	})
 	keeper.SaveParams(ctx, &types.Params{
 		MajorityThreshold: 1,
+		SupportedChains:   []string{"ganache1", "ganache2"},
 	})
 	return keeper
 }

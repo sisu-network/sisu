@@ -9,7 +9,6 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-// TODO: Move txout's byte into separate store.
 var (
 	prefixTxRecord               = []byte{0x01} // Vote for a tx by different nodes
 	prefixTxRecordProcessed      = []byte{0x02}
@@ -18,18 +17,20 @@ var (
 	prefixContract               = []byte{0x05}
 	prefixContractByteCode       = []byte{0x06}
 	prefixContractAddress        = []byte{0x07}
-	prefixTxIn                   = []byte{0x08}
-	prefixTxOut                  = []byte{0x09}
-	prefixTxOutSig               = []byte{0x0A}
-	prefixTxOutContractConfirm   = []byte{0x0B}
-	prefixContractName           = []byte{0x0C}
-	prefixGasPrice               = []byte{0x0D}
-	prefixChain                  = []byte{0x0E}
-	prefixToken                  = []byte{0x0F}
-	prefixTokenPrices            = []byte{0x10}
-	prefixNode                   = []byte{0x11}
-	prefixLiquidity              = []byte{0x12}
-	prefixParams                 = []byte{0x13}
+	prefixTxOut                  = []byte{0x08}
+	prefixTxOutSig               = []byte{0x09}
+	prefixTxOutContractConfirm   = []byte{0x0A}
+	prefixContractName           = []byte{0x0B}
+	prefixGasPrice               = []byte{0x0C}
+	prefixChain                  = []byte{0x0D}
+	prefixToken                  = []byte{0x0E}
+	prefixTokenPrices            = []byte{0x0F}
+	prefixNode                   = []byte{0x10}
+	prefixLiquidity              = []byte{0x11}
+	prefixParams                 = []byte{0x12}
+	prefixGatewayCheckPoint      = []byte{0x13}
+	prefixTransferQueue          = []byte{0x14}
+	prefixPendingTransfers       = []byte{0x15}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -440,24 +441,6 @@ func isContractExistedAtAddress(store cstypes.KVStore, chain, address string) bo
 	return store.Has(key)
 }
 
-///// TxIn
-func saveTxIn(store cstypes.KVStore, msg *types.TxIn) {
-	key := getTxInKey(msg.Chain, msg.BlockHeight, msg.TxHash)
-
-	bz, err := msg.Marshal()
-	if err != nil {
-		log.Error("Cannot marshal TxIn")
-		return
-	}
-
-	store.Set(key, bz)
-}
-
-func isTxInExisted(store cstypes.KVStore, msg *types.TxIn) bool {
-	key := getTxInKey(msg.GetChain(), msg.GetBlockHeight(), msg.GetTxHash())
-	return store.Has(key)
-}
-
 ///// TxOut
 func saveTxOut(store cstypes.KVStore, msg *types.TxOut) {
 	key := getTxOutKey(msg.OutChain, msg.OutHash)
@@ -631,7 +614,7 @@ func getAllChains(store cstypes.KVStore) map[string]*types.Chain {
 }
 
 ///// TxOutConfirm
-func saveTxOutConfirm(store cstypes.KVStore, msg *types.TxOutContractConfirm) {
+func saveTxOutConfirm(store cstypes.KVStore, msg *types.TxOutConfirm) {
 	key := getTxOutConfirmKey(msg.OutChain, msg.OutHash)
 	bz, err := msg.Marshal()
 	if err != nil {
@@ -862,6 +845,82 @@ func getParams(store cstypes.KVStore) *types.Params {
 	}
 
 	return params
+}
+
+///// Gateway Checkpoint
+
+func addCheckPoint(store cstypes.KVStore, checkPoint *types.GatewayCheckPoint) {
+	bz, err := checkPoint.Marshal()
+	if err != nil {
+		log.Error("cannot marshal checkpoint")
+	}
+
+	store.Set([]byte(checkPoint.Chain), bz)
+}
+
+func getCheckPoint(store cstypes.KVStore, chain string) *types.GatewayCheckPoint {
+	bz := store.Get([]byte(chain))
+	if bz == nil {
+		return nil
+	}
+
+	checkPoint := &types.GatewayCheckPoint{}
+	err := checkPoint.Unmarshal(bz)
+	if err != nil {
+		log.Error("Failed to unmarshal gateway checkpoint, err = ", err)
+		return nil
+	}
+
+	return checkPoint
+}
+
+func getAllGatewayCheckPoints(store cstypes.KVStore) map[string]*types.GatewayCheckPoint {
+	ret := make(map[string]*types.GatewayCheckPoint)
+	iter := store.Iterator(nil, nil)
+	for ; iter.Valid(); iter.Next() {
+		bz := iter.Value()
+		checkPoint := &types.GatewayCheckPoint{}
+		err := checkPoint.Unmarshal(bz)
+		if err != nil {
+			log.Error("Failed to unmarshal checkpoint, err = ", err)
+			continue
+		}
+		ret[string(iter.Key())] = checkPoint
+	}
+
+	return ret
+}
+
+///// Transfer Queue
+func setTranfers(store cstypes.KVStore, chain string, transfers []*types.Transfer) {
+	transferBatch := &types.TransferBatch{
+		Chain:     chain,
+		Transfers: transfers,
+	}
+
+	bz, err := transferBatch.Marshal()
+	if err != nil {
+		log.Error("saveTranferQueue: faield to marshal transfer batch")
+		return
+	}
+
+	store.Set([]byte(chain), bz)
+}
+
+func getTransfers(store cstypes.KVStore, chain string) []*types.Transfer {
+	bz := store.Get([]byte(chain))
+	if bz == nil {
+		return nil
+	}
+
+	batch := &types.TransferBatch{}
+	err := batch.Unmarshal(bz)
+	if err != nil {
+		log.Error("getTransferQueue: failed to unmarshal batch")
+		return nil
+	}
+
+	return batch.Transfers
 }
 
 ///// Debug functions

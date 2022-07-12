@@ -3,6 +3,15 @@ package types;
 
 option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 
+message TransferOutParams {
+  // Id of the chain
+  string chain = 1;
+  // The number of maximum transfer in a single transaction.
+  int32 maxBatching = 2;
+}
+
 message Params {
   int32 majority_threshold = 1;
+  repeated TransferOutParams transfer_out_params = 2;
+  repeated string supported_chains = 3;
 }

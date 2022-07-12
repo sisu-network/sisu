@@ -118,7 +118,6 @@ func (h *handlerContractSetLiquidityAddress) signTx(ctx sdk.Context, tx *types.T
 		KeysignMessages: []*hTypes.KeysignMessage{
 			{
 				Id:          h.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), tx.OutHash),
-				InChain:     tx.InChain,
 				OutChain:    tx.OutChain,
 				OutHash:     tx.OutHash,
 				BytesToSign: hash[:],

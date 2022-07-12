@@ -1,0 +1,19 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message BlockHeightMsg {
+  string signer = 1;
+  BlockHeight data = 2;
+}
+
+message BlockHeight {
+  string chain = 1;
+  int64 height = 2;
+  string hash = 3;
+}
+
+message BlockHeightRecord {
+  repeated BlockHeight block_heights = 2;
+}

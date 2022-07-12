@@ -1,24 +1,19 @@
 package sisu
 
 import (
-	"encoding/json"
-	"fmt"
 	"math/big"
+
+	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
 
 	ecommon "github.com/ethereum/go-ethereum/common"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/echovl/cardano-go"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	etypes "github.com/sisu-network/deyes/types"
-	hutils "github.com/sisu-network/dheart/utils"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/utils"
-	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/sisu-network/sisu/x/sisu/world"
@@ -27,42 +22,35 @@ import (
 // This structs produces transaction output based on input. For a given tx input, this struct
 // produces a list (could contain only one element) of transaction output.
 type TxOutputProducer interface {
-	GetTxOuts(ctx sdk.Context, height int64, txIns []*types.TxIn) []*types.TxOutWithSigner
+	// GetTxOuts returns a list of TxOut message and a list of un-processed transfer out request that
+	// needs to be processed next time.
+	GetTxOuts(ctx sdk.Context, chain string, transfers []*types.Transfer) ([]*types.TxOutMsg, error)
 
-	PauseContract(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
+	PauseContract(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error)
 
-	ResumeContract(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
+	ResumeContract(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error)
 
-	ContractChangeOwnership(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutWithSigner, error)
+	ContractChangeOwnership(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutMsg, error)
 
-	ContractSetLiquidPoolAddress(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutWithSigner, error)
+	ContractSetLiquidPoolAddress(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutMsg, error)
 
-	ContractEmergencyWithdrawFund(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutWithSigner, error)
+	ContractEmergencyWithdrawFund(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutMsg, error)
 }
 
 type DefaultTxOutputProducer struct {
-	worldState world.WorldState
-	appKeys    common.AppKeys
-	keeper     keeper.Keeper
-	tssConfig  config.TssConfig
-	txTracker  TxTracker
+	worldState  world.WorldState
+	appKeys     common.AppKeys
+	keeper      keeper.Keeper
+	tssConfig   config.TssConfig
+	txTracker   TxTracker
+	valsManager ValidatorManager
+	privateDb   keeper.Storage
 
 	// Only use for cardano chain
-	cardanoConfig  config.CardanoConfig
-	cardanoNetwork cardano.Network
-	cardanoNode    cardano.Node
-}
-
-type transferOutData struct {
-	tokenAddr   ethcommon.Address
-	blockHeight int64
-	destChain   string
-	token       *types.Token
-	recipient   string
-	amount      *big.Int
-
-	// For tx_tracker
-	txIn *types.TxIn
+	cardanoConfig        config.CardanoConfig
+	cardanoNetwork       cardano.Network
+	cardanoClient        scardano.CardanoClient
+	minCaranoBlockHeight int64
 }
 
 type transferInData struct {
@@ -72,264 +60,129 @@ type transferInData struct {
 }
 
 func NewTxOutputProducer(worldState world.WorldState, appKeys common.AppKeys, keeper keeper.Keeper,
-	tssConfig config.TssConfig, cardanoConfig config.CardanoConfig, cardanoNode cardano.Node,
+	valsManager ValidatorManager, tssConfig config.TssConfig, cardanoConfig config.CardanoConfig,
+	privateDb keeper.Storage, cardanoClient scardano.CardanoClient,
 	txTracker TxTracker) TxOutputProducer {
 	return &DefaultTxOutputProducer{
 		keeper:         keeper,
 		worldState:     worldState,
 		appKeys:        appKeys,
+		valsManager:    valsManager,
 		tssConfig:      tssConfig,
+		privateDb:      privateDb,
 		txTracker:      txTracker,
 		cardanoNetwork: cardanoConfig.GetCardanoNetwork(),
-		cardanoNode:    cardanoNode,
+		cardanoClient:  cardanoClient,
 	}
 }
 
-func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, txIns []*types.TxIn) []*types.TxOutWithSigner {
-	outMsgs := make([]*types.TxOutWithSigner, 0)
-	transferOuts := make([]*transferOutData, 0)
+func (p *DefaultTxOutputProducer) parseCardanoTxIn(ctx sdk.Context, tx *types.TxIn) (*types.TransferOutData, error) {
+	return nil, nil
 
-	// 1. Extracts all the transfers requests from the incoming transactions.
-	for _, txIn := range txIns {
-		// ETH chain
-		if libchain.IsETHBasedChain(txIn.Chain) {
-			ethTx := &ethTypes.Transaction{}
+	// txIn := &etypes.CardanoTxInItem{}
+	// if err := json.Unmarshal(tx.Serialized, txIn); err != nil {
+	// 	log.Error("error when marshaling cardano tx in item: ", err)
+	// 	return nil, err
+	// }
 
-			err := ethTx.UnmarshalBinary(txIn.Serialized)
-			if err != nil {
-				log.Error("Failed to unmarshall eth tx. err =", err)
-				continue
-			}
+	// extraInfo := txIn.Metadata
+	// tokenName := txIn.Asset
+	// if tokenName != "ADA" {
+	// 	tokenName = tokenName[5:] // Remove the WRAP_ prefix
+	// }
+	// if len(tokenName) == 0 {
+	// 	return nil, fmt.Errorf("Invalid token: %s", tokenName)
+	// }
 
-			// Check if this is a transaction that fund our account.
-			if ethTx.To() != nil && p.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
-				txOuts, err := p.getContractDeploymentTx(ctx, txIn.BlockHeight, txIn)
-				if err != nil {
-					log.Error("Failed to get contract deployment tx, err = ", err)
-				} else {
-					outMsgs = append(outMsgs, txOuts...)
-				}
+	// tokens := p.keeper.GetTokens(ctx, []string{tokenName})
+	// token := tokens[tokenName]
+	// if token == nil {
+	// 	return nil, fmt.Errorf("Cannot find token in the keeper")
+	// }
 
-				continue
-			}
+	// amount := new(big.Int).SetUint64(txIn.Amount)
 
-			// Check if this is a transaction to transfer
-			if p.keeper.IsContractExistedAtAddress(ctx, txIn.Chain, ethTx.To().String()) && len(ethTx.Data()) >= 4 {
-				transfer, err := parseEthTransferOut(ethTx, txIn.Chain, p.worldState)
-				if err != nil {
-					log.Error("faield to parse parseEthTransferOut, err = ", parseEthTransferOut)
-					continue
-				}
-				transfer.txIn = txIn
+	// return &transferOutData{
+	// 	blockHeight: tx.BlockHeight,
+	// 	destChain:   extraInfo.Chain,
+	// 	recipient:   extraInfo.Recipient,
+	// 	token:       token,
+	// 	amount:      utils.LovelaceToWei(amount),
+	// }, nil
+}
 
-				transferOuts = append(transferOuts, transfer)
-			}
+func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, chain string,
+	transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
+
+	if libchain.IsETHBasedChain(chain) {
+		msgs, err := p.processEthBatches(ctx, chain, transfers)
+		if err != nil {
+			return nil, err
 		}
 
-		// Cardano chain
-		if libchain.IsCardanoChain(txIn.Chain) {
-			transfer, err := p.parseCardanoTxIn(ctx, txIn)
-			if err != nil {
-				log.Error("Failed to parse cardano transaction, err = ", err)
-				continue
-			}
-			transfer.txIn = txIn
+		return msgs, nil
+	}
 
-			transferOuts = append(transferOuts, transfer)
+	if libchain.IsCardanoChain(chain) {
+		msgs, err := p.processCardanoBatches(ctx, p.keeper, chain, transfers)
+		if err != nil {
+			return nil, err
 		}
+
+		return msgs, nil
 	}
 
-	transferOutMsgs := p.processTransferOut(ctx, transferOuts)
-	outMsgs = append(outMsgs, transferOutMsgs...)
+	log.Error("Unknown chain type: ", chain)
 
-	return outMsgs
+	return nil, nil
 }
 
-func (p *DefaultTxOutputProducer) getContractDeploymentTx(ctx sdk.Context, height int64, tx *types.TxIn) ([]*types.TxOutWithSigner, error) {
-	outMsgs := make([]*types.TxOutWithSigner, 0)
+func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context,
+	dstChain string, transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
+	inHashes := make([]string, 0, len(transfers))
+	tokens := make([]*types.Token, 0, len(transfers))
+	recipients := make([]ethcommon.Address, 0, len(transfers))
+	amounts := make([]*big.Int, 0, len(transfers))
 
-	contracts := p.keeper.GetPendingContracts(ctx, tx.Chain)
-	log.Verbose("len(contracts) = ", len(contracts))
-
-	if len(contracts) > 0 {
-		// TODO: Check balance required to deploy all these contracts. Also check if we are deploying
-		// a contract to avoid duplication.
-
-		// Get the list of deploy transactions. Those txs need to posted and verified (by validators)
-		// to the Sisu chain.
-		outEthTxs := p.getEthContractDeploymentTx(ctx, height, tx.Chain, contracts)
-
-		for i, outTx := range outEthTxs {
-			bz, err := outTx.MarshalBinary()
-			if err != nil {
-				return nil, err
-			}
-
-			outMsg := types.NewMsgTxOutWithSigner(
-				p.appKeys.GetSignerAddress().String(),
-				types.TxOutType_CONTRACT_DEPLOYMENT,
-				tx.BlockHeight,
-				tx.Chain,
-				tx.TxHash,
-				tx.Chain,
-				outTx.Hash().String(),
-				bz,
-				contracts[i].Hash,
-			)
-
-			log.Verbose("ETH Tx Out hash = ", outTx.Hash().String(), " on chain ", tx.Chain)
-
-			outMsgs = append(outMsgs, outMsg)
-		}
-	}
-
-	return outMsgs, nil
-}
-
-// In Cardano chain, transferring multi-asset required at least 1 ADA (10^6 lovelace)
-func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, data *transferOutData, assetAmount uint64) (*cardano.Tx, error) {
-	pubkey := p.keeper.GetKeygenPubkey(ctx, libchain.KEY_TYPE_EDDSA)
-	senderAddr := hutils.GetAddressFromCardanoPubkey(pubkey)
-	log.Debug("cardano sender address = ", senderAddr.String())
-
-	receiverAddr, err := cardano.NewAddress(data.recipient)
-	if err != nil {
-		log.Error("error when parsing receiver addr: ", err)
-		return nil, err
-	}
-
-	multiAsset, err := scardano.GetCardanoMultiAsset(data.destChain, data.token, assetAmount)
-	if err != nil {
-		return nil, err
-	}
-
-	// We need at least 1 ada to send multi assets.
-	tx, err := scardano.BuildTx(p.cardanoNode, p.cardanoNetwork, senderAddr, receiverAddr,
-		cardano.NewValueWithAssets(cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()), multiAsset), nil)
-
-	if err != nil {
-		log.Error("error when building tx: ", err)
-		return nil, err
-	}
-
-	for _, i := range tx.Body.Inputs {
-		log.Debugf("tx input = %v\n", i)
-	}
-
-	for _, o := range tx.Body.Outputs {
-		log.Debugf("tx output = %v\n", o)
-	}
-
-	log.Debug("tx fee = ", tx.Body.Fee)
-
-	return tx, nil
-}
-
-func (p *DefaultTxOutputProducer) parseCardanoTxIn(ctx sdk.Context, tx *types.TxIn) (*transferOutData, error) {
-	txIn := &etypes.CardanoTxInItem{}
-	if err := json.Unmarshal(tx.Serialized, txIn); err != nil {
-		log.Error("error when marshaling cardano tx in item: ", err)
-		return nil, err
-	}
-
-	extraInfo := txIn.Metadata
-	tokenName := txIn.Asset
-	if tokenName != "ADA" {
-		tokenName = tokenName[5:] // Remove the WRAP_ prefix
-	}
-	if len(tokenName) == 0 {
-		return nil, fmt.Errorf("Invalid token: %s", tokenName)
-	}
-
-	tokens := p.keeper.GetTokens(ctx, []string{tokenName})
-	token := tokens[tokenName]
-	if token == nil {
-		return nil, fmt.Errorf("Cannot find token in the keeper")
-	}
-
-	amount := new(big.Int).SetUint64(txIn.Amount)
-
-	return &transferOutData{
-		blockHeight: tx.BlockHeight,
-		destChain:   extraInfo.Chain,
-		recipient:   extraInfo.Recipient,
-		token:       token,
-		amount:      utils.LovelaceToWei(amount),
-	}, nil
-}
-
-func (p *DefaultTxOutputProducer) processTransferOut(ctx sdk.Context, transfers []*transferOutData) []*types.TxOutWithSigner {
-	outMsgs := make([]*types.TxOutWithSigner, 0)
-
+	allTokens := p.keeper.GetAllTokens(ctx)
 	for _, transfer := range transfers {
-		var bz []byte
-		var txHash string
-
-		// ETH chain
-		if libchain.IsETHBasedChain(transfer.destChain) {
-			responseTx, err := p.buildERC20TransferIn(ctx, transfer.token, transfer.tokenAddr, ecommon.HexToAddress(transfer.recipient),
-				transfer.amount, transfer.destChain)
-			if err != nil {
-				log.Error("Failed to build erc20 transfer in, err = ", err)
-				continue
-			}
-
-			bz = responseTx.RawBytes
-			txHash = responseTx.EthTx.Hash().String()
+		token := allTokens[transfer.Token]
+		if token == nil {
+			log.Warn("cannot find token", transfer.Token)
+			continue
 		}
 
-		// Cardano chain
-		if libchain.IsCardanoChain(transfer.destChain) {
-			multiAssetAmt := utils.WeiToLovelace(transfer.amount)
-			log.Verbosef("data.amount = %v, multiAssetAmt = %v", transfer.amount, multiAssetAmt)
-
-			// In real, this transaction transfers at least <1 ADA + additional tx fee>
-			cardanoTx, err := p.getCardanoTx(ctx, transfer, multiAssetAmt.Uint64())
-			if err != nil {
-				log.Error("Failed to get cardano tx, err  = ", err)
-				continue
-			}
-
-			cardanoTxHash, err := cardanoTx.Hash()
-			if err != nil {
-				log.Error("Failed to get cardano hash, err = ", err)
-				continue
-			}
-
-			bz, err = cardanoTx.MarshalCBOR()
-			if err != nil {
-				log.Error("Faield to marshalcbor cardano tx, err = ", err)
-				continue
-			}
-
-			txHash = cardanoTxHash.String()
+		amount, ok := new(big.Int).SetString(transfer.Amount, 10)
+		if !ok {
+			log.Warn("Cannot create big.Int value from amout ", transfer.Amount)
+			continue
 		}
 
-		// Add to the output array
-		if bz != nil {
-			outMsg := types.NewMsgTxOutWithSigner(
-				p.appKeys.GetSignerAddress().String(),
-				types.TxOutType_TRANSFER_OUT,
-				transfer.blockHeight,
-				transfer.destChain,
-				"",
-				transfer.destChain,
-				txHash,
-				bz,
-				"",
-			)
+		tokens = append(tokens, token)
+		recipients = append(recipients, ecommon.HexToAddress(transfer.Recipient))
+		amounts = append(amounts, amount)
+		inHashes = append(inHashes, transfer.Id)
 
-			// Track the txout
-			p.txTracker.AddTransaction(
-				outMsg.Data,
-				transfer.txIn,
-			)
-
-			outMsgs = append(outMsgs, outMsg)
-		}
+		log.Verbosef("Processing transfer in: id = %s, recipient = %s, amount = %s, inHash = %s",
+			token.Id, transfer.Recipient, amount, transfer.Id)
 	}
 
-	return outMsgs
+	responseTx, err := p.buildERC20TransferIn(ctx, p.keeper, tokens, recipients, amounts, dstChain)
+	if err != nil {
+		log.Error("Failed to build erc20 transfer in, err = ", err)
+		return nil, err
+	}
+
+	outMsg := types.NewTxOutMsg(
+		p.appKeys.GetSignerAddress().String(),
+		types.TxOutType_TRANSFER_OUT,
+		inHashes,
+		dstChain,
+		responseTx.EthTx.Hash().String(),
+		responseTx.RawBytes,
+		"",
+	)
+	return []*types.TxOutMsg{outMsg}, nil
 }
 
 func (p *DefaultTxOutputProducer) getGasLimit(chain string) uint64 {

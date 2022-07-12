@@ -53,23 +53,23 @@ func (TxOutType) EnumDescriptor() ([]byte, []int) {
 	return fileDescriptor_155b13ca5b94a7d7, []int{0}
 }
 
-type TxOutWithSigner struct {
+type TxOutMsg struct {
 	Signer string `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
 	Data   *TxOut `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
 }
 
-func (m *TxOutWithSigner) Reset()         { *m = TxOutWithSigner{} }
-func (m *TxOutWithSigner) String() string { return proto.CompactTextString(m) }
-func (*TxOutWithSigner) ProtoMessage()    {}
-func (*TxOutWithSigner) Descriptor() ([]byte, []int) {
+func (m *TxOutMsg) Reset()         { *m = TxOutMsg{} }
+func (m *TxOutMsg) String() string { return proto.CompactTextString(m) }
+func (*TxOutMsg) ProtoMessage()    {}
+func (*TxOutMsg) Descriptor() ([]byte, []int) {
 	return fileDescriptor_155b13ca5b94a7d7, []int{0}
 }
-func (m *TxOutWithSigner) XXX_Unmarshal(b []byte) error {
+func (m *TxOutMsg) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TxOutWithSigner) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TxOutMsg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_TxOutWithSigner.Marshal(b, m, deterministic)
+		return xxx_messageInfo_TxOutMsg.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -79,26 +79,26 @@ func (m *TxOutWithSigner) XXX_Marshal(b []byte, deterministic bool) ([]byte, err
 		return b[:n], nil
 	}
 }
-func (m *TxOutWithSigner) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TxOutWithSigner.Merge(m, src)
+func (m *TxOutMsg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TxOutMsg.Merge(m, src)
 }
-func (m *TxOutWithSigner) XXX_Size() int {
+func (m *TxOutMsg) XXX_Size() int {
 	return m.Size()
 }
-func (m *TxOutWithSigner) XXX_DiscardUnknown() {
-	xxx_messageInfo_TxOutWithSigner.DiscardUnknown(m)
+func (m *TxOutMsg) XXX_DiscardUnknown() {
+	xxx_messageInfo_TxOutMsg.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_TxOutWithSigner proto.InternalMessageInfo
+var xxx_messageInfo_TxOutMsg proto.InternalMessageInfo
 
-func (m *TxOutWithSigner) GetSigner() string {
+func (m *TxOutMsg) GetSigner() string {
 	if m != nil {
 		return m.Signer
 	}
 	return ""
 }
 
-func (m *TxOutWithSigner) GetData() *TxOut {
+func (m *TxOutMsg) GetData() *TxOut {
 	if m != nil {
 		return m.Data
 	}
@@ -106,15 +106,13 @@ func (m *TxOutWithSigner) GetData() *TxOut {
 }
 
 type TxOut struct {
-	OutChain      string    `protobuf:"bytes,1,opt,name=outChain,proto3" json:"outChain,omitempty"`
-	OutHash       string    `protobuf:"bytes,2,opt,name=outHash,proto3" json:"outHash,omitempty"`
-	TxType        TxOutType `protobuf:"varint,3,opt,name=txType,proto3,enum=types.TxOutType" json:"txType,omitempty"`
-	InChain       string    `protobuf:"bytes,4,opt,name=inChain,proto3" json:"inChain,omitempty"`
-	InBlockHeight int64     `protobuf:"varint,5,opt,name=inBlockHeight,proto3" json:"inBlockHeight,omitempty"`
-	InHash        string    `protobuf:"bytes,6,opt,name=inHash,proto3" json:"inHash,omitempty"`
-	OutBytes      []byte    `protobuf:"bytes,7,opt,name=outBytes,proto3" json:"outBytes,omitempty"`
+	OutChain string    `protobuf:"bytes,1,opt,name=outChain,proto3" json:"outChain,omitempty"`
+	OutHash  string    `protobuf:"bytes,2,opt,name=outHash,proto3" json:"outHash,omitempty"`
+	TxType   TxOutType `protobuf:"varint,3,opt,name=txType,proto3,enum=types.TxOutType" json:"txType,omitempty"`
+	InHashes []string  `protobuf:"bytes,4,rep,name=inHashes,proto3" json:"inHashes,omitempty"`
+	OutBytes []byte    `protobuf:"bytes,5,opt,name=outBytes,proto3" json:"outBytes,omitempty"`
 	// optional contract hash
-	ContractHash string `protobuf:"bytes,8,opt,name=contractHash,proto3" json:"contractHash,omitempty"`
+	ContractHash string `protobuf:"bytes,6,opt,name=contractHash,proto3" json:"contractHash,omitempty"`
 }
 
 func (m *TxOut) Reset()         { *m = TxOut{} }
@@ -171,25 +169,11 @@ func (m *TxOut) GetTxType() TxOutType {
 	return TxOutType_CONTRACT_DEPLOYMENT
 }
 
-func (m *TxOut) GetInChain() string {
+func (m *TxOut) GetInHashes() []string {
 	if m != nil {
-		return m.InChain
+		return m.InHashes
 	}
-	return ""
-}
-
-func (m *TxOut) GetInBlockHeight() int64 {
-	if m != nil {
-		return m.InBlockHeight
-	}
-	return 0
-}
-
-func (m *TxOut) GetInHash() string {
-	if m != nil {
-		return m.InHash
-	}
-	return ""
+	return nil
 }
 
 func (m *TxOut) GetOutBytes() []byte {
@@ -267,23 +251,23 @@ func (m *TxOutSig) GetHashNoSig() string {
 	return ""
 }
 
-type TxOutContractConfirmWithSigner struct {
-	Signer string                `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
-	Data   *TxOutContractConfirm `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+type TxOutConfirmMsg struct {
+	Signer string        `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
+	Data   *TxOutConfirm `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
 }
 
-func (m *TxOutContractConfirmWithSigner) Reset()         { *m = TxOutContractConfirmWithSigner{} }
-func (m *TxOutContractConfirmWithSigner) String() string { return proto.CompactTextString(m) }
-func (*TxOutContractConfirmWithSigner) ProtoMessage()    {}
-func (*TxOutContractConfirmWithSigner) Descriptor() ([]byte, []int) {
+func (m *TxOutConfirmMsg) Reset()         { *m = TxOutConfirmMsg{} }
+func (m *TxOutConfirmMsg) String() string { return proto.CompactTextString(m) }
+func (*TxOutConfirmMsg) ProtoMessage()    {}
+func (*TxOutConfirmMsg) Descriptor() ([]byte, []int) {
 	return fileDescriptor_155b13ca5b94a7d7, []int{3}
 }
-func (m *TxOutContractConfirmWithSigner) XXX_Unmarshal(b []byte) error {
+func (m *TxOutConfirmMsg) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TxOutContractConfirmWithSigner) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TxOutConfirmMsg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_TxOutContractConfirmWithSigner.Marshal(b, m, deterministic)
+		return xxx_messageInfo_TxOutConfirmMsg.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -293,51 +277,52 @@ func (m *TxOutContractConfirmWithSigner) XXX_Marshal(b []byte, deterministic boo
 		return b[:n], nil
 	}
 }
-func (m *TxOutContractConfirmWithSigner) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TxOutContractConfirmWithSigner.Merge(m, src)
+func (m *TxOutConfirmMsg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TxOutConfirmMsg.Merge(m, src)
 }
-func (m *TxOutContractConfirmWithSigner) XXX_Size() int {
+func (m *TxOutConfirmMsg) XXX_Size() int {
 	return m.Size()
 }
-func (m *TxOutContractConfirmWithSigner) XXX_DiscardUnknown() {
-	xxx_messageInfo_TxOutContractConfirmWithSigner.DiscardUnknown(m)
+func (m *TxOutConfirmMsg) XXX_DiscardUnknown() {
+	xxx_messageInfo_TxOutConfirmMsg.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_TxOutContractConfirmWithSigner proto.InternalMessageInfo
+var xxx_messageInfo_TxOutConfirmMsg proto.InternalMessageInfo
 
-func (m *TxOutContractConfirmWithSigner) GetSigner() string {
+func (m *TxOutConfirmMsg) GetSigner() string {
 	if m != nil {
 		return m.Signer
 	}
 	return ""
 }
 
-func (m *TxOutContractConfirmWithSigner) GetData() *TxOutContractConfirm {
+func (m *TxOutConfirmMsg) GetData() *TxOutConfirm {
 	if m != nil {
 		return m.Data
 	}
 	return nil
 }
 
-type TxOutContractConfirm struct {
+type TxOutConfirm struct {
 	OutChain        string `protobuf:"bytes,1,opt,name=outChain,proto3" json:"outChain,omitempty"`
 	OutHash         string `protobuf:"bytes,2,opt,name=outHash,proto3" json:"outHash,omitempty"`
 	BlockHeight     int64  `protobuf:"varint,3,opt,name=blockHeight,proto3" json:"blockHeight,omitempty"`
 	ContractAddress string `protobuf:"bytes,4,opt,name=contractAddress,proto3" json:"contractAddress,omitempty"`
+	Nonce           int64  `protobuf:"varint,5,opt,name=nonce,proto3" json:"nonce,omitempty"`
 }
 
-func (m *TxOutContractConfirm) Reset()         { *m = TxOutContractConfirm{} }
-func (m *TxOutContractConfirm) String() string { return proto.CompactTextString(m) }
-func (*TxOutContractConfirm) ProtoMessage()    {}
-func (*TxOutContractConfirm) Descriptor() ([]byte, []int) {
+func (m *TxOutConfirm) Reset()         { *m = TxOutConfirm{} }
+func (m *TxOutConfirm) String() string { return proto.CompactTextString(m) }
+func (*TxOutConfirm) ProtoMessage()    {}
+func (*TxOutConfirm) Descriptor() ([]byte, []int) {
 	return fileDescriptor_155b13ca5b94a7d7, []int{4}
 }
-func (m *TxOutContractConfirm) XXX_Unmarshal(b []byte) error {
+func (m *TxOutConfirm) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *TxOutContractConfirm) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TxOutConfirm) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_TxOutContractConfirm.Marshal(b, m, deterministic)
+		return xxx_messageInfo_TxOutConfirm.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -347,94 +332,100 @@ func (m *TxOutContractConfirm) XXX_Marshal(b []byte, deterministic bool) ([]byte
 		return b[:n], nil
 	}
 }
-func (m *TxOutContractConfirm) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TxOutContractConfirm.Merge(m, src)
+func (m *TxOutConfirm) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TxOutConfirm.Merge(m, src)
 }
-func (m *TxOutContractConfirm) XXX_Size() int {
+func (m *TxOutConfirm) XXX_Size() int {
 	return m.Size()
 }
-func (m *TxOutContractConfirm) XXX_DiscardUnknown() {
-	xxx_messageInfo_TxOutContractConfirm.DiscardUnknown(m)
+func (m *TxOutConfirm) XXX_DiscardUnknown() {
+	xxx_messageInfo_TxOutConfirm.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_TxOutContractConfirm proto.InternalMessageInfo
+var xxx_messageInfo_TxOutConfirm proto.InternalMessageInfo
 
-func (m *TxOutContractConfirm) GetOutChain() string {
+func (m *TxOutConfirm) GetOutChain() string {
 	if m != nil {
 		return m.OutChain
 	}
 	return ""
 }
 
-func (m *TxOutContractConfirm) GetOutHash() string {
+func (m *TxOutConfirm) GetOutHash() string {
 	if m != nil {
 		return m.OutHash
 	}
 	return ""
 }
 
-func (m *TxOutContractConfirm) GetBlockHeight() int64 {
+func (m *TxOutConfirm) GetBlockHeight() int64 {
 	if m != nil {
 		return m.BlockHeight
 	}
 	return 0
 }
 
-func (m *TxOutContractConfirm) GetContractAddress() string {
+func (m *TxOutConfirm) GetContractAddress() string {
 	if m != nil {
 		return m.ContractAddress
 	}
 	return ""
 }
 
+func (m *TxOutConfirm) GetNonce() int64 {
+	if m != nil {
+		return m.Nonce
+	}
+	return 0
+}
+
 func init() {
 	proto.RegisterEnum("types.TxOutType", TxOutType_name, TxOutType_value)
-	proto.RegisterType((*TxOutWithSigner)(nil), "types.TxOutWithSigner")
+	proto.RegisterType((*TxOutMsg)(nil), "types.TxOutMsg")
 	proto.RegisterType((*TxOut)(nil), "types.TxOut")
 	proto.RegisterType((*TxOutSig)(nil), "types.TxOutSig")
-	proto.RegisterType((*TxOutContractConfirmWithSigner)(nil), "types.TxOutContractConfirmWithSigner")
-	proto.RegisterType((*TxOutContractConfirm)(nil), "types.TxOutContractConfirm")
+	proto.RegisterType((*TxOutConfirmMsg)(nil), "types.TxOutConfirmMsg")
+	proto.RegisterType((*TxOutConfirm)(nil), "types.TxOutConfirm")
 }
 
 func init() { proto.RegisterFile("sisu/tx_out.proto", fileDescriptor_155b13ca5b94a7d7) }
 
 var fileDescriptor_155b13ca5b94a7d7 = []byte{
-	// 505 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x93, 0x41, 0x8f, 0xd2, 0x40,
-	0x14, 0xc7, 0x99, 0x65, 0x61, 0xe1, 0x81, 0x6e, 0x1d, 0x89, 0xdb, 0xb8, 0xa6, 0x69, 0x88, 0x87,
-	0x6a, 0x22, 0x24, 0xeb, 0x27, 0x80, 0xc2, 0x0a, 0x71, 0x2d, 0x3a, 0x94, 0x90, 0xf5, 0x52, 0x4b,
-	0xa9, 0x74, 0xb2, 0x6e, 0x87, 0xb4, 0xd3, 0x08, 0xdf, 0xc2, 0xa3, 0x1f, 0xc9, 0xe3, 0x1e, 0x3d,
-	0x1a, 0xf8, 0x20, 0x9a, 0x4e, 0x67, 0xb1, 0x6c, 0x3c, 0x98, 0x3d, 0xc1, 0xef, 0xff, 0x32, 0xff,
-	0xf7, 0xe6, 0xfd, 0x3b, 0xf0, 0x28, 0xa6, 0x71, 0xd2, 0xe6, 0x2b, 0x87, 0x25, 0xbc, 0xb5, 0x8c,
-	0x18, 0x67, 0xb8, 0xc4, 0xd7, 0x4b, 0x3f, 0x6e, 0xbe, 0x85, 0x63, 0x7b, 0x35, 0x4a, 0xf8, 0x94,
-	0xf2, 0x60, 0x4c, 0x17, 0xa1, 0x1f, 0xe1, 0x27, 0x50, 0x8e, 0xc5, 0x3f, 0x15, 0xe9, 0xc8, 0xa8,
-	0x12, 0x49, 0x58, 0x87, 0xc3, 0xb9, 0xcb, 0x5d, 0xf5, 0x40, 0x47, 0x46, 0xed, 0xac, 0xde, 0x12,
-	0x06, 0x2d, 0x71, 0x9a, 0x88, 0x4a, 0xf3, 0x37, 0x82, 0x92, 0x60, 0xfc, 0x14, 0x2a, 0x2c, 0xe1,
-	0x66, 0xe0, 0xd2, 0x50, 0xba, 0xec, 0x18, 0xab, 0x70, 0xc4, 0x12, 0x3e, 0x70, 0xe3, 0x40, 0x58,
-	0x55, 0xc9, 0x2d, 0x62, 0x03, 0xca, 0x7c, 0x65, 0xaf, 0x97, 0xbe, 0x5a, 0xd4, 0x91, 0xf1, 0xf0,
-	0x4c, 0xc9, 0xf7, 0x48, 0x75, 0x22, 0xeb, 0xa9, 0x07, 0x0d, 0x33, 0xfb, 0xc3, 0xcc, 0x43, 0x22,
-	0x7e, 0x0e, 0x0f, 0x68, 0xd8, 0xfd, 0xc2, 0xbc, 0xab, 0x81, 0x4f, 0x17, 0x01, 0x57, 0x4b, 0x3a,
-	0x32, 0x8a, 0x64, 0x5f, 0x4c, 0xef, 0x48, 0x43, 0x31, 0x42, 0x39, 0xbb, 0x63, 0x46, 0x72, 0xee,
-	0xee, 0x9a, 0xfb, 0xb1, 0x7a, 0xa4, 0x23, 0xa3, 0x4e, 0x76, 0x8c, 0x9b, 0x50, 0xf7, 0x58, 0xc8,
-	0x23, 0xd7, 0xcb, 0x86, 0xaf, 0x88, 0x93, 0x7b, 0x5a, 0xf3, 0x13, 0x54, 0xc4, 0xb0, 0x63, 0xba,
-	0xc0, 0x0d, 0x28, 0x79, 0xb9, 0x05, 0x64, 0x80, 0x75, 0xa8, 0x05, 0x6e, 0x1c, 0xc8, 0x7d, 0xcb,
-	0x0d, 0xe4, 0x25, 0xfc, 0x0c, 0xaa, 0x29, 0x5a, 0x2c, 0xad, 0x17, 0x45, 0xfd, 0xaf, 0xd0, 0xa4,
-	0xa0, 0x89, 0x0e, 0xa6, 0x6c, 0x6b, 0xb2, 0xf0, 0x33, 0x8d, 0xae, 0xff, 0x23, 0xbf, 0xf6, 0x5e,
-	0x7e, 0xa7, 0xf9, 0xdd, 0xde, 0x31, 0x93, 0x71, 0x7e, 0x47, 0xd0, 0xf8, 0x57, 0xf9, 0x9e, 0xe9,
-	0xea, 0x50, 0x9b, 0xe5, 0x72, 0x29, 0x8a, 0x5c, 0xf2, 0x12, 0x36, 0xe0, 0xf8, 0x76, 0x9b, 0x9d,
-	0xf9, 0x3c, 0xf2, 0xe3, 0x58, 0xa6, 0x7b, 0x57, 0x7e, 0x49, 0xa1, 0xba, 0xfb, 0x28, 0xf0, 0x09,
-	0x3c, 0x36, 0x47, 0x96, 0x4d, 0x3a, 0xa6, 0xed, 0xf4, 0xfa, 0xef, 0x2f, 0x46, 0x97, 0xef, 0xfa,
-	0x96, 0xad, 0x14, 0xb0, 0x02, 0x75, 0x9b, 0x74, 0xac, 0xf1, 0x79, 0x9f, 0x38, 0xa3, 0x89, 0xad,
-	0x20, 0xdc, 0x00, 0xc5, 0x1c, 0x74, 0xac, 0x37, 0x7d, 0xe7, 0x62, 0xf8, 0x61, 0x32, 0xec, 0x0d,
-	0xed, 0x4b, 0xe5, 0x00, 0x9f, 0xc2, 0xc9, 0x0e, 0x9d, 0xe9, 0xd0, 0x1e, 0xf4, 0x48, 0x67, 0xea,
-	0x9c, 0x4f, 0xac, 0x9e, 0x52, 0xec, 0x9a, 0x3f, 0x36, 0x1a, 0xba, 0xd9, 0x68, 0xe8, 0xd7, 0x46,
-	0x43, 0xdf, 0xb6, 0x5a, 0xe1, 0x66, 0xab, 0x15, 0x7e, 0x6e, 0xb5, 0xc2, 0xc7, 0x17, 0x0b, 0xca,
-	0x83, 0x64, 0xd6, 0xf2, 0xd8, 0x75, 0x3b, 0x7d, 0x60, 0xaf, 0x42, 0x9f, 0x7f, 0x65, 0xd1, 0x95,
-	0x80, 0xf6, 0x2a, 0xfb, 0x11, 0x5b, 0x9e, 0x95, 0xc5, 0xa3, 0x7b, 0xfd, 0x27, 0x00, 0x00, 0xff,
-	0xff, 0x60, 0xed, 0xc2, 0xcf, 0x89, 0x03, 0x00, 0x00,
+	// 494 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x9c, 0x93, 0xc1, 0x6e, 0xd3, 0x4e,
+	0x10, 0xc6, 0xb3, 0x75, 0x93, 0x7f, 0x33, 0x89, 0xfe, 0x35, 0xdb, 0x8a, 0x5a, 0x80, 0x2c, 0x2b,
+	0x17, 0x0c, 0x12, 0x89, 0x54, 0x9e, 0x20, 0x75, 0x52, 0x12, 0xa9, 0x75, 0x60, 0xe3, 0x28, 0x2a,
+	0x17, 0xe3, 0x38, 0xc6, 0x5e, 0x95, 0x7a, 0x23, 0xef, 0x5a, 0x24, 0x6f, 0xc1, 0x53, 0xf0, 0x22,
+	0x5c, 0x38, 0xf6, 0xc8, 0x11, 0x25, 0x2f, 0x82, 0x76, 0xe3, 0x04, 0x97, 0x03, 0x07, 0x4e, 0xd6,
+	0xef, 0x1b, 0xcd, 0x37, 0xe3, 0x6f, 0xb4, 0xf0, 0x88, 0x53, 0x9e, 0x77, 0xc4, 0xd2, 0x67, 0xb9,
+	0x68, 0x2f, 0x32, 0x26, 0x18, 0xae, 0x8a, 0xd5, 0x22, 0xe2, 0xad, 0x1e, 0x1c, 0x79, 0xcb, 0x51,
+	0x2e, 0xae, 0x79, 0x8c, 0x1f, 0x43, 0x8d, 0xd3, 0x38, 0x8d, 0x32, 0x03, 0x59, 0xc8, 0xae, 0x93,
+	0x82, 0xb0, 0x05, 0x87, 0xf3, 0x40, 0x04, 0xc6, 0x81, 0x85, 0xec, 0xc6, 0x79, 0xb3, 0xad, 0x3a,
+	0xdb, 0xaa, 0x8d, 0xa8, 0x4a, 0xeb, 0x1b, 0x82, 0xaa, 0x62, 0xfc, 0x04, 0x8e, 0x58, 0x2e, 0x9c,
+	0x24, 0xa0, 0x69, 0xe1, 0xb2, 0x67, 0x6c, 0xc0, 0x7f, 0x2c, 0x17, 0x83, 0x80, 0x27, 0xca, 0xaa,
+	0x4e, 0x76, 0x88, 0x6d, 0xa8, 0x89, 0xa5, 0xb7, 0x5a, 0x44, 0x86, 0x66, 0x21, 0xfb, 0xff, 0x73,
+	0xbd, 0x3c, 0x43, 0xea, 0xa4, 0xa8, 0x4b, 0x7f, 0x9a, 0xca, 0x9e, 0x88, 0x1b, 0x87, 0x96, 0x26,
+	0xfd, 0x77, 0x5c, 0xcc, 0xbe, 0x58, 0x89, 0x88, 0x1b, 0x55, 0x0b, 0xd9, 0x4d, 0xb2, 0x67, 0xdc,
+	0x82, 0x66, 0xc8, 0x52, 0x91, 0x05, 0xe1, 0x76, 0x81, 0x9a, 0x5a, 0xe0, 0x81, 0xd6, 0xfa, 0x50,
+	0x64, 0x31, 0xa6, 0x31, 0x3e, 0x85, 0x6a, 0x58, 0xfa, 0x89, 0x2d, 0x60, 0x0b, 0x1a, 0x49, 0xc0,
+	0x93, 0x29, 0x15, 0xc9, 0x98, 0xc6, 0xc5, 0x5f, 0x94, 0x25, 0xfc, 0x0c, 0xea, 0x12, 0x5d, 0x26,
+	0xeb, 0x9a, 0xaa, 0xff, 0x16, 0x5a, 0x04, 0x8e, 0xd5, 0x04, 0x87, 0xa5, 0x1f, 0x69, 0x76, 0xf7,
+	0xb7, 0xd0, 0x9f, 0x3f, 0x08, 0xfd, 0xa4, 0x1c, 0x48, 0xd1, 0x5d, 0x64, 0xff, 0x15, 0x41, 0xb3,
+	0x2c, 0xff, 0xe3, 0x09, 0x2c, 0x68, 0xcc, 0x3e, 0xb1, 0xf0, 0x76, 0x10, 0xd1, 0x38, 0x11, 0x6a,
+	0x75, 0x8d, 0x94, 0x25, 0x6c, 0xc3, 0xf1, 0x2e, 0xae, 0xee, 0x7c, 0x9e, 0x45, 0x5c, 0x5e, 0x40,
+	0x7a, 0xfc, 0x29, 0xcb, 0xf0, 0x52, 0x96, 0x86, 0x91, 0xba, 0x82, 0x46, 0xb6, 0xf0, 0x92, 0x42,
+	0x7d, 0x7f, 0x4f, 0x7c, 0x06, 0x27, 0xce, 0xc8, 0xf5, 0x48, 0xd7, 0xf1, 0xfc, 0x5e, 0xff, 0xed,
+	0xd5, 0xe8, 0xe6, 0xba, 0xef, 0x7a, 0x7a, 0x05, 0xeb, 0xd0, 0xf4, 0x48, 0xd7, 0x1d, 0x5f, 0xf6,
+	0x89, 0x3f, 0x9a, 0x78, 0x3a, 0xc2, 0xa7, 0xa0, 0x3b, 0x83, 0xae, 0xfb, 0xa6, 0xef, 0x5f, 0x0d,
+	0xdf, 0x4d, 0x86, 0xbd, 0xa1, 0x77, 0xa3, 0x1f, 0xe0, 0xa7, 0x70, 0xb6, 0x47, 0x7f, 0x3a, 0xf4,
+	0x06, 0x3d, 0xd2, 0x9d, 0xfa, 0x97, 0x13, 0xb7, 0xa7, 0x6b, 0x17, 0xce, 0xf7, 0xb5, 0x89, 0xee,
+	0xd7, 0x26, 0xfa, 0xb9, 0x36, 0xd1, 0x97, 0x8d, 0x59, 0xb9, 0xdf, 0x98, 0x95, 0x1f, 0x1b, 0xb3,
+	0xf2, 0xfe, 0x45, 0x4c, 0x45, 0x92, 0xcf, 0xda, 0x21, 0xbb, 0xeb, 0xc8, 0x47, 0xf1, 0x2a, 0x8d,
+	0xc4, 0x67, 0x96, 0xdd, 0x2a, 0xe8, 0x2c, 0xb7, 0x1f, 0x95, 0xf5, 0xac, 0xa6, 0x1e, 0xca, 0xeb,
+	0x5f, 0x01, 0x00, 0x00, 0xff, 0xff, 0x24, 0x40, 0x77, 0xdc, 0x3d, 0x03, 0x00, 0x00,
 }
 
-func (m *TxOutWithSigner) Marshal() (dAtA []byte, err error) {
+func (m *TxOutMsg) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -444,12 +435,12 @@ func (m *TxOutWithSigner) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TxOutWithSigner) MarshalTo(dAtA []byte) (int, error) {
+func (m *TxOutMsg) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *TxOutWithSigner) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *TxOutMsg) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -501,33 +492,23 @@ func (m *TxOut) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		copy(dAtA[i:], m.ContractHash)
 		i = encodeVarintTxOut(dAtA, i, uint64(len(m.ContractHash)))
 		i--
-		dAtA[i] = 0x42
+		dAtA[i] = 0x32
 	}
 	if len(m.OutBytes) > 0 {
 		i -= len(m.OutBytes)
 		copy(dAtA[i:], m.OutBytes)
 		i = encodeVarintTxOut(dAtA, i, uint64(len(m.OutBytes)))
 		i--
-		dAtA[i] = 0x3a
+		dAtA[i] = 0x2a
 	}
-	if len(m.InHash) > 0 {
-		i -= len(m.InHash)
-		copy(dAtA[i:], m.InHash)
-		i = encodeVarintTxOut(dAtA, i, uint64(len(m.InHash)))
-		i--
-		dAtA[i] = 0x32
-	}
-	if m.InBlockHeight != 0 {
-		i = encodeVarintTxOut(dAtA, i, uint64(m.InBlockHeight))
-		i--
-		dAtA[i] = 0x28
-	}
-	if len(m.InChain) > 0 {
-		i -= len(m.InChain)
-		copy(dAtA[i:], m.InChain)
-		i = encodeVarintTxOut(dAtA, i, uint64(len(m.InChain)))
-		i--
-		dAtA[i] = 0x22
+	if len(m.InHashes) > 0 {
+		for iNdEx := len(m.InHashes) - 1; iNdEx >= 0; iNdEx-- {
+			i -= len(m.InHashes[iNdEx])
+			copy(dAtA[i:], m.InHashes[iNdEx])
+			i = encodeVarintTxOut(dAtA, i, uint64(len(m.InHashes[iNdEx])))
+			i--
+			dAtA[i] = 0x22
+		}
 	}
 	if m.TxType != 0 {
 		i = encodeVarintTxOut(dAtA, i, uint64(m.TxType))
@@ -595,7 +576,7 @@ func (m *TxOutSig) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *TxOutContractConfirmWithSigner) Marshal() (dAtA []byte, err error) {
+func (m *TxOutConfirmMsg) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -605,12 +586,12 @@ func (m *TxOutContractConfirmWithSigner) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TxOutContractConfirmWithSigner) MarshalTo(dAtA []byte) (int, error) {
+func (m *TxOutConfirmMsg) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *TxOutContractConfirmWithSigner) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *TxOutConfirmMsg) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -637,7 +618,7 @@ func (m *TxOutContractConfirmWithSigner) MarshalToSizedBuffer(dAtA []byte) (int,
 	return len(dAtA) - i, nil
 }
 
-func (m *TxOutContractConfirm) Marshal() (dAtA []byte, err error) {
+func (m *TxOutConfirm) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -647,16 +628,21 @@ func (m *TxOutContractConfirm) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *TxOutContractConfirm) MarshalTo(dAtA []byte) (int, error) {
+func (m *TxOutConfirm) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *TxOutContractConfirm) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *TxOutConfirm) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
 	_ = l
+	if m.Nonce != 0 {
+		i = encodeVarintTxOut(dAtA, i, uint64(m.Nonce))
+		i--
+		dAtA[i] = 0x28
+	}
 	if len(m.ContractAddress) > 0 {
 		i -= len(m.ContractAddress)
 		copy(dAtA[i:], m.ContractAddress)
@@ -697,7 +683,7 @@ func encodeVarintTxOut(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *TxOutWithSigner) Size() (n int) {
+func (m *TxOutMsg) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -731,16 +717,11 @@ func (m *TxOut) Size() (n int) {
 	if m.TxType != 0 {
 		n += 1 + sovTxOut(uint64(m.TxType))
 	}
-	l = len(m.InChain)
-	if l > 0 {
-		n += 1 + l + sovTxOut(uint64(l))
-	}
-	if m.InBlockHeight != 0 {
-		n += 1 + sovTxOut(uint64(m.InBlockHeight))
-	}
-	l = len(m.InHash)
-	if l > 0 {
-		n += 1 + l + sovTxOut(uint64(l))
+	if len(m.InHashes) > 0 {
+		for _, s := range m.InHashes {
+			l = len(s)
+			n += 1 + l + sovTxOut(uint64(l))
+		}
 	}
 	l = len(m.OutBytes)
 	if l > 0 {
@@ -774,7 +755,7 @@ func (m *TxOutSig) Size() (n int) {
 	return n
 }
 
-func (m *TxOutContractConfirmWithSigner) Size() (n int) {
+func (m *TxOutConfirmMsg) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -791,7 +772,7 @@ func (m *TxOutContractConfirmWithSigner) Size() (n int) {
 	return n
 }
 
-func (m *TxOutContractConfirm) Size() (n int) {
+func (m *TxOutConfirm) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -812,6 +793,9 @@ func (m *TxOutContractConfirm) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovTxOut(uint64(l))
 	}
+	if m.Nonce != 0 {
+		n += 1 + sovTxOut(uint64(m.Nonce))
+	}
 	return n
 }
 
@@ -821,7 +805,7 @@ func sovTxOut(x uint64) (n int) {
 func sozTxOut(x uint64) (n int) {
 	return sovTxOut(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *TxOutWithSigner) Unmarshal(dAtA []byte) error {
+func (m *TxOutMsg) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -844,10 +828,10 @@ func (m *TxOutWithSigner) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: TxOutWithSigner: wiretype end group for non-group")
+			return fmt.Errorf("proto: TxOutMsg: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TxOutWithSigner: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: TxOutMsg: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1053,7 +1037,7 @@ func (m *TxOut) Unmarshal(dAtA []byte) error {
 			}
 		case 4:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field InChain", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field InHashes", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -1081,60 +1065,9 @@ func (m *TxOut) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.InChain = string(dAtA[iNdEx:postIndex])
+			m.InHashes = append(m.InHashes, string(dAtA[iNdEx:postIndex]))
 			iNdEx = postIndex
 		case 5:
-			if wireType != 0 {
-				return fmt.Errorf("proto: wrong wireType = %d for field InBlockHeight", wireType)
-			}
-			m.InBlockHeight = 0
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTxOut
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				m.InBlockHeight |= int64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-		case 6:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field InHash", wireType)
-			}
-			var stringLen uint64
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowTxOut
-				}
-				if iNdEx >= l {
-					return io.ErrUnexpectedEOF
-				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				stringLen |= uint64(b&0x7F) << shift
-				if b < 0x80 {
-					break
-				}
-			}
-			intStringLen := int(stringLen)
-			if intStringLen < 0 {
-				return ErrInvalidLengthTxOut
-			}
-			postIndex := iNdEx + intStringLen
-			if postIndex < 0 {
-				return ErrInvalidLengthTxOut
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.InHash = string(dAtA[iNdEx:postIndex])
-			iNdEx = postIndex
-		case 7:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field OutBytes", wireType)
 			}
@@ -1168,7 +1101,7 @@ func (m *TxOut) Unmarshal(dAtA []byte) error {
 				m.OutBytes = []byte{}
 			}
 			iNdEx = postIndex
-		case 8:
+		case 6:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field ContractHash", wireType)
 			}
@@ -1367,7 +1300,7 @@ func (m *TxOutSig) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TxOutContractConfirmWithSigner) Unmarshal(dAtA []byte) error {
+func (m *TxOutConfirmMsg) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1390,10 +1323,10 @@ func (m *TxOutContractConfirmWithSigner) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: TxOutContractConfirmWithSigner: wiretype end group for non-group")
+			return fmt.Errorf("proto: TxOutConfirmMsg: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TxOutContractConfirmWithSigner: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: TxOutConfirmMsg: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1458,7 +1391,7 @@ func (m *TxOutContractConfirmWithSigner) Unmarshal(dAtA []byte) error {
 				return io.ErrUnexpectedEOF
 			}
 			if m.Data == nil {
-				m.Data = &TxOutContractConfirm{}
+				m.Data = &TxOutConfirm{}
 			}
 			if err := m.Data.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
@@ -1485,7 +1418,7 @@ func (m *TxOutContractConfirmWithSigner) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *TxOutContractConfirm) Unmarshal(dAtA []byte) error {
+func (m *TxOutConfirm) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -1508,10 +1441,10 @@ func (m *TxOutContractConfirm) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: TxOutContractConfirm: wiretype end group for non-group")
+			return fmt.Errorf("proto: TxOutConfirm: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: TxOutContractConfirm: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: TxOutConfirm: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -1629,6 +1562,25 @@ func (m *TxOutContractConfirm) Unmarshal(dAtA []byte) error {
 			}
 			m.ContractAddress = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
+		case 5:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field Nonce", wireType)
+			}
+			m.Nonce = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTxOut
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.Nonce |= int64(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
 		default:
 			iNdEx = preIndex
 			skippy, err := skipTxOut(dAtA[iNdEx:])

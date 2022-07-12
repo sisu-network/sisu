@@ -3,13 +3,21 @@ package utils
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"crypto/ecdsa"
 	"crypto/rand"
 	"fmt"
 	"io"
 
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcutil/hdkeychain"
+	"github.com/ethereum/go-ethereum/accounts"
+
 	"github.com/cosmos/cosmos-sdk/crypto/keys/ed25519"
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/cosmos/go-bip39"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func AESDEncrypt(message []byte, key []byte) ([]byte, error) {
@@ -58,4 +66,37 @@ func GetCosmosPubKey(keyType string, bz []byte) (cryptotypes.PubKey, error) {
 	}
 
 	return nil, fmt.Errorf("Cannot find public key")
+}
+
+func GetEcdsaPrivateKey(mnemonic string) (*ecdsa.PrivateKey, common.Address) {
+	seed, err := bip39.NewSeedWithErrorChecking(mnemonic, "")
+	if err != nil {
+		panic(err)
+	}
+
+	dpath, err := accounts.ParseDerivationPath("m/44'/60'/0'/0/0")
+	if err != nil {
+		panic(err)
+	}
+
+	masterKey, err := hdkeychain.NewMaster(seed, &chaincfg.MainNetParams)
+
+	key := masterKey
+	for _, n := range dpath {
+		key, err = key.Derive(n)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	privateKey, err := key.ECPrivKey()
+	if err != nil {
+		panic(err)
+	}
+
+	privateKeyECDSA := privateKey.ToECDSA()
+	publicKey := privateKeyECDSA.PublicKey
+	addr := crypto.PubkeyToAddress(publicKey)
+
+	return privateKeyECDSA, addr
 }

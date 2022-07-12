@@ -114,7 +114,7 @@ func (h *handlerPauseResumeContract) doPauseOrResume(ctx sdk.Context, chain, has
 		return nil, err
 	}
 
-	var txOutMsg *types.TxOutWithSigner
+	var txOutMsg *types.TxOutMsg
 	var err error
 	if isPause {
 		log.Info("Creating pause transaction...")
@@ -159,7 +159,6 @@ func (h *handlerPauseResumeContract) signTx(ctx sdk.Context, tx *types.TxOut) {
 		KeysignMessages: []*hTypes.KeysignMessage{
 			{
 				Id:          h.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), tx.OutHash),
-				InChain:     tx.InChain,
 				OutChain:    tx.OutChain,
 				OutHash:     tx.OutHash,
 				BytesToSign: hash[:],

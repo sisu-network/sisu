@@ -1,82 +1,103 @@
 package sisu
 
 import (
+	"fmt"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
 
 func mockForHandlerTxIn() (sdk.Context, ManagerContainer) {
-	txSubmit := &common.MockTxSubmit{}
-	txTracker := &MockTxTracker{}
-
-	txOutputProducer := &MockTxOutputProducer{}
-	txOutputProducer.GetTxOutsFunc = func(ctx sdk.Context, height int64, tx []*types.TxIn) []*types.TxOutWithSigner {
-		txout := types.NewMsgTxOutWithSigner("signer", types.TxOutType_TRANSFER_OUT, 0, "ganache1",
-			"inHash", "ganache2", "outHash", []byte{}, "")
-
-		return []*types.TxOutWithSigner{txout}
-	}
-
 	ctx := testContext()
-	k := keeperTestGenesis(ctx)
+	k := keeperTestAfterContractDeployed(ctx)
 	pmm := NewPostedMessageManager(k)
 	k.SaveParams(ctx, &types.Params{
 		MajorityThreshold: 1,
 	})
 
-	globalData := &common.MockGlobalData{}
-
-	mc := MockManagerContainer(txSubmit, txTracker, txOutputProducer, ctx, k, pmm, globalData, &MockTxInQueue{})
-
+	mc := MockManagerContainer(ctx, k, pmm, &MockTransferQueue{})
 	return ctx, mc
 }
 
 func TestHandlerTxIn_HappyCase(t *testing.T) {
 	t.Parallel()
-	t.Run("output_is_broadcasted", func(t *testing.T) {
+
+	t.Run("transfer_is_saved", func(t *testing.T) {
 		t.Parallel()
 
-		addTxCount := 0
 		ctx, mc := mockForHandlerTxIn()
-		txInQueue := mc.TxInQueue()
-		txInQueue.(*MockTxInQueue).AddTxInFunc = func(txIn *types.TxIn) {
-			addTxCount = 1
-		}
+		srcChain := "ganache1"
+		destChain := "ganache2"
+		recipient := "0x8095f5b69F2970f38DC6eBD2682ed71E4939f988"
+		token := "SISU"
+		hash1 := "123"
+		amount := "10000"
 
 		handler := NewHandlerTxIn(mc)
-		msg := types.NewTxInWithSigner("signer", "ganache1", "", 0, []byte{})
-
-		_, err := handler.DeliverMsg(ctx, msg)
-		require.Nil(t, err)
-		require.Equal(t, 1, addTxCount)
-	})
-
-	t.Run("output_is_not_broadcasted", func(t *testing.T) {
-		t.Parallel()
-
-		addTxCount := 0
-		ctx, mc := mockForHandlerTxIn()
-		globalData := mc.GlobalData().(*common.MockGlobalData)
-		globalData.IsCatchingUpFunc = func() bool {
-			return true
-		}
-
-		txInQueue := mc.TxInQueue()
-		txInQueue.(*MockTxInQueue).AddTxInFunc = func(txIn *types.TxIn) {
-			addTxCount = 1
-		}
-
-		handler := NewHandlerTxIn(mc)
-
-		msg := types.NewTxInWithSigner("signer", "ganache1", "", 0, []byte{})
+		msg := types.NewTxsInMsg("signer", &types.TxsIn{
+			Chain:  srcChain,
+			Height: 10,
+			Requests: []*types.TxIn{
+				{
+					ToChain:   destChain,
+					Token:     token,
+					Hash:      hash1,
+					Recipient: recipient,
+					Amount:    amount,
+				},
+			},
+		})
 
 		_, err := handler.DeliverMsg(ctx, msg)
 		require.Nil(t, err)
 
-		require.Equal(t, 0, addTxCount)
+		keeper := mc.Keeper()
+		queue := keeper.GetTransferQueue(ctx, destChain)
+		require.Equal(t, []*types.Transfer{
+			{
+				Id:        fmt.Sprintf("%s__%s", srcChain, hash1),
+				Recipient: recipient,
+				Token:     token,
+				Amount:    amount,
+			},
+		}, queue)
+
+		// Add the second request
+		hash2 := "456"
+		recipient2 := "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80"
+		token2 := "ADA"
+		handler = NewHandlerTxIn(mc)
+		msg = types.NewTxsInMsg("signer", &types.TxsIn{
+			Chain:  srcChain,
+			Height: 11,
+			Requests: []*types.TxIn{
+				{
+					ToChain:   destChain,
+					Token:     token2,
+					Hash:      hash2,
+					Recipient: recipient2,
+					Amount:    amount,
+				},
+			},
+		})
+		_, err = handler.DeliverMsg(ctx, msg)
+		require.Nil(t, err)
+		queue = keeper.GetTransferQueue(ctx, destChain)
+		require.Equal(t, []*types.Transfer{
+			{
+				Id:        fmt.Sprintf("%s__%s", srcChain, hash1),
+				Recipient: recipient,
+				Token:     token,
+				Amount:    amount,
+			},
+			{
+				Id:        fmt.Sprintf("%s__%s", srcChain, hash2),
+				Recipient: recipient2,
+				Token:     token2,
+				Amount:    amount,
+			},
+		}, queue)
 	})
 }

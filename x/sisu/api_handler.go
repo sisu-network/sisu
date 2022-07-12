@@ -1,7 +1,9 @@
 package sisu
 
 import (
+	"encoding/json"
 	"fmt"
+	"math/big"
 	"sort"
 
 	"github.com/echovl/cardano-go"
@@ -9,6 +11,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	chainstypes "github.com/sisu-network/deyes/chains/types"
 	etypes "github.com/sisu-network/deyes/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	dhtypes "github.com/sisu-network/dheart/types"
@@ -18,12 +21,13 @@ import (
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
+	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
+	"github.com/sisu-network/sisu/x/sisu/eth"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/sisu-network/sisu/x/sisu/world"
 
-	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
@@ -265,23 +269,21 @@ func (a *ApiHandler) OnKeygenResult(result dhtypes.KeygenResult) {
 	log.Info("There is keygen result from dheart, resultEnum = ", resultEnum, " keyType = ", result.KeyType)
 
 	a.txSubmit.SubmitMessageAsync(signerMsg)
-
+	ctx := a.globalData.GetReadOnlyContext()
+	params := a.keeper.GetParams(ctx)
 	// Add list the public key address to watch.
-	for _, chainConfig := range a.config.SupportedChains {
-		chain := chainConfig.Id
-
+	for _, chain := range params.SupportedChains {
 		if libchain.GetKeyTypeForChain(chain) != result.KeyType {
 			continue
 		}
 
-		log.Verbose("adding watcher address ", result.Address, " for chain ", chain)
+		log.Verbose("adding chain account address ", result.Address, " for chain ", chain)
 
-		a.addWatchAddress(chain, result.Address)
+		a.deyesClient.SetChainAccount(chain, result.Address)
+		if libchain.IsCardanoChain(chain) {
+			a.deyesClient.SetGatewayAddress(chain, result.Address)
+		}
 	}
-}
-
-func (a *ApiHandler) addWatchAddress(chain string, address string) {
-	a.deyesClient.AddWatchAddresses(chain, []string{address})
 }
 
 // OnTxDeploymentResult is a callback after there is a deployment result from deyes.
@@ -381,18 +383,19 @@ func (a *ApiHandler) processETHSigningResult(ctx sdk.Context, result *dhtypes.Ke
 
 	// // TODO: Broadcast the keysign result that includes this TxOutSig.
 	// // Save this to TxOutSig
+	fmt.Println("signMsg.OutHash = ", signMsg.OutHash)
 	a.privateDb.SaveTxOutSig(&types.TxOutSig{
 		Chain:       signMsg.OutChain,
 		HashWithSig: signedTx.Hash().String(),
 		HashNoSig:   signMsg.OutHash,
 	})
 
-	log.Info("signedTx hash = ", signedTx.Hash().String())
+	log.Info("signedTx hash = ", utils.KeccakHash32Bytes(bz))
 
 	// If this is a contract deployment transaction, update the contract table with the hash of the
 	// deployment tx bytes.
 	isContractDeployment := chain.IsETHBasedChain(signMsg.OutChain) && txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT
-	err = a.deploySignedTx(ctx, bz, signMsg.OutChain, result.Request.KeysignMessages[index].OutHash, isContractDeployment)
+	err = a.deploySignedTx(ctx, bz, signMsg.OutChain, signedTx.Hash().String(), isContractDeployment)
 	if err != nil {
 		log.Error("deployment error: ", err)
 		return
@@ -484,95 +487,191 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	log.Verbose("There is a new list of txs from deyes, len =", len(txs.Arr))
 
+	fmt.Println("txs = ", *txs)
+
+	blockRequests := &types.TxsIn{
+		Chain:    txs.Chain,
+		Hash:     txs.BlockHash,
+		Height:   txs.Block,
+		Requests: make([]*types.TxIn, 0),
+	}
+
 	ctx := a.globalData.GetReadOnlyContext()
 
 	// Create TxIn messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
-		if !tx.Success {
-			// TODO: Have a mechanism to handle failed transaction.
-			a.txTracker.OnTxFailed(txs.Chain, tx.Hash, types.TxStatusReverted)
-			continue
-		}
+		txIns := a.parseTransferRequest(ctx, txs.Chain, tx)
+		if txIns != nil {
+			blockRequests.Requests = append(blockRequests.Requests, txIns...)
+		} else {
+			// Check if this is a transaciton that fund ETH gateway
+			if libchain.IsETHBasedChain(txs.Chain) {
+				ethTx := &ethTypes.Transaction{}
+				err := ethTx.UnmarshalBinary(tx.Serialized)
+				if err != nil {
+					log.Error("Failed to unmarshall eth tx. err =", err)
+					continue
+				}
 
-		// 1. Check if this tx is from one of our key. If it is, update the status of TxOut to confirmed.
-		if a.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, tx.From) {
-			return a.confirmTx(ctx, tx, txs.Chain, txs.Block)
-		} else if len(tx.To) > 0 {
-			// 2. This is a transaction to our key account or one of our contracts. Create a message to
-			// indicate that we have observed this transaction and broadcast it to cosmos chain.
-			// TODO: handle error correctly
-			hash := utils.GetTxInHash(txs.Block, txs.Chain, tx.Serialized)
-			signerMsg := types.NewTxInWithSigner(
-				a.appKeys.GetSignerAddress().String(),
-				txs.Chain,
-				hash,
-				txs.Block,
-				tx.Serialized,
-			)
+				if ethTx.To() != nil && a.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
+					msg := types.NewFundGatewayMsg(a.appKeys.GetSignerAddress().String(), &types.FundGateway{
+						Chain:  txs.Chain,
+						TxHash: utils.KeccakHash32Bytes(tx.Serialized),
+						Amount: ethTx.Value().Bytes(),
+					})
 
-			a.txSubmit.SubmitMessageAsync(signerMsg)
+					a.txSubmit.SubmitMessageAsync(msg)
+				}
+			}
 		}
+	}
+
+	if len(blockRequests.Requests) > 0 {
+		msg := types.NewTxsInMsg(a.appKeys.GetSignerAddress().String(), blockRequests)
+		a.txSubmit.SubmitMessageAsync(msg)
+	}
+
+	if libchain.IsCardanoChain(txs.Chain) {
+		log.Verbose("Updating block height for cardano")
+		// Broadcast blockheight update
+		msg := types.NewBlockHeightMsg(a.appKeys.GetSignerAddress().String(), &types.BlockHeight{
+			Chain:  txs.Chain,
+			Height: txs.Block,
+			Hash:   txs.BlockHash,
+		})
+		a.txSubmit.SubmitMessageAsync(msg)
 	}
 
 	return nil
 }
 
-// confirmTx confirms that a tx has been included in a block on the blockchain.
-func (a *ApiHandler) confirmTx(ctx sdk.Context, tx *eyesTypes.Tx, chain string, blockHeight int64) error {
-	log.Verbose("This is a transaction from us. We need to confirm it. Chain = ", chain)
+func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eyesTypes.Tx) []*types.TxIn {
+	if libchain.IsETHBasedChain(chain) {
+		erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
+		gwAbi := erc20gatewayContract.Abi
 
-	// The txOutSig is in private db while txOut should come from common db.
-	txOutSig := a.privateDb.GetTxOutSig(chain, tx.Hash)
-	if txOutSig == nil {
-		// TODO: Add this to pending tx to confirm.
-		log.Verbose("cannot find txOutSig with full signature hash: ", tx.Hash)
-		return nil
-	}
-
-	txOut := a.keeper.GetTxOut(ctx, chain, txOutSig.HashNoSig)
-	if txOut == nil {
-		log.Verbose("cannot find txOut with hash (with no sig): ", txOutSig.HashNoSig)
-		return nil
-	}
-
-	log.Info("confirming tx: chain, hash, type = ", chain, " ", tx.Hash, " ", txOut.TxType)
-
-	a.txTracker.RemoveTransaction(chain, txOut.OutHash)
-
-	contractAddress := ""
-	if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT && libchain.IsETHBasedChain(chain) {
 		ethTx := &ethTypes.Transaction{}
 		err := ethTx.UnmarshalBinary(tx.Serialized)
 		if err != nil {
-			log.Error("cannot unmarshal eth transaction, err = ", err)
-			return err
+			log.Error("Failed to unmarshall eth tx. err =", err)
+			return nil
 		}
 
-		contractAddress = ethcrypto.CreateAddress(ethcommon.HexToAddress(tx.From), ethTx.Nonce()).String()
-		log.Info("contractAddress = ", contractAddress)
-
-		txConfirm := &types.TxOutContractConfirm{
-			OutChain:        txOut.OutChain,
-			OutHash:         txOut.OutHash,
-			BlockHeight:     blockHeight,
-			ContractAddress: contractAddress,
+		transfer, err := eth.ParseEthTransferOut(ctx, ethTx, chain, gwAbi, a.keeper)
+		if err != nil {
+			return nil
 		}
 
-		msg := types.NewTxOutContractConfirmWithSigner(
-			a.appKeys.GetSignerAddress().String(),
-			txConfirm,
-		)
-		a.txSubmit.SubmitMessageAsync(msg)
+		return []*types.TxIn{transfer}
 	}
 
-	// We can assume that other tx transactions will succeed in majority of the time. Instead
-	// broadcasting the tx confirmation to Sisu blockchain, we should only record missing or failed
-	// transaction.
-	// We only confirm if the tx out is a contract deployment to save the smart contract address.
-	// TODO: Implement missing/ failed message and broadcast that to everyone after we have not seen
-	// a tx for some blocks.
+	if libchain.IsCardanoChain(chain) {
+		ret := make([]*types.TxIn, 0)
+		cardanoTx := &etypes.CardanoTransactionUtxo{}
+		err := json.Unmarshal(tx.Serialized, cardanoTx)
+		if err != nil {
+			return nil
+		}
+
+		if cardanoTx.Metadata != nil {
+			fmt.Println("cardanoTx.Amount = ", cardanoTx.Amount)
+			// Convert from ADA unit (10^6) to our standard unit (10^18)
+			for _, amount := range cardanoTx.Amount {
+				fmt.Println("AAAAAAA 0000000, amount = ", amount)
+				quantity, ok := new(big.Int).SetString(amount.Quantity, 10)
+				if !ok {
+					log.Error("Failed to get amount quantity in cardano tx")
+					continue
+				}
+				quantity = utils.LovelaceToWei(quantity)
+
+				// Remove the word wrap
+				tokenUnit := amount.Unit
+				if tokenUnit != "lovelace" {
+					token := scardano.GetTokenFromCardanoAsset(ctx, a.keeper, tokenUnit, chain)
+					if token == nil {
+						log.Error("Failed to find token with id: ", tokenUnit)
+						continue
+					}
+					tokenUnit = token.Id
+				} else {
+					tokenUnit = "ADA"
+				}
+
+				fmt.Println("tokenUnit = ", tokenUnit, " quantity = ", quantity)
+				fmt.Println("cardanoTx.Metadata = ", cardanoTx.Metadata)
+
+				ret = append(ret, &types.TxIn{
+					ToChain:   cardanoTx.Metadata.Chain,
+					Token:     tokenUnit,
+					Recipient: cardanoTx.Metadata.Recipient,
+					Amount:    quantity.String(),
+				})
+			}
+		}
+
+		return ret
+	}
 
 	return nil
+}
+
+// ConfirmTx implements AppLogicListener
+func (a *ApiHandler) ConfirmTx(txTrack *chainstypes.TrackUpdate) {
+	ctx := a.globalData.GetReadOnlyContext()
+
+	log.Verbose("Confirming tx height = %d, chain = %s, hash = %s, nonce = %d",
+		txTrack.BlockHeight, txTrack.Chain, txTrack.Hash, txTrack.Nonce)
+
+	// The txOutSig is in private db while txOut should come from common db.
+	txOutSig := a.privateDb.GetTxOutSig(txTrack.Chain, txTrack.Hash)
+	if txOutSig == nil {
+		log.Error("cannot find txOutSig with full signature hash: ", txTrack.Hash)
+		return
+	}
+
+	txOut := a.keeper.GetTxOut(ctx, txTrack.Chain, txOutSig.HashNoSig)
+	if txOut == nil {
+		log.Verbose("cannot find txOut with hash (with no sig): ", txOutSig.HashNoSig)
+		return
+	}
+	log.Info("confirming tx: chain, hash, type = ", txTrack.Chain, " ", txTrack.Hash, " ", txOut.TxType)
+	a.txTracker.RemoveTransaction(txTrack.Chain, txOut.OutHash)
+
+	txConfirm := &types.TxOutConfirm{
+		OutChain:    txOut.OutChain,
+		OutHash:     txOut.OutHash,
+		BlockHeight: txTrack.BlockHeight,
+	}
+
+	if libchain.IsETHBasedChain(txTrack.Chain) {
+		ethTx := &ethTypes.Transaction{}
+		err := ethTx.UnmarshalBinary(txTrack.Bytes)
+		if err != nil {
+			log.Error("cannot unmarshal eth transaction, err = ", err)
+			return
+		}
+
+		txConfirm.Nonce = int64(ethTx.Nonce()) + 1
+		if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
+			sender, err := utils.GetEthSender(ethTx)
+			if err != nil {
+				log.Error("cannot get eth sender, err = ", err)
+				return
+			}
+
+			contractAddress := ethcrypto.CreateAddress(sender, ethTx.Nonce()).String()
+			log.Info("contractAddress = ", contractAddress)
+
+			txConfirm.ContractAddress = contractAddress
+		}
+	}
+
+	msg := types.NewTxOutConfirmMsg(
+		a.appKeys.GetSignerAddress().String(),
+		txConfirm,
+	)
+	a.txSubmit.SubmitMessageAsync(msg)
 }
 
 // OnUpdateTokenPrice is called when there is a token price update from deyes. Post to the network

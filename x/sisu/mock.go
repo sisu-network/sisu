@@ -56,7 +56,7 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.worldState = t
 		case ValidatorManager:
 			mc.valsManager = t
-		case TxInQueue:
+		case TransferQueue:
 			mc.txInQueue = t
 		case TxOutQueue:
 			mc.txOutQueue = t
@@ -69,16 +69,16 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 ///// TxTracker
 
 type MockTxTracker struct {
-	AddTransactionFunc          func(txOut *types.TxOut, txIn *types.TxIn)
+	AddTransactionFunc          func(txOut *types.TxOut)
 	UpdateStatusFunc            func(chain string, hash string, status types.TxStatus)
 	RemoveTransactionFunc       func(chain string, hash string)
 	OnTxFailedFunc              func(chain string, hash string, status types.TxStatus)
 	CheckExpiredTransactionFunc func()
 }
 
-func (m *MockTxTracker) AddTransaction(txOut *types.TxOut, txIn *types.TxIn) {
+func (m *MockTxTracker) AddTransaction(txOut *types.TxOut) {
 	if m.AddTransactionFunc != nil {
-		m.AddTransactionFunc(txOut, txIn)
+		m.AddTransactionFunc(txOut)
 	}
 }
 
@@ -109,23 +109,23 @@ func (m *MockTxTracker) CheckExpiredTransaction() {
 ////// TxOutputProducer
 
 type MockTxOutputProducer struct {
-	GetTxOutsFunc                     func(ctx sdk.Context, height int64, tx []*types.TxIn) []*types.TxOutWithSigner
-	PauseContractFunc                 func(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
-	ResumeContractFunc                func(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error)
-	ContractChangeOwnershipFunc       func(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutWithSigner, error)
-	ContractSetLiquidPoolAddressFunc  func(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutWithSigner, error)
-	ContractEmergencyWithdrawFundFunc func(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutWithSigner, error)
+	GetTxOutsFunc                     func(ctx sdk.Context, chain string, transfers []*types.Transfer) ([]*types.TxOutMsg, error)
+	PauseContractFunc                 func(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error)
+	ResumeContractFunc                func(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error)
+	ContractChangeOwnershipFunc       func(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutMsg, error)
+	ContractSetLiquidPoolAddressFunc  func(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutMsg, error)
+	ContractEmergencyWithdrawFundFunc func(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutMsg, error)
 }
 
-func (m *MockTxOutputProducer) GetTxOuts(ctx sdk.Context, height int64, tx []*types.TxIn) []*types.TxOutWithSigner {
+func (m *MockTxOutputProducer) GetTxOuts(ctx sdk.Context, chain string, transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
 	if m.GetTxOutsFunc != nil {
-		return m.GetTxOutsFunc(ctx, height, tx)
+		return m.GetTxOutsFunc(ctx, chain, transfers)
 	}
 
-	return nil
+	return nil, nil
 }
 
-func (m *MockTxOutputProducer) PauseContract(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error) {
+func (m *MockTxOutputProducer) PauseContract(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error) {
 	if m.PauseContractFunc != nil {
 		return m.PauseContractFunc(ctx, chain, hash)
 	}
@@ -133,7 +133,7 @@ func (m *MockTxOutputProducer) PauseContract(ctx sdk.Context, chain string, hash
 	return nil, nil
 }
 
-func (m *MockTxOutputProducer) ResumeContract(ctx sdk.Context, chain string, hash string) (*types.TxOutWithSigner, error) {
+func (m *MockTxOutputProducer) ResumeContract(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error) {
 	if m.ResumeContractFunc != nil {
 		return m.ResumeContractFunc(ctx, chain, hash)
 	}
@@ -141,7 +141,7 @@ func (m *MockTxOutputProducer) ResumeContract(ctx sdk.Context, chain string, has
 	return nil, nil
 }
 
-func (m *MockTxOutputProducer) ContractChangeOwnership(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutWithSigner, error) {
+func (m *MockTxOutputProducer) ContractChangeOwnership(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutMsg, error) {
 	if m.ContractChangeOwnershipFunc != nil {
 		return m.ContractChangeOwnershipFunc(ctx, chain, contractHash, newOwner)
 	}
@@ -149,7 +149,7 @@ func (m *MockTxOutputProducer) ContractChangeOwnership(ctx sdk.Context, chain, c
 	return nil, nil
 }
 
-func (m *MockTxOutputProducer) ContractSetLiquidPoolAddress(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutWithSigner, error) {
+func (m *MockTxOutputProducer) ContractSetLiquidPoolAddress(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutMsg, error) {
 	if m.ContractSetLiquidPoolAddressFunc != nil {
 		return m.ContractSetLiquidPoolAddressFunc(ctx, chain, contractHash, newAddress)
 	}
@@ -157,7 +157,7 @@ func (m *MockTxOutputProducer) ContractSetLiquidPoolAddress(ctx sdk.Context, cha
 	return nil, nil
 }
 
-func (m *MockTxOutputProducer) ContractEmergencyWithdrawFund(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutWithSigner, error) {
+func (m *MockTxOutputProducer) ContractEmergencyWithdrawFund(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutMsg, error) {
 	if m.ContractEmergencyWithdrawFundFunc != nil {
 		return m.ContractEmergencyWithdrawFundFunc(ctx, chain, contractHash, tokens, newOwner)
 	}
@@ -259,27 +259,25 @@ func (m *MockCardanoNode) Network() cardano.Network {
 
 ///// TxInQueue
 
-type MockTxInQueue struct {
-	StartFunc        func()
-	AddTxInFunc      func(txIn *types.TxIn)
-	ProcessTxInsFunc func()
+type MockTransferQueue struct {
+	StartFunc                         func(ctx sdk.Context)
+	ProcessTransfersFunc              func(ctx sdk.Context)
+	ClearInMemoryPendingTransfersFunc func(chain string)
 }
 
-func (m *MockTxInQueue) Start() {
+func (m *MockTransferQueue) Start(ctx sdk.Context) {
 	if m.StartFunc != nil {
-		m.StartFunc()
+		m.StartFunc(ctx)
 	}
 }
-
-func (m *MockTxInQueue) AddTxIn(txIn *types.TxIn) {
-	if m.AddTxInFunc != nil {
-		m.AddTxInFunc(txIn)
+func (m *MockTransferQueue) ProcessTransfers(ctx sdk.Context) {
+	if m.ProcessTransfersFunc != nil {
+		m.ProcessTransfersFunc(ctx)
 	}
 }
-
-func (m *MockTxInQueue) ProcessTxIns() {
-	if m.ProcessTxInsFunc != nil {
-		m.ProcessTxInsFunc()
+func (m *MockTransferQueue) ClearInMemoryPendingTransfers(chain string) {
+	if m.ClearInMemoryPendingTransfersFunc != nil {
+		m.ClearInMemoryPendingTransfersFunc(chain)
 	}
 }
 
@@ -288,7 +286,7 @@ func (m *MockTxInQueue) ProcessTxIns() {
 type MockTxOutQueue struct {
 	StartFunc         func()
 	AddTxOutFunc      func(txOut *types.TxOut)
-	ProcessTxOutsFunc func()
+	ProcessTxOutsFunc func(ctx sdk.Context)
 }
 
 func (m *MockTxOutQueue) Start() {
@@ -303,8 +301,8 @@ func (m *MockTxOutQueue) AddTxOut(txOut *types.TxOut) {
 	}
 }
 
-func (m *MockTxOutQueue) ProcessTxOuts() {
+func (m *MockTxOutQueue) ProcessTxOuts(ctx sdk.Context) {
 	if m.ProcessTxOutsFunc != nil {
-		m.ProcessTxOutsFunc()
+		m.ProcessTxOutsFunc(ctx)
 	}
 }

@@ -7,7 +7,7 @@ import (
 
 var _ sdk.Msg = &ContractsWithSigner{}
 
-func NewContractsWithSigner(signer string, contracts []*Contract) *ContractsWithSigner {
+func NewContractsMsg(signer string, contracts []*Contract) *ContractsWithSigner {
 	data := &Contracts{
 		Contracts: contracts,
 	}

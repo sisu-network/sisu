@@ -3,6 +3,7 @@ package types;
 
 option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 
+// TODO: Deprecated this and use ExternalData instead.
 message GasPriceMsg {
   string signer = 1;
   repeated string chains = 2;

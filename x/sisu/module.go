@@ -230,6 +230,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 
 	// Reload data after reading the genesis
 	am.worldState.InitData(ctx)
+	am.mc.TransferQueue().Start(ctx)
 
 	return validators
 }
@@ -246,6 +247,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 
 	if !am.worldState.IsDataInitialized() {
 		cloneCtx := utils.CloneSdkContext(ctx)
+		am.mc.TransferQueue().Start(cloneCtx)
 		am.worldState.InitData(cloneCtx)
 	}
 
@@ -282,11 +284,10 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		}()
 	}
 
-	// Process new incoming transactions
-	am.mc.TxInQueue().ProcessTxIns()
+	am.mc.TransferQueue().ProcessTransfers(ctx)
 
 	// Process new outgoing transactions
-	am.mc.TxOutQueue().ProcessTxOuts()
+	am.mc.TxOutQueue().ProcessTxOuts(cloneCtx)
 
 	return []abci.ValidatorUpdate{}
 }

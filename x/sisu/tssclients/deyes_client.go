@@ -11,7 +11,8 @@ import (
 type DeyesClient interface {
 	Ping(source string) error
 	Dispatch(request *eTypes.DispatchedTxRequest) (*eTypes.DispatchedTxResult, error)
-	AddWatchAddresses(chain string, addrs []string) error
+	SetChainAccount(chain string, addr string) error
+	SetGatewayAddress(chain string, addr string) error
 	GetNonce(chain string, address string) int64
 	SetSisuReady(isReady bool) error
 
@@ -61,12 +62,22 @@ func (c *defaultDeyesClient) SetSisuReady(isReady bool) error {
 	return nil
 }
 
-// Adds a list of addresses to watch on a specific chain
-func (c *defaultDeyesClient) AddWatchAddresses(chain string, addrs []string) error {
+func (c *defaultDeyesClient) SetChainAccount(chain string, addr string) error {
 	var result string
-	err := c.client.CallContext(context.Background(), &result, "deyes_addWatchAddresses", chain, addrs)
+	err := c.client.CallContext(context.Background(), &result, "deyes_setChainAccount", chain, addr)
 	if err != nil {
-		log.Error("Cannot Set readiness for deyes, chain = ", chain, "err = ", err)
+		log.Error("Cannot set chain account for deyes, chain = ", chain, "err = ", err)
+		return err
+	}
+
+	return nil
+}
+
+func (c *defaultDeyesClient) SetGatewayAddress(chain string, addr string) error {
+	var result string
+	err := c.client.CallContext(context.Background(), &result, "deyes_setGatewayAddress", chain, addr)
+	if err != nil {
+		log.Error("Cannot set gateway address for deyes, chain = ", chain, "err = ", err)
 		return err
 	}
 

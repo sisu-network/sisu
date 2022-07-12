@@ -23,11 +23,11 @@ func mockForHandlerContractPauseResume() (sdk.Context, ManagerContainer) {
 		return []ctypes.PubKey{}
 	}
 	txOutProducer := &MockTxOutputProducer{}
-	txOutProducer.PauseContractFunc = func(ctx sdk.Context, chain, hash string) (*types.TxOutWithSigner, error) {
+	txOutProducer.PauseContractFunc = func(ctx sdk.Context, chain, hash string) (*types.TxOutMsg, error) {
 		ethTx := ethTypes.NewTx(&ethTypes.LegacyTx{})
 		binary, _ := ethTx.MarshalBinary()
 
-		txOutWithSigner := &types.TxOutWithSigner{
+		txOutWithSigner := &types.TxOutMsg{
 			Signer: "signer",
 			Data: &types.TxOut{
 				OutChain: "ganache1",
@@ -38,11 +38,11 @@ func mockForHandlerContractPauseResume() (sdk.Context, ManagerContainer) {
 		return txOutWithSigner, nil
 	}
 
-	txOutProducer.ResumeContractFunc = func(ctx sdk.Context, chain, hash string) (*types.TxOutWithSigner, error) {
+	txOutProducer.ResumeContractFunc = func(ctx sdk.Context, chain, hash string) (*types.TxOutMsg, error) {
 		ethTx := ethTypes.NewTx(&ethTypes.LegacyTx{})
 		binary, _ := ethTx.MarshalBinary()
 
-		txOutWithSigner := &types.TxOutWithSigner{
+		txOutWithSigner := &types.TxOutMsg{
 			Signer: "signer",
 			Data: &types.TxOut{
 				OutChain: "ganache1",

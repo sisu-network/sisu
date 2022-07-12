@@ -8,7 +8,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec/types"
-	"github.com/echovl/cardano-go/blockfrost"
+	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/p2p"
@@ -264,20 +264,21 @@ func New(
 	worldState := world.NewWorldState(app.k, deyesClient)
 	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert, worldState)
 
-	cardanoNode := blockfrost.NewNode(cfg.Cardano.GetCardanoNetwork(), cfg.Cardano.BlockfrostSecret)
+	// cardanoNode := blockfrost.NewNode(cfg.Cardano.GetCardanoNetwork(), cfg.Cardano.BlockfrostSecret)
+	cardanoNode := scardano.NewBlockfrostClient(cfg.Cardano.GetCardanoNetwork(), cfg.Cardano.BlockfrostSecret)
+
 	valsMgr := tss.NewValidatorManager(app.k)
 	partyManager := tss.NewPartyManager(app.globalData)
-	txOutProducer := tss.NewTxOutputProducer(worldState, app.appKeys, app.k, cfg.Tss, cfg.Cardano, cardanoNode, txTracker)
-	txInQueue := sisu.NewTxInQueue(app.k, txOutProducer, app.globalData, app.txSubmitter)
-	txInQueue.Start()
+	txOutProducer := tss.NewTxOutputProducer(worldState, app.appKeys, app.k, valsMgr, cfg.Tss, cfg.Cardano, privateDb, cardanoNode, txTracker)
+	txInQueue := sisu.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss)
 	txOutQueue := sisu.NewTxOutQueue(app.k, app.globalData, partyManager, dheartClient, txTracker)
 	txOutQueue.Start()
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.k),
 		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
 		app.appKeys, txOutProducer, worldState, txTracker, app.k, valsMgr, txInQueue, txOutQueue)
 
-	tssProcessor := tss.NewApiHandler(privateDb, mc)
-	app.apiHandler.SetAppLogicListener(tssProcessor)
+	apiHandler := tss.NewApiHandler(privateDb, mc)
+	app.apiHandler.SetAppLogicListener(apiHandler)
 
 	sisuHandler := tss.NewSisuHandler(mc)
 	externalHandler := rest.NewExternalHandler(worldState)
@@ -296,10 +297,10 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
 
-		tss.NewAppModule(appCodec, sisuHandler, app.k, tssProcessor, valsMgr, mc),
+		tss.NewAppModule(appCodec, sisuHandler, app.k, apiHandler, valsMgr, mc),
 	}
 
-	app.tssProcessor = tssProcessor
+	app.tssProcessor = apiHandler
 
 	app.mm = module.NewManager(modules...)
 
