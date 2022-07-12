@@ -1,7 +1,6 @@
 package sisu
 
 import (
-	"fmt"
 	"math"
 	"math/big"
 
@@ -125,8 +124,6 @@ func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, chain string, tr
 		amount := cardano.NewValueWithAssets(1_600_000, multiAsset)
 		amounts = append(amounts, amount)
 	}
-
-	fmt.Println("utils.ONE_ADA_IN_LOVELACE.Uint64() = ", utils.ONE_ADA_IN_LOVELACE.Uint64())
 
 	// We need at least 1 ada to send multi assets.
 	tx, err := scardano.BuildTx(p.cardanoClient, senderAddr, receiverAddrs, amounts, nil, utxos, maxBlock)

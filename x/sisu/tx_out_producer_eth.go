@@ -165,8 +165,6 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	gasPrices := make([]int64, 0)
 
 	for i := range amounts {
-		fmt.Println("tokens = ", tokens)
-		fmt.Println("i = ", i)
 		if tokens[i].Price == 0 {
 			return nil, fmt.Errorf("token %s has price 0", tokens[i].Id)
 		}

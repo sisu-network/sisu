@@ -8,6 +8,7 @@ import (
 	"github.com/blockfrost/blockfrost-go"
 	"github.com/echovl/cardano-go"
 	cblockfrost "github.com/echovl/cardano-go/blockfrost"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 const (
@@ -76,9 +77,6 @@ func (c *blockFrostClient) UTxOs(addr cardano.Address, maxBlock uint64) ([]carda
 		return utxos, err
 	}
 
-	fmt.Println("maxBlock = ", maxBlock)
-	fmt.Println("len(utxos) = ", len(utxos))
-
 	if maxBlock == math.MaxUint64 {
 		return utxos, nil
 	}
@@ -92,13 +90,11 @@ func (c *blockFrostClient) UTxOs(addr cardano.Address, maxBlock uint64) ([]carda
 		if !ok {
 			tx, err = c.bfClient.Transaction(context.Background(), utxo.TxHash.String())
 			if err != nil {
-				fmt.Println("EERRRRR")
+				log.Error("cannot get transaction from bitfrost, err = ", err)
 				continue
 			}
 			cached[utxo.TxHash.String()] = tx
 		}
-
-		fmt.Println("tx.BlockHeight = ", tx.BlockHeight, maxBlock)
 
 		if tx.BlockHeight > int(maxBlock) {
 			continue

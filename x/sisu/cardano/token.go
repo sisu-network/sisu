@@ -9,6 +9,7 @@ import (
 	cardanogo "github.com/echovl/cardano-go"
 
 	"github.com/echovl/cardano-go"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -30,8 +31,7 @@ func GetCardanoMultiAsset(chain string, token *types.Token, assetAmount uint64) 
 			}
 			assetName := cardano.NewAssetName(addr[index+1:])
 
-			fmt.Println("policy id & asset name = ", policyID.String(), assetName.String())
-			fmt.Println("GetCardanoMultiAsset: assetAmount = ", assetAmount)
+			log.Verbose("policy id & asset name = ", policyID.String(), assetName.String())
 
 			asset := cardanogo.NewAssets().Set(assetName, cardano.BigNum(assetAmount))
 			multiAsset := cardanogo.NewMultiAsset().Set(cardano.NewPolicyIDFromHash(policyID), asset)
@@ -44,7 +44,6 @@ func GetCardanoMultiAsset(chain string, token *types.Token, assetAmount uint64) 
 }
 
 func GetTokenFromCardanoAsset(ctx sdk.Context, k keeper.Keeper, assetFullName string, cardanoChain string) *types.Token {
-	fmt.Println("assetFullName = ", assetFullName)
 	tokens := k.GetAllTokens(ctx)
 	for _, token := range tokens {
 		for i, chain := range token.Chains {
@@ -56,9 +55,6 @@ func GetTokenFromCardanoAsset(ctx sdk.Context, k keeper.Keeper, assetFullName st
 				}
 
 				numArr := wordToByteString(addr[index+1:])
-				fmt.Println("numArr = ", numArr)
-				fmt.Println("addr[:index]+numArr = ", addr[:index]+numArr)
-
 				if assetFullName == addr[:index]+numArr {
 					return token
 				}

@@ -1,7 +1,6 @@
 package sisu
 
 import (
-	"fmt"
 	"sort"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -133,8 +132,6 @@ func (h *HandlerKeygenResult) createContracts(ctx sdk.Context, msg *types.Keygen
 					Name:      name,
 					ByteCodes: []byte(c.Bin),
 				}
-
-				fmt.Println("contract = ", contract.Hash)
 
 				h.txSubmit.SubmitMessageAsync(types.NewContractsMsg(
 					h.appKeys.GetSignerAddress().String(),

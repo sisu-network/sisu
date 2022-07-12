@@ -232,8 +232,6 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	am.worldState.InitData(ctx)
 	am.mc.TransferQueue().Start(ctx)
 
-	fmt.Println("AAAAA 0000")
-
 	return validators
 }
 
@@ -248,8 +246,6 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	log.Verbose("BeginBlock, height = ", ctx.BlockHeight())
 
 	if !am.worldState.IsDataInitialized() {
-		fmt.Println("Init world state")
-
 		cloneCtx := utils.CloneSdkContext(ctx)
 		am.mc.TransferQueue().Start(cloneCtx)
 		am.worldState.InitData(cloneCtx)

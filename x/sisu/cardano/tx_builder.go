@@ -17,9 +17,6 @@ func BuildTx(node CardanoClient, sender cardano.Address, receivers []cardano.Add
 		return nil, err
 	}
 
-	fmt.Println("balance = ", balance.MultiAsset.String())
-	fmt.Println("utxos = ", utxos)
-
 	total := cardano.NewValue(cardano.Coin(0))
 	for _, amount := range amounts {
 		total = total.Add(amount)
@@ -68,8 +65,6 @@ func BuildTx(node CardanoClient, sender cardano.Address, receivers []cardano.Add
 	pickedUtxosAmount := cardano.NewValue(0)
 	ok := false
 	for _, utxo := range utxos {
-		fmt.Println("utxo balance = ", utxo.Amount)
-
 		if pickedUtxosAmount.Cmp(total) == 1 {
 			ok = true
 			break
@@ -80,7 +75,6 @@ func BuildTx(node CardanoClient, sender cardano.Address, receivers []cardano.Add
 	if pickedUtxosAmount.Cmp(total) == 1 {
 		ok = true
 	}
-	fmt.Println("pickedUtxosAmount = ", pickedUtxosAmount)
 
 	if !ok {
 		return nil, InsufficientFundErr
@@ -95,7 +89,6 @@ func BuildTx(node CardanoClient, sender cardano.Address, receivers []cardano.Add
 		builder.AddInputs(&cardano.TxInput{TxHash: utxo.TxHash, Index: utxo.Index, Amount: utxo.Amount})
 	}
 	for i, amount := range amounts {
-		fmt.Println("Amount = ", *amount)
 		builder.AddOutputs(&cardano.TxOutput{Address: receivers[i], Amount: amount})
 	}
 

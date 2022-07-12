@@ -1,7 +1,6 @@
 package sisu
 
 import (
-	"fmt"
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -107,11 +106,9 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 			continue
 		}
 
-		fmt.Println("len(txOutMsgs) = ", len(txOutMsgs), " on chain ", chain)
-
 		if len(txOutMsgs) > 0 {
 			q.chainsWithSubmission[chain] = true
-			log.Info("Broadcasting txout....")
+			log.Infof("Broadcasting txout with length %d on chain %s", len(txOutMsgs), chain)
 			for _, txOutMsg := range txOutMsgs {
 				q.txSubmit.SubmitMessageAsync(txOutMsg)
 			}

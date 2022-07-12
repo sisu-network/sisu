@@ -1,8 +1,6 @@
 package sisu
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
@@ -27,7 +25,6 @@ func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
 }
 
 func (h *HandlerTxOut) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutMsg) (*sdk.Result, error) {
-	fmt.Println("BBB 000")
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
 		data, err := h.doTxOut(ctx, signerMsg)
 		h.keeper.ProcessTxRecord(ctx, hash)

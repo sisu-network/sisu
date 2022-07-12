@@ -501,8 +501,6 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	// Create TxIn messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
 		txIns := a.parseTransferRequest(ctx, txs.Chain, tx)
-		fmt.Println("txIns length = ", len(txIns))
-
 		if txIns != nil {
 			blockRequests.Requests = append(blockRequests.Requests, txIns...)
 		} else {
@@ -522,15 +520,11 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 						Amount: ethTx.Value().Bytes(),
 					})
 
-					fmt.Println("Submitting fund gateway message.")
-
 					a.txSubmit.SubmitMessageAsync(msg)
 				}
 			}
 		}
 	}
-
-	fmt.Println("len(blockRequests.Requests) = ", len(blockRequests.Requests))
 
 	if len(blockRequests.Requests) > 0 {
 		msg := types.NewTxsInMsg(a.appKeys.GetSignerAddress().String(), blockRequests)
@@ -538,7 +532,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	}
 
 	if libchain.IsCardanoChain(txs.Chain) {
-		fmt.Println("Updating block height for cardano")
+		log.Verbose("Updating block height for cardano")
 		// Broadcast blockheight update
 		msg := types.NewBlockHeightMsg(a.appKeys.GetSignerAddress().String(), &types.BlockHeight{
 			Chain:  txs.Chain,
@@ -615,8 +609,6 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 				})
 			}
 		}
-
-		fmt.Println("Cardano ret size = ", len(ret))
 
 		return ret
 	}

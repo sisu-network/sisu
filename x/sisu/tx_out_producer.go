@@ -1,7 +1,6 @@
 package sisu
 
 import (
-	"fmt"
 	"math/big"
 
 	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
@@ -167,8 +166,6 @@ func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context,
 		log.Verbosef("Processing transfer in: id = %s, recipient = %s, amount = %s, inHash = %s",
 			token.Id, transfer.Recipient, amount, transfer.Id)
 	}
-
-	fmt.Println("len(tokens) = ", len(tokens), len(recipients), len(amounts))
 
 	responseTx, err := p.buildERC20TransferIn(ctx, p.keeper, tokens, recipients, amounts, dstChain)
 	if err != nil {
