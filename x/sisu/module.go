@@ -230,7 +230,7 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 
 	// Reload data after reading the genesis
 	am.worldState.InitData(ctx)
-	am.mc.TxInQueue().Start(ctx)
+	am.mc.TransferQueue().Start(ctx)
 
 	fmt.Println("AAAAA 0000")
 
@@ -251,7 +251,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 		fmt.Println("Init world state")
 
 		cloneCtx := utils.CloneSdkContext(ctx)
-		am.mc.TxInQueue().Start(cloneCtx)
+		am.mc.TransferQueue().Start(cloneCtx)
 		am.worldState.InitData(cloneCtx)
 	}
 
@@ -288,7 +288,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		}()
 	}
 
-	am.mc.TxInQueue().ProcessTransfers(ctx)
+	am.mc.TransferQueue().ProcessTransfers(ctx)
 
 	// Process new outgoing transactions
 	am.mc.TxOutQueue().ProcessTxOuts(cloneCtx)

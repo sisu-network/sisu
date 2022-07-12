@@ -24,7 +24,7 @@ type ManagerContainer interface {
 	TxTracker() TxTracker
 	Keeper() keeper.Keeper
 	ValidatorManager() ValidatorManager
-	TxInQueue() TransferQueue
+	TransferQueue() TransferQueue
 	TxOutQueue() TxOutQueue
 }
 
@@ -124,7 +124,7 @@ func (mc *DefaultManagerContainer) ValidatorManager() ValidatorManager {
 	return mc.valsManager
 }
 
-func (mc *DefaultManagerContainer) TxInQueue() TransferQueue {
+func (mc *DefaultManagerContainer) TransferQueue() TransferQueue {
 	return mc.txInQueue
 }
 

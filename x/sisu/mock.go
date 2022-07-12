@@ -259,27 +259,25 @@ func (m *MockCardanoNode) Network() cardano.Network {
 
 ///// TxInQueue
 
-type MockTxInQueue struct {
-	StartFunc        func()
-	AddTxInFunc      func(height int64, txIn *types.TxIn)
-	ProcessTxInsFunc func(ctx sdk.Context)
+type MockTransferQueue struct {
+	StartFunc                         func(ctx sdk.Context)
+	ProcessTransfersFunc              func(ctx sdk.Context)
+	ClearInMemoryPendingTransfersFunc func(chain string)
 }
 
-func (m *MockTxInQueue) Start() {
+func (m *MockTransferQueue) Start(ctx sdk.Context) {
 	if m.StartFunc != nil {
-		m.StartFunc()
+		m.StartFunc(ctx)
 	}
 }
-
-func (m *MockTxInQueue) AddTxIn(height int64, txIn *types.TxIn) {
-	if m.AddTxInFunc != nil {
-		m.AddTxInFunc(height, txIn)
+func (m *MockTransferQueue) ProcessTransfers(ctx sdk.Context) {
+	if m.ProcessTransfersFunc != nil {
+		m.ProcessTransfersFunc(ctx)
 	}
 }
-
-func (m *MockTxInQueue) ProcessTxIns(ctx sdk.Context) {
-	if m.ProcessTxInsFunc != nil {
-		m.ProcessTxInsFunc(ctx)
+func (m *MockTransferQueue) ClearInMemoryPendingTransfers(chain string) {
+	if m.ClearInMemoryPendingTransfersFunc != nil {
+		m.ClearInMemoryPendingTransfersFunc(chain)
 	}
 }
 

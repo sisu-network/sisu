@@ -25,7 +25,7 @@ func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
 		pmm:           mc.PostedMessageManager(),
 		txOutQueue:    mc.TxOutQueue(),
 		globalData:    mc.GlobalData(),
-		transferQueue: mc.TxInQueue(),
+		transferQueue: mc.TransferQueue(),
 	}
 }
 

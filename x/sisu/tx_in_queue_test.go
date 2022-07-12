@@ -8,7 +8,7 @@ import (
 	"github.com/sisu-network/sisu/utils"
 )
 
-func mockForTxInQueue() (sdk.Context, ManagerContainer) {
+func mockForTransferQueue() (sdk.Context, ManagerContainer) {
 	ctx := testContext()
 	k := keeperTestGenesis(ctx)
 	txOutputProducer := &MockTxOutputProducer{}
@@ -27,7 +27,7 @@ func mockForTxInQueue() (sdk.Context, ManagerContainer) {
 func TestTxInQueue_AddTransaction(t *testing.T) {
 	// t.Parallel()
 
-	// ctx, mc := mockForTxInQueue()
+	// ctx, mc := mockForTransferQueue()
 
 	// submitCount := 0
 	// txSubmit := mc.TxSubmit().(*common.MockTxSubmit)
@@ -67,7 +67,7 @@ func TestTxInQueue_AddTransaction(t *testing.T) {
 func TestTxInQueue_ProcessTxInDifferenBlock(t *testing.T) {
 	t.Parallel()
 
-	ctx, mc := mockForTxInQueue()
+	ctx, mc := mockForTransferQueue()
 	ctx2 := utils.CloneSdkContext(ctx)
 	header := ctx2.BlockHeader()
 	header.Height = ctx.BlockHeight() + 1

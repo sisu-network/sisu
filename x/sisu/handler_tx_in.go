@@ -10,21 +10,18 @@ import (
 )
 
 type HandlerTxIn struct {
-	pmm       PostedMessageManager
-	keeper    keeper.Keeper
-	txInQueue TransferQueue
+	pmm    PostedMessageManager
+	keeper keeper.Keeper
 }
 
 func NewHandlerTxIn(mc ManagerContainer) *HandlerTxIn {
 	return &HandlerTxIn{
-		keeper:    mc.Keeper(),
-		pmm:       mc.PostedMessageManager(),
-		txInQueue: mc.TxInQueue(),
+		keeper: mc.Keeper(),
+		pmm:    mc.PostedMessageManager(),
 	}
 }
 
 func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, signerMsg *types.TxsInMsg) (*sdk.Result, error) {
-	fmt.Println("AAAAAA DeliverMsg, data = ", *signerMsg.Data)
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
 		data, err := h.doTxIn(ctx, signerMsg.Data)
 		h.keeper.ProcessTxRecord(ctx, hash)
@@ -50,7 +47,7 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msg *types.TxsIn) ([]byte, error) 
 		}
 
 		if allTransfers[request.ToChain] == nil {
-			allTransfers[request.ToChain] = h.keeper.GetTransferQueue(ctx, msg.Chain)
+			allTransfers[request.ToChain] = h.keeper.GetTransferQueue(ctx, request.ToChain)
 			if allTransfers[request.ToChain] == nil {
 				allTransfers[request.ToChain] = make([]*types.Transfer, 0)
 			}
@@ -65,10 +62,7 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msg *types.TxsIn) ([]byte, error) 
 			continue
 		}
 
-		fmt.Println("transfer queue size: ", request.ToChain, len(allTransfers[request.ToChain]))
-
 		h.keeper.SetTransferQueue(ctx, request.ToChain, allTransfers[request.ToChain])
-
 		allTransfers[request.ToChain] = nil
 	}
 

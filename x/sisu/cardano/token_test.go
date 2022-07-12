@@ -1,11 +1,12 @@
 package cardano
 
 import (
-	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func Test_wordToByteString(t *testing.T) {
 	ret := wordToByteString("WRAP_ADA")
-	fmt.Println(ret)
+	require.Equal(t, "575241505f414441", ret)
 }

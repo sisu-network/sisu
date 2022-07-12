@@ -33,7 +33,7 @@ func mockForPostedMessageManager() (sdk.Context, ManagerContainer) {
 	})
 	txOutProducer := &MockTxOutputProducer{}
 	mc := MockManagerContainer(k, pmm, globalData, txOutProducer, partyManager, dheartClient, valsMgr,
-		&MockTxInQueue{}, &MockTxOutQueue{})
+		&MockTransferQueue{}, &MockTxOutQueue{})
 
 	return ctx, mc
 }

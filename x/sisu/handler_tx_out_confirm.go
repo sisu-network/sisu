@@ -23,7 +23,7 @@ func NewHandlerTxOutConfirm(mc ManagerContainer) *HandlerTxOutConfirm {
 		keeper:        mc.Keeper(),
 		pmm:           mc.PostedMessageManager(),
 		deyesClient:   mc.DeyesClient(),
-		transferQueue: mc.TxInQueue(),
+		transferQueue: mc.TransferQueue(),
 	}
 }
 
