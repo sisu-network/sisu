@@ -53,6 +53,10 @@ func (h *HandlerTxOut) doTxOut(ctx sdk.Context, txOutMsg *types.TxOutMsg) ([]byt
 		h.handlerTransferOut(ctx, txOut)
 	}
 
+	if !h.globalData.IsCatchingUp() {
+		h.txOutQueue.AddTxOut(txOut)
+	}
+
 	return nil, nil
 }
 
@@ -86,8 +90,4 @@ func (h *HandlerTxOut) handlerTransferOut(ctx sdk.Context, txOut *types.TxOut) {
 
 	h.keeper.SetTransferQueue(ctx, txOut.OutChain, newQueue)
 	h.keeper.SetPendingTransfers(ctx, txOut.OutChain, pendings)
-
-	if !h.globalData.IsCatchingUp() {
-		h.txOutQueue.AddTxOut(txOut)
-	}
 }
