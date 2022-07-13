@@ -247,17 +247,6 @@ func (g *localDockerGenerator) getNodeSettings(chainID, keyringBackend string, i
 			DheartHost: fmt.Sprintf("dheart%d", index),
 			DheartPort: 5678,
 			DeyesUrl:   fmt.Sprintf("http://deyes%d:31001", index),
-			SupportedChains: map[string]config.TssChainConfig{
-				"ganache1": {
-					Id: "ganache1",
-				},
-				"ganache2": {
-					Id: "ganache2",
-				},
-				"cardano-testnet": {
-					Id: "cardano-testnet",
-				},
-			},
 		},
 		Cardano: config.CardanoConfig{BlockfrostSecret: cardanoSecret},
 	}

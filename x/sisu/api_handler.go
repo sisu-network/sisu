@@ -620,7 +620,7 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 func (a *ApiHandler) ConfirmTx(txTrack *chainstypes.TrackUpdate) {
 	ctx := a.globalData.GetReadOnlyContext()
 
-	log.Verbose("Confirming tx height = %d, chain = %s, hash = %s, nonce = %d",
+	log.Verbosef("Confirming tx height = %d, chain = %s, hash = %s, nonce = %d",
 		txTrack.BlockHeight, txTrack.Chain, txTrack.Hash, txTrack.Nonce)
 
 	// The txOutSig is in private db while txOut should come from common db.

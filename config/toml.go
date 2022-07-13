@@ -51,10 +51,6 @@ network = {{ .Cardano.Network }}
 dheart-host = "{{ .Tss.DheartHost }}"
 dheart-port = {{ .Tss.DheartPort }}
 deyes-url = "{{ .Tss.DeyesUrl }}"
-[tss.supported-chains] {{ range $k, $v := .Tss.SupportedChains }}
-	[tss.supported-chains.{{ $v.Id }}]
-		id = "{{ $v.Id }}"
-{{ end }}
 `
 
 var configTemplate *template.Template

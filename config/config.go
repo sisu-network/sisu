@@ -29,10 +29,6 @@ type SisuConfig struct {
 	EmailAlert        EmailAlertConfig `toml:"email-alert"`
 }
 
-type TssChainConfig struct {
-	Id string `toml:"id"`
-}
-
 type CardanoConfig struct {
 	BlockfrostSecret string `toml:"block_frost_secret"`
 	Network          int    `toml:"network"`
@@ -58,8 +54,6 @@ func (c *CardanoConfig) GetCardanoNetwork() cardano.Network {
 type TssConfig struct {
 	DheartHost string `toml:"dheart-host"`
 	DheartPort int    `toml:"dheart-port"`
-	// TODO: Move the supported chains to genesis file.
-	SupportedChains map[string]TssChainConfig `toml:"supported-chains"`
 
 	DeyesUrl string `toml:"deyes-url"`
 
