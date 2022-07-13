@@ -49,12 +49,12 @@ func (h *HandlerTxOut) doTxOut(ctx sdk.Context, txOutMsg *types.TxOutMsg) ([]byt
 	switch txOut.TxType {
 	case types.TxOutType_CONTRACT_DEPLOYMENT:
 		h.keeper.UpdateContractsStatus(ctx, txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
+		if !h.globalData.IsCatchingUp() {
+			h.txOutQueue.AddTxOut(txOut)
+		}
+
 	case types.TxOutType_TRANSFER_OUT:
 		h.handlerTransferOut(ctx, txOut)
-	}
-
-	if !h.globalData.IsCatchingUp() {
-		h.txOutQueue.AddTxOut(txOut)
 	}
 
 	return nil, nil
@@ -90,4 +90,8 @@ func (h *HandlerTxOut) handlerTransferOut(ctx sdk.Context, txOut *types.TxOut) {
 
 	h.keeper.SetTransferQueue(ctx, txOut.OutChain, newQueue)
 	h.keeper.SetPendingTransfers(ctx, txOut.OutChain, pendings)
+
+	if !h.globalData.IsCatchingUp() {
+		h.txOutQueue.AddTxOut(txOut)
+	}
 }
