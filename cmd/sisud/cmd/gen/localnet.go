@@ -100,7 +100,6 @@ Example:
 				chains = append(chains, &types.Chain{
 					Id: "cardano-testnet",
 				})
-				supportedChainsArr = append(supportedChainsArr, "cardano-testnet")
 			}
 
 			nodeConfig := config.Config{
