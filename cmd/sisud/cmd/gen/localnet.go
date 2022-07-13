@@ -89,20 +89,14 @@ Example:
 			keyringBackend := keyring.BackendTest
 
 			chains := getChains(filepath.Join(genesisFolder, "chains.json"))
-			supportedChains := make(map[string]config.TssChainConfig)
 			supportedChainsArr := make([]string, 0)
 			for _, chain := range chains {
-				supportedChains[chain.Id] = config.TssChainConfig{
-					Id: chain.Id,
-				}
 				supportedChainsArr = append(supportedChainsArr, chain.Id)
 			}
 			sort.Strings(supportedChainsArr)
 
 			if len(cardanoSecret) > 0 {
-				supportedChains["cardano-testnet"] = config.TssChainConfig{
-					Id: "cardano-testnet",
-				}
+				supportedChainsArr = append(supportedChainsArr, "cardano-testnet")
 				chains = append(chains, &types.Chain{
 					Id: "cardano-testnet",
 				})
@@ -118,10 +112,9 @@ Example:
 					ApiPort:        25456,
 				},
 				Tss: config.TssConfig{
-					DheartHost:      "0.0.0.0",
-					DheartPort:      5678,
-					DeyesUrl:        "http://0.0.0.0:31001",
-					SupportedChains: supportedChains,
+					DheartHost: "0.0.0.0",
+					DheartPort: 5678,
+					DeyesUrl:   "http://0.0.0.0:31001",
 				},
 			}
 

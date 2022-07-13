@@ -95,28 +95,19 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, signerMsg *types.K
 func (h *HandlerKeygenResult) createContracts(ctx sdk.Context, msg *types.Keygen) {
 	log.Info("Create and broadcast contracts...")
 
-	// We want the final contracts array to be deterministic. We need to sort the list of chains
-	// and list of contracts alphabetically.
-	// Sort all chains alphabetically.
-	chains := make([]string, len(h.config.SupportedChains))
-	i := 0
-	for chain := range h.config.SupportedChains {
-		chains[i] = chain
-		i += 1
-	}
-	sort.Strings(chains)
-
 	// Sort all contracts name alphabetically
 	names := make([]string, len(SupportedContracts))
-	i = 0
+	i := 0
 	for contract := range SupportedContracts {
 		names[i] = contract
 		i += 1
 	}
 	sort.Strings(names)
 
+	params := h.keeper.GetParams(ctx)
+
 	// Create contracts
-	for _, chain := range chains {
+	for _, chain := range params.SupportedChains {
 		if libchain.GetKeyTypeForChain(chain) == msg.KeyType {
 			log.Info("Saving contracts for chain ", chain)
 

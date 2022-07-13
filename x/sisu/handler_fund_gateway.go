@@ -2,7 +2,6 @@ package sisu
 
 import (
 	"math/big"
-	"sort"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -116,19 +115,8 @@ func (h *HandlerFundGateway) getContractTx(ctx sdk.Context, contract *types.Cont
 			return nil
 		}
 
-		tssConfig := h.mc.Config()
-		// Get all allowed chains
-		supportedChains := make([]string, 0)
-		for chain := range tssConfig.SupportedChains {
-			if chain != contract.Chain {
-				supportedChains = append(supportedChains, chain)
-			}
-		}
-
-		sort.Strings(supportedChains)
-
-		log.Info("Allowed chains for chain ", contract.Chain, " are: ", supportedChains)
-
+		params := h.keeper.GetParams(ctx)
+		log.Info("Allowed chains for chain ", contract.Chain, " are: ", params.SupportedChains)
 		lp := h.keeper.GetLiquidity(ctx, contract.Chain)
 		if lp == nil {
 			log.Warn("Lp is nil for chain ", contract.Chain)
@@ -136,7 +124,7 @@ func (h *HandlerFundGateway) getContractTx(ctx sdk.Context, contract *types.Cont
 		}
 
 		log.Infof("Liquidity pool addr for chain %s is %s", contract.Chain, lp.Address)
-		input, err := parsedAbi.Pack("", supportedChains, ecommon.HexToAddress(lp.Address))
+		input, err := parsedAbi.Pack("", params.SupportedChains, ecommon.HexToAddress(lp.Address))
 		if err != nil {
 			log.Error("cannot pack supportedChains, err =", err)
 			return nil

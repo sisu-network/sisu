@@ -222,13 +222,6 @@ Example:
 
 func (g *TestnetGenerator) getNodeSettings(nodeIndex int, chainID, keyringBackend, keyringPassphrase string,
 	testnetConfig TestnetNode, chainConfigs []*types.Chain, dnaConfig log.LogDNAConfig) config.Config {
-	supportedChains := make(map[string]config.TssChainConfig)
-	for _, chainConfig := range chainConfigs {
-		supportedChains[chainConfig.Id] = config.TssChainConfig{
-			Id: chainConfig.Id,
-		}
-	}
-
 	dnaConfig.HostName = testnetConfig.SisuIp
 	dnaConfig.AppName = fmt.Sprintf("sisu%d", nodeIndex)
 
@@ -242,10 +235,9 @@ func (g *TestnetGenerator) getNodeSettings(nodeIndex int, chainID, keyringBacken
 			ApiPort:           25456,
 		},
 		Tss: config.TssConfig{
-			DheartHost:      testnetConfig.HeartIp,
-			DheartPort:      5678,
-			DeyesUrl:        fmt.Sprintf("http://%s:31001", testnetConfig.EyesIp),
-			SupportedChains: supportedChains,
+			DheartHost: testnetConfig.HeartIp,
+			DheartPort: 5678,
+			DeyesUrl:   fmt.Sprintf("http://%s:31001", testnetConfig.EyesIp),
 		},
 		LogDNA: dnaConfig,
 	}
