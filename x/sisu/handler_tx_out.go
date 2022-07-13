@@ -49,6 +49,10 @@ func (h *HandlerTxOut) doTxOut(ctx sdk.Context, txOutMsg *types.TxOutMsg) ([]byt
 	switch txOut.TxType {
 	case types.TxOutType_CONTRACT_DEPLOYMENT:
 		h.keeper.UpdateContractsStatus(ctx, txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
+		if !h.globalData.IsCatchingUp() {
+			h.txOutQueue.AddTxOut(txOut)
+		}
+
 	case types.TxOutType_TRANSFER_OUT:
 		h.handlerTransferOut(ctx, txOut)
 	}
