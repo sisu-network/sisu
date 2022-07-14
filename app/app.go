@@ -210,6 +210,10 @@ func New(
 	}
 
 	app.setupDefaultKeepers(homePath, bApp, skipUpgradeHeights)
+
+	// By default, cosmos sdk silently ignore panic error log when running tx
+	// It helps to print the stack trace
+	app.AddRunTxRecoveryHandler(LogStackTraceOnRunTxFail)
 	////////////// Sisu related keeper //////////////
 
 	cfg, err := config.ReadConfig()
@@ -264,7 +268,6 @@ func New(
 	worldState := world.NewWorldState(app.k, deyesClient)
 	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert, worldState)
 
-	// cardanoNode := blockfrost.NewNode(cfg.Cardano.GetCardanoNetwork(), cfg.Cardano.BlockfrostSecret)
 	cardanoNode := scardano.NewBlockfrostClient(cfg.Cardano.GetCardanoNetwork(), cfg.Cardano.BlockfrostSecret)
 
 	valsMgr := tss.NewValidatorManager(app.k)
