@@ -68,14 +68,14 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 1, addTxCount)
 
-		// Clear the pending queue and we should be able to transfer again
-		mc.Keeper().SetPendingTransfers(ctx, destChain, make([]*types.Transfer, 0))
-		txOutMsg3 := &(*txOutMsg1)
-		txOutMsg2.Data.InHashes = []string{fmt.Sprintf("%s__%s", "ganache1", "hash3")}
-		handler = NewHandlerTxOut(mc)
-		_, err = handler.DeliverMsg(ctx, txOutMsg3)
-		require.NoError(t, err)
-		require.Equal(t, 2, addTxCount)
+		// // Clear the pending queue and we should be able to transfer again
+		// mc.Keeper().SetPendingTransfers(ctx, destChain, make([]*types.Transfer, 0))
+		// txOutMsg3 := &(*txOutMsg1)
+		// txOutMsg2.Data.InHashes = []string{fmt.Sprintf("%s__%s", "ganache1", "hash3")}
+		// handler = NewHandlerTxOut(mc)
+		// _, err = handler.DeliverMsg(ctx, txOutMsg3)
+		// require.NoError(t, err)
+		// require.Equal(t, 2, addTxCount)
 	})
 
 	t.Run("node_is_catching_up", func(t *testing.T) {

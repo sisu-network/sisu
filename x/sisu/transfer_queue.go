@@ -8,6 +8,7 @@ import (
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
+	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type TransferRequest struct {
@@ -18,7 +19,6 @@ type TransferQueue interface {
 	Start(ctx sdk.Context)
 	Stop()
 	ProcessTransfers(ctx sdk.Context)
-	ClearInMemoryPendingTransfers(chain string)
 }
 
 type defaultTransferQueue struct {
@@ -27,10 +27,8 @@ type defaultTransferQueue struct {
 	txSubmit         common.TxSubmit
 	stopCh           chan bool
 
-	// In-memory list that stores all newly added transfer in a block (grouped by chain)
-	chainsWithSubmission map[string]bool
-	newRequestCh         chan TransferRequest
-	lock                 *sync.RWMutex
+	newRequestCh chan TransferRequest
+	lock         *sync.RWMutex
 }
 
 func NewTransferQueue(
@@ -40,13 +38,12 @@ func NewTransferQueue(
 	tssConfig config.TssConfig,
 ) TransferQueue {
 	return &defaultTransferQueue{
-		keeper:               keeper,
-		txOutputProducer:     txOutputProducer,
-		txSubmit:             txSubmit,
-		newRequestCh:         make(chan TransferRequest, 10),
-		lock:                 &sync.RWMutex{},
-		chainsWithSubmission: make(map[string]bool),
-		stopCh:               make(chan bool),
+		keeper:           keeper,
+		txOutputProducer: txOutputProducer,
+		txSubmit:         txSubmit,
+		newRequestCh:     make(chan TransferRequest, 10),
+		lock:             &sync.RWMutex{},
+		stopCh:           make(chan bool),
 	}
 }
 
@@ -64,10 +61,6 @@ func (q *defaultTransferQueue) ProcessTransfers(ctx sdk.Context) {
 	q.newRequestCh <- TransferRequest{
 		ctx: ctx,
 	}
-}
-
-func (q *defaultTransferQueue) ClearInMemoryPendingTransfers(chain string) {
-	q.chainsWithSubmission[chain] = false
 }
 
 func (q *defaultTransferQueue) loop() {
@@ -90,28 +83,24 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 			continue
 		}
 
-		// Check if this chain has some pending tx.
-		pendings := q.keeper.GetPendingTransfers(ctx, chain)
-		if len(pendings) > 0 {
-			continue
-		}
-		if q.chainsWithSubmission[chain] {
-			continue
-		}
-
+		remaining := make([]*types.Transfer, 0)
 		batchSize := params.GetMaxTransferOutBatch(chain)
-		txOutMsgs, err := q.txOutputProducer.GetTxOuts(ctx, chain, queue[:batchSize])
-		if err != nil {
-			log.Error(err)
-			continue
-		}
+		for i := 0; i < len(queue); i += batchSize {
+			txOutMsgs, err := q.txOutputProducer.GetTxOuts(ctx, chain, queue[i:i+batchSize])
+			if err != nil {
+				log.Error(err)
+				remaining = append(remaining, queue[i:i+batchSize]...)
+				continue
+			}
 
-		if len(txOutMsgs) > 0 {
-			q.chainsWithSubmission[chain] = true
-			log.Infof("Broadcasting txout with length %d on chain %s", len(txOutMsgs), chain)
-			for _, txOutMsg := range txOutMsgs {
-				q.txSubmit.SubmitMessageAsync(txOutMsg)
+			if len(txOutMsgs) > 0 {
+				log.Infof("Broadcasting txout with length %d on chain %s", len(txOutMsgs), chain)
+				for _, txOutMsg := range txOutMsgs {
+					q.txSubmit.SubmitMessageAsync(txOutMsg)
+				}
 			}
 		}
+
+		q.keeper.SetTransferQueue(ctx, chain, remaining)
 	}
 }

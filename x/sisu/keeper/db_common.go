@@ -30,7 +30,8 @@ var (
 	prefixParams                 = []byte{0x12}
 	prefixGatewayCheckPoint      = []byte{0x13}
 	prefixTransferQueue          = []byte{0x14}
-	prefixPendingTransfers       = []byte{0x15}
+	prefixTxOutQueue             = []byte{0x15}
+	prefixPendingTxOut           = []byte{0x16}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -921,6 +922,60 @@ func getTransfers(store cstypes.KVStore, chain string) []*types.Transfer {
 	}
 
 	return batch.Transfers
+}
+
+///// TxOutQueue
+func setTxOutQueue(store cstypes.KVStore, chain string, txOuts []*types.TxOut) {
+	queue := &types.TxOutQueue{
+		TxOuts: txOuts,
+	}
+	bz, err := queue.Marshal()
+	if err != nil {
+		log.Error("setTxOutQueue: failed to marshal queue")
+		return
+	}
+
+	store.Set([]byte(chain), bz)
+}
+
+func getTxOutQueue(store cstypes.KVStore, chain string) []*types.TxOut {
+	bz := store.Get([]byte(chain))
+	queue := &types.TxOutQueue{}
+	err := queue.Unmarshal(bz)
+	if err != nil {
+		log.Error("getTxOutQueue: failed to unmarshal TxOutQueue")
+		return nil
+	}
+
+	return queue.TxOuts
+}
+
+///// Pending TxOut
+func setPendingTxOut(store cstypes.KVStore, chain string, txOut *types.TxOut) {
+	if txOut == nil {
+		store.Delete([]byte(chain))
+		return
+	}
+
+	bz, err := txOut.Marshal()
+	if err != nil {
+		log.Error("setPendingTxOut: failed to marshal txOut")
+		return
+	}
+
+	store.Set([]byte(txOut.OutChain), bz)
+}
+
+func getPendingTxOut(store cstypes.KVStore, chain string) *types.TxOut {
+	bz := store.Get([]byte(chain))
+	txOut := &types.TxOut{}
+	err := txOut.Unmarshal(bz)
+	if err != nil {
+		log.Error("getPendingTxOut: failed to unmarshal txout")
+		return nil
+	}
+
+	return txOut
 }
 
 ///// Debug functions
