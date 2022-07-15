@@ -947,6 +947,10 @@ func getTxOutQueue(store cstypes.KVStore, chain string) []*types.TxOut {
 		return nil
 	}
 
+	if queue.TxOuts == nil {
+		queue.TxOuts = make([]*types.TxOut, 0)
+	}
+
 	return queue.TxOuts
 }
 
