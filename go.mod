@@ -16,12 +16,11 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0
 	github.com/hashicorp/go-retryablehttp v0.7.0
-	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d
 	github.com/joho/godotenv v1.3.0
 	github.com/libp2p/go-libp2p-core v0.8.0
 	github.com/logdna/logdna-go v1.0.2
 	github.com/sisu-network/deyes v0.1.7-0.20220712225613-4f6818834021
-	github.com/sisu-network/dheart v0.1.7-0.20220614092423-fa65d4f300a5
+	github.com/sisu-network/dheart v0.1.7-0.20220715081338-7c7f76673e7b
 	github.com/sisu-network/lib v0.0.1-alpha9.0.20220607090913-7a74c077ee70
 	github.com/spf13/cast v1.5.0
 	github.com/spf13/cobra v1.4.0
@@ -94,6 +93,7 @@ require (
 	github.com/gtank/ristretto255 v0.1.2 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-immutable-radix v1.3.1 // indirect
+	github.com/hashicorp/golang-lru v0.5.5-0.20210104140557-80c98217689d // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/ipfs/go-cid v0.0.7 // indirect
@@ -173,7 +173,7 @@ require (
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65 // indirect
-	google.golang.org/genproto v0.0.0-20220711132622-b6f31b0ceb50 // indirect
+	google.golang.org/genproto v0.0.0-20220714211235-042d03aeabc9 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect

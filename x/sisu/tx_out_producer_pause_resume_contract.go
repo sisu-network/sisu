@@ -1,7 +1,6 @@
 package sisu
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 
@@ -46,13 +45,6 @@ func (p *DefaultTxOutputProducer) PauseOrResumeEthContract(ctx sdk.Context, chai
 	gatewayAddress := ethcommon.HexToAddress(gw)
 	erc20gatewayContract := SupportedContracts[targetContractName]
 
-	nonce := p.worldState.UseAndIncreaseNonce(ctx, chain)
-	if nonce < 0 {
-		err := errors.New("PauseEthContract: cannot find nonce for chain " + chain)
-		log.Error(err)
-		return nil, err
-	}
-
 	gasPrice, err := p.worldState.GetGasPrice(chain)
 	if err != nil {
 		return nil, err
@@ -66,7 +58,7 @@ func (p *DefaultTxOutputProducer) PauseOrResumeEthContract(ctx sdk.Context, chai
 	}
 
 	rawTx := ethTypes.NewTransaction(
-		uint64(nonce),
+		0,
 		gatewayAddress,
 		big.NewInt(0),
 		p.getGasLimit(chain),
@@ -81,7 +73,7 @@ func (p *DefaultTxOutputProducer) PauseOrResumeEthContract(ctx sdk.Context, chai
 	}
 
 	return types.NewTxOutMsg(
-		p.appKeys.GetSignerAddress().String(),
+		p.signer,
 		types.TxOutType_TRANSFER_OUT,
 		[]string{""},          // in hash
 		chain,                 // out chain

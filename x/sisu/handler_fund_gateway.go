@@ -79,20 +79,10 @@ func (h *HandlerFundGateway) doContractDeployment(ctx sdk.Context, data *types.F
 }
 
 func (h *HandlerFundGateway) getEthContractDeploymentTx(ctx sdk.Context, chain string, contracts []*types.Contract) []*ethTypes.Transaction {
-	// TODO: Don't use world state here as it's undetermistic. Post message onto the chain to get
-	// consensus.
-	worldState := h.mc.WorldState()
 	txs := make([]*ethTypes.Transaction, 0)
 
 	for _, contract := range contracts {
-		nonce := worldState.UseAndIncreaseNonce(ctx, chain)
-		log.Verbose("nonce for deploying contract:", nonce, " on chain ", chain)
-		if nonce < 0 {
-			log.Error("cannot get nonce for contract")
-			continue
-		}
-
-		rawTx := h.getContractTx(ctx, contract, nonce)
+		rawTx := h.getContractTx(ctx, contract)
 		if rawTx == nil {
 			log.Warn("raw Tx is nil")
 			continue
@@ -104,7 +94,7 @@ func (h *HandlerFundGateway) getEthContractDeploymentTx(ctx sdk.Context, chain s
 	return txs
 }
 
-func (h *HandlerFundGateway) getContractTx(ctx sdk.Context, contract *types.Contract, nonce int64) *ethTypes.Transaction {
+func (h *HandlerFundGateway) getContractTx(ctx sdk.Context, contract *types.Contract) *ethTypes.Transaction {
 	erc20 := SupportedContracts[ContractErc20Gateway]
 	switch contract.Hash {
 	case erc20.AbiHash:
@@ -143,12 +133,8 @@ func (h *HandlerFundGateway) getContractTx(ctx sdk.Context, contract *types.Cont
 			gasPrice = h.getDefaultGasPrice(contract.Chain).Int64()
 		}
 		gasLimit := h.getGasLimit(contract.Chain)
-
-		log.Verbose("Gas price = ", gasPrice, " on chain ", contract.Chain)
-		log.Verbose("gasLimit = ", gasLimit, " on chain ", contract.Chain)
-
 		rawTx := ethTypes.NewContractCreation(
-			uint64(nonce),
+			0,
 			big.NewInt(0),
 			gasLimit,
 			big.NewInt(gasPrice),

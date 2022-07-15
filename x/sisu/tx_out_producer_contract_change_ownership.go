@@ -1,7 +1,6 @@
 package sisu
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 
@@ -31,13 +30,6 @@ func (p *DefaultTxOutputProducer) ContractChangeOwnership(ctx sdk.Context, chain
 	gatewayAddress := ethcommon.HexToAddress(gw)
 	erc20gatewayContract := SupportedContracts[targetContractName]
 
-	nonce := p.worldState.UseAndIncreaseNonce(ctx, chain)
-	if nonce < 0 {
-		err := errors.New("ContractChangeOwnership: cannot find nonce for chain " + chain)
-		log.Error(err)
-		return nil, err
-	}
-
 	gasPrice, err := p.worldState.GetGasPrice(chain)
 	if err != nil {
 		return nil, err
@@ -45,7 +37,7 @@ func (p *DefaultTxOutputProducer) ContractChangeOwnership(ctx sdk.Context, chain
 
 	input, err := erc20gatewayContract.Abi.Pack(MethodTransferOwnership, ethcommon.HexToAddress(newOwner))
 	rawTx := ethTypes.NewTransaction(
-		uint64(nonce),
+		0,
 		gatewayAddress,
 		big.NewInt(0),
 		p.getGasLimit(chain),
@@ -60,7 +52,7 @@ func (p *DefaultTxOutputProducer) ContractChangeOwnership(ctx sdk.Context, chain
 	}
 
 	return types.NewTxOutMsg(
-		p.appKeys.GetSignerAddress().String(),
+		p.signer,
 		types.TxOutType_TRANSFER_OUT,
 		[]string{""},          // in hash
 		chain,                 // out chain

@@ -100,9 +100,13 @@ type Keeper interface {
 	SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.Transfer)
 	GetTransferQueue(ctx sdk.Context, chain string) []*types.Transfer
 
-	// Pending Transfer
-	SetPendingTransfers(ctx sdk.Context, chain string, transfers []*types.Transfer)
-	GetPendingTransfers(ctx sdk.Context, chain string) []*types.Transfer
+	// TxOutQueue
+	SetTxOutQueue(ctx sdk.Context, chain string, txOuts []*types.TxOut)
+	GetTxOutQueue(ctx sdk.Context, chain string) []*types.TxOut
+
+	// PendingTxOut
+	SetPendingTxOut(ctx sdk.Context, chain string, txOut *types.TxOut)
+	GetPendingTxOut(ctx sdk.Context, chain string) *types.TxOut
 }
 
 type DefaultKeeper struct {
@@ -412,16 +416,26 @@ func (k *DefaultKeeper) GetTransferQueue(ctx sdk.Context, chain string) []*types
 	return getTransfers(store, chain)
 }
 
-///// Pending queue
-
-func (k *DefaultKeeper) SetPendingTransfers(ctx sdk.Context, chain string, transfers []*types.Transfer) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPendingTransfers)
-	setTranfers(store, chain, transfers)
+///// TxOutQueue
+func (k *DefaultKeeper) SetTxOutQueue(ctx sdk.Context, chain string, txOuts []*types.TxOut) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutQueue)
+	setTxOutQueue(store, chain, txOuts)
 }
 
-func (k *DefaultKeeper) GetPendingTransfers(ctx sdk.Context, chain string) []*types.Transfer {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPendingTransfers)
-	return getTransfers(store, chain)
+func (k *DefaultKeeper) GetTxOutQueue(ctx sdk.Context, chain string) []*types.TxOut {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutQueue)
+	return getTxOutQueue(store, chain)
+}
+
+///// PendingTxOut
+func (k *DefaultKeeper) SetPendingTxOut(ctx sdk.Context, chain string, txOut *types.TxOut) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPendingTxOut)
+	setPendingTxOut(store, chain, txOut)
+}
+
+func (k *DefaultKeeper) GetPendingTxOut(ctx sdk.Context, chain string) *types.TxOut {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPendingTxOut)
+	return getPendingTxOut(store, chain)
 }
 
 ///// Debug

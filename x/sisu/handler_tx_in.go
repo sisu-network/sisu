@@ -1,8 +1,6 @@
 package sisu
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -40,7 +38,7 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msg *types.TxsIn) ([]byte, error) 
 	// Add the message to the queue for later processing.
 	for _, request := range msg.Requests {
 		transfer := &types.Transfer{
-			Id:        fmt.Sprintf("%s__%s", msg.Chain, request.Hash),
+			Id:        types.GetTransferId(msg.Chain, request.Hash),
 			Recipient: request.Recipient,
 			Token:     request.Token,
 			Amount:    request.Amount,

@@ -272,13 +272,12 @@ func New(
 
 	valsMgr := tss.NewValidatorManager(app.k)
 	partyManager := tss.NewPartyManager(app.globalData)
-	txOutProducer := tss.NewTxOutputProducer(worldState, app.appKeys, app.k, valsMgr, cfg.Tss, cfg.Cardano, privateDb, cardanoNode, txTracker)
+	txOutProducer := tss.NewTxOutputProducer(worldState, app.appKeys, app.k, cfg.Cardano,
+		cardanoNode, txTracker)
 	txInQueue := sisu.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss)
-	txOutQueue := sisu.NewTxOutQueue(app.k, app.globalData, partyManager, dheartClient, txTracker)
-	txOutQueue.Start()
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.k),
 		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
-		app.appKeys, txOutProducer, worldState, txTracker, app.k, valsMgr, txInQueue, txOutQueue)
+		app.appKeys, txOutProducer, worldState, txTracker, app.k, valsMgr, txInQueue)
 
 	apiHandler := tss.NewApiHandler(privateDb, mc)
 	app.apiHandler.SetAppLogicListener(apiHandler)

@@ -34,48 +34,33 @@ func TestTxOutProducer_getContractTx(t *testing.T) {
 }
 
 func TestTxOutProducer_getEthResponse2(t *testing.T) {
-	t.Parallel()
-
 	t.Run("transaction_send_to_key", func(t *testing.T) {
 		// t.Parallel()
 
-		// ethTx := defaultTestEthTx(0)
 		// ctx := testContext()
 		// keeper := keeperTestAfterKeygen(ctx)
-
 		// appKeys := common.NewMockAppKeys()
 
 		// worldState := world.NewWorldState(keeper, &tssclients.MockDeyesClient{})
-
-		// binary, err := ethTx.MarshalBinary()
-		// require.NoError(t, err)
-
-		// txIn := &types.TxIn{
-		// 	BlockHeight: 1,
-		// 	Serialized:  binary,
-		// 	Chain:       "ganache1",
+		// transfer := &types.Transfer{
+		// 	Id:        "ganache1_hash1",
+		// 	Recipient: "0x123",
+		// 	Amount:    "1000",
 		// }
 
 		// txOutProducer := NewTxOutputProducer(worldState, appKeys,
 		// 	keeper,
 		// 	nil,
-		// 	config.TssConfig{
-		// 		DeyesUrl: "http://0.0.0.0:1234",
-		// 		SupportedChains: map[string]config.TssChainConfig{
-		// 			"ganache1": {
-		// 				Id: "ganache",
-		// 			},
-		// 		},
-		// 	},
 		// 	config.CardanoConfig{},
-		// 	&MockCardanoNode{},
+		// 	nil,
 		// 	&MockTxTracker{},
 		// ).(*DefaultTxOutputProducer)
 
-		// txOuts := txOutProducer.GetTxOuts(ctx, 1, []*types.TxIn{txIn})
+		// txOuts, err := txOutProducer.GetTxOuts(ctx, "ganache2", []*types.Transfer{transfer})
+		// require.Nil(t, err)
 		// require.Len(t, txOuts, 1)
 
-		// TODO Check the output of txOut to make sure that they are correct.
+		// // TODO Check the output of txOut to make sure that they are correct.
 	})
 
 	t.Run("transaction_send_to_contract", func(t *testing.T) {

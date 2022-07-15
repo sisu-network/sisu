@@ -239,7 +239,8 @@ func getNode(kb keyring.Keyring, algoStr string, nodeDirName string, outputDir s
 func initGenFiles(
 	clientCtx client.Context, mbm module.BasicManager, chainID string,
 	genAccounts []authtypes.GenesisAccount, genBalances []banktypes.Balance,
-	genFiles []string, nodes []*types.Node, tokens []*types.Token, chains []*types.Chain, liquids []*types.Liquidity, params *types.Params,
+	genFiles []string, nodes []*types.Node, tokens []*types.Token, chains []*types.Chain,
+	liquids []*types.Liquidity, params *types.Params,
 ) error {
 	appGenState := mbm.DefaultGenesis(clientCtx.JSONMarshaler)
 
@@ -262,12 +263,22 @@ func initGenFiles(
 	bankGenState.Balances = genBalances
 	appGenState[banktypes.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(&bankGenState)
 
+	checkPoints := make([]*types.GatewayCheckPoint, 0)
+	for _, chain := range chains {
+		checkPoints = append(checkPoints, &types.GatewayCheckPoint{
+			Chain:       chain.Id,
+			BlockHeight: 1,
+			Nonce:       0,
+		})
+	}
+
 	sisuGenState := types.DefaultGenesis()
 	sisuGenState.Nodes = nodes
 	sisuGenState.Tokens = tokens
 	sisuGenState.Chains = chains
 	sisuGenState.Liquids = liquids
 	sisuGenState.Params = params
+	sisuGenState.Checkpoints = checkPoints
 
 	appGenState[types.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(sisuGenState)
 

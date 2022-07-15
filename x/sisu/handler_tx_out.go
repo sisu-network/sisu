@@ -3,24 +3,19 @@ package sisu
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type HandlerTxOut struct {
-	pmm        PostedMessageManager
-	keeper     keeper.Keeper
-	globalData common.GlobalData
-	txOutQueue TxOutQueue
+	pmm    PostedMessageManager
+	keeper keeper.Keeper
 }
 
 func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
 	return &HandlerTxOut{
-		keeper:     mc.Keeper(),
-		pmm:        mc.PostedMessageManager(),
-		txOutQueue: mc.TxOutQueue(),
-		globalData: mc.GlobalData(),
+		keeper: mc.Keeper(),
+		pmm:    mc.PostedMessageManager(),
 	}
 }
 
@@ -49,49 +44,39 @@ func (h *HandlerTxOut) doTxOut(ctx sdk.Context, txOutMsg *types.TxOutMsg) ([]byt
 	switch txOut.TxType {
 	case types.TxOutType_CONTRACT_DEPLOYMENT:
 		h.keeper.UpdateContractsStatus(ctx, txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
-		if !h.globalData.IsCatchingUp() {
-			h.txOutQueue.AddTxOut(txOut)
-		}
+		h.addTxOutToQueue(ctx, txOut)
 
 	case types.TxOutType_TRANSFER_OUT:
-		h.handlerTransferOut(ctx, txOut)
+		h.handlerTransfer(ctx, txOut)
 	}
 
 	return nil, nil
 }
 
-func (h *HandlerTxOut) handlerTransferOut(ctx sdk.Context, txOut *types.TxOut) {
-	// If there are some transfer in the pendings queue, don't process this txOut.
-	pendings := h.keeper.GetPendingTransfers(ctx, txOut.OutChain)
-	if len(pendings) > 0 {
-		log.Verbose("There are some pending transfers in the pending queue, don't process new transfers")
-		return
+func (h *HandlerTxOut) handlerTransfer(ctx sdk.Context, txOut *types.TxOut) {
+	// 1. Update TxOut queue
+	h.addTxOutToQueue(ctx, txOut)
+
+	// 2. Remove the transfers in txOut from the queue
+	queue := h.keeper.GetTransferQueue(ctx, txOut.OutChain)
+	ids := make(map[string]bool, 0)
+	for _, inHash := range txOut.InHashes {
+		ids[inHash] = true
 	}
 
-	// Move the the transfers associated with this tx_out to pending.
-	queue := h.keeper.GetTransferQueue(ctx, txOut.OutChain)
 	newQueue := make([]*types.Transfer, 0)
-	pendings = make([]*types.Transfer, 0)
 	for _, transfer := range queue {
-		found := false
-		for _, inHash := range txOut.InHashes {
-			if transfer.Id == inHash {
-				found = true
-				break
-			}
-		}
-
-		if !found {
+		if !ids[transfer.Id] {
 			newQueue = append(newQueue, transfer)
-		} else {
-			pendings = append(pendings, transfer)
 		}
 	}
 
 	h.keeper.SetTransferQueue(ctx, txOut.OutChain, newQueue)
-	h.keeper.SetPendingTransfers(ctx, txOut.OutChain, pendings)
+}
 
-	if !h.globalData.IsCatchingUp() {
-		h.txOutQueue.AddTxOut(txOut)
-	}
+func (h *HandlerTxOut) addTxOutToQueue(ctx sdk.Context, txOut *types.TxOut) {
+	// Move the the transfers associated with this tx_out to pending.
+	queue := h.keeper.GetTxOutQueue(ctx, txOut.OutChain)
+	queue = append(queue, txOut)
+	h.keeper.SetTxOutQueue(ctx, txOut.OutChain, queue)
 }

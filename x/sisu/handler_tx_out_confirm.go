@@ -42,7 +42,7 @@ func (h *HandlerTxOutConfirm) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOut
 func (h *HandlerTxOutConfirm) doTxOutConfirm(ctx sdk.Context, msgWithSigner *types.TxOutConfirmMsg) ([]byte, error) {
 	msg := msgWithSigner.Data
 
-	log.Info("Delivering TxOutContractConfirm")
+	log.Info("Delivering TxOutConfirm")
 
 	txOut := h.keeper.GetTxOut(ctx, msg.OutChain, msg.OutHash)
 	if txOut == nil {
@@ -53,14 +53,9 @@ func (h *HandlerTxOutConfirm) doTxOutConfirm(ctx sdk.Context, msgWithSigner *typ
 
 	if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
 		h.confirmContractDeployment(ctx, txOut, msg.ContractAddress)
-	} else {
-		// Clear the pending queue on dest chain
-		h.keeper.SetPendingTransfers(ctx, txOut.OutChain, make([]*types.Transfer, 0))
-		h.transferQueue.ClearInMemoryPendingTransfers(txOut.OutChain)
 	}
 
 	savedCheckPoint := h.keeper.GetGatewayCheckPoint(ctx, msg.OutChain)
-	fmt.Println("savedCheckPoint = ", savedCheckPoint)
 	if savedCheckPoint == nil || savedCheckPoint.BlockHeight < msg.BlockHeight {
 		// Save checkpoint
 		checkPoint := &types.GatewayCheckPoint{
@@ -72,11 +67,12 @@ func (h *HandlerTxOutConfirm) doTxOutConfirm(ctx sdk.Context, msgWithSigner *typ
 			checkPoint.Nonce = msg.Nonce
 		}
 
-		fmt.Println("Saving checkpoint, nonce = ", checkPoint.Nonce)
-
 		// Update observed block height and nonce.
 		h.keeper.AddGatewayCheckPoint(ctx, checkPoint)
 	}
+
+	// Clear the pending TxOut
+	h.keeper.SetPendingTxOut(ctx, txOut.OutChain, nil)
 
 	return nil, nil
 }

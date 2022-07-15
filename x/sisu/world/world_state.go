@@ -1,13 +1,10 @@
 package world
 
 import (
-	"encoding/base64"
 	"fmt"
 	"math/big"
 	"sync"
 
-	"github.com/ethereum/go-ethereum/crypto"
-	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/helper"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -40,8 +37,6 @@ var (
 type WorldState interface {
 	IsDataInitialized() bool
 	InitData(ctx sdk.Context)
-
-	UseAndIncreaseNonce(ctx sdk.Context, chain string) int64
 
 	SetChain(chain *types.Chain)
 	GetGasPrice(chain string) (*big.Int, error)
@@ -104,43 +99,6 @@ func (ws *DefaultWorldState) InitData(ctx sdk.Context) {
 	}
 
 	ws.isDataInit.Store(true)
-}
-
-func (ws *DefaultWorldState) UseAndIncreaseNonce(ctx sdk.Context, chain string) int64 {
-	keyType := libchain.GetKeyTypeForChain(chain)
-	log.Debugf("key type = %s, chain = %s\n", keyType, chain)
-
-	pubKeyBytes := ws.keeper.GetKeygenPubkey(ctx, keyType)
-	if pubKeyBytes == nil {
-		log.Error("cannot find pub key for keyType", chain)
-		return -1
-	}
-
-	log.Debug("pubkey bytes = ", base64.StdEncoding.EncodeToString(pubKeyBytes))
-
-	pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
-	if err != nil {
-		log.Error("Cannot unmarshal pubkey, err = ", err)
-		return -1
-	}
-
-	pubKeyAddress := crypto.PubkeyToAddress(*pubKey).Hex()
-
-	if ws.nonces[chain] == 0 {
-		nonce := ws.deyesClient.GetNonce(chain, pubKeyAddress)
-
-		if nonce == -1 {
-			return -1
-		}
-		ws.nonces[chain] = nonce
-	}
-
-	nonce := ws.nonces[chain]
-	ws.nonces[chain] = ws.nonces[chain] + 1
-
-	log.Verbose("World state, nonce for address ", pubKeyAddress, " on chain ", chain, " is ", nonce)
-
-	return nonce
 }
 
 func (ws *DefaultWorldState) SetChain(chain *types.Chain) {

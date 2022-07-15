@@ -3,7 +3,6 @@ package sisu
 import (
 	"testing"
 
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/stretchr/testify/require"
 )
@@ -16,11 +15,10 @@ func TestTxOutPauseResumeContract(t *testing.T) {
 		keeper := keeperTestAfterContractDeployed(ctx)
 		deyesClient := &tssclients.MockDeyesClient{}
 		worldState := defaultWorldStateTest(ctx, keeper, deyesClient)
-		appKeys := common.NewMockAppKeys()
 		txOutputProducer := DefaultTxOutputProducer{
 			worldState: worldState,
 			keeper:     keeper,
-			appKeys:    appKeys,
+			signer:     "signer",
 		}
 
 		chain := "ganache1"
@@ -39,11 +37,10 @@ func TestTxOutPauseResumeContract(t *testing.T) {
 		keeper := keeperTestAfterContractDeployed(ctx)
 		deyesClient := &tssclients.MockDeyesClient{}
 		worldState := defaultWorldStateTest(ctx, keeper, deyesClient)
-		appKeys := common.NewMockAppKeys()
 		txOutputProducer := DefaultTxOutputProducer{
 			worldState: worldState,
 			keeper:     keeper,
-			appKeys:    appKeys,
+			signer:     "signer",
 		}
 
 		chain := "chain"
@@ -58,34 +55,10 @@ func TestTxOutPauseResumeContract(t *testing.T) {
 		keeper := keeperTestAfterKeygen(ctx)
 		deyesClient := &tssclients.MockDeyesClient{}
 		worldState := defaultWorldStateTest(ctx, keeper, deyesClient)
-		appKeys := common.NewMockAppKeys()
 		txOutputProducer := DefaultTxOutputProducer{
 			worldState: worldState,
 			keeper:     keeper,
-			appKeys:    appKeys,
-		}
-
-		chain := "ganache1"
-		hash := SupportedContracts[ContractErc20Gateway].AbiHash
-		txOutWithSigner, err := txOutputProducer.PauseOrResumeEthContract(ctx, chain, hash, false)
-		require.Error(t, err)
-		require.Nil(t, txOutWithSigner)
-	})
-
-	t.Run("can_not_find_nonce", func(t *testing.T) {
-		ctx := testContext()
-		keeper := keeperTestAfterContractDeployed(ctx)
-		deyesClient := &tssclients.MockDeyesClient{}
-		deyesClient.GetNonceFunc = func(chain, address string) int64 {
-			return -1
-		}
-
-		worldState := defaultWorldStateTest(ctx, keeper, deyesClient)
-		appKeys := common.NewMockAppKeys()
-		txOutputProducer := DefaultTxOutputProducer{
-			worldState: worldState,
-			keeper:     keeper,
-			appKeys:    appKeys,
+			signer:     "signer",
 		}
 
 		chain := "ganache1"

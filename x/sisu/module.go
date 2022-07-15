@@ -116,13 +116,14 @@ type AppModule struct {
 	valsManager     ValidatorManager
 	worldState      world.WorldState
 	txTracker       TxTracker
+	txOutSiger      *txOutSigner
 	mc              ManagerContainer
 }
 
 func NewAppModule(cdc codec.Marshaler,
 	sisuHandler *SisuHandler,
 	keeper keeper.Keeper,
-	processor *ApiHandler,
+	apiHandler *ApiHandler,
 	valsManager ValidatorManager,
 	mc ManagerContainer,
 ) AppModule {
@@ -130,13 +131,14 @@ func NewAppModule(cdc codec.Marshaler,
 		AppModuleBasic: NewAppModuleBasic(cdc),
 		sisuHandler:    sisuHandler,
 		txSubmit:       mc.TxSubmit(),
-		processor:      processor,
+		processor:      apiHandler,
 		keeper:         keeper,
 		appKeys:        mc.AppKeys(),
 		globalData:     mc.GlobalData(),
 		valsManager:    valsManager,
 		worldState:     mc.WorldState(),
 		txTracker:      mc.TxTracker(),
+		txOutSiger:     NewTxOutSigner(mc.Keeper(), mc.PartyManager(), mc.DheartClient()),
 		mc:             mc,
 	}
 }
@@ -210,6 +212,11 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	am.keeper.SaveParams(ctx, params)
 	savedParams := am.keeper.GetParams(ctx)
 	log.Info("Tss params: ", savedParams)
+
+	// Save Checkpoints
+	for _, checkpoint := range genState.Checkpoints {
+		am.keeper.AddGatewayCheckPoint(ctx, checkpoint)
+	}
 
 	// Create validator nodes
 	valsMgr := am.valsManager
@@ -285,8 +292,31 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 
 	am.mc.TransferQueue().ProcessTransfers(ctx)
 
-	// Process new outgoing transactions
-	am.mc.TxOutQueue().ProcessTxOuts(cloneCtx)
+	am.signTxOut(ctx)
 
 	return []abci.ValidatorUpdate{}
+}
+
+func (am AppModule) signTxOut(ctx sdk.Context) {
+	params := am.keeper.GetParams(ctx)
+	for _, chain := range params.SupportedChains {
+		pending := am.keeper.GetPendingTxOut(ctx, chain)
+		if pending != nil {
+			continue
+		}
+
+		queue := am.keeper.GetTxOutQueue(ctx, chain)
+		fmt.Println("len queue = ", len(queue))
+		if len(queue) == 0 {
+			continue
+		}
+
+		txOut := queue[0]
+		am.keeper.SetPendingTxOut(ctx, txOut.OutChain, txOut)
+		am.keeper.SetTxOutQueue(ctx, txOut.OutChain, queue[1:])
+
+		if !am.globalData.IsCatchingUp() {
+			am.txOutSiger.signTxOut(ctx, txOut)
+		}
+	}
 }

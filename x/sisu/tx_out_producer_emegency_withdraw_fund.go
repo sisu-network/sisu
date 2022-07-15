@@ -1,7 +1,6 @@
 package sisu
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 
@@ -18,13 +17,6 @@ func (p *DefaultTxOutputProducer) ContractEmergencyWithdrawFund(ctx sdk.Context,
 
 	if !libchain.IsETHBasedChain(chain) {
 		return nil, fmt.Errorf("unsupported chain %s", chain)
-	}
-
-	nonce := p.worldState.UseAndIncreaseNonce(ctx, chain)
-	if nonce < 0 {
-		err := errors.New("ContractEmergencyWithdrawFund: cannot find nonce for chain " + chain)
-		log.Error(err)
-		return nil, err
 	}
 
 	gasPrice, err := p.worldState.GetGasPrice(chain)
@@ -45,7 +37,7 @@ func (p *DefaultTxOutputProducer) ContractEmergencyWithdrawFund(ctx sdk.Context,
 	}
 
 	rawTx := ethTypes.NewTransaction(
-		uint64(nonce),
+		0,
 		common.HexToAddress(contractHash),
 		big.NewInt(0),
 		p.getGasLimit(chain),
@@ -60,7 +52,7 @@ func (p *DefaultTxOutputProducer) ContractEmergencyWithdrawFund(ctx sdk.Context,
 	}
 
 	return types.NewTxOutMsg(
-		p.appKeys.GetSignerAddress().String(),
+		p.signer,
 		types.TxOutType_LIQUIDITY_WITHDRAW_FUND,
 		[]string{""},          // in hash
 		chain,                 // out chain

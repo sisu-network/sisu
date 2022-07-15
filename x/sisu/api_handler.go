@@ -359,7 +359,7 @@ func (a *ApiHandler) processETHSigningResult(ctx sdk.Context, result *dhtypes.Ke
 	}
 
 	tx := &ethtypes.Transaction{}
-	if err := tx.UnmarshalBinary(txOut.OutBytes); err != nil {
+	if err := tx.UnmarshalBinary(result.Request.KeysignMessages[index].Bytes); err != nil {
 		log.Error("cannot unmarshal tx, err =", err)
 		return
 	}
@@ -394,7 +394,8 @@ func (a *ApiHandler) processETHSigningResult(ctx sdk.Context, result *dhtypes.Ke
 
 	// If this is a contract deployment transaction, update the contract table with the hash of the
 	// deployment tx bytes.
-	isContractDeployment := chain.IsETHBasedChain(signMsg.OutChain) && txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT
+	isContractDeployment := chain.IsETHBasedChain(signMsg.OutChain) &&
+		txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT
 	err = a.deploySignedTx(ctx, bz, signMsg.OutChain, signedTx.Hash().String(), isContractDeployment)
 	if err != nil {
 		log.Error("deployment error: ", err)
@@ -486,8 +487,6 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 // TODO: handle error correctly
 func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	log.Verbose("There is a new list of txs from deyes, len =", len(txs.Arr))
-
-	fmt.Println("txs = ", *txs)
 
 	blockRequests := &types.TxsIn{
 		Chain:    txs.Chain,
