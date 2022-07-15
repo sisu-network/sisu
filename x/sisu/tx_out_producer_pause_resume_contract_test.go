@@ -3,7 +3,6 @@ package sisu
 import (
 	"testing"
 
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/stretchr/testify/require"
 )
@@ -16,11 +15,10 @@ func TestTxOutPauseResumeContract(t *testing.T) {
 		keeper := keeperTestAfterContractDeployed(ctx)
 		deyesClient := &tssclients.MockDeyesClient{}
 		worldState := defaultWorldStateTest(ctx, keeper, deyesClient)
-		appKeys := common.NewMockAppKeys()
 		txOutputProducer := DefaultTxOutputProducer{
 			worldState: worldState,
 			keeper:     keeper,
-			appKeys:    appKeys,
+			signer:     "signer",
 		}
 
 		chain := "ganache1"
@@ -39,11 +37,10 @@ func TestTxOutPauseResumeContract(t *testing.T) {
 		keeper := keeperTestAfterContractDeployed(ctx)
 		deyesClient := &tssclients.MockDeyesClient{}
 		worldState := defaultWorldStateTest(ctx, keeper, deyesClient)
-		appKeys := common.NewMockAppKeys()
 		txOutputProducer := DefaultTxOutputProducer{
 			worldState: worldState,
 			keeper:     keeper,
-			appKeys:    appKeys,
+			signer:     "signer",
 		}
 
 		chain := "chain"
@@ -58,11 +55,10 @@ func TestTxOutPauseResumeContract(t *testing.T) {
 		keeper := keeperTestAfterKeygen(ctx)
 		deyesClient := &tssclients.MockDeyesClient{}
 		worldState := defaultWorldStateTest(ctx, keeper, deyesClient)
-		appKeys := common.NewMockAppKeys()
 		txOutputProducer := DefaultTxOutputProducer{
 			worldState: worldState,
 			keeper:     keeper,
-			appKeys:    appKeys,
+			signer:     "signer",
 		}
 
 		chain := "ganache1"

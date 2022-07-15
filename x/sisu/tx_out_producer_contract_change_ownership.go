@@ -52,7 +52,7 @@ func (p *DefaultTxOutputProducer) ContractChangeOwnership(ctx sdk.Context, chain
 	}
 
 	return types.NewTxOutMsg(
-		p.appKeys.GetSignerAddress().String(),
+		p.signer,
 		types.TxOutType_TRANSFER_OUT,
 		[]string{""},          // in hash
 		chain,                 // out chain

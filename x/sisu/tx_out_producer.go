@@ -38,19 +38,15 @@ type TxOutputProducer interface {
 }
 
 type DefaultTxOutputProducer struct {
-	worldState  world.WorldState
-	appKeys     common.AppKeys
-	keeper      keeper.Keeper
-	tssConfig   config.TssConfig
-	txTracker   TxTracker
-	valsManager ValidatorManager
-	privateDb   keeper.Storage
+	signer     string
+	worldState world.WorldState
+	keeper     keeper.Keeper
+	txTracker  TxTracker
 
 	// Only use for cardano chain
-	cardanoConfig        config.CardanoConfig
-	cardanoNetwork       cardano.Network
-	cardanoClient        scardano.CardanoClient
-	minCaranoBlockHeight int64
+	cardanoConfig  config.CardanoConfig
+	cardanoNetwork cardano.Network
+	cardanoClient  scardano.CardanoClient
 }
 
 type transferInData struct {
@@ -60,16 +56,13 @@ type transferInData struct {
 }
 
 func NewTxOutputProducer(worldState world.WorldState, appKeys common.AppKeys, keeper keeper.Keeper,
-	valsManager ValidatorManager, tssConfig config.TssConfig, cardanoConfig config.CardanoConfig,
-	privateDb keeper.Storage, cardanoClient scardano.CardanoClient,
+	cardanoConfig config.CardanoConfig,
+	cardanoClient scardano.CardanoClient,
 	txTracker TxTracker) TxOutputProducer {
 	return &DefaultTxOutputProducer{
+		signer:         appKeys.GetSignerAddress().String(),
 		keeper:         keeper,
 		worldState:     worldState,
-		appKeys:        appKeys,
-		valsManager:    valsManager,
-		tssConfig:      tssConfig,
-		privateDb:      privateDb,
 		txTracker:      txTracker,
 		cardanoNetwork: cardanoConfig.GetCardanoNetwork(),
 		cardanoClient:  cardanoClient,
@@ -139,7 +132,7 @@ func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context,
 	}
 
 	outMsg := types.NewTxOutMsg(
-		p.appKeys.GetSignerAddress().String(),
+		p.signer,
 		types.TxOutType_TRANSFER_OUT,
 		inHashes,
 		dstChain,
