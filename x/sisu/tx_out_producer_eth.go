@@ -140,13 +140,6 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	gatewayAddress := ethcommon.HexToAddress(gw)
 	erc20gatewayContract := SupportedContracts[targetContractName]
 
-	checkPoint := k.GetGatewayCheckPoint(ctx, destChain)
-	if checkPoint == nil {
-		return nil, fmt.Errorf("cannot find gateway checkout for chain %s", destChain)
-	}
-
-	nonce := checkPoint.Nonce
-
 	gasPrice, err := p.worldState.GetGasPrice(destChain)
 	if err != nil {
 		return nil, err
@@ -236,7 +229,7 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	}
 
 	rawTx := ethTypes.NewTransaction(
-		uint64(nonce),
+		0,
 		gatewayAddress,
 		big.NewInt(0),
 		100_000, // 100k for swapping operation.

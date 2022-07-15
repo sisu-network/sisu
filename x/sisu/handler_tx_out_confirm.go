@@ -42,7 +42,7 @@ func (h *HandlerTxOutConfirm) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOut
 func (h *HandlerTxOutConfirm) doTxOutConfirm(ctx sdk.Context, msgWithSigner *types.TxOutConfirmMsg) ([]byte, error) {
 	msg := msgWithSigner.Data
 
-	log.Info("Delivering TxOutContractConfirm")
+	log.Info("Delivering TxOutConfirm")
 
 	txOut := h.keeper.GetTxOut(ctx, msg.OutChain, msg.OutHash)
 	if txOut == nil {
@@ -71,6 +71,7 @@ func (h *HandlerTxOutConfirm) doTxOutConfirm(ctx sdk.Context, msgWithSigner *typ
 		h.keeper.AddGatewayCheckPoint(ctx, checkPoint)
 	}
 
+	// Clear the pending TxOut
 	h.keeper.SetPendingTxOut(ctx, txOut.OutChain, nil)
 
 	return nil, nil

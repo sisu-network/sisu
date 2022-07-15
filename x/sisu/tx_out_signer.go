@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"strconv"
 
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/echovl/cardano-go"
-	etypes "github.com/ethereum/go-ethereum/core/types"
 	hTypes "github.com/sisu-network/dheart/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
@@ -30,26 +31,27 @@ func NewTxOutSigner(keeper keeper.Keeper, partyManager PartyManager,
 	}
 }
 
-func (q *txOutSigner) signTxOut(ctx sdk.Context, txOut *types.TxOut) {
+func (s *txOutSigner) signTxOut(ctx sdk.Context, txOut *types.TxOut) {
 	if libchain.IsETHBasedChain(txOut.OutChain) {
-		q.signEthTx(ctx, txOut)
+		s.signEthTx(ctx, txOut)
 	}
 
 	if libchain.IsCardanoChain(txOut.OutChain) {
-		q.signCardanoTx(ctx, txOut)
+		s.signCardanoTx(ctx, txOut)
 	}
 }
 
 // signEthTx sends a TxOut to dheart for TSS signing.
-func (q *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) {
+func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
 	log.Info("Delivering TXOUT for chain ", tx.OutChain, " tx hash = ", tx.OutHash)
 	if tx.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
 		log.Info("This TxOut is a contract deployment")
 	}
 
-	ethTx := &etypes.Transaction{}
+	ethTx := &ethtypes.Transaction{}
 	if err := ethTx.UnmarshalBinary(tx.OutBytes); err != nil {
 		log.Error("cannot unmarshal tx, err =", err)
+		return err
 	}
 
 	signer := libchain.GetEthChainSigner(tx.OutChain)
@@ -58,30 +60,53 @@ func (q *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) {
 		log.Error(err)
 	}
 
-	hash := signer.Hash(ethTx)
+	checkPoint := s.keeper.GetGatewayCheckPoint(ctx, tx.OutChain)
+	if checkPoint == nil {
+		err := fmt.Errorf("cannot find gateway checkout for chain %s", tx.OutChain)
+		return err
+	}
 
+	ethTxWithNonce := ethtypes.NewTx(&ethtypes.LegacyTx{
+		Nonce:    uint64(checkPoint.Nonce),
+		To:       ethTx.To(),
+		Value:    ethTx.Value(),
+		Gas:      ethTx.Gas(),
+		GasPrice: ethTx.GasPrice(),
+		Data:     ethTx.Data(),
+	})
+
+	fmt.Println("nonce = ", ethTxWithNonce.Nonce())
+	bz, err := ethTxWithNonce.MarshalBinary()
+	if err != nil {
+		return err
+	}
+
+	hash := signer.Hash(ethTxWithNonce)
 	// 4. Send it to Dheart for signing.
 	keysignReq := &hTypes.KeysignRequest{
 		KeyType: libchain.KEY_TYPE_ECDSA,
 		KeysignMessages: []*hTypes.KeysignMessage{
 			{
-				Id:          q.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), tx.OutHash),
+				Id:          s.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), tx.OutHash),
 				OutChain:    tx.OutChain,
 				OutHash:     tx.OutHash,
+				Bytes:       bz,
 				BytesToSign: hash[:],
 			},
 		},
 	}
 
-	pubKeys := q.partyManager.GetActivePartyPubkeys()
+	pubKeys := s.partyManager.GetActivePartyPubkeys()
 
-	err := q.dheartClient.KeySign(keysignReq, pubKeys)
+	err = s.dheartClient.KeySign(keysignReq, pubKeys)
 	if err != nil {
 		log.Error("Keysign: err =", err)
 	}
+
+	return nil
 }
 
-func (q *txOutSigner) signCardanoTx(ctx sdk.Context, txOut *types.TxOut) {
+func (s *txOutSigner) signCardanoTx(ctx sdk.Context, txOut *types.TxOut) {
 	tx := &cardano.Tx{}
 	if err := tx.UnmarshalCBOR(txOut.OutBytes); err != nil {
 		log.Error("error when unmarshalling cardano tx out: ", err)
@@ -98,7 +123,7 @@ func (q *txOutSigner) signCardanoTx(ctx sdk.Context, txOut *types.TxOut) {
 		KeyType: libchain.KEY_TYPE_EDDSA,
 		KeysignMessages: []*hTypes.KeysignMessage{
 			{
-				Id:          q.getKeysignRequestId(txOut.OutChain, ctx.BlockHeight(), txOut.OutHash),
+				Id:          s.getKeysignRequestId(txOut.OutChain, ctx.BlockHeight(), txOut.OutHash),
 				OutChain:    txOut.OutChain,
 				OutHash:     txOut.OutHash,
 				BytesToSign: txHash[:],
@@ -106,8 +131,8 @@ func (q *txOutSigner) signCardanoTx(ctx sdk.Context, txOut *types.TxOut) {
 		},
 	}
 
-	pubKeys := q.partyManager.GetActivePartyPubkeys()
-	err = q.dheartClient.KeySign(signRequest, pubKeys)
+	pubKeys := s.partyManager.GetActivePartyPubkeys()
+	err = s.dheartClient.KeySign(signRequest, pubKeys)
 	if err != nil {
 		log.Error("Keysign: err =", err)
 	}

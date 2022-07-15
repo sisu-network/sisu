@@ -198,4 +198,5 @@ replace (
 	github.com/echovl/cardano-go => github.com/sisu-network/cardano-go v0.1.14-fork-04
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
+	github.com/sisu-network/dheart => ../dheart
 )
