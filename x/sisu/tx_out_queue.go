@@ -5,9 +5,10 @@ import (
 	"strconv"
 	"sync"
 
+	etypes "github.com/ethereum/go-ethereum/core/types"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/echovl/cardano-go"
-	etypes "github.com/ethereum/go-ethereum/core/types"
 	hTypes "github.com/sisu-network/dheart/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"

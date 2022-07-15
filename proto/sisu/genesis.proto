@@ -8,6 +8,7 @@ import "sisu/token.proto";
 import "sisu/chain.proto";
 import "sisu/liquidity.proto";
 import "sisu/params.proto";
+import "sisu/gateway_checkpoint.proto";
 
 message GenesisState {
   repeated Node nodes = 1;
@@ -15,4 +16,5 @@ message GenesisState {
   repeated Chain chains = 3;
   repeated Liquidity liquids = 4;
   Params params = 5;
+  repeated GatewayCheckPoint checkpoints = 6;
 }
