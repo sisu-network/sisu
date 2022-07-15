@@ -74,8 +74,6 @@ func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
 		GasPrice: ethTx.GasPrice(),
 		Data:     ethTx.Data(),
 	})
-
-	fmt.Println("nonce = ", ethTxWithNonce.Nonce())
 	bz, err := ethTxWithNonce.MarshalBinary()
 	if err != nil {
 		return err

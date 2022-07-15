@@ -123,7 +123,7 @@ type AppModule struct {
 func NewAppModule(cdc codec.Marshaler,
 	sisuHandler *SisuHandler,
 	keeper keeper.Keeper,
-	processor *ApiHandler,
+	apiHandler *ApiHandler,
 	valsManager ValidatorManager,
 	mc ManagerContainer,
 ) AppModule {
@@ -131,7 +131,7 @@ func NewAppModule(cdc codec.Marshaler,
 		AppModuleBasic: NewAppModuleBasic(cdc),
 		sisuHandler:    sisuHandler,
 		txSubmit:       mc.TxSubmit(),
-		processor:      processor,
+		processor:      apiHandler,
 		keeper:         keeper,
 		appKeys:        mc.AppKeys(),
 		globalData:     mc.GlobalData(),
@@ -312,9 +312,11 @@ func (am AppModule) signTxOut(ctx sdk.Context) {
 		}
 
 		txOut := queue[0]
-		am.txOutSiger.signTxOut(ctx, txOut)
-
 		am.keeper.SetPendingTxOut(ctx, txOut.OutChain, txOut)
 		am.keeper.SetTxOutQueue(ctx, txOut.OutChain, queue[1:])
+
+		if !am.globalData.IsCatchingUp() {
+			am.txOutSiger.signTxOut(ctx, txOut)
+		}
 	}
 }

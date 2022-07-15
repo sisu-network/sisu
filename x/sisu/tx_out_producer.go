@@ -76,41 +76,6 @@ func NewTxOutputProducer(worldState world.WorldState, appKeys common.AppKeys, ke
 	}
 }
 
-func (p *DefaultTxOutputProducer) parseCardanoTxIn(ctx sdk.Context, tx *types.TxIn) (*types.TransferOutData, error) {
-	return nil, nil
-
-	// txIn := &etypes.CardanoTxInItem{}
-	// if err := json.Unmarshal(tx.Serialized, txIn); err != nil {
-	// 	log.Error("error when marshaling cardano tx in item: ", err)
-	// 	return nil, err
-	// }
-
-	// extraInfo := txIn.Metadata
-	// tokenName := txIn.Asset
-	// if tokenName != "ADA" {
-	// 	tokenName = tokenName[5:] // Remove the WRAP_ prefix
-	// }
-	// if len(tokenName) == 0 {
-	// 	return nil, fmt.Errorf("Invalid token: %s", tokenName)
-	// }
-
-	// tokens := p.keeper.GetTokens(ctx, []string{tokenName})
-	// token := tokens[tokenName]
-	// if token == nil {
-	// 	return nil, fmt.Errorf("Cannot find token in the keeper")
-	// }
-
-	// amount := new(big.Int).SetUint64(txIn.Amount)
-
-	// return &transferOutData{
-	// 	blockHeight: tx.BlockHeight,
-	// 	destChain:   extraInfo.Chain,
-	// 	recipient:   extraInfo.Recipient,
-	// 	token:       token,
-	// 	amount:      utils.LovelaceToWei(amount),
-	// }, nil
-}
-
 func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, chain string,
 	transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
 

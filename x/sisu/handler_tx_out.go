@@ -3,22 +3,19 @@ package sisu
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type HandlerTxOut struct {
-	pmm        PostedMessageManager
-	keeper     keeper.Keeper
-	globalData common.GlobalData
+	pmm    PostedMessageManager
+	keeper keeper.Keeper
 }
 
 func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
 	return &HandlerTxOut{
-		keeper:     mc.Keeper(),
-		pmm:        mc.PostedMessageManager(),
-		globalData: mc.GlobalData(),
+		keeper: mc.Keeper(),
+		pmm:    mc.PostedMessageManager(),
 	}
 }
 
@@ -50,10 +47,31 @@ func (h *HandlerTxOut) doTxOut(ctx sdk.Context, txOutMsg *types.TxOutMsg) ([]byt
 		h.addTxOutToQueue(ctx, txOut)
 
 	case types.TxOutType_TRANSFER_OUT:
-		h.addTxOutToQueue(ctx, txOut)
+		h.handlerTransfer(ctx, txOut)
 	}
 
 	return nil, nil
+}
+
+func (h *HandlerTxOut) handlerTransfer(ctx sdk.Context, txOut *types.TxOut) {
+	// 1. Update TxOut queue
+	h.addTxOutToQueue(ctx, txOut)
+
+	// 2. Remove the transfers in txOut from the queue
+	queue := h.keeper.GetTransferQueue(ctx, txOut.OutChain)
+	ids := make(map[string]bool, 0)
+	for _, inHash := range txOut.InHashes {
+		ids[inHash] = true
+	}
+
+	newQueue := make([]*types.Transfer, 0)
+	for _, transfer := range queue {
+		if !ids[transfer.Id] {
+			newQueue = append(newQueue, transfer)
+		}
+	}
+
+	h.keeper.SetTransferQueue(ctx, txOut.OutChain, newQueue)
 }
 
 func (h *HandlerTxOut) addTxOutToQueue(ctx sdk.Context, txOut *types.TxOut) {

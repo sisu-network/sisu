@@ -4,11 +4,16 @@ import (
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/golang/groupcache/lru"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
+)
+
+const (
+	MaxPendingTxCacheSize = 1000
 )
 
 type TransferRequest struct {
@@ -26,6 +31,7 @@ type defaultTransferQueue struct {
 	txOutputProducer TxOutputProducer
 	txSubmit         common.TxSubmit
 	stopCh           chan bool
+	submittedTxs     *lru.Cache
 
 	newRequestCh chan TransferRequest
 	lock         *sync.RWMutex
@@ -44,6 +50,7 @@ func NewTransferQueue(
 		newRequestCh:     make(chan TransferRequest, 10),
 		lock:             &sync.RWMutex{},
 		stopCh:           make(chan bool),
+		submittedTxs:     lru.New(MaxPendingTxCacheSize),
 	}
 }
 
@@ -86,11 +93,19 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 		remaining := make([]*types.Transfer, 0)
 		batchSize := params.GetMaxTransferOutBatch(chain)
 		for i := 0; i < len(queue); i += batchSize {
+			if _, ok := q.submittedTxs.Get(queue[i].Id); ok {
+				continue
+			}
+
 			txOutMsgs, err := q.txOutputProducer.GetTxOuts(ctx, chain, queue[i:i+batchSize])
 			if err != nil {
 				log.Error(err)
 				remaining = append(remaining, queue[i:i+batchSize]...)
 				continue
+			}
+
+			for j := 0; j < batchSize; j++ {
+				q.submittedTxs.Add(queue[i+j].Id, true)
 			}
 
 			if len(txOutMsgs) > 0 {
@@ -100,7 +115,5 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 				}
 			}
 		}
-
-		q.keeper.SetTransferQueue(ctx, chain, remaining)
 	}
 }
