@@ -32,7 +32,7 @@ import (
 const (
 	// TODO: put these values into config file.
 	defaultGasAdjustment = 1.0
-	defaultGasLimit      = 3_000_000
+	defaultGasLimit      = 100_000_000
 	UnInitializedSeq     = 18446744073709551615 // Max of uint64. This means it's not initialized
 )
 
