@@ -74,9 +74,6 @@ func TestTransferQueue(t *testing.T) {
 		queue.processBatch(ctx)
 		require.Equal(t, 1, txSubmitCount)
 
-		// Mark this as pending transfer
-		keeper.SetPendingTransfers(ctx, "ganache2", []*types.Transfer{transfer})
-
 		transfer2 := &types.Transfer{
 			Id:        "ganache1__hash2",
 			Recipient: "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80",
@@ -87,10 +84,6 @@ func TestTransferQueue(t *testing.T) {
 
 		queue.processBatch(ctx)
 		require.Equal(t, 1, txSubmitCount) // no new submited tx
-
-		// Clear the pending queue in db
-		keeper.SetPendingTransfers(ctx, "ganache2", make([]*types.Transfer, 0))
-		queue.ClearInMemoryPendingTransfers("ganache2")
 
 		queue.processBatch(ctx)
 		require.Equal(t, 2, txSubmitCount)

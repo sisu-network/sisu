@@ -56,7 +56,6 @@ func (h *HandlerTxOutConfirm) doTxOutConfirm(ctx sdk.Context, msgWithSigner *typ
 	}
 
 	savedCheckPoint := h.keeper.GetGatewayCheckPoint(ctx, msg.OutChain)
-	fmt.Println("savedCheckPoint = ", savedCheckPoint)
 	if savedCheckPoint == nil || savedCheckPoint.BlockHeight < msg.BlockHeight {
 		// Save checkpoint
 		checkPoint := &types.GatewayCheckPoint{
@@ -72,15 +71,7 @@ func (h *HandlerTxOutConfirm) doTxOutConfirm(ctx sdk.Context, msgWithSigner *typ
 		h.keeper.AddGatewayCheckPoint(ctx, checkPoint)
 	}
 
-	// process next transaction in the queue
-	txOutQueue := h.keeper.GetTxOutQueue(ctx, txOut.OutChain)
-
-	if len(txOutQueue) > 0 {
-		h.keeper.SetPendingTxOut(ctx, txOut.OutChain, txOutQueue[0])
-		h.keeper.SetTxOutQueue(ctx, txOut.OutChain, txOutQueue[1:])
-	} else {
-		h.keeper.SetPendingTxOut(ctx, txOut.OutChain, nil)
-	}
+	h.keeper.SetPendingTxOut(ctx, txOut.OutChain, nil)
 
 	return nil, nil
 }

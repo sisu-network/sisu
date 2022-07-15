@@ -58,8 +58,6 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.valsManager = t
 		case TransferQueue:
 			mc.txInQueue = t
-		case TxOutQueue:
-			mc.txOutQueue = t
 		}
 	}
 

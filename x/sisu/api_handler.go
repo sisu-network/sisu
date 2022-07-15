@@ -487,8 +487,6 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	log.Verbose("There is a new list of txs from deyes, len =", len(txs.Arr))
 
-	fmt.Println("txs = ", *txs)
-
 	blockRequests := &types.TxsIn{
 		Chain:    txs.Chain,
 		Hash:     txs.BlockHash,

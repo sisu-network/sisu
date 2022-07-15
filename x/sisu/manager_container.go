@@ -25,7 +25,6 @@ type ManagerContainer interface {
 	Keeper() keeper.Keeper
 	ValidatorManager() ValidatorManager
 	TransferQueue() TransferQueue
-	TxOutQueue() TxOutQueue
 }
 
 type DefaultManagerContainer struct {
@@ -45,14 +44,13 @@ type DefaultManagerContainer struct {
 	keeper        keeper.Keeper
 	valsManager   ValidatorManager
 	txInQueue     TransferQueue
-	txOutQueue    TxOutQueue
 }
 
 func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 	dheartClient tssclients.DheartClient, deyesClient tssclients.DeyesClient,
 	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.TssConfig,
 	appKeys common.AppKeys, txOutProducer TxOutputProducer, worldState world.WorldState, txTracker TxTracker,
-	keeper keeper.Keeper, valsManager ValidatorManager, txInQueue TransferQueue, txOutQueue TxOutQueue) ManagerContainer {
+	keeper keeper.Keeper, valsManager ValidatorManager, txInQueue TransferQueue) ManagerContainer {
 	return &DefaultManagerContainer{
 		pmm:           pmm,
 		partyManager:  partyManager,
@@ -68,7 +66,6 @@ func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 		keeper:        keeper,
 		valsManager:   valsManager,
 		txInQueue:     txInQueue,
-		txOutQueue:    txOutQueue,
 	}
 }
 
@@ -126,8 +123,4 @@ func (mc *DefaultManagerContainer) ValidatorManager() ValidatorManager {
 
 func (mc *DefaultManagerContainer) TransferQueue() TransferQueue {
 	return mc.txInQueue
-}
-
-func (mc *DefaultManagerContainer) TxOutQueue() TxOutQueue {
-	return mc.txOutQueue
 }

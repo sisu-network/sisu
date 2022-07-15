@@ -968,6 +968,10 @@ func setPendingTxOut(store cstypes.KVStore, chain string, txOut *types.TxOut) {
 
 func getPendingTxOut(store cstypes.KVStore, chain string) *types.TxOut {
 	bz := store.Get([]byte(chain))
+	if bz == nil {
+		return nil
+	}
+
 	txOut := &types.TxOut{}
 	err := txOut.Unmarshal(bz)
 	if err != nil {

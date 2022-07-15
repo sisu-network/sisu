@@ -116,6 +116,7 @@ type AppModule struct {
 	valsManager     ValidatorManager
 	worldState      world.WorldState
 	txTracker       TxTracker
+	txOutSiger      *txOutSigner
 	mc              ManagerContainer
 }
 
@@ -137,6 +138,7 @@ func NewAppModule(cdc codec.Marshaler,
 		valsManager:    valsManager,
 		worldState:     mc.WorldState(),
 		txTracker:      mc.TxTracker(),
+		txOutSiger:     NewTxOutSigner(mc.Keeper(), mc.PartyManager(), mc.DheartClient()),
 		mc:             mc,
 	}
 }
@@ -290,8 +292,29 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 
 	am.mc.TransferQueue().ProcessTransfers(ctx)
 
-	// Process new outgoing transactions
-	am.mc.TxOutQueue().ProcessTxOuts(cloneCtx)
+	am.signTxOut(ctx)
 
 	return []abci.ValidatorUpdate{}
+}
+
+func (am AppModule) signTxOut(ctx sdk.Context) {
+	params := am.keeper.GetParams(ctx)
+	for _, chain := range params.SupportedChains {
+		pending := am.keeper.GetPendingTxOut(ctx, chain)
+		if pending != nil {
+			continue
+		}
+
+		queue := am.keeper.GetTxOutQueue(ctx, chain)
+		fmt.Println("len queue = ", len(queue))
+		if len(queue) == 0 {
+			continue
+		}
+
+		txOut := queue[0]
+		am.txOutSiger.signTxOut(ctx, txOut)
+
+		am.keeper.SetPendingTxOut(ctx, txOut.OutChain, txOut)
+		am.keeper.SetTxOutQueue(ctx, txOut.OutChain, queue[1:])
+	}
 }

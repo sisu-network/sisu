@@ -12,14 +12,12 @@ type HandlerTxOut struct {
 	pmm        PostedMessageManager
 	keeper     keeper.Keeper
 	globalData common.GlobalData
-	txOutQueue TxOutQueue
 }
 
 func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
 	return &HandlerTxOut{
 		keeper:     mc.Keeper(),
 		pmm:        mc.PostedMessageManager(),
-		txOutQueue: mc.TxOutQueue(),
 		globalData: mc.GlobalData(),
 	}
 }
@@ -49,18 +47,16 @@ func (h *HandlerTxOut) doTxOut(ctx sdk.Context, txOutMsg *types.TxOutMsg) ([]byt
 	switch txOut.TxType {
 	case types.TxOutType_CONTRACT_DEPLOYMENT:
 		h.keeper.UpdateContractsStatus(ctx, txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
-		if !h.globalData.IsCatchingUp() {
-			h.txOutQueue.AddTxOut(txOut)
-		}
+		h.addTxOutToQueue(ctx, txOut)
 
 	case types.TxOutType_TRANSFER_OUT:
-		h.handlerTransferOut(ctx, txOut)
+		h.addTxOutToQueue(ctx, txOut)
 	}
 
 	return nil, nil
 }
 
-func (h *HandlerTxOut) handlerTransferOut(ctx sdk.Context, txOut *types.TxOut) {
+func (h *HandlerTxOut) addTxOutToQueue(ctx sdk.Context, txOut *types.TxOut) {
 	// Move the the transfers associated with this tx_out to pending.
 	queue := h.keeper.GetTxOutQueue(ctx, txOut.OutChain)
 	queue = append(queue, txOut)

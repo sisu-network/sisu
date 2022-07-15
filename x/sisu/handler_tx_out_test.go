@@ -50,10 +50,10 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 		})
 
 		addTxCount := 0
-		txOutQueue := mc.TxOutQueue()
-		txOutQueue.(*MockTxOutQueue).AddTxOutFunc = func(txOut *types.TxOut) {
-			addTxCount++
-		}
+		// txOutQueue := mc.TxOutQueue()
+		// txOutQueue.(*MockTxOutQueue).AddTxOutFunc = func(txOut *types.TxOut) {
+		// 	addTxCount++
+		// }
 
 		handler := NewHandlerTxOut(mc)
 		_, err := handler.DeliverMsg(ctx, txOutMsg1)
@@ -81,10 +81,10 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 	t.Run("node_is_catching_up", func(t *testing.T) {
 		ctx, mc := mockForHandlerTxOut()
 		addTxCount := 0
-		txOutQueue := mc.TxOutQueue()
-		txOutQueue.(*MockTxOutQueue).AddTxOutFunc = func(txOut *types.TxOut) {
-			addTxCount = 1
-		}
+		// txOutQueue := mc.TxOutQueue()
+		// txOutQueue.(*MockTxOutQueue).AddTxOutFunc = func(txOut *types.TxOut) {
+		// 	addTxCount = 1
+		// }
 
 		globalData := mc.GlobalData().(*common.MockGlobalData)
 		globalData.IsCatchingUpFunc = func() bool {
