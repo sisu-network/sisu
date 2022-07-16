@@ -11,6 +11,7 @@ import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	libchain "github.com/sisu-network/lib/chain"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -62,25 +63,25 @@ func keeperTestGenesis(ctx sdk.Context) keeper.Keeper {
 	keeper.SetTokens(ctx, map[string]*types.Token{
 		"NATIVE_GANACHE1": {
 			Id:       "NATIVE_GANACHE1",
-			Price:    2000000000,
+			Price:    new(big.Int).Mul(big.NewInt(2), utils.EthToWei).String(),
 			Decimals: 18,
 		},
 		"NATIVE_GANACHE2": {
 			Id:       "NATIVE_GANACHE1",
-			Price:    2000000000,
+			Price:    new(big.Int).Mul(big.NewInt(2), utils.EthToWei).String(),
 			Decimals: 18,
 		},
 		"SISU": {
 			Id:        "SISU",
-			Price:     4000000000,
+			Price:     new(big.Int).Mul(big.NewInt(4), utils.EthToWei).String(),
 			Decimals:  18,
 			Chains:    []string{"ganache1", "ganache2"},
 			Addresses: []string{testErc20TokenAddress, testErc20TokenAddress},
 		},
 		"ADA": {
 			Id:        "ADA",
-			Price:     4000000000,
-			Decimals:  6,
+			Price:     new(big.Int).Mul(big.NewInt(400_000_000), utils.GweiToWei).String(),
+			Decimals:  18,
 			Chains:    []string{"ganache1", "ganache2"},
 			Addresses: []string{"0xf0D676183dD5ae6b370adDdbE770235F23546f9d", "0xf0D676183dD5ae6b370adDdbE770235F23546f9d"},
 		},

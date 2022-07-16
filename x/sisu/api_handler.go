@@ -145,7 +145,7 @@ func (a *ApiHandler) calculateTokenPrices(ctx sdk.Context) {
 	// TODO: Fix the signer set.
 	records := a.keeper.GetAllTokenPricesRecord(ctx)
 
-	tokenPrices := make(map[string][]int64)
+	tokenPrices := make(map[string][]*big.Int)
 	for _, data := range records {
 		for _, record := range data.Records {
 			// Only calculate token prices that has been updated recently.
@@ -155,24 +155,27 @@ func (a *ApiHandler) calculateTokenPrices(ctx sdk.Context) {
 
 			m := tokenPrices[record.Token]
 			if m == nil {
-				m = make([]int64, 0)
+				m = make([]*big.Int, 0)
 			}
 
-			m = append(m, record.Price)
+			value, _ := new(big.Int).SetString(record.Price, 10)
+			m = append(m, value)
 
 			tokenPrices[record.Token] = m
 		}
 	}
 
 	// Now sort all the array and get the median
-	medians := make(map[string]int64)
+	medians := make(map[string]*big.Int)
 	for token, list := range tokenPrices {
 		if len(list) == 0 {
 			log.Error("cannot find price list for token ", token)
 			continue
 		}
 
-		sort.Slice(list, func(i, j int) bool { return list[i] < list[j] })
+		sort.Slice(list, func(i, j int) bool {
+			return list[i].Cmp(list[j]) < 0
+		})
 		median := list[len(list)/2]
 		medians[token] = median
 	}
@@ -188,7 +191,7 @@ func (a *ApiHandler) calculateTokenPrices(ctx sdk.Context) {
 	savedTokens := a.keeper.GetTokens(ctx, arr)
 
 	for tokenId, price := range medians {
-		savedTokens[tokenId].Price = price
+		savedTokens[tokenId].Price = price.String()
 	}
 
 	a.keeper.SetTokens(ctx, savedTokens)
@@ -683,7 +686,7 @@ func (a *ApiHandler) OnUpdateTokenPrice(tokenPrices []*etypes.TokenPrice) {
 	for _, token := range tokenPrices {
 		prices = append(prices, &types.TokenPrice{
 			Id:    token.Id,
-			Price: int64(token.Price * utils.DecinmalUnit),
+			Price: token.Price.String(),
 		})
 	}
 

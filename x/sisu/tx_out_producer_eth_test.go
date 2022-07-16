@@ -70,7 +70,7 @@ func TestTxOutProducerErc20_getGasCostInToken(t *testing.T) {
 	chain := "ganache1"
 	token := &types.Token{
 		Id:    "SISU",
-		Price: int64(4 * utils.DecinmalUnit),
+		Price: new(big.Int).Mul(big.NewInt(4), utils.EthToWei).String(),
 	}
 	worldState.SetTokens(map[string]*types.Token{
 		"SISU": token,
@@ -80,7 +80,8 @@ func TestTxOutProducerErc20_getGasCostInToken(t *testing.T) {
 	gasPrice := big.NewInt(10 * 1_000_000_000) // 10 gwei
 	nativeTokenPrice, err := worldState.GetNativeTokenPriceForChain(chain)
 	require.NoError(t, err)
-	amount, err := helper.GetGasCostInToken(gas, gasPrice, big.NewInt(token.Price), big.NewInt(nativeTokenPrice))
+	price, _ := new(big.Int).SetString(token.Price, 10)
+	amount, err := helper.GetGasCostInToken(gas, gasPrice, price, nativeTokenPrice)
 
 	require.Equal(t, nil, err)
 
@@ -99,7 +100,7 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 		worldState.SetTokens(map[string]*types.Token{
 			"SISU": {
 				Id:        "SISU",
-				Price:     int64(0.01 * utils.DecinmalUnit),
+				Price:     new(big.Int).Mul(big.NewInt(10_000_000), utils.GweiToWei).String(), // 0.01
 				Chains:    []string{"ganache1"},
 				Addresses: []string{"addr1"},
 			},
@@ -137,7 +138,7 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 		worldState.SetTokens(map[string]*types.Token{
 			"SISU": {
 				Id:        "SISU",
-				Price:     int64(100 * utils.DecinmalUnit),
+				Price:     utils.EtherToWei(big.NewInt(100)).String(),
 				Chains:    []string{"ganache1"},
 				Addresses: []string{"addr1"},
 			},
@@ -172,7 +173,7 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 		worldState.SetTokens(map[string]*types.Token{
 			"SISU": {
 				Id:        "SISU",
-				Price:     int64(8 * utils.DecinmalUnit),
+				Price:     utils.EtherToWei(big.NewInt(8)).String(),
 				Chains:    []string{"ganache1"},
 				Addresses: []string{"addr1"},
 			},
@@ -204,7 +205,7 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 		worldState.SetTokens(map[string]*types.Token{
 			"SISU": {
 				Id:        "SISU",
-				Price:     0,
+				Price:     utils.ZeroBigInt.String(),
 				Chains:    []string{"ganache1"},
 				Addresses: []string{"addr1"},
 			},
@@ -233,7 +234,7 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 		worldState.SetTokens(map[string]*types.Token{
 			"SISU": {
 				Id:        "SISU",
-				Price:     -1000,
+				Price:     utils.EtherToWei(big.NewInt(-100)).String(),
 				Chains:    []string{"ganache1"},
 				Addresses: []string{"addr1"},
 			},
