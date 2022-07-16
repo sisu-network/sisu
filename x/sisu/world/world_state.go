@@ -42,9 +42,9 @@ type WorldState interface {
 	GetGasPrice(chain string) (*big.Int, error)
 
 	SetTokens(tokenPrices map[string]*types.Token)
-	GetTokenPrice(token string) (int64, error)
-	GetNativeTokenPriceForChain(chain string) (int64, error)
-	GetGasCostInToken(tokenId, chainId string) (int64, error)
+	GetTokenPrice(token string) (*big.Int, error)
+	GetNativeTokenPriceForChain(chain string) (*big.Int, error)
+	GetGasCostInToken(tokenId, chainId string) (*big.Int, error)
 
 	GetTokenFromAddress(chain string, tokenAddr string) *types.Token
 }
@@ -130,23 +130,27 @@ func (ws *DefaultWorldState) SetTokens(tokens map[string]*types.Token) {
 	}
 }
 
-func (ws *DefaultWorldState) GetNativeTokenPriceForChain(chain string) (int64, error) {
+func (ws *DefaultWorldState) GetNativeTokenPriceForChain(chain string) (*big.Int, error) {
 	tokenId := chainToTokens[chain]
 	if len(tokenId) == 0 {
-		return 0, NewErrTokenNotFound(tokenId)
+		return big.NewInt(0), NewErrTokenNotFound(tokenId)
 	}
 
 	return ws.GetTokenPrice(tokenId)
 }
 
-func (ws *DefaultWorldState) GetTokenPrice(tokenId string) (int64, error) {
+func (ws *DefaultWorldState) GetTokenPrice(tokenId string) (*big.Int, error) {
 	val, ok := ws.tokens.Load(tokenId)
 	if ok {
 		token := val.(*types.Token)
-		return token.Price, nil
+		price, ok := new(big.Int).SetString(token.Price, 10)
+		if !ok {
+			return nil, fmt.Errorf("invalid token price %s", token.Price)
+		}
+		return price, nil
 	}
 
-	return 0, NewErrTokenNotFound(tokenId)
+	return big.NewInt(0), NewErrTokenNotFound(tokenId)
 }
 
 func (ws *DefaultWorldState) GetTokenFromAddress(chain string, tokenAddr string) *types.Token {
@@ -159,41 +163,41 @@ func (ws *DefaultWorldState) GetTokenFromAddress(chain string, tokenAddr string)
 	return val.(*types.Token)
 }
 
-func (ws *DefaultWorldState) GetGasCostInToken(tokenId, chainId string) (int64, error) {
+func (ws *DefaultWorldState) GetGasCostInToken(tokenId, chainId string) (*big.Int, error) {
 	gasPrice, err := ws.GetGasPrice(chainId)
 	if err != nil {
 		log.Error(err)
-		return -1, err
+		return nil, err
 	}
 
 	gasUnit := big.NewInt(80_000) // Estimated cost for swapping is 60k. We add some redundancy here.
 	tokenPrice, err := ws.GetTokenPrice(tokenId)
 	if err != nil {
 		log.Error(err)
-		return -1, err
+		return nil, err
 	}
 
-	if tokenPrice == 0 {
-		return 0, fmt.Errorf("Token %s has price 0", tokenId)
+	if big.NewInt(0).Cmp(tokenPrice) == 0 {
+		return nil, fmt.Errorf("Token %s has price 0", tokenId)
 	}
 
-	if tokenPrice < 0 {
-		return 0, fmt.Errorf("Token price is negative, token id = %s, token price = %d", tokenId, tokenPrice)
+	if tokenPrice.Cmp(big.NewInt(0)) < 0 {
+		return nil, fmt.Errorf("Token price is negative, token id = %s, token price = %d", tokenId, tokenPrice)
 	}
 
 	nativeTokenPrice, err := ws.GetNativeTokenPriceForChain(chainId)
 	if err != nil {
 		log.Error(err)
-		return -1, err
+		return nil, err
 	}
 
-	gasCost, err := helper.GetGasCostInToken(gasUnit, gasPrice, big.NewInt(tokenPrice), big.NewInt(nativeTokenPrice))
+	gasCost, err := helper.GetGasCostInToken(gasUnit, gasPrice, tokenPrice, nativeTokenPrice)
 	if err != nil {
 		log.Error(err)
-		return -1, err
+		return nil, err
 	}
 
-	return gasCost.Int64(), nil
+	return gasCost, nil
 }
 
 func (ws *DefaultWorldState) getChainAddrKey(chain, addr string) string {

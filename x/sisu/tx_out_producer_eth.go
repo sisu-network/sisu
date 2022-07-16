@@ -11,6 +11,7 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/sisu-network/sisu/x/sisu/world"
@@ -155,10 +156,14 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	finalRecipients := make([]ethcommon.Address, 0)
 	finalAmounts := make([]*big.Int, 0)
 	amountIns := make([]*big.Int, 0)
-	gasPrices := make([]int64, 0)
+	gasPrices := make([]*big.Int, 0)
 
 	for i := range amounts {
-		if tokens[i].Price == 0 {
+		price, ok := new(big.Int).SetString(tokens[i].Price, 10)
+		if !ok {
+			return nil, fmt.Errorf("invalid token price %s", tokens[i].Price)
+		}
+		if price.Cmp(utils.ZeroBigInt) == 0 {
 			return nil, fmt.Errorf("token %s has price 0", tokens[i].Id)
 		}
 
@@ -168,16 +173,16 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 			return nil, err
 		}
 
-		if gasPriceInToken < 0 {
+		if gasPriceInToken.Cmp(utils.ZeroBigInt) < 0 {
 			log.Errorf("Gas price in token is negative: token id = %s", tokens[i].Id)
-			gasPriceInToken = 0
+			gasPriceInToken = utils.ZeroBigInt
 		}
 
 		// Calculate the output amount
 		amountOut := new(big.Int).Set(amounts[i])
-		amountOut.Sub(amountOut, big.NewInt(gasPriceInToken))
+		amountOut.Sub(amountOut, gasPriceInToken)
 
-		if amountOut.Cmp(big.NewInt(0)) < 0 {
+		if amountOut.Cmp(utils.ZeroBigInt) < 0 {
 			log.Error("Insufficient fund for transfer ", i)
 			continue
 		}

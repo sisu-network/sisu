@@ -23,6 +23,8 @@ const (
 )
 
 var (
-	EthToWei = big.NewInt(1_000_000_000_000_000_000) // 10 ^ 18
-	Gwei     = big.NewInt(1_000_000_000)
+	EthToWei   = big.NewInt(1_000_000_000_000_000_000) // 10 ^ 18
+	GweiToWei  = big.NewInt(1_000_000_000)
+	Gwei       = big.NewInt(1_000_000_000)
+	ZeroBigInt = big.NewInt(0)
 )

@@ -2,15 +2,16 @@ package rest
 
 import (
 	"encoding/json"
+	"math/big"
 	"net/http"
 
 	"github.com/sisu-network/lib/log"
 )
 
 type gasCostResponse struct {
-	Chain   string `json:"chain,omitempty"`
-	TokenId string `json:"token_id,omitempty"`
-	GasCost int64  `json:"gas_cost,omitempty"`
+	Chain   string   `json:"chain,omitempty"`
+	TokenId string   `json:"token_id,omitempty"`
+	GasCost *big.Int `json:"gas_cost,omitempty"`
 }
 
 func (a *ExternalHandler) newGasCostHandler() http.HandlerFunc {

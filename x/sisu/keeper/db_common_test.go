@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"math/big"
 	"sort"
 	"testing"
 
@@ -109,7 +110,7 @@ func TestSaveTokenPrices(t *testing.T) {
 		TokenPrices: []*types.TokenPrice{
 			{
 				Id:    token,
-				Price: 5_000_000_000,
+				Price: big.NewInt(5_000_000_000).String(),
 			},
 		},
 	}
@@ -118,7 +119,7 @@ func TestSaveTokenPrices(t *testing.T) {
 		TokenPrices: []*types.TokenPrice{
 			{
 				Id:    token,
-				Price: 6_000_000_000,
+				Price: big.NewInt(6_000_000_000).String(),
 			},
 		},
 	}
@@ -129,7 +130,7 @@ func TestSaveTokenPrices(t *testing.T) {
 		TokenPrices: []*types.TokenPrice{
 			{
 				Id:    token,
-				Price: 10_000_000_000,
+				Price: big.NewInt(10_000_000_000).String(),
 			},
 		},
 	}
@@ -138,7 +139,7 @@ func TestSaveTokenPrices(t *testing.T) {
 		TokenPrices: []*types.TokenPrice{
 			{
 				Id:    token,
-				Price: 11_000_000_000,
+				Price: big.NewInt(11_000_000_000).String(),
 			},
 		}}
 
@@ -161,9 +162,9 @@ func TestSaveTokenPrices(t *testing.T) {
 	require.Equal(t, []string{signer1, signer2}, allSigners)
 
 	record := allPrices[signer1]
-	require.Equal(t, int64(6_000_000_000), record.Records[0].Price)
+	require.Equal(t, "6000000000", record.Records[0].Price)
 	record = allPrices[signer2]
-	require.Equal(t, int64(11_000_000_000), record.Records[0].Price)
+	require.Equal(t, "11000000000", record.Records[0].Price)
 }
 
 ///// Node
