@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/golang/groupcache/lru"
+	lru "github.com/hashicorp/golang-lru"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
@@ -43,6 +43,11 @@ func NewTransferQueue(
 	txSubmit common.TxSubmit,
 	tssConfig config.TssConfig,
 ) TransferQueue {
+	cache, err := lru.New(MaxPendingTxCacheSize)
+	if err != nil {
+		panic(err)
+	}
+
 	return &defaultTransferQueue{
 		keeper:           keeper,
 		txOutputProducer: txOutputProducer,
@@ -50,7 +55,7 @@ func NewTransferQueue(
 		newRequestCh:     make(chan TransferRequest, 10),
 		lock:             &sync.RWMutex{},
 		stopCh:           make(chan bool),
-		submittedTxs:     lru.New(MaxPendingTxCacheSize),
+		submittedTxs:     cache,
 	}
 }
 
