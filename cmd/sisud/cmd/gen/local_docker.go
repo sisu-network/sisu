@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"os"
 	"path/filepath"
+	"sort"
 	"text/template"
 	"time"
 
@@ -79,6 +80,7 @@ Example:
 			nodeDirPrefix, _ := cmd.Flags().GetString(flagNodeDirPrefix)
 			nodeDaemonHome, _ := cmd.Flags().GetString(flagNodeDaemonHome)
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
+			genesisFolder, _ := cmd.Flags().GetString(flagGenesisFolder)
 			algo, _ := cmd.Flags().GetString(flags.Algo)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 
@@ -94,8 +96,22 @@ Example:
 			}
 
 			// Get Chain id and keyring backend from .env file.
-			chainID := "eth-sisu-local"
+			chainID := "sisu"
 			keyringBackend := keyring.BackendTest
+
+			chains := getChains(filepath.Join(genesisFolder, "chains.json"))
+			supportedChainsArr := make([]string, 0)
+			for _, chain := range chains {
+				supportedChainsArr = append(supportedChainsArr, chain.Id)
+			}
+			sort.Strings(supportedChainsArr)
+			fmt.Println("cardanoSecret = ", len(cardanoSecret))
+			if len(cardanoSecret) > 0 {
+				supportedChainsArr = append(supportedChainsArr, "cardano-testnet")
+				chains = append(chains, &types.Chain{
+					Id: "cardano-testnet",
+				})
+			}
 
 			// startingIPAddress := "192.168.10.6"
 			// ips := getLocalIps(startingIPAddress, numValidators)
@@ -144,7 +160,10 @@ Example:
 				tokens:      getTokens("./misc/dev/tokens.json"),
 				chains:      getChains("./misc/dev/chains.json"),
 				liquidities: getLiquidity("./misc/dev/liquid.json"),
-				params:      &types.Params{MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3))},
+				params: &types.Params{
+					MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3)),
+					SupportedChains:   supportedChainsArr,
+				},
 			}
 
 			valPubKeys, err := InitNetwork(settings)
@@ -170,6 +189,7 @@ Example:
 	cmd.Flags().StringP(flagOutputDir, "o", "./output", "Directory to store initialization data for the localnet")
 	cmd.Flags().String(flagNodeDirPrefix, "node", "Prefix the directory name for each node with (node results in node0, node1, ...)")
 	cmd.Flags().String(flagNodeDaemonHome, "main", "Home directory of the node's daemon configuration")
+	cmd.Flags().String(flagGenesisFolder, "./misc/dev", "Relative path to the folder that contains genesis configuration.")
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom),
 		"Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.Algo, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
@@ -341,27 +361,32 @@ services:
 }
 
 func (g *localDockerGenerator) generateEyesToml(index int, dir string, cardanoSecret string) {
-	deyesConfig := DeyesConfiguration{
-		Chains: []econfig.Chain{
-			{
-				Chain:      "ganache1",
-				BlockTime:  3000,
-				AdjustTime: 100,
-				Rpcs:       []string{"http://ganache1:7545"},
-			},
-			{
-				Chain:      "ganache2",
-				BlockTime:  3000,
-				AdjustTime: 100,
-				Rpcs:       []string{"http://ganache2:7545"},
-			},
-			{
-				Chain:      "cardano-testnet",
-				BlockTime:  10000,
-				AdjustTime: 1000,
-				RpcSecret:  cardanoSecret,
-			},
+	chains := []econfig.Chain{
+		{
+			Chain:      "ganache1",
+			BlockTime:  3000,
+			AdjustTime: 100,
+			Rpcs:       []string{"http://ganache1:7545"},
 		},
+		{
+			Chain:      "ganache2",
+			BlockTime:  3000,
+			AdjustTime: 100,
+			Rpcs:       []string{"http://ganache2:7545"},
+		},
+	}
+
+	if len(cardanoSecret) > 0 {
+		chains = append(chains, econfig.Chain{
+			Chain:      "cardano-testnet",
+			BlockTime:  10000,
+			AdjustTime: 1000,
+			RpcSecret:  cardanoSecret,
+		})
+	}
+
+	deyesConfig := DeyesConfiguration{
+		Chains: chains,
 
 		Sql: SqlConfig{
 			Host:     "mysql",
