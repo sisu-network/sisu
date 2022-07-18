@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -16,7 +15,6 @@ import (
 	p2ptypes "github.com/sisu-network/dheart/p2p/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
 
 	econfig "github.com/sisu-network/deyes/config"
@@ -41,7 +39,6 @@ type LogDNAConfig struct {
 }
 
 type TestnetConfig struct {
-	GenesisFolder   string                  `json:"genesis_folder"`
 	Nodes           []TestnetNode           `json:"nodes"`
 	DeyesChainsPath string                  `json:"deyes_chains_path"`
 	LogDNAConfig    log.LogDNAConfig        `json:"log_dna_config"`
@@ -129,8 +126,6 @@ Example:
 			}
 			log.Info("ips = ", sisuIps)
 
-			chains := getChains(filepath.Join(testnetConfig.GenesisFolder, "chains.json"))
-
 			// Create configuration
 			nodeConfigs := make([]config.Config, numValidators)
 			for i := range sisuIps {
@@ -140,7 +135,7 @@ Example:
 					panic(err)
 				}
 
-				nodeConfig := generator.getNodeSettings(i, chainId, keyringBackend, keyringPassphrase, nodes[i], chains, dnaConfig)
+				nodeConfig := generator.getNodeSettings(i, chainId, keyringBackend, keyringPassphrase, nodes[i], dnaConfig)
 				nodeConfigs[i] = nodeConfig
 			}
 
@@ -195,7 +190,7 @@ Example:
 }
 
 func (g *TestnetGenerator) getNodeSettings(nodeIndex int, chainID, keyringBackend, keyringPassphrase string,
-	testnetConfig TestnetNode, chainConfigs []*types.Chain, dnaConfig log.LogDNAConfig) config.Config {
+	testnetConfig TestnetNode, dnaConfig log.LogDNAConfig) config.Config {
 	dnaConfig.HostName = testnetConfig.SisuIp
 	dnaConfig.AppName = fmt.Sprintf("sisu%d", nodeIndex)
 
@@ -215,17 +210,6 @@ func (g *TestnetGenerator) getNodeSettings(nodeIndex int, chainID, keyringBacken
 		},
 		LogDNA: dnaConfig,
 	}
-}
-
-func (g *TestnetGenerator) readDeyesChainConfigs(path string) []econfig.Chain {
-	deyesChains := make([]econfig.Chain, 0)
-	file, _ := ioutil.ReadFile(path)
-	err := json.Unmarshal([]byte(file), &deyesChains)
-	if err != nil {
-		panic(err)
-	}
-
-	return deyesChains
 }
 
 func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartIps []string,
