@@ -276,7 +276,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	params := am.keeper.GetParams(ctx)
 
 	// Update gas price
-	if ctx.BlockHeight()%UpdateGasPriceFrequency == 1 {
+	if ctx.BlockHeight()%UpdateGasPriceFrequency == 0 {
 		// Get the gas price from deyes
 		go func(params *types.Params) {
 			gasPrices, err := am.processor.deyesClient.GetGasPrices(params.SupportedChains)

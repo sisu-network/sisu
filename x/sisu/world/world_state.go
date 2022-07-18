@@ -192,6 +192,9 @@ func (ws *DefaultWorldState) GetGasCostInToken(tokenId, chainId string) (*big.In
 	}
 
 	gasCost, err := helper.GetGasCostInToken(gasUnit, gasPrice, tokenPrice, nativeTokenPrice)
+	log.Verbose("gasUnit, gasPrice, tokenPrice, nativeTokenPrice, gasCost = ", gasUnit, gasPrice,
+		tokenPrice, nativeTokenPrice, gasCost)
+
 	if err != nil {
 		log.Error(err)
 		return nil, err
