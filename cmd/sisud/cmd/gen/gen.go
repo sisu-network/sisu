@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	econfig "github.com/sisu-network/deyes/config"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -51,6 +53,7 @@ type Setting struct {
 	algoStr           string
 	numValidators     int
 	cardanoSecret     string
+	cardanoDbConfig   *econfig.SyncDbConfig
 
 	nodeConfigs []config.Config
 	tokens      []*types.Token // tokens in the genesis data

@@ -83,10 +83,12 @@ Example:
 			algo, _ := cmd.Flags().GetString(flags.Algo)
 			genesisFolder, _ := cmd.Flags().GetString(flagGenesisFolder)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
+			cardanoDbConfig, _ := cmd.Flags().GetString(flags.CardanoDbConfig)
 
 			// Get Chain id and keyring backend from .env file.
 			chainID := "eth-sisu-local"
 			keyringBackend := keyring.BackendTest
+			deyesChains := generator.readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
 
 			chains := getChains(filepath.Join(genesisFolder, "chains.json"))
 			supportedChainsArr := make([]string, 0)
@@ -95,10 +97,34 @@ Example:
 			}
 			sort.Strings(supportedChainsArr)
 
-			if len(cardanoSecret) > 0 {
+			// Add Cardano config
+			if len(cardanoSecret) > 0 || len(cardanoDbConfig) > 0 {
 				supportedChainsArr = append(supportedChainsArr, "cardano-testnet")
 				chains = append(chains, &types.Chain{
 					Id: "cardano-testnet",
+				})
+
+				var syncDbConfig econfig.SyncDbConfig
+				var clientType econfig.ClientType
+
+				if len(cardanoDbConfig) > 0 {
+					err := json.Unmarshal([]byte(cardanoDbConfig), &syncDbConfig)
+					if err != nil {
+						panic(err)
+					}
+					clientType = econfig.ClientTypeSelfHost
+				} else {
+					clientType = econfig.ClientTypeBlockFrost
+				}
+
+				// Add cardano configuration
+				deyesChains = append(deyesChains, econfig.Chain{
+					Chain:      "cardano-testnet",
+					BlockTime:  10000,
+					AdjustTime: 1000,
+					ClientType: clientType,
+					RpcSecret:  cardanoSecret,
+					SyncDB:     syncDbConfig,
 				})
 			}
 
@@ -115,18 +141,6 @@ Example:
 					DheartPort: 5678,
 					DeyesUrl:   "http://0.0.0.0:31001",
 				},
-			}
-
-			deyesChains := generator.readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
-
-			if cardanoSecret != "" {
-				// Add cardano configuration
-				deyesChains = append(deyesChains, econfig.Chain{
-					Chain:      "cardano-testnet",
-					BlockTime:  10000,
-					AdjustTime: 1000,
-					RpcSecret:  cardanoSecret,
-				})
 			}
 
 			generator.generateEyesToml("../deyes", deyesChains)
@@ -173,6 +187,7 @@ Example:
 	cmd.Flags().String(flags.Algo, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
 	cmd.Flags().String(flags.KeyringBackend, keyring.BackendTest, "Keyring backend. file|os|kwallet|pass|test|memory")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
+	cmd.Flags().String(flags.CardanoDbConfig, "", "Configuration for cardano sync db.")
 	cmd.Flags().String(flagGenesisFolder, "./misc/dev", "Relative path to the folder that contains genesis configuration.")
 
 	return cmd
@@ -252,10 +267,6 @@ func (g *localnetGenerator) getAuthTransactor(client *ethclient.Client, address 
 	auth.GasLimit = uint64(10_000_000)
 
 	return auth, nil
-}
-
-func (g *localnetGenerator) addCardanoDeyesConfigs() {
-
 }
 
 func (g *localnetGenerator) readDeyesChainConfigs(path string) []econfig.Chain {

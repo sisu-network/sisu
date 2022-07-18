@@ -71,7 +71,15 @@ log_local = {{ .LogDNA.LogLocal }}
   adjust_time = {{ $chain.AdjustTime }}
   starting_block = 0
   rpcs = [{{ range $j, $rpc := $chain.Rpcs }} "{{ $rpc }}" {{end}}]
-  rpc_secret = "{{ $chain.RpcSecret }}"{{ end }}
+  rpc_secret = "{{ $chain.RpcSecret }}"
+	client_type = "{{ $chain.ClientType }}"{{ if $chain.SyncDB.Host }}
+	[chains.{{ $chain.Chain }}.sync_db]
+		host = "{{ $chain.SyncDB.Host }}"
+		port = {{ $chain.SyncDB.Port }}
+		user = "{{ $chain.SyncDB.User }}"
+		password = "{{ $chain.SyncDB.Password }}"
+		db_name = "{{ $chain.SyncDB.DbName }}"
+		submit_url = "{{ $chain.SyncDB.SubmitURL }}"{{end}}{{ end }}
 `
 
 	tmpl := template.New("eyesToml")
