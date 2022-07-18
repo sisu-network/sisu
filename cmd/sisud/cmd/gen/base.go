@@ -89,7 +89,7 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager, genBalIterat
 	return setting
 }
 
-func addCardanoConfig(cmd *cobra.Command, genesisFolder string) []econfig.Chain {
+func getDeyesChains(cmd *cobra.Command, genesisFolder string) []econfig.Chain {
 	cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 	cardanoDbConfig, _ := cmd.Flags().GetString(flags.CardanoDbConfig)
 	deyesChains := readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))

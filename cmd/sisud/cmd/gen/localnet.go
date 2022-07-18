@@ -69,7 +69,7 @@ Example:
 			chainID := "eth-sisu-local"
 			keyringBackend := keyring.BackendTest
 
-			deyesChains := addCardanoConfig(cmd, genesisFolder)
+			deyesChains := getDeyesChains(cmd, genesisFolder)
 
 			nodeConfig := config.Config{
 				Mode: "dev",

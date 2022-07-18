@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"net"
 	"os"
 	"path/filepath"
@@ -22,7 +21,6 @@ import (
 
 	econfig "github.com/sisu-network/deyes/config"
 
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -77,11 +75,6 @@ Example:
 	  ./sisu testnet --v 2 --output-dir ./output --config-string '{"deyes_chains":[{"id":"ganache1","rpc":"http://ganache-0.ganache.ganache:7545","gas_price":5000000000,"block_time":3000},{"id":"ganache2","rpc":"http://ganache-1.ganache.ganache:7545","gas_price":10000000000,"block_time":3000}],"tokens":[{"id":"NATIVE_GANACHE1","price":2000000000},{"id":"NATIVE_GANACHE2","price":3000000000},{"id":"SISU","price":4000000000,"decimals":18,"chains":["ganache1","ganache2"],"addresses":["0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C","0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"]}],"nodes":[{"sisu_ip":"sisud.sisu-0","dheart_ip":"dheart.sisu-0","deyes_ip":"deyes.sisu-0","sql":{"host":"mysql.mysql","port":3306,"username":"root","password":"password"}},{"sisu_ip":"sisud.sisu--1","dheart_ip":"dheart.sisu--1","deyes_ip":"deyes.sisu--1","sql":{"host":"mysql.mysql","port":3306,"username":"root","password":"password"}}]}'
 	`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
 			generator := &TestnetGenerator{}
 
 			serverCtx := server.GetServerContextFromCmd(cmd)
@@ -90,24 +83,20 @@ Example:
 			tmConfig.Consensus.TimeoutCommit = 5 * time.Second
 
 			outputDir, _ := cmd.Flags().GetString(flagOutputDir)
-			minGasPrices, _ := cmd.Flags().GetString(server.FlagMinGasPrices)
 			nodeDirPrefix, _ := cmd.Flags().GetString(flagNodeDirPrefix)
-			nodeDaemonHome, _ := cmd.Flags().GetString(flagNodeDaemonHome)
 			chainId, _ := cmd.Flags().GetString(flagChainId)
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
-			algo, _ := cmd.Flags().GetString(flags.Algo)
 			configString, _ := cmd.Flags().GetString(flagConfigString)
 			keyringBackend, _ := cmd.Flags().GetString(flags.KeyringBackend)
 			keyringPassphrase, _ := cmd.Flags().GetString(flagKeyringPassphrase)
-			genesisFolder, _ := cmd.Flags().GetString(flagGenesisFolder)
+			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 
 			if keyringPassphrase == keyring.BackendFile && len(keyringPassphrase) == 0 {
 				panic(fmt.Sprintf("Please input the passphrase if you're using keyring backend file by flag %s", keyringPassphrase))
 			}
 
 			testnetConfig := TestnetConfig{}
-			err = json.Unmarshal([]byte(configString), &testnetConfig)
-
+			err := json.Unmarshal([]byte(configString), &testnetConfig)
 			if err != nil {
 				panic(err)
 			}
@@ -155,36 +144,16 @@ Example:
 				nodeConfigs[i] = nodeConfig
 			}
 
-			deyesChains := addCardanoConfig(cmd, genesisFolder)
-			supportedChainsArr := getSupportedChains(cmd, genesisFolder)
-
-			settings := &Setting{
-				clientCtx:         clientCtx,
-				cmd:               cmd,
-				tmConfig:          tmConfig,
-				mbm:               mbm,
-				genBalIterator:    genBalIterator,
-				outputDir:         outputDir,
-				chainID:           chainId,
-				minGasPrices:      minGasPrices,
-				nodeDirPrefix:     nodeDirPrefix,
-				nodeDaemonHome:    nodeDaemonHome,
-				keyringBackend:    keyringBackend,
-				keyringPassphrase: keyringPassphrase,
-				algoStr:           algo,
-				numValidators:     numValidators,
-
-				ips:         sisuIps,
-				nodeConfigs: nodeConfigs,
-				tokens:      getTokens(filepath.Join(testnetConfig.GenesisFolder, "tokens.json")),
-				chains:      chains,
-				liquidities: getLiquidity(filepath.Join(testnetConfig.GenesisFolder, "liquid.json")),
-				params: &types.Params{
-					MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3)),
-					SupportedChains:   supportedChainsArr,
-				},
-				emailAlert: testnetConfig.EmailAlert,
-			}
+			settings := buildBaseSettings(cmd, mbm, genBalIterator)
+			settings.tmConfig = tmConfig
+			settings.outputDir = outputDir
+			settings.chainID = chainId
+			settings.nodeDirPrefix = nodeDirPrefix
+			settings.keyringBackend = keyringBackend
+			settings.keyringPassphrase = keyringPassphrase
+			settings.ips = sisuIps
+			settings.nodeConfigs = nodeConfigs
+			settings.emailAlert = testnetConfig.EmailAlert
 
 			valPubKeys, err := InitNetwork(settings)
 			peerIds, err := getPeerIds(len(sisuIps), valPubKeys)
@@ -192,6 +161,7 @@ Example:
 				panic(err)
 			}
 
+			deyesChains := getDeyesChains(cmd, genesisFolder)
 			// Create config files for dheart and deyes.
 			for i := range heartIps {
 				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))

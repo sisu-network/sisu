@@ -64,7 +64,7 @@ Example:
 			tmConfig := serverCtx.Config
 			tmConfig.P2P.AddrBookStrict = false
 			tmConfig.LogLevel = ""
-			tmConfig.Consensus.TimeoutCommit = time.Second * 4
+			tmConfig.Consensus.TimeoutCommit = time.Second * 3
 
 			outputDir, _ := cmd.Flags().GetString(flagOutputDir)
 			nodeDirPrefix, _ := cmd.Flags().GetString(flagNodeDirPrefix)
@@ -86,7 +86,7 @@ Example:
 			// Get Chain id and keyring backend from .env file.
 			chainID := "sisu"
 			keyringBackend := keyring.BackendTest
-			deyesChains := addCardanoConfig(cmd, genesisFolder)
+			deyesChains := getDeyesChains(cmd, genesisFolder)
 
 			ips := make([]string, numValidators)
 			for i := range ips {
