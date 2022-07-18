@@ -1,10 +1,12 @@
 [
   {
     "id": "ganache1",
-    "gas_price": 2000000000
+    "gas_price": 2000000000,
+    "native_token": "NATIVE_GANACHE1"
   },
   {
     "id": "ganache2",
-    "gas_price": 2000000000
+    "gas_price": 2000000000,
+    "native_token": "NATIVE_GANACHE2"
   }
 ]

@@ -12,6 +12,7 @@ import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/helper"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/sisu-network/sisu/x/sisu/world"
@@ -168,9 +169,10 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 		}
 
 		// 1. TODO: Subtract the commission fee.
-		gasPriceInToken, err := p.worldState.GetGasCostInToken(tokens[i].Id, destChain)
+		gasPriceInToken, err := helper.GetChainGasCostInToken(ctx, k, tokens[i].Id, destChain, big.NewInt(80_000))
 		if err != nil {
-			return nil, err
+			log.Error("Cannot get gas cost in token, err = ", err)
+			continue
 		}
 
 		if gasPriceInToken.Cmp(utils.ZeroBigInt) < 0 {

@@ -98,7 +98,8 @@ Example:
 			if len(cardanoSecret) > 0 {
 				supportedChainsArr = append(supportedChainsArr, "cardano-testnet")
 				chains = append(chains, &types.Chain{
-					Id: "cardano-testnet",
+					Id:          "cardano-testnet",
+					NativeToken: "ADA",
 				})
 			}
 
