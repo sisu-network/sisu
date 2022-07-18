@@ -70,7 +70,7 @@ log_local = {{ .LogDNA.LogLocal }}
   block_time = {{ $chain.BlockTime }}
   adjust_time = {{ $chain.AdjustTime }}
   starting_block = 0
-  rpcs = [{{ range $j, $rpc := $chain.Rpcs }} "{{ $rpc }}" {{end}}]
+  rpcs = [{{ range $j, $rpc := $chain.Rpcs }}"{{ $rpc }}", {{end}}]
   rpc_secret = "{{ $chain.RpcSecret }}"
   client_type = "{{ $chain.ClientType }}"{{ if $chain.SyncDB.Host }}
   [chains.{{ $chain.Chain }}.sync_db]
