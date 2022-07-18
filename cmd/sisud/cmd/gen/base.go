@@ -81,6 +81,9 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager, genBalIterat
 			SupportedChains:   supportedChainsArr,
 		},
 		cardanoSecret: cardanoSecret,
+		tokens:        getTokens(filepath.Join(genesisFolder, "tokens.json")),
+		chains:        getChains(filepath.Join(genesisFolder, "chains.json")),
+		liquidities:   getLiquidity(filepath.Join(genesisFolder, "liquid.json")),
 	}
 
 	return setting

@@ -3,9 +3,7 @@ package gen
 import (
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math/big"
 	"net"
 	"path/filepath"
@@ -70,7 +68,6 @@ Example:
 			// Get Chain id and keyring backend from .env file.
 			chainID := "eth-sisu-local"
 			keyringBackend := keyring.BackendTest
-			chains := getChains(filepath.Join(genesisFolder, "chains.json"))
 
 			deyesChains := addCardanoConfig(cmd, genesisFolder)
 
@@ -97,8 +94,6 @@ Example:
 			settings.ips = generator.getLocalIps(startingIPAddress, 1)
 			settings.keyringBackend = keyringBackend
 			settings.nodeConfigs = []config.Config{nodeConfig}
-			settings.tokens = getTokens(filepath.Join(genesisFolder, "tokens.json"))
-			settings.chains = chains
 			settings.liquidities = getLiquidity(filepath.Join(genesisFolder, "liquid.json"))
 
 			_, err := InitNetwork(settings)
@@ -195,17 +190,6 @@ func (g *localnetGenerator) getAuthTransactor(client *ethclient.Client, address 
 	auth.GasLimit = uint64(10_000_000)
 
 	return auth, nil
-}
-
-func (g *localnetGenerator) readDeyesChainConfigs(path string) []econfig.Chain {
-	deyesChains := make([]econfig.Chain, 0)
-	file, _ := ioutil.ReadFile(path)
-	err := json.Unmarshal([]byte(file), &deyesChains)
-	if err != nil {
-		panic(err)
-	}
-
-	return deyesChains
 }
 
 func (g *localnetGenerator) generateEyesToml(dir string, chainConfigs []econfig.Chain) {
