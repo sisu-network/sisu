@@ -36,4 +36,5 @@ const (
 	CardanoNetwork         = "cardano-network"
 	CardanoSecret          = "cardano-secret"
 	CardanoFunderMnemonic  = "cardano-funder-mnemonic"
+	CardanoDbConfig        = "cardano-db-config"
 )

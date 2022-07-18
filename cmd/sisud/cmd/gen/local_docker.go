@@ -4,18 +4,15 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
-	"math"
 	"math/big"
 	"os"
 	"path/filepath"
-	"sort"
 	"text/template"
 	"time"
 
 	"github.com/spf13/cobra"
 	tmos "github.com/tendermint/tendermint/libs/os"
 
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -28,7 +25,6 @@ import (
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
-	"github.com/sisu-network/sisu/x/sisu/types"
 
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	heartconfig "github.com/sisu-network/dheart/core/config"
@@ -64,24 +60,16 @@ Example:
 	  ./sisu local-docker --v 2 --output-dir ./output
 	`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			tmConfig := serverCtx.Config
 			tmConfig.P2P.AddrBookStrict = false
 			tmConfig.LogLevel = ""
-			tmConfig.Consensus.TimeoutCommit = time.Second * 4
+			tmConfig.Consensus.TimeoutCommit = time.Second * 3
 
 			outputDir, _ := cmd.Flags().GetString(flagOutputDir)
-			minGasPrices, _ := cmd.Flags().GetString(server.FlagMinGasPrices)
 			nodeDirPrefix, _ := cmd.Flags().GetString(flagNodeDirPrefix)
-			nodeDaemonHome, _ := cmd.Flags().GetString(flagNodeDaemonHome)
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 			genesisFolder, _ := cmd.Flags().GetString(flagGenesisFolder)
-			algo, _ := cmd.Flags().GetString(flags.Algo)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 
 			g := &localDockerGenerator{}
@@ -90,7 +78,7 @@ Example:
 			g.cleanData(outputDir)
 
 			// Make dir folder for mysql docker
-			err = os.MkdirAll(filepath.Join(outputDir, "db"), 0755)
+			err := os.MkdirAll(filepath.Join(outputDir, "db"), 0755)
 			if err != nil {
 				panic(err)
 			}
@@ -98,23 +86,8 @@ Example:
 			// Get Chain id and keyring backend from .env file.
 			chainID := "sisu"
 			keyringBackend := keyring.BackendTest
+			deyesChains := getDeyesChains(cmd, genesisFolder)
 
-			chains := getChains(filepath.Join(genesisFolder, "chains.json"))
-			supportedChainsArr := make([]string, 0)
-			for _, chain := range chains {
-				supportedChainsArr = append(supportedChainsArr, chain.Id)
-			}
-			sort.Strings(supportedChainsArr)
-			fmt.Println("cardanoSecret = ", len(cardanoSecret))
-			if len(cardanoSecret) > 0 {
-				supportedChainsArr = append(supportedChainsArr, "cardano-testnet")
-				chains = append(chains, &types.Chain{
-					Id: "cardano-testnet",
-				})
-			}
-
-			// startingIPAddress := "192.168.10.6"
-			// ips := getLocalIps(startingIPAddress, numValidators)
 			ips := make([]string, numValidators)
 			for i := range ips {
 				ips[i] = fmt.Sprintf("sisu%d", i)
@@ -135,36 +108,17 @@ Example:
 				nodeConfig := g.getNodeSettings(chainID, keyringBackend, i, mysqlIp, ips, cardanoSecret)
 				nodeConfigs[i] = nodeConfig
 
-				g.generateEyesToml(i, dir, cardanoSecret)
+				g.generateEyesToml(deyesChains, i, dir)
 			}
-
 			g.generateDockerCompose(filepath.Join(outputDir, "docker-compose.yml"), ips, dockerConfig)
 
-			settings := &Setting{
-				clientCtx:      clientCtx,
-				cmd:            cmd,
-				tmConfig:       tmConfig,
-				mbm:            mbm,
-				genBalIterator: genBalIterator,
-				outputDir:      outputDir,
-				chainID:        chainID,
-				minGasPrices:   minGasPrices,
-				nodeDirPrefix:  nodeDirPrefix,
-				nodeDaemonHome: nodeDaemonHome,
-				keyringBackend: keyringBackend,
-				algoStr:        algo,
-				numValidators:  numValidators,
-
-				ips:         ips,
-				nodeConfigs: nodeConfigs,
-				tokens:      getTokens("./misc/dev/tokens.json"),
-				chains:      getChains("./misc/dev/chains.json"),
-				liquidities: getLiquidity("./misc/dev/liquid.json"),
-				params: &types.Params{
-					MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3)),
-					SupportedChains:   supportedChainsArr,
-				},
-			}
+			settings := buildBaseSettings(cmd, mbm, genBalIterator)
+			settings.tmConfig = tmConfig
+			settings.chainID = chainID
+			settings.nodeDirPrefix = nodeDirPrefix
+			settings.keyringBackend = keyringBackend
+			settings.ips = ips
+			settings.nodeConfigs = nodeConfigs
 
 			valPubKeys, err := InitNetwork(settings)
 			if err != nil {
@@ -189,7 +143,7 @@ Example:
 	cmd.Flags().StringP(flagOutputDir, "o", "./output", "Directory to store initialization data for the localnet")
 	cmd.Flags().String(flagNodeDirPrefix, "node", "Prefix the directory name for each node with (node results in node0, node1, ...)")
 	cmd.Flags().String(flagNodeDaemonHome, "main", "Home directory of the node's daemon configuration")
-	cmd.Flags().String(flagGenesisFolder, "./misc/dev", "Relative path to the folder that contains genesis configuration.")
+	cmd.Flags().String(flagGenesisFolder, "./misc/docker", "Relative path to the folder that contains genesis configuration.")
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom),
 		"Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.Algo, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
@@ -360,33 +314,9 @@ services:
 	tmos.MustWriteFile(outputPath, buffer.Bytes(), 0644)
 }
 
-func (g *localDockerGenerator) generateEyesToml(index int, dir string, cardanoSecret string) {
-	chains := []econfig.Chain{
-		{
-			Chain:      "ganache1",
-			BlockTime:  3000,
-			AdjustTime: 100,
-			Rpcs:       []string{"http://ganache1:7545"},
-		},
-		{
-			Chain:      "ganache2",
-			BlockTime:  3000,
-			AdjustTime: 100,
-			Rpcs:       []string{"http://ganache2:7545"},
-		},
-	}
-
-	if len(cardanoSecret) > 0 {
-		chains = append(chains, econfig.Chain{
-			Chain:      "cardano-testnet",
-			BlockTime:  10000,
-			AdjustTime: 1000,
-			RpcSecret:  cardanoSecret,
-		})
-	}
-
+func (g *localDockerGenerator) generateEyesToml(deyesChains []econfig.Chain, index int, dir string) {
 	deyesConfig := DeyesConfiguration{
-		Chains: chains,
+		Chains: deyesChains,
 
 		Sql: SqlConfig{
 			Host:     "mysql",

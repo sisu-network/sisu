@@ -22,7 +22,6 @@ import (
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/types"
-	"github.com/spf13/cobra"
 
 	tmconfig "github.com/tendermint/tendermint/config"
 	tmos "github.com/tendermint/tendermint/libs/os"
@@ -32,34 +31,6 @@ import (
 )
 
 const nodeDirPerm = 0755
-
-type Setting struct {
-	clientCtx         client.Context
-	cmd               *cobra.Command
-	tmConfig          *tmconfig.Config
-	mbm               module.BasicManager
-	genBalIterator    banktypes.GenesisBalancesIterator
-	outputDir         string
-	chainID           string
-	minGasPrices      string
-	nodeDirPrefix     string
-	nodeDaemonHome    string
-	ips               []string
-	monikers          []string
-	keyringBackend    string
-	keyringPassphrase string
-	algoStr           string
-	numValidators     int
-	cardanoSecret     string
-
-	nodeConfigs []config.Config
-	tokens      []*types.Token // tokens in the genesis data
-	chains      []*types.Chain // chains in the genesis data
-	liquidities []*types.Liquidity
-	params      *types.Params
-
-	emailAlert config.EmailAlertConfig
-}
 
 // Initialize the localnet
 func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
