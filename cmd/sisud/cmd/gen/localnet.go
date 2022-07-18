@@ -10,7 +10,6 @@ import (
 	"math/big"
 	"net"
 	"path/filepath"
-	"sort"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -83,50 +82,14 @@ Example:
 			algo, _ := cmd.Flags().GetString(flags.Algo)
 			genesisFolder, _ := cmd.Flags().GetString(flagGenesisFolder)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
-			cardanoDbConfig, _ := cmd.Flags().GetString(flags.CardanoDbConfig)
 
 			// Get Chain id and keyring backend from .env file.
 			chainID := "eth-sisu-local"
 			keyringBackend := keyring.BackendTest
-			deyesChains := generator.readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
-
 			chains := getChains(filepath.Join(genesisFolder, "chains.json"))
-			supportedChainsArr := make([]string, 0)
-			for _, chain := range chains {
-				supportedChainsArr = append(supportedChainsArr, chain.Id)
-			}
-			sort.Strings(supportedChainsArr)
 
-			// Add Cardano config
-			if len(cardanoSecret) > 0 || len(cardanoDbConfig) > 0 {
-				supportedChainsArr = append(supportedChainsArr, "cardano-testnet")
-				chains = append(chains, &types.Chain{
-					Id: "cardano-testnet",
-				})
-
-				var syncDbConfig econfig.SyncDbConfig
-				var clientType econfig.ClientType
-
-				if len(cardanoDbConfig) > 0 {
-					err := json.Unmarshal([]byte(cardanoDbConfig), &syncDbConfig)
-					if err != nil {
-						panic(err)
-					}
-					clientType = econfig.ClientTypeSelfHost
-				} else {
-					clientType = econfig.ClientTypeBlockFrost
-				}
-
-				// Add cardano configuration
-				deyesChains = append(deyesChains, econfig.Chain{
-					Chain:      "cardano-testnet",
-					BlockTime:  10000,
-					AdjustTime: 1000,
-					ClientType: clientType,
-					RpcSecret:  cardanoSecret,
-					SyncDB:     syncDbConfig,
-				})
-			}
+			deyesChains := generator.readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
+			deyesChains, supportedChainsArr := addCardanoConfig(cmd, genesisFolder)
 
 			nodeConfig := config.Config{
 				Mode: "dev",

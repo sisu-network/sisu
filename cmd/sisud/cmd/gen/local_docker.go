@@ -8,7 +8,6 @@ import (
 	"math/big"
 	"os"
 	"path/filepath"
-	"sort"
 	"text/template"
 	"time"
 
@@ -98,23 +97,9 @@ Example:
 			// Get Chain id and keyring backend from .env file.
 			chainID := "sisu"
 			keyringBackend := keyring.BackendTest
+			deyesChains := readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
+			deyesChains, supportedChainsArr := addCardanoConfig(cmd, genesisFolder)
 
-			chains := getChains(filepath.Join(genesisFolder, "chains.json"))
-			supportedChainsArr := make([]string, 0)
-			for _, chain := range chains {
-				supportedChainsArr = append(supportedChainsArr, chain.Id)
-			}
-			sort.Strings(supportedChainsArr)
-			fmt.Println("cardanoSecret = ", len(cardanoSecret))
-			if len(cardanoSecret) > 0 {
-				supportedChainsArr = append(supportedChainsArr, "cardano-testnet")
-				chains = append(chains, &types.Chain{
-					Id: "cardano-testnet",
-				})
-			}
-
-			// startingIPAddress := "192.168.10.6"
-			// ips := getLocalIps(startingIPAddress, numValidators)
 			ips := make([]string, numValidators)
 			for i := range ips {
 				ips[i] = fmt.Sprintf("sisu%d", i)
@@ -135,7 +120,7 @@ Example:
 				nodeConfig := g.getNodeSettings(chainID, keyringBackend, i, mysqlIp, ips, cardanoSecret)
 				nodeConfigs[i] = nodeConfig
 
-				g.generateEyesToml(i, dir, cardanoSecret)
+				g.generateEyesToml(deyesChains, i, dir)
 			}
 
 			g.generateDockerCompose(filepath.Join(outputDir, "docker-compose.yml"), ips, dockerConfig)
@@ -360,33 +345,9 @@ services:
 	tmos.MustWriteFile(outputPath, buffer.Bytes(), 0644)
 }
 
-func (g *localDockerGenerator) generateEyesToml(index int, dir string, cardanoSecret string) {
-	chains := []econfig.Chain{
-		{
-			Chain:      "ganache1",
-			BlockTime:  3000,
-			AdjustTime: 100,
-			Rpcs:       []string{"http://ganache1:7545"},
-		},
-		{
-			Chain:      "ganache2",
-			BlockTime:  3000,
-			AdjustTime: 100,
-			Rpcs:       []string{"http://ganache2:7545"},
-		},
-	}
-
-	if len(cardanoSecret) > 0 {
-		chains = append(chains, econfig.Chain{
-			Chain:      "cardano-testnet",
-			BlockTime:  10000,
-			AdjustTime: 1000,
-			RpcSecret:  cardanoSecret,
-		})
-	}
-
+func (g *localDockerGenerator) generateEyesToml(deyesChains []econfig.Chain, index int, dir string) {
 	deyesConfig := DeyesConfiguration{
-		Chains: chains,
+		Chains: deyesChains,
 
 		Sql: SqlConfig{
 			Host:     "mysql",
