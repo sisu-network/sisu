@@ -23,12 +23,12 @@ import (
 	econfig "github.com/sisu-network/deyes/config"
 
 	"github.com/cosmos/cosmos-sdk/client"
-	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/server"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/module"
+	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 )
@@ -95,10 +95,11 @@ Example:
 			nodeDaemonHome, _ := cmd.Flags().GetString(flagNodeDaemonHome)
 			chainId, _ := cmd.Flags().GetString(flagChainId)
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
-			algo, _ := cmd.Flags().GetString(flags.FlagKeyAlgorithm)
+			algo, _ := cmd.Flags().GetString(flags.Algo)
 			configString, _ := cmd.Flags().GetString(flagConfigString)
-			keyringBackend, _ := cmd.Flags().GetString(flags.FlagKeyringBackend)
+			keyringBackend, _ := cmd.Flags().GetString(flags.KeyringBackend)
 			keyringPassphrase, _ := cmd.Flags().GetString(flagKeyringPassphrase)
+			genesisFolder, _ := cmd.Flags().GetString(flagGenesisFolder)
 
 			if keyringPassphrase == keyring.BackendFile && len(keyringPassphrase) == 0 {
 				panic(fmt.Sprintf("Please input the passphrase if you're using keyring backend file by flag %s", keyringPassphrase))
@@ -114,8 +115,6 @@ Example:
 			if len(chainId) == 0 {
 				chainId = "testnet"
 			}
-
-			log.Info("testnet chainId = ", chainId)
 
 			err = os.MkdirAll(outputDir, os.ModePerm)
 			if err != nil {
@@ -156,6 +155,9 @@ Example:
 				nodeConfigs[i] = nodeConfig
 			}
 
+			deyesChains := addCardanoConfig(cmd, genesisFolder)
+			supportedChainsArr := getSupportedChains(cmd, genesisFolder)
+
 			settings := &Setting{
 				clientCtx:         clientCtx,
 				cmd:               cmd,
@@ -177,8 +179,11 @@ Example:
 				tokens:      getTokens(filepath.Join(testnetConfig.GenesisFolder, "tokens.json")),
 				chains:      chains,
 				liquidities: getLiquidity(filepath.Join(testnetConfig.GenesisFolder, "liquid.json")),
-				params:      &types.Params{MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3))},
-				emailAlert:  testnetConfig.EmailAlert,
+				params: &types.Params{
+					MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3)),
+					SupportedChains:   supportedChainsArr,
+				},
+				emailAlert: testnetConfig.EmailAlert,
 			}
 
 			valPubKeys, err := InitNetwork(settings)
@@ -186,8 +191,6 @@ Example:
 			if err != nil {
 				panic(err)
 			}
-
-			deyesChains := generator.readDeyesChainConfigs(testnetConfig.DeyesChainsPath)
 
 			// Create config files for dheart and deyes.
 			for i := range heartIps {
@@ -211,12 +214,13 @@ Example:
 	cmd.Flags().String(flagTmpDir, "tmp-dir", "Location of temporary directory that contains list of peers ips and other configs.")
 	cmd.Flags().String(flagChainId, "sisu-talon-01", "Name of the chain")
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
-	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
+	cmd.Flags().String(flags.Algo, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
 	cmd.Flags().String(flagConfigString, "", "configuration string for all nodes")
-	cmd.Flags().String(flags.FlagKeyringBackend, keyring.BackendTest, "Keyring backend. file|os|kwallet|pass|test|memory")
+	cmd.Flags().String(flags.KeyringBackend, keyring.BackendTest, "Keyring backend. file|os|kwallet|pass|test|memory")
 	cmd.Flags().String(flagKeyringPassphrase, "", "Passphrase for keyring backend if using backend file. Leave it empty if use backend test")
-	cmd.Flags().String(flagGenesisFolder, "./misc/dev", "Relative path to the folder that contains genesis configuration.")
-
+	cmd.Flags().String(flagGenesisFolder, "./misc/testnet", "Relative path to the folder that contains genesis configuration.")
+	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
+	cmd.Flags().String(flags.CardanoDbConfig, "", "Configuration for cardano sync db.")
 	return cmd
 }
 

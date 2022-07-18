@@ -97,8 +97,8 @@ Example:
 			// Get Chain id and keyring backend from .env file.
 			chainID := "sisu"
 			keyringBackend := keyring.BackendTest
-			deyesChains := readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
-			deyesChains, supportedChainsArr := addCardanoConfig(cmd, genesisFolder)
+			deyesChains := addCardanoConfig(cmd, genesisFolder)
+			supportedChainsArr := getSupportedChains(cmd, genesisFolder)
 
 			ips := make([]string, numValidators)
 			for i := range ips {
@@ -174,7 +174,7 @@ Example:
 	cmd.Flags().StringP(flagOutputDir, "o", "./output", "Directory to store initialization data for the localnet")
 	cmd.Flags().String(flagNodeDirPrefix, "node", "Prefix the directory name for each node with (node results in node0, node1, ...)")
 	cmd.Flags().String(flagNodeDaemonHome, "main", "Home directory of the node's daemon configuration")
-	cmd.Flags().String(flagGenesisFolder, "./misc/dev", "Relative path to the folder that contains genesis configuration.")
+	cmd.Flags().String(flagGenesisFolder, "./misc/docker", "Relative path to the folder that contains genesis configuration.")
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom),
 		"Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.Algo, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")

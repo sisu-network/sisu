@@ -3,6 +3,7 @@ package gen
 import (
 	"encoding/json"
 	"io/ioutil"
+	"math"
 	"path/filepath"
 	"sort"
 
@@ -54,6 +55,10 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager, genBalIterat
 	nodeDaemonHome, _ := cmd.Flags().GetString(flagNodeDaemonHome)
 	algo, _ := cmd.Flags().GetString(flags.Algo)
 	numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
+	genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
+	cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
+
+	supportedChainsArr := getSupportedChains(cmd, genesisFolder)
 
 	clientCtx, err := client.GetClientQueryContext(cmd)
 	if err != nil {
@@ -71,26 +76,24 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager, genBalIterat
 		nodeDaemonHome: nodeDaemonHome,
 		algoStr:        algo,
 		numValidators:  numValidators,
+		params: &types.Params{
+			MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3)),
+			SupportedChains:   supportedChainsArr,
+		},
+		cardanoSecret: cardanoSecret,
 	}
 
 	return setting
 }
 
-func addCardanoConfig(cmd *cobra.Command, genesisFolder string) ([]econfig.Chain, []string) {
+func addCardanoConfig(cmd *cobra.Command, genesisFolder string) []econfig.Chain {
 	cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 	cardanoDbConfig, _ := cmd.Flags().GetString(flags.CardanoDbConfig)
 	deyesChains := readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
 
 	chains := getChains(filepath.Join(genesisFolder, "chains.json"))
-	supportedChainsArr := make([]string, 0)
-	for _, chain := range chains {
-		supportedChainsArr = append(supportedChainsArr, chain.Id)
-	}
-	sort.Strings(supportedChainsArr)
-
 	// Add Cardano config
 	if len(cardanoSecret) > 0 || len(cardanoDbConfig) > 0 {
-		supportedChainsArr = append(supportedChainsArr, "cardano-testnet")
 		chains = append(chains, &types.Chain{
 			Id: "cardano-testnet",
 		})
@@ -119,7 +122,29 @@ func addCardanoConfig(cmd *cobra.Command, genesisFolder string) ([]econfig.Chain
 		})
 	}
 
-	return deyesChains, supportedChainsArr
+	return deyesChains
+}
+
+func getSupportedChains(cmd *cobra.Command, genesisFolder string) []string {
+	cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
+	cardanoDbConfig, _ := cmd.Flags().GetString(flags.CardanoDbConfig)
+
+	chains := getChains(filepath.Join(genesisFolder, "chains.json"))
+	supportedChainsArr := make([]string, 0)
+	for _, chain := range chains {
+		supportedChainsArr = append(supportedChainsArr, chain.Id)
+	}
+	sort.Strings(supportedChainsArr)
+
+	// Add Cardano config
+	if len(cardanoSecret) > 0 || len(cardanoDbConfig) > 0 {
+		supportedChainsArr = append(supportedChainsArr, "cardano-testnet")
+		chains = append(chains, &types.Chain{
+			Id: "cardano-testnet",
+		})
+	}
+
+	return supportedChainsArr
 }
 
 func readDeyesChainConfigs(path string) []econfig.Chain {
