@@ -103,11 +103,22 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	// Waits for Sisu to create contract instance in its database. At this stage, the contract is
 	// not deployed yet.
 	c.waitForGatewayCreationInSisuDb(ctx, chains, sisuRpc)
-
 	time.Sleep(time.Second * 3)
+	allPubKeys := queryPubKeys(ctx, sisuRpc)
+
+	// Fund native cardano.
+	if len(cardanoFunderMnemonic) > 0 && len(cardanoSecret) > 0 {
+		cardanoKey, ok := allPubKeys[libchain.KEY_TYPE_EDDSA]
+		if !ok {
+			panic("can not find cardano pub key")
+		}
+
+		cardanoAddr := hutils.GetAddressFromCardanoPubkey(cardanoKey)
+		log.Info("Sisu Cardano Gateway = ", cardanoAddr)
+		c.fundCardano(cardanoAddr, cardanoFunderMnemonic, cardanoSecret)
+	}
 
 	// Fund the accounts with some native ETH
-	allPubKeys := queryPubKeys(ctx, sisuRpc)
 	var tssPubAddr common.Address
 	wg.Add(len(clients))
 	for i, client := range clients {
@@ -158,17 +169,6 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	}
 	wg.Wait()
 
-	// Fund native cardano.
-	if len(cardanoFunderMnemonic) > 0 && len(cardanoSecret) > 0 {
-		cardanoKey, ok := allPubKeys[libchain.KEY_TYPE_EDDSA]
-		if !ok {
-			panic("can not find cardano pub key")
-		}
-
-		cardanoAddr := hutils.GetAddressFromCardanoPubkey(cardanoKey)
-		log.Info("Sisu Cardano Gateway = ", cardanoAddr)
-		c.fundCardano(cardanoAddr, cardanoFunderMnemonic, cardanoSecret)
-	}
 }
 
 // Get WRAP_ADA (hex: 575241505f414441) token.

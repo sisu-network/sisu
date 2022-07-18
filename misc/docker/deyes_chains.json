@@ -1,0 +1,16 @@
+[
+  {
+    "chain": "ganache1",
+    "block_time": 3000,
+    "starting_block": 0,
+    "adjust_time": 300,
+    "rpcs": ["http://ganache1:7545"]
+  },
+  {
+    "chain": "ganache2",
+    "block_time": 3000,
+    "starting_block": 0,
+    "adjust_time": 300,
+    "rpcs": ["http://ganache2:7545"]
+  }
+]

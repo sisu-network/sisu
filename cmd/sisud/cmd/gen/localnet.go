@@ -3,14 +3,10 @@ package gen
 import (
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"math"
 	"math/big"
 	"net"
 	"path/filepath"
-	"sort"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -22,7 +18,6 @@ import (
 
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 
-	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -31,7 +26,6 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	econfig "github.com/sisu-network/deyes/config"
 	"github.com/sisu-network/sisu/config"
-	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 var (
@@ -62,45 +56,20 @@ Example:
 		./sisu localnet
 	`,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			clientCtx, err := client.GetClientQueryContext(cmd)
-			if err != nil {
-				return err
-			}
-
 			serverCtx := server.GetServerContextFromCmd(cmd)
 			tmConfig := serverCtx.Config
 			tmConfig.LogLevel = ""
 			tmConfig.Consensus.TimeoutCommit = time.Second * 3
 
 			generator := &localnetGenerator{}
-
-			outputDir, _ := cmd.Flags().GetString(flagOutputDir)
-			minGasPrices, _ := cmd.Flags().GetString(server.FlagMinGasPrices)
-			nodeDirPrefix, _ := cmd.Flags().GetString(flagNodeDirPrefix)
-			nodeDaemonHome, _ := cmd.Flags().GetString(flagNodeDaemonHome)
 			startingIPAddress, _ := cmd.Flags().GetString(flagStartingIPAddress)
-			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
-			algo, _ := cmd.Flags().GetString(flags.Algo)
 			genesisFolder, _ := cmd.Flags().GetString(flagGenesisFolder)
-			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 
 			// Get Chain id and keyring backend from .env file.
 			chainID := "eth-sisu-local"
 			keyringBackend := keyring.BackendTest
 
-			chains := getChains(filepath.Join(genesisFolder, "chains.json"))
-			supportedChainsArr := make([]string, 0)
-			for _, chain := range chains {
-				supportedChainsArr = append(supportedChainsArr, chain.Id)
-			}
-			sort.Strings(supportedChainsArr)
-
-			if len(cardanoSecret) > 0 {
-				supportedChainsArr = append(supportedChainsArr, "cardano-testnet")
-				chains = append(chains, &types.Chain{
-					Id: "cardano-testnet",
-				})
-			}
+			deyesChains := getDeyesChains(cmd, genesisFolder)
 
 			nodeConfig := config.Config{
 				Mode: "dev",
@@ -117,49 +86,17 @@ Example:
 				},
 			}
 
-			deyesChains := generator.readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
-
-			if cardanoSecret != "" {
-				// Add cardano configuration
-				deyesChains = append(deyesChains, econfig.Chain{
-					Chain:      "cardano-testnet",
-					BlockTime:  10000,
-					AdjustTime: 1000,
-					RpcSecret:  cardanoSecret,
-				})
-			}
-
 			generator.generateEyesToml("../deyes", deyesChains)
 
-			params := &types.Params{
-				MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3)),
-				SupportedChains:   supportedChainsArr,
-			}
+			settings := buildBaseSettings(cmd, mbm, genBalIterator)
+			settings.tmConfig = tmConfig
+			settings.chainID = chainID
+			settings.ips = generator.getLocalIps(startingIPAddress, 1)
+			settings.keyringBackend = keyringBackend
+			settings.nodeConfigs = []config.Config{nodeConfig}
+			settings.liquidities = getLiquidity(filepath.Join(genesisFolder, "liquid.json"))
 
-			settings := &Setting{
-				clientCtx:      clientCtx,
-				cmd:            cmd,
-				tmConfig:       tmConfig,
-				mbm:            mbm,
-				genBalIterator: genBalIterator,
-				outputDir:      outputDir,
-				chainID:        chainID,
-				minGasPrices:   minGasPrices,
-				nodeDirPrefix:  nodeDirPrefix,
-				nodeDaemonHome: nodeDaemonHome,
-				ips:            generator.getLocalIps(startingIPAddress, numValidators),
-				keyringBackend: keyringBackend,
-				algoStr:        algo,
-				numValidators:  numValidators,
-				nodeConfigs:    []config.Config{nodeConfig},
-				tokens:         getTokens(filepath.Join(genesisFolder, "tokens.json")),
-				chains:         chains,
-				liquidities:    getLiquidity(filepath.Join(genesisFolder, "liquid.json")),
-				params:         params,
-				cardanoSecret:  cardanoSecret,
-			}
-
-			_, err = InitNetwork(settings)
+			_, err := InitNetwork(settings)
 			return err
 		},
 	}
@@ -173,6 +110,7 @@ Example:
 	cmd.Flags().String(flags.Algo, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
 	cmd.Flags().String(flags.KeyringBackend, keyring.BackendTest, "Keyring backend. file|os|kwallet|pass|test|memory")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
+	cmd.Flags().String(flags.CardanoDbConfig, "", "Configuration for cardano sync db.")
 	cmd.Flags().String(flagGenesisFolder, "./misc/dev", "Relative path to the folder that contains genesis configuration.")
 
 	return cmd
@@ -252,21 +190,6 @@ func (g *localnetGenerator) getAuthTransactor(client *ethclient.Client, address 
 	auth.GasLimit = uint64(10_000_000)
 
 	return auth, nil
-}
-
-func (g *localnetGenerator) addCardanoDeyesConfigs() {
-
-}
-
-func (g *localnetGenerator) readDeyesChainConfigs(path string) []econfig.Chain {
-	deyesChains := make([]econfig.Chain, 0)
-	file, _ := ioutil.ReadFile(path)
-	err := json.Unmarshal([]byte(file), &deyesChains)
-	if err != nil {
-		panic(err)
-	}
-
-	return deyesChains
 }
 
 func (g *localnetGenerator) generateEyesToml(dir string, chainConfigs []econfig.Chain) {
