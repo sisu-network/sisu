@@ -283,7 +283,7 @@ func New(
 	app.apiHandler.SetAppLogicListener(apiHandler)
 
 	sisuHandler := tss.NewSisuHandler(mc)
-	externalHandler := rest.NewExternalHandler(worldState)
+	externalHandler := rest.NewExternalHandler(app.k, app.globalData)
 	app.externalHandler = externalHandler
 
 	modules := []module.AppModule{

@@ -41,8 +41,6 @@ type WorldState interface {
 	GetGasPrice(chain string) (*big.Int, error)
 
 	SetTokens(tokenPrices map[string]*types.Token)
-
-	GetTokenFromAddress(chain string, tokenAddr string) *types.Token
 }
 
 type DefaultWorldState struct {
@@ -124,16 +122,6 @@ func (ws *DefaultWorldState) SetTokens(tokens map[string]*types.Token) {
 			}
 		}
 	}
-}
-
-func (ws *DefaultWorldState) GetTokenFromAddress(chain string, tokenAddr string) *types.Token {
-	key := ws.getChainAddrKey(chain, tokenAddr)
-	val, ok := ws.addrToToken.Load(key)
-	if !ok {
-		return nil
-	}
-
-	return val.(*types.Token)
 }
 
 func (ws *DefaultWorldState) getChainAddrKey(chain, addr string) string {

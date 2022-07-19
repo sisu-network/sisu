@@ -5,8 +5,6 @@ import (
 	"sync"
 	"time"
 
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
-
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/email"
@@ -238,14 +236,16 @@ func (t *DefaultTxTracker) getEmailBodyString(txo *txObject) (string, error) {
 }
 
 func (t *DefaultTxTracker) getEThTransferIn(chain string, bz []byte) (*types.TransferOutData, error) {
-	ethTx := &ethTypes.Transaction{}
+	// ethTx := &ethTypes.Transaction{}
 
-	err := ethTx.UnmarshalBinary(bz)
-	if err != nil {
-		return nil, err
-	}
+	// err := ethTx.UnmarshalBinary(bz)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	return parseEthTransferOut(ethTx, chain, t.worldState)
+	// return parseEthTransferOut(ethTx, chain, t.worldState)
+
+	return nil, nil
 }
 
 // func (t *DefaultTxTracker) getEthTransferIn(bz []byte) (*transferInData, error) {
