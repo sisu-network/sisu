@@ -25,11 +25,8 @@ func mockForHandlerGasPrice() (sdk.Context, ManagerContainer) {
 	}
 
 	dheartClient := &tssclients.MockDheartClient{}
-	deyesClient := &tssclients.MockDeyesClient{}
-	worldState := defaultWorldStateTest(ctx, k, deyesClient)
-
 	appKeys := common.NewMockAppKeys()
-	mc := MockManagerContainer(k, pmm, globalData, partyManager, dheartClient, worldState, appKeys)
+	mc := MockManagerContainer(k, pmm, globalData, partyManager, dheartClient, appKeys)
 
 	return ctx, mc
 }

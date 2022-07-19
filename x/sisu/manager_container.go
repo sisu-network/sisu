@@ -7,7 +7,6 @@ import (
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
-	"github.com/sisu-network/sisu/x/sisu/world"
 )
 
 type ManagerContainer interface {
@@ -20,7 +19,6 @@ type ManagerContainer interface {
 	Config() config.TssConfig
 	AppKeys() common.AppKeys
 	TxOutProducer() TxOutputProducer
-	WorldState() world.WorldState
 	TxTracker() TxTracker
 	Keeper() keeper.Keeper
 	ValidatorManager() ValidatorManager
@@ -39,7 +37,6 @@ type DefaultManagerContainer struct {
 	config        config.TssConfig
 	appKeys       common.AppKeys
 	txOutProducer TxOutputProducer
-	worldState    world.WorldState
 	txTracker     TxTracker
 	keeper        keeper.Keeper
 	valsManager   ValidatorManager
@@ -49,7 +46,7 @@ type DefaultManagerContainer struct {
 func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 	dheartClient tssclients.DheartClient, deyesClient tssclients.DeyesClient,
 	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.TssConfig,
-	appKeys common.AppKeys, txOutProducer TxOutputProducer, worldState world.WorldState, txTracker TxTracker,
+	appKeys common.AppKeys, txOutProducer TxOutputProducer, txTracker TxTracker,
 	keeper keeper.Keeper, valsManager ValidatorManager, txInQueue TransferQueue) ManagerContainer {
 	return &DefaultManagerContainer{
 		pmm:           pmm,
@@ -61,7 +58,6 @@ func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 		config:        cfg,
 		appKeys:       appKeys,
 		txOutProducer: txOutProducer,
-		worldState:    worldState,
 		txTracker:     txTracker,
 		keeper:        keeper,
 		valsManager:   valsManager,
@@ -103,10 +99,6 @@ func (mc *DefaultManagerContainer) TxOutProducer() TxOutputProducer {
 
 func (mc *DefaultManagerContainer) DeyesClient() tssclients.DeyesClient {
 	return mc.deyesClient
-}
-
-func (mc *DefaultManagerContainer) WorldState() world.WorldState {
-	return mc.worldState
 }
 
 func (mc *DefaultManagerContainer) TxTracker() TxTracker {

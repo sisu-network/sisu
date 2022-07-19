@@ -90,6 +90,8 @@ type MockGlobalData struct {
 	GetMyValidatorAddrFunc  func() string
 	SetReadOnlyContextFunc  func(ctx sdk.Context)
 	GetReadOnlyContextFunc  func() sdk.Context
+	AppInitializedFunc      func() bool
+	SetAppInitializedFunc   func()
 }
 
 func (m *MockGlobalData) Init() {
@@ -148,4 +150,17 @@ func (m *MockGlobalData) GetReadOnlyContext() sdk.Context {
 	}
 
 	return sdk.Context{}
+}
+
+func (m *MockGlobalData) AppInitialized() bool {
+	if m.AppInitializedFunc != nil {
+		return m.AppInitializedFunc()
+	}
+	return false
+}
+
+func (m *MockGlobalData) SetAppInitialized() {
+	if m.SetAppInitializedFunc != nil {
+		m.SetAppInitializedFunc()
+	}
 }

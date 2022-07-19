@@ -45,12 +45,14 @@ func (p *DefaultTxOutputProducer) PauseOrResumeEthContract(ctx sdk.Context, chai
 	gatewayAddress := ethcommon.HexToAddress(gw)
 	erc20gatewayContract := SupportedContracts[targetContractName]
 
-	gasPrice, err := p.worldState.GetGasPrice(chain)
-	if err != nil {
-		return nil, err
+	c := p.keeper.GetChain(ctx, chain)
+	if c == nil {
+		return nil, fmt.Errorf("PauseOrResumeEthContract: invalid chain %s", c)
 	}
+	gasPrice := big.NewInt(c.GasPrice)
 
 	var input []byte
+	var err error
 	if isPause {
 		input, err = erc20gatewayContract.Abi.Pack(MethodPauseGateway)
 	} else {

@@ -9,7 +9,6 @@ import (
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/email"
 	"github.com/sisu-network/sisu/x/sisu/types"
-	"github.com/sisu-network/sisu/x/sisu/world"
 
 	"github.com/sisu-network/lib/log"
 )
@@ -48,15 +47,13 @@ type DefaultTxTracker struct {
 	txs         map[string]*txObject
 	txsLock     *sync.RWMutex
 	emailConfig config.EmailAlertConfig
-	worldState  world.WorldState
 }
 
-func NewTxTracker(emailConfig config.EmailAlertConfig, worldState world.WorldState) TxTracker {
+func NewTxTracker(emailConfig config.EmailAlertConfig) TxTracker {
 	return &DefaultTxTracker{
 		txs:         make(map[string]*txObject),
 		txsLock:     &sync.RWMutex{},
 		emailConfig: emailConfig,
-		worldState:  worldState,
 	}
 }
 

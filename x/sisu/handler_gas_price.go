@@ -9,20 +9,17 @@ import (
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
-	"github.com/sisu-network/sisu/x/sisu/world"
 )
 
 type HandlerGasPrice struct {
 	keeper     keeper.Keeper
 	globalData common.GlobalData
-	worldState world.WorldState
 }
 
 func NewHandlerGasPrice(mc ManagerContainer) *HandlerGasPrice {
 	return &HandlerGasPrice{
 		keeper:     mc.Keeper(),
 		globalData: mc.GlobalData(),
-		worldState: mc.WorldState(),
 	}
 }
 
@@ -73,9 +70,6 @@ func (h *HandlerGasPrice) DeliverMsg(ctx sdk.Context, msg *types.GasPriceMsg) (*
 			}
 			savedChain.GasPrice = median
 			h.keeper.SaveChain(ctx, savedChain)
-
-			// Save to the world state
-			h.worldState.SetChain(savedChain)
 		}
 	}
 
