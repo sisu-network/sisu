@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/x/sisu/helper"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -42,9 +41,6 @@ type WorldState interface {
 	GetGasPrice(chain string) (*big.Int, error)
 
 	SetTokens(tokenPrices map[string]*types.Token)
-	GetTokenPrice(token string) (*big.Int, error)
-	GetNativeTokenPriceForChain(chain string) (*big.Int, error)
-	GetGasCostInToken(tokenId, chainId string) (*big.Int, error)
 
 	GetTokenFromAddress(chain string, tokenAddr string) *types.Token
 }
@@ -130,29 +126,6 @@ func (ws *DefaultWorldState) SetTokens(tokens map[string]*types.Token) {
 	}
 }
 
-func (ws *DefaultWorldState) GetNativeTokenPriceForChain(chain string) (*big.Int, error) {
-	tokenId := chainToTokens[chain]
-	if len(tokenId) == 0 {
-		return big.NewInt(0), NewErrTokenNotFound(tokenId)
-	}
-
-	return ws.GetTokenPrice(tokenId)
-}
-
-func (ws *DefaultWorldState) GetTokenPrice(tokenId string) (*big.Int, error) {
-	val, ok := ws.tokens.Load(tokenId)
-	if ok {
-		token := val.(*types.Token)
-		price, ok := new(big.Int).SetString(token.Price, 10)
-		if !ok {
-			return nil, fmt.Errorf("invalid token price %s", token.Price)
-		}
-		return price, nil
-	}
-
-	return big.NewInt(0), NewErrTokenNotFound(tokenId)
-}
-
 func (ws *DefaultWorldState) GetTokenFromAddress(chain string, tokenAddr string) *types.Token {
 	key := ws.getChainAddrKey(chain, tokenAddr)
 	val, ok := ws.addrToToken.Load(key)
@@ -161,46 +134,6 @@ func (ws *DefaultWorldState) GetTokenFromAddress(chain string, tokenAddr string)
 	}
 
 	return val.(*types.Token)
-}
-
-func (ws *DefaultWorldState) GetGasCostInToken(tokenId, chainId string) (*big.Int, error) {
-	gasPrice, err := ws.GetGasPrice(chainId)
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-
-	gasUnit := big.NewInt(80_000) // Estimated cost for swapping is 60k. We add some redundancy here.
-	tokenPrice, err := ws.GetTokenPrice(tokenId)
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-
-	if big.NewInt(0).Cmp(tokenPrice) == 0 {
-		return nil, fmt.Errorf("Token %s has price 0", tokenId)
-	}
-
-	if tokenPrice.Cmp(big.NewInt(0)) < 0 {
-		return nil, fmt.Errorf("Token price is negative, token id = %s, token price = %d", tokenId, tokenPrice)
-	}
-
-	nativeTokenPrice, err := ws.GetNativeTokenPriceForChain(chainId)
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-
-	gasCost, err := helper.GetGasCostInToken(gasUnit, gasPrice, tokenPrice, nativeTokenPrice)
-	log.Verbose("gasUnit, gasPrice, tokenPrice, nativeTokenPrice, gasCost = ", gasUnit, gasPrice,
-		tokenPrice, nativeTokenPrice, gasCost)
-
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-
-	return gasCost, nil
 }
 
 func (ws *DefaultWorldState) getChainAddrKey(chain, addr string) string {

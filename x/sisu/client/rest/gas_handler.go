@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/x/sisu/helper"
 )
 
 type gasCostResponse struct {
@@ -34,7 +35,13 @@ func (a *ExternalHandler) newGasCostHandler() http.HandlerFunc {
 			return
 		}
 
-		gasCost, err := a.worldState.GetGasCostInToken(tokenId, chainId)
+		ctx := a.globalData.GetReadOnlyContext()
+		if ctx.BlockHeight() == 0 {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		gasCost, err := helper.GetChainGasCostInToken(ctx, a.keeper, tokenId, chainId, big.NewInt(80_000))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return

@@ -42,12 +42,14 @@ func testContext() sdk.Context {
 func keeperTestGenesis(ctx sdk.Context) keeper.Keeper {
 	keeper := keeper.NewKeeper(testKeyStore)
 	keeper.SaveChain(ctx, &types.Chain{
-		Id:       "ganache1",
-		GasPrice: int64(5_000_000_000),
+		Id:          "ganache1",
+		GasPrice:    int64(5_000_000_000),
+		NativeToken: "NATIVE_GANACHE1",
 	})
 	keeper.SaveChain(ctx, &types.Chain{
-		Id:       "ganache2",
-		GasPrice: int64(10_000_000_000),
+		Id:          "ganache2",
+		GasPrice:    int64(10_000_000_000),
+		NativeToken: "NATIVE_GANACHE2",
 	})
 	liquidities := map[string]*types.Liquidity{
 		"ganache1": {

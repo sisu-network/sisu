@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sisu-network/sisu/utils"
-	"github.com/sisu-network/sisu/x/sisu/helper"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -58,35 +57,6 @@ func mockKeeperForTxOutProducerEth(ctx sdk.Context) keeper.Keeper {
 	})
 
 	return k
-}
-
-func TestTxOutProducerErc20_getGasCostInToken(t *testing.T) {
-	ctx := testContext()
-	k := keeperTestGenesis(ctx)
-	deyesClient := &tssclients.MockDeyesClient{}
-
-	worldState := defaultWorldStateTest(ctx, k, deyesClient)
-
-	chain := "ganache1"
-	token := &types.Token{
-		Id:    "SISU",
-		Price: new(big.Int).Mul(big.NewInt(4), utils.EthToWei).String(),
-	}
-	worldState.SetTokens(map[string]*types.Token{
-		"SISU": token,
-	})
-
-	gas := big.NewInt(8_000_000)
-	gasPrice := big.NewInt(10 * 1_000_000_000) // 10 gwei
-	nativeTokenPrice, err := worldState.GetNativeTokenPriceForChain(chain)
-	require.NoError(t, err)
-	price, _ := new(big.Int).SetString(token.Price, 10)
-	amount, err := helper.GetGasCostInToken(gas, gasPrice, price, nativeTokenPrice)
-
-	require.Equal(t, nil, err)
-
-	// amount = 0.008 * 10 * 2 / 4 ~ 0.04. Since 1 ETH = 10^18 wei, 0.04 ETH is 40_000_000_000_000_000 wei.
-	require.Equal(t, big.NewInt(40_000_000_000_000_000), amount)
 }
 
 func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {

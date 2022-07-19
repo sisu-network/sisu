@@ -62,6 +62,8 @@ func GetChainGasCostInToken(ctx sdk.Context, k keeper.Keeper, tokenId, chainId s
 		return nil, err
 	}
 
+	fmt.Println("gasCost = ", gasCost)
+
 	return gasCost, nil
 }
 
