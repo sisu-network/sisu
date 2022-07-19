@@ -3,20 +3,15 @@ package sisu
 import (
 	"testing"
 
-	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/stretchr/testify/require"
 )
 
 func TestTxOutProducerContractChangeOwnership(t *testing.T) {
 	ctx := testContext()
 	keeper := keeperTestAfterContractDeployed(ctx)
-	deyesClient := &tssclients.MockDeyesClient{}
-	worldState := defaultWorldStateTest(ctx, keeper, deyesClient)
-
 	txOutputProducer := DefaultTxOutputProducer{
-		worldState: worldState,
-		keeper:     keeper,
-		signer:     "cosmos1qhktedg5njrjc8xy97m9y9vwnvg9atrk3sru7y",
+		keeper: keeper,
+		signer: "cosmos1qhktedg5njrjc8xy97m9y9vwnvg9atrk3sru7y",
 	}
 
 	chain := "ganache1"

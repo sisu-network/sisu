@@ -91,7 +91,7 @@ Example:
 			settings := buildBaseSettings(cmd, mbm, genBalIterator)
 			settings.tmConfig = tmConfig
 			settings.chainID = chainID
-			settings.ips = generator.getLocalIps(startingIPAddress, 1)
+			settings.ips = []string{startingIPAddress}
 			settings.keyringBackend = keyringBackend
 			settings.nodeConfigs = []config.Config{nodeConfig}
 			settings.liquidities = getLiquidity(filepath.Join(genesisFolder, "liquid.json"))
@@ -114,19 +114,6 @@ Example:
 	cmd.Flags().String(flagGenesisFolder, "./misc/dev", "Relative path to the folder that contains genesis configuration.")
 
 	return cmd
-}
-
-func (g *localnetGenerator) getLocalIps(startingIPAddress string, count int) []string {
-	ips := make([]string, count)
-	for i := 0; i < count; i++ {
-		ip, err := g.getIP(i, startingIPAddress)
-		if err != nil {
-			panic(err)
-		}
-		ips[i] = ip
-	}
-
-	return ips
 }
 
 func (g *localnetGenerator) getIP(i int, startingIPAddr string) (ip string, err error) {

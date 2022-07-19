@@ -26,7 +26,6 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
-	"github.com/sisu-network/sisu/x/sisu/world"
 
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
@@ -63,7 +62,6 @@ type ApiHandler struct {
 	dheartClient tssclients.DheartClient
 	deyesClient  tssclients.DeyesClient
 
-	worldState       world.WorldState
 	keygenBlockPairs []BlockSymbolPair
 
 	privateDb keeper.Storage
@@ -84,7 +82,6 @@ func NewApiHandler(
 		keygenBlockPairs: make([]BlockSymbolPair, 0),
 		dheartClient:     mc.DheartClient(),
 		deyesClient:      mc.DeyesClient(),
-		worldState:       mc.WorldState(),
 		txTracker:        mc.TxTracker(),
 		mc:               mc,
 	}
@@ -195,9 +192,6 @@ func (a *ApiHandler) calculateTokenPrices(ctx sdk.Context) {
 	}
 
 	a.keeper.SetTokens(ctx, savedTokens)
-
-	// Update the world state
-	a.worldState.SetTokens(savedTokens)
 }
 
 // TODO: Move this function to module.go

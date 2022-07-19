@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"os"
 	"sync"
-	"sync/atomic"
+
+	"go.uber.org/atomic"
 
 	"github.com/cosmos/cosmos-sdk/client/rpc"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -31,6 +32,8 @@ type GlobalData interface {
 	GetMyValidatorAddr() string
 	SetReadOnlyContext(ctx sdk.Context)
 	GetReadOnlyContext() sdk.Context
+	AppInitialized() bool
+	SetAppInitialized()
 }
 
 type GlobalDataDefault struct {
@@ -41,6 +44,7 @@ type GlobalDataDefault struct {
 	myTmtConsAddr   sdk.ConsAddress
 	cdc             *codec.LegacyAmino
 	readOnlyContext atomic.Value
+	isDataInit      *atomic.Bool
 
 	validatorSets *rpc.ResultValidatorsOutput
 	usedUtxos     map[string]bool
@@ -60,6 +64,7 @@ func NewGlobalData(cfg config.Config) GlobalData {
 		validatorSets: new(rpc.ResultValidatorsOutput),
 		cfg:           cfg,
 		usedUtxos:     make(map[string]bool),
+		isDataInit:    atomic.NewBool(false),
 	}
 }
 
@@ -194,6 +199,10 @@ func (a *GlobalDataDefault) GetReadOnlyContext() sdk.Context {
 	return val.(sdk.Context)
 }
 
-func (a *GlobalDataDefault) MarkUtxoAsUsed() {
+func (a *GlobalDataDefault) AppInitialized() bool {
+	return a.isDataInit.Load()
+}
 
+func (a *GlobalDataDefault) SetAppInitialized() {
+	a.isDataInit.Store(true)
 }

@@ -30,10 +30,11 @@ func (p *DefaultTxOutputProducer) ContractSetLiquidPoolAddress(ctx sdk.Context, 
 	gatewayAddress := ethcommon.HexToAddress(gw)
 	erc20gatewayContract := SupportedContracts[targetContractName]
 
-	gasPrice, err := p.worldState.GetGasPrice(chain)
-	if err != nil {
-		return nil, err
+	c := p.keeper.GetChain(ctx, chain)
+	if c == nil {
+		return nil, fmt.Errorf("ContractSetLiquidPoolAddress: invalid chain %s", c)
 	}
+	gasPrice := big.NewInt(c.GasPrice)
 
 	input, err := erc20gatewayContract.Abi.Pack(MethodSetLiquidAddress, ethcommon.HexToAddress(newAddress))
 	rawTx := ethTypes.NewTransaction(
