@@ -7,6 +7,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/echovl/cardano-go"
+	econfig "github.com/sisu-network/deyes/config"
 	"github.com/sisu-network/lib/log"
 )
 
@@ -30,8 +31,11 @@ type SisuConfig struct {
 }
 
 type CardanoConfig struct {
-	BlockfrostSecret string `toml:"block_frost_secret"`
-	Network          int    `toml:"network"`
+	ClientType       econfig.ClientType `toml:"client_type"`
+	BlockfrostSecret string             `toml:"block_frost_secret"`
+	Network          int                `toml:"network"`
+
+	SyncDB econfig.SyncDbConfig `toml:"sync_db"`
 }
 
 func (c *CardanoConfig) GetCardanoNetwork() cardano.Network {

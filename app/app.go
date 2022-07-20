@@ -1,6 +1,7 @@
 package app
 
 import (
+	econfig "github.com/sisu-network/deyes/config"
 	"io"
 	"path/filepath"
 
@@ -268,12 +269,16 @@ func New(
 	worldState := world.NewWorldState(app.k, deyesClient)
 	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert, worldState)
 
-	cardanoNode := scardano.NewBlockfrostClient(cfg.Cardano.GetCardanoNetwork(), cfg.Cardano.BlockfrostSecret)
+	cardanoClient := scardano.NewBlockfrostClient(cfg.Cardano.GetCardanoNetwork(), cfg.Cardano.BlockfrostSecret)
+	if cfg.Cardano.ClientType == econfig.ClientTypeSelfHost {
+		log.Info("Use cardano selfhost client")
+		cardanoClient = scardano.NewSyncDBClient(cfg.Cardano.SyncDB, cfg.Cardano.SyncDB.SubmitURL)
+	}
 
 	valsMgr := tss.NewValidatorManager(app.k)
 	partyManager := tss.NewPartyManager(app.globalData)
 	txOutProducer := tss.NewTxOutputProducer(worldState, app.appKeys, app.k, cfg.Cardano,
-		cardanoNode, txTracker)
+		cardanoClient, txTracker)
 	txInQueue := sisu.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss)
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.k),
 		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
