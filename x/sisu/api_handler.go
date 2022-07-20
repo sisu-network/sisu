@@ -387,7 +387,7 @@ func (a *ApiHandler) processETHSigningResult(ctx sdk.Context, result *dhtypes.Ke
 		HashNoSig:   signMsg.OutHash,
 	})
 
-	log.Info("signedTx hash = ", utils.KeccakHash32Bytes(bz))
+	log.Info("signedTx hash = ", signedTx.Hash().String())
 
 	// If this is a contract deployment transaction, update the contract table with the hash of the
 	// deployment tx bytes.
