@@ -5,13 +5,10 @@ import (
 	"sync"
 	"time"
 
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
-
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/email"
 	"github.com/sisu-network/sisu/x/sisu/types"
-	"github.com/sisu-network/sisu/x/sisu/world"
 
 	"github.com/sisu-network/lib/log"
 )
@@ -50,15 +47,13 @@ type DefaultTxTracker struct {
 	txs         map[string]*txObject
 	txsLock     *sync.RWMutex
 	emailConfig config.EmailAlertConfig
-	worldState  world.WorldState
 }
 
-func NewTxTracker(emailConfig config.EmailAlertConfig, worldState world.WorldState) TxTracker {
+func NewTxTracker(emailConfig config.EmailAlertConfig) TxTracker {
 	return &DefaultTxTracker{
 		txs:         make(map[string]*txObject),
 		txsLock:     &sync.RWMutex{},
 		emailConfig: emailConfig,
-		worldState:  worldState,
 	}
 }
 
@@ -238,14 +233,16 @@ func (t *DefaultTxTracker) getEmailBodyString(txo *txObject) (string, error) {
 }
 
 func (t *DefaultTxTracker) getEThTransferIn(chain string, bz []byte) (*types.TransferOutData, error) {
-	ethTx := &ethTypes.Transaction{}
+	// ethTx := &ethTypes.Transaction{}
 
-	err := ethTx.UnmarshalBinary(bz)
-	if err != nil {
-		return nil, err
-	}
+	// err := ethTx.UnmarshalBinary(bz)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	return parseEthTransferOut(ethTx, chain, t.worldState)
+	// return parseEthTransferOut(ethTx, chain, t.worldState)
+
+	return nil, nil
 }
 
 // func (t *DefaultTxTracker) getEthTransferIn(bz []byte) (*transferInData, error) {

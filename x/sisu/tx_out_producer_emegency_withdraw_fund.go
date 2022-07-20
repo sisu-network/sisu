@@ -19,10 +19,11 @@ func (p *DefaultTxOutputProducer) ContractEmergencyWithdrawFund(ctx sdk.Context,
 		return nil, fmt.Errorf("unsupported chain %s", chain)
 	}
 
-	gasPrice, err := p.worldState.GetGasPrice(chain)
-	if err != nil {
-		return nil, err
+	c := p.keeper.GetChain(ctx, chain)
+	if c == nil {
+		return nil, fmt.Errorf("ContractEmergencyWithdrawFund: invalid chain %s", c)
 	}
+	gasPrice := big.NewInt(c.GasPrice)
 
 	liquidityContract := SupportedContracts[ContractLiquidityPool]
 	tokenHashes := make([]common.Address, 0, len(tokens))

@@ -12,21 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sisu-network/sisu/utils"
-	"github.com/sisu-network/sisu/x/sisu/helper"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
-	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
-	"github.com/sisu-network/sisu/x/sisu/world"
 )
-
-func mockTxOutputProducer(ctx sdk.Context, keeper keeper.Keeper, worldState world.WorldState) DefaultTxOutputProducer {
-	txOutputProducer := DefaultTxOutputProducer{
-		worldState: worldState,
-		keeper:     keeper,
-	}
-
-	return txOutputProducer
-}
 
 func mockEthTx(t *testing.T, txOutputProducer DefaultTxOutputProducer, destChain string, tokenAddr ecommon.Address, amount *big.Int) *ethTypes.Transaction {
 	contractAddress := ecommon.HexToAddress("0x08BAB502c5e7125fD558B19a98D14907CF7f7E93")
@@ -60,55 +48,23 @@ func mockKeeperForTxOutProducerEth(ctx sdk.Context) keeper.Keeper {
 	return k
 }
 
-func TestTxOutProducerErc20_getGasCostInToken(t *testing.T) {
-	ctx := testContext()
-	k := keeperTestGenesis(ctx)
-	deyesClient := &tssclients.MockDeyesClient{}
-
-	worldState := defaultWorldStateTest(ctx, k, deyesClient)
-
-	chain := "ganache1"
-	token := &types.Token{
-		Id:    "SISU",
-		Price: new(big.Int).Mul(big.NewInt(4), utils.EthToWei).String(),
-	}
-	worldState.SetTokens(map[string]*types.Token{
-		"SISU": token,
-	})
-
-	gas := big.NewInt(8_000_000)
-	gasPrice := big.NewInt(10 * 1_000_000_000) // 10 gwei
-	nativeTokenPrice, err := worldState.GetNativeTokenPriceForChain(chain)
-	require.NoError(t, err)
-	price, _ := new(big.Int).SetString(token.Price, 10)
-	amount, err := helper.GetGasCostInToken(gas, gasPrice, price, nativeTokenPrice)
-
-	require.Equal(t, nil, err)
-
-	// amount = 0.008 * 10 * 2 / 4 ~ 0.04. Since 1 ETH = 10^18 wei, 0.04 ETH is 40_000_000_000_000_000 wei.
-	require.Equal(t, big.NewInt(40_000_000_000_000_000), amount)
-}
-
 func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 	t.Parallel()
 
 	t.Run("token_has_low_price", func(t *testing.T) {
 		ctx := testContext()
 		keeper := mockKeeperForTxOutProducerEth(ctx)
-		deyesClient := &tssclients.MockDeyesClient{}
-		worldState := defaultWorldStateTest(ctx, keeper, deyesClient)
-		worldState.SetTokens(map[string]*types.Token{
+		keeper.SetTokens(ctx, map[string]*types.Token{
 			"SISU": {
 				Id:        "SISU",
 				Price:     new(big.Int).Mul(big.NewInt(10_000_000), utils.GweiToWei).String(), // 0.01
-				Chains:    []string{"ganache1"},
-				Addresses: []string{"addr1"},
+				Chains:    []string{"ganache1", "ganache2"},
+				Addresses: []string{testErc20TokenAddress, testErc20TokenAddress},
 			},
 		})
 
 		txOutputProducer := DefaultTxOutputProducer{
-			worldState: worldState,
-			keeper:     keeper,
+			keeper: keeper,
 		}
 
 		destChain := "ganache2"
@@ -116,7 +72,7 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 		amount := new(big.Int).Mul(big.NewInt(1), utils.EthToWei)
 
 		ethTx := mockEthTx(t, txOutputProducer, destChain, tokenAddr, amount)
-		data, err := parseEthTransferOut(ethTx, "ganache1", worldState)
+		data, err := parseEthTransferOut(ctx, keeper, ethTx, "ganache1")
 		require.Nil(t, err)
 		txResponse, err := txOutputProducer.buildERC20TransferIn(ctx, keeper, []*types.Token{data.Token},
 			[]ecommon.Address{ecommon.HexToAddress(data.Recipient)}, []*big.Int{data.Amount}, data.DestChain)
@@ -133,25 +89,25 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 	t.Run("token_has_high_price", func(t *testing.T) {
 		ctx := testContext()
 		keeper := mockKeeperForTxOutProducerEth(ctx)
-		deyesClient := &tssclients.MockDeyesClient{}
-		worldState := defaultWorldStateTest(ctx, keeper, deyesClient)
-		worldState.SetTokens(map[string]*types.Token{
+		keeper.SetTokens(ctx, map[string]*types.Token{
 			"SISU": {
 				Id:        "SISU",
 				Price:     utils.EtherToWei(big.NewInt(100)).String(),
-				Chains:    []string{"ganache1"},
-				Addresses: []string{"addr1"},
+				Chains:    []string{"ganache1", "ganache2"},
+				Addresses: []string{testErc20TokenAddress, testErc20TokenAddress},
 			},
 		})
 
-		txOutputProducer := mockTxOutputProducer(ctx, keeper, worldState)
+		txOutputProducer := DefaultTxOutputProducer{
+			keeper: keeper,
+		}
 
 		destChain := "ganache2"
 		tokenAddr := ecommon.HexToAddress(testErc20TokenAddress)
 		amount := new(big.Int).Mul(big.NewInt(1), utils.EthToWei)
 
 		ethTx := mockEthTx(t, txOutputProducer, destChain, tokenAddr, amount)
-		data, err := parseEthTransferOut(ethTx, "ganache1", worldState)
+		data, err := parseEthTransferOut(ctx, keeper, ethTx, "ganache1")
 		require.Nil(t, err)
 		txResponse, err := txOutputProducer.buildERC20TransferIn(ctx, keeper, []*types.Token{data.Token},
 			[]ecommon.Address{ecommon.HexToAddress(data.Recipient)}, []*big.Int{data.Amount}, data.DestChain)
@@ -168,25 +124,25 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 	t.Run("insufficient_fund", func(t *testing.T) {
 		ctx := testContext()
 		keeper := mockKeeperForTxOutProducerEth(ctx)
-		deyesClient := &tssclients.MockDeyesClient{}
-		worldState := defaultWorldStateTest(ctx, keeper, deyesClient)
-		worldState.SetTokens(map[string]*types.Token{
+		keeper.SetTokens(ctx, map[string]*types.Token{
 			"SISU": {
 				Id:        "SISU",
 				Price:     utils.EtherToWei(big.NewInt(8)).String(),
-				Chains:    []string{"ganache1"},
-				Addresses: []string{"addr1"},
+				Chains:    []string{"ganache1", "ganache2"},
+				Addresses: []string{testErc20TokenAddress, testErc20TokenAddress},
 			},
 		})
 
-		txOutputProducer := mockTxOutputProducer(ctx, keeper, worldState)
+		txOutputProducer := DefaultTxOutputProducer{
+			keeper: keeper,
+		}
 
 		destChain := "ganache2"
 		tokenAddr := ecommon.HexToAddress(testErc20TokenAddress)
 		amount := big.NewInt(10_000_000_000)
 
 		ethTx := mockEthTx(t, txOutputProducer, destChain, tokenAddr, amount)
-		data, err := parseEthTransferOut(ethTx, "ganache1", worldState)
+		data, err := parseEthTransferOut(ctx, keeper, ethTx, "ganache1")
 		require.Nil(t, err)
 		txResponse, err := txOutputProducer.buildERC20TransferIn(ctx, keeper, []*types.Token{data.Token},
 			[]ecommon.Address{ecommon.HexToAddress(data.Recipient)}, []*big.Int{data.Amount}, data.DestChain)
@@ -200,25 +156,25 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 	t.Run("token_has_zero_price", func(t *testing.T) {
 		ctx := testContext()
 		keeper := mockKeeperForTxOutProducerEth(ctx)
-		deyesClient := &tssclients.MockDeyesClient{}
-		worldState := defaultWorldStateTest(ctx, keeper, deyesClient)
-		worldState.SetTokens(map[string]*types.Token{
+		keeper.SetTokens(ctx, map[string]*types.Token{
 			"SISU": {
 				Id:        "SISU",
 				Price:     utils.ZeroBigInt.String(),
-				Chains:    []string{"ganache1"},
-				Addresses: []string{"addr1"},
+				Chains:    []string{"ganache1", "ganache2"},
+				Addresses: []string{testErc20TokenAddress, testErc20TokenAddress},
 			},
 		})
 
-		txOutputProducer := mockTxOutputProducer(ctx, keeper, worldState)
+		txOutputProducer := DefaultTxOutputProducer{
+			keeper: keeper,
+		}
 
 		destChain := "ganache2"
 		tokenAddr := ecommon.HexToAddress(testErc20TokenAddress)
 		amount := new(big.Int).Mul(big.NewInt(1), utils.EthToWei)
 
 		ethTx := mockEthTx(t, txOutputProducer, destChain, tokenAddr, amount)
-		data, err := parseEthTransferOut(ethTx, "ganache1", worldState)
+		data, err := parseEthTransferOut(ctx, keeper, ethTx, "ganache1")
 		require.Nil(t, err)
 		txResponse, err := txOutputProducer.buildERC20TransferIn(ctx, keeper, []*types.Token{data.Token},
 			[]ecommon.Address{ecommon.HexToAddress(data.Recipient)}, []*big.Int{data.Amount}, data.DestChain)
@@ -229,25 +185,25 @@ func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 	t.Run("token_has_negative_price", func(t *testing.T) {
 		ctx := testContext()
 		keeper := mockKeeperForTxOutProducerEth(ctx)
-		deyesClient := &tssclients.MockDeyesClient{}
-		worldState := defaultWorldStateTest(ctx, keeper, deyesClient)
-		worldState.SetTokens(map[string]*types.Token{
+		keeper.SetTokens(ctx, map[string]*types.Token{
 			"SISU": {
 				Id:        "SISU",
 				Price:     utils.EtherToWei(big.NewInt(-100)).String(),
-				Chains:    []string{"ganache1"},
-				Addresses: []string{"addr1"},
+				Chains:    []string{"ganache1", "ganache2"},
+				Addresses: []string{testErc20TokenAddress, testErc20TokenAddress},
 			},
 		})
 
-		txOutputProducer := mockTxOutputProducer(ctx, keeper, worldState)
+		txOutputProducer := DefaultTxOutputProducer{
+			keeper: keeper,
+		}
 
 		destChain := "ganache2"
 		tokenAddr := ecommon.HexToAddress(testErc20TokenAddress)
 		amount := new(big.Int).Mul(big.NewInt(1), utils.EthToWei)
 
 		ethTx := mockEthTx(t, txOutputProducer, destChain, tokenAddr, amount)
-		data, err := parseEthTransferOut(ethTx, "ganache1", worldState)
+		data, err := parseEthTransferOut(ctx, keeper, ethTx, "ganache1")
 		require.Nil(t, err)
 		txResponse, err := txOutputProducer.buildERC20TransferIn(ctx, keeper, []*types.Token{data.Token},
 			[]ecommon.Address{ecommon.HexToAddress(data.Recipient)}, []*big.Int{data.Amount}, data.DestChain)

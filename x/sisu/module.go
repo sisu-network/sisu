@@ -26,7 +26,6 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/client/rest"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
-	"github.com/sisu-network/sisu/x/sisu/world"
 )
 
 var (
@@ -114,7 +113,6 @@ type AppModule struct {
 	txSubmit        common.TxSubmit
 	globalData      common.GlobalData
 	valsManager     ValidatorManager
-	worldState      world.WorldState
 	txTracker       TxTracker
 	txOutSiger      *txOutSigner
 	mc              ManagerContainer
@@ -136,7 +134,6 @@ func NewAppModule(cdc codec.Marshaler,
 		appKeys:        mc.AppKeys(),
 		globalData:     mc.GlobalData(),
 		valsManager:    valsManager,
-		worldState:     mc.WorldState(),
 		txTracker:      mc.TxTracker(),
 		txOutSiger:     NewTxOutSigner(mc.Keeper(), mc.PartyManager(), mc.DheartClient()),
 		mc:             mc,
@@ -236,7 +233,6 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	}
 
 	// Reload data after reading the genesis
-	am.worldState.InitData(ctx)
 	am.mc.TransferQueue().Start(ctx)
 
 	return validators
@@ -252,10 +248,10 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	log.Verbose("BeginBlock, height = ", ctx.BlockHeight())
 
-	if !am.worldState.IsDataInitialized() {
+	if !am.globalData.AppInitialized() {
 		cloneCtx := utils.CloneSdkContext(ctx)
 		am.mc.TransferQueue().Start(cloneCtx)
-		am.worldState.InitData(cloneCtx)
+		am.globalData.SetAppInitialized()
 	}
 
 	am.processor.BeginBlock(ctx, req.Header.Height)

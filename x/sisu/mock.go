@@ -8,7 +8,6 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
-	"github.com/sisu-network/sisu/x/sisu/world"
 
 	"github.com/echovl/cardano-go"
 )
@@ -52,8 +51,6 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.readOnlyContext.Store(t)
 		case TxOutputProducer:
 			mc.txOutProducer = t
-		case world.WorldState:
-			mc.worldState = t
 		case ValidatorManager:
 			mc.valsManager = t
 		case TransferQueue:

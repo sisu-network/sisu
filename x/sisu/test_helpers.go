@@ -13,9 +13,7 @@ import (
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
-	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
-	"github.com/sisu-network/sisu/x/sisu/world"
 	tlog "github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
@@ -42,12 +40,14 @@ func testContext() sdk.Context {
 func keeperTestGenesis(ctx sdk.Context) keeper.Keeper {
 	keeper := keeper.NewKeeper(testKeyStore)
 	keeper.SaveChain(ctx, &types.Chain{
-		Id:       "ganache1",
-		GasPrice: int64(5_000_000_000),
+		Id:          "ganache1",
+		GasPrice:    int64(5_000_000_000),
+		NativeToken: "NATIVE_GANACHE1",
 	})
 	keeper.SaveChain(ctx, &types.Chain{
-		Id:       "ganache2",
-		GasPrice: int64(10_000_000_000),
+		Id:          "ganache2",
+		GasPrice:    int64(10_000_000_000),
+		NativeToken: "NATIVE_GANACHE2",
 	})
 	liquidities := map[string]*types.Liquidity{
 		"ganache1": {
@@ -162,11 +162,4 @@ func defaultTestEthTx(nonce uint64) *ethTypes.Transaction {
 
 	return ethTypes.NewTransaction(nonce,
 		ecommon.HexToAddress("0x743E1388AAd8EC7c47Df39AFbAEd58EBc1f43901"), amount, gasLimit, gasPrice, nil)
-}
-
-func defaultWorldStateTest(ctx sdk.Context, keeper keeper.Keeper, deyesClients tssclients.DeyesClient) world.WorldState {
-	ws := world.NewWorldState(keeper, deyesClients)
-	ws.InitData(ctx)
-
-	return ws
 }

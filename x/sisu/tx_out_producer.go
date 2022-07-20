@@ -16,7 +16,6 @@ import (
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
-	"github.com/sisu-network/sisu/x/sisu/world"
 )
 
 // This structs produces transaction output based on input. For a given tx input, this struct
@@ -38,10 +37,9 @@ type TxOutputProducer interface {
 }
 
 type DefaultTxOutputProducer struct {
-	signer     string
-	worldState world.WorldState
-	keeper     keeper.Keeper
-	txTracker  TxTracker
+	signer    string
+	keeper    keeper.Keeper
+	txTracker TxTracker
 
 	// Only use for cardano chain
 	cardanoConfig  config.CardanoConfig
@@ -55,14 +53,13 @@ type transferInData struct {
 	amount    *big.Int
 }
 
-func NewTxOutputProducer(worldState world.WorldState, appKeys common.AppKeys, keeper keeper.Keeper,
+func NewTxOutputProducer(appKeys common.AppKeys, keeper keeper.Keeper,
 	cardanoConfig config.CardanoConfig,
 	cardanoClient scardano.CardanoClient,
 	txTracker TxTracker) TxOutputProducer {
 	return &DefaultTxOutputProducer{
 		signer:         appKeys.GetSignerAddress().String(),
 		keeper:         keeper,
-		worldState:     worldState,
 		txTracker:      txTracker,
 		cardanoNetwork: cardanoConfig.GetCardanoNetwork(),
 		cardanoClient:  cardanoClient,

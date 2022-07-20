@@ -5,16 +5,19 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/gorilla/mux"
-	"github.com/sisu-network/sisu/x/sisu/world"
+	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/keeper"
 )
 
 type ExternalHandler struct {
-	worldState world.WorldState
+	keeper     keeper.Keeper
+	globalData common.GlobalData
 }
 
-func NewExternalHandler(worldState world.WorldState) *ExternalHandler {
+func NewExternalHandler(keeper keeper.Keeper, globalData common.GlobalData) *ExternalHandler {
 	return &ExternalHandler{
-		worldState: worldState,
+		keeper:     keeper,
+		globalData: globalData,
 	}
 }
 

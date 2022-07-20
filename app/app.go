@@ -1,7 +1,6 @@
 package app
 
 import (
-	econfig "github.com/sisu-network/deyes/config"
 	"io"
 	"path/filepath"
 
@@ -56,6 +55,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	econfig "github.com/sisu-network/deyes/config"
 	"github.com/sisu-network/lib/log"
 	appparams "github.com/sisu-network/sisu/app/params"
 	"github.com/sisu-network/sisu/config"
@@ -67,7 +67,6 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/client/rest"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	sisutypes "github.com/sisu-network/sisu/x/sisu/types"
-	"github.com/sisu-network/sisu/x/sisu/world"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
@@ -266,8 +265,7 @@ func New(
 	// storage that contains common data for all the nodes
 	privateDb := keeper.NewStorageDb(filepath.Join(cfg.Sisu.Dir, "private"))
 
-	worldState := world.NewWorldState(app.k, deyesClient)
-	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert, worldState)
+	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert)
 
 	cardanoClient := scardano.NewBlockfrostClient(cfg.Cardano.GetCardanoNetwork(), cfg.Cardano.BlockfrostSecret)
 	if cfg.Cardano.ClientType == econfig.ClientTypeSelfHost {
@@ -277,18 +275,18 @@ func New(
 
 	valsMgr := tss.NewValidatorManager(app.k)
 	partyManager := tss.NewPartyManager(app.globalData)
-	txOutProducer := tss.NewTxOutputProducer(worldState, app.appKeys, app.k, cfg.Cardano,
+	txOutProducer := tss.NewTxOutputProducer(app.appKeys, app.k, cfg.Cardano,
 		cardanoClient, txTracker)
 	txInQueue := sisu.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss)
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.k),
 		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
-		app.appKeys, txOutProducer, worldState, txTracker, app.k, valsMgr, txInQueue)
+		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, txInQueue)
 
 	apiHandler := tss.NewApiHandler(privateDb, mc)
 	app.apiHandler.SetAppLogicListener(apiHandler)
 
 	sisuHandler := tss.NewSisuHandler(mc)
-	externalHandler := rest.NewExternalHandler(worldState)
+	externalHandler := rest.NewExternalHandler(app.k, app.globalData)
 	app.externalHandler = externalHandler
 
 	modules := []module.AppModule{

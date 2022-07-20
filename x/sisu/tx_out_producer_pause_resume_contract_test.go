@@ -3,7 +3,6 @@ package sisu
 import (
 	"testing"
 
-	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/stretchr/testify/require"
 )
 
@@ -13,12 +12,9 @@ func TestTxOutPauseResumeContract(t *testing.T) {
 	t.Run("can_pause_or_resume", func(t *testing.T) {
 		ctx := testContext()
 		keeper := keeperTestAfterContractDeployed(ctx)
-		deyesClient := &tssclients.MockDeyesClient{}
-		worldState := defaultWorldStateTest(ctx, keeper, deyesClient)
 		txOutputProducer := DefaultTxOutputProducer{
-			worldState: worldState,
-			keeper:     keeper,
-			signer:     "signer",
+			keeper: keeper,
+			signer: "signer",
 		}
 
 		chain := "ganache1"
@@ -35,12 +31,9 @@ func TestTxOutPauseResumeContract(t *testing.T) {
 	t.Run("unsupported_chain", func(t *testing.T) {
 		ctx := testContext()
 		keeper := keeperTestAfterContractDeployed(ctx)
-		deyesClient := &tssclients.MockDeyesClient{}
-		worldState := defaultWorldStateTest(ctx, keeper, deyesClient)
 		txOutputProducer := DefaultTxOutputProducer{
-			worldState: worldState,
-			keeper:     keeper,
-			signer:     "signer",
+			keeper: keeper,
+			signer: "signer",
 		}
 
 		chain := "chain"
@@ -53,12 +46,9 @@ func TestTxOutPauseResumeContract(t *testing.T) {
 	t.Run("can_not_find_gateway_address", func(t *testing.T) {
 		ctx := testContext()
 		keeper := keeperTestAfterKeygen(ctx)
-		deyesClient := &tssclients.MockDeyesClient{}
-		worldState := defaultWorldStateTest(ctx, keeper, deyesClient)
 		txOutputProducer := DefaultTxOutputProducer{
-			worldState: worldState,
-			keeper:     keeper,
-			signer:     "signer",
+			keeper: keeper,
+			signer: "signer",
 		}
 
 		chain := "ganache1"

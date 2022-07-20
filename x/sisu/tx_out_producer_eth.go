@@ -12,9 +12,9 @@ import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/helper"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
-	"github.com/sisu-network/sisu/x/sisu/world"
 )
 
 func decodeTxParams(abi abi.ABI, callData []byte) (map[string]interface{}, error) {
@@ -37,7 +37,8 @@ func decodeTxParams(abi abi.ABI, callData []byte) (map[string]interface{}, error
 	return txParams, nil
 }
 
-func parseEthTransferOut(ethTx *ethTypes.Transaction, srcChain string, worldState world.WorldState) (*types.TransferOutData, error) {
+func parseEthTransferOut(ctx sdk.Context, k keeper.Keeper, ethTx *ethTypes.Transaction,
+	srcChain string) (*types.TransferOutData, error) {
 	erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
 	gwAbi := erc20gatewayContract.Abi
 	callData := ethTx.Data()
@@ -58,7 +59,21 @@ func parseEthTransferOut(ethTx *ethTypes.Transaction, srcChain string, worldStat
 		return nil, err
 	}
 
-	token := worldState.GetTokenFromAddress(srcChain, tokenAddr.String())
+	tokens := k.GetAllTokens(ctx)
+	var token *types.Token
+	addr := tokenAddr.String()
+	for _, t := range tokens {
+		for i, chain := range t.Chains {
+			if chain == srcChain && t.Addresses[i] == addr {
+				token = t
+				break
+			}
+		}
+		if token != nil {
+			break
+		}
+	}
+
 	if token == nil {
 		return nil, fmt.Errorf("invalid address %s on chain %s", tokenAddr, srcChain)
 	}
@@ -141,11 +156,12 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	gatewayAddress := ethcommon.HexToAddress(gw)
 	erc20gatewayContract := SupportedContracts[targetContractName]
 
-	gasPrice, err := p.worldState.GetGasPrice(destChain)
-	if err != nil {
-		return nil, err
+	chain := k.GetChain(ctx, destChain)
+	if chain == nil {
+		return nil, fmt.Errorf("Invalid chain: %s", chain)
 	}
 
+	gasPrice := big.NewInt(chain.GasPrice)
 	if gasPrice.Cmp(big.NewInt(0)) <= 0 {
 		gasPrice = p.getDefaultGasPrice(destChain)
 	}
@@ -168,9 +184,10 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 		}
 
 		// 1. TODO: Subtract the commission fee.
-		gasPriceInToken, err := p.worldState.GetGasCostInToken(tokens[i].Id, destChain)
+		gasPriceInToken, err := helper.GetChainGasCostInToken(ctx, k, tokens[i].Id, destChain, big.NewInt(80_000))
 		if err != nil {
-			return nil, err
+			log.Error("Cannot get gas cost in token, err = ", err)
+			continue
 		}
 
 		if gasPriceInToken.Cmp(utils.ZeroBigInt) < 0 {

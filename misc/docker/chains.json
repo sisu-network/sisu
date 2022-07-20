@@ -1,0 +1,10 @@
+[
+  {
+    "id": "ganache1",
+    "gas_price": 2000000000
+  },
+  {
+    "id": "ganache2",
+    "gas_price": 2000000000
+  }
+]
