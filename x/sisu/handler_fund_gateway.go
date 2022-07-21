@@ -134,6 +134,7 @@ func (h *HandlerFundGateway) getContractTx(ctx sdk.Context, contract *types.Cont
 			return nil
 		}
 		gasLimit := h.getGasLimit(contract.Chain)
+		log.Verbosef("Gas price = %d, gas limit = %d", gasPrice, gasLimit)
 		rawTx := ethTypes.NewContractCreation(
 			0,
 			big.NewInt(0),
