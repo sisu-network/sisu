@@ -333,8 +333,8 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, chain, mnemonic, 
 	log.Info("Gas price = ", gasPrice, " on chain ", chain)
 
 	amount := new(big.Int).Mul(big.NewInt(8_000_000), gasPrice)
-	// amount = amount * 1.2
-	amount = amount.Mul(amount, big.NewInt(12))
+	// amount = amount * 1.4
+	amount = amount.Mul(amount, big.NewInt(14))
 	amount = amount.Quo(amount, big.NewInt(10))
 
 	gasLimit := uint64(22000) // in units
