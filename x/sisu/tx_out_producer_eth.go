@@ -166,7 +166,7 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 
 	gasPrice := big.NewInt(premiumGasPrice)
 	if gasPrice.Cmp(big.NewInt(0)) <= 0 {
-		gasPrice = p.getDefaultGasPrice(destChain)
+		return nil, fmt.Errorf("Gas price is non-positive: %s", gasPrice.String())
 	}
 
 	log.Debug("Gas price for swapping  = ", gasPrice)

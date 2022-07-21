@@ -130,7 +130,8 @@ func (h *HandlerFundGateway) getContractTx(ctx sdk.Context, contract *types.Cont
 
 		gasPrice := chain.GasPrice
 		if gasPrice <= 0 {
-			gasPrice = h.getDefaultGasPrice(contract.Chain).Int64()
+			log.Errorf("Gas price is non positive: %d", gasPrice)
+			return nil
 		}
 		gasLimit := h.getGasLimit(contract.Chain)
 		rawTx := ethTypes.NewContractCreation(
@@ -150,31 +151,4 @@ func (h *HandlerFundGateway) getContractTx(ctx sdk.Context, contract *types.Cont
 func (h *HandlerFundGateway) getGasLimit(chain string) uint64 {
 	// TODO: Make this dependent on different chains.
 	return uint64(8_000_000)
-}
-
-// @Deprecated
-func (h *HandlerFundGateway) getDefaultGasPrice(chain string) *big.Int {
-	switch chain {
-	case "ganache1":
-		return big.NewInt(2_000_000_000)
-	case "ganache2":
-		return big.NewInt(2_000_000_000)
-	case "ropsten-testnet":
-		return big.NewInt(4_000_000_000)
-	case "binance-testnet":
-		return big.NewInt(18_000_000_000)
-	case "polygon-testnet":
-		return big.NewInt(7_000_000_000)
-	case "xdai":
-		return big.NewInt(2_000_000_000)
-	case "goerli-testnet":
-		return big.NewInt(1_500_000_000)
-	case "eth":
-		return big.NewInt(70_000_000_000)
-	case "arbitrum-testnet":
-		return big.NewInt(50_000_000)
-	case "fantom-testnet":
-		return big.NewInt(75_000_000_000)
-	}
-	return big.NewInt(100_000_000_000)
 }
