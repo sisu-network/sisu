@@ -326,6 +326,10 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, chain, mnemonic, 
 		panic(err)
 	}
 
+	// Add some 10% premimum to the gas price
+	gasPrice = gasPrice.Mul(gasPrice, big.NewInt(110))
+	gasPrice = gasPrice.Quo(gasPrice, big.NewInt(100))
+
 	log.Info("Gas price = ", gasPrice, " on chain ", chain)
 
 	amount := new(big.Int).Mul(big.NewInt(8_000_000), gasPrice)
