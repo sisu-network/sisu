@@ -151,5 +151,5 @@ func (h *HandlerFundGateway) getContractTx(ctx sdk.Context, contract *types.Cont
 
 func (h *HandlerFundGateway) getGasLimit(chain string) uint64 {
 	// TODO: Make this dependent on different chains.
-	return uint64(8_000_000)
+	return uint64(4_000_000)
 }
