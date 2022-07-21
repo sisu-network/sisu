@@ -43,6 +43,16 @@ log_local = {{ .LogDNA.LogLocal }}
 [cardano]
 block_frost_secret = "{{ .Cardano.BlockfrostSecret }}"
 network = {{ .Cardano.Network }}
+client_type = "{{ .Cardano.ClientType }}"
+
+[cardano.sync_db]
+host = "{{ .Cardano.SyncDB.Host }}"
+port = {{ .Cardano.SyncDB.Port }}
+user = "{{ .Cardano.SyncDB.User }}"
+password = "{{ .Cardano.SyncDB.Password }}"
+db_name = "{{ .Cardano.SyncDB.DbName }}"
+submit_url = "{{ .Cardano.SyncDB.SubmitURL }}"
+ 
 
 ###############################################################################
 ###                         Siu TSS Configuration                          ###

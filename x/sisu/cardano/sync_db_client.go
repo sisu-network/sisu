@@ -13,6 +13,7 @@ import (
 	"github.com/echovl/cardano-go"
 	ecore "github.com/sisu-network/deyes/chains/cardano/core"
 	econfig "github.com/sisu-network/deyes/config"
+	"github.com/sisu-network/lib/log"
 
 	_ "github.com/lib/pq"
 )
@@ -54,8 +55,11 @@ func (s *SyncDbClient) Balance(address cardano.Address, maxBlock uint64) (*carda
 }
 
 func (s *SyncDbClient) UTxOs(addr cardano.Address, maxBlock uint64) ([]cardano.UTxO, error) {
-	butxos, err := s.syncDB.AddressUTXOs(context.Background(), addr.Bech32(), blockfrost.APIQueryParams{To: strconv.Itoa(int(maxBlock))})
+	butxos, err := s.syncDB.AddressUTXOs(context.Background(), addr.Bech32(), blockfrost.APIQueryParams{
+		To: strconv.FormatUint(maxBlock, 10),
+	})
 	if err != nil {
+		log.Error("error when calling address utxos, err = ", err)
 		return nil, err
 	}
 

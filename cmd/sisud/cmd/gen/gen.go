@@ -154,7 +154,7 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 		// Write config/app.toml
 		srvconfig.WriteConfigFile(filepath.Join(mainAppDir, "config/app.toml"), simappConfig)
 
-		// Genreate sisu.toml
+		// Generate sisu.toml
 		generateSisuToml(settings, i, nodeDir)
 	}
 
@@ -351,6 +351,14 @@ func generateSisuToml(settings *Setting, index int, nodeDir string) {
 
 	if len(settings.cardanoSecret) > 0 {
 		cfg.Cardano.BlockfrostSecret = settings.cardanoSecret
+	}
+
+	if settings.cardanoDbConfig != nil {
+		cfg.Cardano.SyncDB = *settings.cardanoDbConfig
+	}
+
+	if len(settings.cardanoClientType) > 0 {
+		cfg.Cardano.ClientType = settings.cardanoClientType
 	}
 
 	config.WriteConfigFile(filepath.Join(configDir, "sisu.toml"), &cfg)
