@@ -63,6 +63,7 @@ func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
 	checkPoint := s.keeper.GetGatewayCheckPoint(ctx, tx.OutChain)
 	if checkPoint == nil {
 		err := fmt.Errorf("cannot find gateway checkout for chain %s", tx.OutChain)
+		log.Error(err)
 		return err
 	}
 
@@ -76,6 +77,7 @@ func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
 	})
 	bz, err := ethTxWithNonce.MarshalBinary()
 	if err != nil {
+		log.Error(err)
 		return err
 	}
 

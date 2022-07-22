@@ -55,6 +55,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/upgrade"
 	upgradekeeper "github.com/cosmos/cosmos-sdk/x/upgrade/keeper"
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
+	econfig "github.com/sisu-network/deyes/config"
 	"github.com/sisu-network/lib/log"
 	appparams "github.com/sisu-network/sisu/app/params"
 	"github.com/sisu-network/sisu/config"
@@ -266,12 +267,16 @@ func New(
 
 	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert)
 
-	cardanoNode := scardano.NewBlockfrostClient(cfg.Cardano.GetCardanoNetwork(), cfg.Cardano.BlockfrostSecret)
+	cardanoClient := scardano.NewBlockfrostClient(cfg.Cardano.GetCardanoNetwork(), cfg.Cardano.BlockfrostSecret)
+	if cfg.Cardano.ClientType == econfig.ClientTypeSelfHost {
+		log.Info("Use cardano selfhost client")
+		cardanoClient = scardano.NewSyncDBClient(cfg.Cardano.SyncDB, cfg.Cardano.SyncDB.SubmitURL)
+	}
 
 	valsMgr := tss.NewValidatorManager(app.k)
 	partyManager := tss.NewPartyManager(app.globalData)
 	txOutProducer := tss.NewTxOutputProducer(app.appKeys, app.k, cfg.Cardano,
-		cardanoNode, txTracker)
+		cardanoClient, txTracker)
 	txInQueue := sisu.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss)
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.k),
 		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,

@@ -8,11 +8,11 @@ import (
 	"github.com/sisu-network/sisu/utils"
 )
 
-// BuildTx contructs a cardano transaction that sends from sender address to receive address.
+// BuildTx constructs a cardano transaction that sends from sender address to receive address.
 func BuildTx(node CardanoClient, sender cardano.Address, receivers []cardano.Address,
 	amounts []*cardano.Value, metadata cardano.Metadata, utxos []cardano.UTxO, maxBlock uint64) (*cardano.Tx, error) {
 	// Calculate if the account has enough balance
-	balance, err := node.Balance(sender)
+	balance, err := node.Balance(sender, maxBlock)
 	if err != nil {
 		return nil, err
 	}

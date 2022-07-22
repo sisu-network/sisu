@@ -36,6 +36,7 @@ type Setting struct {
 	keyringPassphrase string
 	algoStr           string
 	numValidators     int
+	cardanoClientType econfig.ClientType
 	cardanoSecret     string
 	cardanoDbConfig   *econfig.SyncDbConfig
 
@@ -57,6 +58,18 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager, genBalIterat
 	numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 	genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 	cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
+	cardanoDbConfig, _ := cmd.Flags().GetString(flags.CardanoDbConfig)
+	syncDbConfig := &econfig.SyncDbConfig{}
+	var clientType econfig.ClientType
+	if len(cardanoDbConfig) > 0 {
+		err := json.Unmarshal([]byte(cardanoDbConfig), syncDbConfig)
+		if err != nil {
+			panic(err)
+		}
+		clientType = econfig.ClientTypeSelfHost
+	} else {
+		clientType = econfig.ClientTypeBlockFrost
+	}
 
 	supportedChainsArr := getSupportedChains(cmd, genesisFolder)
 
@@ -80,10 +93,12 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager, genBalIterat
 			MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3)),
 			SupportedChains:   supportedChainsArr,
 		},
-		cardanoSecret: cardanoSecret,
-		tokens:        getTokens(filepath.Join(genesisFolder, "tokens.json")),
-		chains:        getChains(filepath.Join(genesisFolder, "chains.json")),
-		liquidities:   getLiquidity(filepath.Join(genesisFolder, "liquid.json")),
+		cardanoSecret:     cardanoSecret,
+		cardanoDbConfig:   syncDbConfig,
+		cardanoClientType: clientType,
+		tokens:            getTokens(filepath.Join(genesisFolder, "tokens.json")),
+		chains:            getChains(filepath.Join(genesisFolder, "chains.json")),
+		liquidities:       getLiquidity(filepath.Join(genesisFolder, "liquid.json")),
 	}
 
 	return setting
@@ -101,7 +116,7 @@ func getDeyesChains(cmd *cobra.Command, genesisFolder string) []econfig.Chain {
 			Id: "cardano-testnet",
 		})
 
-		var syncDbConfig econfig.SyncDbConfig
+		syncDbConfig := econfig.SyncDbConfig{}
 		var clientType econfig.ClientType
 
 		if len(cardanoDbConfig) > 0 {

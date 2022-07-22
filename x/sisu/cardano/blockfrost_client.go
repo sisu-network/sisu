@@ -15,14 +15,16 @@ const (
 	MaxBlockHeight = 9223372036854775807
 )
 
+var _ CardanoClient = (*blockFrostClient)(nil)
+
 var (
-	InsufficientFundErr = fmt.Errorf("Insufficient Fund")
+	InsufficientFundErr = fmt.Errorf("insufficient fund")
 )
 
-// CardanoClient is a interface that interface with Cardano blockchain.
+// CardanoClient is an interface that interface with Cardano blockchain.
 type CardanoClient interface {
 	// Balance returns the current balance of an account.
-	Balance(address cardano.Address) (*cardano.Value, error)
+	Balance(address cardano.Address, maxBlock uint64) (*cardano.Value, error)
 
 	// UTxOs returns a list of unspent transaction outputs for a given address
 	UTxOs(addr cardano.Address, maxBlock uint64) ([]cardano.UTxO, error)
@@ -57,9 +59,9 @@ func NewBlockfrostClient(network cardano.Network, secret string) CardanoClient {
 	}
 }
 
-func (c *blockFrostClient) Balance(address cardano.Address) (*cardano.Value, error) {
+func (c *blockFrostClient) Balance(address cardano.Address, maxBlock uint64) (*cardano.Value, error) {
 	balance := cardano.NewValue(0)
-	utxos, err := c.UTxOs(address, MaxBlockHeight)
+	utxos, err := c.UTxOs(address, maxBlock)
 	if err != nil {
 		return nil, err
 	}
