@@ -149,21 +149,6 @@ log_local = {{ .LogDNA.LogLocal }}
 	tmos.MustWriteFile(filepath.Join(dir, "dheart.toml"), buffer.Bytes(), 0644)
 }
 
-func getChains(file string) []*types.Chain {
-	chains := []*types.Chain{}
-
-	dat, err := os.ReadFile(file)
-	if err != nil {
-		panic(err)
-	}
-
-	if err := json.Unmarshal(dat, &chains); err != nil {
-		panic(err)
-	}
-
-	return chains
-}
-
 func getTokens(file string) []*types.Token {
 	tokens := []*types.Token{}
 

@@ -13,6 +13,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	econfig "github.com/sisu-network/deyes/config"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
+	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
@@ -82,7 +83,7 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager, genBalIterat
 		},
 		cardanoSecret: cardanoSecret,
 		tokens:        getTokens(filepath.Join(genesisFolder, "tokens.json")),
-		chains:        getChains(filepath.Join(genesisFolder, "chains.json")),
+		chains:        helper.GetChains(filepath.Join(genesisFolder, "chains.json")),
 		liquidities:   getLiquidity(filepath.Join(genesisFolder, "liquid.json")),
 	}
 
@@ -94,7 +95,7 @@ func getDeyesChains(cmd *cobra.Command, genesisFolder string) []econfig.Chain {
 	cardanoDbConfig, _ := cmd.Flags().GetString(flags.CardanoDbConfig)
 	deyesChains := readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
 
-	chains := getChains(filepath.Join(genesisFolder, "chains.json"))
+	chains := helper.GetChains(filepath.Join(genesisFolder, "chains.json"))
 	// Add Cardano config
 	if len(cardanoSecret) > 0 || len(cardanoDbConfig) > 0 {
 		chains = append(chains, &types.Chain{
@@ -132,7 +133,7 @@ func getSupportedChains(cmd *cobra.Command, genesisFolder string) []string {
 	cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 	cardanoDbConfig, _ := cmd.Flags().GetString(flags.CardanoDbConfig)
 
-	chains := getChains(filepath.Join(genesisFolder, "chains.json"))
+	chains := helper.GetChains(filepath.Join(genesisFolder, "chains.json"))
 	supportedChainsArr := make([]string, 0)
 	for _, chain := range chains {
 		supportedChainsArr = append(supportedChainsArr, chain.Id)

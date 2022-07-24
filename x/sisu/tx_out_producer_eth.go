@@ -148,7 +148,7 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	targetContractName := ContractErc20Gateway
 	gw := p.keeper.GetLatestContractAddressByName(ctx, destChain, targetContractName)
 	if len(gw) == 0 {
-		err := fmt.Errorf("cannot find gw address for type: %s", targetContractName)
+		err := fmt.Errorf("cannot find gw address for type: %s on chain %s", targetContractName, destChain)
 		log.Error(err)
 		return nil, err
 	}

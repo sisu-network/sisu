@@ -302,7 +302,6 @@ func (am AppModule) signTxOut(ctx sdk.Context) {
 		}
 
 		queue := am.keeper.GetTxOutQueue(ctx, chain)
-		fmt.Println("len queue = ", len(queue))
 		if len(queue) == 0 {
 			continue
 		}

@@ -38,7 +38,6 @@ var (
 	flagChainId           = "chain-id"
 	flagConfigString      = "config-string"
 	flagKeyringPassphrase = "keyring-passphrase"
-	flagGenesisFolder     = "genesis-folder"
 )
 
 type localnetGenerator struct{}
@@ -63,7 +62,7 @@ Example:
 
 			generator := &localnetGenerator{}
 			startingIPAddress, _ := cmd.Flags().GetString(flagStartingIPAddress)
-			genesisFolder, _ := cmd.Flags().GetString(flagGenesisFolder)
+			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 
 			// Get Chain id and keyring backend from .env file.
 			chainID := "eth-sisu-local"
@@ -111,7 +110,7 @@ Example:
 	cmd.Flags().String(flags.KeyringBackend, keyring.BackendTest, "Keyring backend. file|os|kwallet|pass|test|memory")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 	cmd.Flags().String(flags.CardanoDbConfig, "", "Configuration for cardano sync db.")
-	cmd.Flags().String(flagGenesisFolder, "./misc/dev", "Relative path to the folder that contains genesis configuration.")
+	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "Relative path to the folder that contains genesis configuration.")
 
 	return cmd
 }
