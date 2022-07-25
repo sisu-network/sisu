@@ -161,10 +161,7 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 		return nil, fmt.Errorf("Invalid chain: %s", chain)
 	}
 
-	// Add small amount to gas price to give this tx higher priority in the ETH tx pool
-	premiumGasPrice := chain.GasPrice * 105 / 100
-
-	gasPrice := big.NewInt(premiumGasPrice)
+	gasPrice := big.NewInt(chain.GasPrice)
 	if gasPrice.Cmp(big.NewInt(0)) <= 0 {
 		return nil, fmt.Errorf("Gas price is non-positive: %s", gasPrice.String())
 	}
