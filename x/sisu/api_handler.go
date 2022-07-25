@@ -380,7 +380,7 @@ func (a *ApiHandler) processETHSigningResult(ctx sdk.Context, result *dhtypes.Ke
 
 	// // TODO: Broadcast the keysign result that includes this TxOutSig.
 	// // Save this to TxOutSig
-	fmt.Println("signMsg.OutHash = ", signMsg.OutHash)
+	log.Verbose("ETH keysign result signMsg.OutHash = ", signMsg.OutHash)
 	a.privateDb.SaveTxOutSig(&types.TxOutSig{
 		Chain:       signMsg.OutChain,
 		HashWithSig: signedTx.Hash().String(),

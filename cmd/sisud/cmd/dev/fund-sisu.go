@@ -317,7 +317,6 @@ func (c *fundAccountCmd) isContractDeployed(client *ethclient.Client, tokenAddre
 // transferEth transfers a specific ETH amount to an address.
 func (c *fundAccountCmd) transferEth(client *ethclient.Client, genesisFolder, chain, mnemonic, recipient string) {
 	chains := helper.GetChains(filepath.Join(genesisFolder, "chains.json"))
-	fmt.Println("chains = ", chains)
 	var genesisGas *big.Int
 	for _, c := range chains {
 		if c.Id == chain {
