@@ -1,8 +1,6 @@
 package sisu
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -53,7 +51,7 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msg *types.TxsIn) ([]byte, error) 
 			}
 		}
 
-		fmt.Println("Adding transfer to the queue, transfer = ", *transfer)
+		log.Debug("Adding transfer to the queue, transfer = ", *transfer)
 
 		allTransfers[request.ToChain] = append(allTransfers[request.ToChain], transfer)
 	}
@@ -64,7 +62,7 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msg *types.TxsIn) ([]byte, error) 
 			continue
 		}
 
-		fmt.Println("setting transfer queue for chain ", request.ToChain, " allTransfers length = ",
+		log.Debug("setting transfer queue for chain ", request.ToChain, " allTransfers length = ",
 			len(allTransfers[request.ToChain]))
 
 		h.keeper.SetTransferQueue(ctx, request.ToChain, allTransfers[request.ToChain])

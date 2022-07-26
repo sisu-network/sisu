@@ -438,13 +438,15 @@ func (a *ApiHandler) processCardanoSigningResult(ctx sdk.Context, result *dhtype
 		HashNoSig:   signMsg.OutHash,
 	})
 
-	log.Debug("tx = ", tx)
-
 	// TODO: temporary use json to encode/decode. In the future, should use cbor instead
 	txBytes, err := tx.MarshalCBOR()
 	if err != nil {
 		log.Error("error when marshal cardano tx: ", err)
 		return err
+	}
+	hash, err := tx.Hash()
+	if err != nil {
+		return nil
 	}
 
 	err = a.deploySignedTx(ctx, txBytes, signMsg.OutChain, result.Request.KeysignMessages[index].OutHash, false)
@@ -453,7 +455,7 @@ func (a *ApiHandler) processCardanoSigningResult(ctx sdk.Context, result *dhtype
 		return err
 	}
 
-	log.Info("Sent signed cardano tx to deyes")
+	log.Info("Sent signed cardano tx to deyes, tx hash = ", hash)
 
 	return nil
 }
@@ -475,7 +477,16 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 		IsEthContractDeployment: isContractDeployment,
 	}
 
-	go a.deyesClient.Dispatch(request)
+	go func(request *eyesTypes.DispatchedTxRequest) {
+		result, err := a.deyesClient.Dispatch(request)
+		if err != nil {
+			log.Error("Failed to deploy, err = ", err)
+			return
+		}
+		if result != nil && !result.Success {
+			log.Error("Deployment failed!, err = ", result.Err)
+		}
+	}(request)
 
 	return nil
 }
@@ -495,32 +506,42 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	ctx := a.globalData.GetReadOnlyContext()
 
 	// Create TxIn messages and broadcast to the Sisu chain.
+	// TODO: Prevent submitting fund gateway multiple times.
+	gatewayFundTxSubmitted := false
 	for _, tx := range txs.Arr {
-		txIns := a.parseTransferRequest(ctx, txs.Chain, tx)
+		// Check if this is a transaciton that fund ETH gateway
+		if libchain.IsETHBasedChain(txs.Chain) && !gatewayFundTxSubmitted {
+			ethTx := &ethTypes.Transaction{}
+			err := ethTx.UnmarshalBinary(tx.Serialized)
+			if err != nil {
+				log.Error("Failed to unmarshall eth tx. err =", err)
+				continue
+			}
+
+			if ethTx.To() != nil && a.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
+				msg := types.NewFundGatewayMsg(a.appKeys.GetSignerAddress().String(), &types.FundGateway{
+					Chain:  txs.Chain,
+					TxHash: utils.KeccakHash32Bytes(tx.Serialized),
+					Amount: ethTx.Value().Bytes(),
+				})
+
+				// For contract deployment
+				a.txSubmit.SubmitMessageAsync(msg)
+				gatewayFundTxSubmitted = true
+				continue
+			}
+		}
+
+		fmt.Println("Parsing transfer request....")
+		txIns, err := a.parseTransferRequest(ctx, txs.Chain, tx)
+		if err != nil {
+			log.Error("Faield to parse transfer, err = ", err)
+			continue
+		}
+
 		log.Verbose("Len(txIns) = ", len(txIns), " on chain ", txs.Chain)
 		if txIns != nil {
 			transferRequests.Requests = append(transferRequests.Requests, txIns...)
-		} else {
-			// Check if this is a transaciton that fund ETH gateway
-			if libchain.IsETHBasedChain(txs.Chain) {
-				ethTx := &ethTypes.Transaction{}
-				err := ethTx.UnmarshalBinary(tx.Serialized)
-				if err != nil {
-					log.Error("Failed to unmarshall eth tx. err =", err)
-					continue
-				}
-
-				if ethTx.To() != nil && a.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
-					msg := types.NewFundGatewayMsg(a.appKeys.GetSignerAddress().String(), &types.FundGateway{
-						Chain:  txs.Chain,
-						TxHash: utils.KeccakHash32Bytes(tx.Serialized),
-						Amount: ethTx.Value().Bytes(),
-					})
-
-					// For contract deployment
-					a.txSubmit.SubmitMessageAsync(msg)
-				}
-			}
 		}
 	}
 
@@ -543,7 +564,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	return nil
 }
 
-func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eyesTypes.Tx) []*types.TxIn {
+func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.TxIn, error) {
 	if libchain.IsETHBasedChain(chain) {
 		erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
 		gwAbi := erc20gatewayContract.Abi
@@ -552,15 +573,15 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 		err := ethTx.UnmarshalBinary(tx.Serialized)
 		if err != nil {
 			log.Error("Failed to unmarshall eth tx. err =", err)
-			return nil
+			return nil, err
 		}
 
 		transfer, err := eth.ParseEthTransferOut(ctx, ethTx, chain, gwAbi, a.keeper)
 		if err != nil {
-			return nil
+			return nil, err
 		}
 
-		return []*types.TxIn{transfer}
+		return []*types.TxIn{transfer}, nil
 	}
 
 	if libchain.IsCardanoChain(chain) {
@@ -568,7 +589,7 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 		cardanoTx := &etypes.CardanoTransactionUtxo{}
 		err := json.Unmarshal(tx.Serialized, cardanoTx)
 		if err != nil {
-			return nil
+			return nil, err
 		}
 
 		if cardanoTx != nil {
@@ -619,10 +640,10 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 			}
 		}
 
-		return ret
+		return ret, nil
 	}
 
-	return nil
+	return nil, fmt.Errorf("Unknown chain %s", chain)
 }
 
 // ConfirmTx implements AppLogicListener

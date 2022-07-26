@@ -28,7 +28,6 @@ func NewHandlerTxOutConfirm(mc ManagerContainer) *HandlerTxOutConfirm {
 }
 
 func (h *HandlerTxOutConfirm) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutConfirmMsg) (*sdk.Result, error) {
-	fmt.Println("There is a txout confirm")
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
 		data, err := h.doTxOutConfirm(ctx, signerMsg)
 		h.keeper.ProcessTxRecord(ctx, hash)
@@ -72,7 +71,7 @@ func (h *HandlerTxOutConfirm) doTxOutConfirm(ctx sdk.Context, msgWithSigner *typ
 	}
 
 	// Clear the pending TxOut
-	fmt.Println("Clearing pending out for chain", txOut.OutChain)
+	log.Debug("Clearing pending out for chain", txOut.OutChain)
 	h.keeper.SetPendingTxOut(ctx, txOut.OutChain, nil)
 
 	return nil, nil

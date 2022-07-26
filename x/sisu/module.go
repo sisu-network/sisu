@@ -298,7 +298,7 @@ func (am AppModule) signTxOut(ctx sdk.Context) {
 	for _, chain := range params.SupportedChains {
 		pending := am.keeper.GetPendingTxOut(ctx, chain)
 		if pending != nil {
-			fmt.Println(chain, " has some pending")
+			log.Debug(chain, " has some pending")
 			continue
 		}
 
@@ -312,6 +312,7 @@ func (am AppModule) signTxOut(ctx sdk.Context) {
 		am.keeper.SetTxOutQueue(ctx, txOut.OutChain, queue[1:])
 
 		if !am.globalData.IsCatchingUp() {
+			log.Verbose("Signing txout hash = ", txOut.OutHash)
 			am.txOutSiger.signTxOut(ctx, txOut)
 		}
 	}

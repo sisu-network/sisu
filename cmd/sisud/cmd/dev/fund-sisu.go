@@ -177,7 +177,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 
 // Get WRAP_ADA (hex: 575241505f414441) token.
 // PolicyID (dc89700b3adf88f6b520aba2f3cfa4c26fa7a19bd8eadf430d73b9d4) got from there:
-// https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=31c019b737edc7b54ae60a87f372f860715e8bb02b979ed853395ccbf4bf0209
+// https://testnet.cardanoscan.io/transaction/31c019b737edc7b54ae60a87f372f860715e8bb02b979ed853395ccbf4bf0209
 func getMultiAsset(amt uint64) *cardano.MultiAsset {
 	policyHash, err := cardano.NewHash28("dc89700b3adf88f6b520aba2f3cfa4c26fa7a19bd8eadf430d73b9d4")
 	if err != nil {
@@ -217,7 +217,7 @@ func (c *fundAccountCmd) fundCardano(receiver cardano.Address, funderMnemonic st
 	}
 
 	log.Infof("Funded 10 ADA and 1000 WRAP_ADA for address %s, txHash = %s, "+
-		"explorer: https://explorer.cardano-testnet.iohkdev.io/en/transaction?id=%s\n", receiver, txHash.String(), txHash.String())
+		"explorer: https://testnet.cardanoscan.io/transaction/%s\n", receiver, txHash.String(), txHash.String())
 }
 
 func (c *fundAccountCmd) getWalletFromMnemonic(client *wallet.Client, name, password, mnemonic string) (*wallet.Wallet, error) {
