@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	"fmt"
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -91,6 +92,7 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 	params := q.keeper.GetParams(ctx)
 	for _, chain := range params.SupportedChains {
 		queue := q.keeper.GetTransferQueue(ctx, chain)
+		fmt.Println("len(queue) = ", len(queue))
 		if len(queue) == 0 {
 			continue
 		}
@@ -99,6 +101,7 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 		batchSize := params.GetMaxTransferOutBatch(chain)
 		for i := 0; i < len(queue); i += batchSize {
 			if _, ok := q.submittedTxs.Get(queue[i].Id); ok {
+				log.Warn("Tx with id ", queue[i].Id, " is already submitted")
 				continue
 			}
 
@@ -110,6 +113,7 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 			}
 
 			for j := 0; j < batchSize; j++ {
+				fmt.Println("Adding to submited txs ", queue[i+j].Id)
 				q.submittedTxs.Add(queue[i+j].Id, true)
 			}
 

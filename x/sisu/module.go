@@ -298,6 +298,7 @@ func (am AppModule) signTxOut(ctx sdk.Context) {
 	for _, chain := range params.SupportedChains {
 		pending := am.keeper.GetPendingTxOut(ctx, chain)
 		if pending != nil {
+			fmt.Println(chain, " has some pending")
 			continue
 		}
 

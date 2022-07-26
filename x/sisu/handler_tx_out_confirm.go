@@ -72,6 +72,7 @@ func (h *HandlerTxOutConfirm) doTxOutConfirm(ctx sdk.Context, msgWithSigner *typ
 	}
 
 	// Clear the pending TxOut
+	fmt.Println("Clearing pending out for chain", txOut.OutChain)
 	h.keeper.SetPendingTxOut(ctx, txOut.OutChain, nil)
 
 	return nil, nil

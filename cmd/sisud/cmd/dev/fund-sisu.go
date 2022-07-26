@@ -324,7 +324,7 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, genesisFolder, ch
 		}
 	}
 	if genesisGas == nil {
-		panic("Genesis gas is nil")
+		panic(fmt.Errorf("Genesis gas is nil on chain %s", chain))
 	}
 
 	_, account := getPrivateKey(mnemonic)

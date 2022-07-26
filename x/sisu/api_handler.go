@@ -485,7 +485,7 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	log.Verbose("There is a new list of txs from deyes, len =", len(txs.Arr))
 
-	blockRequests := &types.TxsIn{
+	transferRequests := &types.TxsIn{
 		Chain:    txs.Chain,
 		Hash:     txs.BlockHash,
 		Height:   txs.Block,
@@ -497,8 +497,9 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	// Create TxIn messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
 		txIns := a.parseTransferRequest(ctx, txs.Chain, tx)
+		log.Verbose("Len(txIns) = ", len(txIns), " on chain ", txs.Chain)
 		if txIns != nil {
-			blockRequests.Requests = append(blockRequests.Requests, txIns...)
+			transferRequests.Requests = append(transferRequests.Requests, txIns...)
 		} else {
 			// Check if this is a transaciton that fund ETH gateway
 			if libchain.IsETHBasedChain(txs.Chain) {
@@ -516,14 +517,15 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 						Amount: ethTx.Value().Bytes(),
 					})
 
+					// For contract deployment
 					a.txSubmit.SubmitMessageAsync(msg)
 				}
 			}
 		}
 	}
 
-	if len(blockRequests.Requests) > 0 {
-		msg := types.NewTxsInMsg(a.appKeys.GetSignerAddress().String(), blockRequests)
+	if len(transferRequests.Requests) > 0 {
+		msg := types.NewTxsInMsg(a.appKeys.GetSignerAddress().String(), transferRequests)
 		a.txSubmit.SubmitMessageAsync(msg)
 	}
 
@@ -569,10 +571,20 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 			return nil
 		}
 
+		if cardanoTx != nil {
+			fmt.Println("cardanoTx = ", *cardanoTx)
+		} else {
+			log.Error("cardanoTx is nil")
+		}
+
 		if cardanoTx.Metadata != nil {
 			fmt.Println("cardanoTx.Amount = ", cardanoTx.Amount)
 			// Convert from ADA unit (10^6) to our standard unit (10^18)
-			for _, amount := range cardanoTx.Amount {
+			for i, amount := range cardanoTx.Amount {
+				if i == len(cardanoTx.Amount)-1 {
+					// The last transaction returns the remaining token to the sender (or any other address).
+					break
+				}
 				fmt.Println("AAAAAAA 0000000, amount = ", amount)
 				quantity, ok := new(big.Int).SetString(amount.Quantity, 10)
 				if !ok {
@@ -598,6 +610,7 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 				fmt.Println("cardanoTx.Metadata = ", cardanoTx.Metadata)
 
 				ret = append(ret, &types.TxIn{
+					Hash:      cardanoTx.Hash,
 					ToChain:   cardanoTx.Metadata.Chain,
 					Token:     tokenUnit,
 					Recipient: cardanoTx.Metadata.Recipient,
