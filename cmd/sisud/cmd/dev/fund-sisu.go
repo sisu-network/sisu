@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -23,11 +22,11 @@ import (
 	hutils "github.com/sisu-network/dheart/utils"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
-	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
 	liquidity "github.com/sisu-network/sisu/contracts/eth/liquiditypool"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu"
+	"github.com/sisu-network/sisu/x/sisu/types"
 	tssTypes "github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
@@ -62,13 +61,12 @@ func FundSisu() *cobra.Command {
 			liquidityAddrString, _ := cmd.Flags().GetString(flags.LiquidityAddrs)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 			cardanoFunderMnemonic, _ := cmd.Flags().GetString(flags.CardanoFunderMnemonic)
-			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 			tokens := strings.Split(tokenString, ",")
 
 			c := &fundAccountCmd{}
-			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, genesisFolder, tokens,
+			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokens,
 				liquidityAddrString, sisuRpc, cardanoSecret, cardanoFunderMnemonic)
 
 			return nil
@@ -89,7 +87,7 @@ func FundSisu() *cobra.Command {
 }
 
 func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic string,
-	genesisFolder string, tokens []string, liquidityAddrString, sisuRpc, cardanoSecret, cardanoFunderMnemonic string) {
+	tokens []string, liquidityAddrString, sisuRpc, cardanoSecret, cardanoFunderMnemonic string) {
 	chains := strings.Split(chainString, ",")
 	liquidityAddrs := strings.Split(liquidityAddrString, ",")
 
@@ -137,7 +135,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 			}
 			tssPubAddr = crypto.PubkeyToAddress(*pubKey)
 
-			c.transferEth(client, genesisFolder, chain, mnemonic, tssPubAddr.Hex())
+			c.transferEth(client, sisuRpc, chain, mnemonic, tssPubAddr.Hex())
 		}(i, client, chains[i])
 	}
 	wg.Wait()
@@ -315,17 +313,12 @@ func (c *fundAccountCmd) isContractDeployed(client *ethclient.Client, tokenAddre
 }
 
 // transferEth transfers a specific ETH amount to an address.
-func (c *fundAccountCmd) transferEth(client *ethclient.Client, genesisFolder, chain, mnemonic, recipient string) {
-	chains := helper.GetChains(filepath.Join(genesisFolder, "chains.json"))
-	var genesisGas *big.Int
-	for _, c := range chains {
-		if c.Id == chain {
-			genesisGas = big.NewInt(c.GasPrice)
-		}
+func (c *fundAccountCmd) transferEth(client *ethclient.Client, sisuRpc, chain, mnemonic, recipient string) {
+	ch, err := queryChain(context.Background(), sisuRpc, chain)
+	if err != nil {
+		panic(fmt.Errorf("failed to get chain, err = %v", err))
 	}
-	if genesisGas == nil {
-		panic(fmt.Errorf("Genesis gas is nil on chain %s", chain))
-	}
+	genesisGas := big.NewInt(ch.GasPrice)
 
 	_, account := getPrivateKey(mnemonic)
 
@@ -377,6 +370,27 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, genesisFolder, ch
 
 	bind.WaitDeployed(context.Background(), client, signedTx)
 	time.Sleep(time.Second * 3)
+}
+
+func queryChain(ctx context.Context, sisuRpc string, chain string) (*types.Chain, error) {
+	grpcConn, err := grpc.Dial(
+		sisuRpc,
+		grpc.WithInsecure(),
+	)
+	defer grpcConn.Close()
+	if err != nil {
+		panic(err)
+	}
+
+	queryClient := tssTypes.NewTssQueryClient(grpcConn)
+	res, err := queryClient.QueryChain(ctx, &tssTypes.QueryChainRequest{
+		Chain: chain,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Chain, nil
 }
 
 func queryPubKeys(ctx context.Context, sisuRpc string) map[string][]byte {

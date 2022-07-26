@@ -31,8 +31,8 @@ require (
 	github.com/tendermint/tm-db v0.6.4
 	github.com/tyler-smith/go-bip39 v1.1.0
 	go.uber.org/atomic v1.9.0
-	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
-	google.golang.org/grpc v1.47.0
+	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa
+	google.golang.org/grpc v1.48.0
 )
 
 require (
@@ -187,7 +187,7 @@ require (
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220224211638-0e9765cccd65 // indirect
-	google.golang.org/genproto v0.0.0-20220715211116-798f69b842b9 // indirect
+	google.golang.org/genproto v0.0.0-20220725144611-272f38e5d71b // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
 	gopkg.in/ini.v1 v1.66.4 // indirect
 	gopkg.in/natefinch/npipe.v2 v2.0.0-20160621034901-c1b8fa8bdcce // indirect

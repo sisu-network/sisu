@@ -52,3 +52,15 @@ func (k *GrpcQuerier) QueryToken(goCtx context.Context, req *types.QueryTokenReq
 		Token: m[req.Id],
 	}, nil
 }
+
+func (k *GrpcQuerier) QueryChain(goCtx context.Context, req *types.QueryChainRequest) (*types.QueryChainResponse, error) {
+	ctx := sdk.UnwrapSDKContext(goCtx)
+	chain := k.keeper.GetChain(ctx, req.Chain)
+	if chain == nil {
+		return nil, fmt.Errorf("cannot find chain %s", req.Chain)
+	}
+
+	return &types.QueryChainResponse{
+		Chain: chain,
+	}, nil
+}

@@ -5,6 +5,7 @@ option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 
 import "sisu/contract.proto";
 import "sisu/token.proto";
+import "sisu/chain.proto";
 
 service TssQuery {
   rpc AllPubKeys(QueryAllPubKeysRequest) returns (QueryAllPubKeysResponse) {
@@ -13,14 +14,18 @@ service TssQuery {
   rpc QueryContract(QueryContractRequest) returns (QueryContractResponse) {}
 
   rpc QueryToken(QueryTokenRequest) returns (QueryTokenResponse) {}
+
+  rpc QueryChain(QueryChainRequest) returns (QueryChainResponse) {}
 }
 
+// Pubkeys
 message QueryAllPubKeysRequest {}
 
 message QueryAllPubKeysResponse {
   map<string, bytes> pubkeys = 1;
 }
 
+// Contract
 message QueryContractRequest {
   string chain = 1;
   string hash = 2;
@@ -30,9 +35,19 @@ message QueryContractResponse {
   Contract contract = 1;
 }
 
+// Token
 message QueryTokenRequest {
   string id = 1;
 }
 message QueryTokenResponse {
   Token token = 1;
+}
+
+// Chains
+message QueryChainRequest {
+  string chain = 1;
+}
+
+message QueryChainResponse {
+  Chain chain = 1;
 }
