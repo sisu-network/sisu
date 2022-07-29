@@ -19,7 +19,6 @@ var (
 	prefixContractAddress        = []byte{0x07}
 	prefixTxOut                  = []byte{0x08}
 	prefixTxOutSig               = []byte{0x09}
-	prefixTxOutContractConfirm   = []byte{0x0A}
 	prefixContractName           = []byte{0x0B}
 	prefixGasPrice               = []byte{0x0C}
 	prefixChain                  = []byte{0x0D}
@@ -612,23 +611,6 @@ func getAllChains(store cstypes.KVStore) map[string]*types.Chain {
 	}
 
 	return m
-}
-
-///// TxOutConfirm
-func saveTxOutConfirm(store cstypes.KVStore, msg *types.TxOutConfirm) {
-	key := getTxOutConfirmKey(msg.OutChain, msg.OutHash)
-	bz, err := msg.Marshal()
-	if err != nil {
-		log.Error("saveTxOutConfirm: Cannot marshal tx out")
-		return
-	}
-
-	store.Set(key, bz)
-}
-
-func isTxOutConfirmExisted(store cstypes.KVStore, outChain, hash string) bool {
-	key := getTxOutConfirmKey(outChain, hash)
-	return store.Has(key)
 }
 
 ///// Token Prices

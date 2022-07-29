@@ -56,10 +56,6 @@ type Keeper interface {
 	SaveTxOutSig(ctx sdk.Context, msg *types.TxOutSig)
 	GetTxOutSig(ctx sdk.Context, outChain, hashWithSig string) *types.TxOutSig
 
-	// TxOutConfirm
-	SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutConfirm)
-	IsTxOutConfirmExisted(ctx sdk.Context, outChain, hash string) bool
-
 	// Gas Price Record
 	SetGasPrice(ctx sdk.Context, msg *types.GasPriceMsg)
 	GetGasPriceRecord(ctx sdk.Context, height int64) *types.GasPriceRecord
@@ -278,17 +274,6 @@ func (k *DefaultKeeper) GetTxOutSig(ctx sdk.Context, outChain, hashWithSig strin
 func (k *DefaultKeeper) SaveTxOutSig(ctx sdk.Context, msg *types.TxOutSig) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutSig)
 	saveTxOutSig(store, msg)
-}
-
-///// TxOutConfirm
-func (k *DefaultKeeper) SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutConfirm) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutContractConfirm)
-	saveTxOutConfirm(store, msg)
-}
-
-func (k *DefaultKeeper) IsTxOutConfirmExisted(ctx sdk.Context, chain, hash string) bool {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutContractConfirm)
-	return isTxOutConfirmExisted(store, chain, hash)
 }
 
 ///// GasPrice
