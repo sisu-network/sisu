@@ -65,11 +65,11 @@ func TestModule_signTxOut(t *testing.T) {
 	pending1 := kpr.GetPendingTxOutInfo(ctx, "ganache1")
 	require.Equal(t, &types.PendingTxOutInfo{
 		TxOut:        txOut1_1,
-		ExpiredBlock: 2400,
+		ExpiredBlock: 10,
 	}, pending1)
 	pending2 := kpr.GetPendingTxOutInfo(ctx, "ganache2")
 	require.Equal(t, &types.PendingTxOutInfo{
 		TxOut:        txOut2_1,
-		ExpiredBlock: 2400,
+		ExpiredBlock: 10,
 	}, pending2)
 }

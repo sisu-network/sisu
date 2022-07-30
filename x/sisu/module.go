@@ -297,7 +297,7 @@ func (am AppModule) signTxOut(ctx sdk.Context) {
 	params := am.keeper.GetParams(ctx)
 	height := ctx.BlockHeight()
 
-	for _, chain := range params.SupportedChains {
+	for i, chain := range params.SupportedChains {
 		pendingInfo := am.keeper.GetPendingTxOutInfo(ctx, chain)
 		if pendingInfo != nil {
 			log.Debug(chain, " has some pending")
@@ -318,7 +318,7 @@ func (am AppModule) signTxOut(ctx sdk.Context) {
 		txOut := queue[0]
 		am.keeper.SetPendingTxOutInfo(ctx, txOut.OutChain, &types.PendingTxOutInfo{
 			TxOut:        txOut,
-			ExpiredBlock: height + 2400,
+			ExpiredBlock: height + params.PendingTxTimeoutHeights[i],
 		})
 		am.keeper.SetTxOutQueue(ctx, txOut.OutChain, queue[1:])
 
