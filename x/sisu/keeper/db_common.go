@@ -19,18 +19,18 @@ var (
 	prefixContractAddress        = []byte{0x07}
 	prefixTxOut                  = []byte{0x08}
 	prefixTxOutSig               = []byte{0x09}
-	prefixContractName           = []byte{0x0B}
-	prefixGasPrice               = []byte{0x0C}
-	prefixChain                  = []byte{0x0D}
-	prefixToken                  = []byte{0x0E}
-	prefixTokenPrices            = []byte{0x0F}
-	prefixNode                   = []byte{0x10}
-	prefixLiquidity              = []byte{0x11}
-	prefixParams                 = []byte{0x12}
-	prefixGatewayCheckPoint      = []byte{0x13}
-	prefixTransferQueue          = []byte{0x14}
-	prefixTxOutQueue             = []byte{0x15}
-	prefixPendingTxOut           = []byte{0x16}
+	prefixContractName           = []byte{0x0A}
+	prefixGasPrice               = []byte{0x0B}
+	prefixChain                  = []byte{0x0C}
+	prefixToken                  = []byte{0x0D}
+	prefixTokenPrices            = []byte{0x0E}
+	prefixNode                   = []byte{0x0F}
+	prefixLiquidity              = []byte{0x10}
+	prefixParams                 = []byte{0x11}
+	prefixGatewayCheckPoint      = []byte{0x12}
+	prefixTransferQueue          = []byte{0x13}
+	prefixTxOutQueue             = []byte{0x14}
+	prefixPendingTxOut           = []byte{0x15}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -937,35 +937,35 @@ func getTxOutQueue(store cstypes.KVStore, chain string) []*types.TxOut {
 }
 
 ///// Pending TxOut
-func setPendingTxOut(store cstypes.KVStore, chain string, txOut *types.TxOut) {
-	if txOut == nil {
+func setPendingTxOut(store cstypes.KVStore, chain string, txOutInfo *types.PendingTxOutInfo) {
+	if txOutInfo == nil {
 		store.Delete([]byte(chain))
 		return
 	}
 
-	bz, err := txOut.Marshal()
+	bz, err := txOutInfo.Marshal()
 	if err != nil {
 		log.Error("setPendingTxOut: failed to marshal txOut")
 		return
 	}
 
-	store.Set([]byte(txOut.OutChain), bz)
+	store.Set([]byte(txOutInfo.TxOut.OutChain), bz)
 }
 
-func getPendingTxOut(store cstypes.KVStore, chain string) *types.TxOut {
+func getPendingTxOutInfo(store cstypes.KVStore, chain string) *types.PendingTxOutInfo {
 	bz := store.Get([]byte(chain))
 	if bz == nil {
 		return nil
 	}
 
-	txOut := &types.TxOut{}
-	err := txOut.Unmarshal(bz)
+	txOutInfo := &types.PendingTxOutInfo{}
+	err := txOutInfo.Unmarshal(bz)
 	if err != nil {
 		log.Error("getPendingTxOut: failed to unmarshal txout")
 		return nil
 	}
 
-	return txOut
+	return txOutInfo
 }
 
 ///// Debug functions

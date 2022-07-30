@@ -101,8 +101,8 @@ type Keeper interface {
 	GetTxOutQueue(ctx sdk.Context, chain string) []*types.TxOut
 
 	// PendingTxOut
-	SetPendingTxOut(ctx sdk.Context, chain string, txOut *types.TxOut)
-	GetPendingTxOut(ctx sdk.Context, chain string) *types.TxOut
+	SetPendingTxOutInfo(ctx sdk.Context, chain string, txOut *types.PendingTxOutInfo)
+	GetPendingTxOutInfo(ctx sdk.Context, chain string) *types.PendingTxOutInfo
 }
 
 type DefaultKeeper struct {
@@ -413,14 +413,14 @@ func (k *DefaultKeeper) GetTxOutQueue(ctx sdk.Context, chain string) []*types.Tx
 }
 
 ///// PendingTxOut
-func (k *DefaultKeeper) SetPendingTxOut(ctx sdk.Context, chain string, txOut *types.TxOut) {
+func (k *DefaultKeeper) SetPendingTxOutInfo(ctx sdk.Context, chain string, txOutInfo *types.PendingTxOutInfo) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPendingTxOut)
-	setPendingTxOut(store, chain, txOut)
+	setPendingTxOut(store, chain, txOutInfo)
 }
 
-func (k *DefaultKeeper) GetPendingTxOut(ctx sdk.Context, chain string) *types.TxOut {
+func (k *DefaultKeeper) GetPendingTxOutInfo(ctx sdk.Context, chain string) *types.PendingTxOutInfo {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPendingTxOut)
-	return getPendingTxOut(store, chain)
+	return getPendingTxOutInfo(store, chain)
 }
 
 ///// Debug

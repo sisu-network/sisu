@@ -1,0 +1,16 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+import "sisu/tx_out.proto";
+
+// A queue that contains a list of txouts.
+message TxOutQueue {
+  repeated TxOut tx_outs = 1;
+}
+
+message PendingTxOutInfo {
+  TxOut tx_out= 1;
+  int64 expired_block = 2;
+}

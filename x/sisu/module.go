@@ -295,10 +295,18 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 
 func (am AppModule) signTxOut(ctx sdk.Context) {
 	params := am.keeper.GetParams(ctx)
+	height := ctx.BlockHeight()
+
 	for _, chain := range params.SupportedChains {
-		pending := am.keeper.GetPendingTxOut(ctx, chain)
-		if pending != nil {
+		pendingInfo := am.keeper.GetPendingTxOutInfo(ctx, chain)
+		if pendingInfo != nil {
 			log.Debug(chain, " has some pending")
+			if pendingInfo.ExpiredBlock < height {
+				queue := am.keeper.GetTxOutQueue(ctx, chain)
+				queue = append(queue, pendingInfo.TxOut)
+				am.keeper.SetTxOutQueue(ctx, chain, queue)
+			}
+
 			continue
 		}
 
@@ -308,7 +316,10 @@ func (am AppModule) signTxOut(ctx sdk.Context) {
 		}
 
 		txOut := queue[0]
-		am.keeper.SetPendingTxOut(ctx, txOut.OutChain, txOut)
+		am.keeper.SetPendingTxOutInfo(ctx, txOut.OutChain, &types.PendingTxOutInfo{
+			TxOut:        txOut,
+			ExpiredBlock: height + 2400,
+		})
 		am.keeper.SetTxOutQueue(ctx, txOut.OutChain, queue[1:])
 
 		if !am.globalData.IsCatchingUp() {
