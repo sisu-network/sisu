@@ -124,6 +124,8 @@ func getAuthTransactor(client *ethclient.Client, mnemonic string) (*bind.Transac
 		return nil, err
 	}
 
+	fmt.Println("Chain id = ", chainId)
+
 	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainId)
 	if err != nil {
 		return nil, err
@@ -196,6 +198,7 @@ func approveAddress(client *ethclient.Client, mnemonic string, erc20Addr string,
 	// Make a tx to approve.
 	log.Verbose("Approving address ", target, " token = ", erc20Addr,
 		" owner balance = ", ownerBalance, " nonce = ", opts.Nonce)
+
 	tx, err := contract.Approve(opts, common.HexToAddress(target), ownerBalance)
 	if err != nil {
 		log.Error("Cannot approve address, err = ", err)
