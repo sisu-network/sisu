@@ -1,0 +1,15 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message TransferFailureMsg {
+  string signer = 1;
+  TransferFailure data = 2;
+}
+
+message TransferFailure {
+  string chain = 1;
+  repeated string ids = 2;
+  string message = 3;
+}

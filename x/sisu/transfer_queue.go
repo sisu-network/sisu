@@ -32,6 +32,7 @@ type defaultTransferQueue struct {
 	txSubmit         common.TxSubmit
 	stopCh           chan bool
 	submittedTxs     *lru.Cache
+	appKeys          common.AppKeys
 
 	newRequestCh chan TransferRequest
 	lock         *sync.RWMutex
@@ -42,6 +43,7 @@ func NewTransferQueue(
 	txOutputProducer TxOutputProducer,
 	txSubmit common.TxSubmit,
 	tssConfig config.TssConfig,
+	appKeys common.AppKeys,
 ) TransferQueue {
 	cache, err := lru.New(MaxPendingTxCacheSize)
 	if err != nil {
@@ -56,6 +58,7 @@ func NewTransferQueue(
 		lock:             &sync.RWMutex{},
 		stopCh:           make(chan bool),
 		submittedTxs:     cache,
+		appKeys:          appKeys,
 	}
 }
 
@@ -97,32 +100,47 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 
 		log.Debug("Queue length = ", len(queue))
 
-		remaining := make([]*types.Transfer, 0)
 		batchSize := params.GetMaxTransferOutBatch(chain)
-		for i := 0; i < len(queue); i += batchSize {
-			if _, ok := q.submittedTxs.Get(queue[i].Id); ok {
-				log.Warn("Tx with id ", queue[i].Id, " is already submitted")
-				continue
-			}
+		batch := queue[0 : 0+batchSize]
 
-			txOutMsgs, err := q.txOutputProducer.GetTxOuts(ctx, chain, queue[i:i+batchSize])
-			if err != nil {
-				log.Error(err)
-				remaining = append(remaining, queue[i:i+batchSize]...)
-				continue
-			}
+		if _, ok := q.submittedTxs.Get(queue[0].Id); ok {
+			log.Warn("Tx with id ", queue[0].Id, " is already submitted")
+			continue
+		}
 
-			for j := 0; j < batchSize; j++ {
-				log.Verbose("Adding to submited txs ", queue[i+j].Id)
-				q.submittedTxs.Add(queue[i+j].Id, true)
-			}
+		txOutMsgs, err := q.txOutputProducer.GetTxOuts(ctx, chain, batch)
+		if err != nil {
+			log.Error("Failed to get txOut on chain ", chain, ", err = ", err)
+			// Submit transfer failure transaction if this is an ETH based chain
+			ids := q.getTransferIds(batch)
+			msg := types.NewTransferFailureMsg(q.appKeys.GetSignerAddress().String(), &types.TransferFailure{
+				Ids:     ids,
+				Message: err.Error(),
+			})
+			q.txSubmit.SubmitMessageAsync(msg)
+			continue
+		}
 
-			if len(txOutMsgs) > 0 {
-				log.Infof("Broadcasting txout with length %d on chain %s", len(txOutMsgs), chain)
-				for _, txOutMsg := range txOutMsgs {
-					q.txSubmit.SubmitMessageAsync(txOutMsg)
-				}
+		for j := 0; j < batchSize; j++ {
+			log.Verbose("Adding to submited txs ", queue[j].Id)
+			q.submittedTxs.Add(queue[j].Id, true)
+		}
+
+		if len(txOutMsgs) > 0 {
+			log.Infof("Broadcasting txout with length %d on chain %s", len(txOutMsgs), chain)
+			for _, txOutMsg := range txOutMsgs {
+				q.txSubmit.SubmitMessageAsync(txOutMsg)
 			}
 		}
 	}
+}
+
+func (q *defaultTransferQueue) getTransferIds(batch []*types.Transfer) []string {
+	ids := make([]string, len(batch))
+
+	for i, transfer := range batch {
+		ids[i] = transfer.Id
+	}
+
+	return ids
 }

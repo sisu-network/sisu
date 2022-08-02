@@ -46,7 +46,7 @@ func TestTransferQueue(t *testing.T) {
 		keeper := mc.Keeper()
 
 		queue := NewTransferQueue(mc.Keeper(), mc.TxOutProducer(), mc.TxSubmit(),
-			mc.Config()).(*defaultTransferQueue)
+			mc.Config(), nil).(*defaultTransferQueue)
 		transfer := &types.Transfer{
 			Id:        "ganache1__hash1",
 			Recipient: "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80",
