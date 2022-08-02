@@ -344,9 +344,9 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, sisuRpc, chain, m
 
 	log.Info("Gas price = ", gasPrice, " on chain ", chain)
 
-	amount := new(big.Int).Mul(big.NewInt(8_000_000), gasPrice)
-	// amount = amount * 1.4
-	amount = amount.Mul(amount, big.NewInt(14))
+	amount := new(big.Int).Mul(big.NewInt(4_000_000), gasPrice)
+	// amount = amount * 1.2
+	amount = amount.Mul(amount, big.NewInt(12))
 	amount = amount.Quo(amount, big.NewInt(10))
 
 	gasLimit := uint64(22000) // in units
@@ -365,7 +365,7 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, sisuRpc, chain, m
 
 	err = client.SendTransaction(context.Background(), signedTx)
 	if err != nil {
-		panic(err)
+		panic(fmt.Errorf("Failed to transfer ETH on chain %s, err = %s", chain, err))
 	}
 
 	bind.WaitDeployed(context.Background(), client, signedTx)

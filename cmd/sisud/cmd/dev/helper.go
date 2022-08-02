@@ -194,8 +194,12 @@ func approveAddress(client *ethclient.Client, mnemonic string, erc20Addr string,
 	}
 
 	// Make a tx to approve.
-	log.Verbose("Approving address ", target, " token = ", erc20Addr, " owner balance = ", ownerBalance)
+	log.Verbose("Approving address ", target, " token = ", erc20Addr,
+		" owner balance = ", ownerBalance, " nonce = ", opts.Nonce)
 	tx, err := contract.Approve(opts, common.HexToAddress(target), ownerBalance)
+	if err != nil {
+		log.Error("Cannot approve address, err = ", err)
+	}
 	bind.WaitDeployed(context.Background(), client, tx)
 	time.Sleep(time.Second * 3)
 }
