@@ -200,7 +200,7 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 		amountOut.Sub(amountOut, gasPriceInToken)
 
 		if amountOut.Cmp(utils.ZeroBigInt) < 0 {
-			log.Error("Insufficient fund for transfer ", i)
+			log.Error("Insufficient fund for transfer amountOut = ", amountOut, " gasPriceInToken = ", gasPriceInToken)
 			continue
 		}
 
