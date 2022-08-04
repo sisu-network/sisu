@@ -7,5 +7,5 @@ func (params *Params) GetMaxTransferOutBatch(chain string) int {
 		}
 	}
 
-	return 1
+	return 10
 }
