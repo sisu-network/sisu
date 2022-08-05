@@ -62,7 +62,7 @@ func signEthTx(rawTx *ethtypes.Transaction) *ethtypes.Transaction {
 		panic(err)
 	}
 
-	signedTx, err := rawTx.WithSignature(ethtypes.NewEIP2930Signer(big.NewInt(189985)), sig)
+	signedTx, err := rawTx.WithSignature(ethtypes.NewLondonSigner(big.NewInt(189985)), sig)
 	if err != nil {
 		panic(err)
 	}

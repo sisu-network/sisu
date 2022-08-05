@@ -366,7 +366,7 @@ func (a *ApiHandler) processETHSigningResult(ctx sdk.Context, result *dhtypes.Ke
 	if len(result.Signatures[index]) != 65 {
 		log.Error("Signature length is not 65 for chain: ", chainId)
 	}
-	signedTx, err := tx.WithSignature(ethtypes.NewEIP2930Signer(chainId), result.Signatures[index])
+	signedTx, err := tx.WithSignature(ethtypes.NewLondonSigner(chainId), result.Signatures[index])
 	if err != nil {
 		log.Error("cannot set signature for tx, err =", err)
 		return

@@ -101,7 +101,7 @@ func getSigner(client *ethclient.Client) etypes.Signer {
 		panic(err)
 	}
 
-	return etypes.NewEIP2930Signer(chainId)
+	return etypes.NewLondonSigner(chainId)
 }
 
 func getAuthTransactor(client *ethclient.Client, mnemonic string) (*bind.TransactOpts, error) {
