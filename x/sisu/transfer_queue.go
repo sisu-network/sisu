@@ -8,6 +8,7 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -100,8 +101,8 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 
 		log.Debug("Queue length = ", len(queue))
 
-		batchSize := params.GetMaxTransferOutBatch(chain)
-		batch := queue[0 : 0+batchSize]
+		batchSize := utils.MinInt(params.GetMaxTransferOutBatch(chain), len(queue))
+		batch := queue[0:batchSize]
 
 		if _, ok := q.submittedTxs.Get(queue[0].Id); ok {
 			log.Warn("Tx with id ", queue[0].Id, " is already submitted")
