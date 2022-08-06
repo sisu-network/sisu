@@ -532,7 +532,6 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 			}
 		}
 
-		fmt.Println("Parsing transfer request....")
 		txIns, err := a.parseTransferRequest(ctx, txs.Chain, tx)
 		if err != nil {
 			log.Error("Faield to parse transfer, err = ", err)

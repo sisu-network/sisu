@@ -60,7 +60,6 @@ transfer params.
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 			cardanoNetwork, _ := cmd.Flags().GetInt(flags.CardanoNetwork)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
-			cardanoMnemonic, _ := cmd.Flags().GetString(flags.CardanoFunderMnemonic)
 
 			c := &swapCommand{}
 
@@ -96,7 +95,7 @@ transfer params.
 				amount = new(big.Int).Mul(amount, utils.ONE_ADA_IN_LOVELACE)
 
 				c.swapFromCardano(src, dst, token, recipient, gateway, amount, cardano.Network(cardanoNetwork),
-					cardanoSecret, cardanoMnemonic)
+					cardanoSecret, mnemonic)
 			}
 
 			return nil
@@ -113,7 +112,6 @@ transfer params.
 	cmd.Flags().Int(flags.Amount, 1, "The amount of token to be transferred")
 	cmd.Flags().Int(flags.CardanoNetwork, 0, "Carnado network type: 0 for testnet and 1 for mainnet.")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
-	cmd.Flags().String(flags.CardanoFunderMnemonic, "", "Mnemonic of funder wallet which already has a lot of test tokens")
 
 	return cmd
 }
@@ -225,8 +223,8 @@ func (c *swapCommand) getCardanoGateway(ctx context.Context, sisuRpc string) str
 }
 
 func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *types.Token,
-	destRecipient, cardanoGwAddr string, value *big.Int, network cardano.Network, blockfrostSecret, cardanoMnemonic string) {
-	privateKey, senderAddress := c.getSenderAddress(blockfrostSecret, cardanoMnemonic)
+	destRecipient, cardanoGwAddr string, value *big.Int, network cardano.Network, blockfrostSecret, mnemonic string) {
+	privateKey, senderAddress := c.getSenderAddress(blockfrostSecret, mnemonic)
 	receiver, err := cardano.NewAddress(cardanoGwAddr)
 	if err != nil {
 		panic(err)

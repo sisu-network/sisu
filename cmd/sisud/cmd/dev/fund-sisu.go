@@ -60,14 +60,13 @@ func FundSisu() *cobra.Command {
 			tokenString, _ := cmd.Flags().GetString(flags.Erc20Symbols)
 			liquidityAddrString, _ := cmd.Flags().GetString(flags.LiquidityAddrs)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
-			cardanoFunderMnemonic, _ := cmd.Flags().GetString(flags.CardanoFunderMnemonic)
 
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 			tokens := strings.Split(tokenString, ",")
 
 			c := &fundAccountCmd{}
 			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokens,
-				liquidityAddrString, sisuRpc, cardanoSecret, cardanoFunderMnemonic)
+				liquidityAddrString, sisuRpc, cardanoSecret)
 
 			return nil
 		},
@@ -80,14 +79,13 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.LiquidityAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "List of liquidity pool addresses")
 	cmd.Flags().String(flags.Erc20Symbols, "SISU,ADA", "List of ERC20 to approve")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
-	cmd.Flags().String(flags.CardanoFunderMnemonic, "", "Mnemonic of funder wallet which already has a lot of test tokens")
 	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "Relative path to the folder that contains genesis configuration.")
 
 	return cmd
 }
 
 func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic string,
-	tokens []string, liquidityAddrString, sisuRpc, cardanoSecret, cardanoFunderMnemonic string) {
+	tokens []string, liquidityAddrString, sisuRpc, cardanoSecret string) {
 	chains := strings.Split(chainString, ",")
 	liquidityAddrs := strings.Split(liquidityAddrString, ",")
 
@@ -109,7 +107,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	allPubKeys := queryPubKeys(ctx, sisuRpc)
 
 	// Fund native cardano.
-	if len(cardanoFunderMnemonic) > 0 && len(cardanoSecret) > 0 {
+	if len(cardanoSecret) > 0 {
 		cardanoKey, ok := allPubKeys[libchain.KEY_TYPE_EDDSA]
 		if !ok {
 			panic("can not find cardano pub key")
@@ -117,7 +115,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 
 		cardanoAddr := hutils.GetAddressFromCardanoPubkey(cardanoKey)
 		log.Info("Sisu Cardano Gateway = ", cardanoAddr)
-		c.fundCardano(cardanoAddr, cardanoFunderMnemonic, cardanoSecret)
+		c.fundCardano(cardanoAddr, mnemonic, cardanoSecret)
 	}
 
 	// Fund the accounts with some native ETH
