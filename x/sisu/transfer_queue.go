@@ -116,6 +116,7 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 			ids := q.getTransferIds(batch)
 			msg := types.NewTransferFailureMsg(q.appKeys.GetSignerAddress().String(), &types.TransferFailure{
 				Ids:     ids,
+				Chain:   chain,
 				Message: err.Error(),
 			})
 			q.txSubmit.SubmitMessageAsync(msg)
