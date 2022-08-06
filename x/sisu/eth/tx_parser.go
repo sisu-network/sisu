@@ -25,7 +25,8 @@ func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain 
 		return nil, err
 	}
 
-	msg, err := ethTx.AsMessage(ethtypes.NewEIP155Signer(ethTx.ChainId()), nil)
+	msg, err := ethTx.AsMessage(ethtypes.NewLondonSigner(ethTx.ChainId()), nil)
+
 	if err != nil {
 		return nil, err
 	}

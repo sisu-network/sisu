@@ -249,12 +249,12 @@ func (w *Wallet) SignTxEIP155(account accounts.Account, tx *types.Transaction, c
 	}
 
 	// Sign the transaction and verify the sender to avoid hardware fault surprises
-	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
+	signedTx, err := types.SignTx(tx, types.NewLondonSigner(chainID), privateKey)
 	if err != nil {
 		return nil, err
 	}
 
-	msg, err := signedTx.AsMessage(types.NewEIP155Signer(chainID), nil)
+	msg, err := signedTx.AsMessage(types.NewLondonSigner(chainID), nil)
 	if err != nil {
 		return nil, err
 	}
