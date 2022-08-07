@@ -205,8 +205,9 @@ func (c *fundAccountCmd) fundCardano(receiver cardano.Address, funderMnemonic st
 	funderAddr := addrs[0]
 	log.Info("Cardano funder address = ", funderAddr.String())
 
-	// fund 10 ADA and 1000 WRAP_ADA
-	txHash, err := funderWallet.Transfer(receiver, cardano.NewValueWithAssets(10*CardanoDecimals, getMultiAsset(1e3)), nil) // 10 ADA
+	// fund 30 ADA and 1000 WRAP_ADA
+	txHash, err := funderWallet.Transfer(receiver, cardano.NewValueWithAssets(30*CardanoDecimals,
+		getMultiAsset(1e3)), nil) // 30ADA
 	if err != nil {
 		panic(err)
 	}
