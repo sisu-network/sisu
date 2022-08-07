@@ -26,6 +26,7 @@ func DeployAndFund() *cobra.Command {
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 			expectedLiquidityString, _ := cmd.Flags().GetString(flags.ExpectedLiquidityAddrs)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
+			cardanoNetwork, _ := cmd.Flags().GetString(flags.CardanoNetwork)
 
 			log.Info("chainUrls = ", chainUrls)
 
@@ -65,7 +66,7 @@ func DeployAndFund() *cobra.Command {
 			log.Info("========= Fund token to sisu's account and gateway =========")
 			fundSisuCmd := &fundAccountCmd{}
 			fundSisuCmd.fundSisuAccounts(cmd.Context(), chainString, chainUrls, mnemonic,
-				tokenSymbols, liquidityAddrString, sisuRpc, cardanoSecret)
+				tokenSymbols, liquidityAddrString, sisuRpc, cardanoNetwork, cardanoSecret)
 
 			return nil
 		},
@@ -79,6 +80,7 @@ func DeployAndFund() *cobra.Command {
 	cmd.Flags().String(flags.ExpectedLiquidityAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress),
 		"Expected addressed of the liquidity contract after deployment. Empty string means do not check for address match.")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
+	cmd.Flags().String(flags.CardanoNetwork, "cardano-testnet", "The Cardano network that we are interacting with.")
 
 	return cmd
 }

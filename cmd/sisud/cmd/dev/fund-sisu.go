@@ -41,10 +41,6 @@ const (
 	DefaultCardanoPassword    = "12345678910"
 )
 
-var (
-	WrapADA = cardano.NewAssetName("WRAP_ADA")
-)
-
 type fundAccountCmd struct{}
 
 func FundSisu() *cobra.Command {
@@ -60,13 +56,14 @@ func FundSisu() *cobra.Command {
 			tokenString, _ := cmd.Flags().GetString(flags.Erc20Symbols)
 			liquidityAddrString, _ := cmd.Flags().GetString(flags.LiquidityAddrs)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
+			cardanoNetwork, _ := cmd.Flags().GetString(flags.CardanoNetwork)
 
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 			tokens := strings.Split(tokenString, ",")
 
 			c := &fundAccountCmd{}
 			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokens,
-				liquidityAddrString, sisuRpc, cardanoSecret)
+				liquidityAddrString, sisuRpc, cardanoNetwork, cardanoSecret)
 
 			return nil
 		},
@@ -79,13 +76,14 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.LiquidityAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "List of liquidity pool addresses")
 	cmd.Flags().String(flags.Erc20Symbols, "SISU,ADA", "List of ERC20 to approve")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
+	cmd.Flags().String(flags.CardanoNetwork, "cardano-testnet", "The Cardano network that we are interacting with.")
 	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "Relative path to the folder that contains genesis configuration.")
 
 	return cmd
 }
 
 func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic string,
-	tokens []string, liquidityAddrString, sisuRpc, cardanoSecret string) {
+	tokens []string, liquidityAddrString, sisuRpc, cardanoNetwork, cardanoSecret string) {
 	chains := strings.Split(chainString, ",")
 	liquidityAddrs := strings.Split(liquidityAddrString, ",")
 
@@ -115,7 +113,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 
 		cardanoAddr := hutils.GetAddressFromCardanoPubkey(cardanoKey)
 		log.Info("Sisu Cardano Gateway = ", cardanoAddr)
-		c.fundCardano(cardanoAddr, mnemonic, cardanoSecret)
+		c.fundCardano(cardanoAddr, mnemonic, cardanoNetwork, cardanoSecret, sisuRpc, tokens)
 	}
 
 	// Fund the accounts with some native ETH
@@ -171,23 +169,38 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 
 }
 
-// Get WRAP_ADA (hex: 575241505f414441) token.
-// PolicyID (ccf1a53e157a7277e717045578a6e9834405730be0b778fd0daab794) got from there:
-// https://testnet.cardanoscan.io/transaction/1038e9bf118cde5ae856e83e5de23eb2f17bb73d7b9720a28b23c2d4a02fd94b
-func getMultiAsset(amt uint64) *cardano.MultiAsset {
-	policyHash, err := cardano.NewHash28("ccf1a53e157a7277e717045578a6e9834405730be0b778fd0daab794")
-	if err != nil {
-		err := fmt.Errorf("error when parsing policyID hash: %v", err)
-		panic(err)
+func (c *fundAccountCmd) getMultiAsset(sisuRpc, cardanoNetwork string, tokens []string, amt uint64) *cardano.MultiAsset {
+	tokenAddrs := c.getTokenAddrs(context.Background(), sisuRpc, tokens, cardanoNetwork)
+	m := make(map[string]*cardano.Assets)
+	for _, tokenAddr := range tokenAddrs {
+		index := strings.Index(tokenAddr, ":")
+		policyString := tokenAddr[:index]
+		assetName := tokenAddr[index+1:]
+
+		if m[policyString] == nil {
+			m[policyString] = cardano.NewAssets()
+		}
+
+		asset := cardano.NewAssetName(assetName)
+		m[policyString].Set(asset, cardano.BigNum(amt*CardanoDecimals))
 	}
 
-	policyID := cardano.NewPolicyIDFromHash(policyHash)
-	asset := cardano.NewAssets().Set(WrapADA, cardano.BigNum(amt*CardanoDecimals))
+	multiAsset := cardano.NewMultiAsset()
+	for policy, assets := range m {
+		policyHash, err := cardano.NewHash28(policy)
+		if err != nil {
+			err := fmt.Errorf("error when parsing policyID hash: %v", err)
+			panic(err)
+		}
+		policyID := cardano.NewPolicyIDFromHash(policyHash)
+		multiAsset.Set(policyID, assets)
+	}
 
-	return cardano.NewMultiAsset().Set(policyID, asset)
+	return multiAsset
 }
 
-func (c *fundAccountCmd) fundCardano(receiver cardano.Address, funderMnemonic string, blockfrostSecret string) {
+func (c *fundAccountCmd) fundCardano(receiver cardano.Address, funderMnemonic string,
+	cardanoNetwork, blockfrostSecret string, sisuRpc string, tokens []string) {
 	node := blockfrost.NewNode(cardano.Testnet, blockfrostSecret)
 	opts := &wallet.Options{
 		Node: node,
@@ -207,13 +220,13 @@ func (c *fundAccountCmd) fundCardano(receiver cardano.Address, funderMnemonic st
 
 	// fund 30 ADA and 1000 WRAP_ADA
 	txHash, err := funderWallet.Transfer(receiver, cardano.NewValueWithAssets(30*CardanoDecimals,
-		getMultiAsset(1e3)), nil) // 30ADA
+		c.getMultiAsset(sisuRpc, cardanoNetwork, tokens, 1e3)), nil) // 30ADA
 	if err != nil {
 		panic(err)
 	}
 
-	log.Infof("Funded 10 ADA and 1000 WRAP_ADA for address %s, txHash = %s, "+
-		"explorer: https://testnet.cardanoscan.io/transaction/%s\n", receiver, txHash.String(), txHash.String())
+	log.Infof("Address funded = %s, txHash = %s, explorer: https://testnet.cardanoscan.io/transaction/%s\n",
+		receiver, txHash.String(), txHash.String())
 }
 
 func (c *fundAccountCmd) getWalletFromMnemonic(client *wallet.Client, name, password, mnemonic string) (*wallet.Wallet, error) {
