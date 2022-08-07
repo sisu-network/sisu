@@ -591,21 +591,11 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 			return nil, err
 		}
 
-		if cardanoTx != nil {
-			fmt.Println("cardanoTx = ", *cardanoTx)
-		} else {
-			log.Error("cardanoTx is nil")
-		}
-
 		if cardanoTx.Metadata != nil {
-			fmt.Println("cardanoTx.Amount = ", cardanoTx.Amount)
+			nativeTransfer := cardanoTx.Metadata.NativeAda != 0
+			log.Verbose("cardanoTx.Amount = ", cardanoTx.Amount)
 			// Convert from ADA unit (10^6) to our standard unit (10^18)
-			for i, amount := range cardanoTx.Amount {
-				if i == len(cardanoTx.Amount)-1 {
-					// The last transaction returns the remaining token to the sender (or any other address).
-					break
-				}
-				fmt.Println("AAAAAAA 0000000, amount = ", amount)
+			for _, amount := range cardanoTx.Amount {
 				quantity, ok := new(big.Int).SetString(amount.Quantity, 10)
 				if !ok {
 					log.Error("Failed to get amount quantity in cardano tx")
@@ -623,11 +613,15 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 					}
 					tokenUnit = token.Id
 				} else {
+					if !nativeTransfer {
+						// This ADA is for transaction transfer fee. It is not meant to be transfered.
+						continue
+					}
 					tokenUnit = "ADA"
 				}
 
-				fmt.Println("tokenUnit = ", tokenUnit, " quantity = ", quantity)
-				fmt.Println("cardanoTx.Metadata = ", cardanoTx.Metadata)
+				log.Verbose("tokenUnit = ", tokenUnit, " quantity = ", quantity)
+				log.Verbose("cardanoTx.Metadata = ", cardanoTx.Metadata)
 
 				ret = append(ret, &types.TxIn{
 					Hash:      cardanoTx.Hash,
