@@ -94,6 +94,13 @@ func (q *defaultTransferQueue) loop() {
 func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 	params := q.keeper.GetParams(ctx)
 	for _, chain := range params.SupportedChains {
+		pendingInfo := q.keeper.GetPendingTxOutInfo(ctx, chain)
+		if pendingInfo != nil {
+			// Don't try to create new txouts while there are some pending tx.
+			log.Verbosef("Transfer queue: chain %s has some pending tx", chain)
+			continue
+		}
+
 		queue := q.keeper.GetTransferQueue(ctx, chain)
 		if len(queue) == 0 {
 			continue

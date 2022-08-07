@@ -172,10 +172,10 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 }
 
 // Get WRAP_ADA (hex: 575241505f414441) token.
-// PolicyID (dc89700b3adf88f6b520aba2f3cfa4c26fa7a19bd8eadf430d73b9d4) got from there:
-// https://testnet.cardanoscan.io/transaction/31c019b737edc7b54ae60a87f372f860715e8bb02b979ed853395ccbf4bf0209
+// PolicyID (ccf1a53e157a7277e717045578a6e9834405730be0b778fd0daab794) got from there:
+// https://testnet.cardanoscan.io/transaction/1038e9bf118cde5ae856e83e5de23eb2f17bb73d7b9720a28b23c2d4a02fd94b
 func getMultiAsset(amt uint64) *cardano.MultiAsset {
-	policyHash, err := cardano.NewHash28("dc89700b3adf88f6b520aba2f3cfa4c26fa7a19bd8eadf430d73b9d4")
+	policyHash, err := cardano.NewHash28("ccf1a53e157a7277e717045578a6e9834405730be0b778fd0daab794")
 	if err != nil {
 		err := fmt.Errorf("error when parsing policyID hash: %v", err)
 		panic(err)
@@ -193,17 +193,16 @@ func (c *fundAccountCmd) fundCardano(receiver cardano.Address, funderMnemonic st
 		Node: node,
 	}
 	client := wallet.NewClient(opts)
-
-	// funder address: addr_test1vqyqp03az6w8xuknzpfup3h7ghjwu26z7xa6gk7l9j7j2gs8zfwcy
 	funderWallet, err := c.getWalletFromMnemonic(client, DefaultCardanoWalletName, DefaultCardanoPassword, funderMnemonic)
 	if err != nil {
 		panic(err)
 	}
 
-	funderAddr, err := funderWallet.AddAddress()
+	addrs, err := funderWallet.Addresses()
 	if err != nil {
 		panic(err)
 	}
+	funderAddr := addrs[0]
 	log.Info("Cardano funder address = ", funderAddr.String())
 
 	// fund 10 ADA and 1000 WRAP_ADA

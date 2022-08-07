@@ -31,7 +31,7 @@ func GetCardanoMultiAsset(chain string, token *types.Token, assetAmount uint64) 
 			}
 			assetName := cardano.NewAssetName(addr[index+1:])
 
-			log.Verbose("policy id & asset name = ", policyID.String(), assetName.String())
+			log.Verbosef("policy id & asset name = %s %s", policyID.String(), assetName.String())
 
 			asset := cardanogo.NewAssets().Set(assetName, cardano.BigNum(assetAmount))
 			multiAsset := cardanogo.NewMultiAsset().Set(cardano.NewPolicyIDFromHash(policyID), asset)

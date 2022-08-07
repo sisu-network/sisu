@@ -300,8 +300,8 @@ func (am AppModule) signTxOut(ctx sdk.Context) {
 	for i, chain := range params.SupportedChains {
 		pendingInfo := am.keeper.GetPendingTxOutInfo(ctx, chain)
 		if pendingInfo != nil {
-			log.Debug(chain, " has some pending")
 			if pendingInfo.ExpiredBlock < height {
+				log.Infof("Pending tx on chain %s expired. Clearing the pending tx.")
 				queue := am.keeper.GetTxOutQueue(ctx, chain)
 				queue = append(queue, pendingInfo.TxOut)
 				am.keeper.SetTxOutQueue(ctx, chain, queue)
