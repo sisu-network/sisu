@@ -192,12 +192,11 @@ func (c *swapCommand) swapFromEth(client *ethclient.Client, mnemonic string, gat
 	}
 
 	srcTokenAddr := common.HexToAddress(srcToken)
-	dstTokenAddr := common.HexToAddress(dstToken)
 
-	log.Verbosef("destination = %s, recipientAddr %s, srcTokenAddr = %s, dstTokenAddr = %s, amount = %s",
-		dstChain, recipient, srcTokenAddr.String(), dstTokenAddr.String(), amount)
+	log.Verbosef("destination = %s, recipientAddr %s, srcTokenAddr = %s, amount = %s",
+		dstChain, recipient, srcTokenAddr.String(), amount)
 
-	tx, err := contract.TransferOut(opts, dstChain, recipient, srcTokenAddr, dstTokenAddr, amount)
+	tx, err := contract.TransferOut(opts, dstChain, recipient, srcTokenAddr, amount)
 	if err != nil {
 		panic(err)
 	}
