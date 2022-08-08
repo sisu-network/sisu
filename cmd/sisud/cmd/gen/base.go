@@ -84,6 +84,7 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 			MajorityThreshold:       int32(math.Ceil(float64(numValidators) * 2 / 3)),
 			SupportedChains:         supportedChainsArr,
 			PendingTxTimeoutHeights: pendingTxOutHeights,
+			CommissionRate:          10, // 0.1%
 		},
 		cardanoSecret: cardanoSecret,
 		tokens:        getTokens(filepath.Join(genesisFolder, "tokens.json")),

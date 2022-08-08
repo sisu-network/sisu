@@ -186,12 +186,16 @@ func (c *DeployContractCmd) deployLiquidity(client *ethclient.Client, mnemonic s
 		panic(err)
 	}
 
+	// Deploy liquidity needs more gas
+	auth.GasLimit = 5_000_000
+
 	_, tx, _, err := liquidity.DeployLiquiditypool(auth, client)
 	if err != nil {
 		panic(err)
 	}
 	log.Info("Tx hash = ", tx.Hash())
 	log.Info("Deploying liquidity ... ")
+	log.Info("gas limit = ", auth.GasLimit)
 
 	contractAddr, err := bind.WaitDeployed(context.Background(), client, tx)
 	if err != nil {

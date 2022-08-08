@@ -111,6 +111,10 @@ func getAuthTransactor(client *ethclient.Client, mnemonic string) (*bind.Transac
 	if err != nil {
 		return nil, err
 	}
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		return nil, err
+	}
 
 	// This is the private key of the accounts0
 	chainId, err := client.ChainID(context.Background())
@@ -127,6 +131,7 @@ func getAuthTransactor(client *ethclient.Client, mnemonic string) (*bind.Transac
 
 	auth.Nonce = big.NewInt(int64(nonce))
 	auth.Value = big.NewInt(0)
+	auth.GasPrice = gasPrice
 
 	auth.GasLimit = uint64(3_000_000)
 

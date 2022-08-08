@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	"fmt"
 	"math"
 	"math/big"
 
@@ -95,6 +96,10 @@ func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, chain string, tr
 	allTokens := p.keeper.GetAllTokens(ctx)
 	receiverAddrs := make([]cardano.Address, 0)
 	amounts := make([]*cardano.Value, 0, len(transfers))
+	commissionRate := p.keeper.GetParams(ctx).CommissionRate
+	if commissionRate < 0 || commissionRate > 10_000 {
+		return nil, fmt.Errorf("Commission rate is invalid, rate = %d", commissionRate)
+	}
 	for _, transfer := range transfers {
 		// Receivers
 		receiverAddr, err := cardano.NewAddress(transfer.Recipient)
@@ -114,6 +119,9 @@ func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, chain string, tr
 			log.Warnf("Cannot create big.Int value from amount %s on chain %s", transfer.Amount, chain)
 			continue
 		}
+
+		// Subtract commission rate
+		amountInt = utils.SubtractCommissionRate(amountInt, commissionRate)
 
 		// amounts
 		lovelaceAmount := utils.WeiToLovelace(amountInt)
