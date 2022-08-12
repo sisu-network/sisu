@@ -3,6 +3,7 @@ package eth
 import (
 	"fmt"
 	"math/big"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -39,9 +40,9 @@ func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain 
 
 	// TODO: Optimize getting tokens
 	allTokens := keeper.GetAllTokens(ctx)
-	token := getTokenOnChain(allTokens, tokenAddr.String(), srcChain)
+	token := getTokenOnChain(allTokens, strings.ToLower(tokenAddr.String()), srcChain)
 	if token == nil {
-		return nil, fmt.Errorf("Cannot find token on chain %s with address %s", srcChain, tokenAddr)
+		return nil, fmt.Errorf("Cannot find token on chain %s with address %s", srcChain, strings.ToLower(tokenAddr.String()))
 	}
 
 	destChain, ok := txParams["_destChain"].(string)
@@ -117,7 +118,7 @@ func ParseEthTransferIn(ctx sdk.Context, ethTx *ethTypes.Transaction, destChain 
 	return transfers, nil
 }
 
-func getTokenOnChain(allTokens map[string]*types.Token, tokenAddr, chain string) *types.Token {
+func getTokenOnChain(allTokens map[string]*types.Token, tokenAddr, targetChain string) *types.Token {
 	for _, t := range allTokens {
 		if len(t.Chains) != len(t.Addresses) {
 			log.Debug("Chains length is not the same as address length ")
@@ -127,7 +128,7 @@ func getTokenOnChain(allTokens map[string]*types.Token, tokenAddr, chain string)
 		}
 
 		for j, chain := range t.Chains {
-			if chain == chain && t.Addresses[j] == tokenAddr {
+			if chain == targetChain && t.Addresses[j] == tokenAddr {
 				return t
 			}
 		}
