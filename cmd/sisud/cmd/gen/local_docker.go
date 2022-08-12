@@ -315,18 +315,20 @@ services:
 }
 
 func (g *localDockerGenerator) generateEyesToml(deyesChains []econfig.Chain, index int, dir string) {
-	deyesConfig := DeyesConfiguration{
-		Chains: deyesChains,
+	chains := make(map[string]econfig.Chain)
+	for _, cfg := range deyesChains {
+		chains[cfg.Chain] = cfg
+	}
 
-		Sql: SqlConfig{
-			Host:     "mysql",
-			Port:     3306,
-			Schema:   fmt.Sprintf("deyes%d", index),
-			Username: "root",
-			Password: "password",
-		},
-
+	deyesConfig := econfig.Deyes{
+		DbHost:        "mysql",
+		DbPort:        3306,
+		DbUsername:    "root",
+		DbPassword:    "password",
+		DbSchema:      fmt.Sprintf("deyes%d", index),
 		SisuServerUrl: fmt.Sprintf("http://sisu%d:25456", index),
+
+		Chains: chains,
 	}
 
 	writeDeyesConfig(deyesConfig, dir)

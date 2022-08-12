@@ -46,15 +46,20 @@ func getPeerIds(n int, pubKeys []cryptotypes.PubKey) ([]string, error) {
 	return ids, nil
 }
 
-func writeDeyesConfig(deyesConfig DeyesConfiguration, dir string) {
-	eyesToml := `db_host = "{{ .Sql.Host }}"
-db_port = {{ .Sql.Port }}
-db_username = "{{ .Sql.Username }}"
-db_password = "{{ .Sql.Password }}"
-db_schema = "{{ .Sql.Schema }}"
+func writeDeyesConfig(deyesConfig econfig.Deyes, dir string) {
+	eyesToml := `db_host = "{{ .DbHost }}"
+db_port = {{ .DbPort }}
+db_username = "{{ .DbUsername }}"
+db_password = "{{ .DbPassword }}"
+db_schema = "{{ .DbSchema }}"
 
 server_port = 31001
 sisu_server_url = "{{ .SisuServerUrl }}"
+
+price_oracle_url = "{{ .PriceOracleUrl }}"
+price_oracle_secret = "{{ .PriceOracleSecret }}"
+price_poll_frequency = {{ .PricePollFrequency }}
+price_token_list = [ {{range $i, $token := .PriceTokenList}}"{{$token}}", {{end}}]
 
 [log_dna]
 secret = "{{ .LogDNA.Secret }}"

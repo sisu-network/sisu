@@ -178,20 +178,22 @@ func (g *localnetGenerator) getAuthTransactor(client *ethclient.Client, address 
 	return auth, nil
 }
 
-func (g *localnetGenerator) generateEyesToml(dir string, chainConfigs []econfig.Chain) {
-	sqlConfig := SqlConfig{}
-	sqlConfig.Host = "localhost"
-	sqlConfig.Port = 3306
-	sqlConfig.Username = "root"
-	sqlConfig.Password = "password"
-	sqlConfig.Schema = "deyes"
+func (g *localnetGenerator) generateEyesToml(outputDir string, chainConfigs []econfig.Chain) {
+	chains := make(map[string]econfig.Chain)
+	for _, cfg := range chainConfigs {
+		chains[cfg.Chain] = cfg
+	}
 
-	deyesConfig := DeyesConfiguration{
-		Chains: chainConfigs,
+	deyesConfig := econfig.Deyes{
+		DbHost:     "localhost",
+		DbPort:     3306,
+		DbUsername: "root",
+		DbPassword: "password",
+		DbSchema:   "deyes",
 
-		Sql:           sqlConfig,
+		Chains:        chains,
 		SisuServerUrl: fmt.Sprintf("http://%s:25456", "0.0.0.0"),
 	}
 
-	writeDeyesConfig(deyesConfig, dir)
+	writeDeyesConfig(deyesConfig, outputDir)
 }
