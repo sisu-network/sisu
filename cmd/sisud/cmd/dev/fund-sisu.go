@@ -146,7 +146,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 		go func(i int, client *ethclient.Client) {
 			addrs := c.getTokenAddrs(ctx, sisuRpc, tokens, chains[i])
 			for _, addr := range addrs {
-				log.Infof("Approve token with address %s for gateway %s", addr, gateways[i])
+				log.Infof("Approve token with address %s for gateway %s on chain %s", addr, gateways[i], chains[i])
 				approveAddress(client, mnemonic, addr, gateways[i])
 			}
 

@@ -202,7 +202,7 @@ func approveAddress(client *ethclient.Client, mnemonic string, erc20Addr string,
 		log.Error("Cannot approve address, err = ", err)
 	}
 	bind.WaitDeployed(context.Background(), client, tx)
-	time.Sleep(time.Second * 3)
+	time.Sleep(time.Second * 5)
 }
 
 func queryToken(ctx context.Context, sisuRpc, tokenId string) *tssTypes.Token {
