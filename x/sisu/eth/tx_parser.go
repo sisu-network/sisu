@@ -121,9 +121,9 @@ func ParseEthTransferIn(ctx sdk.Context, ethTx *ethTypes.Transaction, destChain 
 func getTokenOnChain(allTokens map[string]*types.Token, tokenAddr, targetChain string) *types.Token {
 	for _, t := range allTokens {
 		if len(t.Chains) != len(t.Addresses) {
-			log.Debug("Chains length is not the same as address length ")
-			log.Debug("t.Chains = ", t.Chains)
-			log.Debug("t.Addresses = ", t.Addresses)
+			log.Error("Chains length is not the same as address length ")
+			log.Error("t.Chains = ", t.Chains)
+			log.Error("t.Addresses = ", t.Addresses)
 			return nil
 		}
 
