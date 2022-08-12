@@ -118,7 +118,7 @@ func TestApiHandler_OnTxIns(t *testing.T) {
 		srcChain := "ganache1"
 		toAddress := "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80"
 		ethTx := createEthTx(toAddress, "ganache2",
-			"0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C", "0x8095f5b69F2970f38DC6eBD2682ed71E4939f988",
+			"0x3a84fbbefd21d6a5ce79d54d348344ee11ebd45c", "0x8095f5b69F2970f38DC6eBD2682ed71E4939f988",
 			new(big.Int).Mul(big.NewInt(1), utils.EthToWei))
 
 		bz, err := ethTx.MarshalBinary()

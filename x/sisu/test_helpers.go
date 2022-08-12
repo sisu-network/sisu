@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"encoding/hex"
 	"math/big"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -76,7 +77,7 @@ func keeperTestGenesis(ctx sdk.Context) keeper.Keeper {
 			Price:     new(big.Int).Mul(big.NewInt(4), utils.EthToWei).String(),
 			Decimals:  18,
 			Chains:    []string{"ganache1", "ganache2"},
-			Addresses: []string{testErc20TokenAddress, testErc20TokenAddress},
+			Addresses: []string{strings.ToLower(testErc20TokenAddress), strings.ToLower(testErc20TokenAddress)},
 		},
 		"ADA": {
 			Id:        "ADA",
