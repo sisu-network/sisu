@@ -122,8 +122,6 @@ func getAuthTransactor(client *ethclient.Client, mnemonic string) (*bind.Transac
 		return nil, err
 	}
 
-	fmt.Println("Chain id = ", chainId)
-
 	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainId)
 	if err != nil {
 		return nil, err

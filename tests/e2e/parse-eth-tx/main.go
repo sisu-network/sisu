@@ -46,15 +46,7 @@ func parseTx() {
 		panic(err)
 	}
 
-	header, err := client.HeaderByNumber(context.Background(), nil)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("head.BaseFee = ", header.BaseFee)
-
 	for _, ethTx := range block.Transactions() {
-		fmt.Println("tx hash = ", ethTx.Hash())
 		if ethTx.Hash().String() != "0x9a30d8db1880149deab188721c1d151bb1403b34ab36544e2402d5661272e7ed" {
 			continue
 		}
@@ -68,28 +60,22 @@ func parseTx() {
 			panic(fmt.Errorf("Failed to decode tx params, err = %v", err))
 		}
 
-		fmt.Println("Tx type = ", ethTx.Type())
-
-		msg, err := ethTx.AsMessage(ethtypes.NewLondonSigner(ethTx.ChainId()), nil)
+		_, err = ethTx.AsMessage(ethtypes.NewLondonSigner(ethTx.ChainId()), nil)
 		if err != nil {
 			panic(fmt.Errorf("Failed to convert to messages, err = %v", err))
 		}
 
-		tokenAddr, ok := txParams["_tokenOut"].(ethcommon.Address)
+		_, ok := txParams["_tokenOut"].(ethcommon.Address)
 		if !ok {
 			err := fmt.Errorf("cannot convert _tokenOut to type ethcommon.Address: %v", txParams)
 			panic(err)
 		}
 
-		destChain, ok := txParams["_destChain"].(string)
+		_, ok = txParams["_destChain"].(string)
 		if !ok {
 			err := fmt.Errorf("cannot convert _destChain to type string: %v", txParams)
 			panic(err)
 		}
-
-		fmt.Println("msg = ", msg)
-		fmt.Println("tokenAddr = ", tokenAddr)
-		fmt.Println("destChain = ", destChain)
 	}
 }
 
