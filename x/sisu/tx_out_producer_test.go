@@ -4,35 +4,6 @@ import (
 	"testing"
 )
 
-func TestTxOutProducer_getContractTx(t *testing.T) {
-	// ctx := testContext()
-	// keeper := keeperTestGenesis(ctx)
-
-	// hash := utils.KeccakHash32(erc20gateway.Erc20gatewayBin)
-	// contract := &types.Contract{
-	// 	Chain: "ganache1",
-	// 	Hash:  hash,
-	// }
-
-	// txOutProducer := DefaultTxOutputProducer{
-	// 	keeper: keeper,
-	// 	tssConfig: config.TssConfig{
-	// 		DeyesUrl: "http://0.0.0.0:1234",
-	// 		SupportedChains: map[string]config.TssChainConfig{
-	// 			"eth": {
-	// 				Id: "eth",
-	// 			},
-	// 		},
-	// 	},
-	// }
-
-	// tx := txOutProducer.getContractTx(ctx, contract, 100)
-	// require.NotNil(t, tx)
-	// require.EqualValues(t, 100, tx.Nonce())
-	// require.EqualValues(t, *big.NewInt(5_000_000_000), *tx.GasPrice())
-	// require.EqualValues(t, *big.NewInt(5_000_000_000), *tx.GasFeeCap())
-}
-
 func TestTxOutProducer_getEthResponse2(t *testing.T) {
 	t.Run("transaction_send_to_key", func(t *testing.T) {
 		// t.Parallel()
