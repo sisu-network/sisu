@@ -18,6 +18,9 @@ import (
 // Cardano multi-asset = policyID + asset nam
 func GetCardanoMultiAsset(chain string, token *types.Token, assetAmount uint64) (*cardanogo.MultiAsset, error) {
 	// Find the address of the cardano token
+
+	fmt.Println("Token = ", *token)
+
 	for i, addr := range token.Addresses {
 		if chain == token.Chains[i] {
 			index := strings.Index(addr, ":")

@@ -5,6 +5,7 @@ import (
 
 	"github.com/echovl/cardano-go"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/utils"
 )
 
@@ -17,12 +18,14 @@ func BuildTx(node CardanoClient, sender cardano.Address, receivers []cardano.Add
 		return nil, err
 	}
 
+	fmt.Println("balance = ", balance)
+
 	total := cardano.NewValue(cardano.Coin(0))
 	for _, amount := range amounts {
 		total = total.Add(amount)
 	}
 	if cmp := balance.Cmp(total); cmp == -1 || cmp == 2 {
-		return nil, fmt.Errorf("Not enough balance, %v > %v", total, balance)
+		return nil, NewNotEnoughBalanceErr(total, balance)
 	}
 
 	pparams, err := node.ProtocolParams()
@@ -51,13 +54,6 @@ func BuildTx(node CardanoClient, sender cardano.Address, receivers []cardano.Add
 
 	// Find utxos that cover the amount to transfer
 	pickedUtxos := []cardano.UTxO{}
-	// utxos, err := node.UTxOs(sender, maxBlock)
-	// log.Debug("all utxos: ")
-	// for _, utxo := range utxos {
-	// 	log.Debug("txHash = ", utxo.TxHash.String(), " coin amount = ", utxo.Amount.Coin)
-	// }
-	log.Debug("--------------------------")
-
 	// Pick at least <MinUTXO * 2> lovelace because we will produce at least 2 new utxos which contains multi-asset:
 	// 1. Transfer coin + multi-asset for user
 	// 2. Transfer remain coin + multi-asset for Cardano gateway (change address)
@@ -77,7 +73,7 @@ func BuildTx(node CardanoClient, sender cardano.Address, receivers []cardano.Add
 	}
 
 	if !ok {
-		return nil, InsufficientFundErr
+		return nil, common.InsufficientFundErr
 	}
 
 	log.Debug("picked utxo: ")

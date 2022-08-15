@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"sort"
 
 	"github.com/echovl/cardano-go"
 
@@ -42,11 +41,6 @@ var (
 	ErrValueDoesNotMatch       = fmt.Errorf("Value does not match")
 )
 
-type BlockSymbolPair struct {
-	blockHeight int64
-	chain       string
-}
-
 // ApiHandler handles API callback from dheart or deyes. There are few functions (BeginBlock & EndBlock)
 // that are still present for historical reason. They should be moved out of this file.
 type ApiHandler struct {
@@ -62,8 +56,6 @@ type ApiHandler struct {
 	dheartClient tssclients.DheartClient
 	deyesClient  tssclients.DeyesClient
 
-	keygenBlockPairs []BlockSymbolPair
-
 	privateDb keeper.Storage
 }
 
@@ -72,126 +64,19 @@ func NewApiHandler(
 	mc ManagerContainer,
 ) *ApiHandler {
 	a := &ApiHandler{
-		keeper:     mc.Keeper(),
-		privateDb:  privateDb,
-		appKeys:    mc.AppKeys(),
-		config:     mc.Config(),
-		txSubmit:   mc.TxSubmit(),
-		globalData: mc.GlobalData(),
-		// And array that stores block numbers where we should do final vote count.
-		keygenBlockPairs: make([]BlockSymbolPair, 0),
-		dheartClient:     mc.DheartClient(),
-		deyesClient:      mc.DeyesClient(),
-		txTracker:        mc.TxTracker(),
-		mc:               mc,
+		keeper:       mc.Keeper(),
+		privateDb:    privateDb,
+		appKeys:      mc.AppKeys(),
+		config:       mc.Config(),
+		txSubmit:     mc.TxSubmit(),
+		globalData:   mc.GlobalData(),
+		dheartClient: mc.DheartClient(),
+		deyesClient:  mc.DeyesClient(),
+		txTracker:    mc.TxTracker(),
+		mc:           mc,
 	}
 
 	return a
-}
-
-// TODO: Move this function to module.go
-func (a *ApiHandler) BeginBlock(ctx sdk.Context, blockHeight int64) {
-	// Check keygen proposal
-	if blockHeight > 1 {
-		// We need to wait till block 2 for multistore of the app to be updated with latest account info
-		// for signing.
-		a.CheckTssKeygen(ctx, blockHeight)
-	}
-
-	oldValue := a.globalData.IsCatchingUp()
-	a.globalData.UpdateCatchingUp()
-	newValue := a.globalData.IsCatchingUp()
-
-	if oldValue && !newValue {
-		log.Info("Setting Sisu readiness for dheart.")
-		// This node has fully catched up with the blockchain, we need to inform dheart about this.
-		a.dheartClient.SetSisuReady(true)
-		a.deyesClient.SetSisuReady(true)
-	}
-
-	// TODO: Make keygen to be command instead of embedding inside the code.
-	// Check Vote result.
-	for len(a.keygenBlockPairs) > 0 && !a.globalData.IsCatchingUp() {
-		log.Verbose("blockHeight = ", blockHeight)
-		if blockHeight < a.keygenBlockPairs[0].blockHeight {
-			break
-		}
-
-		for len(a.keygenBlockPairs) > 0 && blockHeight >= a.keygenBlockPairs[0].blockHeight {
-			// Remove the chain from processing queue.
-			a.keygenBlockPairs = a.keygenBlockPairs[1:]
-		}
-	}
-
-	// Calculate all token prices.
-	a.calculateTokenPrices(ctx)
-}
-
-// calculateTokenPrices gets all token prices posted from all validators and calculate the median.
-func (a *ApiHandler) calculateTokenPrices(ctx sdk.Context) {
-	curBlock := ctx.BlockHeight()
-
-	// We wait for 5 more blocks after we get prices from deyes so that any record can be posted
-	// onto the blockchain.
-	if curBlock%TokenPriceUpdateInterval != 5 {
-		return
-	}
-
-	log.Info("Calcuating token prices....")
-
-	// TODO: Fix the signer set.
-	records := a.keeper.GetAllTokenPricesRecord(ctx)
-
-	tokenPrices := make(map[string][]*big.Int)
-	for _, data := range records {
-		for _, record := range data.Records {
-			// Only calculate token prices that has been updated recently.
-			if curBlock-int64(record.BlockHeight) > TokenPriceUpdateInterval {
-				continue
-			}
-
-			m := tokenPrices[record.Token]
-			if m == nil {
-				m = make([]*big.Int, 0)
-			}
-
-			value, _ := new(big.Int).SetString(record.Price, 10)
-			m = append(m, value)
-
-			tokenPrices[record.Token] = m
-		}
-	}
-
-	// Now sort all the array and get the median
-	medians := make(map[string]*big.Int)
-	for token, list := range tokenPrices {
-		if len(list) == 0 {
-			log.Error("cannot find price list for token ", token)
-			continue
-		}
-
-		sort.Slice(list, func(i, j int) bool {
-			return list[i].Cmp(list[j]) < 0
-		})
-		median := list[len(list)/2]
-		medians[token] = median
-	}
-
-	log.Verbose("Calculated prices = ", medians)
-
-	// Update all the token data.
-	arr := make([]string, 0, len(medians))
-	for token, _ := range medians {
-		arr = append(arr, token)
-	}
-
-	savedTokens := a.keeper.GetTokens(ctx, arr)
-
-	for tokenId, price := range medians {
-		savedTokens[tokenId].Price = price.String()
-	}
-
-	a.keeper.SetTokens(ctx, savedTokens)
 }
 
 // TODO: Move this function to module.go
@@ -200,40 +85,6 @@ func (a *ApiHandler) EndBlock(ctx sdk.Context) {
 		// Inform dheart that we have reached end of block so that dheart could run presign works.
 		height := ctx.BlockHeight()
 		a.dheartClient.BlockEnd(height)
-	}
-}
-
-/**
-Process for generating a new key:
-- Wait for the app to catch up
-- If there is no support for a particular chain, creates a proposal to include a chain
-- When other nodes receive the proposal, top N validator nodes vote to see if it should accept that.
-- After M blocks (M is a constant) since a proposal is sent, count the number of yes vote. If there
-are enough validator supporting the new chain, send a message to TSS engine to do keygen.
-*/
-func (a *ApiHandler) CheckTssKeygen(ctx sdk.Context, blockHeight int64) {
-	// TODO: We can replace this by sending command from client instead of running at the beginning
-	// of each block.
-	if a.globalData.IsCatchingUp() || ctx.BlockHeight()%50 != 2 {
-		return
-	}
-
-	keyTypes := []string{libchain.KEY_TYPE_ECDSA, libchain.KEY_TYPE_EDDSA}
-	for _, keyType := range keyTypes {
-		if a.keeper.IsKeygenExisted(ctx, keyType, 0) {
-			continue
-		}
-
-		// Broadcast a message.
-		signer := a.appKeys.GetSignerAddress()
-		proposal := types.NewMsgKeygenWithSigner(
-			signer.String(),
-			keyType,
-			0,
-		)
-
-		log.Info("Submitting proposal message for ", keyType)
-		a.txSubmit.SubmitMessageAsync(proposal)
 	}
 }
 

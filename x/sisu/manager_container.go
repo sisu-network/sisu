@@ -5,6 +5,7 @@ import (
 
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
+	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 )
@@ -23,6 +24,7 @@ type ManagerContainer interface {
 	Keeper() keeper.Keeper
 	ValidatorManager() ValidatorManager
 	TransferQueue() TransferQueue
+	CardanoClient() scardano.CardanoClient
 }
 
 type DefaultManagerContainer struct {
@@ -41,13 +43,15 @@ type DefaultManagerContainer struct {
 	keeper        keeper.Keeper
 	valsManager   ValidatorManager
 	txInQueue     TransferQueue
+	cardanoClient scardano.CardanoClient
 }
 
 func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 	dheartClient tssclients.DheartClient, deyesClient tssclients.DeyesClient,
 	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.TssConfig,
 	appKeys common.AppKeys, txOutProducer TxOutputProducer, txTracker TxTracker,
-	keeper keeper.Keeper, valsManager ValidatorManager, txInQueue TransferQueue) ManagerContainer {
+	keeper keeper.Keeper, valsManager ValidatorManager, txInQueue TransferQueue,
+	cardanoClient scardano.CardanoClient) ManagerContainer {
 	return &DefaultManagerContainer{
 		pmm:           pmm,
 		partyManager:  partyManager,
@@ -62,6 +66,7 @@ func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 		keeper:        keeper,
 		valsManager:   valsManager,
 		txInQueue:     txInQueue,
+		cardanoClient: cardanoClient,
 	}
 }
 
@@ -115,4 +120,8 @@ func (mc *DefaultManagerContainer) ValidatorManager() ValidatorManager {
 
 func (mc *DefaultManagerContainer) TransferQueue() TransferQueue {
 	return mc.txInQueue
+}
+
+func (mc *DefaultManagerContainer) CardanoClient() scardano.CardanoClient {
+	return mc.cardanoClient
 }

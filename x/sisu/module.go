@@ -254,7 +254,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 		am.globalData.SetAppInitialized()
 	}
 
-	am.processor.BeginBlock(ctx, req.Header.Height)
+	am.beginBlock(ctx, req.Header.Height)
 }
 
 // EndBlock executes all ABCI EndBlock logic respective to the capability module. It

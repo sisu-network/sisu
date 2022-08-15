@@ -27,4 +27,6 @@ var (
 	GweiToWei  = big.NewInt(1_000_000_000)
 	Gwei       = big.NewInt(1_000_000_000)
 	ZeroBigInt = big.NewInt(0)
+
+	OnePointSixEthToWei = big.NewInt(1_600_000_000_000_000_000) // 1.6 * 10 ^ 18
 )
