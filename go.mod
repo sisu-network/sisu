@@ -21,7 +21,7 @@ require (
 	github.com/libp2p/go-libp2p-core v0.8.0
 	github.com/logdna/logdna-go v1.0.2
 	github.com/sisu-network/deyes v0.1.7-0.20220716153122-7f641f01ec92
-	github.com/sisu-network/dheart v0.1.7-0.20220715081338-7c7f76673e7b
+	github.com/sisu-network/dheart v0.1.7-alpha1
 	github.com/sisu-network/lib v0.0.1-alpha9.0.20220805094201-302101a59f7f
 	github.com/spf13/cast v1.5.0
 	github.com/spf13/cobra v1.4.0
