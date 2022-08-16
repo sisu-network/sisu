@@ -6,10 +6,6 @@ import (
 	"github.com/echovl/cardano-go"
 )
 
-var (
-// NotEnoughBalanceErr = fmt.Errorf("Not Enough Balance")
-)
-
 type NotEnoughBalanceErr struct {
 	total, balance *cardano.Value
 }
