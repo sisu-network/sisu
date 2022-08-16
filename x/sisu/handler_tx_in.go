@@ -32,7 +32,7 @@ func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, signerMsg *types.TxsInMsg) (*s
 
 // Delivers observed Txs.
 func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msg *types.TxsIn) ([]byte, error) {
-	log.Info("Deliverying TxIn on chain ", msg.Chain)
+	log.Infof("Deliverying TxIn on chain %s with request length = %d", msg.Chain, len(msg.Requests))
 
 	allTransfers := make(map[string][]*types.Transfer)
 	// Add the message to the queue for later processing.
@@ -51,6 +51,8 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msg *types.TxsIn) ([]byte, error) 
 			}
 		}
 
+		log.Debug("Adding transfer to the queue, transfer = ", *transfer)
+
 		allTransfers[request.ToChain] = append(allTransfers[request.ToChain], transfer)
 	}
 
@@ -59,6 +61,9 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msg *types.TxsIn) ([]byte, error) 
 		if allTransfers[request.ToChain] == nil {
 			continue
 		}
+
+		log.Debug("setting transfer queue for chain ", request.ToChain, " allTransfers length = ",
+			len(allTransfers[request.ToChain]))
 
 		h.keeper.SetTransferQueue(ctx, request.ToChain, allTransfers[request.ToChain])
 		allTransfers[request.ToChain] = nil

@@ -56,10 +56,6 @@ type Keeper interface {
 	SaveTxOutSig(ctx sdk.Context, msg *types.TxOutSig)
 	GetTxOutSig(ctx sdk.Context, outChain, hashWithSig string) *types.TxOutSig
 
-	// TxOutConfirm
-	SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutConfirm)
-	IsTxOutConfirmExisted(ctx sdk.Context, outChain, hash string) bool
-
 	// Gas Price Record
 	SetGasPrice(ctx sdk.Context, msg *types.GasPriceMsg)
 	GetGasPriceRecord(ctx sdk.Context, height int64) *types.GasPriceRecord
@@ -105,8 +101,8 @@ type Keeper interface {
 	GetTxOutQueue(ctx sdk.Context, chain string) []*types.TxOut
 
 	// PendingTxOut
-	SetPendingTxOut(ctx sdk.Context, chain string, txOut *types.TxOut)
-	GetPendingTxOut(ctx sdk.Context, chain string) *types.TxOut
+	SetPendingTxOutInfo(ctx sdk.Context, chain string, txOut *types.PendingTxOutInfo)
+	GetPendingTxOutInfo(ctx sdk.Context, chain string) *types.PendingTxOutInfo
 }
 
 type DefaultKeeper struct {
@@ -280,17 +276,6 @@ func (k *DefaultKeeper) SaveTxOutSig(ctx sdk.Context, msg *types.TxOutSig) {
 	saveTxOutSig(store, msg)
 }
 
-///// TxOutConfirm
-func (k *DefaultKeeper) SaveTxOutConfirm(ctx sdk.Context, msg *types.TxOutConfirm) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutContractConfirm)
-	saveTxOutConfirm(store, msg)
-}
-
-func (k *DefaultKeeper) IsTxOutConfirmExisted(ctx sdk.Context, chain, hash string) bool {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutContractConfirm)
-	return isTxOutConfirmExisted(store, chain, hash)
-}
-
 ///// GasPrice
 func (k *DefaultKeeper) SetGasPrice(ctx sdk.Context, msg *types.GasPriceMsg) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGasPrice)
@@ -428,14 +413,14 @@ func (k *DefaultKeeper) GetTxOutQueue(ctx sdk.Context, chain string) []*types.Tx
 }
 
 ///// PendingTxOut
-func (k *DefaultKeeper) SetPendingTxOut(ctx sdk.Context, chain string, txOut *types.TxOut) {
+func (k *DefaultKeeper) SetPendingTxOutInfo(ctx sdk.Context, chain string, txOutInfo *types.PendingTxOutInfo) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPendingTxOut)
-	setPendingTxOut(store, chain, txOut)
+	setPendingTxOut(store, chain, txOutInfo)
 }
 
-func (k *DefaultKeeper) GetPendingTxOut(ctx sdk.Context, chain string) *types.TxOut {
+func (k *DefaultKeeper) GetPendingTxOutInfo(ctx sdk.Context, chain string) *types.PendingTxOutInfo {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPendingTxOut)
-	return getPendingTxOut(store, chain)
+	return getPendingTxOutInfo(store, chain)
 }
 
 ///// Debug

@@ -27,10 +27,6 @@ message TxOut {
   string contractHash = 6;
 }
 
-message TxOutQueue {
-  repeated TxOut tx_outs = 1;
-}
-
 // TxOut with and full transaction hash (including signature) to look up TxOut when a new tx comes in.
 message TxOutSig {
   string chain = 1;

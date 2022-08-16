@@ -62,7 +62,7 @@ func signEthTx(rawTx *ethtypes.Transaction) *ethtypes.Transaction {
 		panic(err)
 	}
 
-	signedTx, err := rawTx.WithSignature(ethtypes.NewEIP2930Signer(big.NewInt(189985)), sig)
+	signedTx, err := rawTx.WithSignature(ethtypes.NewLondonSigner(big.NewInt(189985)), sig)
 	if err != nil {
 		panic(err)
 	}
@@ -70,17 +70,15 @@ func signEthTx(rawTx *ethtypes.Transaction) *ethtypes.Transaction {
 	return signedTx
 }
 
-func createEthTx(gateway string, dstChain string, srcToken string, dstToken string,
+func createEthTx(gateway string, dstChain string, srcToken string,
 	recipient string, amount *big.Int) *ethtypes.Transaction {
 	srcTokenAddr := ecommon.HexToAddress(srcToken)
-	dstTokenAddr := ecommon.HexToAddress(dstToken)
 	erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
 	input, err := erc20gatewayContract.Abi.Pack(
 		MethodTransferOut,
 		dstChain,
 		recipient,
 		srcTokenAddr,
-		dstTokenAddr,
 		amount,
 	)
 	if err != nil {
@@ -120,8 +118,8 @@ func TestApiHandler_OnTxIns(t *testing.T) {
 		srcChain := "ganache1"
 		toAddress := "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80"
 		ethTx := createEthTx(toAddress, "ganache2",
-			"0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C", "0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C",
-			"0x8095f5b69F2970f38DC6eBD2682ed71E4939f988", new(big.Int).Mul(big.NewInt(1), utils.EthToWei))
+			"0x3a84fbbefd21d6a5ce79d54d348344ee11ebd45c", "0x8095f5b69F2970f38DC6eBD2682ed71E4939f988",
+			new(big.Int).Mul(big.NewInt(1), utils.EthToWei))
 
 		bz, err := ethTx.MarshalBinary()
 		if err != nil {

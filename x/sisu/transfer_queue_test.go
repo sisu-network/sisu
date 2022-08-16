@@ -46,7 +46,7 @@ func TestTransferQueue(t *testing.T) {
 		keeper := mc.Keeper()
 
 		queue := NewTransferQueue(mc.Keeper(), mc.TxOutProducer(), mc.TxSubmit(),
-			mc.Config()).(*defaultTransferQueue)
+			mc.Config(), nil).(*defaultTransferQueue)
 		transfer := &types.Transfer{
 			Id:        "ganache1__hash1",
 			Recipient: "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80",
@@ -73,16 +73,5 @@ func TestTransferQueue(t *testing.T) {
 
 		queue.processBatch(ctx)
 		require.Equal(t, 1, txSubmitCount)
-
-		transfer2 := &types.Transfer{
-			Id:        "ganache1__hash2",
-			Recipient: "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80",
-			Token:     "SISU",
-			Amount:    utils.EthToWei.String(),
-		}
-		keeper.SetTransferQueue(ctx, "ganache2", []*types.Transfer{transfer, transfer2})
-
-		queue.processBatch(ctx)
-		require.Equal(t, 2, txSubmitCount) // Only 1 more txout is created
 	})
 }

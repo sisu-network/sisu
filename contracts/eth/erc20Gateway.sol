@@ -547,7 +547,6 @@ contract ERC20Gateway is Ownable {
         string indexed destChain,
         string indexed recipient,
         address indexed tokenOut,
-        address tokenIn,
         address sender,
         uint256 amount
     );
@@ -571,7 +570,6 @@ contract ERC20Gateway is Ownable {
         string memory _destChain,
         string memory _recipient,
         address _tokenOut,
-        address _tokenIn,
         uint256 _amount
     ) public isNotPaused {
         require(
@@ -584,7 +582,6 @@ contract ERC20Gateway is Ownable {
             _destChain,
             _recipient,
             _tokenOut,
-            _tokenIn,
             msg.sender,
             _amount
         );

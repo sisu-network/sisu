@@ -20,7 +20,7 @@ func PublicKeyBytesToAddress(publicKey []byte) common.Address {
 }
 
 func GetEthSender(tx *etypes.Transaction) (common.Address, error) {
-	msg, err := tx.AsMessage(etypes.NewEIP2930Signer(tx.ChainId()), nil)
+	msg, err := tx.AsMessage(etypes.NewLondonSigner(tx.ChainId()), nil)
 	if err != nil {
 		return common.Address{}, err
 	}

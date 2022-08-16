@@ -13,6 +13,7 @@ import (
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	econfig "github.com/sisu-network/deyes/config"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
+	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
@@ -48,7 +49,8 @@ type Setting struct {
 	emailAlert config.EmailAlertConfig
 }
 
-func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager, genBalIterator banktypes.GenesisBalancesIterator) *Setting {
+func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
+	genBalIterator banktypes.GenesisBalancesIterator) *Setting {
 	outputDir, _ := cmd.Flags().GetString(flagOutputDir)
 	minGasPrices, _ := cmd.Flags().GetString(server.FlagMinGasPrices)
 	nodeDirPrefix, _ := cmd.Flags().GetString(flagNodeDirPrefix)
@@ -64,6 +66,8 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager, genBalIterat
 	if err != nil {
 		panic(err)
 	}
+	deyesChains := getDeyesChains(cmd, genesisFolder)
+	pendingTxOutHeights := getPendingTxTimeoutHeight(deyesChains)
 
 	setting := &Setting{
 		clientCtx:      clientCtx,
@@ -77,12 +81,14 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager, genBalIterat
 		algoStr:        algo,
 		numValidators:  numValidators,
 		params: &types.Params{
-			MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3)),
-			SupportedChains:   supportedChainsArr,
+			MajorityThreshold:       int32(math.Ceil(float64(numValidators) * 2 / 3)),
+			SupportedChains:         supportedChainsArr,
+			PendingTxTimeoutHeights: pendingTxOutHeights,
+			CommissionRate:          10, // 0.1%
 		},
 		cardanoSecret: cardanoSecret,
 		tokens:        getTokens(filepath.Join(genesisFolder, "tokens.json")),
-		chains:        getChains(filepath.Join(genesisFolder, "chains.json")),
+		chains:        helper.GetChains(filepath.Join(genesisFolder, "chains.json")),
 		liquidities:   getLiquidity(filepath.Join(genesisFolder, "liquid.json")),
 	}
 
@@ -94,7 +100,7 @@ func getDeyesChains(cmd *cobra.Command, genesisFolder string) []econfig.Chain {
 	cardanoDbConfig, _ := cmd.Flags().GetString(flags.CardanoDbConfig)
 	deyesChains := readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
 
-	chains := getChains(filepath.Join(genesisFolder, "chains.json"))
+	chains := helper.GetChains(filepath.Join(genesisFolder, "chains.json"))
 	// Add Cardano config
 	if len(cardanoSecret) > 0 || len(cardanoDbConfig) > 0 {
 		chains = append(chains, &types.Chain{
@@ -132,7 +138,7 @@ func getSupportedChains(cmd *cobra.Command, genesisFolder string) []string {
 	cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 	cardanoDbConfig, _ := cmd.Flags().GetString(flags.CardanoDbConfig)
 
-	chains := getChains(filepath.Join(genesisFolder, "chains.json"))
+	chains := helper.GetChains(filepath.Join(genesisFolder, "chains.json"))
 	supportedChainsArr := make([]string, 0)
 	for _, chain := range chains {
 		supportedChainsArr = append(supportedChainsArr, chain.Id)
@@ -160,4 +166,13 @@ func readDeyesChainConfigs(path string) []econfig.Chain {
 	}
 
 	return deyesChains
+}
+
+func getPendingTxTimeoutHeight(deyesChains []econfig.Chain) []int64 {
+	heights := make([]int64, len(deyesChains))
+	for i, c := range deyesChains {
+		heights[i] = int64(c.BlockTime) * 12000 / 5000 // 5s is the estimated Sisu's blocktime
+	}
+
+	return heights
 }

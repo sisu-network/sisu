@@ -8,6 +8,7 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -32,6 +33,7 @@ type defaultTransferQueue struct {
 	txSubmit         common.TxSubmit
 	stopCh           chan bool
 	submittedTxs     *lru.Cache
+	appKeys          common.AppKeys
 
 	newRequestCh chan TransferRequest
 	lock         *sync.RWMutex
@@ -42,6 +44,7 @@ func NewTransferQueue(
 	txOutputProducer TxOutputProducer,
 	txSubmit common.TxSubmit,
 	tssConfig config.TssConfig,
+	appKeys common.AppKeys,
 ) TransferQueue {
 	cache, err := lru.New(MaxPendingTxCacheSize)
 	if err != nil {
@@ -56,6 +59,7 @@ func NewTransferQueue(
 		lock:             &sync.RWMutex{},
 		stopCh:           make(chan bool),
 		submittedTxs:     cache,
+		appKeys:          appKeys,
 	}
 }
 
@@ -90,35 +94,62 @@ func (q *defaultTransferQueue) loop() {
 func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 	params := q.keeper.GetParams(ctx)
 	for _, chain := range params.SupportedChains {
+		pendingInfo := q.keeper.GetPendingTxOutInfo(ctx, chain)
+		if pendingInfo != nil {
+			// Don't try to create new txouts while there are some pending tx.
+			log.Verbosef("Transfer queue: chain %s has some pending tx", chain)
+			continue
+		}
+
 		queue := q.keeper.GetTransferQueue(ctx, chain)
 		if len(queue) == 0 {
 			continue
 		}
 
-		remaining := make([]*types.Transfer, 0)
-		batchSize := params.GetMaxTransferOutBatch(chain)
-		for i := 0; i < len(queue); i += batchSize {
-			if _, ok := q.submittedTxs.Get(queue[i].Id); ok {
-				continue
-			}
+		log.Debug("Queue length = ", len(queue))
 
-			txOutMsgs, err := q.txOutputProducer.GetTxOuts(ctx, chain, queue[i:i+batchSize])
-			if err != nil {
-				log.Error(err)
-				remaining = append(remaining, queue[i:i+batchSize]...)
-				continue
-			}
+		batchSize := utils.MinInt(params.GetMaxTransferOutBatch(chain), len(queue))
+		batch := queue[0:batchSize]
 
-			for j := 0; j < batchSize; j++ {
-				q.submittedTxs.Add(queue[i+j].Id, true)
-			}
+		if _, ok := q.submittedTxs.Get(queue[0].Id); ok {
+			log.Warn("Tx with id ", queue[0].Id, " is already submitted")
+			continue
+		}
 
-			if len(txOutMsgs) > 0 {
-				log.Infof("Broadcasting txout with length %d on chain %s", len(txOutMsgs), chain)
-				for _, txOutMsg := range txOutMsgs {
-					q.txSubmit.SubmitMessageAsync(txOutMsg)
-				}
+		txOutMsgs, err := q.txOutputProducer.GetTxOuts(ctx, chain, batch)
+		if err != nil {
+			log.Error("Failed to get txOut on chain ", chain, ", err = ", err)
+			// Submit transfer failure transaction if this is an ETH based chain
+			ids := q.getTransferIds(batch)
+			msg := types.NewTransferFailureMsg(q.appKeys.GetSignerAddress().String(), &types.TransferFailure{
+				Ids:     ids,
+				Chain:   chain,
+				Message: err.Error(),
+			})
+			q.txSubmit.SubmitMessageAsync(msg)
+			continue
+		}
+
+		for j := 0; j < batchSize; j++ {
+			log.Verbose("Adding to submited txs ", queue[j].Id)
+			q.submittedTxs.Add(queue[j].Id, true)
+		}
+
+		if len(txOutMsgs) > 0 {
+			log.Infof("Broadcasting txout with length %d on chain %s", len(txOutMsgs), chain)
+			for _, txOutMsg := range txOutMsgs {
+				q.txSubmit.SubmitMessageAsync(txOutMsg)
 			}
 		}
 	}
+}
+
+func (q *defaultTransferQueue) getTransferIds(batch []*types.Transfer) []string {
+	ids := make([]string, len(batch))
+
+	for i, transfer := range batch {
+		ids[i] = transfer.Id
+	}
+
+	return ids
 }

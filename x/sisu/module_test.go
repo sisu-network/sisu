@@ -62,8 +62,14 @@ func TestModule_signTxOut(t *testing.T) {
 	txOutQueue2 := kpr.GetTxOutQueue(ctx, "ganache2")
 	require.Equal(t, []*types.TxOut{}, txOutQueue2)
 
-	pending1 := kpr.GetPendingTxOut(ctx, "ganache1")
-	require.Equal(t, txOut1_1, pending1)
-	pending2 := kpr.GetPendingTxOut(ctx, "ganache2")
-	require.Equal(t, txOut2_1, pending2)
+	pending1 := kpr.GetPendingTxOutInfo(ctx, "ganache1")
+	require.Equal(t, &types.PendingTxOutInfo{
+		TxOut:        txOut1_1,
+		ExpiredBlock: 10,
+	}, pending1)
+	pending2 := kpr.GetPendingTxOutInfo(ctx, "ganache2")
+	require.Equal(t, &types.PendingTxOutInfo{
+		TxOut:        txOut2_1,
+		ExpiredBlock: 10,
+	}, pending2)
 }

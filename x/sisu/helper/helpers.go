@@ -50,7 +50,7 @@ func GetChainGasCostInToken(ctx sdk.Context, k keeper.Keeper, tokenId, chainId s
 
 	nativeTokenPrice, ok := new(big.Int).SetString(nativeToken.Price, 10)
 	if !ok {
-		return nil, fmt.Errorf("Invalid native token price %s", nativeToken.Price)
+		return nil, fmt.Errorf("Invalid native token price %s, token = %s", nativeToken.Price, nativeToken.Id)
 	}
 
 	gasCost, err := GetGasCostInToken(gasUnit, big.NewInt(gasPrice), tokenPrice, nativeTokenPrice)

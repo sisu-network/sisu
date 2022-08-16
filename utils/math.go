@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"encoding/binary"
+	"math/big"
 
 	"github.com/sisu-network/lib/log"
 )
@@ -31,4 +32,13 @@ func MaxUint64(a, b uint64) uint64 {
 	}
 
 	return a
+}
+
+// SubtractCommissionRate returns an amount after substracting commission rate. 1 commission rate
+// unit is 0.01%
+func SubtractCommissionRate(amount *big.Int, rate int32) *big.Int {
+	amount = amount.Mul(amount, big.NewInt(int64(10000-rate)))
+	amount = amount.Div(amount, big.NewInt(10_000))
+
+	return amount
 }

@@ -69,7 +69,7 @@ Example:
 			outputDir, _ := cmd.Flags().GetString(flagOutputDir)
 			nodeDirPrefix, _ := cmd.Flags().GetString(flagNodeDirPrefix)
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
-			genesisFolder, _ := cmd.Flags().GetString(flagGenesisFolder)
+			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 
 			g := &localDockerGenerator{}
@@ -143,7 +143,7 @@ Example:
 	cmd.Flags().StringP(flagOutputDir, "o", "./output", "Directory to store initialization data for the localnet")
 	cmd.Flags().String(flagNodeDirPrefix, "node", "Prefix the directory name for each node with (node results in node0, node1, ...)")
 	cmd.Flags().String(flagNodeDaemonHome, "main", "Home directory of the node's daemon configuration")
-	cmd.Flags().String(flagGenesisFolder, "./misc/docker", "Relative path to the folder that contains genesis configuration.")
+	cmd.Flags().String(flags.GenesisFolder, "./misc/docker", "Relative path to the folder that contains genesis configuration.")
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom),
 		"Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.Algo, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
@@ -315,18 +315,20 @@ services:
 }
 
 func (g *localDockerGenerator) generateEyesToml(deyesChains []econfig.Chain, index int, dir string) {
-	deyesConfig := DeyesConfiguration{
-		Chains: deyesChains,
+	chains := make(map[string]econfig.Chain)
+	for _, cfg := range deyesChains {
+		chains[cfg.Chain] = cfg
+	}
 
-		Sql: SqlConfig{
-			Host:     "mysql",
-			Port:     3306,
-			Schema:   fmt.Sprintf("deyes%d", index),
-			Username: "root",
-			Password: "password",
-		},
-
+	deyesConfig := econfig.Deyes{
+		DbHost:        "mysql",
+		DbPort:        3306,
+		DbUsername:    "root",
+		DbPassword:    "password",
+		DbSchema:      fmt.Sprintf("deyes%d", index),
 		SisuServerUrl: fmt.Sprintf("http://sisu%d:25456", index),
+
+		Chains: chains,
 	}
 
 	writeDeyesConfig(deyesConfig, dir)

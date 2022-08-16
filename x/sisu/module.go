@@ -295,23 +295,35 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 
 func (am AppModule) signTxOut(ctx sdk.Context) {
 	params := am.keeper.GetParams(ctx)
-	for _, chain := range params.SupportedChains {
-		pending := am.keeper.GetPendingTxOut(ctx, chain)
-		if pending != nil {
+	height := ctx.BlockHeight()
+
+	for i, chain := range params.SupportedChains {
+		pendingInfo := am.keeper.GetPendingTxOutInfo(ctx, chain)
+		if pendingInfo != nil {
+			if pendingInfo.ExpiredBlock < height {
+				log.Infof("Pending tx on chain %s expired. Clearing the pending tx.")
+				queue := am.keeper.GetTxOutQueue(ctx, chain)
+				queue = append(queue, pendingInfo.TxOut)
+				am.keeper.SetTxOutQueue(ctx, chain, queue)
+			}
+
 			continue
 		}
 
 		queue := am.keeper.GetTxOutQueue(ctx, chain)
-		fmt.Println("len queue = ", len(queue))
 		if len(queue) == 0 {
 			continue
 		}
 
 		txOut := queue[0]
-		am.keeper.SetPendingTxOut(ctx, txOut.OutChain, txOut)
+		am.keeper.SetPendingTxOutInfo(ctx, txOut.OutChain, &types.PendingTxOutInfo{
+			TxOut:        txOut,
+			ExpiredBlock: height + params.PendingTxTimeoutHeights[i],
+		})
 		am.keeper.SetTxOutQueue(ctx, txOut.OutChain, queue[1:])
 
 		if !am.globalData.IsCatchingUp() {
+			log.Verbose("Signing txout hash = ", txOut.OutHash)
 			am.txOutSiger.signTxOut(ctx, txOut)
 		}
 	}

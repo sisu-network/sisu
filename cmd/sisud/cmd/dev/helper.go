@@ -101,7 +101,7 @@ func getSigner(client *ethclient.Client) etypes.Signer {
 		panic(err)
 	}
 
-	return etypes.NewEIP2930Signer(chainId)
+	return etypes.NewLondonSigner(chainId)
 }
 
 func getAuthTransactor(client *ethclient.Client, mnemonic string) (*bind.TransactOpts, error) {
@@ -111,14 +111,12 @@ func getAuthTransactor(client *ethclient.Client, mnemonic string) (*bind.Transac
 	if err != nil {
 		return nil, err
 	}
-
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
 		return nil, err
 	}
 
 	// This is the private key of the accounts0
-
 	chainId, err := client.ChainID(context.Background())
 	if err != nil {
 		return nil, err
@@ -133,7 +131,7 @@ func getAuthTransactor(client *ethclient.Client, mnemonic string) (*bind.Transac
 	auth.Value = big.NewInt(0)
 	auth.GasPrice = gasPrice
 
-	auth.GasLimit = uint64(5_000_000)
+	auth.GasLimit = uint64(3_000_000)
 
 	return auth, nil
 }
@@ -194,10 +192,15 @@ func approveAddress(client *ethclient.Client, mnemonic string, erc20Addr string,
 	}
 
 	// Make a tx to approve.
-	log.Verbose("Approving address ", target, " token = ", erc20Addr, " owner balance = ", ownerBalance)
+	log.Verbose("Approving address ", target, " token = ", erc20Addr,
+		" owner balance = ", ownerBalance, " nonce = ", opts.Nonce)
+
 	tx, err := contract.Approve(opts, common.HexToAddress(target), ownerBalance)
+	if err != nil {
+		log.Error("Cannot approve address, err = ", err)
+	}
 	bind.WaitDeployed(context.Background(), client, tx)
-	time.Sleep(time.Second * 3)
+	time.Sleep(time.Second * 5)
 }
 
 func queryToken(ctx context.Context, sisuRpc, tokenId string) *tssTypes.Token {

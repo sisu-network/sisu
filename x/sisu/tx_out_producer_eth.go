@@ -148,7 +148,7 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	targetContractName := ContractErc20Gateway
 	gw := p.keeper.GetLatestContractAddressByName(ctx, destChain, targetContractName)
 	if len(gw) == 0 {
-		err := fmt.Errorf("cannot find gw address for type: %s", targetContractName)
+		err := fmt.Errorf("cannot find gw address for type: %s on chain %s", targetContractName, destChain)
 		log.Error(err)
 		return nil, err
 	}
@@ -163,7 +163,12 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 
 	gasPrice := big.NewInt(chain.GasPrice)
 	if gasPrice.Cmp(big.NewInt(0)) <= 0 {
-		gasPrice = p.getDefaultGasPrice(destChain)
+		return nil, fmt.Errorf("Gas price is non-positive: %s", gasPrice.String())
+	}
+
+	commissionRate := p.keeper.GetParams(ctx).CommissionRate
+	if commissionRate < 0 || commissionRate > 10_000 {
+		return nil, fmt.Errorf("Commission rate is invalid, rate = %d", commissionRate)
 	}
 
 	log.Debug("Gas price for swapping  = ", gasPrice)
@@ -175,6 +180,11 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	gasPrices := make([]*big.Int, 0)
 
 	for i := range amounts {
+		amountOut := new(big.Int).Set(amounts[i])
+
+		// Subtract commission rate
+		amountOut = utils.SubtractCommissionRate(amountOut, commissionRate)
+
 		price, ok := new(big.Int).SetString(tokens[i].Price, 10)
 		if !ok {
 			return nil, fmt.Errorf("invalid token price %s", tokens[i].Price)
@@ -183,7 +193,6 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 			return nil, fmt.Errorf("token %s has price 0", tokens[i].Id)
 		}
 
-		// 1. TODO: Subtract the commission fee.
 		gasPriceInToken, err := helper.GetChainGasCostInToken(ctx, k, tokens[i].Id, destChain, big.NewInt(80_000))
 		if err != nil {
 			log.Error("Cannot get gas cost in token, err = ", err)
@@ -195,12 +204,11 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 			gasPriceInToken = utils.ZeroBigInt
 		}
 
-		// Calculate the output amount
-		amountOut := new(big.Int).Set(amounts[i])
+		// Subtract gas price in token.
 		amountOut.Sub(amountOut, gasPriceInToken)
 
 		if amountOut.Cmp(utils.ZeroBigInt) < 0 {
-			log.Error("Insufficient fund for transfer ", i)
+			log.Error("Insufficient fund for transfer amountOut = ", amountOut, " gasPriceInToken = ", gasPriceInToken)
 			continue
 		}
 

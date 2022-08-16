@@ -24,7 +24,7 @@ func mockEthTx(t *testing.T, txOutputProducer DefaultTxOutputProducer, destChain
 	abi, err := abi.JSON(strings.NewReader(SupportedContracts[ContractErc20Gateway].AbiString))
 	require.NoError(t, err)
 
-	data, err := abi.Pack(MethodTransferOut, destChain, contractAddress.String(), tokenAddr, tokenAddr, amount)
+	data, err := abi.Pack(MethodTransferOut, destChain, contractAddress.String(), tokenAddr, amount)
 	require.NoError(t, err)
 
 	ethTx := ethTypes.NewTx(&ethTypes.LegacyTx{

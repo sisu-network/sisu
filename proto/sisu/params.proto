@@ -14,4 +14,8 @@ message Params {
   int32 majority_threshold = 1;
   repeated TransferOutParams transfer_out_params = 2;
   repeated string supported_chains = 3;
+  // Maximum Sisu's  block height that we will wait for a transaction in pending state on a chain.
+  repeated int64 pending_tx_timeout_heights = 4;
+  // Transaction commission rate with 1 unit = 0.01%
+  int32 commission_rate = 5;
 }

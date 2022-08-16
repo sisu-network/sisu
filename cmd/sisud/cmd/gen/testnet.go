@@ -8,16 +8,16 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
+	econfig "github.com/sisu-network/deyes/config"
 	heartconfig "github.com/sisu-network/dheart/core/config"
 	p2ptypes "github.com/sisu-network/dheart/p2p/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
 	"github.com/spf13/cobra"
-
-	econfig "github.com/sisu-network/deyes/config"
 
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -38,11 +38,18 @@ type LogDNAConfig struct {
 	HostName string `json:"host_name,omitempty"`
 }
 
+type TestnetOracle struct {
+	Url       string `json:"url"`
+	Secret    string `json:"secret"`
+	TokenList string `json:"token_list"`
+}
+
 type TestnetConfig struct {
 	Nodes           []TestnetNode           `json:"nodes"`
 	DeyesChainsPath string                  `json:"deyes_chains_path"`
 	LogDNAConfig    log.LogDNAConfig        `json:"log_dna_config"`
 	EmailAlert      config.EmailAlertConfig `json:"email_alert"`
+	Oracle          TestnetOracle           `json:"oracle"`
 }
 
 type SqlConfig struct {
@@ -86,7 +93,6 @@ Example:
 			configString, _ := cmd.Flags().GetString(flagConfigString)
 			keyringBackend, _ := cmd.Flags().GetString(flags.KeyringBackend)
 			keyringPassphrase, _ := cmd.Flags().GetString(flagKeyringPassphrase)
-			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 
 			if keyringPassphrase == keyring.BackendFile && len(keyringPassphrase) == 0 {
 				panic(fmt.Sprintf("Please input the passphrase if you're using keyring backend file by flag %s", keyringPassphrase))
@@ -156,7 +162,6 @@ Example:
 				panic(err)
 			}
 
-			deyesChains := getDeyesChains(cmd, genesisFolder)
 			// Create config files for dheart and deyes.
 			for i := range heartIps {
 				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
@@ -165,7 +170,7 @@ Example:
 				generator.generateHeartToml(i, dir, heartIps, peerIds, sisuIps[i], nodes[i].Sql, valPubKeys, dnaConfig)
 
 				// Deyes configs
-				generator.generateEyesToml(i, dir, sisuIps[i], eyesIps[i], nodes[i].Sql, deyesChains, dnaConfig)
+				generator.generateEyesToml(cmd, i, dir, sisuIps[i], eyesIps[i], nodes[i].Sql, testnetConfig)
 			}
 
 			return err
@@ -183,7 +188,7 @@ Example:
 	cmd.Flags().String(flagConfigString, "", "configuration string for all nodes")
 	cmd.Flags().String(flags.KeyringBackend, keyring.BackendTest, "Keyring backend. file|os|kwallet|pass|test|memory")
 	cmd.Flags().String(flagKeyringPassphrase, "", "Passphrase for keyring backend if using backend file. Leave it empty if use backend test")
-	cmd.Flags().String(flagGenesisFolder, "./misc/testnet", "Relative path to the folder that contains genesis configuration.")
+	cmd.Flags().String(flags.GenesisFolder, "./misc/test", "Relative path to the folder that contains genesis configuration.")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 	cmd.Flags().String(flags.CardanoDbConfig, "", "Configuration for cardano sync db.")
 	return cmd
@@ -263,19 +268,37 @@ func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartI
 	writeHeartConfig(outputDir, hConfig)
 }
 
-func (g *TestnetGenerator) generateEyesToml(index int, dir string, sisuIp, deyesIp string, sqlConfig SqlConfig,
-	chainConfigs []econfig.Chain, dnaConfig log.LogDNAConfig) {
+func (g *TestnetGenerator) generateEyesToml(cmd *cobra.Command, index int, dir string, sisuIp, deyesIp string, sqlConfig SqlConfig,
+	testnetCfg TestnetConfig) {
 	sqlConfig.Schema = "deyes"
 
-	dnaConfig.HostName = deyesIp
-	dnaConfig.AppName = fmt.Sprintf("deyes%d", index)
+	testnetCfg.LogDNAConfig.HostName = deyesIp
+	testnetCfg.LogDNAConfig.AppName = fmt.Sprintf("deyes%d", index)
 
-	deyesConfig := DeyesConfiguration{
-		Chains: chainConfigs,
+	genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
+	deyesChains := getDeyesChains(cmd, genesisFolder)
+	chains := make(map[string]econfig.Chain)
+	for _, cfg := range deyesChains {
+		chains[cfg.Chain] = cfg
+	}
 
-		Sql:           sqlConfig,
+	tokens := strings.Split(testnetCfg.Oracle.TokenList, ",")
+
+	deyesConfig := econfig.Deyes{
+		DbHost:     sqlConfig.Host,
+		DbPort:     sqlConfig.Port,
+		DbUsername: sqlConfig.Username,
+		DbPassword: sqlConfig.Password,
+		DbSchema:   sqlConfig.Schema,
+
+		Chains:        chains,
 		SisuServerUrl: fmt.Sprintf("http://%s:25456", sisuIp),
-		LogDNA:        dnaConfig,
+		LogDNA:        testnetCfg.LogDNAConfig,
+
+		PriceOracleUrl:     testnetCfg.Oracle.Url,
+		PriceOracleSecret:  testnetCfg.Oracle.Secret,
+		PricePollFrequency: 1800,
+		PriceTokenList:     tokens,
 	}
 
 	writeDeyesConfig(deyesConfig, dir)
