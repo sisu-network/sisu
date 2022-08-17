@@ -123,7 +123,7 @@ func TestDefaultTxOutputProducer_getCardanoTx(t *testing.T) {
 				Id:        "ganache1_hash1",
 				Recipient: "addr_test1vq0qus2tc5g2463xkng2g584gynlxs58t64d973dpu9gmqc2rrjv5",
 				Token:     "SISU",
-				Amount:    (utils.EthToWei.Mul(utils.EthToWei, big.NewInt(200))).String(),
+				Amount:    (new(big.Int).Mul(utils.EthToWei, big.NewInt(200))).String(),
 			},
 		}
 
