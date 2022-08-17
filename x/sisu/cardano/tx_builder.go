@@ -1,8 +1,6 @@
 package cardano
 
 import (
-	"fmt"
-
 	"github.com/echovl/cardano-go"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
@@ -17,8 +15,6 @@ func BuildTx(node CardanoClient, sender cardano.Address, receivers []cardano.Add
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("balance = ", balance)
 
 	total := cardano.NewValue(cardano.Coin(0))
 	for _, amount := range amounts {
