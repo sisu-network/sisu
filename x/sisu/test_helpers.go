@@ -76,15 +76,15 @@ func keeperTestGenesis(ctx sdk.Context) keeper.Keeper {
 			Id:        "SISU",
 			Price:     new(big.Int).Mul(big.NewInt(4), utils.EthToWei).String(),
 			Decimals:  18,
-			Chains:    []string{"ganache1", "ganache2"},
-			Addresses: []string{strings.ToLower(testErc20TokenAddress), strings.ToLower(testErc20TokenAddress)},
+			Chains:    []string{"ganache1", "ganache2", "cardano-testnet"},
+			Addresses: []string{strings.ToLower(testErc20TokenAddress), strings.ToLower(testErc20TokenAddress), "ccf1a53e157a7277e717045578a6e9834405730be0b778fd0daab794:uSISU"},
 		},
 		"ADA": {
 			Id:        "ADA",
 			Price:     new(big.Int).Mul(big.NewInt(400_000_000), utils.GweiToWei).String(),
 			Decimals:  18,
-			Chains:    []string{"ganache1", "ganache2"},
-			Addresses: []string{"0xf0D676183dD5ae6b370adDdbE770235F23546f9d", "0xf0D676183dD5ae6b370adDdbE770235F23546f9d"},
+			Chains:    []string{"ganache1", "ganache2", "cardano-testnet"},
+			Addresses: []string{"0xf0D676183dD5ae6b370adDdbE770235F23546f9d", "0xf0D676183dD5ae6b370adDdbE770235F23546f9d", "ccf1a53e157a7277e717045578a6e9834405730be0b778fd0daab794:uADA"},
 		},
 	})
 	keeper.SaveParams(ctx, &types.Params{

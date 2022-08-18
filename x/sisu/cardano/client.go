@@ -2,7 +2,6 @@ package cardano
 
 import (
 	"context"
-	"fmt"
 	"math"
 
 	"github.com/blockfrost/blockfrost-go"
@@ -13,10 +12,6 @@ import (
 
 const (
 	MaxBlockHeight = 9223372036854775807
-)
-
-var (
-	InsufficientFundErr = fmt.Errorf("Insufficient Fund")
 )
 
 // CardanoClient is a interface that interface with Cardano blockchain.

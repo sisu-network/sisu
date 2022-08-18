@@ -317,8 +317,6 @@ func (k *DefaultKeeper) GetAllTokenPricesRecord(ctx sdk.Context) map[string]*typ
 	return getAllTokenPrices(store)
 }
 
-///// Calculated token prices
-
 func (k *DefaultKeeper) SetTokens(ctx sdk.Context, tokens map[string]*types.Token) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixToken)
 	setTokens(store, tokens)

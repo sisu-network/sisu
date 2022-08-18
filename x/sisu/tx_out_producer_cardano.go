@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/big"
 
+	"github.com/sisu-network/sisu/common"
 	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 
@@ -114,17 +115,48 @@ func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, chain string, tr
 			continue
 		}
 
-		amountInt, ok := new(big.Int).SetString(transfer.Amount, 10)
+		amountOut, ok := new(big.Int).SetString(transfer.Amount, 10)
 		if !ok {
 			log.Warnf("Cannot create big.Int value from amount %s on chain %s", transfer.Amount, chain)
 			continue
 		}
 
 		// Subtract commission rate
-		amountInt = utils.SubtractCommissionRate(amountInt, commissionRate)
+		amountOut = utils.SubtractCommissionRate(amountOut, commissionRate)
 
-		// amounts
-		lovelaceAmount := utils.WeiToLovelace(amountInt)
+		// Subtract the 1.6 ADA for multi asset transaction
+		if token.Id == "ADA" {
+			amountOut = amountOut.Sub(amountOut, utils.OnePointSixEthToWei)
+		} else {
+			// Convert the price of 1.6 ADA to token unit
+			adaToken := allTokens["ADA"]
+			adaInUsd, ok := new(big.Int).SetString(adaToken.Price, 10)
+			if !ok {
+				return nil, fmt.Errorf("Invalid ada price %s", adaToken.Price)
+			}
+			// Times 1.6
+			tmp := new(big.Int).Mul(adaInUsd, big.NewInt(16))
+			adaInUsd = tmp.Div(tmp, big.NewInt(10))
+			// Get the token amount from ada price
+			tokenPrice, ok := new(big.Int).SetString(token.Price, 10)
+			if !ok {
+				return nil, fmt.Errorf("Invalid token price %s", adaToken.Price)
+			}
+
+			// Amount of ADA fee in Token price
+			amountInToken := adaInUsd.Mul(adaInUsd, utils.EthToWei)
+			amountInToken = amountInToken.Div(amountInToken, tokenPrice)
+
+			amountOut = amountOut.Sub(amountOut, amountInToken)
+		}
+
+		// If amountOut is smaller or equal 0, quit
+		if amountOut.Cmp(utils.ZeroBigInt) < 0 {
+			return nil, common.InsufficientFundErr
+		}
+
+		// Convert from Wei unit to lovelace unit
+		lovelaceAmount := utils.WeiToLovelace(amountOut)
 		multiAsset, err := scardano.GetCardanoMultiAsset(chain, token, lovelaceAmount.Uint64())
 		if err != nil {
 			return nil, err
