@@ -1,10 +1,10 @@
 [
   {
     "id": "ganache1",
-    "address": "0x3DeaCe7E9C8b6ee632bb71663315d6330914f915"
+    "address": "0x3deace7e9c8b6ee632bb71663315d6330914f915"
   },
   {
     "id": "ganache2",
-    "address": "0x3DeaCe7E9C8b6ee632bb71663315d6330914f915"
+    "address": "0x3deace7e9c8b6ee632bb71663315d6330914f915"
   }
 ]
