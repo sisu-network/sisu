@@ -229,3 +229,41 @@ func TestDb_KeygenPubkey(t *testing.T) {
 	pubkeyBytes = getKeygenPubkey(store, libchain.KEY_TYPE_ECDSA)
 	require.Equal(t, []byte("ec_key_1"), pubkeyBytes)
 }
+
+func TestDb_KeygenResult(t *testing.T) {
+	store := memstore.NewStore()
+
+	saveKeygenResult(store, &types.KeygenResultWithSigner{
+		Signer: "signer1",
+		Keygen: &types.Keygen{
+			KeyType: "ecdsa",
+			Index:   0,
+		},
+		Data: &types.KeygenResult{
+			From: "signer1",
+		},
+	})
+	saveKeygenResult(store, &types.KeygenResultWithSigner{
+		Signer: "signer2",
+		Keygen: &types.Keygen{
+			KeyType: "ecdsa",
+			Index:   0,
+		},
+		Data: &types.KeygenResult{
+			From: "signer2",
+		},
+	})
+	saveKeygenResult(store, &types.KeygenResultWithSigner{
+		Signer: "signer3",
+		Keygen: &types.Keygen{
+			KeyType: "ecdsa",
+			Index:   0,
+		},
+		Data: &types.KeygenResult{
+			From: "signer3",
+		},
+	})
+
+	results := getAllKeygenResult(store, "ecdsa", 0)
+	require.Equal(t, 3, len(results))
+}
