@@ -339,11 +339,6 @@ func generateSisuToml(settings *Setting, index int, nodeDir string) {
 		panic(err)
 	}
 
-	// Create tss folder
-	if err := os.MkdirAll(filepath.Join(nodeDir, "tss"), nodeDirPerm); err != nil {
-		panic(err)
-	}
-
 	cfg := settings.nodeConfigs[index]
 	if index == 0 {
 		cfg.Sisu.EmailAlert = settings.emailAlert
