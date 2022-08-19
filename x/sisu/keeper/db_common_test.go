@@ -267,3 +267,15 @@ func TestDb_KeygenResult(t *testing.T) {
 	results := getAllKeygenResult(store, "ecdsa", 0)
 	require.Equal(t, 3, len(results))
 }
+
+func TestDb_getGateway(t *testing.T) {
+	store := memstore.NewStore()
+
+	setGateway(store, "ganache1", "addr1")
+	gateway := getGateway(store, "ganache1")
+	require.Equal(t, "addr1", gateway)
+
+	setGateway(store, "ganache2", "addr2")
+	gateway = getGateway(store, "ganache2")
+	require.Equal(t, "addr2", gateway)
+}

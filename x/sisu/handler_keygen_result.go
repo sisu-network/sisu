@@ -57,6 +57,7 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 	// Check the majority of the results
 	successCount := 0
 	for _, result := range results {
+		log.Verbose("Keygen result: from: ", result.Data.From, " type = ", result.Keygen.KeyType, " success = ", result.Data.Result)
 		if result.Data.Result == types.KeygenResult_SUCCESS {
 			successCount += 1
 		}
@@ -65,8 +66,16 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 	if successCount == h.valsMgr.GetValidatorLength(ctx) {
 		// TODO: Make sure that everyone has the same address and pubkey.
 		// Save keygen Address
-		log.Info("Saving keygen...")
 		h.keeper.SaveKeygen(ctx, keygen)
+
+		// Setting gateway
+		params := h.keeper.GetParams(ctx)
+		for _, chain := range params.SupportedChains {
+			if libchain.GetKeyTypeForChain(chain) == keygen.KeyType {
+				log.Verbose("Setting gateway = ", keygen.Address, " for chain ", chain)
+				h.keeper.SetGateway(ctx, chain, keygen.Address)
+			}
+		}
 
 		log.Infof("Keygen %s succeeded", keygen.KeyType)
 

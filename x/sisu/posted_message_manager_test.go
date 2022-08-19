@@ -96,7 +96,7 @@ func TestPostedMessageManager(t *testing.T) {
 		require.True(t, process)
 
 		h := NewHandlerKeygenResult(mc)
-		_, err := h.doKeygenResult(ctx, msg)
+		_, err := h.doKeygenResult(ctx, msg.Keygen, []*types.KeygenResultWithSigner{msg})
 		require.NoError(t, err)
 
 		h.keeper.ProcessTxRecord(ctx, hash)
