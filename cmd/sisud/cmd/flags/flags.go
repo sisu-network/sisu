@@ -1,6 +1,8 @@
 package flags
 
 const (
+	RootFolder = "root-folder"
+
 	Chain                  = "chain"
 	Name                   = "name"
 	Index                  = "index"
