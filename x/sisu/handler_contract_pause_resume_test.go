@@ -59,8 +59,6 @@ func mockForHandlerContractPauseResume() (sdk.Context, ManagerContainer) {
 }
 
 func TestHandlerContractPauseResume_doPauseOrResume(t *testing.T) {
-	t.Parallel()
-
 	t.Run("is_catching_up", func(t *testing.T) {
 		ctx, mc := mockForHandlerContractPauseResume()
 

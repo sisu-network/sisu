@@ -59,8 +59,6 @@ func mockTxOutWithSignerForPostedMessageManager() *types.TxOutMsg {
 }
 
 func TestPostedMessageManager(t *testing.T) {
-	t.Parallel()
-
 	t.Run("keygen_with_signer", func(t *testing.T) {
 		ctx, mc := mockForPostedMessageManager()
 		pmm := mc.PostedMessageManager()

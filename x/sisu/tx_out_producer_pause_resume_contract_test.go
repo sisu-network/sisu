@@ -7,8 +7,6 @@ import (
 )
 
 func TestTxOutPauseResumeContract(t *testing.T) {
-	t.Parallel()
-
 	t.Run("can_pause_or_resume", func(t *testing.T) {
 		ctx := testContext()
 		keeper := keeperTestAfterContractDeployed(ctx)

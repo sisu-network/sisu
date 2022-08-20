@@ -37,8 +37,6 @@ func mockForTransferQueue() (sdk.Context, ManagerContainer) {
 
 func TestTransferQueue(t *testing.T) {
 	t.Run("transfer_is_saved", func(t *testing.T) {
-		t.Parallel()
-
 		ctx, mc := mockForTransferQueue()
 		txOutProducer := mc.TxOutProducer().(*MockTxOutputProducer)
 		txSubmit := mc.TxSubmit().(*common.MockTxSubmit)

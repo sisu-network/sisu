@@ -49,8 +49,6 @@ func mockKeeperForTxOutProducerEth(ctx sdk.Context) keeper.Keeper {
 }
 
 func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
-	t.Parallel()
-
 	t.Run("token_has_low_price", func(t *testing.T) {
 		ctx := testContext()
 		keeper := mockKeeperForTxOutProducerEth(ctx)

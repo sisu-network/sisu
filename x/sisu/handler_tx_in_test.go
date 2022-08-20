@@ -22,11 +22,7 @@ func mockForHandlerTxIn() (sdk.Context, ManagerContainer) {
 }
 
 func TestHandlerTxIn_HappyCase(t *testing.T) {
-	t.Parallel()
-
 	t.Run("transfer_is_saved", func(t *testing.T) {
-		t.Parallel()
-
 		ctx, mc := mockForHandlerTxIn()
 		srcChain := "ganache1"
 		destChain := "ganache2"
