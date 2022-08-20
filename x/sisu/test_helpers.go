@@ -135,6 +135,9 @@ func keeperTestAfterContractDeployed(ctx sdk.Context) keeper.Keeper {
 		Hash:    SupportedContracts[ContractErc20Gateway].AbiHash,
 	}, false)
 
+	keeper.SetGateway(ctx, "ganache1", testContractAddr)
+	keeper.SetGateway(ctx, "ganache2", testContractAddr)
+
 	return keeper
 }
 
