@@ -347,7 +347,8 @@ func (a *ApiHandler) OnKeysignResult(result *dhtypes.KeysignResult) {
 	}
 }
 
-func (a *ApiHandler) processETHSigningResult(ctx sdk.Context, result *dhtypes.KeysignResult, signMsg *dhtypes.KeysignMessage, index int) {
+func (a *ApiHandler) processETHSigningResult(ctx sdk.Context, result *dhtypes.KeysignResult,
+	signMsg *dhtypes.KeysignMessage, index int) {
 	// Find the tx in txout table
 	txOut := a.keeper.GetTxOut(ctx, signMsg.OutChain, signMsg.OutHash)
 	if txOut == nil {
@@ -530,6 +531,14 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 				gatewayFundTxSubmitted = true
 				continue
 			}
+		}
+
+		// Check if this is a transaction from our gateway. If true, ignore it.
+		gateway := a.keeper.GetGateway(ctx, txs.Chain)
+		if gateway == tx.From {
+			log.Verbosef("This is a transaction sent from our gateway %s on chain %s, ignore",
+				gateway, txs.Chain)
+			continue
 		}
 
 		txIns, err := a.parseTransferRequest(ctx, txs.Chain, tx)

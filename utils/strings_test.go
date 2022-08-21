@@ -8,7 +8,6 @@ import (
 )
 
 func TestAllInAlphabet(t *testing.T) {
-	t.Parallel()
 	testCases := []struct {
 		Text     string
 		Alphabet string
@@ -20,7 +19,6 @@ func TestAllInAlphabet(t *testing.T) {
 	for _, testCase := range testCases {
 		tc := testCase
 		t.Run(tc.Text, func(t *testing.T) {
-			t.Parallel()
 			result := AllInAlphabet(tc.Text, tc.Alphabet)
 			require.Equal(t, tc.Expected, result)
 		})

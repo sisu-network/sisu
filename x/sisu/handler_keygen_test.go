@@ -31,8 +31,6 @@ func mockForHandlerKeygen() (sdk.Context, ManagerContainer) {
 }
 
 func TestHandlerKeygen_normal(t *testing.T) {
-	t.Parallel()
-
 	submitCount := 0
 
 	ctx, mc := mockForHandlerKeygen()
@@ -58,8 +56,6 @@ func TestHandlerKeygen_normal(t *testing.T) {
 }
 
 func TestHandlerKeygen_CatchingUp(t *testing.T) {
-	t.Parallel()
-
 	submitCount := 0
 	ctx, mc := mockForHandlerKeygen()
 

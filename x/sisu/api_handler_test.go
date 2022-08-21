@@ -25,7 +25,7 @@ import (
 
 func mockForApiHandlerTest() (sdk.Context, ManagerContainer) {
 	ctx := testContext()
-	k := keeperTestGenesis(ctx)
+	k := keeperTestAfterContractDeployed(ctx)
 
 	globalData := &common.MockGlobalData{
 		GetReadOnlyContextFunc: func() sdk.Context {
@@ -99,11 +99,7 @@ func createEthTx(gateway string, dstChain string, srcToken string,
 }
 
 func TestApiHandler_OnTxIns(t *testing.T) {
-	t.Parallel()
-
 	t.Run("empty_tx", func(t *testing.T) {
-		t.Parallel()
-
 		_, mc := mockForApiHandlerTest()
 		processor := NewApiHandler(nil, mc)
 
@@ -111,8 +107,6 @@ func TestApiHandler_OnTxIns(t *testing.T) {
 	})
 
 	t.Run("eth_transfer", func(t *testing.T) {
-		t.Parallel()
-
 		_, mc := mockForApiHandlerTest()
 
 		srcChain := "ganache1"
@@ -199,5 +193,48 @@ func TestApiHandler_OnTxIns(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, 1, submitCount)
+	})
+
+	t.Run("tx_sent_from_our_gateway", func(t *testing.T) {
+		// There should be no tx out created
+		ctx, mc := mockForApiHandlerTest()
+		gateway := "gateway"
+		mc.Keeper().SetGateway(ctx, "ganache1", gateway)
+
+		srcChain := "ganache1"
+		toAddress := "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80"
+		ethTx := createEthTx(toAddress, "ganache2",
+			"0x3a84fbbefd21d6a5ce79d54d348344ee11ebd45c", "0x8095f5b69F2970f38DC6eBD2682ed71E4939f988",
+			new(big.Int).Mul(big.NewInt(1), utils.EthToWei))
+
+		bz, err := ethTx.MarshalBinary()
+		if err != nil {
+			panic(err)
+		}
+
+		txs := &eyesTypes.Txs{
+			Chain: srcChain,
+			Block: int64(utils.RandomNaturalNumber(1000)),
+			Arr: []*eyesTypes.Tx{{
+				SrcChain:   srcChain,
+				From:       gateway,
+				Hash:       utils.RandomHeximalString(64),
+				Serialized: bz,
+				To:         toAddress,
+			}},
+		}
+
+		submitCount := 0
+		txSubmit := mc.TxSubmit().(*common.MockTxSubmit)
+		txSubmit.SubmitMessageAsyncFunc = func(msg sdk.Msg) error {
+			submitCount = 1
+			return nil
+		}
+
+		processor := NewApiHandler(nil, mc)
+		err = processor.OnTxIns(txs)
+
+		require.NoError(t, err)
+		require.Equal(t, 0, submitCount)
 	})
 }

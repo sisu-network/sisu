@@ -8,7 +8,6 @@ import (
 )
 
 func TestRandomDecimalString(t *testing.T) {
-	t.Parallel()
 	require.Equal(t, "", RandomDecimalString(-1))
 	require.Equal(t, "", RandomDecimalString(0))
 	n := 10
@@ -28,7 +27,6 @@ func TestRandomDecimalString(t *testing.T) {
 }
 
 func TestRandomHeximalString(t *testing.T) {
-	t.Parallel()
 	require.Equal(t, "", RandomHeximalString(-1))
 	require.Equal(t, "", RandomHeximalString(0))
 	n := 10
@@ -48,7 +46,6 @@ func TestRandomHeximalString(t *testing.T) {
 }
 
 func TestRandomString(t *testing.T) {
-	t.Parallel()
 	testCases := []struct {
 		Name     string
 		Alphabet string
@@ -65,7 +62,6 @@ func TestRandomString(t *testing.T) {
 	for _, testCase := range testCases {
 		tc := testCase
 		t.Run(tc.Name, func(t *testing.T) {
-			t.Parallel()
 			for n := 0; n < 20; n++ {
 				s := RandomString(n, tc.Alphabet)
 				r := []rune(s)
@@ -77,7 +73,6 @@ func TestRandomString(t *testing.T) {
 }
 
 func TestRandomNaturalNumber(t *testing.T) {
-	t.Parallel()
 	for n := 1; n <= 1000; n++ {
 		for i := 0; i <= 100; i++ {
 			v := RandomNaturalNumber(n)

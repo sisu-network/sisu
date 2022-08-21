@@ -37,56 +37,58 @@ func NewHandlerKeygenResult(mc ManagerContainer) *HandlerKeygenResult {
 }
 
 func (h *HandlerKeygenResult) DeliverMsg(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) (*sdk.Result, error) {
+	log.Infof("Delivering keygen result of type %s, from %s, result = %v",
+		signerMsg.Keygen.KeyType, signerMsg.Data.From, signerMsg.Data.Result)
+
 	// Save result to KVStore & private db
 	h.keeper.SaveKeygenResult(ctx, signerMsg)
 
-	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
-		data, err := h.doKeygenResult(ctx, signerMsg)
-		h.keeper.ProcessTxRecord(ctx, hash)
-
-		return &sdk.Result{Data: data}, err
+	// TODO: Handler keygen failure and check result expiration time.
+	results := h.keeper.GetAllKeygenResult(ctx, signerMsg.Keygen.KeyType, signerMsg.Keygen.Index)
+	if len(results) == h.valsMgr.GetValidatorLength(ctx) {
+		h.doKeygenResult(ctx, signerMsg.Keygen, results)
 	}
 
 	return &sdk.Result{}, nil
 }
 
-func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner) ([]byte, error) {
-	msg := signerMsg.Data
-
-	log.Infof("Delivering keygen result of type %s, result = %v", signerMsg.Keygen.KeyType, msg.Result)
-
-	// Get the majority of of votes
-	// TODO: Only count result from validator node. Otherwise, anyone could post fake result.
-	results := h.keeper.GetAllKeygenResult(ctx, signerMsg.Keygen.KeyType, signerMsg.Keygen.Index)
-	if len(results) == h.valsMgr.GetValidatorLength(ctx) {
-		// Check the majority of the results
-		successCount := 0
-		for _, result := range results {
-			if result.Data.Result == types.KeygenResult_SUCCESS {
-				successCount += 1
-			}
-		}
-
-		if successCount == h.valsMgr.GetValidatorLength(ctx) {
-			// TODO: Make sure that everyone has the same address and pubkey.
-			// Save keygen Address
-			log.Info("Saving keygen...")
-			h.keeper.SaveKeygen(ctx, signerMsg.Keygen)
-
-			log.Infof("Keygen %s succeeded", signerMsg.Keygen.KeyType)
-
-			if !h.globalData.IsCatchingUp() {
-				switch signerMsg.Keygen.KeyType {
-				case libchain.KEY_TYPE_ECDSA:
-					h.createContracts(ctx, signerMsg.Keygen)
-				}
-			}
-		} else {
-			// TODO: handle failure case
-			return nil, nil
+func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keygen,
+	results []*types.KeygenResultWithSigner) ([]byte, error) {
+	// Check the majority of the results
+	successCount := 0
+	for _, result := range results {
+		log.Verbose("Keygen result: from: ", result.Data.From, " type = ", result.Keygen.KeyType, " success = ", result.Data.Result)
+		if result.Data.Result == types.KeygenResult_SUCCESS {
+			successCount += 1
 		}
 	}
 
+	if successCount == h.valsMgr.GetValidatorLength(ctx) {
+		// TODO: Make sure that everyone has the same address and pubkey.
+		// Save keygen Address
+		h.keeper.SaveKeygen(ctx, keygen)
+
+		// Setting gateway
+		params := h.keeper.GetParams(ctx)
+		for _, chain := range params.SupportedChains {
+			if libchain.GetKeyTypeForChain(chain) == keygen.KeyType {
+				log.Verbose("Setting gateway = ", keygen.Address, " for chain ", chain)
+				h.keeper.SetGateway(ctx, chain, keygen.Address)
+			}
+		}
+
+		log.Infof("Keygen %s succeeded", keygen.KeyType)
+
+		if !h.globalData.IsCatchingUp() {
+			switch keygen.KeyType {
+			case libchain.KEY_TYPE_ECDSA:
+				h.createContracts(ctx, keygen)
+			}
+		}
+	} else {
+		// TODO: handle failure case
+		return nil, nil
+	}
 	return nil, nil
 }
 

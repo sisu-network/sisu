@@ -4,13 +4,14 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/sisu-network/lib/log"
 
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/sisu-network/sisu/app"
+	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 	"github.com/spf13/cobra"
 )
 
@@ -24,19 +25,13 @@ requires more than 1 validator nodes in the network and will not work for local 
 This command only deletes data files but not config files.
 `,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			if err := deleteMainAppData(); err != nil {
+			root, _ := cmd.Flags().GetString(flags.RootFolder)
+
+			if err := deleteMainAppData(root); err != nil {
 				return err
 			}
 
-			if err := deleteEthData(); err != nil {
-				return err
-			}
-
-			if err := deleteTssData(); err != nil {
-				return err
-			}
-
-			if err := resetValidatorState(); err != nil {
+			if err := resetValidatorState(root); err != nil {
 				return err
 			}
 
@@ -48,12 +43,21 @@ This command only deletes data files but not config files.
 		},
 	}
 
+	home, err := os.UserHomeDir()
+	if err != nil {
+		panic(err)
+	}
+
+	cmd.Flags().String(flags.RootFolder, home+"/.sisu/main", "Relative path to the root folder of Sisu.")
+
 	return cmd
 }
 
-func deleteMainAppData() error {
-	dataDir := app.MainAppHome + "/data"
-	configDir := app.MainAppHome + "/config"
+func deleteMainAppData(root string) error {
+	dataDir := path.Join(root, "data")
+	configDir := path.Join(root, "config")
+
+	fmt.Println("dataDir = ", dataDir)
 
 	toDelete := []string{
 		// config folders.
@@ -81,23 +85,6 @@ func deleteMainAppData() error {
 	return deleteFiles(toDelete)
 }
 
-func deleteEthData() error {
-	toDelete := []string{
-		app.SisuHome + "/eth",
-		app.SisuHome + "/ethleveldb",
-	}
-
-	return deleteFiles(toDelete)
-}
-
-func deleteTssData() error {
-	toDelete := []string{
-		app.SisuHome + "/tss/processor.db",
-	}
-
-	return deleteFiles(toDelete)
-}
-
 func deleteFiles(toDelete []string) error {
 	for _, file := range toDelete {
 		log.Info("Deleting file/directory", file)
@@ -110,14 +97,14 @@ func deleteFiles(toDelete []string) error {
 	return nil
 }
 
-func resetValidatorState() error {
+func resetValidatorState(root string) error {
 	content := `{
 		"height": "0",
 		"round": 0,
 		"step": 0
 	}`
 
-	path := app.MainAppHome + "/data/priv_validator_state.json"
+	path := path.Join(root, "data/priv_validator_state.json")
 	return os.WriteFile(path, []byte(content), 0644)
 }
 

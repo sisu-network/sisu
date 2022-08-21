@@ -87,6 +87,10 @@ type Keeper interface {
 	SaveParams(ctx sdk.Context, params *types.Params)
 	GetParams(ctx sdk.Context) *types.Params
 
+	// Gateway
+	SetGateway(ctx sdk.Context, chain string, gateway string)
+	GetGateway(ctx sdk.Context, chain string) string
+
 	// Gateway checkpoint
 	AddGatewayCheckPoint(ctx sdk.Context, checkPoint *types.GatewayCheckPoint)
 	GetGatewayCheckPoint(ctx sdk.Context, chain string) *types.GatewayCheckPoint
@@ -370,6 +374,17 @@ func (k *DefaultKeeper) SaveParams(ctx sdk.Context, params *types.Params) {
 func (k *DefaultKeeper) GetParams(ctx sdk.Context) *types.Params {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixParams)
 	return getParams(store)
+}
+
+///// Gateway
+func (k *DefaultKeeper) SetGateway(ctx sdk.Context, chain string, gateway string) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGateway)
+	setGateway(store, chain, gateway)
+}
+
+func (k *DefaultKeeper) GetGateway(ctx sdk.Context, chain string) string {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGateway)
+	return getGateway(store, chain)
 }
 
 ///// Gateway Checkpoint

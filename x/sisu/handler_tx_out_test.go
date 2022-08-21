@@ -20,8 +20,6 @@ func mockForHandlerTxOut() (sdk.Context, ManagerContainer) {
 }
 
 func TestHandlerTxOut_TransferOut(t *testing.T) {
-	t.Parallel()
-
 	destChain := "ganache2"
 	txOutMsg1 := &types.TxOutMsg{
 		Signer: "signer",

@@ -229,3 +229,53 @@ func TestDb_KeygenPubkey(t *testing.T) {
 	pubkeyBytes = getKeygenPubkey(store, libchain.KEY_TYPE_ECDSA)
 	require.Equal(t, []byte("ec_key_1"), pubkeyBytes)
 }
+
+func TestDb_KeygenResult(t *testing.T) {
+	store := memstore.NewStore()
+
+	saveKeygenResult(store, &types.KeygenResultWithSigner{
+		Signer: "signer1",
+		Keygen: &types.Keygen{
+			KeyType: "ecdsa",
+			Index:   0,
+		},
+		Data: &types.KeygenResult{
+			From: "signer1",
+		},
+	})
+	saveKeygenResult(store, &types.KeygenResultWithSigner{
+		Signer: "signer2",
+		Keygen: &types.Keygen{
+			KeyType: "ecdsa",
+			Index:   0,
+		},
+		Data: &types.KeygenResult{
+			From: "signer2",
+		},
+	})
+	saveKeygenResult(store, &types.KeygenResultWithSigner{
+		Signer: "signer3",
+		Keygen: &types.Keygen{
+			KeyType: "ecdsa",
+			Index:   0,
+		},
+		Data: &types.KeygenResult{
+			From: "signer3",
+		},
+	})
+
+	results := getAllKeygenResult(store, "ecdsa", 0)
+	require.Equal(t, 3, len(results))
+}
+
+func TestDb_getGateway(t *testing.T) {
+	store := memstore.NewStore()
+
+	setGateway(store, "ganache1", "addr1")
+	gateway := getGateway(store, "ganache1")
+	require.Equal(t, "addr1", gateway)
+
+	setGateway(store, "ganache2", "addr2")
+	gateway = getGateway(store, "ganache2")
+	require.Equal(t, "addr2", gateway)
+}

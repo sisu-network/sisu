@@ -59,8 +59,6 @@ func mockTxOutWithSignerForPostedMessageManager() *types.TxOutMsg {
 }
 
 func TestPostedMessageManager(t *testing.T) {
-	t.Parallel()
-
 	t.Run("keygen_with_signer", func(t *testing.T) {
 		ctx, mc := mockForPostedMessageManager()
 		pmm := mc.PostedMessageManager()
@@ -96,7 +94,7 @@ func TestPostedMessageManager(t *testing.T) {
 		require.True(t, process)
 
 		h := NewHandlerKeygenResult(mc)
-		_, err := h.doKeygenResult(ctx, msg)
+		_, err := h.doKeygenResult(ctx, msg.Keygen, []*types.KeygenResultWithSigner{msg})
 		require.NoError(t, err)
 
 		h.keeper.ProcessTxRecord(ctx, hash)

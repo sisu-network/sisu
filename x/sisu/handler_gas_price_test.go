@@ -32,8 +32,6 @@ func mockForHandlerGasPrice() (sdk.Context, ManagerContainer) {
 }
 
 func TestHandlerGasPrice(t *testing.T) {
-	t.Parallel()
-
 	t.Run("set_gas_price_successfully", func(t *testing.T) {
 		ctx, mc := mockForHandlerGasPrice()
 
@@ -57,8 +55,6 @@ func TestHandlerGasPrice(t *testing.T) {
 	})
 
 	t.Run("multiple_signers_set_gas_price_successfully", func(t *testing.T) {
-		t.Parallel()
-
 		ctx, mc := mockForHandlerGasPrice()
 
 		chains := []string{"ETH", "BSC", "POLYGON"}

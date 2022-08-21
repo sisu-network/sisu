@@ -27,10 +27,11 @@ var (
 	prefixNode                   = []byte{0x0F}
 	prefixLiquidity              = []byte{0x10}
 	prefixParams                 = []byte{0x11}
-	prefixGatewayCheckPoint      = []byte{0x12}
-	prefixTransferQueue          = []byte{0x13}
-	prefixTxOutQueue             = []byte{0x14}
-	prefixPendingTxOut           = []byte{0x15}
+	prefixGateway                = []byte{0x12}
+	prefixGatewayCheckPoint      = []byte{0x13}
+	prefixTransferQueue          = []byte{0x14}
+	prefixTxOutQueue             = []byte{0x15}
+	prefixPendingTxOut           = []byte{0x16}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -828,6 +829,23 @@ func getParams(store cstypes.KVStore) *types.Params {
 	}
 
 	return params
+}
+
+///// Gateway
+
+func setGateway(store cstypes.KVStore, chain string, address string) {
+	key := fmt.Sprintf("%s__%s", chain, "erc20") // we only have erc20 gateway at the moment
+	store.Set([]byte(key), []byte(address))
+}
+
+func getGateway(store cstypes.KVStore, chain string) string {
+	key := fmt.Sprintf("%s__%s", chain, "erc20")
+	bz := store.Get([]byte(key))
+	if bz == nil {
+		return ""
+	}
+
+	return string(bz)
 }
 
 ///// Gateway Checkpoint
