@@ -72,4 +72,27 @@ func TestModule_signTxOut(t *testing.T) {
 		TxOut:        txOut2_1,
 		ExpiredBlock: 10,
 	}, pending2)
+
+	// Clone ctx with height = 20. The pending transaction expires. We should add it back to the
+	// queue.
+	cloneCtx := sdk.Context{}
+	cacheMS := ctx.MultiStore().CacheMultiStore()
+	header := ctx.BlockHeader()
+	header.Height = 20
+	cloneCtx = sdk.NewContext(
+		cacheMS, header, ctx.IsCheckTx(), nil,
+	)
+
+	// The pending tx should be empty
+	module.signTxOut(cloneCtx)
+	pending1 = kpr.GetPendingTxOutInfo(cloneCtx, "ganache1")
+	require.Nil(t, pending1)
+	pending2 = kpr.GetPendingTxOutInfo(cloneCtx, "ganache2")
+	require.Nil(t, pending2)
+
+	// The tx is added back to the queue.
+	txOutQueue1 = kpr.GetTxOutQueue(ctx, "ganache1")
+	require.Equal(t, []*types.TxOut{txOut1_2}, txOutQueue1)
+	txOutQueue2 = kpr.GetTxOutQueue(ctx, "ganache2")
+	require.Equal(t, []*types.TxOut{}, txOutQueue2)
 }

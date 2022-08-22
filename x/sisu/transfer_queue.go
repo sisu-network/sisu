@@ -4,7 +4,6 @@ import (
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	lru "github.com/hashicorp/golang-lru"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
@@ -32,7 +31,6 @@ type defaultTransferQueue struct {
 	txOutputProducer TxOutputProducer
 	txSubmit         common.TxSubmit
 	stopCh           chan bool
-	submittedTxs     *lru.Cache
 	appKeys          common.AppKeys
 
 	newRequestCh chan TransferRequest
@@ -46,11 +44,6 @@ func NewTransferQueue(
 	tssConfig config.TssConfig,
 	appKeys common.AppKeys,
 ) TransferQueue {
-	cache, err := lru.New(MaxPendingTxCacheSize)
-	if err != nil {
-		panic(err)
-	}
-
 	return &defaultTransferQueue{
 		keeper:           keeper,
 		txOutputProducer: txOutputProducer,
@@ -58,7 +51,6 @@ func NewTransferQueue(
 		newRequestCh:     make(chan TransferRequest, 10),
 		lock:             &sync.RWMutex{},
 		stopCh:           make(chan bool),
-		submittedTxs:     cache,
 		appKeys:          appKeys,
 	}
 }
@@ -111,11 +103,6 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 		batchSize := utils.MinInt(params.GetMaxTransferOutBatch(chain), len(queue))
 		batch := queue[0:batchSize]
 
-		if _, ok := q.submittedTxs.Get(queue[0].Id); ok {
-			log.Warn("Tx with id ", queue[0].Id, " is already submitted")
-			continue
-		}
-
 		txOutMsgs, err := q.txOutputProducer.GetTxOuts(ctx, chain, batch)
 		if err != nil {
 			log.Error("Failed to get txOut on chain ", chain, ", err = ", err)
@@ -128,11 +115,6 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 			})
 			q.txSubmit.SubmitMessageAsync(msg)
 			continue
-		}
-
-		for j := 0; j < batchSize; j++ {
-			log.Verbose("Adding to submited txs ", queue[j].Id)
-			q.submittedTxs.Add(queue[j].Id, true)
 		}
 
 		if len(txOutMsgs) > 0 {
