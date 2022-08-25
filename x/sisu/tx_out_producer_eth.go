@@ -262,7 +262,7 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 		0,
 		gatewayAddress,
 		big.NewInt(0),
-		100_000, // 100k for swapping operation.
+		uint64(100_000*len(recipients)), // 100k per swapping operation.
 		gasPrice,
 		input,
 	)
