@@ -1,8 +1,6 @@
 package sisu
 
 import (
-	"sort"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
@@ -78,59 +76,9 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 		}
 
 		log.Infof("Keygen %s succeeded", keygen.KeyType)
-
-		if !h.globalData.IsCatchingUp() {
-			switch keygen.KeyType {
-			case libchain.KEY_TYPE_ECDSA:
-				h.createContracts(ctx, keygen)
-			}
-		}
 	} else {
 		// TODO: handle failure case
 		return nil, nil
 	}
 	return nil, nil
-}
-
-// createContracts creates and broadcast pending contracts. All nodes need to agree what
-// contracts to deploy on what chains.
-func (h *HandlerKeygenResult) createContracts(ctx sdk.Context, msg *types.Keygen) {
-	log.Info("Create and broadcast contracts...")
-
-	// Sort all contracts name alphabetically
-	names := make([]string, len(SupportedContracts))
-	i := 0
-	for contract := range SupportedContracts {
-		names[i] = contract
-		i += 1
-	}
-	sort.Strings(names)
-
-	params := h.keeper.GetParams(ctx)
-
-	// Create contracts
-	for _, chain := range params.SupportedChains {
-		if libchain.GetKeyTypeForChain(chain) == msg.KeyType {
-			log.Info("Saving contracts for chain ", chain)
-
-			for _, name := range names {
-				c := SupportedContracts[name]
-				if !c.IsDeployBySisu {
-					continue
-				}
-
-				contract := &types.Contract{
-					Chain:     chain,
-					Hash:      c.AbiHash,
-					Name:      name,
-					ByteCodes: []byte(c.Bin),
-				}
-
-				h.txSubmit.SubmitMessageAsync(types.NewContractsMsg(
-					h.appKeys.GetSignerAddress().String(),
-					[]*types.Contract{contract},
-				))
-			}
-		}
-	}
 }

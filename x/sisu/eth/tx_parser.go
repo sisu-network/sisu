@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/contracts/eth/vault"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 
@@ -18,8 +19,12 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
-func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain string, gwAbi abi.ABI,
-	keeper keeper.Keeper) (*types.TxIn, error) {
+func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain string, keeper keeper.Keeper) (*types.TxIn, error) {
+	gwAbi, err := abi.JSON(strings.NewReader(vault.VaultABI))
+	if err != nil {
+		return nil, err
+	}
+
 	callData := ethTx.Data()
 	txParams, err := decodeTxParams(gwAbi, callData)
 	if err != nil {

@@ -107,13 +107,13 @@ func keeperTestAfterKeygen(ctx sdk.Context) keeper.Keeper {
 	})
 	keeper.SaveContract(ctx, &types.Contract{
 		Chain: "ganache1",
-		Name:  "erc20gateway",
-		Hash:  SupportedContracts[ContractErc20Gateway].AbiHash,
+		Name:  "vault",
+		Hash:  SupportedContracts[ContractVault].AbiHash,
 	}, false)
 	keeper.SaveContract(ctx, &types.Contract{
 		Chain: "ganache2",
-		Name:  "erc20gateway",
-		Hash:  SupportedContracts[ContractErc20Gateway].AbiHash,
+		Name:  "vault",
+		Hash:  SupportedContracts[ContractVault].AbiHash,
 	}, false)
 
 	return keeper
@@ -124,15 +124,15 @@ func keeperTestAfterContractDeployed(ctx sdk.Context) keeper.Keeper {
 
 	keeper.SaveContract(ctx, &types.Contract{
 		Chain:   "ganache1",
-		Name:    "erc20gateway",
+		Name:    ContractVault,
 		Address: testContractAddr,
-		Hash:    SupportedContracts[ContractErc20Gateway].AbiHash,
+		Hash:    SupportedContracts[ContractVault].AbiHash,
 	}, false)
 	keeper.SaveContract(ctx, &types.Contract{
 		Chain:   "ganache2",
-		Name:    "erc20gateway",
+		Name:    ContractVault,
 		Address: testContractAddr,
-		Hash:    SupportedContracts[ContractErc20Gateway].AbiHash,
+		Hash:    SupportedContracts[ContractVault].AbiHash,
 	}, false)
 
 	keeper.SetGateway(ctx, "ganache1", testContractAddr)

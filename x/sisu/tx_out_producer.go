@@ -24,16 +24,6 @@ type TxOutputProducer interface {
 	// GetTxOuts returns a list of TxOut message and a list of un-processed transfer out request that
 	// needs to be processed next time.
 	GetTxOuts(ctx sdk.Context, chain string, transfers []*types.Transfer) ([]*types.TxOutMsg, error)
-
-	PauseContract(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error)
-
-	ResumeContract(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error)
-
-	ContractChangeOwnership(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutMsg, error)
-
-	ContractSetLiquidPoolAddress(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutMsg, error)
-
-	ContractEmergencyWithdrawFund(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutMsg, error)
 }
 
 type DefaultTxOutputProducer struct {

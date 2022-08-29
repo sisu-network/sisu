@@ -574,9 +574,6 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 
 func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.TxIn, error) {
 	if libchain.IsETHBasedChain(chain) {
-		erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
-		gwAbi := erc20gatewayContract.Abi
-
 		ethTx := &ethTypes.Transaction{}
 		err := ethTx.UnmarshalBinary(tx.Serialized)
 		if err != nil {
@@ -584,7 +581,7 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 			return nil, err
 		}
 
-		transfer, err := eth.ParseEthTransferOut(ctx, ethTx, chain, gwAbi, a.keeper)
+		transfer, err := eth.ParseEthTransferOut(ctx, ethTx, chain, a.keeper)
 		if err != nil {
 			return nil, err
 		}

@@ -3,10 +3,12 @@ package sisu
 import (
 	"fmt"
 	"math/big"
+	"strings"
 	"testing"
 
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
@@ -17,6 +19,7 @@ import (
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/contracts/eth/vault"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -73,8 +76,9 @@ func signEthTx(rawTx *ethtypes.Transaction) *ethtypes.Transaction {
 func createEthTx(gateway string, dstChain string, srcToken string,
 	recipient string, amount *big.Int) *ethtypes.Transaction {
 	srcTokenAddr := ecommon.HexToAddress(srcToken)
-	erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
-	input, err := erc20gatewayContract.Abi.Pack(
+
+	vaultAbi, err := abi.JSON(strings.NewReader(vault.VaultABI))
+	input, err := vaultAbi.Pack(
 		MethodTransferOut,
 		dstChain,
 		recipient,

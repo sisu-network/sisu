@@ -39,7 +39,7 @@ func decodeTxParams(abi abi.ABI, callData []byte) (map[string]interface{}, error
 
 func parseEthTransferOut(ctx sdk.Context, k keeper.Keeper, ethTx *ethTypes.Transaction,
 	srcChain string) (*types.TransferOutData, error) {
-	erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
+	erc20gatewayContract := SupportedContracts[ContractVault]
 	gwAbi := erc20gatewayContract.Abi
 	callData := ethTx.Data()
 	txParams, err := decodeTxParams(gwAbi, callData)
@@ -47,13 +47,13 @@ func parseEthTransferOut(ctx sdk.Context, k keeper.Keeper, ethTx *ethTypes.Trans
 		return nil, err
 	}
 
-	tokenAddr, ok := txParams["_tokenOut"].(ethcommon.Address)
+	tokenAddr, ok := txParams["token"].(ethcommon.Address)
 	if !ok {
-		err := fmt.Errorf("cannot convert _tokenOut to type ethcommon.Address: %v", txParams)
+		err := fmt.Errorf("cannot convert token to type ethcommon.Address: %v", txParams)
 		return nil, err
 	}
 
-	destChain, ok := txParams["_destChain"].(string)
+	destChain, ok := txParams["dstChain"].(string)
 	if !ok {
 		err := fmt.Errorf("cannot convert _destChain to type string: %v", txParams)
 		return nil, err
@@ -78,13 +78,13 @@ func parseEthTransferOut(ctx sdk.Context, k keeper.Keeper, ethTx *ethTypes.Trans
 		return nil, fmt.Errorf("invalid address %s on chain %s", tokenAddr, srcChain)
 	}
 
-	recipient, ok := txParams["_recipient"].(string)
+	recipient, ok := txParams["to"].(ecommon.Address)
 	if !ok {
-		err := fmt.Errorf("cannot convert _recipient to type ethcommon.Address: %v", txParams)
+		err := fmt.Errorf("cannot convert to to type ethcommon.Address: %v", txParams)
 		return nil, err
 	}
 
-	amount, ok := txParams["_amount"].(*big.Int)
+	amount, ok := txParams["amount"].(*big.Int)
 	if !ok {
 		err := fmt.Errorf("cannot convert _amount to type *big.Int: %v", txParams)
 		return nil, err
@@ -93,45 +93,43 @@ func parseEthTransferOut(ctx sdk.Context, k keeper.Keeper, ethTx *ethTypes.Trans
 	return &types.TransferOutData{
 		DestChain: destChain,
 		Token:     token,
-		Recipient: recipient,
+		Recipient: recipient.String(),
 		Amount:    amount,
 	}, nil
 }
 
 func parseTransferInData(ethTx *ethTypes.Transaction) ([]*transferInData, error) {
-	erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
-	gwAbi := erc20gatewayContract.Abi
+	vaultContract := SupportedContracts[ContractVault]
+	gwAbi := vaultContract.Abi
 	callData := ethTx.Data()
 	txParams, err := decodeTxParams(gwAbi, callData)
 	if err != nil {
 		return nil, err
 	}
 
-	tokens, ok := txParams["tokens"].([]ethcommon.Address)
+	token, ok := txParams["token"].(ethcommon.Address)
 	if !ok {
 		err := fmt.Errorf("parseTransferInData: cannot convert _token to type ethcommon.Address: %v", txParams)
 		return nil, err
 	}
 
-	recipients, ok := txParams["recipients"].([]ethcommon.Address)
+	recipient, ok := txParams["to"].(ethcommon.Address)
 	if !ok {
 		err := fmt.Errorf("parseTransferInData: cannot convert _recipient to type ethcommon.Address: %v", txParams)
 		return nil, err
 	}
 
-	amounts, ok := txParams["amounts"].([]*big.Int)
+	amount, ok := txParams["amount"].(*big.Int)
 	if !ok {
 		err := fmt.Errorf("parseTransferInData: cannot convert _amount to type *big.Int: %v", txParams)
 		return nil, err
 	}
 
-	txIns := make([]*transferInData, len(tokens))
-	for i := range tokens {
-		txIns[i] = &transferInData{
-			token:     tokens[i],
-			recipient: recipients[i].String(),
-			amount:    amounts[i],
-		}
+	txIns := make([]*transferInData, 1)
+	txIns[0] = &transferInData{
+		token:     token,
+		recipient: recipient.String(),
+		amount:    amount,
 	}
 
 	return txIns, nil
@@ -145,7 +143,7 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	amounts []*big.Int,
 	destChain string,
 ) (*types.TxResponse, error) {
-	targetContractName := ContractErc20Gateway
+	targetContractName := ContractVault
 	gw := p.keeper.GetLatestContractAddressByName(ctx, destChain, targetContractName)
 	if len(gw) == 0 {
 		err := fmt.Errorf("cannot find gw address for type: %s on chain %s", targetContractName, destChain)
@@ -154,7 +152,7 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	}
 
 	gatewayAddress := ethcommon.HexToAddress(gw)
-	erc20gatewayContract := SupportedContracts[targetContractName]
+	vault := SupportedContracts[targetContractName]
 
 	chain := k.GetChain(ctx, destChain)
 	if chain == nil {
@@ -247,12 +245,24 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 		)
 	}
 
-	input, err := erc20gatewayContract.Abi.Pack(
-		MethodTransferIn,
-		finalTokenAddrs,
-		finalRecipients,
-		finalAmounts,
-	)
+	var input []byte
+	var err error
+	if len(finalTokenAddrs) == 1 {
+		input, err = vault.Abi.Pack(
+			MethodTransferIn,
+			finalTokenAddrs[0],
+			finalRecipients[0],
+			finalAmounts[0],
+		)
+	} else {
+		input, err = vault.Abi.Pack(
+			MethodTransferInMultiple,
+			finalTokenAddrs,
+			finalRecipients,
+			finalAmounts,
+		)
+	}
+
 	if err != nil {
 		log.Error(err)
 		return nil, err

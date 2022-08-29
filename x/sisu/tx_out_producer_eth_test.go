@@ -2,11 +2,9 @@ package sisu
 
 import (
 	"math/big"
-	"strings"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	ecommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"
@@ -21,10 +19,9 @@ func mockEthTx(t *testing.T, txOutputProducer DefaultTxOutputProducer, destChain
 	gasLimit := uint64(100)
 	gasPrice := big.NewInt(100)
 
-	abi, err := abi.JSON(strings.NewReader(SupportedContracts[ContractErc20Gateway].AbiString))
-	require.NoError(t, err)
+	abi := SupportedContracts[ContractVault].Abi
 
-	data, err := abi.Pack(MethodTransferOut, destChain, contractAddress.String(), tokenAddr, amount)
+	data, err := abi.Pack(MethodTransferOut, tokenAddr, destChain, contractAddress, amount)
 	require.NoError(t, err)
 
 	ethTx := ethTypes.NewTx(&ethTypes.LegacyTx{
