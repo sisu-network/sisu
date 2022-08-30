@@ -65,15 +65,15 @@ func parseTx() {
 			panic(fmt.Errorf("Failed to convert to messages, err = %v", err))
 		}
 
-		_, ok := txParams["_tokenOut"].(ethcommon.Address)
+		_, ok := txParams["token"].(ethcommon.Address)
 		if !ok {
-			err := fmt.Errorf("cannot convert _tokenOut to type ethcommon.Address: %v", txParams)
+			err := fmt.Errorf("cannot convert token to type ethcommon.Address: %v", txParams)
 			panic(err)
 		}
 
-		_, ok = txParams["_destChain"].(string)
+		_, ok = txParams["dstChain"].(string)
 		if !ok {
-			err := fmt.Errorf("cannot convert _destChain to type string: %v", txParams)
+			err := fmt.Errorf("cannot convert dstChain to type string: %v", txParams)
 			panic(err)
 		}
 	}

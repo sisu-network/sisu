@@ -39,7 +39,7 @@ func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain 
 
 	tokenAddr, ok := txParams["token"].(ethcommon.Address)
 	if !ok {
-		err := fmt.Errorf("cannot convert _tokenOut to type ethcommon.Address: %v", txParams)
+		err := fmt.Errorf("cannot convert token to type ethcommon.Address: %v", txParams)
 		return nil, err
 	}
 

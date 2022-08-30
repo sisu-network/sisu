@@ -144,7 +144,11 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	destChain string,
 ) (*types.TxResponse, error) {
 	targetContractName := ContractVault
-	gw := p.keeper.GetLatestContractAddressByName(ctx, destChain, targetContractName)
+	v := p.keeper.GetVault(ctx, destChain)
+	if v == nil {
+		return nil, fmt.Errorf("Cannot find vault for chain %s", destChain)
+	}
+	gw := v.Address
 	if len(gw) == 0 {
 		err := fmt.Errorf("cannot find gw address for type: %s on chain %s", targetContractName, destChain)
 		log.Error(err)
@@ -152,7 +156,7 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	}
 
 	gatewayAddress := ethcommon.HexToAddress(gw)
-	vault := SupportedContracts[targetContractName]
+	vaultInfo := SupportedContracts[targetContractName]
 
 	chain := k.GetChain(ctx, destChain)
 	if chain == nil {
@@ -248,14 +252,14 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	var input []byte
 	var err error
 	if len(finalTokenAddrs) == 1 {
-		input, err = vault.Abi.Pack(
+		input, err = vaultInfo.Abi.Pack(
 			MethodTransferIn,
 			finalTokenAddrs[0],
 			finalRecipients[0],
 			finalAmounts[0],
 		)
 	} else {
-		input, err = vault.Abi.Pack(
+		input, err = vaultInfo.Abi.Pack(
 			MethodTransferInMultiple,
 			finalTokenAddrs,
 			finalRecipients,
