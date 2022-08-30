@@ -37,7 +37,7 @@ func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain 
 		return nil, err
 	}
 
-	tokenAddr, ok := txParams["_tokenOut"].(ethcommon.Address)
+	tokenAddr, ok := txParams["token"].(ethcommon.Address)
 	if !ok {
 		err := fmt.Errorf("cannot convert _tokenOut to type ethcommon.Address: %v", txParams)
 		return nil, err
@@ -50,19 +50,19 @@ func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain 
 		return nil, fmt.Errorf("Cannot find token on chain %s with address %s", srcChain, strings.ToLower(tokenAddr.String()))
 	}
 
-	destChain, ok := txParams["_destChain"].(string)
+	destChain, ok := txParams["dstChain"].(string)
 	if !ok {
 		err := fmt.Errorf("cannot convert _destChain to type string: %v", txParams)
 		return nil, err
 	}
 
-	recipient, ok := txParams["_recipient"].(string)
+	recipient, ok := txParams["to"].(ethcommon.Address)
 	if !ok {
 		err := fmt.Errorf("cannot convert _recipient to type ethcommon.Address: %v", txParams)
 		return nil, err
 	}
 
-	amount, ok := txParams["_amount"].(*big.Int)
+	amount, ok := txParams["amount"].(*big.Int)
 	if !ok {
 		err := fmt.Errorf("cannot convert _amount to type *big.Int: %v", txParams)
 		return nil, err
@@ -72,7 +72,7 @@ func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain 
 		Sender:    msg.From().Hex(),
 		ToChain:   destChain,
 		Token:     token.Id,
-		Recipient: recipient,
+		Recipient: recipient.String(),
 		Amount:    amount.String(),
 		Hash:      ethTx.Hash().String(),
 	}, nil

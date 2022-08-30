@@ -22,7 +22,6 @@ import (
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/utils"
-	"github.com/sisu-network/sisu/x/sisu"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	tssTypes "github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
@@ -82,11 +81,13 @@ transfer params.
 
 			// Swapping from ETH chain
 			if libchain.IsETHBasedChain(src) {
-				gateway := c.getEthGatewayAddresses(cmd.Context(), src, sisuRpc)
+				vault := c.getVaultAddress(cmd.Context(), src, sisuRpc)
 				amount := big.NewInt(int64(unit))
 				amount = new(big.Int).Mul(amount, utils.EthToWei)
 
-				c.swapFromEth(client, mnemonic, gateway, dst, srcToken, dstToken, recipient, amount)
+				fmt.Println("vault = ", vault)
+
+				c.swapFromEth(client, mnemonic, vault, dst, srcToken, dstToken, recipient, amount)
 			} else if libchain.IsCardanoChain(src) {
 				gateway := c.getCardanoGateway(cmd.Context(), sisuRpc)
 				log.Info("Cardano gateway = ", gateway)
@@ -150,7 +151,7 @@ func (c *swapCommand) getTokenAddrs(tokenId string, srcChain string, dstChain st
 	return token, src, dest
 }
 
-func (c *swapCommand) getEthGatewayAddresses(context context.Context, chain string, sisuRpc string) string {
+func (c *swapCommand) getVaultAddress(context context.Context, chain string, sisuRpc string) string {
 	grpcConn, err := grpc.Dial(
 		sisuRpc,
 		grpc.WithInsecure(),
@@ -161,27 +162,26 @@ func (c *swapCommand) getEthGatewayAddresses(context context.Context, chain stri
 	}
 
 	queryClient := tssTypes.NewTssQueryClient(grpcConn)
-	res, err := queryClient.QueryContract(context, &tssTypes.QueryContractRequest{
+	res, err := queryClient.QueryVault(context, &tssTypes.QueryVaultRequest{
 		Chain: chain,
-		Hash:  sisu.SupportedContracts[sisu.ContractVault].AbiHash,
 	})
 
 	if err != nil {
 		panic(err)
 	}
 
-	if len(res.Contract.Address) == 0 {
+	if len(res.Vault.Address) == 0 {
 		panic("gateway contract address is empty")
 	}
 
-	return res.Contract.Address
+	return res.Vault.Address
 }
 
 // swapFromEth creates an ETH transaction and sends to gateway contract.
-func (c *swapCommand) swapFromEth(client *ethclient.Client, mnemonic string, gateway string, dstChain string,
+func (c *swapCommand) swapFromEth(client *ethclient.Client, mnemonic string, vaultAddr string, dstChain string,
 	srcToken string, dstToken string, recipient string, amount *big.Int) {
-	gatewayAddr := common.HexToAddress(gateway)
-	contract, err := vault.NewVault(gatewayAddr, client)
+	v := common.HexToAddress(vaultAddr)
+	contract, err := vault.NewVault(v, client)
 	if err != nil {
 		panic(err)
 	}

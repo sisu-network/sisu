@@ -56,7 +56,8 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 	// Check the majority of the results
 	successCount := 0
 	for _, result := range results {
-		log.Verbose("Keygen result: from: ", result.Data.From, " type = ", result.Keygen.KeyType, " success = ", result.Data.Result)
+		log.Verbose("Keygen result: from: ", result.Data.From, " type = ", result.Keygen.KeyType,
+			" success = ", result.Data.Result)
 		if result.Data.Result == types.KeygenResult_SUCCESS {
 			successCount += 1
 		}

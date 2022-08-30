@@ -33,8 +33,8 @@ import (
 
 const (
 	ExpectedVaultAddress     = "0x3a84fbbefd21d6a5ce79d54d348344ee11ebd45c"
-	ExpectedSisuAddress      = "0xf0D676183dD5ae6b370adDdbE770235F23546f9d"
-	ExpectedAdaAddress       = "0x3DeaCe7E9C8b6ee632bb71663315d6330914f915"
+	ExpectedSisuAddress      = "0xf0d676183dd5ae6b370adddbe770235f23546f9d"
+	ExpectedAdaAddress       = "0x3deace7e9c8b6ee632bb71663315d6330914f915"
 	CardanoDecimals          = 1000 * 1000
 	DefaultCardanoWalletName = "sisu"
 	DefaultCardanoPassword   = "12345678910"
@@ -215,7 +215,7 @@ func (c *fundAccountCmd) getWalletFromMnemonic(client *wallet.Client, name, pass
 }
 
 func (c *fundAccountCmd) waitForPubkeys(goCtx context.Context, chains []string, sisuRpc string) []string {
-	log.Info("Waiting for all contract created in Sisu's db")
+	log.Info("Waiting for public keys to be generated in Sisu's db")
 
 	contractAddrs := make([]string, len(chains))
 	for {
@@ -237,7 +237,7 @@ func (c *fundAccountCmd) waitForPubkeys(goCtx context.Context, chains []string, 
 		break
 	}
 
-	log.Info("All contracts have been created in Sisu db.")
+	log.Info("All public keys have been created in Sisu db.")
 	return contractAddrs
 }
 
