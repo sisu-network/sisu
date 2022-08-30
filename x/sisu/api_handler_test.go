@@ -199,11 +199,15 @@ func TestApiHandler_OnTxIns(t *testing.T) {
 		require.Equal(t, 1, submitCount)
 	})
 
-	t.Run("tx_sent_from_our_gateway", func(t *testing.T) {
+	t.Run("tx_sent_from_our_vault", func(t *testing.T) {
 		// There should be no tx out created
 		ctx, mc := mockForApiHandlerTest()
 		gateway := "gateway"
-		mc.Keeper().SetGateway(ctx, "ganache1", gateway)
+		mc.Keeper().SetVaults(ctx, []*types.Vault{
+			{
+				Chain: "ganache1",
+			},
+		})
 
 		srcChain := "ganache1"
 		toAddress := "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80"

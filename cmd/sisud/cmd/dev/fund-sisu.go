@@ -23,9 +23,8 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
-	liquidity "github.com/sisu-network/sisu/contracts/eth/liquiditypool"
+	"github.com/sisu-network/sisu/contracts/eth/vault"
 	"github.com/sisu-network/sisu/utils"
-	"github.com/sisu-network/sisu/x/sisu"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	tssTypes "github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
@@ -33,12 +32,12 @@ import (
 )
 
 const (
-	ExpectedSisuAddress       = "0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"
-	ExpectedAdaAddress        = "0xf0D676183dD5ae6b370adDdbE770235F23546f9d"
-	ExpectedLiquidPoolAddress = "0x3DeaCe7E9C8b6ee632bb71663315d6330914f915"
-	CardanoDecimals           = 1000 * 1000
-	DefaultCardanoWalletName  = "sisu"
-	DefaultCardanoPassword    = "12345678910"
+	ExpectedVaultAddress     = "0x3a84fbbefd21d6a5ce79d54d348344ee11ebd45c"
+	ExpectedSisuAddress      = "0xf0D676183dD5ae6b370adDdbE770235F23546f9d"
+	ExpectedAdaAddress       = "0x3DeaCe7E9C8b6ee632bb71663315d6330914f915"
+	CardanoDecimals          = 1000 * 1000
+	DefaultCardanoWalletName = "sisu"
+	DefaultCardanoPassword   = "12345678910"
 )
 
 type fundAccountCmd struct{}
@@ -54,7 +53,7 @@ func FundSisu() *cobra.Command {
 			urlString, _ := cmd.Flags().GetString(flags.ChainUrls)
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
 			tokenString, _ := cmd.Flags().GetString(flags.Erc20Symbols)
-			liquidityAddrString, _ := cmd.Flags().GetString(flags.LiquidityAddrs)
+			vaultString, _ := cmd.Flags().GetString(flags.VaultAddrs)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 			cardanoNetwork, _ := cmd.Flags().GetString(flags.CardanoNetwork)
 
@@ -62,8 +61,8 @@ func FundSisu() *cobra.Command {
 			tokens := strings.Split(tokenString, ",")
 
 			c := &fundAccountCmd{}
-			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokens,
-				liquidityAddrString, sisuRpc, cardanoNetwork, cardanoSecret)
+			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokens, vaultString,
+				sisuRpc, cardanoNetwork, cardanoSecret)
 
 			return nil
 		},
@@ -73,7 +72,7 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.ChainUrls, "http://0.0.0.0:7545,http://0.0.0.0:8545", "RPCs of all the chains we want to fund.")
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
-	cmd.Flags().String(flags.LiquidityAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "List of liquidity pool addresses")
+	cmd.Flags().String(flags.VaultAddrs, fmt.Sprintf("%s,%s", ExpectedVaultAddress, ExpectedVaultAddress), "List of vault addresses")
 	cmd.Flags().String(flags.Erc20Symbols, "SISU,ADA", "List of ERC20 to approve")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 	cmd.Flags().String(flags.CardanoNetwork, "cardano-testnet", "The Cardano network that we are interacting with.")
@@ -83,11 +82,9 @@ func FundSisu() *cobra.Command {
 }
 
 func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic string,
-	tokens []string, liquidityAddrString, sisuRpc, cardanoNetwork, cardanoSecret string) {
+	tokens []string, vaultString string, sisuRpc, cardanoNetwork, cardanoSecret string) {
 	chains := strings.Split(chainString, ",")
-	liquidityAddrs := strings.Split(liquidityAddrString, ",")
-
-	log.Info("liquidityAddrs = ", liquidityAddrs)
+	vaults := strings.Split(vaultString, ",")
 
 	wg := &sync.WaitGroup{}
 
@@ -100,7 +97,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 
 	// Waits for Sisu to create contract instance in its database. At this stage, the contract is
 	// not deployed yet.
-	c.waitForGatewayCreationInSisuDb(ctx, chains, sisuRpc)
+	c.waitForPubkeys(ctx, chains, sisuRpc)
 	time.Sleep(time.Second * 3)
 	allPubKeys := queryPubKeys(ctx, sisuRpc)
 
@@ -116,57 +113,36 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 		c.fundCardano(cardanoAddr, mnemonic, cardanoNetwork, cardanoSecret, sisuRpc, tokens)
 	}
 
-	// Fund the accounts with some native ETH
+	// Fund the accounts with some native ETH and other tokens
 	var tssPubAddr common.Address
+	// Get chain and local chain URL
+	pubKeyBytes := allPubKeys[libchain.KEY_TYPE_ECDSA]
+	pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
+	if err != nil {
+		panic(err)
+	}
+	tssPubAddr = crypto.PubkeyToAddress(*pubKey)
+
 	wg.Add(len(clients))
 	for i, client := range clients {
 		go func(i int, client *ethclient.Client, chain string) {
 			defer wg.Done()
-
-			// Get chain and local chain URL
-			pubKeyBytes := allPubKeys[libchain.KEY_TYPE_ECDSA]
-			pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
-			if err != nil {
-				panic(err)
-			}
-			tssPubAddr = crypto.PubkeyToAddress(*pubKey)
-
 			c.transferEth(client, sisuRpc, chain, mnemonic, tssPubAddr.Hex())
 		}(i, client, chains[i])
 	}
 	wg.Wait()
 
-	// Waits until all gateway contracts are deployed.
-	log.Info("Now we wait until gateway contracts are deployed on all chains.")
-	gateways := c.waitForGatewayDeployed(ctx, chains, sisuRpc)
+	log.Verbose("Setting spender for the vault...")
 
-	// Approve the contract with some preallocated token from account0
+	// Add vault spender
 	wg.Add(len(clients))
 	for i, client := range clients {
 		go func(i int, client *ethclient.Client) {
-			addrs := c.getTokenAddrs(ctx, sisuRpc, tokens, chains[i])
-			for _, addr := range addrs {
-				log.Infof("Approve token with address %s for gateway %s on chain %s", addr, gateways[i], chains[i])
-				approveAddress(client, mnemonic, addr, gateways[i])
-			}
-
+			c.addVaultSpender(client, mnemonic, common.HexToAddress(vaults[i]), tssPubAddr)
 			wg.Done()
 		}(i, client)
 	}
 	wg.Wait()
-	log.Info("Gateway approval done!")
-
-	// Set gateway for the liquidity
-	log.Info("Set gateway address for liquidity pool")
-	wg.Add(len(gateways))
-	for i, client := range clients {
-		go func(i int, client *ethclient.Client) {
-			c.setGatewayForLiquidity(client, mnemonic, liquidityAddrs[i], gateways[i])
-			wg.Done()
-		}(i, client)
-	}
-	wg.Wait()
-
 }
 
 func (c *fundAccountCmd) getMultiAsset(sisuRpc, cardanoNetwork string, tokens []string, amt uint64) *cardano.MultiAsset {
@@ -238,7 +214,7 @@ func (c *fundAccountCmd) getWalletFromMnemonic(client *wallet.Client, name, pass
 	return w, nil
 }
 
-func (c *fundAccountCmd) waitForGatewayCreationInSisuDb(goCtx context.Context, chains []string, sisuRpc string) []string {
+func (c *fundAccountCmd) waitForPubkeys(goCtx context.Context, chains []string, sisuRpc string) []string {
 	log.Info("Waiting for all contract created in Sisu's db")
 
 	contractAddrs := make([]string, len(chains))
@@ -252,63 +228,17 @@ func (c *fundAccountCmd) waitForGatewayCreationInSisuDb(goCtx context.Context, c
 			panic(err)
 		}
 
-		queryClient := tssTypes.NewTssQueryClient(grpcConn)
-
-		done := true
-		for i, chain := range chains {
-			res, err := queryClient.QueryContract(goCtx, &tssTypes.QueryContractRequest{
-				Chain: chain,
-				Hash:  sisu.SupportedContracts[sisu.ContractErc20Gateway].AbiHash,
-			})
-
-			if err != nil {
-				log.Error("err = ", err)
-				log.Verbose("Contract has not been created yet ", i, " yet. Keep sleeping...")
-				time.Sleep(time.Second * 3)
-				done = false
-				break
-			}
-
-			contractAddrs[i] = res.Contract.Address
+		allPubKeys := queryPubKeys(goCtx, sisuRpc)
+		if allPubKeys == nil || len(allPubKeys) == 0 {
+			time.Sleep(time.Second * 3)
+			continue
 		}
 
-		if done {
-			break
-		}
+		break
 	}
 
 	log.Info("All contracts have been created in Sisu db.")
 	return contractAddrs
-}
-
-func (c *fundAccountCmd) setGatewayForLiquidity(client *ethclient.Client, mnemonic string, liquidityAddr, gatewayAddr string) {
-	log.Infof("Setting gateway for liquidity pool, gateway address: %s, liquidity pool address %s\n", gatewayAddr, liquidityAddr)
-
-	contract, err := liquidity.NewLiquiditypool(common.HexToAddress(liquidityAddr), client)
-	if err != nil {
-		panic(err)
-	}
-
-	opts, err := getAuthTransactor(client, mnemonic)
-	if err != nil {
-		panic(err)
-	}
-
-	tx, err := contract.SetGateway(opts, common.HexToAddress(gatewayAddr))
-	if err != nil {
-		panic(err)
-	}
-	txReceipt, err := bind.WaitMined(context.Background(), client, tx)
-	if err != nil {
-		panic(err)
-	}
-
-	if txReceipt.Status != ethtypes.ReceiptStatusSuccessful {
-		log.Info("Tx Hash = ", txReceipt.TxHash)
-		panic("tx grant liquidity pool access failed")
-	}
-
-	log.Info("Grant access for gateway successfully")
 }
 
 // isContractDeployed checks if a contract has been deployed at a specific address so that
@@ -424,59 +354,8 @@ func queryPubKeys(ctx context.Context, sisuRpc string) map[string][]byte {
 	return res.Pubkeys
 }
 
-func (c *fundAccountCmd) waitForGatewayDeployed(goCtx context.Context, chains []string,
-	sisuRpc string) []string {
-	addrs := make([]string, len(chains))
-
-	for {
-		grpcConn, err := grpc.Dial(
-			sisuRpc,
-			grpc.WithInsecure(),
-		)
-		defer grpcConn.Close()
-		if err != nil {
-			panic(err)
-		}
-
-		queryClient := tssTypes.NewTssQueryClient(grpcConn)
-
-		done := true
-		for i, chain := range chains {
-			if len(addrs[i]) > 0 {
-				continue
-			}
-
-			res, err := queryClient.QueryContract(goCtx, &tssTypes.QueryContractRequest{
-				Chain: chain,
-				Hash:  sisu.SupportedContracts[sisu.ContractErc20Gateway].AbiHash,
-			})
-
-			if err != nil || len(res.Contract.Address) == 0 {
-				log.Verbose("we have not found gateway contract address for chain ", chain, " yet. Keep sleeping...")
-				time.Sleep(time.Second * 3)
-				done = false
-				break
-			}
-
-			log.Info("GatewayContract Address = ", res.Contract.Address)
-			addrs[i] = res.Contract.Address
-		}
-
-		if done {
-			break
-		}
-	}
-
-	gateways := make([]string, len(addrs))
-	for i, addr := range addrs {
-		gateways[i] = addr
-	}
-
-	return gateways
-}
-
-func (c *fundAccountCmd) setGateway(client *ethclient.Client, mnemonic string, liquidAddr, gateway common.Address) {
-	liquidInstance, err := liquidity.NewLiquiditypool(liquidAddr, client)
+func (c *fundAccountCmd) addVaultSpender(client *ethclient.Client, mnemonic string, vaultAddr, spender common.Address) {
+	vaultInstance, err := vault.NewVault(vaultAddr, client)
 	if err != nil {
 		panic(err)
 	}
@@ -486,10 +365,13 @@ func (c *fundAccountCmd) setGateway(client *ethclient.Client, mnemonic string, l
 		panic(err)
 	}
 
-	_, err = liquidInstance.SetGateway(auth, gateway)
+	tx, err := vaultInstance.AddSpender(auth, spender)
 	if err != nil {
 		panic(err)
 	}
+
+	bind.WaitDeployed(context.Background(), client, tx)
+	time.Sleep(time.Second * 5)
 }
 
 func (c *fundAccountCmd) queryAllownace(client *ethclient.Client,

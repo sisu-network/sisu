@@ -533,11 +533,11 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 			}
 		}
 
-		// Check if this is a transaction from our gateway. If true, ignore it.
-		gateway := a.keeper.GetGateway(ctx, txs.Chain)
-		if gateway == tx.From {
+		// Check if this is a transaction from our sisu. If true, ignore it.
+		sisu := a.keeper.GetMpcAddress(ctx, txs.Chain)
+		if sisu == tx.From {
 			log.Verbosef("This is a transaction sent from our gateway %s on chain %s, ignore",
-				gateway, txs.Chain)
+				sisu, txs.Chain)
 			continue
 		}
 

@@ -51,7 +51,7 @@ func parseTx() {
 			continue
 		}
 
-		erc20gatewayContract := sisu.SupportedContracts[sisu.ContractErc20Gateway]
+		erc20gatewayContract := sisu.SupportedContracts[sisu.ContractVault]
 		gwAbi := erc20gatewayContract.Abi
 
 		callData := ethTx.Data()

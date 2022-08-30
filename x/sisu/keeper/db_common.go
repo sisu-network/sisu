@@ -25,9 +25,9 @@ var (
 	prefixToken                  = []byte{0x0D}
 	prefixTokenPrices            = []byte{0x0E}
 	prefixNode                   = []byte{0x0F}
-	prefixLiquidity              = []byte{0x10}
+	prefixVault                  = []byte{0x10}
 	prefixParams                 = []byte{0x11}
-	prefixGateway                = []byte{0x12}
+	prefixMpcAddress             = []byte{0x12}
 	prefixGatewayCheckPoint      = []byte{0x13}
 	prefixTransferQueue          = []byte{0x14}
 	prefixTxOutQueue             = []byte{0x15}
@@ -757,53 +757,47 @@ func loadValidators(store cstypes.KVStore) []*types.Node {
 	return vals
 }
 
-///// Liquidity
-func setLiquidities(store cstypes.KVStore, liquidities map[string]*types.Liquidity) {
-	for id, liquid := range liquidities {
-		bz, err := liquid.Marshal()
+///// Vault
+func setVaults(store cstypes.KVStore, vaults []*types.Vault) {
+	for i, vault := range vaults {
+		bz, err := vaults[i].Marshal()
 		if err != nil {
-			log.Error("cannot marshal liquidity ", id)
+			log.Error("cannot marshal vault on chain ", vault.Chain)
 			continue
 		}
 
-		store.Set([]byte(id), bz)
+		store.Set([]byte(vault.Chain), bz)
 	}
 }
 
-func getLiquidity(store cstypes.KVStore, chain string) *types.Liquidity {
+func getVault(store cstypes.KVStore, chain string) *types.Vault {
 	bz := store.Get([]byte(chain))
 	if bz == nil {
 		return nil
 	}
 
-	liquid := &types.Liquidity{}
-	if err := liquid.Unmarshal(bz); err != nil {
+	vault := &types.Vault{}
+	if err := vault.Unmarshal(bz); err != nil {
 		log.Errorf("getLiquidity: error when unmarshal liquid for chain: %s", chain)
 		return nil
 	}
 
-	return liquid
+	return vault
 }
 
-func getAllLiquidities(store cstypes.KVStore) map[string]*types.Liquidity {
-	liquids := make(map[string]*types.Liquidity)
+///// MPC Address
 
-	iter := store.Iterator(nil, nil)
+func setMpcAddress(store cstypes.KVStore, chain string, address string) {
+	store.Set([]byte(chain), []byte(address))
+}
 
-	for ; iter.Valid(); iter.Next() {
-		liq := &types.Liquidity{}
-		err := liq.Unmarshal(iter.Value())
-		if err != nil {
-			log.Error("cannot unmarshal liquidity ", string(iter.Key()))
-			continue
-		}
-
-		liquids[string(iter.Key())] = liq
+func getMpcAddress(store cstypes.KVStore, chain string) string {
+	bz := store.Get([]byte(chain))
+	if bz == nil {
+		return ""
 	}
 
-	_ = iter.Close()
-
-	return liquids
+	return string(bz)
 }
 
 ///// Params
@@ -833,12 +827,12 @@ func getParams(store cstypes.KVStore) *types.Params {
 
 ///// Gateway
 
-func setGateway(store cstypes.KVStore, chain string, address string) {
+func setSisuAccount(store cstypes.KVStore, chain string, address string) {
 	key := fmt.Sprintf("%s__%s", chain, "erc20") // we only have erc20 gateway at the moment
 	store.Set([]byte(key), []byte(address))
 }
 
-func getGateway(store cstypes.KVStore, chain string) string {
+func getSisuAccount(store cstypes.KVStore, chain string) string {
 	key := fmt.Sprintf("%s__%s", chain, "erc20")
 	bz := store.Get([]byte(key))
 	if bz == nil {

@@ -50,17 +50,20 @@ func keeperTestGenesis(ctx sdk.Context) keeper.Keeper {
 		GasPrice:    int64(10_000_000_000),
 		NativeToken: "NATIVE_GANACHE2",
 	})
-	liquidities := map[string]*types.Liquidity{
-		"ganache1": {
-			Id:      "ganache1",
+
+	vaults := []*types.Vault{
+		{
+			Id:      "ganache1_v0",
+			Chain:   "ganache1",
 			Address: "0xf0D676183dD5ae6b370adDdbE770235F23546f9d",
 		},
-		"ganache2": {
-			Id:      "ganache2",
+		{
+			Id:      "ganache2_v0",
+			Chain:   "ganache2",
 			Address: "0xf0D676183dD5ae6b370adDdbE770235F23546f9d",
 		},
 	}
-	keeper.SetLiquidities(ctx, liquidities)
+	keeper.SetVaults(ctx, vaults)
 	keeper.SetTokens(ctx, map[string]*types.Token{
 		"NATIVE_GANACHE1": {
 			Id:       "NATIVE_GANACHE1",
@@ -135,8 +138,8 @@ func keeperTestAfterContractDeployed(ctx sdk.Context) keeper.Keeper {
 		Hash:    SupportedContracts[ContractVault].AbiHash,
 	}, false)
 
-	keeper.SetGateway(ctx, "ganache1", testContractAddr)
-	keeper.SetGateway(ctx, "ganache2", testContractAddr)
+	keeper.SetMpcAddress(ctx, "ganache1", testContractAddr)
+	keeper.SetMpcAddress(ctx, "ganache2", testContractAddr)
 
 	return keeper
 }

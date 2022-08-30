@@ -191,18 +191,8 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	}
 	log.Info("Chains in the genesis file: ", strings.Join(chains, ", "))
 
-	// Save liquidities
-	liquids := make(map[string]*types.Liquidity)
-	for _, liq := range genState.Liquids {
-		liquids[liq.Id] = liq
-	}
-	am.keeper.SetLiquidities(ctx, liquids)
-	savedLiqs := am.keeper.GetAllLiquidities(ctx)
-	liqIds := make([]string, 0, len(savedLiqs))
-	for _, liq := range savedLiqs {
-		liqIds = append(liqIds, liq.Id)
-	}
-	log.Info("Liquidities in the genesis file: ", strings.Join(liqIds, ", "))
+	// Save vaults
+	am.keeper.SetVaults(ctx, genState.Vaults)
 
 	// Save params
 	params := genState.Params

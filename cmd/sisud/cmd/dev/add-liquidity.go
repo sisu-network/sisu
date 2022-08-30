@@ -5,14 +5,10 @@ import (
 	"math/big"
 	"strings"
 	"sync"
-	"time"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
-	liquidity "github.com/sisu-network/sisu/contracts/eth/liquiditypool"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -36,10 +32,10 @@ Short:
 			urlString, _ := cmd.Flags().GetString(flags.ChainUrls)
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
 			tokenAddrString, _ := cmd.Flags().GetString(flags.Erc20Addrs)
-			liquidityAddrString, _ := cmd.Flags().GetString(flags.LiquidityAddrs)
+			VaultAddrsString, _ := cmd.Flags().GetString(flags.VaultAddrs)
 
 			c := &AddLiquidityCmd{}
-			c.approveAndAddLiquidity(urlString, mnemonic, tokenAddrString, liquidityAddrString)
+			c.approveAndAddLiquidity(urlString, mnemonic, tokenAddrString, VaultAddrsString)
 
 			return nil
 		},
@@ -48,14 +44,14 @@ Short:
 	cmd.Flags().String(flags.ChainUrls, "http://0.0.0.0:7545,http://0.0.0.0:8545", "RPCs of all the chains we want to fund.")
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
 	cmd.Flags().String(flags.Erc20Addrs, fmt.Sprintf("%s,%s", ExpectedSisuAddress, ExpectedSisuAddress), "Token address.")
-	cmd.Flags().String(flags.LiquidityAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "Liquidity addresses.")
+	cmd.Flags().String(flags.VaultAddrs, fmt.Sprintf("%s,%s", ExpectedVaultAddress, ExpectedVaultAddress), "Liquidity addresses.")
 
 	return cmd
 }
 
-func (c *AddLiquidityCmd) approveAndAddLiquidity(urlString, mnemonic, tokenAddrString, liquidityAddrString string) {
+func (c *AddLiquidityCmd) approveAndAddLiquidity(urlString, mnemonic, tokenAddrString, vaultAddrString string) {
 	tokenAddrs := strings.Split(tokenAddrString, ",")
-	liquidityAddrs := strings.Split(liquidityAddrString, ",")
+	vaultAddrs := strings.Split(vaultAddrString, ",")
 	urls := strings.Split(urlString, ",")
 	clients := getEthClients(urlString)
 	defer func() {
@@ -65,56 +61,26 @@ func (c *AddLiquidityCmd) approveAndAddLiquidity(urlString, mnemonic, tokenAddrS
 	}()
 
 	wg := &sync.WaitGroup{}
-	// Approve the contract with some preallocated token from account0
-	wg.Add(len(clients))
-	for i, client := range clients {
-		go func(i int, client *ethclient.Client) {
-			approveAddress(client, mnemonic, tokenAddrs[i], liquidityAddrs[i])
-			wg.Done()
-		}(i, client)
-	}
-	wg.Wait()
-	log.Info("Liquidity approval done!")
-
-	time.Sleep(time.Second * 3)
-
 	// Add liquidity to the pool
 	wg.Add(len(clients))
 	for i, client := range clients {
 		go func(i int, client *ethclient.Client) {
 			defer wg.Done()
 
-			balance, err := queryErc20Balance(client, tokenAddrs[i], liquidityAddrs[i])
+			balance, err := queryErc20Balance(client, tokenAddrs[i], vaultAddrs[i])
 			if err != nil {
 				panic(err)
 			}
 
 			if balance.Cmp(big.NewInt(0)) == 0 {
-				log.Infof("Adding liquidity of token %s to the pool at %s for chain url %s", tokenAddrs[i], liquidityAddrs[i], urls[i])
-				c.addLiquidity(client, mnemonic, liquidityAddrs[i], tokenAddrs[i])
+				log.Infof("Adding liquidity of token %s to the pool at %s for chain url %s", tokenAddrs[i], vaultAddrs[i], urls[i])
+				transferErc20(client, mnemonic, tokenAddrs[i], vaultAddrs[i])
+
+				balance, _ = queryErc20Balance(client, tokenAddrs[i], vaultAddrs[i])
 			} else {
-				log.Infof("Liquidity pool has received %s tokens (%s) \n", balance.String(), tokenAddrs[i])
+				log.Infof("Vault received %s tokens (%s) \n", balance.String(), tokenAddrs[i])
 			}
 		}(i, client)
 	}
 	wg.Wait()
-}
-
-func (c *AddLiquidityCmd) addLiquidity(client *ethclient.Client, mnemonic string, liquidAddr, tokenAddress string) {
-	liquidInstance, err := liquidity.NewLiquiditypool(common.HexToAddress(liquidAddr), client)
-	if err != nil {
-		panic(err)
-	}
-
-	auth, err := getAuthTransactor(client, mnemonic)
-	if err != nil {
-		panic(err)
-	}
-
-	amountInWei := new(big.Int).Mul(big.NewInt(500), utils.EthToWei)
-
-	_, err = liquidInstance.AddLiquidity(auth, common.HexToAddress(tokenAddress), amountInWei)
-	if err != nil {
-		panic(err)
-	}
 }

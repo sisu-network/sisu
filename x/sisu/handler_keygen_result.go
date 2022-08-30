@@ -24,13 +24,14 @@ type HandlerKeygenResult struct {
 
 func NewHandlerKeygenResult(mc ManagerContainer) *HandlerKeygenResult {
 	return &HandlerKeygenResult{
-		keeper:     mc.Keeper(),
-		pmm:        mc.PostedMessageManager(),
-		globalData: mc.GlobalData(),
-		config:     mc.Config(),
-		txSubmit:   mc.TxSubmit(),
-		appKeys:    mc.AppKeys(),
-		valsMgr:    mc.ValidatorManager(),
+		keeper:      mc.Keeper(),
+		pmm:         mc.PostedMessageManager(),
+		globalData:  mc.GlobalData(),
+		config:      mc.Config(),
+		txSubmit:    mc.TxSubmit(),
+		appKeys:     mc.AppKeys(),
+		valsMgr:     mc.ValidatorManager(),
+		deyesClient: mc.DeyesClient(),
 	}
 }
 
@@ -70,8 +71,15 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 		params := h.keeper.GetParams(ctx)
 		for _, chain := range params.SupportedChains {
 			if libchain.GetKeyTypeForChain(chain) == keygen.KeyType {
-				log.Verbose("Setting gateway = ", keygen.Address, " for chain ", chain)
-				h.keeper.SetGateway(ctx, chain, keygen.Address)
+				log.Verbose("Setting sisu account = ", keygen.Address, " for chain ", chain)
+				h.deyesClient.SetChainAccount(chain, keygen.Address)
+
+				// Set Vault
+				vault := h.keeper.GetVault(ctx, chain)
+				h.deyesClient.SetGatewayAddress(chain, vault.Address)
+
+				// Set Mpc address
+				h.keeper.SetMpcAddress(ctx, chain, keygen.Address)
 			}
 		}
 

@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/sisu-network/sisu/contracts/eth/vault"
 	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
 
 	cgblockfrost "github.com/echovl/cardano-go/blockfrost"
@@ -20,7 +21,6 @@ import (
 	hutils "github.com/sisu-network/dheart/utils"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/contracts/eth/erc20gateway"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -163,7 +163,7 @@ func (c *swapCommand) getEthGatewayAddresses(context context.Context, chain stri
 	queryClient := tssTypes.NewTssQueryClient(grpcConn)
 	res, err := queryClient.QueryContract(context, &tssTypes.QueryContractRequest{
 		Chain: chain,
-		Hash:  sisu.SupportedContracts[sisu.ContractErc20Gateway].AbiHash,
+		Hash:  sisu.SupportedContracts[sisu.ContractVault].AbiHash,
 	})
 
 	if err != nil {
@@ -181,7 +181,7 @@ func (c *swapCommand) getEthGatewayAddresses(context context.Context, chain stri
 func (c *swapCommand) swapFromEth(client *ethclient.Client, mnemonic string, gateway string, dstChain string,
 	srcToken string, dstToken string, recipient string, amount *big.Int) {
 	gatewayAddr := common.HexToAddress(gateway)
-	contract, err := erc20gateway.NewErc20gateway(gatewayAddr, client)
+	contract, err := vault.NewVault(gatewayAddr, client)
 	if err != nil {
 		panic(err)
 	}
@@ -196,7 +196,8 @@ func (c *swapCommand) swapFromEth(client *ethclient.Client, mnemonic string, gat
 	log.Verbosef("destination = %s, recipientAddr %s, srcTokenAddr = %s, amount = %s",
 		dstChain, recipient, srcTokenAddr.String(), amount)
 
-	tx, err := contract.TransferOut(opts, dstChain, recipient, srcTokenAddr, amount)
+	recipientAddr := common.HexToAddress(recipient)
+	tx, err := contract.TransferOut(opts, srcTokenAddr, dstChain, recipientAddr, amount)
 	if err != nil {
 		panic(err)
 	}

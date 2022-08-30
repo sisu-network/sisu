@@ -78,18 +78,17 @@ type Keeper interface {
 	SaveNode(ctx sdk.Context, node *types.Node)
 	LoadValidators(ctx sdk.Context) []*types.Node
 
-	// Liquidities
-	SetLiquidities(ctx sdk.Context, liquidities map[string]*types.Liquidity)
-	GetLiquidity(ctx sdk.Context, chain string) *types.Liquidity
-	GetAllLiquidities(ctx sdk.Context) map[string]*types.Liquidity
+	// Vaults
+	SetVaults(ctx sdk.Context, vaults []*types.Vault)
+	GetVault(ctx sdk.Context, chain string) *types.Vault
+
+	// MPC Address
+	SetMpcAddress(ctx sdk.Context, chain string, address string)
+	GetMpcAddress(ctx sdk.Context, chain string) string
 
 	// Params
 	SaveParams(ctx sdk.Context, params *types.Params)
 	GetParams(ctx sdk.Context) *types.Params
-
-	// Gateway
-	SetGateway(ctx sdk.Context, chain string, gateway string)
-	GetGateway(ctx sdk.Context, chain string) string
 
 	// Gateway checkpoint
 	AddGatewayCheckPoint(ctx sdk.Context, checkPoint *types.GatewayCheckPoint)
@@ -348,21 +347,27 @@ func (k *DefaultKeeper) LoadValidators(ctx sdk.Context) []*types.Node {
 	return loadValidators(store)
 }
 
-///// Liquidities
+///// Vaults
 
-func (k *DefaultKeeper) SetLiquidities(ctx sdk.Context, liquids map[string]*types.Liquidity) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixLiquidity)
-	setLiquidities(store, liquids)
+func (k *DefaultKeeper) SetVaults(ctx sdk.Context, vaults []*types.Vault) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixVault)
+	setVaults(store, vaults)
 }
 
-func (k *DefaultKeeper) GetLiquidity(ctx sdk.Context, chain string) *types.Liquidity {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixLiquidity)
-	return getLiquidity(store, chain)
+func (k *DefaultKeeper) GetVault(ctx sdk.Context, chain string) *types.Vault {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixVault)
+	return getVault(store, chain)
 }
 
-func (k *DefaultKeeper) GetAllLiquidities(ctx sdk.Context) map[string]*types.Liquidity {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixLiquidity)
-	return getAllLiquidities(store)
+///// Vaults
+func (k *DefaultKeeper) SetMpcAddress(ctx sdk.Context, chain string, address string) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixMpcAddress)
+	setMpcAddress(store, chain, address)
+}
+
+func (k *DefaultKeeper) GetMpcAddress(ctx sdk.Context, chain string) string {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixMpcAddress)
+	return getMpcAddress(store, chain)
 }
 
 ///// Params
@@ -374,17 +379,6 @@ func (k *DefaultKeeper) SaveParams(ctx sdk.Context, params *types.Params) {
 func (k *DefaultKeeper) GetParams(ctx sdk.Context) *types.Params {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixParams)
 	return getParams(store)
-}
-
-///// Gateway
-func (k *DefaultKeeper) SetGateway(ctx sdk.Context, chain string, gateway string) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGateway)
-	setGateway(store, chain, gateway)
-}
-
-func (k *DefaultKeeper) GetGateway(ctx sdk.Context, chain string) string {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGateway)
-	return getGateway(store, chain)
 }
 
 ///// Gateway Checkpoint
