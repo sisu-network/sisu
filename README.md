@@ -4,48 +4,7 @@
 - Install Docker
 - Install Go 1.6. Make sure GOPATH, GOROOT are set and go module is turned on.
 
-# Errors you might face.
-- This repository currently depends on other private repositories in the sisu-network organization. Run `make configure-git` to tell git to clone those repositories over SSH.
-
 # Run Sisu
-## Run with Docker
-1. Create a `tmp` folder and copy the `id_rsa` into that folder. Docker will need it to download and build the container.
-```
-mkdir tmp
-cp ~/.ssh/id_rsa tmp
-```
-2. Run the following command to build all docker images (including dheart and deyes).
-```
-./scripts/docker_build_all.sh
-```
-3. Next step is to build sisu and generate config and genesis data. You can replace `1` with any number of node in your network.
-```
-go build -o ./sisu cmd/sisud/main.go
-./sisu local-docker --v 1 --output-dir ./output
-```
-4. Start docker
-```
-cd output
-docker-compose up -d
-```
-You can watch logs from sisu, dheart and deyes by running
-```
-docker-compose logs -f sisu0
-```
-Replace `0` with any other node index.
-
-## Shutdown Docker
-From `output` folder, run:
-
-```
-docker-compose down
-```
-
-NOTE: if you get into bad data state or you want to reset the blockchain, simply run the local-docker command again from the Sisu root folder
-```
-./sisu local-docker --v 2 --output-dir ./output
-```
-
 
 ## Run without Docker
 Running without docker requires 5 different tabs on the terminal. In exchange, you get faster compilation time for Sisu every time you make any change.
@@ -66,6 +25,20 @@ ganache-cli --accounts 10 --blockTime 3 --port 8545 --defaultBalanceEther 100000
 ### Run dheart and deyes
 Follow the instruction on dheart and deyes to run these 2 components in 2 separate tabs. Make sure you create `dheart.toml` and `deyes.toml` files before running them.
 
+### Deploy Vault contract
+You need to deploy Vault contract before running Sisu. This vault is later controlled by Sisu's network account .
+
+Build Sisu binary file:
+
+```
+go build -o ./sisu cmd/sisud/main.go
+```
+
+Deploy vault contract:
+```
+./sisu dev deploy
+```
+
 ### Build and run Sisu
 
 Generate config file and genesis for local sisu app. You need to generate this while ganache instances are running.
@@ -75,7 +48,6 @@ Generate config file and genesis for local sisu app. You need to generate this w
 ```
 
 Create `.env` file
-
 
 ```
 cp .env.dev .env
@@ -122,3 +94,62 @@ Wait for few seconds for Sisu to pick up and execute the swap. Afterward, you ca
 ```
 
 Note: the token the recipient receives will not exactly the amount user swaps because there is some fee taken away from the swap amount.
+
+
+## Run with Docker
+1. Run the following command to build all docker images (including dheart and deyes).
+```
+./scripts/docker_build_all.sh
+```
+2. Next step is to build sisu and generate config and genesis data. You can replace `2` with any number of node in your network.
+```
+go build -o ./sisu cmd/sisud/main.go
+./sisu local-docker --v 2 --output-dir ./output
+```
+3. Start docker
+```
+cd output
+docker-compose up -d
+```
+You can watch logs from sisu, dheart and deyes by running
+```
+docker-compose logs -f sisu0
+```
+You can view log of other nodes by replacing `0` with any other node index.
+
+4. Deploy vault contract
+
+```
+./sisu dev deploy-and-fund
+```
+
+5. Deploy ERC20 & fund vault with some tokens:
+
+```
+./sisu dev deploy-and-fund
+```
+
+6. Swapping SISU token between ganache1 & ganache2:
+
+```
+./sisu dev swap --erc20-symbol SISU --amount 10 --account 0x2d532C099CA476780c7703610D807948ae47856A
+```
+
+7. Query recipient's balance in the destination chain:
+
+```
+./sisu dev query --erc20-symbol SISU --chain ganache2 --account 0x2d532C099CA476780c7703610D807948ae47856A
+```
+
+
+## Shutdown Docker
+From `output` folder, run:
+
+```
+docker-compose down
+```
+
+NOTE: if you get into bad data state or you want to reset the blockchain, simply run the local-docker command again from the Sisu root folder
+```
+./sisu local-docker --v 2 --output-dir ./output
+```
