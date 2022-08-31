@@ -26,9 +26,15 @@ func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain 
 	}
 
 	callData := ethTx.Data()
-	txParams, err := decodeTxParams(gwAbi, callData)
+	methodName, txParams, err := decodeTxParams(gwAbi, callData)
 	if err != nil {
 		return nil, err
+	}
+
+	if methodName != "transferOut" && methodName != "transferOutMultiple" &&
+		methodName != "transferOutNonEvm" && methodName != "transferOutMultipleNonEvm" {
+		// This is not a transfer In function
+		return nil, nil
 	}
 
 	msg, err := ethTx.AsMessage(ethtypes.NewLondonSigner(ethTx.ChainId()), nil)
@@ -78,51 +84,6 @@ func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain 
 	}, nil
 }
 
-func ParseEthTransferIn(ctx sdk.Context, ethTx *ethTypes.Transaction, destChain string, gwAbi abi.ABI,
-	keeper keeper.Keeper) ([]*types.TransferOutData, error) {
-	callData := ethTx.Data()
-	txParams, err := decodeTxParams(gwAbi, callData)
-	if err != nil {
-		return nil, err
-	}
-
-	tokensAddrs, ok := txParams["tokens"].([]ethcommon.Address)
-	if !ok {
-		err := fmt.Errorf("cannot convert tokens to type eth address]: %v", txParams)
-		return nil, err
-	}
-
-	recipients, ok := txParams["recipients"].([]ethcommon.Address)
-	if !ok {
-		err := fmt.Errorf("cannot convert recipients to type eth address]: %v", txParams)
-		return nil, err
-	}
-
-	amounts, ok := txParams["amounts"].([]*big.Int)
-	if !ok {
-		err := fmt.Errorf("cannot convert amounts to type []*big.Int: %v", txParams)
-		return nil, err
-	}
-
-	allTokens := keeper.GetAllTokens(ctx)
-	transfers := make([]*types.TransferOutData, 0)
-	for i, tokenAddr := range tokensAddrs {
-		token := getTokenOnChain(allTokens, tokenAddr.String(), destChain)
-		if token == nil {
-			return nil, fmt.Errorf("ParseEthTransferIn: Cannot find token on chain %s with address %s", destChain, tokenAddr)
-		}
-
-		transfers = append(transfers, &types.TransferOutData{
-			DestChain: destChain,
-			Token:     token,
-			Recipient: recipients[i].String(),
-			Amount:    amounts[i],
-		})
-	}
-
-	return transfers, nil
-}
-
 func getTokenOnChain(allTokens map[string]*types.Token, tokenAddr, targetChain string) *types.Token {
 	for _, t := range allTokens {
 		if len(t.Chains) != len(t.Addresses) {
@@ -142,22 +103,22 @@ func getTokenOnChain(allTokens map[string]*types.Token, tokenAddr, targetChain s
 	return nil
 }
 
-func decodeTxParams(abi abi.ABI, callData []byte) (map[string]interface{}, error) {
+func decodeTxParams(abi abi.ABI, callData []byte) (string, map[string]interface{}, error) {
 	if len(callData) < 4 {
-		return nil, fmt.Errorf("decodeTxParams: call data size is smaller than 4")
+		return "", nil, fmt.Errorf("decodeTxParams: call data size is smaller than 4")
 	}
 
 	txParams := map[string]interface{}{}
 	m, err := abi.MethodById(callData[:4])
 	if err != nil {
 		log.Error(err)
-		return nil, err
+		return "", nil, err
 	}
 
 	if err := m.Inputs.UnpackIntoMap(txParams, callData[4:]); err != nil {
 		log.Error(err)
-		return nil, err
+		return "", nil, err
 	}
 
-	return txParams, nil
+	return m.Name, txParams, nil
 }

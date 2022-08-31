@@ -468,6 +468,10 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 			return nil, err
 		}
 
+		if transfer == nil {
+			return []*types.TxIn{}, nil
+		}
+
 		return []*types.TxIn{transfer}, nil
 	}
 
