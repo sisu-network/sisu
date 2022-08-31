@@ -108,35 +108,12 @@ func keeperTestAfterKeygen(ctx sdk.Context) keeper.Keeper {
 		Address:     ethTx.To().String(),
 		PubKeyBytes: defaultTestEthPubkeyBytes(),
 	})
-	keeper.SaveContract(ctx, &types.Contract{
-		Chain: "ganache1",
-		Name:  "vault",
-		Hash:  SupportedContracts[ContractVault].AbiHash,
-	}, false)
-	keeper.SaveContract(ctx, &types.Contract{
-		Chain: "ganache2",
-		Name:  "vault",
-		Hash:  SupportedContracts[ContractVault].AbiHash,
-	}, false)
 
 	return keeper
 }
 
 func keeperTestAfterContractDeployed(ctx sdk.Context) keeper.Keeper {
 	keeper := keeperTestAfterKeygen(ctx)
-
-	keeper.SaveContract(ctx, &types.Contract{
-		Chain:   "ganache1",
-		Name:    ContractVault,
-		Address: testContractAddr,
-		Hash:    SupportedContracts[ContractVault].AbiHash,
-	}, false)
-	keeper.SaveContract(ctx, &types.Contract{
-		Chain:   "ganache2",
-		Name:    ContractVault,
-		Address: testContractAddr,
-		Hash:    SupportedContracts[ContractVault].AbiHash,
-	}, false)
 
 	keeper.SetMpcAddress(ctx, "ganache1", testContractAddr)
 	keeper.SetMpcAddress(ctx, "ganache2", testContractAddr)

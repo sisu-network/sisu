@@ -1,8 +1,6 @@
 package sisu
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
@@ -50,10 +48,6 @@ func (h *HandlerTxOutConfirm) doTxOutConfirm(ctx sdk.Context, msgWithSigner *typ
 		return nil, nil
 	}
 
-	if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
-		h.confirmContractDeployment(ctx, txOut, msg.ContractAddress)
-	}
-
 	savedCheckPoint := h.keeper.GetGatewayCheckPoint(ctx, msg.OutChain)
 	if savedCheckPoint == nil || savedCheckPoint.BlockHeight < msg.BlockHeight {
 		// Save checkpoint
@@ -73,39 +67,6 @@ func (h *HandlerTxOutConfirm) doTxOutConfirm(ctx sdk.Context, msgWithSigner *typ
 	// Clear the pending TxOut
 	log.Verbose("Clearing pending out for chain ", txOut.OutChain)
 	h.keeper.SetPendingTxOutInfo(ctx, txOut.OutChain, nil)
-
-	return nil, nil
-}
-
-func (h *HandlerTxOutConfirm) confirmContractDeployment(ctx sdk.Context, txOut *types.TxOut,
-	contractAddress string) ([]byte, error) {
-	log.Info("txOut.ContractHash = ", txOut.ContractHash)
-
-	// Update the address for the contract.
-	contract := h.keeper.GetContract(ctx, txOut.OutChain, txOut.ContractHash, false)
-	if contract == nil {
-		err := fmt.Errorf("cannot find contract hash with hash %s on chain %s", txOut.ContractHash, txOut.OutChain)
-		log.Critical(err)
-		return nil, err
-	}
-
-	if len(contractAddress) == 0 {
-		err := fmt.Errorf("contract address is nil")
-		log.Critical(err)
-		return nil, err
-	}
-
-	contract.Address = contractAddress
-	log.Infof("Contract address for chain %s = %s ", contract.Chain, contractAddress)
-
-	// Save the contract (with address)
-	h.keeper.SaveContract(ctx, contract, false)
-
-	// Create a new entry with contract & address as key for easy txOut look up.
-	h.keeper.CreateContractAddress(ctx, txOut.OutChain, txOut.OutHash, contractAddress)
-
-	// Add the address to deyes to watch
-	h.deyesClient.SetGatewayAddress(txOut.OutChain, contractAddress)
 
 	return nil, nil
 }

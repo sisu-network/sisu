@@ -33,20 +33,6 @@ type Keeper interface {
 	SaveKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner)
 	GetAllKeygenResult(ctx sdk.Context, keygenType string, index int32) []*types.KeygenResultWithSigner
 
-	// Contract
-	SaveContract(ctx sdk.Context, msg *types.Contract, saveByteCode bool)
-	SaveContracts(ctx sdk.Context, msgs []*types.Contract, saveByteCode bool)
-	IsContractExisted(ctx sdk.Context, msg *types.Contract) bool
-	GetContract(ctx sdk.Context, chain string, hash string, includeByteCode bool) *types.Contract
-	GetPendingContracts(ctx sdk.Context, chain string) []*types.Contract
-	UpdateContractAddress(ctx sdk.Context, chain string, hash string, address string)
-	UpdateContractsStatus(ctx sdk.Context, chain string, contractHash string, status string)
-	GetLatestContractAddressByName(ctx sdk.Context, chain, name string) string
-
-	// Contract Address
-	CreateContractAddress(ctx sdk.Context, chain string, txOutHash string, address string)
-	IsContractExistedAtAddress(ctx sdk.Context, chain string, address string) bool
-
 	// TxOut
 	SaveTxOut(ctx sdk.Context, msg *types.TxOut)
 	IsTxOutExisted(ctx sdk.Context, msg *types.TxOut) bool
@@ -174,80 +160,6 @@ func (k *DefaultKeeper) SaveKeygenResult(ctx sdk.Context, signerMsg *types.Keyge
 func (k *DefaultKeeper) GetAllKeygenResult(ctx sdk.Context, keygenType string, index int32) []*types.KeygenResultWithSigner {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenResultWithSigner)
 	return getAllKeygenResult(store, keygenType, index)
-}
-
-///// Contract
-func (k *DefaultKeeper) SaveContract(ctx sdk.Context, msg *types.Contract, saveByteCode bool) {
-	k.SaveContracts(ctx, []*types.Contract{msg}, saveByteCode)
-}
-
-func (k *DefaultKeeper) SaveContracts(ctx sdk.Context, msgs []*types.Contract, saveByteCode bool) {
-	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
-	var byteCodeStore cstypes.KVStore
-	byteCodeStore = nil
-	if saveByteCode {
-		byteCodeStore = prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractByteCode)
-	}
-
-	saveContracts(contractStore, byteCodeStore, msgs)
-
-	// After saving contracts, also save contract address for each contract type
-	contractNameStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractName)
-	for _, msg := range msgs {
-		saveContractAddressForName(contractNameStore, msg)
-	}
-}
-
-func (k *DefaultKeeper) IsContractExisted(ctx sdk.Context, msg *types.Contract) bool {
-	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
-	return isContractExisted(contractStore, msg)
-}
-
-func (k *DefaultKeeper) GetContract(ctx sdk.Context, chain string, hash string, includeByteCode bool) *types.Contract {
-	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
-	var byteCodeStore cstypes.KVStore
-	byteCodeStore = nil
-	if includeByteCode {
-		byteCodeStore = prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractByteCode)
-	}
-
-	return getContract(contractStore, byteCodeStore, chain, hash)
-}
-
-func (k *DefaultKeeper) GetPendingContracts(ctx sdk.Context, chain string) []*types.Contract {
-	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
-	byteCodeStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractByteCode)
-
-	return getPendingContracts(contractStore, byteCodeStore, chain)
-}
-
-func (k *DefaultKeeper) UpdateContractAddress(ctx sdk.Context, chain string, hash string, address string) {
-	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
-	updateContractAddress(contractStore, chain, hash, address)
-}
-
-func (k *DefaultKeeper) UpdateContractsStatus(ctx sdk.Context, chain string, contractHash string, status string) {
-	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
-	updateContractsStatus(contractStore, chain, contractHash, status)
-}
-
-func (k *DefaultKeeper) GetLatestContractAddressByName(ctx sdk.Context, chain, name string) string {
-	contractNameStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractName)
-	return getContractAddressByName(contractNameStore, chain, name)
-}
-
-///// Contract Address
-func (k *DefaultKeeper) CreateContractAddress(ctx sdk.Context, chain string, txOutHash string, address string) {
-	caStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractAddress)
-	txOutStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
-
-	createContractAddress(caStore, txOutStore, chain, txOutHash, address)
-}
-
-func (k *DefaultKeeper) IsContractExistedAtAddress(ctx sdk.Context, chain string, address string) bool {
-	caStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractAddress)
-
-	return isContractExistedAtAddress(caStore, chain, address)
 }
 
 ///// TxOut

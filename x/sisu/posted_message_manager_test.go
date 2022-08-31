@@ -146,27 +146,6 @@ func TestPostedMessageManager(t *testing.T) {
 		require.False(t, process)
 	})
 
-	t.Run("contract_with_signer", func(t *testing.T) {
-		ctx, mc := mockForPostedMessageManager()
-		pmm := mc.PostedMessageManager()
-
-		msg := &types.ContractsWithSigner{
-			Signer: "signer",
-			Data:   &types.Contracts{},
-		}
-
-		process, hash := pmm.ShouldProcessMsg(ctx, msg)
-		require.True(t, process)
-
-		h := NewHandlerContract(mc)
-		_, err := h.doContracts(ctx, msg)
-		require.NoError(t, err)
-
-		h.keeper.ProcessTxRecord(ctx, hash)
-		process, _ = pmm.ShouldProcessMsg(ctx, msg)
-		require.False(t, process)
-	})
-
 	// t.Run("pause_contract", func(t *testing.T) {
 	// 	ctx, mc := mockForPostedMessageManager()
 	// 	pmm := mc.PostedMessageManager()
