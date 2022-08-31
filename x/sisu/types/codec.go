@@ -31,7 +31,6 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil), &ChangeOwnershipContractMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &ChangeLiquidPoolAddressMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &LiquidityWithdrawFundMsg{})
-	registry.RegisterImplementations((*sdk.Msg)(nil), &FundGatewayMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &BlockHeightMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TransferBatchMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TransferFailureMsg{})

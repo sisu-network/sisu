@@ -62,8 +62,6 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 		// 	return NewHandlerContractSetLiquidityAddress(mc).DeliverMsg(ctx, msg)
 		// case *types.LiquidityWithdrawFundMsg:
 		// 	return NewHandlerContractLiquidityWithdrawFund(mc).DeliverMsg(ctx, msg)
-		// case *types.FundGatewayMsg:
-		// 	return NewHandlerFundGateway(mc).DeliverMsg(ctx, msg)
 		case *types.BlockHeightMsg:
 			return NewHandlerBlockHeight(mc.Keeper()).DeliverMsg(ctx, msg)
 		case *types.TransferFailureMsg:

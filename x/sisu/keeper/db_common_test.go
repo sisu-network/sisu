@@ -272,10 +272,10 @@ func TestDb_getGateway(t *testing.T) {
 	store := memstore.NewStore()
 
 	setSisuAccount(store, "ganache1", "addr1")
-	gateway := getSisuAccount(store, "ganache1")
-	require.Equal(t, "addr1", gateway)
+	sisu := getSisuAccount(store, "ganache1")
+	require.Equal(t, "addr1", sisu)
 
 	setSisuAccount(store, "ganache2", "addr2")
-	gateway = getSisuAccount(store, "ganache2")
-	require.Equal(t, "addr2", gateway)
+	sisu = getSisuAccount(store, "ganache2")
+	require.Equal(t, "addr2", sisu)
 }
