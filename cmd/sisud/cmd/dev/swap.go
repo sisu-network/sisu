@@ -85,8 +85,6 @@ transfer params.
 				amount := big.NewInt(int64(unit))
 				amount = new(big.Int).Mul(amount, utils.EthToWei)
 
-				fmt.Println("vault = ", vault)
-
 				c.swapFromEth(client, mnemonic, vault, dst, srcToken, dstToken, recipient, amount)
 			} else if libchain.IsCardanoChain(src) {
 				gateway := c.getCardanoGateway(cmd.Context(), sisuRpc)

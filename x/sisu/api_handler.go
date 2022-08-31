@@ -389,36 +389,11 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	ctx := a.globalData.GetReadOnlyContext()
 
 	// Create TxIn messages and broadcast to the Sisu chain.
-	// TODO: Prevent submitting fund gateway multiple times.
-	gatewayFundTxSubmitted := false
 	for _, tx := range txs.Arr {
-		// Check if this is a transaciton that fund ETH gateway
-		if libchain.IsETHBasedChain(txs.Chain) && !gatewayFundTxSubmitted {
-			ethTx := &ethTypes.Transaction{}
-			err := ethTx.UnmarshalBinary(tx.Serialized)
-			if err != nil {
-				log.Error("Failed to unmarshall eth tx. err =", err)
-				continue
-			}
-
-			if ethTx.To() != nil && a.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
-				msg := types.NewFundGatewayMsg(a.appKeys.GetSignerAddress().String(), &types.FundGateway{
-					Chain:  txs.Chain,
-					TxHash: utils.KeccakHash32Bytes(tx.Serialized),
-					Amount: ethTx.Value().Bytes(),
-				})
-
-				// For contract deployment
-				a.txSubmit.SubmitMessageAsync(msg)
-				gatewayFundTxSubmitted = true
-				continue
-			}
-		}
-
 		// Check if this is a transaction from our sisu. If true, ignore it.
 		sisu := a.keeper.GetMpcAddress(ctx, txs.Chain)
 		if sisu == tx.From {
-			log.Verbosef("This is a transaction sent from our gateway %s on chain %s, ignore",
+			log.Verbosef("This is a transaction sent from our sisu account %s on chain %s, ignore",
 				sisu, txs.Chain)
 			continue
 		}
