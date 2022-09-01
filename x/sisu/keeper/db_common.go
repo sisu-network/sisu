@@ -32,6 +32,7 @@ var (
 	prefixTransferQueue          = []byte{0x14}
 	prefixTxOutQueue             = []byte{0x15}
 	prefixPendingTxOut           = []byte{0x16}
+	prefixCommandQueue           = []byte{0x17}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -52,11 +53,6 @@ func getContractKey(chain string, hash string) []byte {
 func getContractNameKey(chain, name string) []byte {
 	// chain + contract name
 	return []byte(fmt.Sprintf("%s__%s", chain, name))
-}
-
-func getTxInKey(chain string, height int64, hash string) []byte {
-	// chain, height, hash
-	return []byte(fmt.Sprintf("%s__%d__%s", chain, height, hash))
 }
 
 func getTxOutKey(outChain string, outHash string) []byte {
@@ -692,6 +688,37 @@ func getAllGatewayCheckPoints(store cstypes.KVStore) map[string]*types.GatewayCh
 	}
 
 	return ret
+}
+
+///// Command Queue
+func setCommandQueue(store cstypes.KVStore, chain string, commands []*types.Command) {
+	cmds := &types.Commands{
+		List: commands,
+	}
+
+	bz, err := cmds.Marshal()
+	if err != nil {
+		log.Error("saveTranferQueue: faield to marshal transfer batch")
+		return
+	}
+
+	store.Set([]byte(chain), bz)
+}
+
+func getCommandQueue(store cstypes.KVStore, chain string) []*types.Command {
+	bz := store.Get([]byte(chain))
+	if bz == nil {
+		return nil
+	}
+
+	cmds := &types.Commands{}
+	err := cmds.Unmarshal(bz)
+	if err != nil {
+		log.Error("getCommandQueue: failed to unmarshal command")
+		return nil
+	}
+
+	return cmds.List
 }
 
 ///// Transfer Queue

@@ -81,6 +81,10 @@ type Keeper interface {
 	GetGatewayCheckPoint(ctx sdk.Context, chain string) *types.GatewayCheckPoint
 	GetAllGatewayCheckPoints(ctx sdk.Context) map[string]*types.GatewayCheckPoint
 
+	// Command Queue
+	SetCommandQueue(ctx sdk.Context, chain string, commands []*types.Command)
+	GetCommandQueue(ctx sdk.Context, chain string) []*types.Command
+
 	// Transfer Queue
 	SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.Transfer)
 	GetTransferQueue(ctx sdk.Context, chain string) []*types.Transfer
@@ -307,6 +311,17 @@ func (k *DefaultKeeper) GetGatewayCheckPoint(ctx sdk.Context, chain string) *typ
 func (k *DefaultKeeper) GetAllGatewayCheckPoints(ctx sdk.Context) map[string]*types.GatewayCheckPoint {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGatewayCheckPoint)
 	return getAllGatewayCheckPoints(store)
+}
+
+///// Command Queue
+func (k *DefaultKeeper) SetCommandQueue(ctx sdk.Context, chain string, commands []*types.Command) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixCommandQueue)
+	setCommandQueue(store, chain, commands)
+}
+
+func (k *DefaultKeeper) GetCommandQueue(ctx sdk.Context, chain string) []*types.Command {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixCommandQueue)
+	return getCommandQueue(store, chain)
 }
 
 ///// Transfer Queue

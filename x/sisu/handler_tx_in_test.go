@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func mockForHandlerTxIn() (sdk.Context, ManagerContainer) {
+func mockForHandlerTransferOut() (sdk.Context, ManagerContainer) {
 	ctx := testContext()
 	k := keeperTestAfterContractDeployed(ctx)
 	pmm := NewPostedMessageManager(k)
@@ -21,9 +21,9 @@ func mockForHandlerTxIn() (sdk.Context, ManagerContainer) {
 	return ctx, mc
 }
 
-func TestHandlerTxIn_HappyCase(t *testing.T) {
+func TestHandlerTransferOut_HappyCase(t *testing.T) {
 	t.Run("transfer_is_saved", func(t *testing.T) {
-		ctx, mc := mockForHandlerTxIn()
+		ctx, mc := mockForHandlerTransferOut()
 		srcChain := "ganache1"
 		destChain := "ganache2"
 		recipient := "0x8095f5b69F2970f38DC6eBD2682ed71E4939f988"
@@ -31,8 +31,8 @@ func TestHandlerTxIn_HappyCase(t *testing.T) {
 		hash1 := "123"
 		amount := "10000"
 
-		handler := NewHandlerTxIn(mc)
-		msg := types.NewTxsInMsg("signer", &types.TxsIn{
+		handler := NewHandlerTransferOut(mc)
+		msg := types.NewTransferOutsMsg("signer", &types.TransferOuts{
 			Chain:  srcChain,
 			Height: 10,
 			Requests: []*types.TransferOut{
@@ -64,8 +64,8 @@ func TestHandlerTxIn_HappyCase(t *testing.T) {
 		hash2 := "456"
 		recipient2 := "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80"
 		token2 := "ADA"
-		handler = NewHandlerTxIn(mc)
-		msg = types.NewTxsInMsg("signer", &types.TxsIn{
+		handler = NewHandlerTransferOut(mc)
+		msg = types.NewTransferOutsMsg("signer", &types.TransferOuts{
 			Chain:  srcChain,
 			Height: 11,
 			Requests: []*types.TransferOut{

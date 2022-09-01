@@ -229,18 +229,18 @@ func (t *DefaultTxTracker) getEmailBodyString(txo *txObject) (string, error) {
 	return utils.PrettyStruct(body)
 }
 
-func (t *DefaultTxTracker) getEThTransferIn(chain string, bz []byte) (*types.TransferOutData, error) {
-	// ethTx := &ethTypes.Transaction{}
+// func (t *DefaultTxTracker) getEThTransferIn(chain string, bz []byte) (*types.TransferOutData, error) {
+// 	// ethTx := &ethTypes.Transaction{}
 
-	// err := ethTx.UnmarshalBinary(bz)
-	// if err != nil {
-	// 	return nil, err
-	// }
+// 	// err := ethTx.UnmarshalBinary(bz)
+// 	// if err != nil {
+// 	// 	return nil, err
+// 	// }
 
-	// return parseEthTransferOut(ethTx, chain, t.worldState)
+// 	// return parseEthTransferOut(ethTx, chain, t.worldState)
 
-	return nil, nil
-}
+// 	return nil, nil
+// }
 
 // func (t *DefaultTxTracker) getEthTransferIn(bz []byte) (*transferInData, error) {
 // 	ethTx := &ethTypes.Transaction{}

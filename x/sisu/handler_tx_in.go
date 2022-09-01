@@ -7,21 +7,21 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-type HandlerTxIn struct {
+type HandlerTransferOut struct {
 	pmm    PostedMessageManager
 	keeper keeper.Keeper
 }
 
-func NewHandlerTxIn(mc ManagerContainer) *HandlerTxIn {
-	return &HandlerTxIn{
+func NewHandlerTransferOut(mc ManagerContainer) *HandlerTransferOut {
+	return &HandlerTransferOut{
 		keeper: mc.Keeper(),
 		pmm:    mc.PostedMessageManager(),
 	}
 }
 
-func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, signerMsg *types.TxsInMsg) (*sdk.Result, error) {
+func (h *HandlerTransferOut) DeliverMsg(ctx sdk.Context, signerMsg *types.TransferOutsMsg) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
-		data, err := h.doTxIn(ctx, signerMsg.Data)
+		data, err := h.doTransferOut(ctx, signerMsg.Data)
 		h.keeper.ProcessTxRecord(ctx, hash)
 
 		return &sdk.Result{Data: data}, err
@@ -31,8 +31,8 @@ func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, signerMsg *types.TxsInMsg) (*s
 }
 
 // Delivers observed Txs.
-func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msg *types.TxsIn) ([]byte, error) {
-	log.Infof("Deliverying TxIn on chain %s with request length = %d", msg.Chain, len(msg.Requests))
+func (h *HandlerTransferOut) doTransferOut(ctx sdk.Context, msg *types.TransferOuts) ([]byte, error) {
+	log.Infof("Deliverying TransferOut on chain %s with request length = %d", msg.Chain, len(msg.Requests))
 
 	allTransfers := make(map[string][]*types.Transfer)
 	// Add the message to the queue for later processing.

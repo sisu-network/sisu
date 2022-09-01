@@ -368,7 +368,7 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	log.Verbose("There is a new list of txs from deyes, len =", len(txs.Arr))
 
-	transferRequests := &types.TxsIn{
+	transferRequests := &types.TransferOuts{
 		Chain:    txs.Chain,
 		Hash:     txs.BlockHash,
 		Height:   txs.Block,
@@ -400,7 +400,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	}
 
 	if len(transferRequests.Requests) > 0 {
-		msg := types.NewTxsInMsg(a.appKeys.GetSignerAddress().String(), transferRequests)
+		msg := types.NewTransferOutsMsg(a.appKeys.GetSignerAddress().String(), transferRequests)
 		a.txSubmit.SubmitMessageAsync(msg)
 	}
 
@@ -425,8 +425,8 @@ func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.T
 			return nil, parseResult.Error
 		}
 
-		if parseResult.TxIn != nil {
-			return []*types.TransferOut{parseResult.TxIn}, nil
+		if parseResult.TransferOut != nil {
+			return []*types.TransferOut{parseResult.TransferOut}, nil
 		}
 
 		return []*types.TransferOut{}, nil

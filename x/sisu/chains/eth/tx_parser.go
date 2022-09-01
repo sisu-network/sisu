@@ -51,7 +51,7 @@ func ParseVaultTx(ctx sdk.Context, keeper keeper.Keeper, chain string, eyesTx *e
 	switch methodName {
 	case "transferOut":
 		result.Method = chainstypes.MethodTransferOut
-		result.TxIn, result.Error = parseEthTransferOut(ctx, keeper, ethTx, chain, txParams)
+		result.TransferOut, result.Error = parseEthTransferOut(ctx, keeper, ethTx, chain, txParams)
 	case "addSpender":
 		result.Method = chainstypes.MethodAddSpender
 	default:

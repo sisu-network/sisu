@@ -25,7 +25,7 @@ func GetTxRecordHash(msg sdk.Msg) ([]byte, string, error) {
 		hash := getKeygenKey(msg.Keygen.KeyType, int(msg.Keygen.Index))
 		return hash, msg.Signer, nil
 
-	case *types.TxsInMsg:
+	case *types.TransferOutsMsg:
 		serialized, err := msg.Data.Marshal()
 		if err != nil {
 			return nil, "", err

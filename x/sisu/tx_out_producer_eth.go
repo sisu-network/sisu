@@ -17,67 +17,6 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-func parseEthTransferOut(ctx sdk.Context, k keeper.Keeper, ethTx *ethTypes.Transaction,
-	srcChain string) (*types.TransferOutData, error) {
-	erc20gatewayContract := SupportedContracts[ContractVault]
-	gwAbi := erc20gatewayContract.Abi
-	callData := ethTx.Data()
-	_, txParams, err := eth.DecodeTxParams(gwAbi, callData)
-	if err != nil {
-		return nil, err
-	}
-
-	tokenAddr, ok := txParams["token"].(ethcommon.Address)
-	if !ok {
-		err := fmt.Errorf("cannot convert token to type ethcommon.Address: %v", txParams)
-		return nil, err
-	}
-
-	destChain, ok := txParams["dstChain"].(string)
-	if !ok {
-		err := fmt.Errorf("cannot convert _destChain to type string: %v", txParams)
-		return nil, err
-	}
-
-	tokens := k.GetAllTokens(ctx)
-	var token *types.Token
-	addr := tokenAddr.String()
-	for _, t := range tokens {
-		for i, chain := range t.Chains {
-			if chain == srcChain && t.Addresses[i] == addr {
-				token = t
-				break
-			}
-		}
-		if token != nil {
-			break
-		}
-	}
-
-	if token == nil {
-		return nil, fmt.Errorf("invalid address %s on chain %s", tokenAddr, srcChain)
-	}
-
-	recipient, ok := txParams["to"].(ecommon.Address)
-	if !ok {
-		err := fmt.Errorf("cannot convert to to type ethcommon.Address: %v", txParams)
-		return nil, err
-	}
-
-	amount, ok := txParams["amount"].(*big.Int)
-	if !ok {
-		err := fmt.Errorf("cannot convert _amount to type *big.Int: %v", txParams)
-		return nil, err
-	}
-
-	return &types.TransferOutData{
-		DestChain: destChain,
-		Token:     token,
-		Recipient: recipient.String(),
-		Amount:    amount,
-	}, nil
-}
-
 func parseTransferInData(ethTx *ethTypes.Transaction) ([]*transferInData, error) {
 	vaultContract := SupportedContracts[ContractVault]
 	gwAbi := vaultContract.Abi

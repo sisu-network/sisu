@@ -1,0 +1,19 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+import "sisu/transfer_batch.proto";
+
+enum CommandType {
+  TRANSFER = 0;
+}
+
+message Commands {
+  repeated Command list = 1;
+}
+
+message Command {
+  CommandType type = 1;
+  Transfer transfer = 2;
+}

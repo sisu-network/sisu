@@ -58,7 +58,7 @@ func NewTransferQueue(
 func (q *defaultTransferQueue) Start(ctx sdk.Context) {
 	// Start the loop
 	go q.loop()
-	log.Info("TxInQueue started")
+	log.Info("TransferQueue started")
 }
 
 func (q *defaultTransferQueue) Stop() {

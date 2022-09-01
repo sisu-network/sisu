@@ -4,12 +4,12 @@ package types;
 option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 
 // Note: all new fields in this proto MUST be included in SerializeWithoutSigner in the go file.
-message TxsInMsg {
+message TransferOutsMsg {
   string signer = 1;
-  TxsIn data = 2;
+  TransferOuts data = 2;
 }
 
-message TxsIn {
+message TransferOuts {
   string chain = 1;
   int64 height = 2;
   string hash = 3;

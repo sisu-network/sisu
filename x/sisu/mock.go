@@ -54,7 +54,7 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 		case ValidatorManager:
 			mc.valsManager = t
 		case TransferQueue:
-			mc.txInQueue = t
+			mc.transferOutQueue = t
 		}
 	}
 
