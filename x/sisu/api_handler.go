@@ -372,7 +372,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 		Chain:    txs.Chain,
 		Hash:     txs.BlockHash,
 		Height:   txs.Block,
-		Requests: make([]*types.TxIn, 0),
+		Requests: make([]*types.TransferOut, 0),
 	}
 
 	ctx := a.globalData.GetReadOnlyContext()
@@ -418,7 +418,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	return nil
 }
 
-func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.TxIn, error) {
+func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.TransferOut, error) {
 	if libchain.IsETHBasedChain(chain) {
 		parseResult := eth.ParseVaultTx(ctx, a.keeper, chain, tx)
 		if parseResult.Error != nil {
@@ -426,14 +426,14 @@ func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.T
 		}
 
 		if parseResult.TxIn != nil {
-			return []*types.TxIn{parseResult.TxIn}, nil
+			return []*types.TransferOut{parseResult.TxIn}, nil
 		}
 
-		return []*types.TxIn{}, nil
+		return []*types.TransferOut{}, nil
 	}
 
 	if libchain.IsCardanoChain(chain) {
-		ret := make([]*types.TxIn, 0)
+		ret := make([]*types.TransferOut, 0)
 		cardanoTx := &etypes.CardanoTransactionUtxo{}
 		err := json.Unmarshal(tx.Serialized, cardanoTx)
 		if err != nil {
@@ -472,7 +472,7 @@ func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.T
 				log.Verbose("tokenUnit = ", tokenUnit, " quantity = ", quantity)
 				log.Verbose("cardanoTx.Metadata = ", cardanoTx.Metadata)
 
-				ret = append(ret, &types.TxIn{
+				ret = append(ret, &types.TransferOut{
 					Hash:      cardanoTx.Hash,
 					ToChain:   cardanoTx.Metadata.Chain,
 					Token:     tokenUnit,
@@ -512,6 +512,7 @@ func (a *ApiHandler) OnTxIncludedInBlock(txTrack *chainstypes.TrackUpdate) {
 		a.confirmTx(txTrack, txOut)
 	} else {
 		// Tx is included in the block but fails to execute.
+
 	}
 }
 

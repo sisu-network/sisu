@@ -14,10 +14,10 @@ message TxsIn {
   int64 height = 2;
   string hash = 3;
 
-  repeated TxIn requests = 4;
+  repeated TransferOut requests = 4;
 }
 
-message TxIn {
+message TransferOut {
   string sender = 1;
   string to_chain = 2;
   string token = 3;

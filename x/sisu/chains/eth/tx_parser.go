@@ -63,7 +63,7 @@ func ParseVaultTx(ctx sdk.Context, keeper keeper.Keeper, chain string, eyesTx *e
 }
 
 func parseEthTransferOut(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.Transaction, chain string,
-	txParams map[string]interface{}) (*types.TxIn, error) {
+	txParams map[string]interface{}) (*types.TransferOut, error) {
 	msg, err := ethTx.AsMessage(ethtypes.NewLondonSigner(ethTx.ChainId()), nil)
 	if err != nil {
 		return nil, err
@@ -99,7 +99,7 @@ func parseEthTransferOut(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.
 		return nil, err
 	}
 
-	return &types.TxIn{
+	return &types.TransferOut{
 		Sender:    msg.From().Hex(),
 		ToChain:   destChain,
 		Token:     token.Id,

@@ -35,7 +35,7 @@ func TestHandlerTxIn_HappyCase(t *testing.T) {
 		msg := types.NewTxsInMsg("signer", &types.TxsIn{
 			Chain:  srcChain,
 			Height: 10,
-			Requests: []*types.TxIn{
+			Requests: []*types.TransferOut{
 				{
 					ToChain:   destChain,
 					Token:     token,
@@ -68,7 +68,7 @@ func TestHandlerTxIn_HappyCase(t *testing.T) {
 		msg = types.NewTxsInMsg("signer", &types.TxsIn{
 			Chain:  srcChain,
 			Height: 11,
-			Requests: []*types.TxIn{
+			Requests: []*types.TransferOut{
 				{
 					ToChain:   destChain,
 					Token:     token2,

@@ -12,5 +12,5 @@ type TransferOutData struct {
 	// For tx_tracker
 	InChain string
 	InHash  string
-	TxIn    *TxIn
+	TxIn    *TransferOut
 }
