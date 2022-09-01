@@ -14,12 +14,8 @@ var (
 	prefixTxRecordProcessed      = []byte{0x02}
 	prefixKeygen                 = []byte{0x03}
 	prefixKeygenResultWithSigner = []byte{0x04}
-	prefixContract               = []byte{0x05}
-	prefixContractByteCode       = []byte{0x06}
-	prefixContractAddress        = []byte{0x07}
 	prefixTxOut                  = []byte{0x08}
 	prefixTxOutSig               = []byte{0x09}
-	prefixContractName           = []byte{0x0A}
 	prefixGasPrice               = []byte{0x0B}
 	prefixChain                  = []byte{0x0C}
 	prefixToken                  = []byte{0x0D}

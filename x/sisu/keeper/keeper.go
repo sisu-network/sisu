@@ -364,8 +364,6 @@ func (k *DefaultKeeper) getStoreFromName(ctx sdk.Context, name string) cstypes.K
 	switch name {
 	case "keygen":
 		store = prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygen)
-	case "contract":
-		store = prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
 	case "txOut":
 		store = prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
 	}
