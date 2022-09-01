@@ -39,7 +39,6 @@ type TxTracker interface {
 	UpdateStatus(chain string, hash string, status types.TxStatus)
 	RemoveTransaction(chain string, hash string)
 	OnTxFailed(chain string, hash string, status types.TxStatus)
-
 	CheckExpiredTransaction()
 }
 
@@ -225,8 +224,6 @@ func (t *DefaultTxTracker) getEmailBodyString(txo *txObject) (string, error) {
 	// 		Recipient:    data.recipient,
 	// 		Amount:       data.amount.String(),
 	// 	}
-	case types.TxOutType_CONTRACT_DEPLOYMENT:
-		return fmt.Sprintf("contract deployment failed, hash = %s", txo.txOut.OutHash), nil
 	}
 
 	return utils.PrettyStruct(body)

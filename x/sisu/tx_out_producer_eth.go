@@ -7,42 +7,22 @@ import (
 	ecommon "github.com/ethereum/go-ethereum/common"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/eth"
 	"github.com/sisu-network/sisu/x/sisu/helper"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
-
-func decodeTxParams(abi abi.ABI, callData []byte) (map[string]interface{}, error) {
-	if len(callData) < 4 {
-		return nil, fmt.Errorf("decodeTxParams: call data size is smaller than 4")
-	}
-
-	txParams := map[string]interface{}{}
-	m, err := abi.MethodById(callData[:4])
-	if err != nil {
-		log.Error(err)
-		return nil, err
-	}
-
-	if err := m.Inputs.UnpackIntoMap(txParams, callData[4:]); err != nil {
-		log.Error(err)
-		return nil, err
-	}
-
-	return txParams, nil
-}
 
 func parseEthTransferOut(ctx sdk.Context, k keeper.Keeper, ethTx *ethTypes.Transaction,
 	srcChain string) (*types.TransferOutData, error) {
 	erc20gatewayContract := SupportedContracts[ContractVault]
 	gwAbi := erc20gatewayContract.Abi
 	callData := ethTx.Data()
-	txParams, err := decodeTxParams(gwAbi, callData)
+	_, txParams, err := eth.DecodeTxParams(gwAbi, callData)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +82,7 @@ func parseTransferInData(ethTx *ethTypes.Transaction) ([]*transferInData, error)
 	vaultContract := SupportedContracts[ContractVault]
 	gwAbi := vaultContract.Abi
 	callData := ethTx.Data()
-	txParams, err := decodeTxParams(gwAbi, callData)
+	_, txParams, err := eth.DecodeTxParams(gwAbi, callData)
 	if err != nil {
 		return nil, err
 	}

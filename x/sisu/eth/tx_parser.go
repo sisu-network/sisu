@@ -26,7 +26,7 @@ func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain 
 	}
 
 	callData := ethTx.Data()
-	methodName, txParams, err := decodeTxParams(gwAbi, callData)
+	methodName, txParams, err := DecodeTxParams(gwAbi, callData)
 	if err != nil {
 		return nil, err
 	}
@@ -103,8 +103,9 @@ func getTokenOnChain(allTokens map[string]*types.Token, tokenAddr, targetChain s
 	return nil
 }
 
-func decodeTxParams(abi abi.ABI, callData []byte) (string, map[string]interface{}, error) {
+func DecodeTxParams(abi abi.ABI, callData []byte) (string, map[string]interface{}, error) {
 	if len(callData) < 4 {
+		fmt.Println("len(callData) = ", len(callData))
 		return "", nil, fmt.Errorf("decodeTxParams: call data size is smaller than 4")
 	}
 

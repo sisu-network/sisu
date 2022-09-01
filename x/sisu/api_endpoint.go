@@ -21,7 +21,7 @@ type AppLogicListener interface {
 	OnKeysignResult(result *htypes.KeysignResult)
 	OnTxDeploymentResult(result *etypes.DispatchedTxResult)
 	OnUpdateTokenPrice(tokenPrices []*etypes.TokenPrice)
-	ConfirmTx(txTrack *chainstypes.TrackUpdate)
+	OnTxIncludedInBlock(txTrack *chainstypes.TrackUpdate)
 }
 
 type ApiEndPoint struct {
@@ -128,9 +128,9 @@ func (a *ApiEndPoint) UpdateTokenPrices(prices []*etypes.TokenPrice) {
 	}
 }
 
-func (a *ApiEndPoint) ConfirmTx(txTrack *chainstypes.TrackUpdate) {
+func (a *ApiEndPoint) OnTxIncludedInBlock(txTrack *chainstypes.TrackUpdate) {
 	listener := a.getAppLogicListener()
 	if listener != nil {
-		go listener.ConfirmTx(txTrack)
+		go listener.OnTxIncludedInBlock(txTrack)
 	}
 }

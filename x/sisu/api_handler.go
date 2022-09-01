@@ -14,7 +14,6 @@ import (
 	etypes "github.com/sisu-network/deyes/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	dhtypes "github.com/sisu-network/dheart/types"
-	"github.com/sisu-network/lib/chain"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
@@ -24,8 +23,6 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
-
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
 const (
@@ -271,12 +268,7 @@ func (a *ApiHandler) processETHSigningResult(ctx sdk.Context, result *dhtypes.Ke
 	})
 
 	log.Info("signedTx hash = ", signedTx.Hash().String(), " on chain ", signMsg.OutChain)
-
-	// If this is a contract deployment transaction, update the contract table with the hash of the
-	// deployment tx bytes.
-	isContractDeployment := chain.IsETHBasedChain(signMsg.OutChain) &&
-		txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT
-	err = a.deploySignedTx(ctx, bz, signMsg.OutChain, signedTx.Hash().String(), isContractDeployment)
+	err = a.deploySignedTx(ctx, bz, signMsg.OutChain, signedTx.Hash().String())
 	if err != nil {
 		log.Error("deployment error: ", err)
 		return
@@ -332,7 +324,7 @@ func (a *ApiHandler) processCardanoSigningResult(ctx sdk.Context, result *dhtype
 		return nil
 	}
 
-	err = a.deploySignedTx(ctx, txBytes, signMsg.OutChain, result.Request.KeysignMessages[index].OutHash, false)
+	err = a.deploySignedTx(ctx, txBytes, signMsg.OutChain, result.Request.KeysignMessages[index].OutHash)
 	if err != nil {
 		log.Error("deployment error: ", err)
 		return err
@@ -344,7 +336,7 @@ func (a *ApiHandler) processCardanoSigningResult(ctx sdk.Context, result *dhtype
 }
 
 // deploySignedTx creates a deployment request and sends it to deyes.
-func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string, outHash string, isContractDeployment bool) error {
+func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string, outHash string) error {
 	log.Verbose("Sending final tx to the deyes for deployment for chain ", outChain)
 
 	pubkey := a.keeper.GetKeygenPubkey(ctx, libchain.GetKeyTypeForChain(outChain))
@@ -353,11 +345,10 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 	}
 
 	request := &etypes.DispatchedTxRequest{
-		Chain:                   outChain,
-		TxHash:                  outHash,
-		Tx:                      bz,
-		PubKey:                  pubkey,
-		IsEthContractDeployment: isContractDeployment,
+		Chain:  outChain,
+		TxHash: outHash,
+		Tx:     bz,
+		PubKey: pubkey,
 	}
 
 	go func(request *eyesTypes.DispatchedTxRequest) {
@@ -368,6 +359,7 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 		}
 		if result != nil && !result.Success {
 			log.Error("Deployment failed!, err = ", result.Err)
+			// TODO: Post failure error the chain.
 		}
 	}(request)
 
@@ -506,8 +498,8 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 	return nil, fmt.Errorf("Unknown chain %s", chain)
 }
 
-// ConfirmTx implements AppLogicListener
-func (a *ApiHandler) ConfirmTx(txTrack *chainstypes.TrackUpdate) {
+// OnTxIncludedInBlock implements AppLogicListener
+func (a *ApiHandler) OnTxIncludedInBlock(txTrack *chainstypes.TrackUpdate) {
 	ctx := a.globalData.GetReadOnlyContext()
 
 	log.Verbosef("Confirming tx height = %d, chain = %s, hash = %s, nonce = %d",
@@ -525,6 +517,15 @@ func (a *ApiHandler) ConfirmTx(txTrack *chainstypes.TrackUpdate) {
 		log.Verbose("cannot find txOut with hash (with no sig): ", txOutSig.HashNoSig)
 		return
 	}
+
+	if txTrack.Result == chainstypes.TrackResultConfirmed {
+		a.confirmTx(txTrack, txOut)
+	} else {
+		// Tx is included in the block but fails to execute.
+	}
+}
+
+func (a *ApiHandler) confirmTx(txTrack *chainstypes.TrackUpdate, txOut *types.TxOut) {
 	log.Info("confirming tx: chain, hash, type = ", txTrack.Chain, " ", txTrack.Hash, " ", txOut.TxType)
 	a.txTracker.RemoveTransaction(txTrack.Chain, txOut.OutHash)
 
@@ -543,18 +544,6 @@ func (a *ApiHandler) ConfirmTx(txTrack *chainstypes.TrackUpdate) {
 		}
 
 		txConfirm.Nonce = int64(ethTx.Nonce()) + 1
-		if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
-			sender, err := utils.GetEthSender(ethTx)
-			if err != nil {
-				log.Error("cannot get eth sender, err = ", err)
-				return
-			}
-
-			contractAddress := ethcrypto.CreateAddress(sender, ethTx.Nonce()).String()
-			log.Info("contractAddress = ", contractAddress)
-
-			txConfirm.ContractAddress = contractAddress
-		}
 	}
 
 	msg := types.NewTxOutConfirmMsg(

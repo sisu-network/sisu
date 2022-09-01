@@ -44,10 +44,6 @@ func (s *txOutSigner) signTxOut(ctx sdk.Context, txOut *types.TxOut) {
 // signEthTx sends a TxOut to dheart for TSS signing.
 func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
 	log.Info("Delivering TXOUT for chain ", tx.OutChain, " tx hash = ", tx.OutHash)
-	if tx.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
-		log.Info("This TxOut is a contract deployment")
-	}
-
 	ethTx := &ethtypes.Transaction{}
 	if err := ethTx.UnmarshalBinary(tx.OutBytes); err != nil {
 		log.Error("cannot unmarshal tx, err =", err)
