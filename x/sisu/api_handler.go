@@ -154,8 +154,6 @@ func (a *ApiHandler) OnKeygenResult(result dhtypes.KeygenResult) {
 		}
 
 		log.Verbose("adding chain account address ", result.Address, " for chain ", chain)
-
-		a.deyesClient.SetChainAccount(chain, result.Address)
 		if libchain.IsCardanoChain(chain) {
 			a.deyesClient.SetGatewayAddress(chain, result.Address)
 		}

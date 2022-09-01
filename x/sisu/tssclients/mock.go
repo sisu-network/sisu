@@ -16,7 +16,6 @@ func check() {
 type MockDeyesClient struct {
 	PingFunc              func(source string) error
 	DispatchFunc          func(request *eTypes.DispatchedTxRequest) (*eTypes.DispatchedTxResult, error)
-	SetChainAccountFunc   func(chain string, addr string) error
 	SetGatewayAddressFunc func(chain string, addr string) error
 	GetNonceFunc          func(chain string, address string) int64
 	SetSisuReadyFunc      func(isReady bool) error
@@ -37,14 +36,6 @@ func (c *MockDeyesClient) Dispatch(request *eTypes.DispatchedTxRequest) (*eTypes
 	}
 
 	return nil, nil
-}
-
-func (c *MockDeyesClient) SetChainAccount(chain string, addr string) error {
-	if c.SetChainAccountFunc != nil {
-		return c.SetChainAccountFunc(chain, addr)
-	}
-
-	return nil
 }
 
 func (c *MockDeyesClient) SetGatewayAddress(chain string, addr string) error {

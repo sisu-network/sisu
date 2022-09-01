@@ -72,8 +72,6 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 		params := h.keeper.GetParams(ctx)
 		for _, chain := range params.SupportedChains {
 			if libchain.GetKeyTypeForChain(chain) == keygen.KeyType {
-				log.Verbose("Setting sisu account = ", keygen.Address, " for chain ", chain)
-				h.deyesClient.SetChainAccount(chain, keygen.Address)
 				// Set Vault
 				vault := h.keeper.GetVault(ctx, chain)
 				h.deyesClient.SetGatewayAddress(chain, vault.Address)
