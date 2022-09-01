@@ -55,12 +55,12 @@ func keeperTestGenesis(ctx sdk.Context) keeper.Keeper {
 		{
 			Id:      "ganache1_v0",
 			Chain:   "ganache1",
-			Address: "0xf0D676183dD5ae6b370adDdbE770235F23546f9d",
+			Address: "0x3a84fbbefd21d6a5ce79d54d348344ee11ebd45c",
 		},
 		{
 			Id:      "ganache2_v0",
 			Chain:   "ganache2",
-			Address: "0xf0D676183dD5ae6b370adDdbE770235F23546f9d",
+			Address: "0x3a84fbbefd21d6a5ce79d54d348344ee11ebd45c",
 		},
 	}
 	keeper.SetVaults(ctx, vaults)

@@ -8,7 +8,6 @@ import (
 	"github.com/echovl/cardano-go"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	chainstypes "github.com/sisu-network/deyes/chains/types"
 	etypes "github.com/sisu-network/deyes/types"
@@ -18,8 +17,8 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/utils"
-	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
-	"github.com/sisu-network/sisu/x/sisu/eth"
+	scardano "github.com/sisu-network/sisu/x/sisu/chains/cardano"
+	"github.com/sisu-network/sisu/x/sisu/chains/eth"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -388,7 +387,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 			continue
 		}
 
-		txIns, err := a.parseTransferRequest(ctx, txs.Chain, tx)
+		txIns, err := a.parseDeyesTx(ctx, txs.Chain, tx)
 		if err != nil {
 			log.Error("Faield to parse transfer, err = ", err)
 			continue
@@ -419,25 +418,18 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	return nil
 }
 
-func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.TxIn, error) {
+func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.TxIn, error) {
 	if libchain.IsETHBasedChain(chain) {
-		ethTx := &ethTypes.Transaction{}
-		err := ethTx.UnmarshalBinary(tx.Serialized)
-		if err != nil {
-			log.Error("Failed to unmarshall eth tx. err =", err)
-			return nil, err
+		parseResult := eth.ParseVaultTx(ctx, a.keeper, chain, tx)
+		if parseResult.Error != nil {
+			return nil, parseResult.Error
 		}
 
-		transfer, err := eth.ParseEthTransferOut(ctx, ethTx, chain, a.keeper)
-		if err != nil {
-			return nil, err
+		if parseResult.TxIn != nil {
+			return []*types.TxIn{parseResult.TxIn}, nil
 		}
 
-		if transfer == nil {
-			return []*types.TxIn{}, nil
-		}
-
-		return []*types.TxIn{transfer}, nil
+		return []*types.TxIn{}, nil
 	}
 
 	if libchain.IsCardanoChain(chain) {
@@ -534,7 +526,7 @@ func (a *ApiHandler) confirmTx(txTrack *chainstypes.TrackUpdate, txOut *types.Tx
 	}
 
 	if libchain.IsETHBasedChain(txTrack.Chain) {
-		ethTx := &ethTypes.Transaction{}
+		ethTx := &ethtypes.Transaction{}
 		err := ethTx.UnmarshalBinary(txTrack.Bytes)
 		if err != nil {
 			log.Error("cannot unmarshal eth transaction, err = ", err)

@@ -9,36 +9,62 @@ import (
 
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/contracts/eth/vault"
+	chainstypes "github.com/sisu-network/sisu/x/sisu/chains/types"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
+	etypes "github.com/sisu-network/deyes/types"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
-func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain string, keeper keeper.Keeper) (*types.TxIn, error) {
-	gwAbi, err := abi.JSON(strings.NewReader(vault.VaultABI))
+// ParseVaultTx parses a transaction that is sent to the vault.
+func ParseVaultTx(ctx sdk.Context, keeper keeper.Keeper, chain string, eyesTx *etypes.Tx) *chainstypes.ParseResult {
+	vaultAbi, err := abi.JSON(strings.NewReader(vault.VaultABI))
 	if err != nil {
-		return nil, err
+		return &chainstypes.ParseResult{Error: err}
+	}
+
+	ethTx := &ethtypes.Transaction{}
+	err = ethTx.UnmarshalBinary(eyesTx.Serialized)
+	if err != nil {
+		log.Error("Failed to unmarshall eth tx. err =", err)
+		return &chainstypes.ParseResult{Error: err}
 	}
 
 	callData := ethTx.Data()
-	methodName, txParams, err := DecodeTxParams(gwAbi, callData)
+	if len(callData) < 4 {
+		// This is just a normal transfer
+		return &chainstypes.ParseResult{
+			Method: chainstypes.MethodNativeTransfer,
+		}
+	}
+
+	result := &chainstypes.ParseResult{}
+	methodName, txParams, err := DecodeTxParams(vaultAbi, callData)
 	if err != nil {
-		return nil, err
+		return &chainstypes.ParseResult{Error: err}
 	}
 
-	if methodName != "transferOut" && methodName != "transferOutMultiple" &&
-		methodName != "transferOutNonEvm" && methodName != "transferOutMultipleNonEvm" {
-		// This is not a transfer In function
-		return nil, nil
+	switch methodName {
+	case "transferOut":
+		result.Method = chainstypes.MethodTransferOut
+		result.TxIn, result.Error = parseEthTransferOut(ctx, keeper, ethTx, chain, txParams)
+	case "addSpender":
+		result.Method = chainstypes.MethodAddSpender
+	default:
+		result.Method = chainstypes.MethodUnknown
+		result.Error = fmt.Errorf("Unknown method %s", methodName)
 	}
 
+	return result
+}
+
+func parseEthTransferOut(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.Transaction, chain string,
+	txParams map[string]interface{}) (*types.TxIn, error) {
 	msg, err := ethTx.AsMessage(ethtypes.NewLondonSigner(ethTx.ChainId()), nil)
-
 	if err != nil {
 		return nil, err
 	}
@@ -49,11 +75,10 @@ func ParseEthTransferOut(ctx sdk.Context, ethTx *ethTypes.Transaction, srcChain 
 		return nil, err
 	}
 
-	// TODO: Optimize getting tokens
 	allTokens := keeper.GetAllTokens(ctx)
-	token := getTokenOnChain(allTokens, strings.ToLower(tokenAddr.String()), srcChain)
+	token := getTokenOnChain(allTokens, strings.ToLower(tokenAddr.String()), chain)
 	if token == nil {
-		return nil, fmt.Errorf("Cannot find token on chain %s with address %s", srcChain, strings.ToLower(tokenAddr.String()))
+		return nil, fmt.Errorf("Cannot find token on chain %s with address %s", chain, strings.ToLower(tokenAddr.String()))
 	}
 
 	destChain, ok := txParams["dstChain"].(string)
@@ -104,11 +129,6 @@ func getTokenOnChain(allTokens map[string]*types.Token, tokenAddr, targetChain s
 }
 
 func DecodeTxParams(abi abi.ABI, callData []byte) (string, map[string]interface{}, error) {
-	if len(callData) < 4 {
-		fmt.Println("len(callData) = ", len(callData))
-		return "", nil, fmt.Errorf("decodeTxParams: call data size is smaller than 4")
-	}
-
 	txParams := map[string]interface{}{}
 	m, err := abi.MethodById(callData[:4])
 	if err != nil {

@@ -5,7 +5,7 @@ import (
 
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
-	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
+	scardano "github.com/sisu-network/sisu/x/sisu/chains/cardano"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 )

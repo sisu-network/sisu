@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/sisu-network/sisu/contracts/eth/vault"
-	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
+	scardano "github.com/sisu-network/sisu/x/sisu/chains/cardano"
 
 	cgblockfrost "github.com/echovl/cardano-go/blockfrost"
 

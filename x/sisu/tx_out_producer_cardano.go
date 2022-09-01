@@ -6,7 +6,7 @@ import (
 	"math/big"
 
 	"github.com/sisu-network/sisu/common"
-	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
+	scardano "github.com/sisu-network/sisu/x/sisu/chains/cardano"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
