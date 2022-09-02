@@ -63,12 +63,13 @@ func (p *DefaultTxOutputProducer) processCardanoBatches(ctx sdk.Context, k keepe
 		p.signer,
 		types.TxOutType_TRANSFER_OUT,
 		&types.TxOutContent{
-			InHashes: inHashes,
 			OutChain: destChain,
 			OutHash:  hash.String(),
 			OutBytes: bz,
 		},
-		&types.TxOutInput{},
+		&types.TxOutInput{
+			TransferOutIds: inHashes,
+		},
 	)
 	outMgs = append(outMgs, outMsg)
 

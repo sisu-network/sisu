@@ -133,15 +133,15 @@ func TestPostedMessageManager(t *testing.T) {
 		ctx, mc := mockForPostedMessageManager()
 		pmm := mc.PostedMessageManager()
 
-		msg := &types.TxOutConfirmMsg{
+		msg := &types.TxOutResultMsg{
 			Signer: "signer",
-			Data:   &types.TxOutConfirm{},
+			Data:   &types.TxOutResult{},
 		}
 
 		process, hash := pmm.ShouldProcessMsg(ctx, msg)
 		require.True(t, process)
 
-		h := NewHandlerTxOutConfirm(mc)
+		h := NewHandlerTxOutResult(mc)
 		_, err := h.doTxOutConfirm(ctx, msg)
 		require.NoError(t, err)
 

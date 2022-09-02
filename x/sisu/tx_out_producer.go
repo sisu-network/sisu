@@ -124,10 +124,11 @@ func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context,
 		&types.TxOutContent{
 			OutChain: dstChain,
 			OutHash:  responseTx.EthTx.Hash().String(),
-			InHashes: inHashes,
 			OutBytes: responseTx.RawBytes,
 		},
-		&types.TxOutInput{},
+		&types.TxOutInput{
+			TransferOutIds: inHashes,
+		},
 	)
 	return []*types.TxOutMsg{outMsg}, nil
 }

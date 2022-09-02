@@ -508,24 +508,11 @@ func (a *ApiHandler) OnTxIncludedInBlock(txTrack *chainstypes.TrackUpdate) {
 		return
 	}
 
-	if txTrack.Result == chainstypes.TrackResultConfirmed {
-		a.confirmTx(txTrack, txOut)
-	} else {
-		// Tx is included in the block but fails to execute.
-
-	}
-}
-
-func (a *ApiHandler) confirmTx(txTrack *chainstypes.TrackUpdate, txOut *types.TxOut) {
-	log.Info("confirming tx: chain, hash, type = ", txTrack.Chain, " ", txTrack.Hash, " ", txOut.TxType)
-	a.txTracker.RemoveTransaction(txTrack.Chain, txOut.Content.OutHash)
-
-	txConfirm := &types.TxOutConfirm{
+	txConfirm := &types.TxOutResult{
 		OutChain:    txOut.Content.OutChain,
 		OutHash:     txOut.Content.OutHash,
 		BlockHeight: txTrack.BlockHeight,
 	}
-
 	if libchain.IsETHBasedChain(txTrack.Chain) {
 		ethTx := &ethtypes.Transaction{}
 		err := ethTx.UnmarshalBinary(txTrack.Bytes)
@@ -537,7 +524,15 @@ func (a *ApiHandler) confirmTx(txTrack *chainstypes.TrackUpdate, txOut *types.Tx
 		txConfirm.Nonce = int64(ethTx.Nonce()) + 1
 	}
 
-	msg := types.NewTxOutConfirmMsg(
+	if txTrack.Result == chainstypes.TrackResultConfirmed {
+		log.Info("confirming tx: chain, hash, type = ", txTrack.Chain, " ", txTrack.Hash, " ", txOut.TxType)
+		txConfirm.Result = types.TxOutResultType_IN_BLOCK_SUCCESS
+	} else {
+		// Tx is included in the block but fails to execute.
+		txConfirm.Result = types.TxOutResultType_IN_BLOCK_FAILURE
+	}
+
+	msg := types.NewTxOutResultMsg(
 		a.appKeys.GetSignerAddress().String(),
 		txConfirm,
 	)

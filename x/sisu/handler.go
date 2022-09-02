@@ -44,24 +44,14 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 			return NewHandlerTransferOut(mc).DeliverMsg(ctx, msg)
 		case *types.TxOutMsg:
 			return NewHandlerTxOut(mc).DeliverMsg(ctx, msg)
-		case *types.TxOutConfirmMsg:
-			return NewHandlerTxOutConfirm(mc).DeliverMsg(ctx, msg)
+		case *types.TxOutResultMsg:
+			return NewHandlerTxOutResult(mc).DeliverMsg(ctx, msg)
 		case *types.KeysignResult:
 			return NewHandlerKeysignResult(mc).DeliverMsg(ctx, msg)
 		case *types.GasPriceMsg:
 			return NewHandlerGasPrice(mc).DeliverMsg(ctx, msg)
 		case *types.UpdateTokenPrice:
 			return NewHandlerTokenPrice(mc).DeliverMsg(ctx, msg)
-		// case *types.PauseContractMsg:
-		// 	return NewHandlerPauseContract(mc).DeliverMsg(ctx, msg)
-		// case *types.ResumeContractMsg:
-		// 	return NewHandlerResumeContract(mc).DeliverMsg(ctx, msg)
-		// case *types.ChangeOwnershipContractMsg:
-		// 	return NewHandlerContractChangeOwnership(mc).DeliverMsg(ctx, msg)
-		// case *types.ChangeLiquidPoolAddressMsg:
-		// 	return NewHandlerContractSetLiquidityAddress(mc).DeliverMsg(ctx, msg)
-		// case *types.LiquidityWithdrawFundMsg:
-		// 	return NewHandlerContractLiquidityWithdrawFund(mc).DeliverMsg(ctx, msg)
 		case *types.BlockHeightMsg:
 			return NewHandlerBlockHeight(mc.Keeper()).DeliverMsg(ctx, msg)
 		case *types.TransferFailureMsg:

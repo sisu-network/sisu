@@ -21,13 +21,12 @@ message TxOut {
 message TxOutContent {
   string outChain = 1;
   string outHash = 2; // Id that identifies the txOut in the outChain
-
-  repeated string inHashes = 3;
-  bytes outBytes = 4;
+  bytes outBytes = 3;
 }
 
 message TxOutInput {
-
+  // For transferOut
+  repeated string transferOutIds = 1;
 }
 
 // TxOut with and full transaction hash (including signature) to look up TxOut when a new tx comes in.
@@ -35,16 +34,4 @@ message TxOutSig {
   string chain = 1;
   string hashWithSig = 2;
   string hashNoSig = 3;
-}
-
-message TxOutConfirmMsg {
-  string signer = 1;
-  TxOutConfirm data = 2;
-}
-
-message TxOutConfirm {
-  string outChain = 1;
-  string outHash = 2;
-  int64 blockHeight = 3;
-  int64 nonce = 4;
 }

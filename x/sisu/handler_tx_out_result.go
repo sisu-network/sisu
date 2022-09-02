@@ -9,15 +9,15 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-type HandlerTxOutConfirm struct {
+type HandlerTxOutResult struct {
 	pmm           PostedMessageManager
 	keeper        keeper.Keeper
 	deyesClient   tssclients.DeyesClient
 	transferQueue TransferQueue
 }
 
-func NewHandlerTxOutConfirm(mc ManagerContainer) *HandlerTxOutConfirm {
-	return &HandlerTxOutConfirm{
+func NewHandlerTxOutResult(mc ManagerContainer) *HandlerTxOutResult {
+	return &HandlerTxOutResult{
 		keeper:        mc.Keeper(),
 		pmm:           mc.PostedMessageManager(),
 		deyesClient:   mc.DeyesClient(),
@@ -25,7 +25,7 @@ func NewHandlerTxOutConfirm(mc ManagerContainer) *HandlerTxOutConfirm {
 	}
 }
 
-func (h *HandlerTxOutConfirm) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutConfirmMsg) (*sdk.Result, error) {
+func (h *HandlerTxOutResult) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutResultMsg) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
 		data, err := h.doTxOutConfirm(ctx, signerMsg)
 		h.keeper.ProcessTxRecord(ctx, hash)
@@ -36,7 +36,7 @@ func (h *HandlerTxOutConfirm) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOut
 	return &sdk.Result{}, nil
 }
 
-func (h *HandlerTxOutConfirm) doTxOutConfirm(ctx sdk.Context, msgWithSigner *types.TxOutConfirmMsg) ([]byte, error) {
+func (h *HandlerTxOutResult) doTxOutConfirm(ctx sdk.Context, msgWithSigner *types.TxOutResultMsg) ([]byte, error) {
 	msg := msgWithSigner.Data
 
 	log.Info("Delivering TxOutConfirm")
