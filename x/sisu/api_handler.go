@@ -282,7 +282,7 @@ func (a *ApiHandler) processCardanoSigningResult(ctx sdk.Context, result *dhtype
 	}
 
 	tx := &cardano.Tx{}
-	if err := tx.UnmarshalCBOR(txOut.OutBytes); err != nil {
+	if err := tx.UnmarshalCBOR(txOut.Content.OutBytes); err != nil {
 		log.Error("error when unmarshalling cardano tx: ", err)
 		return err
 	}
@@ -518,11 +518,11 @@ func (a *ApiHandler) OnTxIncludedInBlock(txTrack *chainstypes.TrackUpdate) {
 
 func (a *ApiHandler) confirmTx(txTrack *chainstypes.TrackUpdate, txOut *types.TxOut) {
 	log.Info("confirming tx: chain, hash, type = ", txTrack.Chain, " ", txTrack.Hash, " ", txOut.TxType)
-	a.txTracker.RemoveTransaction(txTrack.Chain, txOut.OutHash)
+	a.txTracker.RemoveTransaction(txTrack.Chain, txOut.Content.OutHash)
 
 	txConfirm := &types.TxOutConfirm{
-		OutChain:    txOut.OutChain,
-		OutHash:     txOut.OutHash,
+		OutChain:    txOut.Content.OutChain,
+		OutHash:     txOut.Content.OutHash,
 		BlockHeight: txTrack.BlockHeight,
 	}
 

@@ -13,15 +13,21 @@ message TxOutMsg {
 }
 
 message TxOut {
+  TxOutType txType = 1;
+  TxOutContent content = 2;
+  TxOutInput input = 3;
+}
+
+message TxOutContent {
   string outChain = 1;
   string outHash = 2; // Id that identifies the txOut in the outChain
 
-  TxOutType txType = 3;
-  repeated string inHashes = 4;
-  bytes outBytes = 5;
+  repeated string inHashes = 3;
+  bytes outBytes = 4;
+}
 
-  // optional contract hash
-  string contractHash = 6;
+message TxOutInput {
+
 }
 
 // TxOut with and full transaction hash (including signature) to look up TxOut when a new tx comes in.

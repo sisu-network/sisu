@@ -15,9 +15,11 @@ func TestKeeper_SaveAndGetTxOut(t *testing.T) {
 	txOutWithSigner := &types.TxOutMsg{
 		Signer: "signer",
 		Data: &types.TxOut{
-			OutChain: "bitcoin",
-			OutHash:  utils.RandomHeximalString(32),
-			OutBytes: []byte("Hash"),
+			Content: &types.TxOutContent{
+				OutChain: "bitcoin",
+				OutHash:  utils.RandomHeximalString(32),
+				OutBytes: []byte("Hash"),
+			},
 		},
 	}
 
@@ -30,11 +32,11 @@ func TestKeeper_SaveAndGetTxOut(t *testing.T) {
 
 	// Any chain in OutChain, BlockHeight, OutBytes would not retrieve the txOut.
 	other = *txOutWithSigner.Data
-	other.OutChain = "sisu"
+	other.Content.OutChain = "sisu"
 	require.Equal(t, false, keeper.IsTxOutExisted(ctx, &other))
 
 	other = *txOutWithSigner.Data
-	other.OutHash = utils.RandomHeximalString(48)
+	other.Content.OutHash = utils.RandomHeximalString(48)
 	require.Equal(t, false, keeper.IsTxOutExisted(ctx, &other))
 }
 

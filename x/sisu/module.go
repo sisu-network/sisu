@@ -114,7 +114,7 @@ type AppModule struct {
 	globalData      common.GlobalData
 	valsManager     ValidatorManager
 	txTracker       TxTracker
-	txOutSiger      *txOutSigner
+	txOutSigner     *txOutSigner
 	mc              ManagerContainer
 }
 
@@ -135,7 +135,7 @@ func NewAppModule(cdc codec.Marshaler,
 		globalData:     mc.GlobalData(),
 		valsManager:    valsManager,
 		txTracker:      mc.TxTracker(),
-		txOutSiger:     NewTxOutSigner(mc.Keeper(), mc.PartyManager(), mc.DheartClient()),
+		txOutSigner:    NewTxOutSigner(mc.Keeper(), mc.PartyManager(), mc.DheartClient()),
 		mc:             mc,
 	}
 }
@@ -308,15 +308,15 @@ func (am AppModule) signTxOut(ctx sdk.Context) {
 		}
 
 		txOut := queue[0]
-		am.keeper.SetPendingTxOutInfo(ctx, txOut.OutChain, &types.PendingTxOutInfo{
+		am.keeper.SetPendingTxOutInfo(ctx, txOut.Content.OutChain, &types.PendingTxOutInfo{
 			TxOut:        txOut,
 			ExpiredBlock: height + params.PendingTxTimeoutHeights[i],
 		})
-		am.keeper.SetTxOutQueue(ctx, txOut.OutChain, queue[1:])
+		am.keeper.SetTxOutQueue(ctx, txOut.Content.OutChain, queue[1:])
 
 		if !am.globalData.IsCatchingUp() {
-			log.Verbose("Signing txout hash = ", txOut.OutHash)
-			am.txOutSiger.signTxOut(ctx, txOut)
+			log.Verbose("Signing txout hash = ", txOut.Content.OutHash)
+			am.txOutSigner.signTxOut(ctx, txOut)
 		}
 	}
 }

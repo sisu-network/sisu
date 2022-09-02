@@ -32,33 +32,33 @@ func NewTxOutSigner(keeper keeper.Keeper, partyManager PartyManager,
 }
 
 func (s *txOutSigner) signTxOut(ctx sdk.Context, txOut *types.TxOut) {
-	if libchain.IsETHBasedChain(txOut.OutChain) {
+	if libchain.IsETHBasedChain(txOut.Content.OutChain) {
 		s.signEthTx(ctx, txOut)
 	}
 
-	if libchain.IsCardanoChain(txOut.OutChain) {
+	if libchain.IsCardanoChain(txOut.Content.OutChain) {
 		s.signCardanoTx(ctx, txOut)
 	}
 }
 
 // signEthTx sends a TxOut to dheart for TSS signing.
 func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
-	log.Info("Delivering TXOUT for chain ", tx.OutChain, " tx hash = ", tx.OutHash)
+	log.Info("Delivering TXOUT for chain ", tx.Content.OutChain, " tx hash = ", tx.Content.OutHash)
 	ethTx := &ethtypes.Transaction{}
-	if err := ethTx.UnmarshalBinary(tx.OutBytes); err != nil {
+	if err := ethTx.UnmarshalBinary(tx.Content.OutBytes); err != nil {
 		log.Error("cannot unmarshal tx, err =", err)
 		return err
 	}
 
-	signer := libchain.GetEthChainSigner(tx.OutChain)
+	signer := libchain.GetEthChainSigner(tx.Content.OutChain)
 	if signer == nil {
-		err := fmt.Errorf("cannot find signer for chain %s", tx.OutChain)
+		err := fmt.Errorf("cannot find signer for chain %s", tx.Content.OutChain)
 		log.Error(err)
 	}
 
-	checkPoint := s.keeper.GetGatewayCheckPoint(ctx, tx.OutChain)
+	checkPoint := s.keeper.GetGatewayCheckPoint(ctx, tx.Content.OutChain)
 	if checkPoint == nil {
-		err := fmt.Errorf("cannot find gateway checkout for chain %s", tx.OutChain)
+		err := fmt.Errorf("cannot find gateway checkout for chain %s", tx.Content.OutChain)
 		return err
 	}
 
@@ -81,9 +81,9 @@ func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
 		KeyType: libchain.KEY_TYPE_ECDSA,
 		KeysignMessages: []*hTypes.KeysignMessage{
 			{
-				Id:          s.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), tx.OutHash),
-				OutChain:    tx.OutChain,
-				OutHash:     tx.OutHash,
+				Id:          s.getKeysignRequestId(tx.Content.OutChain, ctx.BlockHeight(), tx.Content.OutHash),
+				OutChain:    tx.Content.OutChain,
+				OutHash:     tx.Content.OutHash,
 				Bytes:       bz,
 				BytesToSign: hash[:],
 			},
@@ -102,7 +102,7 @@ func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
 
 func (s *txOutSigner) signCardanoTx(ctx sdk.Context, txOut *types.TxOut) {
 	tx := &cardano.Tx{}
-	if err := tx.UnmarshalCBOR(txOut.OutBytes); err != nil {
+	if err := tx.UnmarshalCBOR(txOut.Content.OutBytes); err != nil {
 		log.Error("error when unmarshalling cardano tx out: ", err)
 		return
 	}
@@ -117,9 +117,9 @@ func (s *txOutSigner) signCardanoTx(ctx sdk.Context, txOut *types.TxOut) {
 		KeyType: libchain.KEY_TYPE_EDDSA,
 		KeysignMessages: []*hTypes.KeysignMessage{
 			{
-				Id:          s.getKeysignRequestId(txOut.OutChain, ctx.BlockHeight(), txOut.OutHash),
-				OutChain:    txOut.OutChain,
-				OutHash:     txOut.OutHash,
+				Id:          s.getKeysignRequestId(txOut.Content.OutChain, ctx.BlockHeight(), txOut.Content.OutHash),
+				OutChain:    txOut.Content.OutChain,
+				OutHash:     txOut.Content.OutHash,
 				BytesToSign: txHash[:],
 			},
 		},

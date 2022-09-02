@@ -50,8 +50,10 @@ func mockTxOutWithSignerForPostedMessageManager() *types.TxOutMsg {
 	txOutWithSigner := &types.TxOutMsg{
 		Signer: "signer",
 		Data: &types.TxOut{
-			OutChain: "ganache1",
-			OutBytes: binary,
+			Content: &types.TxOutContent{
+				OutChain: "ganache1",
+				OutBytes: binary,
+			},
 		},
 	}
 
@@ -109,7 +111,9 @@ func TestPostedMessageManager(t *testing.T) {
 		msg := &types.TxOutMsg{
 			Signer: "signer",
 			Data: &types.TxOut{
-				OutChain: "ganache1",
+				Content: &types.TxOutContent{
+					OutChain: "ganache1",
+				},
 			},
 		}
 

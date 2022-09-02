@@ -37,19 +37,25 @@ func TestModule_signTxOut(t *testing.T) {
 	require.Nil(t, err)
 
 	txOut1_1 := &types.TxOut{
-		OutChain: "ganache1",
-		OutHash:  "hash1_1",
-		OutBytes: bz,
+		Content: &types.TxOutContent{
+			OutChain: "ganache1",
+			OutHash:  "hash1_1",
+			OutBytes: bz,
+		},
 	}
 	txOut1_2 := &types.TxOut{
-		OutChain: "ganache1",
-		OutHash:  "hash1_2",
-		OutBytes: bz,
+		Content: &types.TxOutContent{
+			OutChain: "ganache1",
+			OutHash:  "hash1_2",
+			OutBytes: bz,
+		},
 	}
 	txOut2_1 := &types.TxOut{
-		OutChain: "ganache2",
-		OutHash:  "hash2_1",
-		OutBytes: bz,
+		Content: &types.TxOutContent{
+			OutChain: "ganache2",
+			OutHash:  "hash2_1",
+			OutBytes: bz,
+		},
 	}
 
 	kpr.SetTxOutQueue(ctx, "ganache1", []*types.TxOut{txOut1_1, txOut1_2})

@@ -244,7 +244,7 @@ func getAllKeygenResult(store cstypes.KVStore, keygenType string, index int32) [
 
 ///// TxOut
 func saveTxOut(store cstypes.KVStore, msg *types.TxOut) {
-	key := getTxOutKey(msg.OutChain, msg.OutHash)
+	key := getTxOutKey(msg.Content.OutChain, msg.Content.OutHash)
 	bz, err := msg.Marshal()
 	if err != nil {
 		log.Error("Cannot marshal tx out")
@@ -255,7 +255,7 @@ func saveTxOut(store cstypes.KVStore, msg *types.TxOut) {
 }
 
 func isTxOutExisted(store cstypes.KVStore, msg *types.TxOut) bool {
-	key := getTxOutKey(msg.OutChain, msg.OutHash)
+	key := getTxOutKey(msg.Content.OutChain, msg.Content.OutHash)
 	return store.Has(key)
 }
 
@@ -792,7 +792,7 @@ func setPendingTxOut(store cstypes.KVStore, chain string, txOutInfo *types.Pendi
 		return
 	}
 
-	store.Set([]byte(txOutInfo.TxOut.OutChain), bz)
+	store.Set([]byte(txOutInfo.TxOut.Content.OutChain), bz)
 }
 
 func getPendingTxOutInfo(store cstypes.KVStore, chain string) *types.PendingTxOutInfo {

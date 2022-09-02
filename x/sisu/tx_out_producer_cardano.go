@@ -62,20 +62,15 @@ func (p *DefaultTxOutputProducer) processCardanoBatches(ctx sdk.Context, k keepe
 	outMsg := types.NewTxOutMsg(
 		p.signer,
 		types.TxOutType_TRANSFER_OUT,
-		inHashes,
-		destChain,
-		hash.String(),
-		bz,
-		"",
+		&types.TxOutContent{
+			InHashes: inHashes,
+			OutChain: destChain,
+			OutHash:  hash.String(),
+			OutBytes: bz,
+		},
+		&types.TxOutInput{},
 	)
 	outMgs = append(outMgs, outMsg)
-
-	// TODO: Make this track multiple transactions.
-	// // Track the txout
-	// p.txTracker.AddTransaction(
-	// 	outMsg.Data,
-	// 	transfer.txIn,
-	// )
 
 	return outMgs, nil
 }

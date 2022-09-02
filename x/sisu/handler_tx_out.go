@@ -54,9 +54,9 @@ func (h *HandlerTxOut) handlerTransfer(ctx sdk.Context, txOut *types.TxOut) {
 	h.addTxOutToQueue(ctx, txOut)
 
 	// 2. Remove the transfers in txOut from the queue
-	queue := h.keeper.GetTransferQueue(ctx, txOut.OutChain)
+	queue := h.keeper.GetTransferQueue(ctx, txOut.Content.OutChain)
 	ids := make(map[string]bool, 0)
-	for _, inHash := range txOut.InHashes {
+	for _, inHash := range txOut.Content.InHashes {
 		ids[inHash] = true
 	}
 
@@ -67,12 +67,12 @@ func (h *HandlerTxOut) handlerTransfer(ctx sdk.Context, txOut *types.TxOut) {
 		}
 	}
 
-	h.keeper.SetTransferQueue(ctx, txOut.OutChain, newQueue)
+	h.keeper.SetTransferQueue(ctx, txOut.Content.OutChain, newQueue)
 }
 
 func (h *HandlerTxOut) addTxOutToQueue(ctx sdk.Context, txOut *types.TxOut) {
 	// Move the the transfers associated with this tx_out to pending.
-	queue := h.keeper.GetTxOutQueue(ctx, txOut.OutChain)
+	queue := h.keeper.GetTxOutQueue(ctx, txOut.Content.OutChain)
 	queue = append(queue, txOut)
-	h.keeper.SetTxOutQueue(ctx, txOut.OutChain, queue)
+	h.keeper.SetTxOutQueue(ctx, txOut.Content.OutChain, queue)
 }
