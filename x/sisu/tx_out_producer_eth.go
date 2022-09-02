@@ -11,48 +11,10 @@ import (
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/utils"
-	"github.com/sisu-network/sisu/x/sisu/chains/eth"
 	"github.com/sisu-network/sisu/x/sisu/helper"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
-
-func parseTransferInData(ethTx *ethTypes.Transaction) ([]*transferInData, error) {
-	vaultContract := SupportedContracts[ContractVault]
-	gwAbi := vaultContract.Abi
-	callData := ethTx.Data()
-	_, txParams, err := eth.DecodeTxParams(gwAbi, callData)
-	if err != nil {
-		return nil, err
-	}
-
-	token, ok := txParams["token"].(ethcommon.Address)
-	if !ok {
-		err := fmt.Errorf("parseTransferInData: cannot convert _token to type ethcommon.Address: %v", txParams)
-		return nil, err
-	}
-
-	recipient, ok := txParams["to"].(ethcommon.Address)
-	if !ok {
-		err := fmt.Errorf("parseTransferInData: cannot convert _recipient to type ethcommon.Address: %v", txParams)
-		return nil, err
-	}
-
-	amount, ok := txParams["amount"].(*big.Int)
-	if !ok {
-		err := fmt.Errorf("parseTransferInData: cannot convert _amount to type *big.Int: %v", txParams)
-		return nil, err
-	}
-
-	txIns := make([]*transferInData, 1)
-	txIns[0] = &transferInData{
-		token:     token,
-		recipient: recipient.String(),
-		amount:    amount,
-	}
-
-	return txIns, nil
-}
 
 func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	ctx sdk.Context,
