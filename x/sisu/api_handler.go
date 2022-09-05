@@ -376,6 +376,11 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 
 	// Create TxIn messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {
+		if !tx.Success {
+			log.Verbose("Failed incoming transaction (not our fault), hash = ", tx.Hash, ", chain = ", txs.Chain)
+			continue
+		}
+
 		// Check if this is a transaction from our sisu. If true, ignore it.
 		sisu := a.keeper.GetMpcAddress(ctx, txs.Chain)
 		if sisu == tx.From {

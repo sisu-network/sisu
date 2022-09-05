@@ -169,13 +169,15 @@ func (c *DeployContractCmd) deployErc20(client *ethclient.Client, mnemonic strin
 		panic(err)
 	}
 
-	if len(expectedAddress) > 0 && contractAddr.String() != expectedAddress {
+	contractAddrString := strings.ToLower(contractAddr.String())
+
+	if len(expectedAddress) > 0 && contractAddrString != expectedAddress {
 		panic(fmt.Errorf(`Unmatched ERC20 address. We expect address %s but get %s.
 You need to update the expected address (both in this file and the tokens_dev.json).`,
-			expectedAddress, contractAddr.String()))
+			expectedAddress, contractAddrString))
 	}
 
-	log.Info("Deployed contract successfully, addr: ", contractAddr.String())
+	log.Info("Deployed contract successfully, addr: ", contractAddrString)
 
 	return contractAddr
 }

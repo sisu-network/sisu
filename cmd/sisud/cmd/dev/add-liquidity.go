@@ -78,7 +78,7 @@ func (c *AddLiquidityCmd) approveAndAddLiquidity(urlString, mnemonic, tokenAddrS
 
 				balance, _ = queryErc20Balance(client, tokenAddrs[i], vaultAddrs[i])
 			} else {
-				log.Infof("Vault received %s tokens (%s) \n", balance.String(), tokenAddrs[i])
+				log.Infof("Vault received %s tokens (%s)", balance.String(), tokenAddrs[i])
 			}
 		}(i, client)
 	}

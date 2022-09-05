@@ -56,7 +56,7 @@ func (h *HandlerTxOut) handlerTransfer(ctx sdk.Context, txOut *types.TxOut) {
 	// 2. Remove the transfers in txOut from the queue
 	queue := h.keeper.GetTransferQueue(ctx, txOut.Content.OutChain)
 	ids := make(map[string]bool, 0)
-	for _, inHash := range txOut.Input.TransferOutIds {
+	for _, inHash := range txOut.Input.TransferIds {
 		ids[inHash] = true
 	}
 

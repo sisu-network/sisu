@@ -55,7 +55,7 @@ transfer params.
 			dst, _ := cmd.Flags().GetString(flags.Dst)
 			tokenSymbol, _ := cmd.Flags().GetString(flags.Erc20Symbol)
 			recipient, _ := cmd.Flags().GetString(flags.Account)
-			unit, _ := cmd.Flags().GetInt(flags.Amount)
+			amount, _ := cmd.Flags().GetInt(flags.Amount)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 			cardanoNetwork, _ := cmd.Flags().GetInt(flags.CardanoNetwork)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
@@ -82,18 +82,20 @@ transfer params.
 			// Swapping from ETH chain
 			if libchain.IsETHBasedChain(src) {
 				vault := c.getVaultAddress(cmd.Context(), src, sisuRpc)
-				amount := big.NewInt(int64(unit))
-				amount = new(big.Int).Mul(amount, utils.EthToWei)
+				amountBigInt := big.NewInt(int64(amount))
+				amountBigInt = new(big.Int).Mul(amountBigInt, utils.EthToWei)
 
-				c.swapFromEth(client, mnemonic, vault, dst, srcToken, dstToken, recipient, amount)
+				fmt.Println("Vault address = ", vault)
+
+				c.swapFromEth(client, mnemonic, vault, dst, srcToken, dstToken, recipient, amountBigInt)
 			} else if libchain.IsCardanoChain(src) {
 				gateway := c.getCardanoGateway(cmd.Context(), sisuRpc)
 				log.Info("Cardano gateway = ", gateway)
 
-				amount := big.NewInt(int64(unit))
-				amount = new(big.Int).Mul(amount, utils.ONE_ADA_IN_LOVELACE)
+				amountBigInt := big.NewInt(int64(amount))
+				amountBigInt = new(big.Int).Mul(amountBigInt, utils.ONE_ADA_IN_LOVELACE)
 
-				c.swapFromCardano(src, dst, token, recipient, gateway, amount, cardano.Network(cardanoNetwork),
+				c.swapFromCardano(src, dst, token, recipient, gateway, amountBigInt, cardano.Network(cardanoNetwork),
 					cardanoSecret, mnemonic)
 			}
 

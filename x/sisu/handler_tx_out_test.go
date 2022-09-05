@@ -30,7 +30,7 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 				OutBytes: []byte{},
 			},
 			Input: &types.TxOutInput{
-				TransferOutIds: []string{fmt.Sprintf("%s__%s", "ganache1", "hash1")},
+				TransferIds: []string{fmt.Sprintf("%s__%s", "ganache1", "hash1")},
 			},
 		},
 	}
@@ -65,7 +65,7 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 
 		// We are not processing the second request since we have some tx in the pending transfer queue.
 		txOutMsg2 := &(*txOutMsg1)
-		txOutMsg2.Data.Input.TransferOutIds = []string{fmt.Sprintf("%s__%s", "ganache1", "hash2")}
+		txOutMsg2.Data.Input.TransferIds = []string{fmt.Sprintf("%s__%s", "ganache1", "hash2")}
 		handler = NewHandlerTxOut(mc)
 		_, err = handler.DeliverMsg(ctx, txOutMsg2)
 		require.NoError(t, err)

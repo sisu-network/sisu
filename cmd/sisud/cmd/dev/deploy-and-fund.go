@@ -24,7 +24,6 @@ func DeployAndFund() *cobra.Command {
 			chainUrls, _ := cmd.Flags().GetString(flags.ChainUrls)
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
-			vaultString, _ := cmd.Flags().GetString(flags.ExpectedVaultAddrs)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 			cardanoNetwork, _ := cmd.Flags().GetString(flags.CardanoNetwork)
 
@@ -34,6 +33,12 @@ func DeployAndFund() *cobra.Command {
 
 			// Deploy ERC20 And liquidity pool
 			deployContractCmd := &DeployContractCmd{}
+
+			// Deploy vault
+			log.Info("========= Deploying Vault =========")
+			vaultAddrs := deployContractCmd.doDeployment(chainUrls, "vault", mnemonic, fmt.Sprintf("%s,%s", ExpectedVaultAddress, ExpectedVaultAddress), "", "")
+			vaultString := strings.Join(vaultAddrs, ",")
+
 			// Deploy Sisu and ADA tokens
 			sisuAddrs := deployContractCmd.doDeployment(chainUrls, "erc20", mnemonic, fmt.Sprintf("%s,%s", ExpectedSisuAddress, ExpectedSisuAddress), "Sisu Token", "SISU")
 			adaAddrs := deployContractCmd.doDeployment(chainUrls, "erc20", mnemonic, fmt.Sprintf("%s,%s", ExpectedAdaAddress, ExpectedAdaAddress), "Ada Token", "ADA")
@@ -70,7 +75,6 @@ func DeployAndFund() *cobra.Command {
 	cmd.Flags().String(flags.ChainUrls, "http://0.0.0.0:7545,http://0.0.0.0:8545", "RPCs of all the chains we want to fund.")
 	cmd.Flags().String(flags.Chains, "ganache1,ganache2", "Names of all chains we want to fund.")
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
-	cmd.Flags().String(flags.ExpectedVaultAddrs, fmt.Sprintf("%s,%s", ExpectedVaultAddress, ExpectedVaultAddress), "Expected addressed of the contract after deployment. Empty string means do not check for address match.")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 	cmd.Flags().String(flags.CardanoNetwork, "cardano-testnet", "The Cardano network that we are interacting with.")
 

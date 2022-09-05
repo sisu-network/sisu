@@ -32,7 +32,10 @@ type defaultTransferQueue struct {
 	txSubmit         common.TxSubmit
 	stopCh           chan bool
 	appKeys          common.AppKeys
-	submittedTxs     map[string]bool
+	// A map from chain -> bool. This indicates this transfer queue created some txOut for chain X
+	// but the tx out is not "delivered" yet. This prevents the queue create the same txOut again
+	// in the next block.
+	submittedTxs map[string]bool
 
 	newRequestCh chan TransferRequest
 	lock         *sync.RWMutex
@@ -92,6 +95,11 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 		if pendingInfo != nil {
 			// Don't try to create new txouts while there are some pending tx.
 			log.Verbosef("Transfer queue: chain %s has some pending tx", chain)
+			q.submittedTxs[chain] = false
+			continue
+		}
+
+		if q.submittedTxs[chain] {
 			continue
 		}
 
@@ -121,6 +129,7 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 
 		if len(txOutMsgs) > 0 {
 			log.Infof("Broadcasting txout with length %d on chain %s", len(txOutMsgs), chain)
+			q.submittedTxs[chain] = true
 			for _, txOutMsg := range txOutMsgs {
 				q.txSubmit.SubmitMessageAsync(txOutMsg)
 			}

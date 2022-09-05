@@ -47,6 +47,8 @@ func (h *HandlerTxOutResult) doTxOutResult(ctx sdk.Context, msgWithSigner *types
 		return nil, nil
 	}
 
+	log.Verbose("msg.Result = ", msg.Result)
+
 	switch msg.Result {
 	case types.TxOutResultType_IN_BLOCK_SUCCESS:
 		return h.doTxOutConfirm(ctx, msg, txOut)
