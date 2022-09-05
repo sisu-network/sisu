@@ -28,4 +28,7 @@ message Transfer {
   // Destination
   string to_chain = 8;
   string to_recipient = 9;
+
+  // Retry number
+  int32 retryNum = 10;
 }

@@ -85,8 +85,9 @@ type Keeper interface {
 	GetCommandQueue(ctx sdk.Context, chain string) []*types.Command
 
 	// Transfer
-	AddTransfer(ctx sdk.Context, transfers *types.Transfers)
+	AddTransfer(ctx sdk.Context, transfers []*types.Transfer)
 	GetTransfer(ctx sdk.Context, id string) *types.Transfer
+	GetTransfers(ctx sdk.Context, ids []string) []*types.Transfer
 
 	// Transfer Queue
 	SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.Transfer)
@@ -323,14 +324,19 @@ func (k *DefaultKeeper) GetCommandQueue(ctx sdk.Context, chain string) []*types.
 }
 
 ///// Transfer
-func (k *DefaultKeeper) AddTransfer(ctx sdk.Context, transfers *types.Transfers) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferOut)
-	addTransfer(store, transfers)
+func (k *DefaultKeeper) AddTransfer(ctx sdk.Context, transfers []*types.Transfer) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
+	addTransfers(store, transfers)
 }
 
 func (k *DefaultKeeper) GetTransfer(ctx sdk.Context, id string) *types.Transfer {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferOut)
-	return getTransfer(store, id)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
+	return getTransfers(store, []string{id})[0]
+}
+
+func (k *DefaultKeeper) GetTransfers(ctx sdk.Context, ids []string) []*types.Transfer {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
+	return getTransfers(store, ids)
 }
 
 ///// Transfer Queue

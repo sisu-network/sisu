@@ -60,6 +60,8 @@ func (h *HandlerTxOutResult) doTxOutResult(ctx sdk.Context, msgWithSigner *types
 }
 
 func (h *HandlerTxOutResult) doTxOutConfirm(ctx sdk.Context, msg *types.TxOutResult, txOut *types.TxOut) ([]byte, error) {
+	log.Verbose("Transaction is successfully included in a block, hash = ", msg.OutHash, " chain = ", msg.OutChain)
+
 	savedCheckPoint := h.keeper.GetGatewayCheckPoint(ctx, msg.OutChain)
 	if savedCheckPoint == nil || savedCheckPoint.BlockHeight < msg.BlockHeight {
 		// Save checkpoint
@@ -86,8 +88,25 @@ func (h *HandlerTxOutResult) doTxOutConfirm(ctx sdk.Context, msg *types.TxOutRes
 func (h *HandlerTxOutResult) doTxOutFailure(ctx sdk.Context, msg *types.TxOutResult, txOut *types.TxOut) ([]byte, error) {
 	switch txOut.TxType {
 	case types.TxOutType_TRANSFER_OUT:
-		// Put the transaction back into the transfer queue.
+		ids := txOut.Input.TransferIds
+		transfers := h.keeper.GetTransfers(ctx, ids)
+		transferQ := h.keeper.GetTransferQueue(ctx, msg.OutChain)
+
+		// Update the retry number of these transfers.
+		for _, transfer := range transfers {
+			transfer.RetryNum++
+			h.keeper.AddTransfer(ctx, []*types.Transfer{transfer})
+
+			// Put the transaction back into the transfer queue.
+			transferQ = append(transferQ, transfer)
+		}
+
+		h.keeper.SetTransferQueue(ctx, msg.OutChain, transferQ)
 	}
+
+	// Clear the pending TxOut
+	log.Verbose("Clearing pending out for chain ", txOut.Content.OutChain)
+	h.keeper.SetPendingTxOutInfo(ctx, txOut.Content.OutChain, nil)
 
 	return nil, nil
 }

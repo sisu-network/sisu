@@ -29,7 +29,7 @@ var (
 	prefixTxOutQueue             = []byte{0x15}
 	prefixPendingTxOut           = []byte{0x16}
 	prefixCommandQueue           = []byte{0x17}
-	prefixTransferOut            = []byte{0x18}
+	prefixTransfer               = []byte{0x18}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -714,8 +714,8 @@ func getCommandQueue(store cstypes.KVStore, chain string) []*types.Command {
 }
 
 ///// Transfer
-func addTransfer(store cstypes.KVStore, transfers *types.Transfers) {
-	for _, transfer := range transfers.Transfers {
+func addTransfers(store cstypes.KVStore, transfers []*types.Transfer) {
+	for _, transfer := range transfers {
 		bz, err := transfer.Marshal()
 		if err != nil {
 			log.Error("addTransfer: failed to marshal transfer, err = ", err)
@@ -726,20 +726,26 @@ func addTransfer(store cstypes.KVStore, transfers *types.Transfers) {
 	}
 }
 
-func getTransfer(store cstypes.KVStore, id string) *types.Transfer {
-	bz := store.Get([]byte(id))
-	if bz == nil {
-		return nil
+func getTransfers(store cstypes.KVStore, ids []string) []*types.Transfer {
+	transfers := make([]*types.Transfer, 0)
+
+	for i, id := range ids {
+		bz := store.Get([]byte(id))
+		if bz == nil {
+			transfers[i] = nil
+			continue
+		}
+
+		transfer := &types.Transfer{}
+		err := transfer.Unmarshal(bz)
+		if err != nil {
+			log.Error("getTransfer: Failed to unmarshal transfer out, err = ", err)
+			transfers[i] = nil
+			continue
+		}
 	}
 
-	transfer := &types.Transfer{}
-	err := transfer.Unmarshal(bz)
-	if err != nil {
-		log.Error("getTransfer: Failed to unmarshal transfer out, err = ", err)
-		return nil
-	}
-
-	return transfer
+	return transfers
 }
 
 ///// Transfer Queue

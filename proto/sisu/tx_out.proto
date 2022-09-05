@@ -22,6 +22,7 @@ message TxOutContent {
   string outChain = 1;
   string outHash = 2; // Id that identifies the txOut in the outChain
   bytes outBytes = 3;
+  int32 retryNum = 4;
 }
 
 message TxOutInput {
