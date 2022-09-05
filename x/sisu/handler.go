@@ -40,8 +40,8 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 			return NewHandlerKeygen(mc).DeliverMsg(ctx, msg)
 		case *types.KeygenResultWithSigner:
 			return NewHandlerKeygenResult(mc).DeliverMsg(ctx, msg)
-		case *types.TransferOutsMsg:
-			return NewHandlerTransferOut(mc).DeliverMsg(ctx, msg)
+		case *types.TransfersMsg:
+			return NewHandlerTransfers(mc).DeliverMsg(ctx, msg)
 		case *types.TxOutMsg:
 			return NewHandlerTxOut(mc).DeliverMsg(ctx, msg)
 		case *types.TxOutResultMsg:

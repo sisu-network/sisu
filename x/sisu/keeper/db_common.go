@@ -29,6 +29,7 @@ var (
 	prefixTxOutQueue             = []byte{0x15}
 	prefixPendingTxOut           = []byte{0x16}
 	prefixCommandQueue           = []byte{0x17}
+	prefixTransferOut            = []byte{0x18}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -252,11 +253,6 @@ func saveTxOut(store cstypes.KVStore, msg *types.TxOut) {
 	}
 
 	store.Set(key, bz)
-}
-
-func isTxOutExisted(store cstypes.KVStore, msg *types.TxOut) bool {
-	key := getTxOutKey(msg.Content.OutChain, msg.Content.OutHash)
-	return store.Has(key)
 }
 
 func getTxOut(store cstypes.KVStore, outChain, hash string) *types.TxOut {
@@ -717,10 +713,38 @@ func getCommandQueue(store cstypes.KVStore, chain string) []*types.Command {
 	return cmds.List
 }
 
+///// Transfer
+func addTransfer(store cstypes.KVStore, transfers *types.Transfers) {
+	for _, transfer := range transfers.Transfers {
+		bz, err := transfer.Marshal()
+		if err != nil {
+			log.Error("addTransfer: failed to marshal transfer, err = ", err)
+			continue
+		}
+
+		store.Set([]byte(transfer.Id), bz)
+	}
+}
+
+func getTransfer(store cstypes.KVStore, id string) *types.Transfer {
+	bz := store.Get([]byte(id))
+	if bz == nil {
+		return nil
+	}
+
+	transfer := &types.Transfer{}
+	err := transfer.Unmarshal(bz)
+	if err != nil {
+		log.Error("getTransfer: Failed to unmarshal transfer out, err = ", err)
+		return nil
+	}
+
+	return transfer
+}
+
 ///// Transfer Queue
-func setTranfers(store cstypes.KVStore, chain string, transfers []*types.Transfer) {
-	transferBatch := &types.TransferBatch{
-		Chain:     chain,
+func setTranferQueue(store cstypes.KVStore, chain string, transfers []*types.Transfer) {
+	transferBatch := &types.Transfers{
 		Transfers: transfers,
 	}
 
@@ -733,13 +757,13 @@ func setTranfers(store cstypes.KVStore, chain string, transfers []*types.Transfe
 	store.Set([]byte(chain), bz)
 }
 
-func getTransfers(store cstypes.KVStore, chain string) []*types.Transfer {
+func getTransferQueue(store cstypes.KVStore, chain string) []*types.Transfer {
 	bz := store.Get([]byte(chain))
 	if bz == nil {
-		return nil
+		return []*types.Transfer{}
 	}
 
-	batch := &types.TransferBatch{}
+	batch := &types.Transfers{}
 	err := batch.Unmarshal(bz)
 	if err != nil {
 		log.Error("getTransferQueue: failed to unmarshal batch")

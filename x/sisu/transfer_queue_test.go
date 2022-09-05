@@ -46,10 +46,10 @@ func TestTransferQueue(t *testing.T) {
 		queue := NewTransferQueue(mc.Keeper(), mc.TxOutProducer(), mc.TxSubmit(),
 			mc.Config(), nil).(*defaultTransferQueue)
 		transfer := &types.Transfer{
-			Id:        "ganache1__hash1",
-			Recipient: "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80",
-			Token:     "SISU",
-			Amount:    utils.EthToWei.String(),
+			Id:          "ganache1__hash1",
+			ToRecipient: "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80",
+			Token:       "SISU",
+			Amount:      utils.EthToWei.String(),
 		}
 
 		keeper.SetTransferQueue(ctx, "ganache2", []*types.Transfer{transfer})

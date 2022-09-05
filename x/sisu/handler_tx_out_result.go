@@ -27,7 +27,7 @@ func NewHandlerTxOutResult(mc ManagerContainer) *HandlerTxOutResult {
 
 func (h *HandlerTxOutResult) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutResultMsg) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
-		data, err := h.doTxOutConfirm(ctx, signerMsg)
+		data, err := h.doTxOutResult(ctx, signerMsg)
 		h.keeper.ProcessTxRecord(ctx, hash)
 
 		return &sdk.Result{Data: data}, err
@@ -36,11 +36,10 @@ func (h *HandlerTxOutResult) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutR
 	return &sdk.Result{}, nil
 }
 
-func (h *HandlerTxOutResult) doTxOutConfirm(ctx sdk.Context, msgWithSigner *types.TxOutResultMsg) ([]byte, error) {
+func (h *HandlerTxOutResult) doTxOutResult(ctx sdk.Context, msgWithSigner *types.TxOutResultMsg) ([]byte, error) {
+	log.Info("Delivering TxOutResult")
+
 	msg := msgWithSigner.Data
-
-	log.Info("Delivering TxOutConfirm")
-
 	txOut := h.keeper.GetTxOut(ctx, msg.OutChain, msg.OutHash)
 	if txOut == nil {
 		log.Critical("cannot find txout from txOutConfirm message, chain & hash = ",
@@ -48,6 +47,17 @@ func (h *HandlerTxOutResult) doTxOutConfirm(ctx sdk.Context, msgWithSigner *type
 		return nil, nil
 	}
 
+	switch msg.Result {
+	case types.TxOutResultType_IN_BLOCK_SUCCESS:
+		return h.doTxOutConfirm(ctx, msg, txOut)
+	case types.TxOutResultType_IN_BLOCK_FAILURE:
+		return h.doTxOutFailure(ctx, msg, txOut)
+	}
+
+	return nil, nil
+}
+
+func (h *HandlerTxOutResult) doTxOutConfirm(ctx sdk.Context, msg *types.TxOutResult, txOut *types.TxOut) ([]byte, error) {
 	savedCheckPoint := h.keeper.GetGatewayCheckPoint(ctx, msg.OutChain)
 	if savedCheckPoint == nil || savedCheckPoint.BlockHeight < msg.BlockHeight {
 		// Save checkpoint
@@ -67,6 +77,15 @@ func (h *HandlerTxOutResult) doTxOutConfirm(ctx sdk.Context, msgWithSigner *type
 	// Clear the pending TxOut
 	log.Verbose("Clearing pending out for chain ", txOut.Content.OutChain)
 	h.keeper.SetPendingTxOutInfo(ctx, txOut.Content.OutChain, nil)
+
+	return nil, nil
+}
+
+func (h *HandlerTxOutResult) doTxOutFailure(ctx sdk.Context, msg *types.TxOutResult, txOut *types.TxOut) ([]byte, error) {
+	switch txOut.TxType {
+	case types.TxOutType_TRANSFER_OUT:
+		// Put the transaction back into the transfer queue.
+	}
 
 	return nil, nil
 }

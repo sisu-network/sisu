@@ -99,7 +99,7 @@ func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, chain string, tr
 	}
 	for _, transfer := range transfers {
 		// Receivers
-		receiverAddr, err := cardano.NewAddress(transfer.Recipient)
+		receiverAddr, err := cardano.NewAddress(transfer.ToRecipient)
 		if err != nil {
 			log.Error("error when parsing receiver addr: ", err)
 			continue

@@ -31,17 +31,17 @@ func TestHandlerTransferOut_HappyCase(t *testing.T) {
 		hash1 := "123"
 		amount := "10000"
 
-		handler := NewHandlerTransferOut(mc)
-		msg := types.NewTransferOutsMsg("signer", &types.TransferOuts{
-			Chain:  srcChain,
-			Height: 10,
-			Requests: []*types.TransferOut{
+		handler := NewHandlerTransfers(mc)
+		msg := types.NewTransfersMsg("signer", &types.Transfers{
+			Transfers: []*types.Transfer{
 				{
-					ToChain:   destChain,
-					Token:     token,
-					Hash:      hash1,
-					Recipient: recipient,
-					Amount:    amount,
+					FromChain:       srcChain,
+					FromBlockHeight: 10,
+					ToChain:         destChain,
+					Token:           token,
+					FromHash:        hash1,
+					ToRecipient:     recipient,
+					Amount:          amount,
 				},
 			},
 		})
@@ -53,10 +53,10 @@ func TestHandlerTransferOut_HappyCase(t *testing.T) {
 		queue := keeper.GetTransferQueue(ctx, destChain)
 		require.Equal(t, []*types.Transfer{
 			{
-				Id:        fmt.Sprintf("%s__%s", srcChain, hash1),
-				Recipient: recipient,
-				Token:     token,
-				Amount:    amount,
+				Id:          fmt.Sprintf("%s__%s", srcChain, hash1),
+				ToRecipient: recipient,
+				Token:       token,
+				Amount:      amount,
 			},
 		}, queue)
 
@@ -64,17 +64,17 @@ func TestHandlerTransferOut_HappyCase(t *testing.T) {
 		hash2 := "456"
 		recipient2 := "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80"
 		token2 := "ADA"
-		handler = NewHandlerTransferOut(mc)
-		msg = types.NewTransferOutsMsg("signer", &types.TransferOuts{
-			Chain:  srcChain,
-			Height: 11,
-			Requests: []*types.TransferOut{
+		handler = NewHandlerTransfers(mc)
+		msg = types.NewTransfersMsg("signer", &types.Transfers{
+			Transfers: []*types.Transfer{
 				{
-					ToChain:   destChain,
-					Token:     token2,
-					Hash:      hash2,
-					Recipient: recipient2,
-					Amount:    amount,
+					FromChain:       srcChain,
+					FromBlockHeight: 11,
+					ToChain:         destChain,
+					Token:           token2,
+					FromHash:        hash2,
+					ToRecipient:     recipient2,
+					Amount:          amount,
 				},
 			},
 		})
@@ -83,16 +83,16 @@ func TestHandlerTransferOut_HappyCase(t *testing.T) {
 		queue = keeper.GetTransferQueue(ctx, destChain)
 		require.Equal(t, []*types.Transfer{
 			{
-				Id:        fmt.Sprintf("%s__%s", srcChain, hash1),
-				Recipient: recipient,
-				Token:     token,
-				Amount:    amount,
+				Id:          fmt.Sprintf("%s__%s", srcChain, hash1),
+				ToRecipient: recipient,
+				Token:       token,
+				Amount:      amount,
 			},
 			{
-				Id:        fmt.Sprintf("%s__%s", srcChain, hash2),
-				Recipient: recipient2,
-				Token:     token2,
-				Amount:    amount,
+				Id:          fmt.Sprintf("%s__%s", srcChain, hash2),
+				ToRecipient: recipient2,
+				Token:       token2,
+				Amount:      amount,
 			},
 		}, queue)
 	})

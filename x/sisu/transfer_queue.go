@@ -32,6 +32,7 @@ type defaultTransferQueue struct {
 	txSubmit         common.TxSubmit
 	stopCh           chan bool
 	appKeys          common.AppKeys
+	submittedTxs     map[string]bool
 
 	newRequestCh chan TransferRequest
 	lock         *sync.RWMutex
@@ -52,6 +53,7 @@ func NewTransferQueue(
 		lock:             &sync.RWMutex{},
 		stopCh:           make(chan bool),
 		appKeys:          appKeys,
+		submittedTxs:     make(map[string]bool),
 	}
 }
 

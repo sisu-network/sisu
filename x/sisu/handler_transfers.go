@@ -1,27 +1,29 @@
 package sisu
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-type HandlerTransferOut struct {
+type HandlerTransfers struct {
 	pmm    PostedMessageManager
 	keeper keeper.Keeper
 }
 
-func NewHandlerTransferOut(mc ManagerContainer) *HandlerTransferOut {
-	return &HandlerTransferOut{
+func NewHandlerTransfers(mc ManagerContainer) *HandlerTransfers {
+	return &HandlerTransfers{
 		keeper: mc.Keeper(),
 		pmm:    mc.PostedMessageManager(),
 	}
 }
 
-func (h *HandlerTransferOut) DeliverMsg(ctx sdk.Context, signerMsg *types.TransferOutsMsg) (*sdk.Result, error) {
+func (h *HandlerTransfers) DeliverMsg(ctx sdk.Context, signerMsg *types.TransfersMsg) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
-		data, err := h.doTransferOut(ctx, signerMsg.Data)
+		data, err := h.doTransfers(ctx, signerMsg.Data)
 		h.keeper.ProcessTxRecord(ctx, hash)
 
 		return &sdk.Result{Data: data}, err
@@ -31,33 +33,29 @@ func (h *HandlerTransferOut) DeliverMsg(ctx sdk.Context, signerMsg *types.Transf
 }
 
 // Delivers observed Txs.
-func (h *HandlerTransferOut) doTransferOut(ctx sdk.Context, msg *types.TransferOuts) ([]byte, error) {
-	log.Infof("Deliverying TransferOut on chain %s with request length = %d", msg.Chain, len(msg.Requests))
+func (h *HandlerTransfers) doTransfers(ctx sdk.Context, msg *types.Transfers) ([]byte, error) {
+	if len(msg.Transfers) == 0 {
+		return nil, fmt.Errorf("Empty transfers array")
+	}
+
+	log.Infof("Deliverying TransferOut on chain %s with request length = %d",
+		msg.Transfers[0].FromChain, len(msg.Transfers))
 
 	allTransfers := make(map[string][]*types.Transfer)
 	// Add the message to the queue for later processing.
-	for _, request := range msg.Requests {
-		transfer := &types.Transfer{
-			Id:        types.GetTransferId(msg.Chain, request.Hash),
-			Recipient: request.Recipient,
-			Token:     request.Token,
-			Amount:    request.Amount,
-		}
-
+	for _, request := range msg.Transfers {
 		if allTransfers[request.ToChain] == nil {
 			allTransfers[request.ToChain] = h.keeper.GetTransferQueue(ctx, request.ToChain)
-			if allTransfers[request.ToChain] == nil {
-				allTransfers[request.ToChain] = make([]*types.Transfer, 0)
-			}
+
 		}
 
-		log.Debug("Adding transfer to the queue, transfer = ", *transfer)
+		log.Debug("Adding transfer to the queue, transfer = ", *request)
 
-		allTransfers[request.ToChain] = append(allTransfers[request.ToChain], transfer)
+		allTransfers[request.ToChain] = append(allTransfers[request.ToChain], request)
 	}
 
 	// Save all of transfer to the transfer queue
-	for _, request := range msg.Requests {
+	for _, request := range msg.Transfers {
 		if allTransfers[request.ToChain] == nil {
 			continue
 		}

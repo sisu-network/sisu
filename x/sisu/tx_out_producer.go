@@ -104,12 +104,12 @@ func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context,
 		}
 
 		tokens = append(tokens, token)
-		recipients = append(recipients, ecommon.HexToAddress(transfer.Recipient))
+		recipients = append(recipients, ecommon.HexToAddress(transfer.ToRecipient))
 		amounts = append(amounts, amount)
 		inHashes = append(inHashes, transfer.Id)
 
 		log.Verbosef("Processing transfer in: id = %s, recipient = %s, amount = %s, inHash = %s",
-			token.Id, transfer.Recipient, amount, transfer.Id)
+			token.Id, transfer.ToRecipient, amount, transfer.Id)
 	}
 
 	responseTx, err := p.buildERC20TransferIn(ctx, p.keeper, tokens, recipients, amounts, dstChain)

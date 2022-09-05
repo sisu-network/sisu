@@ -1,0 +1,31 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+// Note: all new fields in this proto MUST be included in SerializeWithoutSigner in the go file.
+message TransfersMsg {
+  string signer = 1;
+  Transfers data = 2;
+}
+
+message Transfers {
+  repeated Transfer transfers =  1;
+}
+
+message Transfer {
+  string id = 1;
+
+  // Source
+  string from_chain = 2;
+  int64 from_block_height = 3;
+  string from_hash = 4;
+  string from_sender = 5;
+
+  string token = 6;
+  string amount = 7;
+
+  // Destination
+  string to_chain = 8;
+  string to_recipient = 9;
+}

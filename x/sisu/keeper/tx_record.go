@@ -25,7 +25,7 @@ func GetTxRecordHash(msg sdk.Msg) ([]byte, string, error) {
 		hash := getKeygenKey(msg.Keygen.KeyType, int(msg.Keygen.Index))
 		return hash, msg.Signer, nil
 
-	case *types.TransferOutsMsg:
+	case *types.TransfersMsg:
 		serialized, err := msg.Data.Marshal()
 		if err != nil {
 			return nil, "", err
@@ -67,12 +67,6 @@ func GetTxRecordHash(msg sdk.Msg) ([]byte, string, error) {
 		}
 		return []byte(utils.KeccakHash32(string(serialized))), msg.Signer, nil
 	case *types.LiquidityWithdrawFundMsg:
-		serialized, err := msg.Data.Marshal()
-		if err != nil {
-			return nil, "", err
-		}
-		return []byte(utils.KeccakHash32(string(serialized))), msg.Signer, nil
-	case *types.TransferBatchMsg:
 		serialized, err := msg.Data.Marshal()
 		if err != nil {
 			return nil, "", err

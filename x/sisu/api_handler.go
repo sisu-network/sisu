@@ -368,11 +368,8 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	log.Verbose("There is a new list of txs from deyes, len =", len(txs.Arr))
 
-	transferRequests := &types.TransferOuts{
-		Chain:    txs.Chain,
-		Hash:     txs.BlockHash,
-		Height:   txs.Block,
-		Requests: make([]*types.TransferOut, 0),
+	transferRequests := &types.Transfers{
+		Transfers: make([]*types.Transfer, 0),
 	}
 
 	ctx := a.globalData.GetReadOnlyContext()
@@ -387,20 +384,25 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 			continue
 		}
 
-		txIns, err := a.parseDeyesTx(ctx, txs.Chain, tx)
+		transfers, err := a.parseDeyesTx(ctx, txs.Chain, tx)
 		if err != nil {
 			log.Error("Faield to parse transfer, err = ", err)
 			continue
 		}
 
-		log.Verbose("Len(txIns) = ", len(txIns), " on chain ", txs.Chain)
-		if txIns != nil {
-			transferRequests.Requests = append(transferRequests.Requests, txIns...)
+		// Assign the id for all transfers
+		for _, transfer := range transfers {
+			transfer.Id = types.GetTransferId(transfer.FromChain, transfer.FromHash)
+		}
+
+		log.Verbose("Len(transfers) = ", len(transfers), " on chain ", txs.Chain)
+		if transfers != nil {
+			transferRequests.Transfers = append(transferRequests.Transfers, transfers...)
 		}
 	}
 
-	if len(transferRequests.Requests) > 0 {
-		msg := types.NewTransferOutsMsg(a.appKeys.GetSignerAddress().String(), transferRequests)
+	if len(transferRequests.Transfers) > 0 {
+		msg := types.NewTransfersMsg(a.appKeys.GetSignerAddress().String(), transferRequests)
 		a.txSubmit.SubmitMessageAsync(msg)
 	}
 
@@ -418,7 +420,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	return nil
 }
 
-func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.TransferOut, error) {
+func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.Transfer, error) {
 	if libchain.IsETHBasedChain(chain) {
 		parseResult := eth.ParseVaultTx(ctx, a.keeper, chain, tx)
 		if parseResult.Error != nil {
@@ -426,14 +428,14 @@ func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.T
 		}
 
 		if parseResult.TransferOut != nil {
-			return []*types.TransferOut{parseResult.TransferOut}, nil
+			return []*types.Transfer{parseResult.TransferOut}, nil
 		}
 
-		return []*types.TransferOut{}, nil
+		return []*types.Transfer{}, nil
 	}
 
 	if libchain.IsCardanoChain(chain) {
-		ret := make([]*types.TransferOut, 0)
+		ret := make([]*types.Transfer, 0)
 		cardanoTx := &etypes.CardanoTransactionUtxo{}
 		err := json.Unmarshal(tx.Serialized, cardanoTx)
 		if err != nil {
@@ -472,12 +474,12 @@ func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.T
 				log.Verbose("tokenUnit = ", tokenUnit, " quantity = ", quantity)
 				log.Verbose("cardanoTx.Metadata = ", cardanoTx.Metadata)
 
-				ret = append(ret, &types.TransferOut{
-					Hash:      cardanoTx.Hash,
-					ToChain:   cardanoTx.Metadata.Chain,
-					Token:     tokenUnit,
-					Recipient: cardanoTx.Metadata.Recipient,
-					Amount:    quantity.String(),
+				ret = append(ret, &types.Transfer{
+					FromHash:    cardanoTx.Hash,
+					Token:       tokenUnit,
+					Amount:      quantity.String(),
+					ToChain:     cardanoTx.Metadata.Chain,
+					ToRecipient: cardanoTx.Metadata.Recipient,
 				})
 			}
 		}

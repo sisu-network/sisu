@@ -35,7 +35,6 @@ type Keeper interface {
 
 	// TxOut
 	SaveTxOut(ctx sdk.Context, msg *types.TxOut)
-	IsTxOutExisted(ctx sdk.Context, msg *types.TxOut) bool
 	GetTxOut(ctx sdk.Context, outChain, hash string) *types.TxOut
 
 	// TxOutSig
@@ -84,6 +83,10 @@ type Keeper interface {
 	// Command Queue
 	SetCommandQueue(ctx sdk.Context, chain string, commands []*types.Command)
 	GetCommandQueue(ctx sdk.Context, chain string) []*types.Command
+
+	// Transfer
+	AddTransfer(ctx sdk.Context, transfers *types.Transfers)
+	GetTransfer(ctx sdk.Context, id string) *types.Transfer
 
 	// Transfer Queue
 	SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.Transfer)
@@ -170,11 +173,6 @@ func (k *DefaultKeeper) GetAllKeygenResult(ctx sdk.Context, keygenType string, i
 func (k *DefaultKeeper) SaveTxOut(ctx sdk.Context, msg *types.TxOut) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
 	saveTxOut(store, msg)
-}
-
-func (k *DefaultKeeper) IsTxOutExisted(ctx sdk.Context, msg *types.TxOut) bool {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
-	return isTxOutExisted(store, msg)
 }
 
 func (k *DefaultKeeper) GetTxOut(ctx sdk.Context, outChain, hash string) *types.TxOut {
@@ -324,15 +322,26 @@ func (k *DefaultKeeper) GetCommandQueue(ctx sdk.Context, chain string) []*types.
 	return getCommandQueue(store, chain)
 }
 
+///// Transfer
+func (k *DefaultKeeper) AddTransfer(ctx sdk.Context, transfers *types.Transfers) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferOut)
+	addTransfer(store, transfers)
+}
+
+func (k *DefaultKeeper) GetTransfer(ctx sdk.Context, id string) *types.Transfer {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferOut)
+	return getTransfer(store, id)
+}
+
 ///// Transfer Queue
 func (k *DefaultKeeper) SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.Transfer) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferQueue)
-	setTranfers(store, chain, transfers)
+	setTranferQueue(store, chain, transfers)
 }
 
 func (k *DefaultKeeper) GetTransferQueue(ctx sdk.Context, chain string) []*types.Transfer {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferQueue)
-	return getTransfers(store, chain)
+	return getTransferQueue(store, chain)
 }
 
 ///// TxOutQueue
