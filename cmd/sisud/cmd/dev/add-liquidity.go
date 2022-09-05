@@ -61,7 +61,18 @@ func (c *AddLiquidityCmd) approveAndAddLiquidity(urlString, mnemonic, tokenAddrS
 	}()
 
 	wg := &sync.WaitGroup{}
-	// Add liquidity to the pool
+	// Approve the contract with some preallocated token from account0
+	wg.Add(len(clients))
+	for i, client := range clients {
+		go func(i int, client *ethclient.Client) {
+			approveAddress(client, mnemonic, tokenAddrs[i], vaultAddrs[i])
+			wg.Done()
+		}(i, client)
+	}
+	wg.Wait()
+	log.Info("Vault approval done!")
+
+	// Add liquidity to the vault
 	wg.Add(len(clients))
 	for i, client := range clients {
 		go func(i int, client *ethclient.Client) {
