@@ -90,19 +90,19 @@ func (h *HandlerTxOutResult) doTxOutFailure(ctx sdk.Context, msg *types.TxOutRes
 	case types.TxOutType_TRANSFER_OUT:
 		ids := txOut.Input.TransferIds
 		transfers := h.keeper.GetTransfers(ctx, ids)
-		transferQ := h.keeper.GetTransferQueue(ctx, msg.OutChain)
 
 		// Update the retry number of these transfers.
 		for _, transfer := range transfers {
 			transfer.RetryNum++
 			h.keeper.AddTransfer(ctx, []*types.Transfer{transfer})
-
-			// TODO: Figure out when we should process this transfer since we do not have enough funding.
-			// Put the transaction back into the transfer queue.
-			transferQ = append(transferQ, transfer)
 		}
 
-		h.keeper.SetTransferQueue(ctx, msg.OutChain, transferQ)
+		// TODO: Figure out when we should process this transfer since we do not have enough funding.
+		// transferQ := h.keeper.GetTransferQueue(ctx, msg.OutChain)
+		// for _, transfer := range transfers {
+		// 	h.keeper.SetTransferQueue(ctx, msg.OutChain, transferQ)
+		// 	transferQ = append(transferQ, transfer)
+		// }
 	}
 
 	// Clear the pending TxOut
