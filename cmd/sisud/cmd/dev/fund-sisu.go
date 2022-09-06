@@ -122,11 +122,14 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 		panic(err)
 	}
 	tssPubAddr = crypto.PubkeyToAddress(*pubKey)
+	log.Info("tssPubAddr = ", tssPubAddr)
 
+	log.Verbose("Funding Sisu's account with some native ETH....")
 	wg.Add(len(clients))
 	for i, client := range clients {
 		go func(i int, client *ethclient.Client, chain string) {
 			defer wg.Done()
+
 			c.transferEth(client, sisuRpc, chain, mnemonic, tssPubAddr.Hex())
 		}(i, client, chains[i])
 	}

@@ -132,8 +132,3 @@ func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context,
 	)
 	return []*types.TxOutMsg{outMsg}, nil
 }
-
-func (p *DefaultTxOutputProducer) getGasLimit(chain string) uint64 {
-	// TODO: Make this dependent on different chains.
-	return uint64(8_000_000)
-}

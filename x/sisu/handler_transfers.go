@@ -38,8 +38,10 @@ func (h *HandlerTransfers) doTransfers(ctx sdk.Context, msg *types.Transfers) ([
 		return nil, fmt.Errorf("Empty transfers array")
 	}
 
-	log.Infof("Deliverying TransferOut on chain %s with request length = %d",
-		msg.Transfers[0].FromChain, len(msg.Transfers))
+	log.Infof("Deliverying TransferOut length = %d", len(msg.Transfers))
+
+	// Save this to the keeper
+	h.keeper.AddTransfer(ctx, msg.Transfers)
 
 	allTransfers := make(map[string][]*types.Transfer)
 	// Add the message to the queue for later processing.

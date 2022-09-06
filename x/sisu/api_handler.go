@@ -161,9 +161,44 @@ func (a *ApiHandler) OnKeygenResult(result dhtypes.KeygenResult) {
 
 // OnTxDeploymentResult is a callback after there is a deployment result from deyes.
 func (a *ApiHandler) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
+	if !result.Success {
+		txOut := a.getTxOutFromSignedHash(result.Chain, result.TxHash)
+
+		if result.Err == etypes.ErrNotEnoughBalance {
+			// Report this as failure. Submit to the Sisu chain
+			txOutResult := &types.TxOutResult{
+				OutChain: txOut.Content.OutChain,
+				OutHash:  txOut.Content.OutHash,
+				Result:   types.TxOutResultType_NOT_ENOUGH_NATIVE_BALANCE,
+			}
+
+			a.submitTxOutResult(txOutResult)
+		}
+
+		return
+	}
+
 	log.Info("The transaction has been sent to blockchain (but not included in a block yet). chain = ",
-		result.Chain, ", address = ", result.DeployedAddr)
+		result.Chain)
 	a.txTracker.UpdateStatus(result.Chain, result.TxHash, types.TxStatusDepoyed)
+}
+
+// getTxOutFromSignedHash fetches txout in the TxOut store from the hash of a signed transaction.
+func (a *ApiHandler) getTxOutFromSignedHash(chain, signedHash string) *types.TxOut {
+	// The txOutSig is in private db while txOut should come from common db.
+	txOutSig := a.privateDb.GetTxOutSig(chain, signedHash)
+	if txOutSig == nil {
+		log.Error("cannot find txOutSig with full signature hash: ", signedHash)
+		return nil
+	}
+
+	ctx := a.globalData.GetReadOnlyContext()
+	txOut := a.keeper.GetTxOut(ctx, chain, txOutSig.HashNoSig)
+	if txOut == nil {
+		log.Verbose("cannot find txOut with hash (with no sig): ", txOutSig.HashNoSig)
+	}
+
+	return txOut
 }
 
 // This function is called after dheart sends Sisu keysign result.
@@ -310,7 +345,6 @@ func (a *ApiHandler) processCardanoSigningResult(ctx sdk.Context, result *dhtype
 		HashNoSig:   signMsg.OutHash,
 	})
 
-	// TODO: temporary use json to encode/decode. In the future, should use cbor instead
 	txBytes, err := tx.MarshalCBOR()
 	if err != nil {
 		log.Error("error when marshal cardano tx: ", err)
@@ -350,6 +384,7 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 
 	go func(request *eyesTypes.DispatchedTxRequest) {
 		result, err := a.deyesClient.Dispatch(request)
+
 		if err != nil {
 			log.Error("Failed to deploy, err = ", err)
 			return
@@ -497,25 +532,12 @@ func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.T
 
 // OnTxIncludedInBlock implements AppLogicListener
 func (a *ApiHandler) OnTxIncludedInBlock(txTrack *chainstypes.TrackUpdate) {
-	ctx := a.globalData.GetReadOnlyContext()
-
 	log.Verbosef("Confirming tx height = %d, chain = %s, hash = %s, nonce = %d",
 		txTrack.BlockHeight, txTrack.Chain, txTrack.Hash, txTrack.Nonce)
 
-	// The txOutSig is in private db while txOut should come from common db.
-	txOutSig := a.privateDb.GetTxOutSig(txTrack.Chain, txTrack.Hash)
-	if txOutSig == nil {
-		log.Error("cannot find txOutSig with full signature hash: ", txTrack.Hash)
-		return
-	}
+	txOut := a.getTxOutFromSignedHash(txTrack.Chain, txTrack.Hash)
 
-	txOut := a.keeper.GetTxOut(ctx, txTrack.Chain, txOutSig.HashNoSig)
-	if txOut == nil {
-		log.Verbose("cannot find txOut with hash (with no sig): ", txOutSig.HashNoSig)
-		return
-	}
-
-	txConfirm := &types.TxOutResult{
+	txOutResult := &types.TxOutResult{
 		OutChain:    txOut.Content.OutChain,
 		OutHash:     txOut.Content.OutHash,
 		BlockHeight: txTrack.BlockHeight,
@@ -528,20 +550,24 @@ func (a *ApiHandler) OnTxIncludedInBlock(txTrack *chainstypes.TrackUpdate) {
 			return
 		}
 
-		txConfirm.Nonce = int64(ethTx.Nonce()) + 1
+		txOutResult.Nonce = int64(ethTx.Nonce()) + 1
 	}
 
 	if txTrack.Result == chainstypes.TrackResultConfirmed {
 		log.Info("confirming tx: chain, hash, type = ", txTrack.Chain, " ", txTrack.Hash, " ", txOut.TxType)
-		txConfirm.Result = types.TxOutResultType_IN_BLOCK_SUCCESS
+		txOutResult.Result = types.TxOutResultType_IN_BLOCK_SUCCESS
 	} else {
 		// Tx is included in the block but fails to execute.
-		txConfirm.Result = types.TxOutResultType_IN_BLOCK_FAILURE
+		txOutResult.Result = types.TxOutResultType_IN_BLOCK_FAILURE
 	}
 
+	a.submitTxOutResult(txOutResult)
+}
+
+func (a *ApiHandler) submitTxOutResult(txOutResult *types.TxOutResult) {
 	msg := types.NewTxOutResultMsg(
 		a.appKeys.GetSignerAddress().String(),
-		txConfirm,
+		txOutResult,
 	)
 	a.txSubmit.SubmitMessageAsync(msg)
 }

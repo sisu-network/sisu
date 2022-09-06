@@ -42,7 +42,7 @@ func (h *HandlerTxOutResult) doTxOutResult(ctx sdk.Context, msgWithSigner *types
 	msg := msgWithSigner.Data
 	txOut := h.keeper.GetTxOut(ctx, msg.OutChain, msg.OutHash)
 	if txOut == nil {
-		log.Critical("cannot find txout from txOutConfirm message, chain & hash = ",
+		log.Errorf("cannot find txout from txOutConfirm message, chain = %s & hash = %s",
 			msg.OutChain, msg.OutHash)
 		return nil, nil
 	}
@@ -52,7 +52,7 @@ func (h *HandlerTxOutResult) doTxOutResult(ctx sdk.Context, msgWithSigner *types
 	switch msg.Result {
 	case types.TxOutResultType_IN_BLOCK_SUCCESS:
 		return h.doTxOutConfirm(ctx, msg, txOut)
-	case types.TxOutResultType_IN_BLOCK_FAILURE:
+	case types.TxOutResultType_NOT_ENOUGH_NATIVE_BALANCE, types.TxOutResultType_IN_BLOCK_FAILURE:
 		return h.doTxOutFailure(ctx, msg, txOut)
 	}
 
@@ -97,6 +97,7 @@ func (h *HandlerTxOutResult) doTxOutFailure(ctx sdk.Context, msg *types.TxOutRes
 			transfer.RetryNum++
 			h.keeper.AddTransfer(ctx, []*types.Transfer{transfer})
 
+			// TODO: Figure out when we should process this transfer since we do not have enough funding.
 			// Put the transaction back into the transfer queue.
 			transferQ = append(transferQ, transfer)
 		}

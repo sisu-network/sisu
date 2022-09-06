@@ -727,12 +727,13 @@ func addTransfers(store cstypes.KVStore, transfers []*types.Transfer) {
 }
 
 func getTransfers(store cstypes.KVStore, ids []string) []*types.Transfer {
-	transfers := make([]*types.Transfer, 0)
+	transfers := make([]*types.Transfer, len(ids))
 
 	for i, id := range ids {
 		bz := store.Get([]byte(id))
 		if bz == nil {
 			transfers[i] = nil
+			log.Error("Transfer is nil for id ", id)
 			continue
 		}
 
@@ -743,6 +744,8 @@ func getTransfers(store cstypes.KVStore, ids []string) []*types.Transfer {
 			transfers[i] = nil
 			continue
 		}
+
+		transfers[i] = transfer
 	}
 
 	return transfers

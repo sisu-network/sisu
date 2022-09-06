@@ -331,7 +331,12 @@ func (k *DefaultKeeper) AddTransfer(ctx sdk.Context, transfers []*types.Transfer
 
 func (k *DefaultKeeper) GetTransfer(ctx sdk.Context, id string) *types.Transfer {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
-	return getTransfers(store, []string{id})[0]
+	transfers := getTransfers(store, []string{id})
+	if len(transfers) == 0 {
+		return nil
+	}
+
+	return transfers[0]
 }
 
 func (k *DefaultKeeper) GetTransfers(ctx sdk.Context, ids []string) []*types.Transfer {

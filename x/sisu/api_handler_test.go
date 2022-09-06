@@ -177,7 +177,6 @@ func TestApiHandler_OnTxIns(t *testing.T) {
 			Chain: srcChain,
 			Block: int64(utils.RandomNaturalNumber(1000)),
 			Arr: []*eyesTypes.Tx{{
-				SrcChain:   srcChain,
 				From:       address,
 				Hash:       utils.RandomHeximalString(64),
 				Serialized: bz,
