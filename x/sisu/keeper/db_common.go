@@ -753,33 +753,30 @@ func getTransfers(store cstypes.KVStore, ids []string) []*types.Transfer {
 
 ///// Transfer Queue
 func setTranferQueue(store cstypes.KVStore, chain string, transfers []*types.Transfer) {
-	transferBatch := &types.Transfers{
-		Transfers: transfers,
-	}
-
-	bz, err := transferBatch.Marshal()
-	if err != nil {
-		log.Error("saveTranferQueue: faield to marshal transfer batch")
+	if len(transfers) == 0 {
+		store.Delete([]byte(chain))
 		return
 	}
 
-	store.Set([]byte(chain), bz)
+	ids := make([]string, len(transfers))
+	for i, transfer := range transfers {
+		ids[i] = transfer.Id
+	}
+
+	s := strings.Join(ids, ",")
+	store.Set([]byte(chain), []byte(s))
 }
 
-func getTransferQueue(store cstypes.KVStore, chain string) []*types.Transfer {
-	bz := store.Get([]byte(chain))
+func getTransferQueue(queueStore, transferStore cstypes.KVStore, chain string) []*types.Transfer {
+	bz := queueStore.Get([]byte(chain))
 	if bz == nil {
 		return []*types.Transfer{}
 	}
 
-	batch := &types.Transfers{}
-	err := batch.Unmarshal(bz)
-	if err != nil {
-		log.Error("getTransferQueue: failed to unmarshal batch")
-		return nil
-	}
+	s := string(bz)
+	ids := strings.Split(s, ",")
 
-	return batch.Transfers
+	return getTransfers(transferStore, ids)
 }
 
 ///// TxOutQueue
