@@ -132,13 +132,14 @@ func TestApiHandler_OnTxIns(t *testing.T) {
 				Hash:       utils.RandomHeximalString(64),
 				Serialized: bz,
 				To:         toAddress,
+				Success:    true,
 			}},
 		}
 
 		submitCount := 0
 		txSubmit := mc.TxSubmit().(*common.MockTxSubmit)
 		txSubmit.SubmitMessageAsyncFunc = func(msg sdk.Msg) error {
-			require.Equal(t, "TxsInMsg", msg.Type())
+			require.Equal(t, "Transfers", msg.Type())
 			submitCount = 1
 			return nil
 		}

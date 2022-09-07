@@ -30,20 +30,36 @@ func TestHandlerTransferOut_HappyCase(t *testing.T) {
 		token := "SISU"
 		hash1 := "123"
 		amount := "10000"
+		hash2 := "456"
+		recipient2 := "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80"
+		token2 := "ADA"
+
+		transfers := []*types.Transfer{
+			{
+				Id:              fmt.Sprintf("%s__%s", srcChain, hash1),
+				FromChain:       srcChain,
+				FromBlockHeight: 10,
+				ToChain:         destChain,
+				Token:           token,
+				FromHash:        hash1,
+				ToRecipient:     recipient,
+				Amount:          amount,
+			},
+			{
+				Id:              fmt.Sprintf("%s__%s", srcChain, hash2),
+				FromChain:       srcChain,
+				FromBlockHeight: 11,
+				ToChain:         destChain,
+				Token:           token2,
+				FromHash:        hash2,
+				ToRecipient:     recipient2,
+				Amount:          amount,
+			},
+		}
 
 		handler := NewHandlerTransfers(mc)
 		msg := types.NewTransfersMsg("signer", &types.Transfers{
-			Transfers: []*types.Transfer{
-				{
-					FromChain:       srcChain,
-					FromBlockHeight: 10,
-					ToChain:         destChain,
-					Token:           token,
-					FromHash:        hash1,
-					ToRecipient:     recipient,
-					Amount:          amount,
-				},
-			},
+			Transfers: []*types.Transfer{transfers[0]},
 		})
 
 		_, err := handler.DeliverMsg(ctx, msg)
@@ -53,47 +69,25 @@ func TestHandlerTransferOut_HappyCase(t *testing.T) {
 		queue := keeper.GetTransferQueue(ctx, destChain)
 		require.Equal(t, []*types.Transfer{
 			{
-				Id:          fmt.Sprintf("%s__%s", srcChain, hash1),
-				ToRecipient: recipient,
-				Token:       token,
-				Amount:      amount,
+				Id:              fmt.Sprintf("%s__%s", srcChain, hash1),
+				FromChain:       srcChain,
+				FromBlockHeight: 10,
+				ToChain:         destChain,
+				Token:           token,
+				FromHash:        hash1,
+				ToRecipient:     recipient,
+				Amount:          amount,
 			},
 		}, queue)
 
 		// Add the second request
-		hash2 := "456"
-		recipient2 := "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80"
-		token2 := "ADA"
 		handler = NewHandlerTransfers(mc)
 		msg = types.NewTransfersMsg("signer", &types.Transfers{
-			Transfers: []*types.Transfer{
-				{
-					FromChain:       srcChain,
-					FromBlockHeight: 11,
-					ToChain:         destChain,
-					Token:           token2,
-					FromHash:        hash2,
-					ToRecipient:     recipient2,
-					Amount:          amount,
-				},
-			},
+			Transfers: []*types.Transfer{transfers[1]},
 		})
 		_, err = handler.DeliverMsg(ctx, msg)
 		require.Nil(t, err)
 		queue = keeper.GetTransferQueue(ctx, destChain)
-		require.Equal(t, []*types.Transfer{
-			{
-				Id:          fmt.Sprintf("%s__%s", srcChain, hash1),
-				ToRecipient: recipient,
-				Token:       token,
-				Amount:      amount,
-			},
-			{
-				Id:          fmt.Sprintf("%s__%s", srcChain, hash2),
-				ToRecipient: recipient2,
-				Token:       token2,
-				Amount:      amount,
-			},
-		}, queue)
+		require.Equal(t, transfers, queue)
 	})
 }

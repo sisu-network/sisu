@@ -5,39 +5,33 @@ import (
 
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/types"
-
 	"github.com/stretchr/testify/require"
 )
 
 func TestKeeper_SaveAndGetTxOut(t *testing.T) {
 	keeper, ctx := GetTestKeeperAndContext()
 
-	txOutWithSigner := &types.TxOutMsg{
-		Signer: "signer",
-		Data: &types.TxOut{
-			Content: &types.TxOutContent{
-				OutChain: "bitcoin",
-				OutHash:  utils.RandomHeximalString(32),
-				OutBytes: []byte("Hash"),
-			},
+	chain := "bitcoin"
+	hash := utils.RandomHeximalString(32)
+
+	original := &types.TxOut{
+		Content: &types.TxOutContent{
+			OutChain: chain,
+			OutHash:  hash,
+			OutBytes: []byte("Hash"),
 		},
 	}
 
-	keeper.SaveTxOut(ctx, txOutWithSigner.Data)
-	require.Equal(t, true, keeper.IsTxOutExisted(ctx, txOutWithSigner.Data))
-
-	// Different signer would not change the observedTx retrieval
-	other := *txOutWithSigner.Data
-	require.Equal(t, true, keeper.IsTxOutExisted(ctx, txOutWithSigner.Data))
+	keeper.SaveTxOut(ctx, original)
+	txOut := keeper.GetTxOut(ctx, chain, hash)
+	require.Equal(t, original, txOut)
 
 	// Any chain in OutChain, BlockHeight, OutBytes would not retrieve the txOut.
-	other = *txOutWithSigner.Data
-	other.Content.OutChain = "sisu"
-	require.Equal(t, false, keeper.IsTxOutExisted(ctx, &other))
+	txOut = keeper.GetTxOut(ctx, "eth", hash)
+	require.Nil(t, txOut)
 
-	other = *txOutWithSigner.Data
-	other.Content.OutHash = utils.RandomHeximalString(48)
-	require.Equal(t, false, keeper.IsTxOutExisted(ctx, &other))
+	txOut = keeper.GetTxOut(ctx, chain, utils.RandomHeximalString(48))
+	require.Nil(t, txOut)
 }
 
 func TestKeeper_BlockHeights(t *testing.T) {

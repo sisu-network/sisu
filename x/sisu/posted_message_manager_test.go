@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	"fmt"
 	"math/big"
 	"testing"
 
@@ -111,8 +112,12 @@ func TestPostedMessageManager(t *testing.T) {
 		msg := &types.TxOutMsg{
 			Signer: "signer",
 			Data: &types.TxOut{
+				TxType: types.TxOutType_TRANSFER_OUT,
 				Content: &types.TxOutContent{
 					OutChain: "ganache1",
+				},
+				Input: &types.TxOutInput{
+					TransferIds: []string{fmt.Sprintf("%s__%s", "ganache1", "hash1")},
 				},
 			},
 		}

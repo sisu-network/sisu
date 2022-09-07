@@ -38,7 +38,8 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 	t.Run("transfer_out_successful", func(t *testing.T) {
 		ctx, mc := mockForHandlerTxOut()
 		kpr := mc.Keeper()
-		kpr.SetTransferQueue(ctx, destChain, []*types.Transfer{
+
+		transfers := []*types.Transfer{
 			{
 				Id: fmt.Sprintf("%s__%s", "ganache1", "hash1"),
 			},
@@ -48,7 +49,10 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 			{
 				Id: fmt.Sprintf("%s__%s", "ganache1", "hash3"),
 			},
-		})
+		}
+
+		kpr.AddTransfer(ctx, transfers)
+		kpr.SetTransferQueue(ctx, destChain, transfers)
 
 		handler := NewHandlerTxOut(mc)
 		_, err := handler.DeliverMsg(ctx, txOutMsg1)

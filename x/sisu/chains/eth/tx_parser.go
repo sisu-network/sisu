@@ -100,6 +100,7 @@ func parseEthTransferOut(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.
 	}
 
 	return &types.Transfer{
+		Id:          types.GetTransferId(chain, ethTx.Hash().String()),
 		FromChain:   chain,
 		FromSender:  msg.From().Hex(),
 		FromHash:    ethTx.Hash().String(),
