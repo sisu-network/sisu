@@ -85,7 +85,7 @@ type Keeper interface {
 	GetCommandQueue(ctx sdk.Context, chain string) []*types.Command
 
 	// Transfer
-	AddTransfer(ctx sdk.Context, transfers []*types.Transfer)
+	AddTransfers(ctx sdk.Context, transfers []*types.Transfer)
 	GetTransfer(ctx sdk.Context, id string) *types.Transfer
 	GetTransfers(ctx sdk.Context, ids []string) []*types.Transfer
 
@@ -324,7 +324,7 @@ func (k *DefaultKeeper) GetCommandQueue(ctx sdk.Context, chain string) []*types.
 }
 
 ///// Transfer
-func (k *DefaultKeeper) AddTransfer(ctx sdk.Context, transfers []*types.Transfer) {
+func (k *DefaultKeeper) AddTransfers(ctx sdk.Context, transfers []*types.Transfer) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
 	addTransfers(store, transfers)
 }

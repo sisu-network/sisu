@@ -31,7 +31,7 @@ func TestHandlerTransferFailure(t *testing.T) {
 		},
 	}
 
-	k.AddTransfer(ctx, queue)
+	k.AddTransfers(ctx, queue)
 	k.SetTransferQueue(ctx, chain, queue)
 
 	h := NewHanlderTransferFailure(k, pmm)

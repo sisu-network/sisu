@@ -51,7 +51,7 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 			},
 		}
 
-		kpr.AddTransfer(ctx, transfers)
+		kpr.AddTransfers(ctx, transfers)
 		kpr.SetTransferQueue(ctx, destChain, transfers)
 
 		handler := NewHandlerTxOut(mc)

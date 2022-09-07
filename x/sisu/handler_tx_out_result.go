@@ -5,14 +5,12 @@ import (
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
-	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type HandlerTxOutResult struct {
 	pmm           PostedMessageManager
 	keeper        keeper.Keeper
-	deyesClient   tssclients.DeyesClient
 	transferQueue TransferQueue
 }
 
@@ -20,7 +18,6 @@ func NewHandlerTxOutResult(mc ManagerContainer) *HandlerTxOutResult {
 	return &HandlerTxOutResult{
 		keeper:        mc.Keeper(),
 		pmm:           mc.PostedMessageManager(),
-		deyesClient:   mc.DeyesClient(),
 		transferQueue: mc.TransferQueue(),
 	}
 }
@@ -94,7 +91,7 @@ func (h *HandlerTxOutResult) doTxOutFailure(ctx sdk.Context, msg *types.TxOutRes
 		// Update the retry number of these transfers.
 		for _, transfer := range transfers {
 			transfer.RetryNum++
-			h.keeper.AddTransfer(ctx, []*types.Transfer{transfer})
+			h.keeper.AddTransfers(ctx, []*types.Transfer{transfer})
 		}
 
 		// TODO: Figure out when we should process this transfer since we do not have enough funding.

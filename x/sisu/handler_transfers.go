@@ -41,7 +41,7 @@ func (h *HandlerTransfers) doTransfers(ctx sdk.Context, msg *types.Transfers) ([
 	log.Infof("Deliverying TransferOut length = %d", len(msg.Transfers))
 
 	// Save this to the keeper
-	h.keeper.AddTransfer(ctx, msg.Transfers)
+	h.keeper.AddTransfers(ctx, msg.Transfers)
 
 	allTransfers := make(map[string][]*types.Transfer)
 	// Add the message to the queue for later processing.
