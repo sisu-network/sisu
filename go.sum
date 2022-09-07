@@ -917,8 +917,8 @@ github.com/sirupsen/logrus v1.6.0/go.mod h1:7uNnSEd1DgxDLC74fIahvMZmmYsHGZGEOFrf
 github.com/sirupsen/logrus v1.7.0/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
 github.com/sirupsen/logrus v1.8.1 h1:dJKuHgqk1NNQlqoA6BTlM1Wf9DOH3NBjQyu0h9+AZZE=
 github.com/sirupsen/logrus v1.8.1/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
-github.com/sisu-network/cardano-go v0.1.14-fork-04 h1:jT4k68hTCM+ovQlP1tk1d06PU5/LbBpNR8AKVnUj8xM=
-github.com/sisu-network/cardano-go v0.1.14-fork-04/go.mod h1:gvo3faIs9dNVR0bRjIn8vQca8Pd6TpYWpxMiIV87lr4=
+github.com/sisu-network/cardano-go v0.1.14-fork-05 h1:fhGEs14e7SQ5uJc3LJ9B+xvTCseOGOq/ipQcHbUTFn8=
+github.com/sisu-network/cardano-go v0.1.14-fork-05/go.mod h1:gvo3faIs9dNVR0bRjIn8vQca8Pd6TpYWpxMiIV87lr4=
 github.com/sisu-network/deyes v0.1.7-0.20220906200718-8c3a2bd7e765 h1:IpP9/tn9jaSY+lFMlU0hIKXQroNMR2KPznTJ4y28r28=
 github.com/sisu-network/deyes v0.1.7-0.20220906200718-8c3a2bd7e765/go.mod h1:5mU4NcfNwAfnaA77G9nXS50IpiU3Y50EtCpyOQ9s6uI=
 github.com/sisu-network/dheart v0.1.7-alpha1 h1:Ad7HGR2hCW24OLrR60rEqdGuMp8vFvHcyYj1uopVQak=
