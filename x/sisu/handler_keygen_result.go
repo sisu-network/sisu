@@ -63,21 +63,33 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 		}
 	}
 
+	log.Debug("AAAAA successCount, h.valsMgr.GetValidatorLength(ctx)= ", successCount, h.valsMgr.GetValidatorLength(ctx))
+
 	if successCount == h.valsMgr.GetValidatorLength(ctx) {
+		log.Debug("AAAAA 00000")
+
 		// TODO: Make sure that everyone has the same address and pubkey.
 		// Save keygen Address
 		h.keeper.SaveKeygen(ctx, keygen)
 
+		log.Debug("AAAAA 111111")
+
 		// Setting gateway
 		params := h.keeper.GetParams(ctx)
+		log.Debug("AAAAA params.SupportedChains = ", params.SupportedChains)
 		for _, chain := range params.SupportedChains {
 			if libchain.GetKeyTypeForChain(chain) == keygen.KeyType {
 				// Set Vault
+				log.Debug("AAAAA 22222")
 				vault := h.keeper.GetVault(ctx, chain)
+				log.Debug("AAAAA 333333")
 				h.deyesClient.SetGatewayAddress(chain, vault.Address)
+
+				log.Debug("AAAAA 4444444")
 
 				// Set Mpc address
 				h.keeper.SetMpcAddress(ctx, chain, keygen.Address)
+				log.Debug("AAAAA 555555")
 			}
 		}
 
