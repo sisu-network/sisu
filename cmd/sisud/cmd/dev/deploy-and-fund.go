@@ -16,7 +16,7 @@ type DeployAndFundCmd struct {
 func DeployAndFund() *cobra.Command {
 	cmd := &cobra.Command{
 		Use: "deploy-and-fund",
-		Short: `Deploy ERC20 tokens, liquidity contracts and fund Sisu's account. Example:
+		Short: `Deploy ERC20 tokens, vault contracts and fund Sisu's account. Example:
 ./sisu dev deploy-and-fund
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -31,7 +31,7 @@ func DeployAndFund() *cobra.Command {
 
 			log.Info("========= Deploy ERC20 =========")
 
-			// Deploy ERC20 And liquidity pool
+			// Deploy Vault & ERC20
 			deployContractCmd := &DeployContractCmd{}
 
 			// Deploy vault
