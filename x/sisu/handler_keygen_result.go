@@ -80,12 +80,18 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 		for _, chain := range params.SupportedChains {
 			if libchain.GetKeyTypeForChain(chain) == keygen.KeyType {
 				// Set Vault
-				log.Debug("AAAAA 22222")
-				vault := h.keeper.GetVault(ctx, chain)
-				log.Debug("AAAAA 333333")
-				h.deyesClient.SetGatewayAddress(chain, vault.Address)
-
-				log.Debug("AAAAA 4444444")
+				switch keygen.KeyType {
+				case libchain.KEY_TYPE_ECDSA:
+					log.Debug("AAAAA 22222")
+					vault := h.keeper.GetVault(ctx, chain)
+					log.Debug("AAAAA 333333")
+					h.deyesClient.SetGatewayAddress(chain, vault.Address)
+					log.Debug("AAAAA 4444444")
+				case libchain.KEY_TYPE_EDDSA:
+					log.Debug("AAAAA 22222 ED")
+					h.deyesClient.SetGatewayAddress(chain, keygen.Address)
+					log.Debug("AAAAA 33333 ED")
+				}
 
 				// Set Mpc address
 				h.keeper.SetMpcAddress(ctx, chain, keygen.Address)
