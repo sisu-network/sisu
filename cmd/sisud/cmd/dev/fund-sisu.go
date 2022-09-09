@@ -358,6 +358,7 @@ func queryPubKeys(ctx context.Context, sisuRpc string) map[string][]byte {
 }
 
 func (c *fundAccountCmd) addVaultSpender(client *ethclient.Client, mnemonic string, vaultAddr, spender common.Address) {
+	fmt.Println("Add vault spender, vault = ", vaultAddr.String(), " spender = ", spender.String())
 	vaultInstance, err := vault.NewVault(vaultAddr, client)
 	if err != nil {
 		panic(err)

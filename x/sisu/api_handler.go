@@ -162,6 +162,7 @@ func (a *ApiHandler) OnKeygenResult(result dhtypes.KeygenResult) {
 // OnTxDeploymentResult is a callback after there is a deployment result from deyes.
 func (a *ApiHandler) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 	if !result.Success {
+		log.Verbosef("Result from deyes: failed to deploy tx, chain = %s, signed hash = %s", result.Chain, result.TxHash)
 		txOut := a.getTxOutFromSignedHash(result.Chain, result.TxHash)
 
 		if result.Err == etypes.ErrNotEnoughBalance {
@@ -532,7 +533,7 @@ func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.T
 
 // OnTxIncludedInBlock implements AppLogicListener
 func (a *ApiHandler) OnTxIncludedInBlock(txTrack *chainstypes.TrackUpdate) {
-	log.Verbosef("Confirming tx height = %d, chain = %s, hash = %s, nonce = %d",
+	log.Verbosef("Confirming tx height = %d, chain = %s, signed hash = %s, nonce = %d",
 		txTrack.BlockHeight, txTrack.Chain, txTrack.Hash, txTrack.Nonce)
 
 	txOut := a.getTxOutFromSignedHash(txTrack.Chain, txTrack.Hash)
@@ -554,7 +555,7 @@ func (a *ApiHandler) OnTxIncludedInBlock(txTrack *chainstypes.TrackUpdate) {
 	}
 
 	if txTrack.Result == chainstypes.TrackResultConfirmed {
-		log.Info("confirming tx: chain, hash, type = ", txTrack.Chain, " ", txTrack.Hash, " ", txOut.TxType)
+		log.Infof("confirming tx: chain = %s, signed hash = %, type = %v", txTrack.Chain, txTrack.Hash, txOut.TxType)
 		txOutResult.Result = types.TxOutResultType_IN_BLOCK_SUCCESS
 	} else {
 		// Tx is included in the block but fails to execute.
