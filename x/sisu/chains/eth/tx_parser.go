@@ -76,9 +76,9 @@ func parseEthTransferOut(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.
 	}
 
 	allTokens := keeper.GetAllTokens(ctx)
-	token := getTokenOnChain(allTokens, strings.ToLower(tokenAddr.String()), chain)
+	token := getTokenOnChain(allTokens, tokenAddr.String(), chain)
 	if token == nil {
-		return nil, fmt.Errorf("Cannot find token on chain %s with address %s", chain, strings.ToLower(tokenAddr.String()))
+		return nil, fmt.Errorf("Cannot find token on chain %s with address %s", chain, tokenAddr.String())
 	}
 
 	destChain, ok := txParams["dstChain"].(string)
@@ -121,7 +121,7 @@ func getTokenOnChain(allTokens map[string]*types.Token, tokenAddr, targetChain s
 		}
 
 		for j, chain := range t.Chains {
-			if chain == targetChain && t.Addresses[j] == tokenAddr {
+			if chain == targetChain && strings.EqualFold(t.Addresses[j], tokenAddr) {
 				return t
 			}
 		}

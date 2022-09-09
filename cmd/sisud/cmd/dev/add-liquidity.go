@@ -32,10 +32,10 @@ Short:
 			urlString, _ := cmd.Flags().GetString(flags.ChainUrls)
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
 			tokenAddrString, _ := cmd.Flags().GetString(flags.Erc20Addrs)
-			VaultAddrsString, _ := cmd.Flags().GetString(flags.VaultAddrs)
+			vaultAddrsString, _ := cmd.Flags().GetString(flags.VaultAddrs)
 
 			c := &AddLiquidityCmd{}
-			c.approveAndAddLiquidity(urlString, mnemonic, tokenAddrString, VaultAddrsString)
+			c.approveAndAddLiquidity(urlString, mnemonic, tokenAddrString, vaultAddrsString)
 
 			return nil
 		},
