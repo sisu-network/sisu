@@ -262,26 +262,24 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, sisuRpc, chain, m
 	if err != nil {
 		panic(fmt.Errorf("failed to get chain, err = %v", err))
 	}
-	genesisGas := big.NewInt(ch.GasPrice)
 
 	_, account := getPrivateKey(mnemonic)
-
 	log.Info("from address = ", account.String(), " to Address = ", recipient)
 
 	nonce, err := client.PendingNonceAt(context.Background(), account)
 	if err != nil {
+		log.Error("Failed to get nonce on chain ", chain)
 		panic(err)
 	}
 
+	genesisGas := big.NewInt(ch.GasPrice)
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
 		panic(err)
 	}
-
 	if gasPrice.Cmp(genesisGas) < 0 {
 		gasPrice = genesisGas
 	}
-
 	// Add some 10% premimum to the gas price
 	gasPrice = gasPrice.Mul(gasPrice, big.NewInt(110))
 	gasPrice = gasPrice.Quo(gasPrice, big.NewInt(100))
