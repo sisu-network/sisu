@@ -114,15 +114,15 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	}
 
 	// Fund the accounts with some native ETH and other tokens
-	var tssPubAddr common.Address
+	var sisuAccount common.Address
 	// Get chain and local chain URL
 	pubKeyBytes := allPubKeys[libchain.KEY_TYPE_ECDSA]
 	pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
 	if err != nil {
 		panic(err)
 	}
-	tssPubAddr = crypto.PubkeyToAddress(*pubKey)
-	log.Info("tssPubAddr = ", tssPubAddr)
+	sisuAccount = crypto.PubkeyToAddress(*pubKey)
+	log.Info("Sisu account = ", sisuAccount)
 
 	log.Verbose("Funding Sisu's account with some native ETH....")
 	wg.Add(len(clients))
@@ -130,7 +130,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 		go func(i int, client *ethclient.Client, chain string) {
 			defer wg.Done()
 
-			c.transferEth(client, sisuRpc, chain, mnemonic, tssPubAddr.Hex())
+			c.transferEth(client, sisuRpc, chain, mnemonic, sisuAccount.Hex())
 		}(i, client, chains[i])
 	}
 	wg.Wait()
@@ -141,7 +141,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	wg.Add(len(clients))
 	for i, client := range clients {
 		go func(i int, client *ethclient.Client) {
-			c.addVaultSpender(client, mnemonic, common.HexToAddress(vaults[i]), tssPubAddr)
+			c.addVaultSpender(client, mnemonic, common.HexToAddress(vaults[i]), sisuAccount)
 			wg.Done()
 		}(i, client)
 	}
@@ -288,10 +288,8 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, sisuRpc, chain, m
 
 	log.Info("Gas price = ", gasPrice, " on chain ", chain)
 
-	amount := new(big.Int).Mul(big.NewInt(4_000_000), gasPrice)
-	// amount = amount * 1.2
-	amount = amount.Mul(amount, big.NewInt(12))
-	amount = amount.Quo(amount, big.NewInt(10))
+	// 0.05 ETH
+	amount := new(big.Int).Div(utils.EthToWei, big.NewInt(20))
 
 	gasLimit := uint64(22000) // in units
 

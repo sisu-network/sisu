@@ -293,14 +293,14 @@ func (a *ApiHandler) processETHSigningResult(ctx sdk.Context, result *dhtypes.Ke
 
 	// // TODO: Broadcast the keysign result that includes this TxOutSig.
 	// // Save this to TxOutSig
-	log.Verbose("ETH keysign result signMsg.OutHash = ", signMsg.OutHash, " on chain ", signMsg.OutChain)
+	log.Verbosef("ETH keysign result chain = %s, hash (no sig) = %s, hash (signed) = %s",
+		signMsg.OutChain, signMsg.OutHash, signedTx.Hash().String())
 	a.privateDb.SaveTxOutSig(&types.TxOutSig{
 		Chain:       signMsg.OutChain,
 		HashWithSig: signedTx.Hash().String(),
 		HashNoSig:   signMsg.OutHash,
 	})
 
-	log.Info("signedTx hash = ", signedTx.Hash().String(), " on chain ", signMsg.OutChain)
 	err = a.deploySignedTx(ctx, bz, signMsg.OutChain, signedTx.Hash().String())
 	if err != nil {
 		log.Error("deployment error: ", err)
