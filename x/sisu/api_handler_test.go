@@ -74,7 +74,7 @@ func signEthTx(rawTx *ethtypes.Transaction) *ethtypes.Transaction {
 	return signedTx
 }
 
-func createTransferOutEthTx(gateway string, dstChain string, srcToken string,
+func createTransferOutEthTx(gateway string, dstChain *big.Int, srcToken string,
 	recipient string, amount *big.Int) *ethtypes.Transaction {
 	srcTokenAddr := ecommon.HexToAddress(srcToken)
 
@@ -116,7 +116,7 @@ func TestApiHandler_OnTxIns(t *testing.T) {
 
 		srcChain := "ganache1"
 		toAddress := "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80"
-		ethTx := createTransferOutEthTx(toAddress, "ganache2",
+		ethTx := createTransferOutEthTx(toAddress, libchain.GetChainIntFromId("ganache2"),
 			"0x3a84fbbefd21d6a5ce79d54d348344ee11ebd45c", "0x8095f5b69F2970f38DC6eBD2682ed71E4939f988",
 			new(big.Int).Mul(big.NewInt(1), utils.EthToWei))
 
@@ -165,7 +165,7 @@ func TestApiHandler_OnTxIns(t *testing.T) {
 
 		srcChain := "ganache1"
 		toAddress := "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80"
-		ethTx := createTransferOutEthTx(toAddress, "ganache2",
+		ethTx := createTransferOutEthTx(toAddress, libchain.GetChainIntFromId("ganache2"),
 			"0x3a84fbbefd21d6a5ce79d54d348344ee11ebd45c", "0x8095f5b69F2970f38DC6eBD2682ed71E4939f988",
 			new(big.Int).Mul(big.NewInt(1), utils.EthToWei))
 
