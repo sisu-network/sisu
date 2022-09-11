@@ -5,6 +5,8 @@ import (
 	"math/big"
 	"strings"
 
+	libchain "github.com/sisu-network/lib/chain"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/sisu-network/lib/log"
@@ -81,15 +83,19 @@ func parseEthTransferOut(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.
 		return nil, fmt.Errorf("Cannot find token on chain %s with address %s", chain, tokenAddr.String())
 	}
 
-	destChain, ok := txParams["dstChain"].(string)
+	destChain, ok := txParams["dstChain"].(*big.Int)
 	if !ok {
-		err := fmt.Errorf("cannot convert _destChain to type string: %v", txParams)
+		err := fmt.Errorf("cannot convert destChain to type string: %v", txParams)
 		return nil, err
+	}
+	to := libchain.GetChainNameFromInt(destChain)
+	if to == "" {
+		return nil, fmt.Errorf("Unknown destChain %s", destChain)
 	}
 
 	recipient, ok := txParams["to"].(ethcommon.Address)
 	if !ok {
-		err := fmt.Errorf("cannot convert _recipient to type ethcommon.Address: %v", txParams)
+		err := fmt.Errorf("cannot convert recipient to type ethcommon.Address: %v", txParams)
 		return nil, err
 	}
 
@@ -106,7 +112,7 @@ func parseEthTransferOut(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.
 		FromHash:    ethTx.Hash().String(),
 		Token:       token.Id,
 		Amount:      amount.String(),
-		ToChain:     destChain,
+		ToChain:     to,
 		ToRecipient: recipient.String(),
 	}, nil
 }

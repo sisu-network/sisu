@@ -21,7 +21,7 @@ require (
 	github.com/logdna/logdna-go v1.0.2
 	github.com/sisu-network/deyes v0.1.7-0.20220906200718-8c3a2bd7e765
 	github.com/sisu-network/dheart v0.1.7-alpha1
-	github.com/sisu-network/lib v0.0.1-alpha9.0.20220805094201-302101a59f7f
+	github.com/sisu-network/lib v0.0.1-alpha9.0.20220911122121-1a380f5ce2fe
 	github.com/spf13/cast v1.5.0
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/pflag v1.0.5

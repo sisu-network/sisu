@@ -196,7 +196,8 @@ func (c *swapCommand) swapFromEth(client *ethclient.Client, mnemonic string, vau
 		dstChain, recipient, srcTokenAddr.String(), amount)
 
 	recipientAddr := common.HexToAddress(recipient)
-	tx, err := contract.TransferOut(opts, srcTokenAddr, dstChain, recipientAddr, amount)
+	tx, err := contract.TransferOut(opts, srcTokenAddr, libchain.GetChainIntFromId(dstChain),
+		recipientAddr, amount)
 	if err != nil {
 		panic(err)
 	}
