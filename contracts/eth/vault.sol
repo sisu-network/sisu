@@ -116,6 +116,9 @@ library SafeERC20 {
 contract Vault {
     using SafeERC20 for IERC20;
 
+    // delay for timelock functions
+    uint256 public constant DELAY = 1 days;
+
     // Symbolic spender address in the balance map. Spenders could change but this address remains
     // the same.
     address private constant symbolicSpender =
@@ -125,7 +128,11 @@ contract Vault {
         0x4000000000000000000000000000000000000000;
 
     mapping(address => bool) spenders;
+    mapping(uint256 => bool) notPausedChains;
+
     address private admin;
+    address private pendingAdmin;
+    uint256 public newAdminTime;
 
     mapping(address => mapping(address => uint256)) private balances;
 
@@ -163,7 +170,24 @@ contract Vault {
     }
 
     function changeAdmin(address newAdmin) external onlyAdmin {
-        admin = newAdmin;
+        require(newAdmin != address(0), "changeAdmin: address(0)");
+        pendingAdmin = newAdmin;
+        newAdminTime = block.timestamp + DELAY;
+    }
+
+    function applyAdmin() external onlyAdmin {
+        require(pendingAdmin != address(0), "applyAdmin: address(0)");
+        require(
+            block.timestamp >= newAdminTime,
+            "applyAdmin: ADMIN_NOT_READY "
+        );
+
+        admin = pendingAdmin;
+        pendingAdmin = address(0);
+    }
+
+    function setNotPausedChain(uint256 chain, bool state) external onlyAdmin {
+        notPausedChains[chain] = state;
     }
 
     ////////////////////////////////////////////////////////////////
@@ -256,10 +280,12 @@ contract Vault {
      */
     function transferOutNonEvm(
         address token,
-        string memory dstChain,
+        uint256 dstChain,
         string memory to,
         uint256 amount
     ) public {
+        require(!notPausedChains[dstChain], "CHAIN_IS_PAUSED");
+
         if (balances[token][msg.sender] >= amount) {
             _dec(token, msg.sender, amount);
         } else {
@@ -273,10 +299,12 @@ contract Vault {
      */
     function transferOut(
         address token,
-        string memory dstChain,
+        uint256 dstChain,
         address to,
         uint256 amount
     ) public {
+        require(!notPausedChains[dstChain], "CHAIN_IS_PAUSED");
+
         if (balances[token][msg.sender] >= amount) {
             _dec(token, msg.sender, amount);
         } else {
@@ -287,9 +315,9 @@ contract Vault {
     /**
      * @dev Transfer multiple tokens out to different destination.
      */
-    function transferOutMultipleNonEvm(
+    function transferOutNonEvmMultiple(
         address[] memory tokens,
-        string[] memory dstChains,
+        uint256[] memory dstChains,
         string[] memory tos,
         uint256[] memory amounts
     ) external {
@@ -304,7 +332,7 @@ contract Vault {
      */
     function transferOutMultiple(
         address[] memory tokens,
-        string[] memory dstChains,
+        uint256[] memory dstChains,
         address[] memory tos,
         uint256[] memory amounts
     ) external {
@@ -316,10 +344,12 @@ contract Vault {
     /**
      * @dev Transfer out native token from an account to a new chain.
      */
-    function transferOutNative(string memory to, string memory dstChain)
+    function transferOutNative(string memory to, uint256 dstChain)
         external
         payable
     {
+        require(!notPausedChains[dstChain], "CHAIN_IS_PAUSED");
+
         _inc(native, msg.sender, msg.value);
     }
 
