@@ -162,19 +162,29 @@ func (a *ApiHandler) OnKeygenResult(result dhtypes.KeygenResult) {
 // OnTxDeploymentResult is a callback after there is a deployment result from deyes.
 func (a *ApiHandler) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 	if !result.Success {
-		log.Verbosef("Result from deyes: failed to deploy tx, chain = %s, signed hash = %s", result.Chain, result.TxHash)
+		log.Verbosef("Result from deyes: failed to deploy tx, chain = %s, signed hash = %s, error = %v",
+			result.Chain, result.TxHash, result.Err)
 		txOut := a.getTxOutFromSignedHash(result.Chain, result.TxHash)
 
-		if result.Err == etypes.ErrNotEnoughBalance {
-			// Report this as failure. Submit to the Sisu chain
-			txOutResult := &types.TxOutResult{
-				OutChain: txOut.Content.OutChain,
-				OutHash:  txOut.Content.OutHash,
-				Result:   types.TxOutResultType_NOT_ENOUGH_NATIVE_BALANCE,
-			}
-
-			a.submitTxOutResult(txOutResult)
+		if txOut == nil {
+			log.Errorf("Cannot find txOut for dispath result with signed hash = %s, chain = %s", result.TxHash, result.Chain)
+			return
 		}
+
+		// Report this as failure. Submit to the Sisu chain
+		txOutResult := &types.TxOutResult{
+			OutChain: txOut.Content.OutChain,
+			OutHash:  txOut.Content.OutHash,
+		}
+
+		switch result.Err {
+		case etypes.ErrNotEnoughBalance:
+			txOutResult.Result = types.TxOutResultType_NOT_ENOUGH_NATIVE_BALANCE
+		default:
+			txOutResult.Result = types.TxOutResultType_UNKNOWN
+		}
+
+		a.submitTxOutResult(txOutResult)
 
 		return
 	}
