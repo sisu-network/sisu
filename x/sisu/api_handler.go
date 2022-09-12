@@ -565,7 +565,7 @@ func (a *ApiHandler) OnTxIncludedInBlock(txTrack *chainstypes.TrackUpdate) {
 	}
 
 	if txTrack.Result == chainstypes.TrackResultConfirmed {
-		log.Infof("confirming tx: chain = %s, signed hash = %, type = %v", txTrack.Chain, txTrack.Hash, txOut.TxType)
+		log.Infof("confirming tx: chain = %s, signed hash = %s, type = %v", txTrack.Chain, txTrack.Hash, txOut.TxType)
 		txOutResult.Result = types.TxOutResultType_IN_BLOCK_SUCCESS
 	} else {
 		// Tx is included in the block but fails to execute.
