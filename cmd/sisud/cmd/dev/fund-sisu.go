@@ -76,7 +76,6 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.Erc20Symbols, "SISU,ADA", "List of ERC20 to approve")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 	cmd.Flags().String(flags.CardanoNetwork, "cardano-testnet", "The Cardano network that we are interacting with.")
-	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "Relative path to the folder that contains genesis configuration.")
 
 	return cmd
 }
