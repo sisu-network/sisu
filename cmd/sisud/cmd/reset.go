@@ -57,8 +57,6 @@ func deleteMainAppData(root string) error {
 	dataDir := path.Join(root, "data")
 	configDir := path.Join(root, "config")
 
-	fmt.Println("dataDir = ", dataDir)
-
 	toDelete := []string{
 		// config folders.
 		configDir + "/addrbook.json",

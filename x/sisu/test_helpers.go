@@ -50,17 +50,20 @@ func keeperTestGenesis(ctx sdk.Context) keeper.Keeper {
 		GasPrice:    int64(10_000_000_000),
 		NativeToken: "NATIVE_GANACHE2",
 	})
-	liquidities := map[string]*types.Liquidity{
-		"ganache1": {
-			Id:      "ganache1",
-			Address: "0xf0D676183dD5ae6b370adDdbE770235F23546f9d",
+
+	vaults := []*types.Vault{
+		{
+			Id:      "ganache1_v0",
+			Chain:   "ganache1",
+			Address: "0x3a84fbbefd21d6a5ce79d54d348344ee11ebd45c",
 		},
-		"ganache2": {
-			Id:      "ganache2",
-			Address: "0xf0D676183dD5ae6b370adDdbE770235F23546f9d",
+		{
+			Id:      "ganache2_v0",
+			Chain:   "ganache2",
+			Address: "0x3a84fbbefd21d6a5ce79d54d348344ee11ebd45c",
 		},
 	}
-	keeper.SetLiquidities(ctx, liquidities)
+	keeper.SetVaults(ctx, vaults)
 	keeper.SetTokens(ctx, map[string]*types.Token{
 		"NATIVE_GANACHE1": {
 			Id:       "NATIVE_GANACHE1",
@@ -105,16 +108,6 @@ func keeperTestAfterKeygen(ctx sdk.Context) keeper.Keeper {
 		Address:     ethTx.To().String(),
 		PubKeyBytes: defaultTestEthPubkeyBytes(),
 	})
-	keeper.SaveContract(ctx, &types.Contract{
-		Chain: "ganache1",
-		Name:  "erc20gateway",
-		Hash:  SupportedContracts[ContractErc20Gateway].AbiHash,
-	}, false)
-	keeper.SaveContract(ctx, &types.Contract{
-		Chain: "ganache2",
-		Name:  "erc20gateway",
-		Hash:  SupportedContracts[ContractErc20Gateway].AbiHash,
-	}, false)
 
 	return keeper
 }
@@ -122,21 +115,21 @@ func keeperTestAfterKeygen(ctx sdk.Context) keeper.Keeper {
 func keeperTestAfterContractDeployed(ctx sdk.Context) keeper.Keeper {
 	keeper := keeperTestAfterKeygen(ctx)
 
-	keeper.SaveContract(ctx, &types.Contract{
-		Chain:   "ganache1",
-		Name:    "erc20gateway",
-		Address: testContractAddr,
-		Hash:    SupportedContracts[ContractErc20Gateway].AbiHash,
-	}, false)
-	keeper.SaveContract(ctx, &types.Contract{
-		Chain:   "ganache2",
-		Name:    "erc20gateway",
-		Address: testContractAddr,
-		Hash:    SupportedContracts[ContractErc20Gateway].AbiHash,
-	}, false)
+	keeper.SetMpcAddress(ctx, "ganache1", testContractAddr)
+	keeper.SetMpcAddress(ctx, "ganache2", testContractAddr)
 
-	keeper.SetGateway(ctx, "ganache1", testContractAddr)
-	keeper.SetGateway(ctx, "ganache2", testContractAddr)
+	keeper.SetVaults(ctx, []*types.Vault{
+		{
+			Id:      "ganache1_v0",
+			Chain:   "ganache1",
+			Address: "0x3a84fbbefd21d6a5ce79d54d348344ee11ebd45c",
+		},
+		{
+			Id:      "ganache2_v0",
+			Chain:   "ganache2",
+			Address: "0x3a84fbbefd21d6a5ce79d54d348344ee11ebd45c",
+		},
+	})
 
 	return keeper
 }

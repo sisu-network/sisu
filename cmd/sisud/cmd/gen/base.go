@@ -39,11 +39,11 @@ type Setting struct {
 	numValidators     int
 	cardanoSecret     string
 	cardanoDbConfig   *econfig.SyncDbConfig
+	vaults            []*types.Vault
 
 	nodeConfigs []config.Config
 	tokens      []*types.Token // tokens in the genesis data
 	chains      []*types.Chain // chains in the genesis data
-	liquidities []*types.Liquidity
 	params      *types.Params
 
 	emailAlert config.EmailAlertConfig
@@ -89,7 +89,7 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 		cardanoSecret: cardanoSecret,
 		tokens:        getTokens(filepath.Join(genesisFolder, "tokens.json")),
 		chains:        helper.GetChains(filepath.Join(genesisFolder, "chains.json")),
-		liquidities:   getLiquidity(filepath.Join(genesisFolder, "liquid.json")),
+		vaults:        getVaults(filepath.Join(genesisFolder, "vault.json")),
 	}
 
 	return setting

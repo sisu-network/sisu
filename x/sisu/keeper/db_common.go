@@ -14,24 +14,22 @@ var (
 	prefixTxRecordProcessed      = []byte{0x02}
 	prefixKeygen                 = []byte{0x03}
 	prefixKeygenResultWithSigner = []byte{0x04}
-	prefixContract               = []byte{0x05}
-	prefixContractByteCode       = []byte{0x06}
-	prefixContractAddress        = []byte{0x07}
 	prefixTxOut                  = []byte{0x08}
 	prefixTxOutSig               = []byte{0x09}
-	prefixContractName           = []byte{0x0A}
 	prefixGasPrice               = []byte{0x0B}
 	prefixChain                  = []byte{0x0C}
 	prefixToken                  = []byte{0x0D}
 	prefixTokenPrices            = []byte{0x0E}
 	prefixNode                   = []byte{0x0F}
-	prefixLiquidity              = []byte{0x10}
+	prefixVault                  = []byte{0x10}
 	prefixParams                 = []byte{0x11}
-	prefixGateway                = []byte{0x12}
+	prefixMpcAddress             = []byte{0x12}
 	prefixGatewayCheckPoint      = []byte{0x13}
 	prefixTransferQueue          = []byte{0x14}
 	prefixTxOutQueue             = []byte{0x15}
 	prefixPendingTxOut           = []byte{0x16}
+	prefixCommandQueue           = []byte{0x17}
+	prefixTransfer               = []byte{0x18}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -52,11 +50,6 @@ func getContractKey(chain string, hash string) []byte {
 func getContractNameKey(chain, name string) []byte {
 	// chain + contract name
 	return []byte(fmt.Sprintf("%s__%s", chain, name))
-}
-
-func getTxInKey(chain string, height int64, hash string) []byte {
-	// chain, height, hash
-	return []byte(fmt.Sprintf("%s__%d__%s", chain, height, hash))
 }
 
 func getTxOutKey(outChain string, outHash string) []byte {
@@ -250,201 +243,9 @@ func getAllKeygenResult(store cstypes.KVStore, keygenType string, index int32) [
 	return results
 }
 
-///// Contract
-
-func saveContracts(contractStore cstypes.KVStore, byteCodeStore cstypes.KVStore, msgs []*types.Contract) {
-	for _, msg := range msgs {
-		saveContract(contractStore, byteCodeStore, msg)
-	}
-}
-
-func saveContract(contractStore cstypes.KVStore, byteCodeStore cstypes.KVStore, msg *types.Contract) {
-	bz, err := msg.Marshal()
-	if err != nil {
-		log.Error("Cannot marshal contract message, err = ", err)
-		return
-	}
-
-	// Save byte code into separate store since it's rarely read.
-	copy := &types.Contract{}
-	if msg.ByteCodes == nil {
-		// ByteCode is nil, the copy is the same object reference as message
-		copy = msg
-	} else {
-		// ByteCode is not nil, we need to remove the bytecode from the copy.
-		err = copy.Unmarshal(bz)
-		if err != nil {
-			log.Error("Cannot unmarshal contract message, err = ", err)
-			return
-		}
-
-		// Set bytecode to nil
-		copy.ByteCodes = nil
-	}
-
-	// Get the serialized bytes of copy
-	bz, err = copy.Marshal()
-	if err != nil {
-		log.Error("Cannot marshal contract copy, err = ", err)
-		return
-	}
-
-	contractKey := getContractKey(msg.Chain, msg.Hash)
-	contractStore.Set(contractKey, bz)
-
-	// Save byte code
-	if byteCodeStore != nil && len(msg.ByteCodes) > 0 {
-		byteCodeKey := getContractKey(msg.Chain, msg.Hash)
-		byteCodeStore.Set(byteCodeKey, msg.ByteCodes)
-	}
-}
-
-func saveContractAddressForName(contractStore cstypes.KVStore, msg *types.Contract) {
-	key := getContractNameKey(msg.Chain, msg.Name)
-	contractStore.Set(key, []byte(msg.Address))
-}
-
-func isContractExisted(contractStore cstypes.KVStore, msg *types.Contract) bool {
-	contractKey := getContractKey(msg.Chain, msg.Hash)
-	return contractStore.Has(contractKey)
-}
-
-func getPendingContracts(contractStore cstypes.KVStore, byteCodeStore cstypes.KVStore, chain string) []*types.Contract {
-	contracts := make([]*types.Contract, 0)
-
-	iter := contractStore.Iterator([]byte(fmt.Sprintf("%s__", chain)), []byte(fmt.Sprintf("%s__~", chain)))
-
-	for ; iter.Valid(); iter.Next() {
-		key := iter.Key()
-		bz := iter.Value()
-
-		contract := &types.Contract{}
-		err := contract.Unmarshal(bz)
-		if err != nil {
-			log.Error("GetPendingContracts: Cannot unmarshal contract bytes")
-			continue
-		}
-
-		// Pending contracts are contracts that do not have address or status
-		if contract.Address != "" || contract.Status != "" {
-			continue
-		}
-
-		bz = byteCodeStore.Get(key)
-		contract.ByteCodes = bz
-
-		contracts = append(contracts, contract)
-	}
-
-	return contracts
-}
-
-// TODO: Remove this. The status should be put in separate store.
-func updateContractsStatus(contractStore cstypes.KVStore, chain string, contractHash string, status string) {
-	key := getContractKey(chain, contractHash)
-
-	bz := contractStore.Get(key)
-	contract := &types.Contract{}
-	err := contract.Unmarshal(bz)
-
-	if err != nil {
-		log.Error("UpdateContractsStatus: Cannot unmarshal contract bytes")
-		return
-	}
-
-	contract.Status = status
-	bz, err = contract.Marshal()
-	if err != nil {
-		log.Error("UpdateContractsStatus: Cannot marshal contract bytes")
-		return
-	}
-
-	contractStore.Set(key, bz)
-}
-
-func getContract(contractStore cstypes.KVStore, byteCodeStore cstypes.KVStore, chain string, contractHash string) *types.Contract {
-	key := getContractKey(chain, contractHash)
-	bz := contractStore.Get(key)
-
-	if bz == nil {
-		log.Errorf("getContract: serialized contract is nil, chain = %s, contract hash = %s", chain, contractHash)
-		return nil
-	}
-
-	contract := &types.Contract{}
-	err := contract.Unmarshal(bz)
-	if err != nil {
-		log.Error("getContract: cannot unmarshal contract, err = ", err)
-		return nil
-	}
-
-	if byteCodeStore != nil {
-		contract.ByteCodes = byteCodeStore.Get(key)
-	}
-
-	return contract
-}
-
-func getContractAddressByName(contractNameStore cstypes.KVStore, chain, name string) string {
-	key := getContractNameKey(chain, name)
-	bz := contractNameStore.Get(key)
-	if bz == nil {
-		log.Error("getContractAddressByName: serialized contract hash is nil")
-		return ""
-	}
-
-	return string(bz)
-}
-
-func updateContractAddress(contractStore cstypes.KVStore, chain string, hash string, address string) {
-	contract := getContract(contractStore, nil, chain, hash)
-	if contract == nil {
-		return
-	}
-
-	contract.Address = address
-	saveContracts(contractStore, nil, []*types.Contract{contract})
-}
-
-///// Contract Address
-func createContractAddress(caStore cstypes.KVStore, txOutStore cstypes.KVStore, chain string, txOutHash string, address string) {
-	// Find the txout in the contract hash
-	txOut := getTxOut(txOutStore, chain, txOutHash)
-	if txOut == nil {
-		log.Error("createContractAddress: cannot find txOut with hash ", txOutHash)
-		return
-	}
-
-	if len(txOut.ContractHash) == 0 {
-		log.Error("createContractAddress: contract hash hash length = 0")
-		return
-	}
-
-	ca := &types.ContractAddress{
-		Chain:        chain,
-		Address:      address,
-		ContractHash: txOut.ContractHash,
-		TxOutHash:    txOutHash,
-	}
-	bz, err := ca.Marshal()
-	if err != nil {
-		log.Error("createContractAddress: cannot marhsal contract adress, err = ", err)
-		return
-	}
-
-	key := getContractAddressKey(chain, address)
-	caStore.Set(key, bz)
-}
-
-func isContractExistedAtAddress(store cstypes.KVStore, chain, address string) bool {
-	key := getContractAddressKey(chain, address)
-
-	return store.Has(key)
-}
-
 ///// TxOut
 func saveTxOut(store cstypes.KVStore, msg *types.TxOut) {
-	key := getTxOutKey(msg.OutChain, msg.OutHash)
+	key := getTxOutKey(msg.Content.OutChain, msg.Content.OutHash)
 	bz, err := msg.Marshal()
 	if err != nil {
 		log.Error("Cannot marshal tx out")
@@ -452,11 +253,6 @@ func saveTxOut(store cstypes.KVStore, msg *types.TxOut) {
 	}
 
 	store.Set(key, bz)
-}
-
-func isTxOutExisted(store cstypes.KVStore, msg *types.TxOut) bool {
-	key := getTxOutKey(msg.OutChain, msg.OutHash)
-	return store.Has(key)
 }
 
 func getTxOut(store cstypes.KVStore, outChain, hash string) *types.TxOut {
@@ -757,53 +553,47 @@ func loadValidators(store cstypes.KVStore) []*types.Node {
 	return vals
 }
 
-///// Liquidity
-func setLiquidities(store cstypes.KVStore, liquidities map[string]*types.Liquidity) {
-	for id, liquid := range liquidities {
-		bz, err := liquid.Marshal()
+///// Vault
+func setVaults(store cstypes.KVStore, vaults []*types.Vault) {
+	for i, vault := range vaults {
+		bz, err := vaults[i].Marshal()
 		if err != nil {
-			log.Error("cannot marshal liquidity ", id)
+			log.Error("cannot marshal vault on chain ", vault.Chain)
 			continue
 		}
 
-		store.Set([]byte(id), bz)
+		store.Set([]byte(vault.Chain), bz)
 	}
 }
 
-func getLiquidity(store cstypes.KVStore, chain string) *types.Liquidity {
+func getVault(store cstypes.KVStore, chain string) *types.Vault {
 	bz := store.Get([]byte(chain))
 	if bz == nil {
 		return nil
 	}
 
-	liquid := &types.Liquidity{}
-	if err := liquid.Unmarshal(bz); err != nil {
+	vault := &types.Vault{}
+	if err := vault.Unmarshal(bz); err != nil {
 		log.Errorf("getLiquidity: error when unmarshal liquid for chain: %s", chain)
 		return nil
 	}
 
-	return liquid
+	return vault
 }
 
-func getAllLiquidities(store cstypes.KVStore) map[string]*types.Liquidity {
-	liquids := make(map[string]*types.Liquidity)
+///// MPC Address
 
-	iter := store.Iterator(nil, nil)
+func setMpcAddress(store cstypes.KVStore, chain string, address string) {
+	store.Set([]byte(chain), []byte(address))
+}
 
-	for ; iter.Valid(); iter.Next() {
-		liq := &types.Liquidity{}
-		err := liq.Unmarshal(iter.Value())
-		if err != nil {
-			log.Error("cannot unmarshal liquidity ", string(iter.Key()))
-			continue
-		}
-
-		liquids[string(iter.Key())] = liq
+func getMpcAddress(store cstypes.KVStore, chain string) string {
+	bz := store.Get([]byte(chain))
+	if bz == nil {
+		return ""
 	}
 
-	_ = iter.Close()
-
-	return liquids
+	return string(bz)
 }
 
 ///// Params
@@ -833,12 +623,12 @@ func getParams(store cstypes.KVStore) *types.Params {
 
 ///// Gateway
 
-func setGateway(store cstypes.KVStore, chain string, address string) {
+func setSisuAccount(store cstypes.KVStore, chain string, address string) {
 	key := fmt.Sprintf("%s__%s", chain, "erc20") // we only have erc20 gateway at the moment
 	store.Set([]byte(key), []byte(address))
 }
 
-func getGateway(store cstypes.KVStore, chain string) string {
+func getSisuAccount(store cstypes.KVStore, chain string) string {
 	key := fmt.Sprintf("%s__%s", chain, "erc20")
 	bz := store.Get([]byte(key))
 	if bz == nil {
@@ -892,14 +682,13 @@ func getAllGatewayCheckPoints(store cstypes.KVStore) map[string]*types.GatewayCh
 	return ret
 }
 
-///// Transfer Queue
-func setTranfers(store cstypes.KVStore, chain string, transfers []*types.Transfer) {
-	transferBatch := &types.TransferBatch{
-		Chain:     chain,
-		Transfers: transfers,
+///// Command Queue
+func setCommandQueue(store cstypes.KVStore, chain string, commands []*types.Command) {
+	cmds := &types.Commands{
+		List: commands,
 	}
 
-	bz, err := transferBatch.Marshal()
+	bz, err := cmds.Marshal()
 	if err != nil {
 		log.Error("saveTranferQueue: faield to marshal transfer batch")
 		return
@@ -908,20 +697,86 @@ func setTranfers(store cstypes.KVStore, chain string, transfers []*types.Transfe
 	store.Set([]byte(chain), bz)
 }
 
-func getTransfers(store cstypes.KVStore, chain string) []*types.Transfer {
+func getCommandQueue(store cstypes.KVStore, chain string) []*types.Command {
 	bz := store.Get([]byte(chain))
 	if bz == nil {
 		return nil
 	}
 
-	batch := &types.TransferBatch{}
-	err := batch.Unmarshal(bz)
+	cmds := &types.Commands{}
+	err := cmds.Unmarshal(bz)
 	if err != nil {
-		log.Error("getTransferQueue: failed to unmarshal batch")
+		log.Error("getCommandQueue: failed to unmarshal command")
 		return nil
 	}
 
-	return batch.Transfers
+	return cmds.List
+}
+
+///// Transfer
+func addTransfers(store cstypes.KVStore, transfers []*types.Transfer) {
+	for _, transfer := range transfers {
+		bz, err := transfer.Marshal()
+		if err != nil {
+			log.Error("addTransfer: failed to marshal transfer, err = ", err)
+			continue
+		}
+
+		store.Set([]byte(transfer.Id), bz)
+	}
+}
+
+func getTransfers(store cstypes.KVStore, ids []string) []*types.Transfer {
+	transfers := make([]*types.Transfer, len(ids))
+
+	for i, id := range ids {
+		bz := store.Get([]byte(id))
+		if bz == nil {
+			transfers[i] = nil
+			log.Error("Transfer is nil for id ", id)
+			continue
+		}
+
+		transfer := &types.Transfer{}
+		err := transfer.Unmarshal(bz)
+		if err != nil {
+			log.Error("getTransfer: Failed to unmarshal transfer out, err = ", err)
+			transfers[i] = nil
+			continue
+		}
+
+		transfers[i] = transfer
+	}
+
+	return transfers
+}
+
+///// Transfer Queue
+func setTranferQueue(store cstypes.KVStore, chain string, transfers []*types.Transfer) {
+	if len(transfers) == 0 {
+		store.Delete([]byte(chain))
+		return
+	}
+
+	ids := make([]string, len(transfers))
+	for i, transfer := range transfers {
+		ids[i] = transfer.Id
+	}
+
+	s := strings.Join(ids, ",")
+	store.Set([]byte(chain), []byte(s))
+}
+
+func getTransferQueue(queueStore, transferStore cstypes.KVStore, chain string) []*types.Transfer {
+	bz := queueStore.Get([]byte(chain))
+	if bz == nil {
+		return []*types.Transfer{}
+	}
+
+	s := string(bz)
+	ids := strings.Split(s, ",")
+
+	return getTransfers(transferStore, ids)
 }
 
 ///// TxOutQueue
@@ -967,7 +822,7 @@ func setPendingTxOut(store cstypes.KVStore, chain string, txOutInfo *types.Pendi
 		return
 	}
 
-	store.Set([]byte(txOutInfo.TxOut.OutChain), bz)
+	store.Set([]byte(txOutInfo.TxOut.Content.OutChain), bz)
 }
 
 func getPendingTxOutInfo(store cstypes.KVStore, chain string) *types.PendingTxOutInfo {

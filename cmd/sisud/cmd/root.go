@@ -121,7 +121,6 @@ func initRootCmd(rootCmd *cobra.Command, encodingConfig params.EncodingConfig, a
 		PauseContractCmd(),
 		ResumeContractCmd(),
 		ContractChangeOwnershipCmd(),
-		ContractChangeLiquidityAddressCmd(),
 		ContractLiquidityWithdrawFund(),
 	)
 

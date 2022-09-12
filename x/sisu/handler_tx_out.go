@@ -42,10 +42,6 @@ func (h *HandlerTxOut) doTxOut(ctx sdk.Context, txOutMsg *types.TxOutMsg) ([]byt
 
 	// If this is a txOut deployment, mark the contract as being deployed.
 	switch txOut.TxType {
-	case types.TxOutType_CONTRACT_DEPLOYMENT:
-		h.keeper.UpdateContractsStatus(ctx, txOut.OutChain, txOut.ContractHash, string(types.TxOutStatusSigning))
-		h.addTxOutToQueue(ctx, txOut)
-
 	case types.TxOutType_TRANSFER_OUT:
 		h.handlerTransfer(ctx, txOut)
 	}
@@ -58,9 +54,9 @@ func (h *HandlerTxOut) handlerTransfer(ctx sdk.Context, txOut *types.TxOut) {
 	h.addTxOutToQueue(ctx, txOut)
 
 	// 2. Remove the transfers in txOut from the queue
-	queue := h.keeper.GetTransferQueue(ctx, txOut.OutChain)
+	queue := h.keeper.GetTransferQueue(ctx, txOut.Content.OutChain)
 	ids := make(map[string]bool, 0)
-	for _, inHash := range txOut.InHashes {
+	for _, inHash := range txOut.Input.TransferIds {
 		ids[inHash] = true
 	}
 
@@ -71,12 +67,12 @@ func (h *HandlerTxOut) handlerTransfer(ctx sdk.Context, txOut *types.TxOut) {
 		}
 	}
 
-	h.keeper.SetTransferQueue(ctx, txOut.OutChain, newQueue)
+	h.keeper.SetTransferQueue(ctx, txOut.Content.OutChain, newQueue)
 }
 
 func (h *HandlerTxOut) addTxOutToQueue(ctx sdk.Context, txOut *types.TxOut) {
 	// Move the the transfers associated with this tx_out to pending.
-	queue := h.keeper.GetTxOutQueue(ctx, txOut.OutChain)
+	queue := h.keeper.GetTxOutQueue(ctx, txOut.Content.OutChain)
 	queue = append(queue, txOut)
-	h.keeper.SetTxOutQueue(ctx, txOut.OutChain, queue)
+	h.keeper.SetTxOutQueue(ctx, txOut.Content.OutChain, queue)
 }

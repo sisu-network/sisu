@@ -12,8 +12,8 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
-	liquidity "github.com/sisu-network/sisu/contracts/eth/liquiditypool"
 	"github.com/sisu-network/sisu/contracts/eth/sampleerc20"
+	"github.com/sisu-network/sisu/contracts/eth/vault"
 	"github.com/spf13/cobra"
 )
 
@@ -46,10 +46,10 @@ Example:
 		},
 	}
 
-	cmd.Flags().String(flags.Contract, "liquidity", "Contract name that we want to deploy.")
+	cmd.Flags().String(flags.Contract, "vault", "Contract name that we want to deploy.")
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
 	cmd.Flags().String(flags.ChainUrls, "http://0.0.0.0:7545,http://0.0.0.0:8545", "RPCs of all the chains we want to fund.")
-	cmd.Flags().String(flags.ExpectedAddrs, fmt.Sprintf("%s,%s", ExpectedLiquidPoolAddress, ExpectedLiquidPoolAddress), "Expected addressed of the contract after deployment. Empty string means do not check for address match.")
+	cmd.Flags().String(flags.ExpectedAddrs, fmt.Sprintf("%s,%s", ExpectedVaultAddress, ExpectedVaultAddress), "Expected addressed of the contract after deployment. Empty string means do not check for address match.")
 	cmd.Flags().String(flags.Erc20Name, "Sisu Token", "Token name")
 	cmd.Flags().String(flags.Erc20Symbol, "SISU", "Token symbol")
 
@@ -113,8 +113,8 @@ func (c *DeployContractCmd) doDeployment(urlString, contract, mnemonic, expAddrS
 			case "erc20":
 				addr = c.deployErc20(client, mnemonic, expectedAddrs[i], tokenName, tokenSymbol)
 
-			case "liquidity":
-				addr = c.deployLiquidity(client, mnemonic, expectedAddrs[i])
+			case "vault":
+				addr = c.deployVault(client, mnemonic)
 
 			default:
 				panic(fmt.Sprintf("Unknown contract %s", contract))
@@ -169,46 +169,38 @@ func (c *DeployContractCmd) deployErc20(client *ethclient.Client, mnemonic strin
 		panic(err)
 	}
 
-	if len(expectedAddress) > 0 && contractAddr.String() != expectedAddress {
+	contractAddrString := strings.ToLower(contractAddr.String())
+
+	if len(expectedAddress) > 0 && contractAddrString != expectedAddress {
 		panic(fmt.Errorf(`Unmatched ERC20 address. We expect address %s but get %s.
 You need to update the expected address (both in this file and the tokens_dev.json).`,
-			expectedAddress, contractAddr.String()))
+			expectedAddress, contractAddrString))
 	}
 
-	log.Info("Deployed contract successfully, addr: ", contractAddr.String())
+	log.Info("Deployed contract successfully, addr: ", contractAddrString)
 
 	return contractAddr
 }
 
-func (c *DeployContractCmd) deployLiquidity(client *ethclient.Client, mnemonic string, expectedAddress string) common.Address {
+func (c *DeployContractCmd) deployVault(client *ethclient.Client, mnemonic string) common.Address {
 	auth, err := getAuthTransactor(client, mnemonic)
 	if err != nil {
 		panic(err)
 	}
 
-	// Deploy liquidity needs more gas
-	auth.GasLimit = 5_000_000
-
-	_, tx, _, err := liquidity.DeployLiquiditypool(auth, client)
+	_, tx, _, err := vault.DeployVault(auth, client)
 	if err != nil {
 		panic(err)
 	}
-	log.Info("Tx hash = ", tx.Hash())
-	log.Info("Deploying liquidity ... ")
-	log.Info("gas limit = ", auth.GasLimit)
 
+	log.Info("Tx hash = ", tx.Hash())
+	log.Info("Deploying Vault contract ... ")
 	contractAddr, err := bind.WaitDeployed(context.Background(), client, tx)
 	if err != nil {
 		panic(err)
 	}
 
-	if len(expectedAddress) > 0 && contractAddr.String() != expectedAddress {
-		panic(fmt.Errorf(`Unmatched Liquid pool address. We expect address %s but get %s.
-You need to update the expected address (both in this file and the liquidity_dev.json).`,
-			expectedAddress, contractAddr.String()))
-	}
-
-	log.Info("Deployed liquidity successfully, addr: ", contractAddr.String())
+	log.Info("Deployed contract successfully, addr: ", contractAddr.String())
 
 	return contractAddr
 }

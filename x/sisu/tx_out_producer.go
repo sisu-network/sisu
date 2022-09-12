@@ -3,7 +3,7 @@ package sisu
 import (
 	"math/big"
 
-	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
+	scardano "github.com/sisu-network/sisu/x/sisu/chains/cardano"
 
 	ecommon "github.com/ethereum/go-ethereum/common"
 	ethcommon "github.com/ethereum/go-ethereum/common"
@@ -24,16 +24,6 @@ type TxOutputProducer interface {
 	// GetTxOuts returns a list of TxOut message and a list of un-processed transfer out request that
 	// needs to be processed next time.
 	GetTxOuts(ctx sdk.Context, chain string, transfers []*types.Transfer) ([]*types.TxOutMsg, error)
-
-	PauseContract(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error)
-
-	ResumeContract(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error)
-
-	ContractChangeOwnership(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutMsg, error)
-
-	ContractSetLiquidPoolAddress(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutMsg, error)
-
-	ContractEmergencyWithdrawFund(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutMsg, error)
 }
 
 type DefaultTxOutputProducer struct {
@@ -114,12 +104,12 @@ func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context,
 		}
 
 		tokens = append(tokens, token)
-		recipients = append(recipients, ecommon.HexToAddress(transfer.Recipient))
+		recipients = append(recipients, ecommon.HexToAddress(transfer.ToRecipient))
 		amounts = append(amounts, amount)
 		inHashes = append(inHashes, transfer.Id)
 
 		log.Verbosef("Processing transfer in: id = %s, recipient = %s, amount = %s, inHash = %s",
-			token.Id, transfer.Recipient, amount, transfer.Id)
+			token.Id, transfer.ToRecipient, amount, transfer.Id)
 	}
 
 	responseTx, err := p.buildERC20TransferIn(ctx, p.keeper, tokens, recipients, amounts, dstChain)
@@ -131,16 +121,14 @@ func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context,
 	outMsg := types.NewTxOutMsg(
 		p.signer,
 		types.TxOutType_TRANSFER_OUT,
-		inHashes,
-		dstChain,
-		responseTx.EthTx.Hash().String(),
-		responseTx.RawBytes,
-		"",
+		&types.TxOutContent{
+			OutChain: dstChain,
+			OutHash:  responseTx.EthTx.Hash().String(),
+			OutBytes: responseTx.RawBytes,
+		},
+		&types.TxOutInput{
+			TransferIds: inHashes,
+		},
 	)
 	return []*types.TxOutMsg{outMsg}, nil
-}
-
-func (p *DefaultTxOutputProducer) getGasLimit(chain string) uint64 {
-	// TODO: Make this dependent on different chains.
-	return uint64(8_000_000)
 }

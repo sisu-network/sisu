@@ -1,0 +1,25 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+enum TxOutResultType {
+  UNKNOWN = 0;
+  IN_BLOCK_SUCCESS = 1;
+  IN_BLOCK_FAILURE = 2;
+  NOT_ENOUGH_NATIVE_BALANCE = 3;
+  TIMEOUT = 4;
+}
+
+message TxOutResultMsg {
+  string signer = 1;
+  TxOutResult data = 2;
+}
+
+message TxOutResult {
+  TxOutResultType result = 1;
+  string outChain = 2;
+  string outHash = 3;
+  int64 blockHeight = 4;
+  int64 nonce = 5;
+}

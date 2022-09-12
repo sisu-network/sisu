@@ -6,7 +6,7 @@ import (
 	"math/big"
 
 	"github.com/sisu-network/sisu/common"
-	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
+	scardano "github.com/sisu-network/sisu/x/sisu/chains/cardano"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -62,20 +62,16 @@ func (p *DefaultTxOutputProducer) processCardanoBatches(ctx sdk.Context, k keepe
 	outMsg := types.NewTxOutMsg(
 		p.signer,
 		types.TxOutType_TRANSFER_OUT,
-		inHashes,
-		destChain,
-		hash.String(),
-		bz,
-		"",
+		&types.TxOutContent{
+			OutChain: destChain,
+			OutHash:  hash.String(),
+			OutBytes: bz,
+		},
+		&types.TxOutInput{
+			TransferIds: inHashes,
+		},
 	)
 	outMgs = append(outMgs, outMsg)
-
-	// TODO: Make this track multiple transactions.
-	// // Track the txout
-	// p.txTracker.AddTransaction(
-	// 	outMsg.Data,
-	// 	transfer.txIn,
-	// )
 
 	return outMgs, nil
 }
@@ -103,7 +99,7 @@ func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, chain string, tr
 	}
 	for _, transfer := range transfers {
 		// Receivers
-		receiverAddr, err := cardano.NewAddress(transfer.Recipient)
+		receiverAddr, err := cardano.NewAddress(transfer.ToRecipient)
 		if err != nil {
 			log.Error("error when parsing receiver addr: ", err)
 			continue

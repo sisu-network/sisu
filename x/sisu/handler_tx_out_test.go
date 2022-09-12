@@ -24,17 +24,22 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 	txOutMsg1 := &types.TxOutMsg{
 		Signer: "signer",
 		Data: &types.TxOut{
-			InHashes: []string{fmt.Sprintf("%s__%s", "ganache1", "hash1")},
-			TxType:   types.TxOutType_TRANSFER_OUT,
-			OutChain: destChain,
-			OutBytes: []byte{},
+			TxType: types.TxOutType_TRANSFER_OUT,
+			Content: &types.TxOutContent{
+				OutChain: destChain,
+				OutBytes: []byte{},
+			},
+			Input: &types.TxOutInput{
+				TransferIds: []string{fmt.Sprintf("%s__%s", "ganache1", "hash1")},
+			},
 		},
 	}
 
 	t.Run("transfer_out_successful", func(t *testing.T) {
 		ctx, mc := mockForHandlerTxOut()
 		kpr := mc.Keeper()
-		kpr.SetTransferQueue(ctx, destChain, []*types.Transfer{
+
+		transfers := []*types.Transfer{
 			{
 				Id: fmt.Sprintf("%s__%s", "ganache1", "hash1"),
 			},
@@ -44,12 +49,15 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 			{
 				Id: fmt.Sprintf("%s__%s", "ganache1", "hash3"),
 			},
-		})
+		}
+
+		kpr.AddTransfers(ctx, transfers)
+		kpr.SetTransferQueue(ctx, destChain, transfers)
 
 		handler := NewHandlerTxOut(mc)
 		_, err := handler.DeliverMsg(ctx, txOutMsg1)
 		require.NoError(t, err)
-		transferQueue := kpr.GetTransferQueue(ctx, txOutMsg1.Data.OutChain)
+		transferQueue := kpr.GetTransferQueue(ctx, txOutMsg1.Data.Content.OutChain)
 		require.Equal(t, []*types.Transfer{
 			{
 				Id: fmt.Sprintf("%s__%s", "ganache1", "hash2"),
@@ -61,11 +69,11 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 
 		// We are not processing the second request since we have some tx in the pending transfer queue.
 		txOutMsg2 := &(*txOutMsg1)
-		txOutMsg2.Data.InHashes = []string{fmt.Sprintf("%s__%s", "ganache1", "hash2")}
+		txOutMsg2.Data.Input.TransferIds = []string{fmt.Sprintf("%s__%s", "ganache1", "hash2")}
 		handler = NewHandlerTxOut(mc)
 		_, err = handler.DeliverMsg(ctx, txOutMsg2)
 		require.NoError(t, err)
-		transferQueue = kpr.GetTransferQueue(ctx, txOutMsg1.Data.OutChain)
+		transferQueue = kpr.GetTransferQueue(ctx, txOutMsg1.Data.Content.OutChain)
 		require.Equal(t, []*types.Transfer{
 			{
 				Id: fmt.Sprintf("%s__%s", "ganache1", "hash3"),

@@ -169,16 +169,16 @@ func getTokens(file string) []*types.Token {
 	return tokens
 }
 
-func getLiquidity(file string) []*types.Liquidity {
-	liquids := []*types.Liquidity{}
+func getVaults(file string) []*types.Vault {
+	vaults := []*types.Vault{}
 	bz, err := os.ReadFile(file)
 	if err != nil {
 		panic(err)
 	}
 
-	if err := json.Unmarshal(bz, &liquids); err != nil {
+	if err := json.Unmarshal(bz, &vaults); err != nil {
 		panic(err)
 	}
 
-	return liquids
+	return vaults
 }

@@ -82,7 +82,8 @@ type Params struct {
 	SupportedChains   []string             `protobuf:"bytes,3,rep,name=supported_chains,json=supportedChains,proto3" json:"supported_chains,omitempty"`
 	// Maximum Sisu's  block height that we will wait for a transaction in pending state on a chain.
 	PendingTxTimeoutHeights []int64 `protobuf:"varint,4,rep,packed,name=pending_tx_timeout_heights,json=pendingTxTimeoutHeights,proto3" json:"pending_tx_timeout_heights,omitempty"`
-	CommissionRate          int32   `protobuf:"varint,5,opt,name=commission_rate,json=commissionRate,proto3" json:"commission_rate,omitempty"`
+	// Transaction commission rate with 1 unit = 0.01%
+	CommissionRate int32 `protobuf:"varint,5,opt,name=commission_rate,json=commissionRate,proto3" json:"commission_rate,omitempty"`
 }
 
 func (m *Params) Reset()         { *m = Params{} }

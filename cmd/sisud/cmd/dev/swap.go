@@ -6,7 +6,8 @@ import (
 	"math/big"
 	"time"
 
-	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
+	"github.com/sisu-network/sisu/contracts/eth/vault"
+	scardano "github.com/sisu-network/sisu/x/sisu/chains/cardano"
 
 	cgblockfrost "github.com/echovl/cardano-go/blockfrost"
 
@@ -20,9 +21,7 @@ import (
 	hutils "github.com/sisu-network/dheart/utils"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/contracts/eth/erc20gateway"
 	"github.com/sisu-network/sisu/utils"
-	"github.com/sisu-network/sisu/x/sisu"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	tssTypes "github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
@@ -56,7 +55,7 @@ transfer params.
 			dst, _ := cmd.Flags().GetString(flags.Dst)
 			tokenSymbol, _ := cmd.Flags().GetString(flags.Erc20Symbol)
 			recipient, _ := cmd.Flags().GetString(flags.Account)
-			unit, _ := cmd.Flags().GetInt(flags.Amount)
+			amount, _ := cmd.Flags().GetInt(flags.Amount)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 			cardanoNetwork, _ := cmd.Flags().GetInt(flags.CardanoNetwork)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
@@ -82,19 +81,20 @@ transfer params.
 
 			// Swapping from ETH chain
 			if libchain.IsETHBasedChain(src) {
-				gateway := c.getEthGatewayAddresses(cmd.Context(), src, sisuRpc)
-				amount := big.NewInt(int64(unit))
-				amount = new(big.Int).Mul(amount, utils.EthToWei)
+				vault := c.getVaultAddress(cmd.Context(), src, sisuRpc)
+				fmt.Println("Vault address = ", vault)
+				amountBigInt := big.NewInt(int64(amount))
+				amountBigInt = new(big.Int).Mul(amountBigInt, utils.EthToWei)
 
-				c.swapFromEth(client, mnemonic, gateway, dst, srcToken, dstToken, recipient, amount)
+				c.swapFromEth(client, mnemonic, vault, dst, srcToken, dstToken, recipient, amountBigInt)
 			} else if libchain.IsCardanoChain(src) {
 				gateway := c.getCardanoGateway(cmd.Context(), sisuRpc)
 				log.Info("Cardano gateway = ", gateway)
 
-				amount := big.NewInt(int64(unit))
-				amount = new(big.Int).Mul(amount, utils.ONE_ADA_IN_LOVELACE)
+				amountBigInt := big.NewInt(int64(amount))
+				amountBigInt = new(big.Int).Mul(amountBigInt, utils.ONE_ADA_IN_LOVELACE)
 
-				c.swapFromCardano(src, dst, token, recipient, gateway, amount, cardano.Network(cardanoNetwork),
+				c.swapFromCardano(src, dst, token, recipient, gateway, amountBigInt, cardano.Network(cardanoNetwork),
 					cardanoSecret, mnemonic)
 			}
 
@@ -150,7 +150,7 @@ func (c *swapCommand) getTokenAddrs(tokenId string, srcChain string, dstChain st
 	return token, src, dest
 }
 
-func (c *swapCommand) getEthGatewayAddresses(context context.Context, chain string, sisuRpc string) string {
+func (c *swapCommand) getVaultAddress(context context.Context, chain string, sisuRpc string) string {
 	grpcConn, err := grpc.Dial(
 		sisuRpc,
 		grpc.WithInsecure(),
@@ -161,27 +161,26 @@ func (c *swapCommand) getEthGatewayAddresses(context context.Context, chain stri
 	}
 
 	queryClient := tssTypes.NewTssQueryClient(grpcConn)
-	res, err := queryClient.QueryContract(context, &tssTypes.QueryContractRequest{
+	res, err := queryClient.QueryVault(context, &tssTypes.QueryVaultRequest{
 		Chain: chain,
-		Hash:  sisu.SupportedContracts[sisu.ContractErc20Gateway].AbiHash,
 	})
 
 	if err != nil {
 		panic(err)
 	}
 
-	if len(res.Contract.Address) == 0 {
+	if len(res.Vault.Address) == 0 {
 		panic("gateway contract address is empty")
 	}
 
-	return res.Contract.Address
+	return res.Vault.Address
 }
 
 // swapFromEth creates an ETH transaction and sends to gateway contract.
-func (c *swapCommand) swapFromEth(client *ethclient.Client, mnemonic string, gateway string, dstChain string,
+func (c *swapCommand) swapFromEth(client *ethclient.Client, mnemonic string, vaultAddr string, dstChain string,
 	srcToken string, dstToken string, recipient string, amount *big.Int) {
-	gatewayAddr := common.HexToAddress(gateway)
-	contract, err := erc20gateway.NewErc20gateway(gatewayAddr, client)
+	v := common.HexToAddress(vaultAddr)
+	contract, err := vault.NewVault(v, client)
 	if err != nil {
 		panic(err)
 	}
@@ -196,7 +195,9 @@ func (c *swapCommand) swapFromEth(client *ethclient.Client, mnemonic string, gat
 	log.Verbosef("destination = %s, recipientAddr %s, srcTokenAddr = %s, amount = %s",
 		dstChain, recipient, srcTokenAddr.String(), amount)
 
-	tx, err := contract.TransferOut(opts, dstChain, recipient, srcTokenAddr, amount)
+	recipientAddr := common.HexToAddress(recipient)
+	tx, err := contract.TransferOut(opts, srcTokenAddr, libchain.GetChainIntFromId(dstChain),
+		recipientAddr, amount)
 	if err != nil {
 		panic(err)
 	}

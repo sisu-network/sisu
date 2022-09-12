@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/big"
 	"net"
-	"path/filepath"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -93,7 +92,6 @@ Example:
 			settings.ips = []string{startingIPAddress}
 			settings.keyringBackend = keyringBackend
 			settings.nodeConfigs = []config.Config{nodeConfig}
-			settings.liquidities = getLiquidity(filepath.Join(genesisFolder, "liquid.json"))
 
 			_, err := InitNetwork(settings)
 			return err

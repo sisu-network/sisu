@@ -1,0 +1,12 @@
+[
+  {
+    "id": "ganache1_v0",
+    "chain": "ganache1",
+    "address": "0x3a84fbbefd21d6a5ce79d54d348344ee11ebd45c"
+  },
+  {
+    "id": "ganache2_v0",
+    "chain": "ganache2",
+    "address": "0x3a84fbbefd21d6a5ce79d54d348344ee11ebd45c"
+  }
+]

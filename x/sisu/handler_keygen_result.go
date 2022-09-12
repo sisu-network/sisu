@@ -1,8 +1,6 @@
 package sisu
 
 import (
-	"sort"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
@@ -26,13 +24,14 @@ type HandlerKeygenResult struct {
 
 func NewHandlerKeygenResult(mc ManagerContainer) *HandlerKeygenResult {
 	return &HandlerKeygenResult{
-		keeper:     mc.Keeper(),
-		pmm:        mc.PostedMessageManager(),
-		globalData: mc.GlobalData(),
-		config:     mc.Config(),
-		txSubmit:   mc.TxSubmit(),
-		appKeys:    mc.AppKeys(),
-		valsMgr:    mc.ValidatorManager(),
+		keeper:      mc.Keeper(),
+		pmm:         mc.PostedMessageManager(),
+		globalData:  mc.GlobalData(),
+		config:      mc.Config(),
+		txSubmit:    mc.TxSubmit(),
+		appKeys:     mc.AppKeys(),
+		valsMgr:     mc.ValidatorManager(),
+		deyesClient: mc.DeyesClient(),
 	}
 }
 
@@ -57,7 +56,8 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 	// Check the majority of the results
 	successCount := 0
 	for _, result := range results {
-		log.Verbose("Keygen result: from: ", result.Data.From, " type = ", result.Keygen.KeyType, " success = ", result.Data.Result)
+		log.Verbose("Keygen result: from: ", result.Data.From, " type = ", result.Keygen.KeyType,
+			" success = ", result.Data.Result)
 		if result.Data.Result == types.KeygenResult_SUCCESS {
 			successCount += 1
 		}
@@ -72,65 +72,24 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 		params := h.keeper.GetParams(ctx)
 		for _, chain := range params.SupportedChains {
 			if libchain.GetKeyTypeForChain(chain) == keygen.KeyType {
-				log.Verbose("Setting gateway = ", keygen.Address, " for chain ", chain)
-				h.keeper.SetGateway(ctx, chain, keygen.Address)
+				// Set Vault
+				switch keygen.KeyType {
+				case libchain.KEY_TYPE_ECDSA:
+					vault := h.keeper.GetVault(ctx, chain)
+					h.deyesClient.SetGatewayAddress(chain, vault.Address)
+				case libchain.KEY_TYPE_EDDSA:
+					h.deyesClient.SetGatewayAddress(chain, keygen.Address)
+				}
+
+				// Set Mpc address
+				h.keeper.SetMpcAddress(ctx, chain, keygen.Address)
 			}
 		}
 
 		log.Infof("Keygen %s succeeded", keygen.KeyType)
-
-		if !h.globalData.IsCatchingUp() {
-			switch keygen.KeyType {
-			case libchain.KEY_TYPE_ECDSA:
-				h.createContracts(ctx, keygen)
-			}
-		}
 	} else {
 		// TODO: handle failure case
 		return nil, nil
 	}
 	return nil, nil
-}
-
-// createContracts creates and broadcast pending contracts. All nodes need to agree what
-// contracts to deploy on what chains.
-func (h *HandlerKeygenResult) createContracts(ctx sdk.Context, msg *types.Keygen) {
-	log.Info("Create and broadcast contracts...")
-
-	// Sort all contracts name alphabetically
-	names := make([]string, len(SupportedContracts))
-	i := 0
-	for contract := range SupportedContracts {
-		names[i] = contract
-		i += 1
-	}
-	sort.Strings(names)
-
-	params := h.keeper.GetParams(ctx)
-
-	// Create contracts
-	for _, chain := range params.SupportedChains {
-		if libchain.GetKeyTypeForChain(chain) == msg.KeyType {
-			log.Info("Saving contracts for chain ", chain)
-
-			for _, name := range names {
-				c := SupportedContracts[name]
-				if !c.IsDeployBySisu {
-					continue
-				}
-
-				contract := &types.Contract{
-					Chain:     chain,
-					Hash:      c.AbiHash,
-					Name:      name,
-					ByteCodes: []byte(c.Bin),
-				}
-
-				h.txSubmit.SubmitMessageAsync(types.NewContractsMsg(
-					h.appKeys.GetSignerAddress().String(),
-					[]*types.Contract{contract},
-				))
-			}
-		}
-	}
 }

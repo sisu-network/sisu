@@ -1,180 +1,165 @@
 package sisu
 
-import (
-	"fmt"
-	"strconv"
+// type HandlerPauseContract struct {
+// 	pmm    PostedMessageManager
+// 	keeper keeper.Keeper
+// 	mc     ManagerContainer
+// }
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	etypes "github.com/ethereum/go-ethereum/core/types"
-	hTypes "github.com/sisu-network/dheart/types"
-	libchain "github.com/sisu-network/lib/chain"
-	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/common"
-	"github.com/sisu-network/sisu/x/sisu/keeper"
-	"github.com/sisu-network/sisu/x/sisu/tssclients"
-	"github.com/sisu-network/sisu/x/sisu/types"
-)
+// func NewHandlerPauseContract(mc ManagerContainer) *HandlerPauseContract {
+// 	return &HandlerPauseContract{
+// 		keeper: mc.Keeper(),
+// 		pmm:    mc.PostedMessageManager(),
+// 		mc:     mc,
+// 	}
+// }
 
-type HandlerPauseContract struct {
-	pmm    PostedMessageManager
-	keeper keeper.Keeper
-	mc     ManagerContainer
-}
+// func (h *HandlerPauseContract) DeliverMsg(ctx sdk.Context, msg *types.PauseContractMsg) (*sdk.Result, error) {
+// 	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
+// 		data, err := newHandlerPauseResumeContract(h.mc).doPauseOrResume(ctx, msg.Data.Chain, msg.Data.Hash, true)
+// 		h.keeper.ProcessTxRecord(ctx, hash)
 
-func NewHandlerPauseContract(mc ManagerContainer) *HandlerPauseContract {
-	return &HandlerPauseContract{
-		keeper: mc.Keeper(),
-		pmm:    mc.PostedMessageManager(),
-		mc:     mc,
-	}
-}
+// 		return &sdk.Result{Data: data}, err
+// 	} else {
+// 		log.Verbose("HandlerPause: transaction has been processed")
+// 	}
 
-func (h *HandlerPauseContract) DeliverMsg(ctx sdk.Context, msg *types.PauseContractMsg) (*sdk.Result, error) {
-	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
-		data, err := newHandlerPauseResumeContract(h.mc).doPauseOrResume(ctx, msg.Data.Chain, msg.Data.Hash, true)
-		h.keeper.ProcessTxRecord(ctx, hash)
+// 	return &sdk.Result{}, nil
+// }
 
-		return &sdk.Result{Data: data}, err
-	} else {
-		log.Verbose("HandlerPause: transaction has been processed")
-	}
+// ////////////////////////////////
+// // HandlerResumeContract handles resuming contracts.
+// ////////////////////////////////
 
-	return &sdk.Result{}, nil
-}
+// type HandlerResumeContract struct {
+// 	pmm    PostedMessageManager
+// 	keeper keeper.Keeper
+// 	mc     ManagerContainer
+// }
 
-////////////////////////////////
-// HandlerResumeContract handles resuming contracts.
-////////////////////////////////
+// func NewHandlerResumeContract(mc ManagerContainer) *HandlerResumeContract {
+// 	return &HandlerResumeContract{
+// 		keeper: mc.Keeper(),
+// 		pmm:    mc.PostedMessageManager(),
+// 		mc:     mc,
+// 	}
+// }
 
-type HandlerResumeContract struct {
-	pmm    PostedMessageManager
-	keeper keeper.Keeper
-	mc     ManagerContainer
-}
+// func (h *HandlerResumeContract) DeliverMsg(ctx sdk.Context, msg *types.ResumeContractMsg) (*sdk.Result, error) {
+// 	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
+// 		newHandlerPauseResumeContract(h.mc).doPauseOrResume(ctx, msg.Data.Chain, msg.Data.Hash, false)
+// 		h.keeper.ProcessTxRecord(ctx, hash)
+// 	} else {
+// 		log.Verbose("HandlerResumeContract: transaction has been processed")
+// 	}
 
-func NewHandlerResumeContract(mc ManagerContainer) *HandlerResumeContract {
-	return &HandlerResumeContract{
-		keeper: mc.Keeper(),
-		pmm:    mc.PostedMessageManager(),
-		mc:     mc,
-	}
-}
+// 	return &sdk.Result{}, nil
+// }
 
-func (h *HandlerResumeContract) DeliverMsg(ctx sdk.Context, msg *types.ResumeContractMsg) (*sdk.Result, error) {
-	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
-		newHandlerPauseResumeContract(h.mc).doPauseOrResume(ctx, msg.Data.Chain, msg.Data.Hash, false)
-		h.keeper.ProcessTxRecord(ctx, hash)
-	} else {
-		log.Verbose("HandlerResumeContract: transaction has been processed")
-	}
+// ////////////////////////////////
+// // HandlerPauseResumeContract is a handler used for both pausing and resuming contracts.
+// ////////////////////////////////
 
-	return &sdk.Result{}, nil
-}
+// type handlerPauseResumeContract struct {
+// 	keeper           keeper.Keeper
+// 	txOutputProducer TxOutputProducer
+// 	globalData       common.GlobalData
+// 	partyManager     PartyManager
+// 	dheartClient     tssclients.DheartClient
+// }
 
-////////////////////////////////
-// HandlerPauseResumeContract is a handler used for both pausing and resuming contracts.
-////////////////////////////////
+// func newHandlerPauseResumeContract(mc ManagerContainer) *handlerPauseResumeContract {
+// 	return &handlerPauseResumeContract{
+// 		keeper:           mc.Keeper(),
+// 		txOutputProducer: mc.TxOutProducer(),
+// 		globalData:       mc.GlobalData(),
+// 		partyManager:     mc.PartyManager(),
+// 		dheartClient:     mc.DheartClient(),
+// 	}
+// }
 
-type handlerPauseResumeContract struct {
-	keeper           keeper.Keeper
-	txOutputProducer TxOutputProducer
-	globalData       common.GlobalData
-	partyManager     PartyManager
-	dheartClient     tssclients.DheartClient
-}
+// func (h *handlerPauseResumeContract) doPauseOrResume(ctx sdk.Context, chain, hash string, isPause bool) ([]byte, error) {
+// 	// Only do pause/pause if we finished catching up.
+// 	if h.globalData.IsCatchingUp() {
+// 		log.Info("We are catching up with the network, exiting doPauseOrResume")
+// 		return nil, nil
+// 	}
 
-func newHandlerPauseResumeContract(mc ManagerContainer) *handlerPauseResumeContract {
-	return &handlerPauseResumeContract{
-		keeper:           mc.Keeper(),
-		txOutputProducer: mc.TxOutProducer(),
-		globalData:       mc.GlobalData(),
-		partyManager:     mc.PartyManager(),
-		dheartClient:     mc.DheartClient(),
-	}
-}
+// 	found := false
+// 	for _, contract := range SupportedContracts {
+// 		if contract.AbiHash == hash {
+// 			found = true
+// 			break
+// 		}
+// 	}
 
-func (h *handlerPauseResumeContract) doPauseOrResume(ctx sdk.Context, chain, hash string, isPause bool) ([]byte, error) {
-	// Only do pause/pause if we finished catching up.
-	if h.globalData.IsCatchingUp() {
-		log.Info("We are catching up with the network, exiting doPauseOrResume")
-		return nil, nil
-	}
+// 	if !found {
+// 		err := fmt.Errorf("doPauseOrResume: contract with hash %s is not supported", hash)
+// 		log.Error(err)
+// 		return nil, err
+// 	}
 
-	found := false
-	for _, contract := range SupportedContracts {
-		if contract.AbiHash == hash {
-			found = true
-			break
-		}
-	}
+// 	var txOutMsg *types.TxOutMsg
+// 	var err error
+// 	if isPause {
+// 		log.Info("Creating pause transaction...")
+// 		txOutMsg, err = h.txOutputProducer.PauseContract(ctx, chain, hash)
+// 	} else {
+// 		log.Info("Creating resume transaction...")
+// 		txOutMsg, err = h.txOutputProducer.ResumeContract(ctx, chain, hash)
+// 	}
 
-	if !found {
-		err := fmt.Errorf("doPauseOrResume: contract with hash %s is not supported", hash)
-		log.Error(err)
-		return nil, err
-	}
+// 	if err != nil {
+// 		log.Error("cannot get txOut for pausing contract, err = ", err)
+// 		return nil, nil
+// 	}
 
-	var txOutMsg *types.TxOutMsg
-	var err error
-	if isPause {
-		log.Info("Creating pause transaction...")
-		txOutMsg, err = h.txOutputProducer.PauseContract(ctx, chain, hash)
-	} else {
-		log.Info("Creating resume transaction...")
-		txOutMsg, err = h.txOutputProducer.ResumeContract(ctx, chain, hash)
-	}
+// 	// Save this to KVStore
+// 	h.keeper.SaveTxOut(ctx, txOutMsg.Data)
 
-	if err != nil {
-		log.Error("cannot get txOut for pausing contract, err = ", err)
-		return nil, nil
-	}
+// 	// Sends to dheart for signing.
+// 	h.signTx(ctx, txOutMsg.Data)
 
-	// Save this to KVStore
-	h.keeper.SaveTxOut(ctx, txOutMsg.Data)
+// 	return nil, nil
+// }
 
-	// Sends to dheart for signing.
-	h.signTx(ctx, txOutMsg.Data)
+// // signTx sends a TxOut to dheart for TSS signing.
+// func (h *handlerPauseResumeContract) signTx(ctx sdk.Context, tx *types.TxOut) {
+// 	ethTx := &etypes.Transaction{}
+// 	if err := ethTx.UnmarshalBinary(tx.OutBytes); err != nil {
+// 		log.Error("cannot unmarshal tx, err =", err)
+// 	}
 
-	return nil, nil
-}
+// 	signer := libchain.GetEthChainSigner(tx.OutChain)
+// 	if signer == nil {
+// 		err := fmt.Errorf("cannot find signer for chain %s", tx.OutChain)
+// 		log.Error(err)
+// 	}
 
-// signTx sends a TxOut to dheart for TSS signing.
-func (h *handlerPauseResumeContract) signTx(ctx sdk.Context, tx *types.TxOut) {
-	ethTx := &etypes.Transaction{}
-	if err := ethTx.UnmarshalBinary(tx.OutBytes); err != nil {
-		log.Error("cannot unmarshal tx, err =", err)
-	}
+// 	hash := signer.Hash(ethTx)
 
-	signer := libchain.GetEthChainSigner(tx.OutChain)
-	if signer == nil {
-		err := fmt.Errorf("cannot find signer for chain %s", tx.OutChain)
-		log.Error(err)
-	}
+// 	// Send it to Dheart for signing.
+// 	keysignReq := &hTypes.KeysignRequest{
+// 		KeyType: libchain.KEY_TYPE_ECDSA,
+// 		KeysignMessages: []*hTypes.KeysignMessage{
+// 			{
+// 				Id:          h.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), tx.OutHash),
+// 				OutChain:    tx.OutChain,
+// 				OutHash:     tx.OutHash,
+// 				BytesToSign: hash[:],
+// 			},
+// 		},
+// 	}
 
-	hash := signer.Hash(ethTx)
+// 	pubKeys := h.partyManager.GetActivePartyPubkeys()
 
-	// Send it to Dheart for signing.
-	keysignReq := &hTypes.KeysignRequest{
-		KeyType: libchain.KEY_TYPE_ECDSA,
-		KeysignMessages: []*hTypes.KeysignMessage{
-			{
-				Id:          h.getKeysignRequestId(tx.OutChain, ctx.BlockHeight(), tx.OutHash),
-				OutChain:    tx.OutChain,
-				OutHash:     tx.OutHash,
-				BytesToSign: hash[:],
-			},
-		},
-	}
+// 	err := h.dheartClient.KeySign(keysignReq, pubKeys)
 
-	pubKeys := h.partyManager.GetActivePartyPubkeys()
+// 	if err != nil {
+// 		log.Error("Keysign: err =", err)
+// 	}
+// }
 
-	err := h.dheartClient.KeySign(keysignReq, pubKeys)
-
-	if err != nil {
-		log.Error("Keysign: err =", err)
-	}
-}
-
-func (h *handlerPauseResumeContract) getKeysignRequestId(chain string, blockHeight int64, txHash string) string {
-	return chain + "_" + strconv.Itoa(int(blockHeight)) + "_" + txHash
-}
+// func (h *handlerPauseResumeContract) getKeysignRequestId(chain string, blockHeight int64, txHash string) string {
+// 	return chain + "_" + strconv.Itoa(int(blockHeight)) + "_" + txHash
+// }

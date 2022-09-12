@@ -21,6 +21,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
+	"github.com/sisu-network/sisu/utils"
 	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
 	tssTypes "github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -196,6 +197,25 @@ func approveAddress(client *ethclient.Client, mnemonic string, erc20Addr string,
 		" owner balance = ", ownerBalance, " nonce = ", opts.Nonce)
 
 	tx, err := contract.Approve(opts, common.HexToAddress(target), ownerBalance)
+	if err != nil {
+		log.Error("Cannot approve address, err = ", err)
+	}
+	bind.WaitDeployed(context.Background(), client, tx)
+	time.Sleep(time.Second * 5)
+}
+
+func transferErc20(client *ethclient.Client, mnemonic string, erc20Addr string, target string) {
+	contract, err := erc20.NewErc20(common.HexToAddress(erc20Addr), client)
+	if err != nil {
+		panic(err)
+	}
+
+	opts, err := getAuthTransactor(client, mnemonic)
+	if err != nil {
+		panic(err)
+	}
+
+	tx, err := contract.Transfer(opts, common.HexToAddress(target), new(big.Int).Mul(utils.EthToWei, big.NewInt(10000)))
 	if err != nil {
 		log.Error("Cannot approve address, err = ", err)
 	}

@@ -4,30 +4,24 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"sort"
 
 	"github.com/echovl/cardano-go"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	chainstypes "github.com/sisu-network/deyes/chains/types"
 	etypes "github.com/sisu-network/deyes/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	dhtypes "github.com/sisu-network/dheart/types"
-	"github.com/sisu-network/lib/chain"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
-	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
-	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
-	"github.com/sisu-network/sisu/x/sisu/eth"
+	scardano "github.com/sisu-network/sisu/x/sisu/chains/cardano"
+	"github.com/sisu-network/sisu/x/sisu/chains/eth"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
-
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
 const (
@@ -42,16 +36,10 @@ var (
 	ErrValueDoesNotMatch       = fmt.Errorf("Value does not match")
 )
 
-type BlockSymbolPair struct {
-	blockHeight int64
-	chain       string
-}
-
 // ApiHandler handles API callback from dheart or deyes. There are few functions (BeginBlock & EndBlock)
 // that are still present for historical reason. They should be moved out of this file.
 type ApiHandler struct {
 	keeper     keeper.Keeper
-	config     config.TssConfig
 	txSubmit   common.TxSubmit
 	appKeys    common.AppKeys
 	globalData common.GlobalData
@@ -62,8 +50,6 @@ type ApiHandler struct {
 	dheartClient tssclients.DheartClient
 	deyesClient  tssclients.DeyesClient
 
-	keygenBlockPairs []BlockSymbolPair
-
 	privateDb keeper.Storage
 }
 
@@ -72,126 +58,18 @@ func NewApiHandler(
 	mc ManagerContainer,
 ) *ApiHandler {
 	a := &ApiHandler{
-		keeper:     mc.Keeper(),
-		privateDb:  privateDb,
-		appKeys:    mc.AppKeys(),
-		config:     mc.Config(),
-		txSubmit:   mc.TxSubmit(),
-		globalData: mc.GlobalData(),
-		// And array that stores block numbers where we should do final vote count.
-		keygenBlockPairs: make([]BlockSymbolPair, 0),
-		dheartClient:     mc.DheartClient(),
-		deyesClient:      mc.DeyesClient(),
-		txTracker:        mc.TxTracker(),
-		mc:               mc,
+		keeper:       mc.Keeper(),
+		privateDb:    privateDb,
+		appKeys:      mc.AppKeys(),
+		txSubmit:     mc.TxSubmit(),
+		globalData:   mc.GlobalData(),
+		dheartClient: mc.DheartClient(),
+		deyesClient:  mc.DeyesClient(),
+		txTracker:    mc.TxTracker(),
+		mc:           mc,
 	}
 
 	return a
-}
-
-// TODO: Move this function to module.go
-func (a *ApiHandler) BeginBlock(ctx sdk.Context, blockHeight int64) {
-	// Check keygen proposal
-	if blockHeight > 1 {
-		// We need to wait till block 2 for multistore of the app to be updated with latest account info
-		// for signing.
-		a.CheckTssKeygen(ctx, blockHeight)
-	}
-
-	oldValue := a.globalData.IsCatchingUp()
-	a.globalData.UpdateCatchingUp()
-	newValue := a.globalData.IsCatchingUp()
-
-	if oldValue && !newValue {
-		log.Info("Setting Sisu readiness for dheart.")
-		// This node has fully catched up with the blockchain, we need to inform dheart about this.
-		a.dheartClient.SetSisuReady(true)
-		a.deyesClient.SetSisuReady(true)
-	}
-
-	// TODO: Make keygen to be command instead of embedding inside the code.
-	// Check Vote result.
-	for len(a.keygenBlockPairs) > 0 && !a.globalData.IsCatchingUp() {
-		log.Verbose("blockHeight = ", blockHeight)
-		if blockHeight < a.keygenBlockPairs[0].blockHeight {
-			break
-		}
-
-		for len(a.keygenBlockPairs) > 0 && blockHeight >= a.keygenBlockPairs[0].blockHeight {
-			// Remove the chain from processing queue.
-			a.keygenBlockPairs = a.keygenBlockPairs[1:]
-		}
-	}
-
-	// Calculate all token prices.
-	a.calculateTokenPrices(ctx)
-}
-
-// calculateTokenPrices gets all token prices posted from all validators and calculate the median.
-func (a *ApiHandler) calculateTokenPrices(ctx sdk.Context) {
-	curBlock := ctx.BlockHeight()
-
-	// We wait for 5 more blocks after we get prices from deyes so that any record can be posted
-	// onto the blockchain.
-	if curBlock%TokenPriceUpdateInterval != 5 {
-		return
-	}
-
-	log.Info("Calcuating token prices....")
-
-	// TODO: Fix the signer set.
-	records := a.keeper.GetAllTokenPricesRecord(ctx)
-
-	tokenPrices := make(map[string][]*big.Int)
-	for _, data := range records {
-		for _, record := range data.Records {
-			// Only calculate token prices that has been updated recently.
-			if curBlock-int64(record.BlockHeight) > TokenPriceUpdateInterval {
-				continue
-			}
-
-			m := tokenPrices[record.Token]
-			if m == nil {
-				m = make([]*big.Int, 0)
-			}
-
-			value, _ := new(big.Int).SetString(record.Price, 10)
-			m = append(m, value)
-
-			tokenPrices[record.Token] = m
-		}
-	}
-
-	// Now sort all the array and get the median
-	medians := make(map[string]*big.Int)
-	for token, list := range tokenPrices {
-		if len(list) == 0 {
-			log.Error("cannot find price list for token ", token)
-			continue
-		}
-
-		sort.Slice(list, func(i, j int) bool {
-			return list[i].Cmp(list[j]) < 0
-		})
-		median := list[len(list)/2]
-		medians[token] = median
-	}
-
-	log.Verbose("Calculated prices = ", medians)
-
-	// Update all the token data.
-	arr := make([]string, 0, len(medians))
-	for token, _ := range medians {
-		arr = append(arr, token)
-	}
-
-	savedTokens := a.keeper.GetTokens(ctx, arr)
-
-	for tokenId, price := range medians {
-		savedTokens[tokenId].Price = price.String()
-	}
-
-	a.keeper.SetTokens(ctx, savedTokens)
 }
 
 // TODO: Move this function to module.go
@@ -275,8 +153,6 @@ func (a *ApiHandler) OnKeygenResult(result dhtypes.KeygenResult) {
 		}
 
 		log.Verbose("adding chain account address ", result.Address, " for chain ", chain)
-
-		a.deyesClient.SetChainAccount(chain, result.Address)
 		if libchain.IsCardanoChain(chain) {
 			a.deyesClient.SetGatewayAddress(chain, result.Address)
 		}
@@ -285,9 +161,45 @@ func (a *ApiHandler) OnKeygenResult(result dhtypes.KeygenResult) {
 
 // OnTxDeploymentResult is a callback after there is a deployment result from deyes.
 func (a *ApiHandler) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
+	if !result.Success {
+		log.Verbosef("Result from deyes: failed to deploy tx, chain = %s, signed hash = %s", result.Chain, result.TxHash)
+		txOut := a.getTxOutFromSignedHash(result.Chain, result.TxHash)
+
+		if result.Err == etypes.ErrNotEnoughBalance {
+			// Report this as failure. Submit to the Sisu chain
+			txOutResult := &types.TxOutResult{
+				OutChain: txOut.Content.OutChain,
+				OutHash:  txOut.Content.OutHash,
+				Result:   types.TxOutResultType_NOT_ENOUGH_NATIVE_BALANCE,
+			}
+
+			a.submitTxOutResult(txOutResult)
+		}
+
+		return
+	}
+
 	log.Info("The transaction has been sent to blockchain (but not included in a block yet). chain = ",
-		result.Chain, ", address = ", result.DeployedAddr)
+		result.Chain)
 	a.txTracker.UpdateStatus(result.Chain, result.TxHash, types.TxStatusDepoyed)
+}
+
+// getTxOutFromSignedHash fetches txout in the TxOut store from the hash of a signed transaction.
+func (a *ApiHandler) getTxOutFromSignedHash(chain, signedHash string) *types.TxOut {
+	// The txOutSig is in private db while txOut should come from common db.
+	txOutSig := a.privateDb.GetTxOutSig(chain, signedHash)
+	if txOutSig == nil {
+		log.Error("cannot find txOutSig with full signature hash: ", signedHash)
+		return nil
+	}
+
+	ctx := a.globalData.GetReadOnlyContext()
+	txOut := a.keeper.GetTxOut(ctx, chain, txOutSig.HashNoSig)
+	if txOut == nil {
+		log.Verbose("cannot find txOut with hash (with no sig): ", txOutSig.HashNoSig)
+	}
+
+	return txOut
 }
 
 // This function is called after dheart sends Sisu keysign result.
@@ -381,20 +293,15 @@ func (a *ApiHandler) processETHSigningResult(ctx sdk.Context, result *dhtypes.Ke
 
 	// // TODO: Broadcast the keysign result that includes this TxOutSig.
 	// // Save this to TxOutSig
-	log.Verbose("ETH keysign result signMsg.OutHash = ", signMsg.OutHash, " on chain ", signMsg.OutChain)
+	log.Verbosef("ETH keysign result chain = %s, hash (no sig) = %s, hash (signed) = %s",
+		signMsg.OutChain, signMsg.OutHash, signedTx.Hash().String())
 	a.privateDb.SaveTxOutSig(&types.TxOutSig{
 		Chain:       signMsg.OutChain,
 		HashWithSig: signedTx.Hash().String(),
 		HashNoSig:   signMsg.OutHash,
 	})
 
-	log.Info("signedTx hash = ", signedTx.Hash().String(), " on chain ", signMsg.OutChain)
-
-	// If this is a contract deployment transaction, update the contract table with the hash of the
-	// deployment tx bytes.
-	isContractDeployment := chain.IsETHBasedChain(signMsg.OutChain) &&
-		txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT
-	err = a.deploySignedTx(ctx, bz, signMsg.OutChain, signedTx.Hash().String(), isContractDeployment)
+	err = a.deploySignedTx(ctx, bz, signMsg.OutChain, signedTx.Hash().String())
 	if err != nil {
 		log.Error("deployment error: ", err)
 		return
@@ -411,7 +318,7 @@ func (a *ApiHandler) processCardanoSigningResult(ctx sdk.Context, result *dhtype
 	}
 
 	tx := &cardano.Tx{}
-	if err := tx.UnmarshalCBOR(txOut.OutBytes); err != nil {
+	if err := tx.UnmarshalCBOR(txOut.Content.OutBytes); err != nil {
 		log.Error("error when unmarshalling cardano tx: ", err)
 		return err
 	}
@@ -439,7 +346,6 @@ func (a *ApiHandler) processCardanoSigningResult(ctx sdk.Context, result *dhtype
 		HashNoSig:   signMsg.OutHash,
 	})
 
-	// TODO: temporary use json to encode/decode. In the future, should use cbor instead
 	txBytes, err := tx.MarshalCBOR()
 	if err != nil {
 		log.Error("error when marshal cardano tx: ", err)
@@ -450,7 +356,7 @@ func (a *ApiHandler) processCardanoSigningResult(ctx sdk.Context, result *dhtype
 		return nil
 	}
 
-	err = a.deploySignedTx(ctx, txBytes, signMsg.OutChain, result.Request.KeysignMessages[index].OutHash, false)
+	err = a.deploySignedTx(ctx, txBytes, signMsg.OutChain, result.Request.KeysignMessages[index].OutHash)
 	if err != nil {
 		log.Error("deployment error: ", err)
 		return err
@@ -462,7 +368,7 @@ func (a *ApiHandler) processCardanoSigningResult(ctx sdk.Context, result *dhtype
 }
 
 // deploySignedTx creates a deployment request and sends it to deyes.
-func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string, outHash string, isContractDeployment bool) error {
+func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string, outHash string) error {
 	log.Verbose("Sending final tx to the deyes for deployment for chain ", outChain)
 
 	pubkey := a.keeper.GetKeygenPubkey(ctx, libchain.GetKeyTypeForChain(outChain))
@@ -471,21 +377,22 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 	}
 
 	request := &etypes.DispatchedTxRequest{
-		Chain:                   outChain,
-		TxHash:                  outHash,
-		Tx:                      bz,
-		PubKey:                  pubkey,
-		IsEthContractDeployment: isContractDeployment,
+		Chain:  outChain,
+		TxHash: outHash,
+		Tx:     bz,
+		PubKey: pubkey,
 	}
 
 	go func(request *eyesTypes.DispatchedTxRequest) {
 		result, err := a.deyesClient.Dispatch(request)
+
 		if err != nil {
 			log.Error("Failed to deploy, err = ", err)
 			return
 		}
 		if result != nil && !result.Success {
 			log.Error("Deployment failed!, err = ", result.Err)
+			// TODO: Post failure error the chain.
 		}
 	}(request)
 
@@ -497,64 +404,46 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	log.Verbose("There is a new list of txs from deyes, len =", len(txs.Arr))
 
-	transferRequests := &types.TxsIn{
-		Chain:    txs.Chain,
-		Hash:     txs.BlockHash,
-		Height:   txs.Block,
-		Requests: make([]*types.TxIn, 0),
+	transferRequests := &types.Transfers{
+		Transfers: make([]*types.Transfer, 0),
 	}
 
 	ctx := a.globalData.GetReadOnlyContext()
 
 	// Create TxIn messages and broadcast to the Sisu chain.
-	// TODO: Prevent submitting fund gateway multiple times.
-	gatewayFundTxSubmitted := false
 	for _, tx := range txs.Arr {
-		// Check if this is a transaciton that fund ETH gateway
-		if libchain.IsETHBasedChain(txs.Chain) && !gatewayFundTxSubmitted {
-			ethTx := &ethTypes.Transaction{}
-			err := ethTx.UnmarshalBinary(tx.Serialized)
-			if err != nil {
-				log.Error("Failed to unmarshall eth tx. err =", err)
-				continue
-			}
-
-			if ethTx.To() != nil && a.keeper.IsKeygenAddress(ctx, libchain.KEY_TYPE_ECDSA, ethTx.To().String()) {
-				msg := types.NewFundGatewayMsg(a.appKeys.GetSignerAddress().String(), &types.FundGateway{
-					Chain:  txs.Chain,
-					TxHash: utils.KeccakHash32Bytes(tx.Serialized),
-					Amount: ethTx.Value().Bytes(),
-				})
-
-				// For contract deployment
-				a.txSubmit.SubmitMessageAsync(msg)
-				gatewayFundTxSubmitted = true
-				continue
-			}
-		}
-
-		// Check if this is a transaction from our gateway. If true, ignore it.
-		gateway := a.keeper.GetGateway(ctx, txs.Chain)
-		if gateway == tx.From {
-			log.Verbosef("This is a transaction sent from our gateway %s on chain %s, ignore",
-				gateway, txs.Chain)
+		if !tx.Success {
+			log.Verbose("Failed incoming transaction (not our fault), hash = ", tx.Hash, ", chain = ", txs.Chain)
 			continue
 		}
 
-		txIns, err := a.parseTransferRequest(ctx, txs.Chain, tx)
+		// Check if this is a transaction from our sisu. If true, ignore it.
+		sisu := a.keeper.GetMpcAddress(ctx, txs.Chain)
+		if sisu == tx.From {
+			log.Verbosef("This is a transaction sent from our sisu account %s on chain %s, ignore",
+				sisu, txs.Chain)
+			continue
+		}
+
+		transfers, err := a.parseDeyesTx(ctx, txs.Chain, tx)
 		if err != nil {
 			log.Error("Faield to parse transfer, err = ", err)
 			continue
 		}
 
-		log.Verbose("Len(txIns) = ", len(txIns), " on chain ", txs.Chain)
-		if txIns != nil {
-			transferRequests.Requests = append(transferRequests.Requests, txIns...)
+		// Assign the id for all transfers
+		for _, transfer := range transfers {
+			transfer.Id = types.GetTransferId(transfer.FromChain, transfer.FromHash)
+		}
+
+		log.Verbose("Len(transfers) = ", len(transfers), " on chain ", txs.Chain)
+		if transfers != nil {
+			transferRequests.Transfers = append(transferRequests.Transfers, transfers...)
 		}
 	}
 
-	if len(transferRequests.Requests) > 0 {
-		msg := types.NewTxsInMsg(a.appKeys.GetSignerAddress().String(), transferRequests)
+	if len(transferRequests.Transfers) > 0 {
+		msg := types.NewTransfersMsg(a.appKeys.GetSignerAddress().String(), transferRequests)
 		a.txSubmit.SubmitMessageAsync(msg)
 	}
 
@@ -572,28 +461,22 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	return nil
 }
 
-func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.TxIn, error) {
+func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.Transfer, error) {
 	if libchain.IsETHBasedChain(chain) {
-		erc20gatewayContract := SupportedContracts[ContractErc20Gateway]
-		gwAbi := erc20gatewayContract.Abi
-
-		ethTx := &ethTypes.Transaction{}
-		err := ethTx.UnmarshalBinary(tx.Serialized)
-		if err != nil {
-			log.Error("Failed to unmarshall eth tx. err =", err)
-			return nil, err
+		parseResult := eth.ParseVaultTx(ctx, a.keeper, chain, tx)
+		if parseResult.Error != nil {
+			return nil, parseResult.Error
 		}
 
-		transfer, err := eth.ParseEthTransferOut(ctx, ethTx, chain, gwAbi, a.keeper)
-		if err != nil {
-			return nil, err
+		if parseResult.TransferOut != nil {
+			return []*types.Transfer{parseResult.TransferOut}, nil
 		}
 
-		return []*types.TxIn{transfer}, nil
+		return []*types.Transfer{}, nil
 	}
 
 	if libchain.IsCardanoChain(chain) {
-		ret := make([]*types.TxIn, 0)
+		ret := make([]*types.Transfer, 0)
 		cardanoTx := &etypes.CardanoTransactionUtxo{}
 		err := json.Unmarshal(tx.Serialized, cardanoTx)
 		if err != nil {
@@ -632,12 +515,12 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 				log.Verbose("tokenUnit = ", tokenUnit, " quantity = ", quantity)
 				log.Verbose("cardanoTx.Metadata = ", cardanoTx.Metadata)
 
-				ret = append(ret, &types.TxIn{
-					Hash:      cardanoTx.Hash,
-					ToChain:   cardanoTx.Metadata.Chain,
-					Token:     tokenUnit,
-					Recipient: cardanoTx.Metadata.Recipient,
-					Amount:    quantity.String(),
+				ret = append(ret, &types.Transfer{
+					FromHash:    cardanoTx.Hash,
+					Token:       tokenUnit,
+					Amount:      quantity.String(),
+					ToChain:     cardanoTx.Metadata.Chain,
+					ToRecipient: cardanoTx.Metadata.Recipient,
 				})
 			}
 		}
@@ -648,60 +531,44 @@ func (a *ApiHandler) parseTransferRequest(ctx sdk.Context, chain string, tx *eye
 	return nil, fmt.Errorf("Unknown chain %s", chain)
 }
 
-// ConfirmTx implements AppLogicListener
-func (a *ApiHandler) ConfirmTx(txTrack *chainstypes.TrackUpdate) {
-	ctx := a.globalData.GetReadOnlyContext()
-
-	log.Verbosef("Confirming tx height = %d, chain = %s, hash = %s, nonce = %d",
+// OnTxIncludedInBlock implements AppLogicListener
+func (a *ApiHandler) OnTxIncludedInBlock(txTrack *chainstypes.TrackUpdate) {
+	log.Verbosef("Confirming tx height = %d, chain = %s, signed hash = %s, nonce = %d",
 		txTrack.BlockHeight, txTrack.Chain, txTrack.Hash, txTrack.Nonce)
 
-	// The txOutSig is in private db while txOut should come from common db.
-	txOutSig := a.privateDb.GetTxOutSig(txTrack.Chain, txTrack.Hash)
-	if txOutSig == nil {
-		log.Error("cannot find txOutSig with full signature hash: ", txTrack.Hash)
-		return
-	}
+	txOut := a.getTxOutFromSignedHash(txTrack.Chain, txTrack.Hash)
 
-	txOut := a.keeper.GetTxOut(ctx, txTrack.Chain, txOutSig.HashNoSig)
-	if txOut == nil {
-		log.Verbose("cannot find txOut with hash (with no sig): ", txOutSig.HashNoSig)
-		return
-	}
-	log.Info("confirming tx: chain, hash, type = ", txTrack.Chain, " ", txTrack.Hash, " ", txOut.TxType)
-	a.txTracker.RemoveTransaction(txTrack.Chain, txOut.OutHash)
-
-	txConfirm := &types.TxOutConfirm{
-		OutChain:    txOut.OutChain,
-		OutHash:     txOut.OutHash,
+	txOutResult := &types.TxOutResult{
+		OutChain:    txOut.Content.OutChain,
+		OutHash:     txOut.Content.OutHash,
 		BlockHeight: txTrack.BlockHeight,
 	}
-
 	if libchain.IsETHBasedChain(txTrack.Chain) {
-		ethTx := &ethTypes.Transaction{}
+		ethTx := &ethtypes.Transaction{}
 		err := ethTx.UnmarshalBinary(txTrack.Bytes)
 		if err != nil {
 			log.Error("cannot unmarshal eth transaction, err = ", err)
 			return
 		}
 
-		txConfirm.Nonce = int64(ethTx.Nonce()) + 1
-		if txOut.TxType == types.TxOutType_CONTRACT_DEPLOYMENT {
-			sender, err := utils.GetEthSender(ethTx)
-			if err != nil {
-				log.Error("cannot get eth sender, err = ", err)
-				return
-			}
-
-			contractAddress := ethcrypto.CreateAddress(sender, ethTx.Nonce()).String()
-			log.Info("contractAddress = ", contractAddress)
-
-			txConfirm.ContractAddress = contractAddress
-		}
+		txOutResult.Nonce = int64(ethTx.Nonce()) + 1
 	}
 
-	msg := types.NewTxOutConfirmMsg(
+	if txTrack.Result == chainstypes.TrackResultConfirmed {
+		log.Infof("confirming tx: chain = %s, signed hash = %, type = %v", txTrack.Chain, txTrack.Hash, txOut.TxType)
+		txOutResult.Result = types.TxOutResultType_IN_BLOCK_SUCCESS
+	} else {
+		// Tx is included in the block but fails to execute.
+		txOutResult.Result = types.TxOutResultType_IN_BLOCK_FAILURE
+	}
+
+	a.submitTxOutResult(txOutResult)
+}
+
+func (a *ApiHandler) submitTxOutResult(txOutResult *types.TxOutResult) {
+	msg := types.NewTxOutResultMsg(
 		a.appKeys.GetSignerAddress().String(),
-		txConfirm,
+		txOutResult,
 	)
 	a.txSubmit.SubmitMessageAsync(msg)
 }

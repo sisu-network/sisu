@@ -33,23 +33,8 @@ type Keeper interface {
 	SaveKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner)
 	GetAllKeygenResult(ctx sdk.Context, keygenType string, index int32) []*types.KeygenResultWithSigner
 
-	// Contract
-	SaveContract(ctx sdk.Context, msg *types.Contract, saveByteCode bool)
-	SaveContracts(ctx sdk.Context, msgs []*types.Contract, saveByteCode bool)
-	IsContractExisted(ctx sdk.Context, msg *types.Contract) bool
-	GetContract(ctx sdk.Context, chain string, hash string, includeByteCode bool) *types.Contract
-	GetPendingContracts(ctx sdk.Context, chain string) []*types.Contract
-	UpdateContractAddress(ctx sdk.Context, chain string, hash string, address string)
-	UpdateContractsStatus(ctx sdk.Context, chain string, contractHash string, status string)
-	GetLatestContractAddressByName(ctx sdk.Context, chain, name string) string
-
-	// Contract Address
-	CreateContractAddress(ctx sdk.Context, chain string, txOutHash string, address string)
-	IsContractExistedAtAddress(ctx sdk.Context, chain string, address string) bool
-
 	// TxOut
 	SaveTxOut(ctx sdk.Context, msg *types.TxOut)
-	IsTxOutExisted(ctx sdk.Context, msg *types.TxOut) bool
 	GetTxOut(ctx sdk.Context, outChain, hash string) *types.TxOut
 
 	// TxOutSig
@@ -78,23 +63,31 @@ type Keeper interface {
 	SaveNode(ctx sdk.Context, node *types.Node)
 	LoadValidators(ctx sdk.Context) []*types.Node
 
-	// Liquidities
-	SetLiquidities(ctx sdk.Context, liquidities map[string]*types.Liquidity)
-	GetLiquidity(ctx sdk.Context, chain string) *types.Liquidity
-	GetAllLiquidities(ctx sdk.Context) map[string]*types.Liquidity
+	// Vaults
+	SetVaults(ctx sdk.Context, vaults []*types.Vault)
+	GetVault(ctx sdk.Context, chain string) *types.Vault
+
+	// MPC Address
+	SetMpcAddress(ctx sdk.Context, chain string, address string)
+	GetMpcAddress(ctx sdk.Context, chain string) string
 
 	// Params
 	SaveParams(ctx sdk.Context, params *types.Params)
 	GetParams(ctx sdk.Context) *types.Params
 
-	// Gateway
-	SetGateway(ctx sdk.Context, chain string, gateway string)
-	GetGateway(ctx sdk.Context, chain string) string
-
 	// Gateway checkpoint
 	AddGatewayCheckPoint(ctx sdk.Context, checkPoint *types.GatewayCheckPoint)
 	GetGatewayCheckPoint(ctx sdk.Context, chain string) *types.GatewayCheckPoint
 	GetAllGatewayCheckPoints(ctx sdk.Context) map[string]*types.GatewayCheckPoint
+
+	// Command Queue
+	SetCommandQueue(ctx sdk.Context, chain string, commands []*types.Command)
+	GetCommandQueue(ctx sdk.Context, chain string) []*types.Command
+
+	// Transfer
+	AddTransfers(ctx sdk.Context, transfers []*types.Transfer)
+	GetTransfer(ctx sdk.Context, id string) *types.Transfer
+	GetTransfers(ctx sdk.Context, ids []string) []*types.Transfer
 
 	// Transfer Queue
 	SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.Transfer)
@@ -177,89 +170,10 @@ func (k *DefaultKeeper) GetAllKeygenResult(ctx sdk.Context, keygenType string, i
 	return getAllKeygenResult(store, keygenType, index)
 }
 
-///// Contract
-func (k *DefaultKeeper) SaveContract(ctx sdk.Context, msg *types.Contract, saveByteCode bool) {
-	k.SaveContracts(ctx, []*types.Contract{msg}, saveByteCode)
-}
-
-func (k *DefaultKeeper) SaveContracts(ctx sdk.Context, msgs []*types.Contract, saveByteCode bool) {
-	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
-	var byteCodeStore cstypes.KVStore
-	byteCodeStore = nil
-	if saveByteCode {
-		byteCodeStore = prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractByteCode)
-	}
-
-	saveContracts(contractStore, byteCodeStore, msgs)
-
-	// After saving contracts, also save contract address for each contract type
-	contractNameStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractName)
-	for _, msg := range msgs {
-		saveContractAddressForName(contractNameStore, msg)
-	}
-}
-
-func (k *DefaultKeeper) IsContractExisted(ctx sdk.Context, msg *types.Contract) bool {
-	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
-	return isContractExisted(contractStore, msg)
-}
-
-func (k *DefaultKeeper) GetContract(ctx sdk.Context, chain string, hash string, includeByteCode bool) *types.Contract {
-	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
-	var byteCodeStore cstypes.KVStore
-	byteCodeStore = nil
-	if includeByteCode {
-		byteCodeStore = prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractByteCode)
-	}
-
-	return getContract(contractStore, byteCodeStore, chain, hash)
-}
-
-func (k *DefaultKeeper) GetPendingContracts(ctx sdk.Context, chain string) []*types.Contract {
-	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
-	byteCodeStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractByteCode)
-
-	return getPendingContracts(contractStore, byteCodeStore, chain)
-}
-
-func (k *DefaultKeeper) UpdateContractAddress(ctx sdk.Context, chain string, hash string, address string) {
-	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
-	updateContractAddress(contractStore, chain, hash, address)
-}
-
-func (k *DefaultKeeper) UpdateContractsStatus(ctx sdk.Context, chain string, contractHash string, status string) {
-	contractStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
-	updateContractsStatus(contractStore, chain, contractHash, status)
-}
-
-func (k *DefaultKeeper) GetLatestContractAddressByName(ctx sdk.Context, chain, name string) string {
-	contractNameStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractName)
-	return getContractAddressByName(contractNameStore, chain, name)
-}
-
-///// Contract Address
-func (k *DefaultKeeper) CreateContractAddress(ctx sdk.Context, chain string, txOutHash string, address string) {
-	caStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractAddress)
-	txOutStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
-
-	createContractAddress(caStore, txOutStore, chain, txOutHash, address)
-}
-
-func (k *DefaultKeeper) IsContractExistedAtAddress(ctx sdk.Context, chain string, address string) bool {
-	caStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixContractAddress)
-
-	return isContractExistedAtAddress(caStore, chain, address)
-}
-
 ///// TxOut
 func (k *DefaultKeeper) SaveTxOut(ctx sdk.Context, msg *types.TxOut) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
 	saveTxOut(store, msg)
-}
-
-func (k *DefaultKeeper) IsTxOutExisted(ctx sdk.Context, msg *types.TxOut) bool {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
-	return isTxOutExisted(store, msg)
 }
 
 func (k *DefaultKeeper) GetTxOut(ctx sdk.Context, outChain, hash string) *types.TxOut {
@@ -348,21 +262,27 @@ func (k *DefaultKeeper) LoadValidators(ctx sdk.Context) []*types.Node {
 	return loadValidators(store)
 }
 
-///// Liquidities
+///// Vaults
 
-func (k *DefaultKeeper) SetLiquidities(ctx sdk.Context, liquids map[string]*types.Liquidity) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixLiquidity)
-	setLiquidities(store, liquids)
+func (k *DefaultKeeper) SetVaults(ctx sdk.Context, vaults []*types.Vault) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixVault)
+	setVaults(store, vaults)
 }
 
-func (k *DefaultKeeper) GetLiquidity(ctx sdk.Context, chain string) *types.Liquidity {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixLiquidity)
-	return getLiquidity(store, chain)
+func (k *DefaultKeeper) GetVault(ctx sdk.Context, chain string) *types.Vault {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixVault)
+	return getVault(store, chain)
 }
 
-func (k *DefaultKeeper) GetAllLiquidities(ctx sdk.Context) map[string]*types.Liquidity {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixLiquidity)
-	return getAllLiquidities(store)
+///// Vaults
+func (k *DefaultKeeper) SetMpcAddress(ctx sdk.Context, chain string, address string) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixMpcAddress)
+	setMpcAddress(store, chain, address)
+}
+
+func (k *DefaultKeeper) GetMpcAddress(ctx sdk.Context, chain string) string {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixMpcAddress)
+	return getMpcAddress(store, chain)
 }
 
 ///// Params
@@ -374,17 +294,6 @@ func (k *DefaultKeeper) SaveParams(ctx sdk.Context, params *types.Params) {
 func (k *DefaultKeeper) GetParams(ctx sdk.Context) *types.Params {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixParams)
 	return getParams(store)
-}
-
-///// Gateway
-func (k *DefaultKeeper) SetGateway(ctx sdk.Context, chain string, gateway string) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGateway)
-	setGateway(store, chain, gateway)
-}
-
-func (k *DefaultKeeper) GetGateway(ctx sdk.Context, chain string) string {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGateway)
-	return getGateway(store, chain)
 }
 
 ///// Gateway Checkpoint
@@ -403,15 +312,48 @@ func (k *DefaultKeeper) GetAllGatewayCheckPoints(ctx sdk.Context) map[string]*ty
 	return getAllGatewayCheckPoints(store)
 }
 
+///// Command Queue
+func (k *DefaultKeeper) SetCommandQueue(ctx sdk.Context, chain string, commands []*types.Command) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixCommandQueue)
+	setCommandQueue(store, chain, commands)
+}
+
+func (k *DefaultKeeper) GetCommandQueue(ctx sdk.Context, chain string) []*types.Command {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixCommandQueue)
+	return getCommandQueue(store, chain)
+}
+
+///// Transfer
+func (k *DefaultKeeper) AddTransfers(ctx sdk.Context, transfers []*types.Transfer) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
+	addTransfers(store, transfers)
+}
+
+func (k *DefaultKeeper) GetTransfer(ctx sdk.Context, id string) *types.Transfer {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
+	transfers := getTransfers(store, []string{id})
+	if len(transfers) == 0 {
+		return nil
+	}
+
+	return transfers[0]
+}
+
+func (k *DefaultKeeper) GetTransfers(ctx sdk.Context, ids []string) []*types.Transfer {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
+	return getTransfers(store, ids)
+}
+
 ///// Transfer Queue
 func (k *DefaultKeeper) SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.Transfer) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferQueue)
-	setTranfers(store, chain, transfers)
+	setTranferQueue(store, chain, transfers)
 }
 
 func (k *DefaultKeeper) GetTransferQueue(ctx sdk.Context, chain string) []*types.Transfer {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferQueue)
-	return getTransfers(store, chain)
+	transferStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
+	queueStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferQueue)
+	return getTransferQueue(queueStore, transferStore, chain)
 }
 
 ///// TxOutQueue
@@ -443,8 +385,6 @@ func (k *DefaultKeeper) getStoreFromName(ctx sdk.Context, name string) cstypes.K
 	switch name {
 	case "keygen":
 		store = prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygen)
-	case "contract":
-		store = prefix.NewStore(ctx.KVStore(k.storeKey), prefixContract)
 	case "txOut":
 		store = prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
 	}

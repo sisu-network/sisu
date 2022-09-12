@@ -8,7 +8,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec/types"
-	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
+	scardano "github.com/sisu-network/sisu/x/sisu/chains/cardano"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/p2p"
@@ -272,10 +272,10 @@ func New(
 	partyManager := tss.NewPartyManager(app.globalData)
 	txOutProducer := tss.NewTxOutputProducer(app.appKeys, app.k, cfg.Cardano,
 		cardanoNode, txTracker)
-	txInQueue := sisu.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss, app.appKeys)
+	transferQueue := sisu.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss, app.appKeys)
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.k),
 		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
-		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, txInQueue, cardanoNode)
+		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, transferQueue, cardanoNode)
 
 	apiHandler := tss.NewApiHandler(privateDb, mc)
 	app.apiHandler.SetAppLogicListener(apiHandler)

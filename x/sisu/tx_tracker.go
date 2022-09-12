@@ -39,7 +39,6 @@ type TxTracker interface {
 	UpdateStatus(chain string, hash string, status types.TxStatus)
 	RemoveTransaction(chain string, hash string)
 	OnTxFailed(chain string, hash string, status types.TxStatus)
-
 	CheckExpiredTransaction()
 }
 
@@ -62,8 +61,8 @@ func (t *DefaultTxTracker) getTxoKey(chain string, hash string) string {
 }
 
 func (t *DefaultTxTracker) AddTransaction(txOut *types.TxOut) {
-	chain := txOut.OutChain
-	hash := txOut.OutHash
+	chain := txOut.Content.OutChain
+	hash := txOut.Content.OutHash
 	key := t.getTxoKey(chain, hash)
 
 	t.txsLock.Lock()
@@ -149,9 +148,9 @@ func (t *DefaultTxTracker) processFailedTx(txo *txObject) {
 	inHash := ""
 
 	log.Warnf("Processing failed transaction. outChain: %s, outHash :%s, status: %v, inChain: %s, inHash: %s",
-		txo.txOut.OutChain, txo.txOut.OutHash, txo.status, inChain, inHash)
+		txo.txOut.Content.OutChain, txo.txOut.Content.OutHash, txo.status, inChain, inHash)
 
-	key := t.getTxoKey(txo.txOut.OutChain, txo.txOut.OutHash)
+	key := t.getTxoKey(txo.txOut.Content.OutChain, txo.txOut.Content.OutHash)
 	t.txsLock.Lock()
 	delete(t.txs, key)
 	t.txsLock.Unlock()
@@ -170,7 +169,7 @@ func (t *DefaultTxTracker) sendAlertEmail(url, secret, emailAddress string, txo 
 		return
 	}
 
-	subject := fmt.Sprintf("Failed tx on chain %s with hash %s", txo.txOut.OutChain, txo.txOut.OutHash)
+	subject := fmt.Sprintf("Failed tx on chain %s with hash %s", txo.txOut.Content.OutChain, txo.txOut.Content.OutHash)
 
 	err = email.NewSendGrid().Send(url, secret, emailAddress, subject, body)
 	if err != nil {
@@ -205,8 +204,8 @@ func (t *DefaultTxTracker) getEmailBodyString(txo *txObject) (string, error) {
 	}
 
 	body := Body{}
-	body.Chain = txo.txOut.OutChain
-	body.Hash = txo.txOut.OutHash
+	body.Chain = txo.txOut.Content.OutChain
+	body.Hash = txo.txOut.Content.OutHash
 	body.LastStatus = types.StatusStrings[txo.status]
 
 	switch txo.txOut.TxType {
@@ -220,30 +219,28 @@ func (t *DefaultTxTracker) getEmailBodyString(txo *txObject) (string, error) {
 
 	// 	body.TxOutData = TxOutData{
 	// 		Type:         "TRANSFER_OUT",
-	// 		Chain:        txo.txOut.OutChain,
+	// 		Chain:        txo.txOut.Content.OutChain,
 	// 		TokenAddress: data.token.String(),
 	// 		Recipient:    data.recipient,
 	// 		Amount:       data.amount.String(),
 	// 	}
-	case types.TxOutType_CONTRACT_DEPLOYMENT:
-		return fmt.Sprintf("contract deployment failed, hash = %s", txo.txOut.OutHash), nil
 	}
 
 	return utils.PrettyStruct(body)
 }
 
-func (t *DefaultTxTracker) getEThTransferIn(chain string, bz []byte) (*types.TransferOutData, error) {
-	// ethTx := &ethTypes.Transaction{}
+// func (t *DefaultTxTracker) getEThTransferIn(chain string, bz []byte) (*types.TransferOutData, error) {
+// 	// ethTx := &ethTypes.Transaction{}
 
-	// err := ethTx.UnmarshalBinary(bz)
-	// if err != nil {
-	// 	return nil, err
-	// }
+// 	// err := ethTx.UnmarshalBinary(bz)
+// 	// if err != nil {
+// 	// 	return nil, err
+// 	// }
 
-	// return parseEthTransferOut(ethTx, chain, t.worldState)
+// 	// return parseEthTransferOut(ethTx, chain, t.worldState)
 
-	return nil, nil
-}
+// 	return nil, nil
+// }
 
 // func (t *DefaultTxTracker) getEthTransferIn(bz []byte) (*transferInData, error) {
 // 	ethTx := &ethTypes.Transaction{}

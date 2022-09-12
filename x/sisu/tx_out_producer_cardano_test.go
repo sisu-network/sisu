@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/echovl/cardano-go"
 	"github.com/sisu-network/sisu/utils"
-	scardano "github.com/sisu-network/sisu/x/sisu/cardano"
+	scardano "github.com/sisu-network/sisu/x/sisu/chains/cardano"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
@@ -109,10 +109,10 @@ func TestDefaultTxOutputProducer_getCardanoTx(t *testing.T) {
 		mockClient(client, utxos, balance)
 		transfers := []*types.Transfer{
 			{
-				Id:        "ganache1_hash1",
-				Recipient: recipient1.String(),
-				Token:     "SISU",
-				Amount:    utils.EthToWei.String(), // Transfer 1 Sisu
+				Id:          "ganache1_hash1",
+				ToRecipient: recipient1.String(),
+				Token:       "SISU",
+				Amount:      utils.EthToWei.String(), // Transfer 1 Sisu
 			},
 		}
 
@@ -145,10 +145,10 @@ func TestDefaultTxOutputProducer_getCardanoTx(t *testing.T) {
 
 		transfers := []*types.Transfer{
 			{
-				Id:        "ganache1_hash1",
-				Recipient: recipient1.String(),
-				Token:     "SISU",
-				Amount:    (new(big.Int).Mul(utils.EthToWei, big.NewInt(200))).String(), // 200 Sisu
+				Id:          "ganache1_hash1",
+				ToRecipient: recipient1.String(),
+				Token:       "SISU",
+				Amount:      (new(big.Int).Mul(utils.EthToWei, big.NewInt(200))).String(), // 200 Sisu
 			},
 		}
 
@@ -167,16 +167,16 @@ func TestDefaultTxOutputProducer_getCardanoTx(t *testing.T) {
 
 		transfers := []*types.Transfer{
 			{
-				Id:        "ganache1_hash1",
-				Recipient: recipient1.String(),
-				Token:     "SISU",
-				Amount:    (new(big.Int).Mul(utils.EthToWei, big.NewInt(5))).String(),
+				Id:          "ganache1_hash1",
+				ToRecipient: recipient1.String(),
+				Token:       "SISU",
+				Amount:      (new(big.Int).Mul(utils.EthToWei, big.NewInt(5))).String(),
 			},
 			{
-				Id:        "ganache1_hash2",
-				Recipient: recipient2.String(),
-				Token:     "SISU",
-				Amount:    (new(big.Int).Mul(utils.EthToWei, big.NewInt(10))).String(),
+				Id:          "ganache1_hash2",
+				ToRecipient: recipient2.String(),
+				Token:       "SISU",
+				Amount:      (new(big.Int).Mul(utils.EthToWei, big.NewInt(10))).String(),
 			},
 		}
 

@@ -160,7 +160,7 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 
 	if err := initGenFiles(
 		clientCtx, mbm, chainID, genAccounts, genBalances, genFiles, nodes,
-		settings.tokens, settings.chains, settings.liquidities, settings.params,
+		settings.tokens, settings.chains, settings.vaults, settings.params,
 	); err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func initGenFiles(
 	clientCtx client.Context, mbm module.BasicManager, chainID string,
 	genAccounts []authtypes.GenesisAccount, genBalances []banktypes.Balance,
 	genFiles []string, nodes []*types.Node, tokens []*types.Token, chains []*types.Chain,
-	liquids []*types.Liquidity, params *types.Params,
+	vaults []*types.Vault, params *types.Params,
 ) error {
 	appGenState := mbm.DefaultGenesis(clientCtx.JSONMarshaler)
 
@@ -247,7 +247,7 @@ func initGenFiles(
 	sisuGenState.Nodes = nodes
 	sisuGenState.Tokens = tokens
 	sisuGenState.Chains = chains
-	sisuGenState.Liquids = liquids
+	sisuGenState.Vaults = vaults
 	sisuGenState.Params = params
 	sisuGenState.Checkpoints = checkPoints
 

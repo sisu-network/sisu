@@ -4,18 +4,16 @@ import (
 	"context"
 
 	"github.com/ethereum/go-ethereum/rpc"
-	eTypes "github.com/sisu-network/deyes/types"
+	etypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/lib/log"
 )
 
 type DeyesClient interface {
 	Ping(source string) error
-	Dispatch(request *eTypes.DispatchedTxRequest) (*eTypes.DispatchedTxResult, error)
-	SetChainAccount(chain string, addr string) error
+	Dispatch(request *etypes.DispatchedTxRequest) (*etypes.DispatchedTxResult, error)
 	SetGatewayAddress(chain string, addr string) error
 	GetNonce(chain string, address string) int64
 	SetSisuReady(isReady bool) error
-
 	GetGasPrices(chains []string) ([]int64, error)
 }
 
@@ -62,17 +60,6 @@ func (c *defaultDeyesClient) SetSisuReady(isReady bool) error {
 	return nil
 }
 
-func (c *defaultDeyesClient) SetChainAccount(chain string, addr string) error {
-	var result string
-	err := c.client.CallContext(context.Background(), &result, "deyes_setChainAccount", chain, addr)
-	if err != nil {
-		log.Error("Cannot set chain account for deyes, chain = ", chain, "err = ", err)
-		return err
-	}
-
-	return nil
-}
-
 func (c *defaultDeyesClient) SetGatewayAddress(chain string, addr string) error {
 	var result string
 	err := c.client.CallContext(context.Background(), &result, "deyes_setGatewayAddress", chain, addr)
@@ -84,8 +71,8 @@ func (c *defaultDeyesClient) SetGatewayAddress(chain string, addr string) error 
 	return nil
 }
 
-func (c *defaultDeyesClient) Dispatch(request *eTypes.DispatchedTxRequest) (*eTypes.DispatchedTxResult, error) {
-	var result = &eTypes.DispatchedTxResult{}
+func (c *defaultDeyesClient) Dispatch(request *etypes.DispatchedTxRequest) (*etypes.DispatchedTxResult, error) {
+	var result = &etypes.DispatchedTxResult{}
 	err := c.client.CallContext(context.Background(), &result, "deyes_dispatchTx", request)
 	if err != nil {
 		log.Error("Cannot Dispatch tx to the chain", request.Chain, "err =", err)

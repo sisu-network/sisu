@@ -271,11 +271,11 @@ func TestDb_KeygenResult(t *testing.T) {
 func TestDb_getGateway(t *testing.T) {
 	store := memstore.NewStore()
 
-	setGateway(store, "ganache1", "addr1")
-	gateway := getGateway(store, "ganache1")
-	require.Equal(t, "addr1", gateway)
+	setSisuAccount(store, "ganache1", "addr1")
+	sisu := getSisuAccount(store, "ganache1")
+	require.Equal(t, "addr1", sisu)
 
-	setGateway(store, "ganache2", "addr2")
-	gateway = getGateway(store, "ganache2")
-	require.Equal(t, "addr2", gateway)
+	setSisuAccount(store, "ganache2", "addr2")
+	sisu = getSisuAccount(store, "ganache2")
+	require.Equal(t, "addr2", sisu)
 }
