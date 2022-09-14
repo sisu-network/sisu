@@ -249,6 +249,7 @@ func (a *ApiHandler) OnKeysignResult(result *dhtypes.KeysignResult) {
 				a.processETHSigningResult(ctx, result, keysignMsg, i)
 			}
 
+			// TODO: Submit signing failure here.
 			if libchain.IsCardanoChain(keysignMsg.OutChain) {
 				if err := a.processCardanoSigningResult(ctx, result, keysignMsg, i); err != nil {
 					log.Error("Failed to process cardano signing result, err = ", err)
@@ -396,13 +397,35 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 	go func(request *eyesTypes.DispatchedTxRequest) {
 		result, err := a.deyesClient.Dispatch(request)
 
-		if err != nil {
-			log.Error("Failed to deploy, err = ", err)
-			return
-		}
-		if result != nil && !result.Success {
-			log.Error("Deployment failed!, err = ", result.Err)
-			// TODO: Post failure error the chain.
+		// Handle failure case.
+		if err != nil || (result != nil && !result.Success) {
+			log.Error("Deployment failed!, err = ", err)
+
+			txOut := a.getTxOutFromSignedHash(outChain, outHash)
+
+			if txOut == nil {
+				log.Errorf("Cannot find txOut for dispath result with signed hash = %s, chain = %s", outHash, outChain)
+				return
+			}
+
+			// Report this as failure. Submit to the Sisu chain
+			txOutResult := &types.TxOutResult{
+				OutChain: txOut.Content.OutChain,
+				OutHash:  txOut.Content.OutHash,
+			}
+			txOutResult.Result = types.TxOutResultType_GENERIC_ERROR
+
+			if result != nil {
+				log.Verbose("Result error = ", result.Err)
+				switch result.Err {
+				case etypes.ErrNotEnoughBalance:
+					txOutResult.Result = types.TxOutResultType_NOT_ENOUGH_NATIVE_BALANCE
+				}
+			}
+
+			a.submitTxOutResult(txOutResult)
+		} else {
+			log.Verbose("Tx is sent to deyes!")
 		}
 	}(request)
 

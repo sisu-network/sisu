@@ -9,6 +9,7 @@ enum TxOutResultType {
   IN_BLOCK_FAILURE = 2;
   NOT_ENOUGH_NATIVE_BALANCE = 3;
   TIMEOUT = 4;
+  GENERIC_ERROR = 5;
 }
 
 message TxOutResultMsg {
