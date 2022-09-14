@@ -23,13 +23,14 @@ import (
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/contracts/eth/vault"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/stretchr/testify/require"
 )
 
 func mockForApiHandlerTest() (sdk.Context, ManagerContainer) {
-	ctx := TestContext()
-	k := KeeperTestAfterContractDeployed(ctx)
+	ctx := testmock.TestContext()
+	k := testmock.KeeperTestAfterContractDeployed(ctx)
 
 	globalData := &common.MockGlobalData{
 		GetReadOnlyContextFunc: func() sdk.Context {

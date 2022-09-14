@@ -5,13 +5,14 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
 
 func mockForHandlerTransferOut() (sdk.Context, ManagerContainer) {
-	ctx := TestContext()
-	k := KeeperTestAfterContractDeployed(ctx)
+	ctx := testmock.TestContext()
+	k := testmock.KeeperTestAfterContractDeployed(ctx)
 	pmm := NewPostedMessageManager(k)
 	k.SaveParams(ctx, &types.Params{
 		MajorityThreshold: 1,

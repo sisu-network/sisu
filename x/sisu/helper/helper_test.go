@@ -21,7 +21,7 @@ var (
 )
 
 // TODO: Refactor test context out of the sisu package
-func testContext() sdk.Context {
+func testmock.TestContext() sdk.Context {
 	db := dbm.NewMemDB()
 	cms := store.NewCommitMultiStore(db)
 	cms.MountStoreWithDB(testKeyStore, sdk.StoreTypeIAVL, db)
@@ -31,7 +31,7 @@ func testContext() sdk.Context {
 }
 
 func TestGasCostInToken(t *testing.T) {
-	ctx := testContext()
+	ctx := testmock.TestContext()
 	k := keeper.NewKeeper(testKeyStore)
 
 	chain := "ganache1"

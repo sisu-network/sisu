@@ -5,13 +5,14 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
 
 func mockForHandlerTxOut() (sdk.Context, ManagerContainer) {
-	ctx := TestContext()
-	k := KeeperTestGenesis(ctx)
+	ctx := testmock.TestContext()
+	k := testmock.KeeperTestGenesis(ctx)
 	txTracker := &MockTxTracker{}
 	pmm := NewPostedMessageManager(k)
 

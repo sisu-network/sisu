@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sisu-network/sisu/x/sisu/keeper"
+	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
@@ -35,7 +36,7 @@ func mockEthTx(t *testing.T, txOutputProducer DefaultTxOutputProducer, destChain
 }
 
 func mockKeeperForTxOutProducerEth(ctx sdk.Context) keeper.Keeper {
-	k := KeeperTestAfterContractDeployed(ctx)
+	k := testmock.KeeperTestAfterContractDeployed(ctx)
 	k.AddGatewayCheckPoint(ctx, &types.GatewayCheckPoint{
 		Chain: "ganache2",
 		Nonce: 1,
@@ -46,7 +47,7 @@ func mockKeeperForTxOutProducerEth(ctx sdk.Context) keeper.Keeper {
 
 // func TestTxOutProducerErc20_processERC20TransferOut(t *testing.T) {
 // 	t.Run("token_has_low_price", func(t *testing.T) {
-// 		ctx := testContext()
+// 		ctx := testmock.TestContext()
 // 		keeper := mockKeeperForTxOutProducerEth(ctx)
 // 		keeper.SetTokens(ctx, map[string]*types.Token{
 // 			"SISU": {
@@ -81,7 +82,7 @@ func mockKeeperForTxOutProducerEth(ctx sdk.Context) keeper.Keeper {
 // 	})
 
 // 	t.Run("token_has_high_price", func(t *testing.T) {
-// 		ctx := testContext()
+// 		ctx := testmock.TestContext()
 // 		keeper := mockKeeperForTxOutProducerEth(ctx)
 // 		keeper.SetTokens(ctx, map[string]*types.Token{
 // 			"SISU": {
@@ -116,7 +117,7 @@ func mockKeeperForTxOutProducerEth(ctx sdk.Context) keeper.Keeper {
 // 	})
 
 // 	t.Run("insufficient_fund", func(t *testing.T) {
-// 		ctx := testContext()
+// 		ctx := testmock.TestContext()
 // 		keeper := mockKeeperForTxOutProducerEth(ctx)
 // 		keeper.SetTokens(ctx, map[string]*types.Token{
 // 			"SISU": {
@@ -148,7 +149,7 @@ func mockKeeperForTxOutProducerEth(ctx sdk.Context) keeper.Keeper {
 // 	})
 
 // 	t.Run("token_has_zero_price", func(t *testing.T) {
-// 		ctx := testContext()
+// 		ctx := testmock.TestContext()
 // 		keeper := mockKeeperForTxOutProducerEth(ctx)
 // 		keeper.SetTokens(ctx, map[string]*types.Token{
 // 			"SISU": {
@@ -177,7 +178,7 @@ func mockKeeperForTxOutProducerEth(ctx sdk.Context) keeper.Keeper {
 // 	})
 
 // 	t.Run("token_has_negative_price", func(t *testing.T) {
-// 		ctx := testContext()
+// 		ctx := testmock.TestContext()
 // 		keeper := mockKeeperForTxOutProducerEth(ctx)
 // 		keeper.SetTokens(ctx, map[string]*types.Token{
 // 			"SISU": {

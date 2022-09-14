@@ -10,14 +10,15 @@ import (
 	ecommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
 
 func mockForPostedMessageManager() (sdk.Context, ManagerContainer) {
-	ctx := TestContext()
-	k := KeeperTestGenesis(ctx)
+	ctx := testmock.TestContext()
+	k := testmock.KeeperTestGenesis(ctx)
 	pmm := NewPostedMessageManager(k)
 	globalData := &common.MockGlobalData{}
 	dheartClient := &tssclients.MockDheartClient{}

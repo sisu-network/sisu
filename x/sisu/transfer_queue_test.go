@@ -6,13 +6,14 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
 
 func mockForTransferQueue() (sdk.Context, ManagerContainer) {
-	ctx := TestContext()
-	k := KeeperTestGenesis(ctx)
+	ctx := testmock.TestContext()
+	k := testmock.KeeperTestGenesis(ctx)
 	params := k.GetParams(ctx)
 	params.TransferOutParams = []*types.TransferOutParams{
 		{

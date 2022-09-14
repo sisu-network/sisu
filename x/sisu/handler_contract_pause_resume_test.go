@@ -1,8 +1,8 @@
 package sisu
 
 // func mockForHandlerContractPauseResume() (sdk.Context, ManagerContainer) {
-// 	ctx := testContext()
-// 	k := keeperTestGenesis(ctx)
+// 	ctx := testmock.TestContext()
+// 	k := testmock.KeeperTestGenesis(ctx)
 // 	pmm := NewPostedMessageManager(k)
 // 	globalData := &common.MockGlobalData{}
 // 	dheartClient := &tssclients.MockDheartClient{}
