@@ -11,7 +11,7 @@ import (
 type DeyesClient interface {
 	Ping(source string) error
 	Dispatch(request *etypes.DispatchedTxRequest) (*etypes.DispatchedTxResult, error)
-	SetGatewayAddress(chain string, addr string) error
+	SetVaultAddress(chain string, addr string) error
 	GetNonce(chain string, address string) int64
 	SetSisuReady(isReady bool) error
 	GetGasPrices(chains []string) ([]int64, error)
@@ -60,9 +60,9 @@ func (c *defaultDeyesClient) SetSisuReady(isReady bool) error {
 	return nil
 }
 
-func (c *defaultDeyesClient) SetGatewayAddress(chain string, addr string) error {
+func (c *defaultDeyesClient) SetVaultAddress(chain string, addr string) error {
 	var result string
-	err := c.client.CallContext(context.Background(), &result, "deyes_setGatewayAddress", chain, addr)
+	err := c.client.CallContext(context.Background(), &result, "deyes_setVaultAddress", chain, addr)
 	if err != nil {
 		log.Error("Cannot set gateway address for deyes, chain = ", chain, "err = ", err)
 		return err
