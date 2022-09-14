@@ -13,8 +13,8 @@ import (
 )
 
 func mockForHandlerKeygen() (sdk.Context, ManagerContainer) {
-	ctx := testContext()
-	k := keeperTestGenesis(ctx)
+	ctx := TestContext()
+	k := KeeperTestGenesis(ctx)
 	globalData := &common.MockGlobalData{}
 	pmm := NewPostedMessageManager(k)
 

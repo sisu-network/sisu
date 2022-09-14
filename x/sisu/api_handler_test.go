@@ -28,8 +28,8 @@ import (
 )
 
 func mockForApiHandlerTest() (sdk.Context, ManagerContainer) {
-	ctx := testContext()
-	k := keeperTestAfterContractDeployed(ctx)
+	ctx := TestContext()
+	k := KeeperTestAfterContractDeployed(ctx)
 
 	globalData := &common.MockGlobalData{
 		GetReadOnlyContextFunc: func() sdk.Context {

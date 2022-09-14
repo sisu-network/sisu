@@ -28,7 +28,7 @@ var (
 	testErc20TokenAddress = "0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"
 )
 
-func testContext() sdk.Context {
+func TestContext() sdk.Context {
 	db := dbm.NewMemDB()
 	cms := store.NewCommitMultiStore(db)
 	cms.MountStoreWithDB(testKeyStore, sdk.StoreTypeIAVL, db)
@@ -38,7 +38,7 @@ func testContext() sdk.Context {
 }
 
 // Default keeper
-func keeperTestGenesis(ctx sdk.Context) keeper.Keeper {
+func KeeperTestGenesis(ctx sdk.Context) keeper.Keeper {
 	keeper := keeper.NewKeeper(testKeyStore)
 	keeper.SaveChain(ctx, &types.Chain{
 		Id:          "ganache1",
@@ -99,9 +99,9 @@ func keeperTestGenesis(ctx sdk.Context) keeper.Keeper {
 }
 
 // Keeper after keygen has been saved
-func keeperTestAfterKeygen(ctx sdk.Context) keeper.Keeper {
+func KeeperTestAfterKeygen(ctx sdk.Context) keeper.Keeper {
 	ethTx := defaultTestEthTx(0)
-	keeper := keeperTestGenesis(ctx)
+	keeper := KeeperTestGenesis(ctx)
 
 	keeper.SaveKeygen(ctx, &types.Keygen{
 		KeyType:     libchain.KEY_TYPE_ECDSA,
@@ -112,8 +112,8 @@ func keeperTestAfterKeygen(ctx sdk.Context) keeper.Keeper {
 	return keeper
 }
 
-func keeperTestAfterContractDeployed(ctx sdk.Context) keeper.Keeper {
-	keeper := keeperTestAfterKeygen(ctx)
+func KeeperTestAfterContractDeployed(ctx sdk.Context) keeper.Keeper {
+	keeper := KeeperTestAfterKeygen(ctx)
 
 	keeper.SetMpcAddress(ctx, "ganache1", testContractAddr)
 	keeper.SetMpcAddress(ctx, "ganache2", testContractAddr)

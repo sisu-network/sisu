@@ -10,8 +10,8 @@ import (
 )
 
 func mockForHandlerTransferFailure() (sdk.Context, keeper.Keeper, PostedMessageManager) {
-	ctx := testContext()
-	k := keeperTestGenesis(ctx)
+	ctx := TestContext()
+	k := KeeperTestGenesis(ctx)
 	pmm := NewPostedMessageManager(k)
 
 	return ctx, k, pmm

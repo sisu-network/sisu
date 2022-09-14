@@ -12,8 +12,8 @@ import (
 )
 
 func mockForTestModule() (sdk.Context, ManagerContainer) {
-	ctx := testContext()
-	k := keeperTestGenesis(ctx)
+	ctx := TestContext()
+	k := KeeperTestGenesis(ctx)
 	globalData := &common.MockGlobalData{}
 	txOutQueue := &MockTxOutQueue{}
 

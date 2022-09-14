@@ -14,8 +14,8 @@ import (
 )
 
 func mockForTestDefaultTxOutputProducer() (sdk.Context, keeper.Keeper, *scardano.MockCardanoClient) {
-	ctx := testContext()
-	k := keeperTestAfterContractDeployed(ctx)
+	ctx := TestContext()
+	k := KeeperTestAfterContractDeployed(ctx)
 
 	client := &scardano.MockCardanoClient{}
 	client.ProtocolParamsFunc = func() (*cardano.ProtocolParams, error) {

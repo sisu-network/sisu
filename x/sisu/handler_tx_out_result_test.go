@@ -10,8 +10,8 @@ import (
 )
 
 func mockForHandlerTxOutResult() (sdk.Context, ManagerContainer) {
-	ctx := testContext()
-	k := keeperTestGenesis(ctx)
+	ctx := TestContext()
+	k := KeeperTestGenesis(ctx)
 	pmm := NewPostedMessageManager(k)
 	transferQ := MockTransferQueue{}
 

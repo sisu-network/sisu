@@ -11,8 +11,8 @@ import (
 )
 
 func mockForTransferQueue() (sdk.Context, ManagerContainer) {
-	ctx := testContext()
-	k := keeperTestGenesis(ctx)
+	ctx := TestContext()
+	k := KeeperTestGenesis(ctx)
 	params := k.GetParams(ctx)
 	params.TransferOutParams = []*types.TransferOutParams{
 		{

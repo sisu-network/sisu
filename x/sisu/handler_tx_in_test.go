@@ -10,8 +10,8 @@ import (
 )
 
 func mockForHandlerTransferOut() (sdk.Context, ManagerContainer) {
-	ctx := testContext()
-	k := keeperTestAfterContractDeployed(ctx)
+	ctx := TestContext()
+	k := KeeperTestAfterContractDeployed(ctx)
 	pmm := NewPostedMessageManager(k)
 	k.SaveParams(ctx, &types.Params{
 		MajorityThreshold: 1,

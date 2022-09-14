@@ -12,8 +12,8 @@ import (
 )
 
 func mockForHandlerGasPrice() (sdk.Context, ManagerContainer) {
-	ctx := testContext()
-	k := keeperTestGenesis(ctx)
+	ctx := TestContext()
+	k := KeeperTestGenesis(ctx)
 	k.SaveParams(ctx, &types.Params{MajorityThreshold: 1})
 
 	globalData := &common.MockGlobalData{}

@@ -16,8 +16,8 @@ import (
 )
 
 func mockForPostedMessageManager() (sdk.Context, ManagerContainer) {
-	ctx := testContext()
-	k := keeperTestGenesis(ctx)
+	ctx := TestContext()
+	k := KeeperTestGenesis(ctx)
 	pmm := NewPostedMessageManager(k)
 	globalData := &common.MockGlobalData{}
 	dheartClient := &tssclients.MockDheartClient{}

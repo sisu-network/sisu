@@ -35,7 +35,7 @@ func mockEthTx(t *testing.T, txOutputProducer DefaultTxOutputProducer, destChain
 }
 
 func mockKeeperForTxOutProducerEth(ctx sdk.Context) keeper.Keeper {
-	k := keeperTestAfterContractDeployed(ctx)
+	k := KeeperTestAfterContractDeployed(ctx)
 	k.AddGatewayCheckPoint(ctx, &types.GatewayCheckPoint{
 		Chain: "ganache2",
 		Nonce: 1,
