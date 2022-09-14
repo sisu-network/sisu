@@ -84,7 +84,7 @@ func (h *HandlerTxOutResult) doTxOutConfirm(ctx sdk.Context, msg *types.TxOutRes
 }
 
 func (h *HandlerTxOutResult) doTxOutFailure(ctx sdk.Context, msg *types.TxOutResult, txOut *types.TxOut) ([]byte, error) {
-	log.Verbose("Transaction failed!, txOut.TxType = ", txOut.TxType)
+	log.Warn("Transaction failed!, txOut.TxType = ", txOut.TxType)
 
 	switch txOut.TxType {
 	case types.TxOutType_TRANSFER_OUT:
@@ -95,6 +95,8 @@ func (h *HandlerTxOutResult) doTxOutFailure(ctx sdk.Context, msg *types.TxOutRes
 		for _, transfer := range transfers {
 			transfer.RetryNum++
 			h.keeper.AddTransfers(ctx, []*types.Transfer{transfer})
+
+			log.Verbosef("Failed transaction: from chain = %s, from hash = %s", transfer.FromChain, transfer.FromHash)
 		}
 
 		// TODO: Figure out when we should process this transfer since we do not have enough funding.
