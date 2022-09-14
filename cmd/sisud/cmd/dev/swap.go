@@ -82,7 +82,7 @@ transfer params.
 			// Swapping from ETH chain
 			if libchain.IsETHBasedChain(src) {
 				vault := c.getVaultAddress(cmd.Context(), src, sisuRpc)
-				fmt.Println("Vault address = ", vault)
+				log.Info("Vault address = ", vault)
 				amountBigInt := big.NewInt(int64(amount))
 				amountBigInt = new(big.Int).Mul(amountBigInt, utils.EthToWei)
 

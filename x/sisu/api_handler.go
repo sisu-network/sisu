@@ -162,19 +162,29 @@ func (a *ApiHandler) OnKeygenResult(result dhtypes.KeygenResult) {
 // OnTxDeploymentResult is a callback after there is a deployment result from deyes.
 func (a *ApiHandler) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 	if !result.Success {
-		log.Verbosef("Result from deyes: failed to deploy tx, chain = %s, signed hash = %s", result.Chain, result.TxHash)
+		log.Verbosef("Result from deyes: failed to deploy tx, chain = %s, signed hash = %s, error = %v",
+			result.Chain, result.TxHash, result.Err)
 		txOut := a.getTxOutFromSignedHash(result.Chain, result.TxHash)
 
-		if result.Err == etypes.ErrNotEnoughBalance {
-			// Report this as failure. Submit to the Sisu chain
-			txOutResult := &types.TxOutResult{
-				OutChain: txOut.Content.OutChain,
-				OutHash:  txOut.Content.OutHash,
-				Result:   types.TxOutResultType_NOT_ENOUGH_NATIVE_BALANCE,
-			}
-
-			a.submitTxOutResult(txOutResult)
+		if txOut == nil {
+			log.Errorf("Cannot find txOut for dispath result with signed hash = %s, chain = %s", result.TxHash, result.Chain)
+			return
 		}
+
+		// Report this as failure. Submit to the Sisu chain
+		txOutResult := &types.TxOutResult{
+			OutChain: txOut.Content.OutChain,
+			OutHash:  txOut.Content.OutHash,
+		}
+
+		switch result.Err {
+		case etypes.ErrNotEnoughBalance:
+			txOutResult.Result = types.TxOutResultType_NOT_ENOUGH_NATIVE_BALANCE
+		default:
+			txOutResult.Result = types.TxOutResultType_UNKNOWN
+		}
+
+		a.submitTxOutResult(txOutResult)
 
 		return
 	}
@@ -239,6 +249,7 @@ func (a *ApiHandler) OnKeysignResult(result *dhtypes.KeysignResult) {
 				a.processETHSigningResult(ctx, result, keysignMsg, i)
 			}
 
+			// TODO: Submit signing failure here.
 			if libchain.IsCardanoChain(keysignMsg.OutChain) {
 				if err := a.processCardanoSigningResult(ctx, result, keysignMsg, i); err != nil {
 					log.Error("Failed to process cardano signing result, err = ", err)
@@ -386,13 +397,35 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 	go func(request *eyesTypes.DispatchedTxRequest) {
 		result, err := a.deyesClient.Dispatch(request)
 
-		if err != nil {
-			log.Error("Failed to deploy, err = ", err)
-			return
-		}
-		if result != nil && !result.Success {
-			log.Error("Deployment failed!, err = ", result.Err)
-			// TODO: Post failure error the chain.
+		// Handle failure case.
+		if err != nil || (result != nil && !result.Success) {
+			log.Error("Deployment failed!, err = ", err)
+
+			txOut := a.getTxOutFromSignedHash(outChain, outHash)
+
+			if txOut == nil {
+				log.Errorf("Cannot find txOut for dispath result with signed hash = %s, chain = %s", outHash, outChain)
+				return
+			}
+
+			// Report this as failure. Submit to the Sisu chain
+			txOutResult := &types.TxOutResult{
+				OutChain: txOut.Content.OutChain,
+				OutHash:  txOut.Content.OutHash,
+			}
+			txOutResult.Result = types.TxOutResultType_GENERIC_ERROR
+
+			if result != nil {
+				log.Verbose("Result error = ", result.Err)
+				switch result.Err {
+				case etypes.ErrNotEnoughBalance:
+					txOutResult.Result = types.TxOutResultType_NOT_ENOUGH_NATIVE_BALANCE
+				}
+			}
+
+			a.submitTxOutResult(txOutResult)
+		} else {
+			log.Verbose("Tx is sent to deyes!")
 		}
 	}(request)
 
@@ -555,7 +588,7 @@ func (a *ApiHandler) OnTxIncludedInBlock(txTrack *chainstypes.TrackUpdate) {
 	}
 
 	if txTrack.Result == chainstypes.TrackResultConfirmed {
-		log.Infof("confirming tx: chain = %s, signed hash = %, type = %v", txTrack.Chain, txTrack.Hash, txOut.TxType)
+		log.Infof("confirming tx: chain = %s, signed hash = %s, type = %v", txTrack.Chain, txTrack.Hash, txOut.TxType)
 		txOutResult.Result = types.TxOutResultType_IN_BLOCK_SUCCESS
 	} else {
 		// Tx is included in the block but fails to execute.
