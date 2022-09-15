@@ -53,7 +53,7 @@ func ParseVaultTx(ctx sdk.Context, keeper keeper.Keeper, chain string, eyesTx *e
 	switch methodName {
 	case "transferOut":
 		result.Method = chainstypes.MethodTransferOut
-		result.TransferOut, result.Error = parseEthTransferOut(ctx, keeper, ethTx, chain, txParams)
+		result.TransferOut, result.Error = parseTransferOut(ctx, keeper, ethTx, chain, txParams)
 	case "addSpender":
 		result.Method = chainstypes.MethodAddSpender
 	default:
@@ -64,7 +64,7 @@ func ParseVaultTx(ctx sdk.Context, keeper keeper.Keeper, chain string, eyesTx *e
 	return result
 }
 
-func parseEthTransferOut(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.Transaction, chain string,
+func parseTransferOut(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.Transaction, chain string,
 	txParams map[string]interface{}) (*types.Transfer, error) {
 	msg, err := ethTx.AsMessage(ethtypes.NewLondonSigner(ethTx.ChainId()), nil)
 	if err != nil {
@@ -134,6 +134,22 @@ func getTokenOnChain(allTokens map[string]*types.Token, tokenAddr, targetChain s
 	}
 
 	return nil
+}
+
+func parseTransferIn(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.Transaction) (map[string]any, error) {
+	vaultAbi, _ := abi.JSON(strings.NewReader(vault.VaultABI))
+	callData := ethTx.Data()
+	if len(callData) < 4 {
+		// This is just a normal transfer
+		return nil, fmt.Errorf("Invalid transferIn data")
+	}
+
+	_, txParams, err := DecodeTxParams(vaultAbi, callData)
+	if err != nil {
+		return nil, err
+	}
+
+	return txParams, nil
 }
 
 func DecodeTxParams(abi abi.ABI, callData []byte) (string, map[string]interface{}, error) {

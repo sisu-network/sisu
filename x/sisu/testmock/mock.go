@@ -25,7 +25,7 @@ var (
 	testSisuEthAddr       = "0x743E1388AAd8EC7c47Df39AFbAEd58EBc1f43901"
 	testSisuEthPubkeyHex  = "04b3cb1c95782b1793e3102d2ba493c34456f11ce471ca7e1ec1a731275b72bb2ba93e45069dab6d2b84815baeb3824f39c344bb9cf03d62cca9504724a808cc42"
 	testContractAddr      = "0x50cc7ceDe8532d5f431EfC3e3EF167423Bc1807a"
-	testErc20TokenAddress = "0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"
+	TestErc20TokenAddress = "0x3A84fBbeFD21D6a5ce79D54d348344EE11EBd45C"
 )
 
 func TestContext() sdk.Context {
@@ -80,7 +80,7 @@ func KeeperTestGenesis(ctx sdk.Context) keeper.Keeper {
 			Price:     new(big.Int).Mul(big.NewInt(4), utils.EthToWei).String(),
 			Decimals:  18,
 			Chains:    []string{"ganache1", "ganache2", "cardano-testnet"},
-			Addresses: []string{strings.ToLower(testErc20TokenAddress), strings.ToLower(testErc20TokenAddress), "ccf1a53e157a7277e717045578a6e9834405730be0b778fd0daab794:uSISU"},
+			Addresses: []string{strings.ToLower(TestErc20TokenAddress), strings.ToLower(TestErc20TokenAddress), "ccf1a53e157a7277e717045578a6e9834405730be0b778fd0daab794:uSISU"},
 		},
 		"ADA": {
 			Id:        "ADA",
