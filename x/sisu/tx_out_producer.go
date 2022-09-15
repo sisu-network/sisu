@@ -5,7 +5,6 @@ import (
 
 	scardano "github.com/sisu-network/sisu/x/sisu/chains/cardano"
 
-	ecommon "github.com/ethereum/go-ethereum/common"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,6 +15,9 @@ import (
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
+
+	chainseth "github.com/sisu-network/sisu/x/sisu/chains/eth"
+	chainstypes "github.com/sisu-network/sisu/x/sisu/chains/types"
 )
 
 // This structs produces transaction output based on input. For a given tx input, this struct
@@ -35,6 +37,8 @@ type DefaultTxOutputProducer struct {
 	cardanoConfig  config.CardanoConfig
 	cardanoNetwork cardano.Network
 	cardanoClient  scardano.CardanoClient
+
+	bridges map[string]chainstypes.Bridge
 }
 
 type transferInData struct {
@@ -53,6 +57,7 @@ func NewTxOutputProducer(appKeys common.AppKeys, keeper keeper.Keeper,
 		txTracker:      txTracker,
 		cardanoNetwork: cardanoConfig.GetCardanoNetwork(),
 		cardanoClient:  cardanoClient,
+		bridges:        make(map[string]chainstypes.Bridge),
 	}
 }
 
@@ -60,7 +65,8 @@ func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, chain string,
 	transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
 
 	if libchain.IsETHBasedChain(chain) {
-		msgs, err := p.processEthBatches(ctx, chain, transfers)
+		bridge := p.getBridge(chain)
+		msgs, err := bridge.ProcessTransfers(ctx, transfers)
 		if err != nil {
 			return nil, err
 		}
@@ -82,53 +88,13 @@ func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, chain string,
 	return nil, nil
 }
 
-func (p *DefaultTxOutputProducer) processEthBatches(ctx sdk.Context,
-	dstChain string, transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
-	inHashes := make([]string, 0, len(transfers))
-	tokens := make([]*types.Token, 0, len(transfers))
-	recipients := make([]ethcommon.Address, 0, len(transfers))
-	amounts := make([]*big.Int, 0, len(transfers))
-
-	allTokens := p.keeper.GetAllTokens(ctx)
-	for _, transfer := range transfers {
-		token := allTokens[transfer.Token]
-		if token == nil {
-			log.Warn("cannot find token", transfer.Token)
-			continue
+func (p *DefaultTxOutputProducer) getBridge(chain string) chainstypes.Bridge {
+	bridge := p.bridges[chain]
+	if bridge == nil {
+		if libchain.IsETHBasedChain(chain) {
+			p.bridges[chain] = chainseth.NewBridge(chain, p.signer, p.keeper)
 		}
-
-		amount, ok := new(big.Int).SetString(transfer.Amount, 10)
-		if !ok {
-			log.Warn("Cannot create big.Int value from amout ", transfer.Amount)
-			continue
-		}
-
-		tokens = append(tokens, token)
-		recipients = append(recipients, ecommon.HexToAddress(transfer.ToRecipient))
-		amounts = append(amounts, amount)
-		inHashes = append(inHashes, transfer.Id)
-
-		log.Verbosef("Processing transfer in: id = %s, recipient = %s, amount = %s, inHash = %s",
-			token.Id, transfer.ToRecipient, amount, transfer.Id)
 	}
 
-	responseTx, err := p.buildERC20TransferIn(ctx, p.keeper, tokens, recipients, amounts, dstChain)
-	if err != nil {
-		log.Error("Failed to build erc20 transfer in, err = ", err)
-		return nil, err
-	}
-
-	outMsg := types.NewTxOutMsg(
-		p.signer,
-		types.TxOutType_TRANSFER_OUT,
-		&types.TxOutContent{
-			OutChain: dstChain,
-			OutHash:  responseTx.EthTx.Hash().String(),
-			OutBytes: responseTx.RawBytes,
-		},
-		&types.TxOutInput{
-			TransferIds: inHashes,
-		},
-	)
-	return []*types.TxOutMsg{outMsg}, nil
+	return p.bridges[chain]
 }

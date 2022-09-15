@@ -1,4 +1,4 @@
-package sisu
+package eth
 
 import (
 	"strings"
@@ -8,7 +8,6 @@ import (
 	"github.com/sisu-network/sisu/utils"
 )
 
-// TODO: Delete this file and use chains/eth instead.
 const (
 	ContractVault = "vault"
 
