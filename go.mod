@@ -19,7 +19,7 @@ require (
 	github.com/joho/godotenv v1.3.0
 	github.com/libp2p/go-libp2p-core v0.8.0
 	github.com/logdna/logdna-go v1.0.2
-	github.com/sisu-network/deyes v0.1.8
+	github.com/sisu-network/deyes v0.1.9-0.20220914224425-18ce8da0fcaf
 	github.com/sisu-network/dheart v0.1.7-alpha1
 	github.com/sisu-network/lib v0.0.1-alpha9.0.20220911122121-1a380f5ce2fe
 	github.com/spf13/cast v1.5.0

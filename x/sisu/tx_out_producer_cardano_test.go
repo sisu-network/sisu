@@ -9,13 +9,14 @@ import (
 	"github.com/sisu-network/sisu/utils"
 	scardano "github.com/sisu-network/sisu/x/sisu/chains/cardano"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
+	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
 
 func mockForTestDefaultTxOutputProducer() (sdk.Context, keeper.Keeper, *scardano.MockCardanoClient) {
-	ctx := testContext()
-	k := keeperTestAfterContractDeployed(ctx)
+	ctx := testmock.TestContext()
+	k := testmock.KeeperTestAfterContractDeployed(ctx)
 
 	client := &scardano.MockCardanoClient{}
 	client.ProtocolParamsFunc = func() (*cardano.ProtocolParams, error) {

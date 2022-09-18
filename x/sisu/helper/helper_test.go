@@ -4,35 +4,16 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/cosmos/cosmos-sdk/store"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
+	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
-	dbm "github.com/tendermint/tm-db"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	tlog "github.com/tendermint/tendermint/libs/log"
-	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 )
-
-var (
-	testKeyStore = sdk.NewKVStoreKey("TestContext")
-)
-
-// TODO: Refactor test context out of the sisu package
-func testContext() sdk.Context {
-	db := dbm.NewMemDB()
-	cms := store.NewCommitMultiStore(db)
-	cms.MountStoreWithDB(testKeyStore, sdk.StoreTypeIAVL, db)
-	cms.LoadVersion(0)
-	ctx := sdk.NewContext(cms, tmproto.Header{}, false, tlog.NewNopLogger())
-	return ctx
-}
 
 func TestGasCostInToken(t *testing.T) {
-	ctx := testContext()
-	k := keeper.NewKeeper(testKeyStore)
+	ctx := testmock.TestContext()
+	k := keeper.NewKeeper(testmock.TestKeyStore)
 
 	chain := "ganache1"
 	k.SaveChain(ctx, &types.Chain{

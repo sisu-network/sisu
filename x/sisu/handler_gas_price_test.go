@@ -6,14 +6,15 @@ import (
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
 
 func mockForHandlerGasPrice() (sdk.Context, ManagerContainer) {
-	ctx := testContext()
-	k := keeperTestGenesis(ctx)
+	ctx := testmock.TestContext()
+	k := testmock.KeeperTestGenesis(ctx)
 	k.SaveParams(ctx, &types.Params{MajorityThreshold: 1})
 
 	globalData := &common.MockGlobalData{}

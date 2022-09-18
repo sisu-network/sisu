@@ -5,13 +5,14 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
+	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
 
 func mockForHandlerTransferFailure() (sdk.Context, keeper.Keeper, PostedMessageManager) {
-	ctx := testContext()
-	k := keeperTestGenesis(ctx)
+	ctx := testmock.TestContext()
+	k := testmock.KeeperTestGenesis(ctx)
 	pmm := NewPostedMessageManager(k)
 
 	return ctx, k, pmm

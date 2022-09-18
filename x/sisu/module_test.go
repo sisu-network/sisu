@@ -7,13 +7,14 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
 
 func mockForTestModule() (sdk.Context, ManagerContainer) {
-	ctx := testContext()
-	k := keeperTestGenesis(ctx)
+	ctx := testmock.TestContext()
+	k := testmock.KeeperTestGenesis(ctx)
 	globalData := &common.MockGlobalData{}
 	txOutQueue := &MockTxOutQueue{}
 

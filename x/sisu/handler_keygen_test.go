@@ -7,14 +7,15 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
 
 func mockForHandlerKeygen() (sdk.Context, ManagerContainer) {
-	ctx := testContext()
-	k := keeperTestGenesis(ctx)
+	ctx := testmock.TestContext()
+	k := testmock.KeeperTestGenesis(ctx)
 	globalData := &common.MockGlobalData{}
 	pmm := NewPostedMessageManager(k)
 
