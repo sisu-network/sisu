@@ -21,7 +21,7 @@ import (
 )
 
 var (
-	testKeyStore          = sdk.NewKVStoreKey("TestContext")
+	TestKeyStore          = sdk.NewKVStoreKey("TestContext")
 	testSisuEthAddr       = "0x743E1388AAd8EC7c47Df39AFbAEd58EBc1f43901"
 	testSisuEthPubkeyHex  = "04b3cb1c95782b1793e3102d2ba493c34456f11ce471ca7e1ec1a731275b72bb2ba93e45069dab6d2b84815baeb3824f39c344bb9cf03d62cca9504724a808cc42"
 	testContractAddr      = "0x50cc7ceDe8532d5f431EfC3e3EF167423Bc1807a"
@@ -31,7 +31,7 @@ var (
 func TestContext() sdk.Context {
 	db := dbm.NewMemDB()
 	cms := store.NewCommitMultiStore(db)
-	cms.MountStoreWithDB(testKeyStore, sdk.StoreTypeIAVL, db)
+	cms.MountStoreWithDB(TestKeyStore, sdk.StoreTypeIAVL, db)
 	cms.LoadVersion(0)
 	ctx := sdk.NewContext(cms, tmproto.Header{}, false, tlog.NewNopLogger())
 	return ctx
@@ -39,7 +39,7 @@ func TestContext() sdk.Context {
 
 // Default keeper
 func KeeperTestGenesis(ctx sdk.Context) keeper.Keeper {
-	keeper := keeper.NewKeeper(testKeyStore)
+	keeper := keeper.NewKeeper(TestKeyStore)
 	keeper.SaveChain(ctx, &types.Chain{
 		Id:          "ganache1",
 		GasPrice:    int64(5_000_000_000),
