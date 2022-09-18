@@ -16,21 +16,21 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-type ethBridge struct {
+type bridge struct {
 	signer string
 	chain  string
 	keeper keeper.Keeper
 }
 
 func NewBridge(chain string, signer string, k keeper.Keeper) ctypes.Bridge {
-	return &ethBridge{
+	return &bridge{
 		chain:  chain,
 		signer: signer,
 		keeper: k,
 	}
 }
 
-func (b *ethBridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
+func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
 	inHashes := make([]string, 0, len(transfers))
 	tokens := make([]*types.Token, 0, len(transfers))
 	recipients := make([]ethcommon.Address, 0, len(transfers))
@@ -81,7 +81,7 @@ func (b *ethBridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfe
 	return []*types.TxOutMsg{outMsg}, nil
 }
 
-func (b *ethBridge) buildERC20TransferIn(
+func (b *bridge) buildERC20TransferIn(
 	ctx sdk.Context,
 	tokens []*types.Token,
 	recipients []ethcommon.Address,
