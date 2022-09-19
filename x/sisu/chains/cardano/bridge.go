@@ -162,11 +162,18 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 
 		// Convert from Wei unit to lovelace unit
 		lovelaceAmount := utils.WeiToLovelace(amountOut)
-		multiAsset, err := GetCardanoMultiAsset(chain, token, lovelaceAmount.Uint64())
-		if err != nil {
-			return nil, err
+
+		var amount *cardano.Value
+		if token.Id == "ADA" {
+			// Transfer native ADA instead of wrapped token
+			amount = cardano.NewValue(cardano.Coin(amountOut.Uint64()))
+		} else {
+			multiAsset, err := GetCardanoMultiAsset(chain, token, lovelaceAmount.Uint64())
+			if err != nil {
+				return nil, err
+			}
+			amount = cardano.NewValueWithAssets(1_600_000, multiAsset)
 		}
-		amount := cardano.NewValueWithAssets(1_600_000, multiAsset)
 		amounts = append(amounts, amount)
 	}
 
@@ -179,14 +186,14 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 	}
 
 	for _, i := range tx.Body.Inputs {
-		log.Debugf("tx input = %v\n", i)
+		log.Verbosef("tx input = %v\n", i)
 	}
 
 	for _, o := range tx.Body.Outputs {
-		log.Debugf("tx output = %v\n", o)
+		log.Verbosef("tx output = %v\n", o)
 	}
 
-	log.Debug("tx fee = ", tx.Body.Fee)
+	log.Verbose("tx fee = ", tx.Body.Fee)
 
 	return tx, nil
 }
