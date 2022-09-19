@@ -57,7 +57,7 @@ transfer params.
 			recipient, _ := cmd.Flags().GetString(flags.Account)
 			amount, _ := cmd.Flags().GetInt(flags.Amount)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
-			cardanoNetwork, _ := cmd.Flags().GetInt(flags.CardanoNetwork)
+			cardanoNetwork, _ := cmd.Flags().GetInt(flags.CardanoChain)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 
 			c := &swapCommand{}
@@ -110,7 +110,7 @@ transfer params.
 	cmd.Flags().String(flags.Erc20Symbol, "SISU", "ID of the ERC20 to transferred")
 	cmd.Flags().String(flags.Account, "", "Recipient address in the destination chain")
 	cmd.Flags().Int(flags.Amount, 1, "The amount of token to be transferred")
-	cmd.Flags().Int(flags.CardanoNetwork, 0, "Carnado network type: 0 for testnet and 1 for mainnet.")
+	cmd.Flags().Int(flags.CardanoChain, 0, "Cardano network type: 0 for testnet and 1 for mainnet.")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 
 	return cmd
