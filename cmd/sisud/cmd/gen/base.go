@@ -38,7 +38,7 @@ type Setting struct {
 	algoStr           string
 	numValidators     int
 	cardanoSecret     string
-	cardanoNetwork    string
+	cardanoChain      string
 	cardanoDbConfig   *econfig.SyncDbConfig
 	vaults            []*types.Vault
 
@@ -60,7 +60,7 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 	numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 	genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 	cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
-	cardanoNetwork, _ := cmd.Flags().GetString(flags.CardanoChain)
+	cardanoChain, _ := cmd.Flags().GetString(flags.CardanoChain)
 
 	supportedChainsArr := getSupportedChains(cmd, genesisFolder)
 
@@ -88,11 +88,11 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 			PendingTxTimeoutHeights: pendingTxOutHeights,
 			CommissionRate:          10, // 0.1%
 		},
-		cardanoSecret:  cardanoSecret,
-		cardanoNetwork: cardanoNetwork,
-		tokens:         getTokens(filepath.Join(genesisFolder, "tokens.json")),
-		chains:         helper.GetChains(filepath.Join(genesisFolder, "chains.json")),
-		vaults:         getVaults(filepath.Join(genesisFolder, "vault.json")),
+		cardanoSecret: cardanoSecret,
+		cardanoChain:  cardanoChain,
+		tokens:        getTokens(filepath.Join(genesisFolder, "tokens.json")),
+		chains:        helper.GetChains(filepath.Join(genesisFolder, "chains.json")),
+		vaults:        getVaults(filepath.Join(genesisFolder, "vault.json")),
 	}
 
 	return setting
