@@ -46,7 +46,7 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) 
 	}
 
 	pubkey := b.keeper.GetKeygenPubkey(ctx, libchain.KEY_TYPE_EDDSA)
-	senderAddr := hutils.GetAddressFromCardanoPubkey(pubkey)
+	sisuAddr := hutils.GetAddressFromCardanoPubkey(pubkey)
 
 	var maxBlockHeight uint64
 	checkPoint := b.keeper.GetGatewayCheckPoint(ctx, b.chain)
@@ -55,7 +55,7 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) 
 	} else {
 		maxBlockHeight = uint64(checkPoint.BlockHeight)
 	}
-	utxos, err := b.client.UTxOs(senderAddr, maxBlockHeight)
+	utxos, err := b.client.UTxOs(sisuAddr, maxBlockHeight)
 	if err != nil {
 		return nil, err
 	}

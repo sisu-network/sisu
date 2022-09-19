@@ -6,5 +6,6 @@ const (
 	MethodUnknown MethodType = iota
 	MethodNativeTransfer
 	MethodTransferOut
+	MethodTransferOutNonEvm
 	MethodAddSpender
 )

@@ -17,6 +17,7 @@ import (
 	"github.com/echovl/cardano-go/wallet"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	hutils "github.com/sisu-network/dheart/utils"
 	libchain "github.com/sisu-network/lib/chain"
@@ -57,7 +58,7 @@ transfer params.
 			recipient, _ := cmd.Flags().GetString(flags.Account)
 			amount, _ := cmd.Flags().GetInt(flags.Amount)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
-			cardanoNetwork, _ := cmd.Flags().GetInt(flags.CardanoChain)
+			cardanoChain, _ := cmd.Flags().GetString(flags.CardanoChain)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 
 			c := &swapCommand{}
@@ -94,7 +95,7 @@ transfer params.
 				amountBigInt := big.NewInt(int64(amount))
 				amountBigInt = new(big.Int).Mul(amountBigInt, utils.ONE_ADA_IN_LOVELACE)
 
-				c.swapFromCardano(src, dst, token, recipient, gateway, amountBigInt, cardano.Network(cardanoNetwork),
+				c.swapFromCardano(src, dst, token, recipient, gateway, amountBigInt, cardanoChain,
 					cardanoSecret, mnemonic)
 			}
 
@@ -110,7 +111,7 @@ transfer params.
 	cmd.Flags().String(flags.Erc20Symbol, "SISU", "ID of the ERC20 to transferred")
 	cmd.Flags().String(flags.Account, "", "Recipient address in the destination chain")
 	cmd.Flags().Int(flags.Amount, 1, "The amount of token to be transferred")
-	cmd.Flags().Int(flags.CardanoChain, 0, "Cardano network type: 0 for testnet and 1 for mainnet.")
+	cmd.Flags().String(flags.CardanoChain, "", "Cardano chain.")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 
 	return cmd
@@ -195,11 +196,20 @@ func (c *swapCommand) swapFromEth(client *ethclient.Client, mnemonic string, vau
 	log.Verbosef("destination = %s, recipientAddr %s, srcTokenAddr = %s, amount = %s",
 		dstChain, recipient, srcTokenAddr.String(), amount)
 
-	recipientAddr := common.HexToAddress(recipient)
-	tx, err := contract.TransferOut(opts, srcTokenAddr, libchain.GetChainIntFromId(dstChain),
-		recipientAddr, amount)
-	if err != nil {
-		panic(err)
+	var tx *ethtypes.Transaction
+	if libchain.IsETHBasedChain(dstChain) {
+		recipientAddr := common.HexToAddress(recipient)
+		tx, err = contract.TransferOut(opts, srcTokenAddr, libchain.GetChainIntFromId(dstChain),
+			recipientAddr, amount)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		tx, err = contract.TransferOutNonEvm(opts, srcTokenAddr, libchain.GetChainIntFromId(dstChain),
+			recipient, amount)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	waitTx, err := bind.WaitMined(context.Background(), client, tx)
@@ -223,7 +233,7 @@ func (c *swapCommand) getCardanoGateway(ctx context.Context, sisuRpc string) str
 }
 
 func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *types.Token,
-	destRecipient, cardanoGwAddr string, value *big.Int, network cardano.Network, blockfrostSecret, mnemonic string) {
+	destRecipient, cardanoGwAddr string, value *big.Int, network string, blockfrostSecret, mnemonic string) {
 	privateKey, senderAddress := c.getSenderAddress(blockfrostSecret, mnemonic)
 	receiver, err := cardano.NewAddress(cardanoGwAddr)
 	if err != nil {

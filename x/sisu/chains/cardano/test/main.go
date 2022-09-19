@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/echovl/cardano-go"
 	"github.com/echovl/cardano-go/blockfrost"
 	"github.com/echovl/cardano-go/wallet"
+	"github.com/sisu-network/lib/log"
 )
 
 const (
@@ -50,14 +50,14 @@ func transferAda(recipientString string) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("addr = ", addrs[0])
+	log.Verbose("addr = ", addrs[0])
 
 	balance, err := w.Balance()
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("Balance = ", balance)
+	log.Verbose("Balance = ", balance)
 
 	recipient, err := cardano.NewAddress(recipientString)
 	if err != nil {
@@ -69,7 +69,7 @@ func transferAda(recipientString string) {
 		panic(err)
 	}
 
-	fmt.Println("hash = ", txHash.String())
+	log.Verbose("hash = ", txHash.String())
 }
 
 func main() {

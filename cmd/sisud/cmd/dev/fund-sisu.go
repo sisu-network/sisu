@@ -114,7 +114,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 
 		cardanoAddr := hutils.GetAddressFromCardanoPubkey(cardanoKey)
 		log.Info("Sisu Cardano Gateway = ", cardanoAddr)
-		c.fundCardano(cardanoAddr, mnemonic, cardanoNetwork, cardanoSecret, sisuRpc, tokens)
+		c.fundCardano(cardanoAddr, cardanoMnemonic, cardanoNetwork, cardanoSecret, sisuRpc, tokens)
 	}
 
 	// Fund the accounts with some native ETH and other tokens
@@ -155,7 +155,10 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 func (c *fundAccountCmd) getMultiAsset(sisuRpc, cardanoNetwork string, tokens []string, amt uint64) *cardano.MultiAsset {
 	tokenAddrs := c.getTokenAddrs(context.Background(), sisuRpc, tokens, cardanoNetwork)
 	m := make(map[string]*cardano.Assets)
-	for _, tokenAddr := range tokenAddrs {
+	for i, tokenAddr := range tokenAddrs {
+		if tokens[i] == "ADA" {
+			continue
+		}
 		index := strings.Index(tokenAddr, ":")
 		policyString := tokenAddr[:index]
 		assetName := tokenAddr[index+1:]
