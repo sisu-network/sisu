@@ -165,8 +165,14 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 
 		var amount *cardano.Value
 		if token.Id == "ADA" {
+			// Minimum ADA per UTXO is 1,000,000 lovelace.
+			if lovelaceAmount.Cmp(utils.ONE_ADA_IN_LOVELACE) < 0 {
+				return nil, fmt.Errorf("Lovelace output is %s, min requirement is 1_000_000 lovelace",
+					lovelaceAmount.String())
+			}
+
 			// Transfer native ADA instead of wrapped token
-			amount = cardano.NewValue(cardano.Coin(amountOut.Uint64()))
+			amount = cardano.NewValue(cardano.Coin(lovelaceAmount.Uint64()))
 		} else {
 			multiAsset, err := GetCardanoMultiAsset(chain, token, lovelaceAmount.Uint64())
 			if err != nil {
