@@ -215,7 +215,7 @@ func TestBridge_getCardanoTx(t *testing.T) {
 		tx, err := bridge.getCardanoTx(ctx, "cardano-testnet", transfers, utxos, uint64(100))
 		require.Nil(t, tx)
 		require.NotNil(t, err)
-		require.Equal(t, "Lovelace output is 749000, min requirement is 1_000_000 lovelace", err.Error())
+		require.Equal(t, "Lovelace output is 799000, min requirement is 1_000_000 lovelace", err.Error())
 
 		// 2 ADA
 		transfers[0].Amount = (new(big.Int).Mul(utils.EthToWei, big.NewInt(2))).String()

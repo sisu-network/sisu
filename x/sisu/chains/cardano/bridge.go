@@ -130,8 +130,8 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 		amountOut = utils.SubtractCommissionRate(amountOut, commissionRate)
 
 		if token.Id == "ADA" {
-			// Subtract 0.25 ADA for transaction fee.
-			amountOut = amountOut.Sub(amountOut, new(big.Int).Div(utils.ONE_ETHER_IN_WEI, big.NewInt(4)))
+			// Subtract 0.2 ADA for transaction fee.
+			amountOut = amountOut.Sub(amountOut, new(big.Int).Div(utils.ONE_ETHER_IN_WEI, big.NewInt(5)))
 		} else {
 			// Subtract the 1.6 ADA for multi asset transaction
 
