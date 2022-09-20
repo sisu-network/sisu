@@ -129,10 +129,12 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 		// Subtract commission rate
 		amountOut = utils.SubtractCommissionRate(amountOut, commissionRate)
 
-		// Subtract the 1.6 ADA for multi asset transaction
 		if token.Id == "ADA" {
-			amountOut = amountOut.Sub(amountOut, utils.OnePointSixEthToWei)
+			// Subtract 0.25 ADA for transaction fee.
+			amountOut = amountOut.Sub(amountOut, new(big.Int).Div(utils.ONE_ETHER_IN_WEI, big.NewInt(4)))
 		} else {
+			// Subtract the 1.6 ADA for multi asset transaction
+
 			// Convert the price of 1.6 ADA to token unit
 			adaToken := allTokens["ADA"]
 			adaInUsd, ok := new(big.Int).SetString(adaToken.Price, 10)
@@ -166,7 +168,7 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 		var amount *cardano.Value
 		if token.Id == "ADA" {
 			// Minimum ADA per UTXO is 1,000,000 lovelace.
-			if lovelaceAmount.Cmp(utils.ONE_ADA_IN_LOVELACE) < 0 {
+			if lovelaceAmount.Cmp(utils.ONE_ADA_IN_LOVELACE) <= 0 {
 				return nil, fmt.Errorf("Lovelace output is %s, min requirement is 1_000_000 lovelace",
 					lovelaceAmount.String())
 			}

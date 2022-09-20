@@ -71,7 +71,6 @@ func mockClient(client *MockCardanoClient, utxos []cardano.UTxO, balance *cardan
 
 func TestBridge_getCardanoTx(t *testing.T) {
 	ctx, k, client := mockForTestDefaultTxOutputProducer()
-	bridge := NewBridge("cardano", "signer", k, client).(*bridge)
 
 	// Set the commission fee
 	params := k.GetParams(ctx)
@@ -89,6 +88,8 @@ func TestBridge_getCardanoTx(t *testing.T) {
 	recipient2, err := cardano.NewAddress("addr_test1vpjdtcsa7kq9l9l3ahmfkvg6fn03k7ky87luhggt2hl4mhg7u9ly6")
 
 	t.Run("get_tx_success", func(t *testing.T) {
+		bridge := NewBridge("cardano", "signer", k, client).(*bridge)
+
 		balance = cardano.NewValueWithAssets(
 			cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*10),
 			getMultiAssetWithBalance("uSISU", 100*1_000_000),
@@ -125,6 +126,8 @@ func TestBridge_getCardanoTx(t *testing.T) {
 	})
 
 	t.Run("get_tx_not_enough_balance", func(t *testing.T) {
+		bridge := NewBridge("cardano", "signer", k, client).(*bridge)
+
 		balance = cardano.NewValueWithAssets(
 			cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*10),
 			getMultiAssetWithBalance("uSISU", 100*1_000_000), // 100 Sisu tokens
@@ -147,6 +150,8 @@ func TestBridge_getCardanoTx(t *testing.T) {
 	})
 
 	t.Run("transfer_multiple_assets", func(t *testing.T) {
+		bridge := NewBridge("cardano", "signer", k, client).(*bridge)
+
 		balance = cardano.NewValueWithAssets(
 			cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*10),
 			getMultiAssetWithBalance("uSISU", 100*1_000_000), // 100 Sisu tokens
@@ -186,5 +191,35 @@ func TestBridge_getCardanoTx(t *testing.T) {
 			0,
 			tx.Body.Outputs[2].Amount.Cmp(expectedAmount),
 		)
+	})
+
+	t.Run("transfer_native_ada_smaller_than_1", func(t *testing.T) {
+		bridge := NewBridge("cardano", "signer", k, client).(*bridge)
+
+		balance = cardano.NewValueWithAssets(
+			cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*10),
+			getMultiAssetWithBalance("uSISU", 100*1_000_000), // 100 Sisu tokens
+		)
+		utxos := mockUtxos(hash, sender, balance)
+		mockClient(client, utxos, balance)
+
+		transfers := []*types.Transfer{
+			{
+				Id:          "ganache1_hash1",
+				ToRecipient: recipient1.String(),
+				Token:       "ADA",
+				Amount:      (new(big.Int).Mul(utils.EthToWei, big.NewInt(1))).String(),
+			},
+		}
+
+		tx, err := bridge.getCardanoTx(ctx, "cardano-testnet", transfers, utxos, uint64(100))
+		require.Nil(t, tx)
+		require.NotNil(t, err)
+		require.Equal(t, "Lovelace output is 749000, min requirement is 1_000_000 lovelace", err.Error())
+
+		// 2 ADA
+		transfers[0].Amount = (new(big.Int).Mul(utils.EthToWei, big.NewInt(2))).String()
+		tx, err = bridge.getCardanoTx(ctx, "cardano-testnet", transfers, utxos, uint64(100))
+		require.Nil(t, err)
 	})
 }
