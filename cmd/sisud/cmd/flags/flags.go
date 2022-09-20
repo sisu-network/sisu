@@ -35,7 +35,8 @@ const (
 	KeyringBackend      = "keyring-backend"
 	Algo                = "algo"
 	MinimumGasPrices    = "minimum-gas-prices"
-	CardanoNetwork      = "cardano-network"
+	CardanoChain        = "cardano-chain"
 	CardanoSecret       = "cardano-secret"
+	CardanoMnemonic     = "cardano-mnemonic"
 	CardanoDbConfig     = "cardano-db-config"
 )

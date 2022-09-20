@@ -17,6 +17,7 @@ import (
 	"github.com/echovl/cardano-go/wallet"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	hutils "github.com/sisu-network/dheart/utils"
 	libchain "github.com/sisu-network/lib/chain"
@@ -57,8 +58,12 @@ transfer params.
 			recipient, _ := cmd.Flags().GetString(flags.Account)
 			amount, _ := cmd.Flags().GetInt(flags.Amount)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
-			cardanoNetwork, _ := cmd.Flags().GetInt(flags.CardanoNetwork)
+			cardanoChain, _ := cmd.Flags().GetString(flags.CardanoChain)
+			cardanoMnemonic, _ := cmd.Flags().GetString(flags.CardanoMnemonic)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
+			if len(cardanoMnemonic) == 0 {
+				cardanoMnemonic = mnemonic
+			}
 
 			c := &swapCommand{}
 
@@ -88,14 +93,14 @@ transfer params.
 
 				c.swapFromEth(client, mnemonic, vault, dst, srcToken, dstToken, recipient, amountBigInt)
 			} else if libchain.IsCardanoChain(src) {
-				gateway := c.getCardanoGateway(cmd.Context(), sisuRpc)
-				log.Info("Cardano gateway = ", gateway)
+				vault := c.getCardanoVault(cmd.Context(), sisuRpc)
+				log.Info("Cardano gateway = ", vault)
 
 				amountBigInt := big.NewInt(int64(amount))
 				amountBigInt = new(big.Int).Mul(amountBigInt, utils.ONE_ADA_IN_LOVELACE)
 
-				c.swapFromCardano(src, dst, token, recipient, gateway, amountBigInt, cardano.Network(cardanoNetwork),
-					cardanoSecret, mnemonic)
+				c.swapFromCardano(src, dst, token, recipient, vault, amountBigInt, cardanoChain,
+					cardanoSecret, cardanoMnemonic)
 			}
 
 			return nil
@@ -110,7 +115,8 @@ transfer params.
 	cmd.Flags().String(flags.Erc20Symbol, "SISU", "ID of the ERC20 to transferred")
 	cmd.Flags().String(flags.Account, "", "Recipient address in the destination chain")
 	cmd.Flags().Int(flags.Amount, 1, "The amount of token to be transferred")
-	cmd.Flags().Int(flags.CardanoNetwork, 0, "Carnado network type: 0 for testnet and 1 for mainnet.")
+	cmd.Flags().String(flags.CardanoChain, "", "Cardano chain.")
+	cmd.Flags().String(flags.CardanoMnemonic, "", "Cardano mnemonic.")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 
 	return cmd
@@ -195,11 +201,20 @@ func (c *swapCommand) swapFromEth(client *ethclient.Client, mnemonic string, vau
 	log.Verbosef("destination = %s, recipientAddr %s, srcTokenAddr = %s, amount = %s",
 		dstChain, recipient, srcTokenAddr.String(), amount)
 
-	recipientAddr := common.HexToAddress(recipient)
-	tx, err := contract.TransferOut(opts, srcTokenAddr, libchain.GetChainIntFromId(dstChain),
-		recipientAddr, amount)
-	if err != nil {
-		panic(err)
+	var tx *ethtypes.Transaction
+	if libchain.IsETHBasedChain(dstChain) {
+		recipientAddr := common.HexToAddress(recipient)
+		tx, err = contract.TransferOut(opts, srcTokenAddr, libchain.GetChainIntFromId(dstChain),
+			recipientAddr, amount)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		tx, err = contract.TransferOutNonEvm(opts, srcTokenAddr, libchain.GetChainIntFromId(dstChain),
+			recipient, amount)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	waitTx, err := bind.WaitMined(context.Background(), client, tx)
@@ -212,7 +227,7 @@ func (c *swapCommand) swapFromEth(client *ethclient.Client, mnemonic string, vau
 	time.Sleep(time.Second * 3)
 }
 
-func (c *swapCommand) getCardanoGateway(ctx context.Context, sisuRpc string) string {
+func (c *swapCommand) getCardanoVault(ctx context.Context, sisuRpc string) string {
 	allPubKeys := queryPubKeys(ctx, sisuRpc)
 	cardanoKey, ok := allPubKeys[libchain.KEY_TYPE_EDDSA]
 	if !ok {
@@ -223,12 +238,14 @@ func (c *swapCommand) getCardanoGateway(ctx context.Context, sisuRpc string) str
 }
 
 func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *types.Token,
-	destRecipient, cardanoGwAddr string, value *big.Int, network cardano.Network, blockfrostSecret, mnemonic string) {
+	destRecipient, cardanoVault string, value *big.Int, network string, blockfrostSecret, mnemonic string) {
 	privateKey, senderAddress := c.getSenderAddress(blockfrostSecret, mnemonic)
-	receiver, err := cardano.NewAddress(cardanoGwAddr)
+	receiver, err := cardano.NewAddress(cardanoVault)
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Println("senderAddress = ", senderAddress)
 
 	multiAsset, err := scardano.GetCardanoMultiAsset(srcChain, token, value.Uint64())
 	if err != nil {
@@ -242,7 +259,7 @@ func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *
 		},
 	}
 
-	node := scardano.NewBlockfrostClient(cardano.Testnet, blockfrostSecret)
+	node := scardano.NewBlockfrostClient(cardano.Preprod, blockfrostSecret)
 	tip, err := node.Tip()
 	if err != nil {
 		panic(err)

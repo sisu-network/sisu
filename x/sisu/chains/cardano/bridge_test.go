@@ -1,4 +1,4 @@
-package sisu
+package cardano
 
 import (
 	"math/big"
@@ -7,18 +7,17 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/echovl/cardano-go"
 	"github.com/sisu-network/sisu/utils"
-	scardano "github.com/sisu-network/sisu/x/sisu/chains/cardano"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
 
-func mockForTestDefaultTxOutputProducer() (sdk.Context, keeper.Keeper, *scardano.MockCardanoClient) {
+func mockForTestDefaultTxOutputProducer() (sdk.Context, keeper.Keeper, *MockCardanoClient) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestAfterContractDeployed(ctx)
 
-	client := &scardano.MockCardanoClient{}
+	client := &MockCardanoClient{}
 	client.ProtocolParamsFunc = func() (*cardano.ProtocolParams, error) {
 		return &cardano.ProtocolParams{
 			MinFeeA:          5,
@@ -36,15 +35,6 @@ func mockForTestDefaultTxOutputProducer() (sdk.Context, keeper.Keeper, *scardano
 	}
 
 	return ctx, k, client
-}
-
-func DummyPolicyId() cardano.PolicyID {
-	hash, err := cardano.NewHash28("ccf1a53e157a7277e717045578a6e9834405730be0b778fd0daab794")
-	if err != nil {
-		panic(err)
-	}
-
-	return cardano.NewPolicyIDFromHash(hash)
 }
 
 func getMultiAssetWithBalance(assetName string, balance int) *cardano.MultiAsset {
@@ -68,7 +58,7 @@ func mockUtxos(hash cardano.Hash32, sender cardano.Address, balance *cardano.Val
 	}
 }
 
-func mockClient(client *scardano.MockCardanoClient, utxos []cardano.UTxO, balance *cardano.Value) {
+func mockClient(client *MockCardanoClient, utxos []cardano.UTxO, balance *cardano.Value) {
 	client.UTxOsFunc = func(addr cardano.Address, maxBlock uint64) ([]cardano.UTxO, error) {
 		return utxos, nil
 	}
@@ -79,12 +69,9 @@ func mockClient(client *scardano.MockCardanoClient, utxos []cardano.UTxO, balanc
 
 }
 
-func TestDefaultTxOutputProducer_getCardanoTx(t *testing.T) {
+func TestBridge_getCardanoTx(t *testing.T) {
 	ctx, k, client := mockForTestDefaultTxOutputProducer()
-	txOutProducer := &DefaultTxOutputProducer{
-		keeper:        k,
-		cardanoClient: client,
-	}
+	bridge := NewBridge("cardano", "signer", k, client).(*bridge)
 
 	// Set the commission fee
 	params := k.GetParams(ctx)
@@ -106,6 +93,7 @@ func TestDefaultTxOutputProducer_getCardanoTx(t *testing.T) {
 			cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*10),
 			getMultiAssetWithBalance("uSISU", 100*1_000_000),
 		)
+
 		utxos := mockUtxos(hash, sender, balance)
 		mockClient(client, utxos, balance)
 		transfers := []*types.Transfer{
@@ -118,7 +106,7 @@ func TestDefaultTxOutputProducer_getCardanoTx(t *testing.T) {
 		}
 
 		// Get tx
-		tx, err := txOutProducer.getCardanoTx(ctx, "cardano-testnet", transfers, utxos, uint64(100))
+		tx, err := bridge.getCardanoTx(ctx, "cardano-testnet", transfers, utxos, uint64(100))
 		require.Nil(t, err)
 		require.Equal(t, 2, len(tx.Body.Outputs))
 		require.Equal(t, recipient1, tx.Body.Outputs[1].Address)
@@ -154,7 +142,7 @@ func TestDefaultTxOutputProducer_getCardanoTx(t *testing.T) {
 		}
 
 		// Transfer 200 tokens (exceed balanaced of 100 tokens)
-		_, err := txOutProducer.getCardanoTx(ctx, "cardano-testnet", transfers, utxos, uint64(100))
+		_, err := bridge.getCardanoTx(ctx, "cardano-testnet", transfers, utxos, uint64(100))
 		require.NotNil(t, err)
 	})
 
@@ -182,7 +170,7 @@ func TestDefaultTxOutputProducer_getCardanoTx(t *testing.T) {
 		}
 
 		// Get tx
-		tx, err := txOutProducer.getCardanoTx(ctx, "cardano-testnet", transfers, utxos, uint64(100))
+		tx, err := bridge.getCardanoTx(ctx, "cardano-testnet", transfers, utxos, uint64(100))
 		require.Nil(t, err)
 		require.Equal(t, 3, len(tx.Body.Outputs))
 

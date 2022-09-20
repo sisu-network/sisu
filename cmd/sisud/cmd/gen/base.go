@@ -38,6 +38,7 @@ type Setting struct {
 	algoStr           string
 	numValidators     int
 	cardanoSecret     string
+	cardanoChain      string
 	cardanoDbConfig   *econfig.SyncDbConfig
 	vaults            []*types.Vault
 
@@ -59,6 +60,7 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 	numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 	genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 	cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
+	cardanoChain, _ := cmd.Flags().GetString(flags.CardanoChain)
 
 	supportedChainsArr := getSupportedChains(cmd, genesisFolder)
 
@@ -87,6 +89,7 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 			CommissionRate:          10, // 0.1%
 		},
 		cardanoSecret: cardanoSecret,
+		cardanoChain:  cardanoChain,
 		tokens:        getTokens(filepath.Join(genesisFolder, "tokens.json")),
 		chains:        helper.GetChains(filepath.Join(genesisFolder, "chains.json")),
 		vaults:        getVaults(filepath.Join(genesisFolder, "vault.json")),

@@ -346,6 +346,7 @@ func generateSisuToml(settings *Setting, index int, nodeDir string) {
 
 	if len(settings.cardanoSecret) > 0 {
 		cfg.Cardano.BlockfrostSecret = settings.cardanoSecret
+		cfg.Cardano.Chain = settings.cardanoChain
 	}
 
 	config.WriteConfigFile(filepath.Join(configDir, "sisu.toml"), &cfg)

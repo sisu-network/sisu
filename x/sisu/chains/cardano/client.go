@@ -39,8 +39,12 @@ type blockFrostClient struct {
 
 func NewBlockfrostClient(network cardano.Network, secret string) CardanoClient {
 	server := blockfrost.CardanoMainNet
-	if network == cardano.Testnet {
+	switch network {
+	case cardano.Testnet:
 		server = blockfrost.CardanoTestNet
+	case cardano.Preprod:
+		// We hardcode the preprod url here until blockfrost supports Preprod type.
+		server = "https://cardano-preprod.blockfrost.io/api/v0"
 	}
 
 	return &blockFrostClient{

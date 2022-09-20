@@ -31,18 +31,18 @@ type SisuConfig struct {
 
 type CardanoConfig struct {
 	BlockfrostSecret string `toml:"block_frost_secret"`
-	Network          int    `toml:"network"`
+	Chain            string `toml:"chain"`
 }
 
 func (c *CardanoConfig) GetCardanoNetwork() cardano.Network {
-	switch c.Network {
-	case 0:
-		return cardano.Testnet
-	case 1:
+	switch c.Chain {
+	case "cardano-testnet":
+		return cardano.Preprod
+	case "cardano-mainet":
 		return cardano.Mainnet
 	}
 
-	panic(fmt.Errorf("Unkwown network %d", c.Network))
+	panic(fmt.Errorf("Unkwown network %s", c.Chain))
 }
 
 // Example of supported chains in the toml config file.

@@ -4,18 +4,17 @@ import (
 	"testing"
 
 	"github.com/echovl/cardano-go"
-	"github.com/echovl/cardano-go/crypto"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/stretchr/testify/require"
 )
 
-func DummyPolicyId(t *testing.T) cardano.PolicyID {
-	policyKey := crypto.NewXPrvKeyFromEntropy([]byte("policy"), "")
-	policyScript, err := cardano.NewScriptPubKey(policyKey.PubKey())
-	require.NoError(t, err)
-	policyID, err := cardano.NewPolicyID(policyScript)
-	require.NoError(t, err)
-	return policyID
+func DummyPolicyId() cardano.PolicyID {
+	hash, err := cardano.NewHash28("ccf1a53e157a7277e717045578a6e9834405730be0b778fd0daab794")
+	if err != nil {
+		panic(err)
+	}
+
+	return cardano.NewPolicyIDFromHash(hash)
 }
 
 func TestTxBuilder_Fee(t *testing.T) {
@@ -26,7 +25,7 @@ func TestTxBuilder_Fee(t *testing.T) {
 	receiver, err := cardano.NewAddress("addr_test1vqyqp03az6w8xuknzpfup3h7ghjwu26z7xa6gk7l9j7j2gs8zfwcy")
 	require.NoError(t, err)
 
-	policyID := DummyPolicyId(t)
+	policyID := DummyPolicyId()
 	assetName := "uANIMAL"
 	cAssetName := cardano.NewAssetName(assetName)
 

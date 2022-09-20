@@ -1,26 +1,42 @@
-package sisu
+package cardano
 
 import (
 	"fmt"
 	"math"
 	"math/big"
 
-	"github.com/sisu-network/sisu/common"
-	scardano "github.com/sisu-network/sisu/x/sisu/chains/cardano"
-	"github.com/sisu-network/sisu/x/sisu/keeper"
+	"github.com/sisu-network/lib/log"
+
+	"github.com/echovl/cardano-go"
+	hutils "github.com/sisu-network/dheart/utils"
+
+	libchain "github.com/sisu-network/lib/chain"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/echovl/cardano-go"
-	libchain "github.com/sisu-network/lib/chain"
-	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/utils"
+	chaintypes "github.com/sisu-network/sisu/x/sisu/chains/types"
+	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
-
-	hutils "github.com/sisu-network/dheart/utils"
 )
 
-func (p *DefaultTxOutputProducer) processCardanoBatches(ctx sdk.Context, k keeper.Keeper, destChain string,
-	transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
+type bridge struct {
+	chain  string
+	signer string
+	keeper keeper.Keeper
+	client CardanoClient
+}
+
+func NewBridge(chain string, signer string, keeper keeper.Keeper, client CardanoClient) chaintypes.Bridge {
+	return &bridge{
+		keeper: keeper,
+		chain:  chain,
+		signer: signer,
+		client: client,
+	}
+}
+
+func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
 	// Find the highest block where majority of the validator nodes has reach to.
 	outMgs := make([]*types.TxOutMsg, 0)
 	inHashes := make([]string, len(transfers))
@@ -29,22 +45,22 @@ func (p *DefaultTxOutputProducer) processCardanoBatches(ctx sdk.Context, k keepe
 		inHashes = append(inHashes, transfer.Id)
 	}
 
-	pubkey := p.keeper.GetKeygenPubkey(ctx, libchain.KEY_TYPE_EDDSA)
-	senderAddr := hutils.GetAddressFromCardanoPubkey(pubkey)
+	pubkey := b.keeper.GetKeygenPubkey(ctx, libchain.KEY_TYPE_EDDSA)
+	sisuAddr := hutils.GetAddressFromCardanoPubkey(pubkey)
 
 	var maxBlockHeight uint64
-	checkPoint := k.GetGatewayCheckPoint(ctx, destChain)
+	checkPoint := b.keeper.GetGatewayCheckPoint(ctx, b.chain)
 	if checkPoint == nil {
 		maxBlockHeight = math.MaxUint64
 	} else {
 		maxBlockHeight = uint64(checkPoint.BlockHeight)
 	}
-	utxos, err := p.cardanoClient.UTxOs(senderAddr, maxBlockHeight)
+	utxos, err := b.client.UTxOs(sisuAddr, maxBlockHeight)
 	if err != nil {
 		return nil, err
 	}
 
-	tx, err := p.getCardanoTx(ctx, destChain, transfers, utxos, maxBlockHeight)
+	tx, err := b.getCardanoTx(ctx, b.chain, transfers, utxos, maxBlockHeight)
 	if err != nil {
 		return nil, err
 	}
@@ -60,10 +76,10 @@ func (p *DefaultTxOutputProducer) processCardanoBatches(ctx sdk.Context, k keepe
 	}
 
 	outMsg := types.NewTxOutMsg(
-		p.signer,
+		b.signer,
 		types.TxOutType_TRANSFER_OUT,
 		&types.TxOutContent{
-			OutChain: destChain,
+			OutChain: b.chain,
 			OutHash:  hash.String(),
 			OutBytes: bz,
 		},
@@ -76,24 +92,17 @@ func (p *DefaultTxOutputProducer) processCardanoBatches(ctx sdk.Context, k keepe
 	return outMgs, nil
 }
 
-func (p *DefaultTxOutputProducer) getUtxos(ctx sdk.Context, chain string, height int64) ([]cardano.UTxO, error) {
-	pubkey := p.keeper.GetKeygenPubkey(ctx, libchain.KEY_TYPE_EDDSA)
-	senderAddr := hutils.GetAddressFromCardanoPubkey(pubkey)
-
-	return p.cardanoClient.UTxOs(senderAddr, uint64(height))
-}
-
 // In Cardano chain, transferring multi-asset required at least 1 ADA (10^6 lovelace)
-func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.Transfer,
+func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.Transfer,
 	utxos []cardano.UTxO, maxBlock uint64) (*cardano.Tx, error) {
-	pubkey := p.keeper.GetKeygenPubkey(ctx, libchain.KEY_TYPE_EDDSA)
+	pubkey := b.keeper.GetKeygenPubkey(ctx, libchain.KEY_TYPE_EDDSA)
 	senderAddr := hutils.GetAddressFromCardanoPubkey(pubkey)
 	log.Debug("cardano sender address = ", senderAddr.String())
 
-	allTokens := p.keeper.GetAllTokens(ctx)
+	allTokens := b.keeper.GetAllTokens(ctx)
 	receiverAddrs := make([]cardano.Address, 0)
 	amounts := make([]*cardano.Value, 0, len(transfers))
-	commissionRate := p.keeper.GetParams(ctx).CommissionRate
+	commissionRate := b.keeper.GetParams(ctx).CommissionRate
 	if commissionRate < 0 || commissionRate > 10_000 {
 		return nil, fmt.Errorf("Commission rate is invalid, rate = %d", commissionRate)
 	}
@@ -153,16 +162,23 @@ func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, chain string, tr
 
 		// Convert from Wei unit to lovelace unit
 		lovelaceAmount := utils.WeiToLovelace(amountOut)
-		multiAsset, err := scardano.GetCardanoMultiAsset(chain, token, lovelaceAmount.Uint64())
-		if err != nil {
-			return nil, err
+
+		var amount *cardano.Value
+		if token.Id == "ADA" {
+			// Transfer native ADA instead of wrapped token
+			amount = cardano.NewValue(cardano.Coin(amountOut.Uint64()))
+		} else {
+			multiAsset, err := GetCardanoMultiAsset(chain, token, lovelaceAmount.Uint64())
+			if err != nil {
+				return nil, err
+			}
+			amount = cardano.NewValueWithAssets(1_600_000, multiAsset)
 		}
-		amount := cardano.NewValueWithAssets(1_600_000, multiAsset)
 		amounts = append(amounts, amount)
 	}
 
 	// We need at least 1 ada to send multi assets.
-	tx, err := scardano.BuildTx(p.cardanoClient, senderAddr, receiverAddrs, amounts, nil, utxos, maxBlock)
+	tx, err := BuildTx(b.client, senderAddr, receiverAddrs, amounts, nil, utxos, maxBlock)
 
 	if err != nil {
 		log.Error("error when building tx: ", err)
@@ -170,14 +186,14 @@ func (p *DefaultTxOutputProducer) getCardanoTx(ctx sdk.Context, chain string, tr
 	}
 
 	for _, i := range tx.Body.Inputs {
-		log.Debugf("tx input = %v\n", i)
+		log.Verbosef("tx input = %v\n", i)
 	}
 
 	for _, o := range tx.Body.Outputs {
-		log.Debugf("tx output = %v\n", o)
+		log.Verbosef("tx output = %v\n", o)
 	}
 
-	log.Debug("tx fee = ", tx.Body.Fee)
+	log.Verbose("tx fee = ", tx.Body.Fee)
 
 	return tx, nil
 }

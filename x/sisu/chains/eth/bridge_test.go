@@ -38,7 +38,7 @@ func TestBridge(t *testing.T) {
 		ctx := testmock.TestContext()
 		keeper := mockKeeperForBridge(ctx, new(big.Int).Mul(big.NewInt(10_000_000), utils.GweiToWei))
 
-		bridge := NewBridge("ganache2", "", keeper).(*ethBridge)
+		bridge := NewBridge("ganache2", "", keeper).(*bridge)
 		amount := new(big.Int).Mul(big.NewInt(1), utils.EthToWei)
 		txResponse, err := bridge.buildERC20TransferIn(ctx,
 			[]*types.Token{keeper.GetTokens(ctx, []string{"SISU"})["SISU"]},
@@ -58,7 +58,7 @@ func TestBridge(t *testing.T) {
 		ctx := testmock.TestContext()
 		keeper := mockKeeperForBridge(ctx, utils.EtherToWei(big.NewInt(100)))
 
-		bridge := NewBridge("ganache2", "", keeper).(*ethBridge)
+		bridge := NewBridge("ganache2", "", keeper).(*bridge)
 		amount := new(big.Int).Mul(big.NewInt(1), utils.EthToWei)
 		txResponse, err := bridge.buildERC20TransferIn(ctx,
 			[]*types.Token{keeper.GetTokens(ctx, []string{"SISU"})["SISU"]},
@@ -78,7 +78,7 @@ func TestBridge(t *testing.T) {
 		ctx := testmock.TestContext()
 		keeper := mockKeeperForBridge(ctx, utils.EtherToWei(big.NewInt(8)))
 
-		bridge := NewBridge("ganache2", "", keeper).(*ethBridge)
+		bridge := NewBridge("ganache2", "", keeper).(*bridge)
 		amount := big.NewInt(10_000_000_000)
 		txResponse, err := bridge.buildERC20TransferIn(ctx,
 			[]*types.Token{keeper.GetTokens(ctx, []string{"SISU"})["SISU"]},
@@ -94,7 +94,7 @@ func TestBridge(t *testing.T) {
 		ctx := testmock.TestContext()
 		keeper := mockKeeperForBridge(ctx, big.NewInt(0))
 
-		bridge := NewBridge("ganache2", "", keeper).(*ethBridge)
+		bridge := NewBridge("ganache2", "", keeper).(*bridge)
 		amount := new(big.Int).Mul(big.NewInt(1), utils.EthToWei)
 		txResponse, err := bridge.buildERC20TransferIn(ctx,
 			[]*types.Token{keeper.GetTokens(ctx, []string{"SISU"})["SISU"]},

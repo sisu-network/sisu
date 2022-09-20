@@ -55,13 +55,17 @@ func FundSisu() *cobra.Command {
 			tokenString, _ := cmd.Flags().GetString(flags.Erc20Symbols)
 			vaultString, _ := cmd.Flags().GetString(flags.VaultAddrs)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
-			cardanoNetwork, _ := cmd.Flags().GetString(flags.CardanoNetwork)
+			cardanoMnemonic, _ := cmd.Flags().GetString(flags.CardanoMnemonic)
+			cardanoNetwork, _ := cmd.Flags().GetString(flags.CardanoChain)
+			if len(cardanoMnemonic) == 0 {
+				cardanoMnemonic = mnemonic
+			}
 
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 			tokens := strings.Split(tokenString, ",")
 
 			c := &fundAccountCmd{}
-			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokens, vaultString,
+			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, cardanoMnemonic, tokens, vaultString,
 				sisuRpc, cardanoNetwork, cardanoSecret)
 
 			return nil
@@ -74,14 +78,15 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
 	cmd.Flags().String(flags.VaultAddrs, fmt.Sprintf("%s,%s", ExpectedVaultAddress, ExpectedVaultAddress), "List of vault addresses")
 	cmd.Flags().String(flags.Erc20Symbols, "SISU,ADA", "List of ERC20 to approve")
+	cmd.Flags().String(flags.CardanoMnemonic, "", "The blockfrost secret to interact with cardano network.")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
-	cmd.Flags().String(flags.CardanoNetwork, "cardano-testnet", "The Cardano network that we are interacting with.")
+	cmd.Flags().String(flags.CardanoChain, "cardano-testnet", "The Cardano network that we are interacting with.")
 
 	return cmd
 }
 
 func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic string,
-	tokens []string, vaultString string, sisuRpc, cardanoNetwork, cardanoSecret string) {
+	cardanoMnemonic string, tokens []string, vaultString string, sisuRpc, cardanoNetwork, cardanoSecret string) {
 	chains := strings.Split(chainString, ",")
 	vaults := strings.Split(vaultString, ",")
 
@@ -109,7 +114,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 
 		cardanoAddr := hutils.GetAddressFromCardanoPubkey(cardanoKey)
 		log.Info("Sisu Cardano Gateway = ", cardanoAddr)
-		c.fundCardano(cardanoAddr, mnemonic, cardanoNetwork, cardanoSecret, sisuRpc, tokens)
+		c.fundCardano(cardanoAddr, cardanoMnemonic, cardanoNetwork, cardanoSecret, sisuRpc, tokens)
 	}
 
 	// Fund the accounts with some native ETH and other tokens
@@ -150,7 +155,10 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 func (c *fundAccountCmd) getMultiAsset(sisuRpc, cardanoNetwork string, tokens []string, amt uint64) *cardano.MultiAsset {
 	tokenAddrs := c.getTokenAddrs(context.Background(), sisuRpc, tokens, cardanoNetwork)
 	m := make(map[string]*cardano.Assets)
-	for _, tokenAddr := range tokenAddrs {
+	for i, tokenAddr := range tokenAddrs {
+		if tokens[i] == "ADA" {
+			continue
+		}
 		index := strings.Index(tokenAddr, ":")
 		policyString := tokenAddr[:index]
 		assetName := tokenAddr[index+1:]
@@ -179,7 +187,7 @@ func (c *fundAccountCmd) getMultiAsset(sisuRpc, cardanoNetwork string, tokens []
 
 func (c *fundAccountCmd) fundCardano(receiver cardano.Address, funderMnemonic string,
 	cardanoNetwork, blockfrostSecret string, sisuRpc string, tokens []string) {
-	node := blockfrost.NewNode(cardano.Testnet, blockfrostSecret)
+	node := blockfrost.NewNode(cardano.Preprod, blockfrostSecret)
 	opts := &wallet.Options{
 		Node: node,
 	}

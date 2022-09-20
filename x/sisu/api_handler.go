@@ -501,8 +501,8 @@ func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.T
 			return nil, parseResult.Error
 		}
 
-		if parseResult.TransferOut != nil {
-			return []*types.Transfer{parseResult.TransferOut}, nil
+		if parseResult.TransferOuts != nil {
+			return parseResult.TransferOuts, nil
 		}
 
 		return []*types.Transfer{}, nil

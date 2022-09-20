@@ -53,7 +53,10 @@ func ParseVaultTx(ctx sdk.Context, keeper keeper.Keeper, chain string, eyesTx *e
 	switch methodName {
 	case "transferOut":
 		result.Method = chainstypes.MethodTransferOut
-		result.TransferOut, result.Error = parseTransferOut(ctx, keeper, ethTx, chain, txParams)
+		result.TransferOuts, result.Error = parseTransferOut(ctx, keeper, ethTx, chain, true, txParams)
+	case "transferOutNonEvm":
+		result.Method = chainstypes.MethodTransferOutNonEvm
+		result.TransferOuts, result.Error = parseTransferOut(ctx, keeper, ethTx, chain, false, txParams)
 	case "addSpender":
 		result.Method = chainstypes.MethodAddSpender
 	default:
@@ -65,7 +68,7 @@ func ParseVaultTx(ctx sdk.Context, keeper keeper.Keeper, chain string, eyesTx *e
 }
 
 func parseTransferOut(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.Transaction, chain string,
-	txParams map[string]interface{}) (*types.Transfer, error) {
+	isEvm bool, txParams map[string]interface{}) ([]*types.Transfer, error) {
 	msg, err := ethTx.AsMessage(ethtypes.NewLondonSigner(ethTx.ChainId()), nil)
 	if err != nil {
 		return nil, err
@@ -93,10 +96,20 @@ func parseTransferOut(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.Tra
 		return nil, fmt.Errorf("Unknown destChain %s", destChain)
 	}
 
-	recipient, ok := txParams["to"].(ethcommon.Address)
-	if !ok {
-		err := fmt.Errorf("cannot convert recipient to type ethcommon.Address: %v", txParams)
-		return nil, err
+	var recipient string
+	if isEvm {
+		recipientAddr, ok := txParams["to"].(ethcommon.Address)
+		if !ok {
+			err := fmt.Errorf("cannot convert recipient to type ethcommon.Address: %v", txParams)
+			return nil, err
+		}
+		recipient = recipientAddr.String()
+	} else {
+		recipient, ok = txParams["to"].(string)
+		if !ok {
+			err := fmt.Errorf("cannot convert recipient to type ethcommon.Address: %v", txParams)
+			return nil, err
+		}
 	}
 
 	amount, ok := txParams["amount"].(*big.Int)
@@ -105,15 +118,17 @@ func parseTransferOut(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.Tra
 		return nil, err
 	}
 
-	return &types.Transfer{
-		Id:          types.GetTransferId(chain, ethTx.Hash().String()),
-		FromChain:   chain,
-		FromSender:  msg.From().Hex(),
-		FromHash:    ethTx.Hash().String(),
-		Token:       token.Id,
-		Amount:      amount.String(),
-		ToChain:     to,
-		ToRecipient: recipient.String(),
+	return []*types.Transfer{
+		{
+			Id:          types.GetTransferId(chain, ethTx.Hash().String()),
+			FromChain:   chain,
+			FromSender:  msg.From().Hex(),
+			FromHash:    ethTx.Hash().String(),
+			Token:       token.Id,
+			Amount:      amount.String(),
+			ToChain:     to,
+			ToRecipient: recipient,
+		},
 	}, nil
 }
 
