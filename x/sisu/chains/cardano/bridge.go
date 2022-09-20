@@ -126,13 +126,18 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 			continue
 		}
 
+		// Convert from Wei unit to lovelace unit
+		amountOut = utils.WeiToLovelace(amountOut)
+
 		// Subtract commission rate
 		amountOut = utils.SubtractCommissionRate(amountOut, commissionRate)
 
-		// Subtract the 1.6 ADA for multi asset transaction
 		if token.Id == "ADA" {
-			amountOut = amountOut.Sub(amountOut, utils.OnePointSixEthToWei)
+			// Subtract 0.2 ADA for transaction fee.
+			amountOut = amountOut.Sub(amountOut, new(big.Int).Div(utils.ONE_ADA_IN_LOVELACE, big.NewInt(5)))
 		} else {
+			// Subtract the 1.6 ADA for multi asset transaction
+
 			// Convert the price of 1.6 ADA to token unit
 			adaToken := allTokens["ADA"]
 			adaInUsd, ok := new(big.Int).SetString(adaToken.Price, 10)
@@ -148,27 +153,34 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 				return nil, fmt.Errorf("Invalid token price %s", adaToken.Price)
 			}
 
+			if tokenPrice.Cmp(big.NewInt(0)) == 0 {
+				return nil, fmt.Errorf("Token %s has price 0", token.Id)
+			}
+
 			// Amount of ADA fee in Token price
-			amountInToken := adaInUsd.Mul(adaInUsd, utils.EthToWei)
+			amountInToken := adaInUsd.Mul(adaInUsd, utils.ONE_ADA_IN_LOVELACE)
 			amountInToken = amountInToken.Div(amountInToken, tokenPrice)
 
 			amountOut = amountOut.Sub(amountOut, amountInToken)
 		}
 
 		// If amountOut is smaller or equal 0, quit
-		if amountOut.Cmp(utils.ZeroBigInt) < 0 {
+		if amountOut.Cmp(utils.ZeroBigInt) <= 0 {
 			return nil, common.InsufficientFundErr
 		}
 
-		// Convert from Wei unit to lovelace unit
-		lovelaceAmount := utils.WeiToLovelace(amountOut)
-
 		var amount *cardano.Value
 		if token.Id == "ADA" {
+			// Minimum ADA per UTXO is 1,000,000 lovelace.
+			if amountOut.Cmp(utils.ONE_ADA_IN_LOVELACE) < 0 {
+				return nil, fmt.Errorf("Lovelace output is %s, min requirement is 1_000_000 lovelace",
+					amountOut.String())
+			}
+
 			// Transfer native ADA instead of wrapped token
 			amount = cardano.NewValue(cardano.Coin(amountOut.Uint64()))
 		} else {
-			multiAsset, err := GetCardanoMultiAsset(chain, token, lovelaceAmount.Uint64())
+			multiAsset, err := GetCardanoMultiAsset(chain, token, amountOut.Uint64())
 			if err != nil {
 				return nil, err
 			}
