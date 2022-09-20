@@ -153,6 +153,10 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 				return nil, fmt.Errorf("Invalid token price %s", adaToken.Price)
 			}
 
+			if tokenPrice.Cmp(big.NewInt(0)) == 0 {
+				return nil, fmt.Errorf("Token %s has price 0", token.Id)
+			}
+
 			// Amount of ADA fee in Token price
 			amountInToken := adaInUsd.Mul(adaInUsd, utils.ONE_ADA_IN_LOVELACE)
 			amountInToken = amountInToken.Div(amountInToken, tokenPrice)
@@ -161,14 +165,14 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 		}
 
 		// If amountOut is smaller or equal 0, quit
-		if amountOut.Cmp(utils.ZeroBigInt) < 0 {
+		if amountOut.Cmp(utils.ZeroBigInt) <= 0 {
 			return nil, common.InsufficientFundErr
 		}
 
 		var amount *cardano.Value
 		if token.Id == "ADA" {
 			// Minimum ADA per UTXO is 1,000,000 lovelace.
-			if amountOut.Cmp(utils.ONE_ADA_IN_LOVELACE) <= 0 {
+			if amountOut.Cmp(utils.ONE_ADA_IN_LOVELACE) < 0 {
 				return nil, fmt.Errorf("Lovelace output is %s, min requirement is 1_000_000 lovelace",
 					amountOut.String())
 			}
