@@ -126,12 +126,15 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 			continue
 		}
 
+		// Convert from Wei unit to lovelace unit
+		amountOut = utils.WeiToLovelace(amountOut)
+
 		// Subtract commission rate
 		amountOut = utils.SubtractCommissionRate(amountOut, commissionRate)
 
 		if token.Id == "ADA" {
 			// Subtract 0.2 ADA for transaction fee.
-			amountOut = amountOut.Sub(amountOut, new(big.Int).Div(utils.ONE_ETHER_IN_WEI, big.NewInt(5)))
+			amountOut = amountOut.Sub(amountOut, new(big.Int).Div(utils.ONE_ADA_IN_LOVELACE, big.NewInt(5)))
 		} else {
 			// Subtract the 1.6 ADA for multi asset transaction
 
@@ -151,7 +154,7 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 			}
 
 			// Amount of ADA fee in Token price
-			amountInToken := adaInUsd.Mul(adaInUsd, utils.EthToWei)
+			amountInToken := adaInUsd.Mul(adaInUsd, utils.ONE_ADA_IN_LOVELACE)
 			amountInToken = amountInToken.Div(amountInToken, tokenPrice)
 
 			amountOut = amountOut.Sub(amountOut, amountInToken)
@@ -162,21 +165,18 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 			return nil, common.InsufficientFundErr
 		}
 
-		// Convert from Wei unit to lovelace unit
-		lovelaceAmount := utils.WeiToLovelace(amountOut)
-
 		var amount *cardano.Value
 		if token.Id == "ADA" {
 			// Minimum ADA per UTXO is 1,000,000 lovelace.
-			if lovelaceAmount.Cmp(utils.ONE_ADA_IN_LOVELACE) <= 0 {
+			if amountOut.Cmp(utils.ONE_ADA_IN_LOVELACE) <= 0 {
 				return nil, fmt.Errorf("Lovelace output is %s, min requirement is 1_000_000 lovelace",
-					lovelaceAmount.String())
+					amountOut.String())
 			}
 
 			// Transfer native ADA instead of wrapped token
-			amount = cardano.NewValue(cardano.Coin(lovelaceAmount.Uint64()))
+			amount = cardano.NewValue(cardano.Coin(amountOut.Uint64()))
 		} else {
-			multiAsset, err := GetCardanoMultiAsset(chain, token, lovelaceAmount.Uint64())
+			multiAsset, err := GetCardanoMultiAsset(chain, token, amountOut.Uint64())
 			if err != nil {
 				return nil, err
 			}
