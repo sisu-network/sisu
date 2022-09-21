@@ -245,11 +245,15 @@ func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *
 		panic(err)
 	}
 
-	fmt.Println("senderAddress = ", senderAddress)
-
-	multiAsset, err := scardano.GetCardanoMultiAsset(srcChain, token, value.Uint64())
-	if err != nil {
-		panic(err)
+	var amount *cardano.Value
+	if token.Id == "ADA" {
+		amount = cardano.NewValue(cardano.Coin(value.Uint64()))
+	} else {
+		multiAsset, err := scardano.GetCardanoMultiAsset(srcChain, token, value.Uint64())
+		if err != nil {
+			panic(err)
+		}
+		amount = cardano.NewValueWithAssets(cardano.Coin(1_600_000), multiAsset)
 	}
 
 	metadata := cardano.Metadata{
@@ -266,7 +270,6 @@ func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *
 	}
 
 	utxos, err := node.UTxOs(senderAddress, tip.Block+1000)
-	amount := cardano.NewValueWithAssets(cardano.Coin(1_600_000), multiAsset)
 	tx, err := scardano.BuildTx(node, senderAddress, []cardano.Address{receiver},
 		[]*cardano.Value{amount}, metadata, utxos, tip.Block)
 	if err != nil {
