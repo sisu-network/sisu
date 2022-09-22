@@ -58,7 +58,7 @@ func (h *HandlerTxOutResult) doTxOutResult(ctx sdk.Context, msgWithSigner *types
 }
 
 func (h *HandlerTxOutResult) doTxOutConfirm(ctx sdk.Context, msg *types.TxOutResult, txOut *types.TxOut) ([]byte, error) {
-	log.Verbose("Transaction is successfully included in a block, hash = ", msg.OutHash, " chain = ", msg.OutChain)
+	log.Verbose("Transaction is successfully included in a block, hash (no sig)= ", msg.OutHash, " chain = ", msg.OutChain)
 
 	savedCheckPoint := h.keeper.GetGatewayCheckPoint(ctx, msg.OutChain)
 	if savedCheckPoint == nil || savedCheckPoint.BlockHeight < msg.BlockHeight {

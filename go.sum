@@ -923,8 +923,8 @@ github.com/sisu-network/deyes v0.1.9-0.20220914224425-18ce8da0fcaf h1:aYe0FcFJNu
 github.com/sisu-network/deyes v0.1.9-0.20220914224425-18ce8da0fcaf/go.mod h1:U3CH582au6wMZOdLvvyH2iJzkmmyN+++/UilZ+twaIc=
 github.com/sisu-network/dheart v0.1.7-alpha1 h1:Ad7HGR2hCW24OLrR60rEqdGuMp8vFvHcyYj1uopVQak=
 github.com/sisu-network/dheart v0.1.7-alpha1/go.mod h1:/pEi6MoeZ/Uy5D275sBxxav1WQX7q2pcYdzW0xIfmyU=
-github.com/sisu-network/lib v0.0.1-alpha9.0.20220919073604-e4a787588ea6 h1:c6ufBbAhY7ASrD9MaHWLNDVG6NKgNH1vruHdUA7MxAQ=
-github.com/sisu-network/lib v0.0.1-alpha9.0.20220919073604-e4a787588ea6/go.mod h1:ccPr7jJqYU+f0F10Z0hCiKJtYCFcFhgeElxIwRuCI6k=
+github.com/sisu-network/lib v0.0.1-alpha9.0.20220921223910-3acf2cd9191a h1:HQKqWcNgaXRhbfdpa0ZksxIDdCK9FC21FRnDh1ErVdE=
+github.com/sisu-network/lib v0.0.1-alpha9.0.20220921223910-3acf2cd9191a/go.mod h1:ccPr7jJqYU+f0F10Z0hCiKJtYCFcFhgeElxIwRuCI6k=
 github.com/sisu-network/tss-lib v0.1.3-0.20220602042956-0a991a4b5046 h1:SVxFTtflzZktK5YeWi4tTWVtf5dJU/Zhco77WedOW1I=
 github.com/sisu-network/tss-lib v0.1.3-0.20220602042956-0a991a4b5046/go.mod h1:MwmGjqpw4gTUGi9fZFVnoqCXPR1vd31viwfAbwzwwnM=
 github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d/go.mod h1:OnSkiWE9lh6wB0YB77sQom3nweQdgAjqCqsofrRNTgc=

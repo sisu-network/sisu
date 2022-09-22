@@ -10,6 +10,7 @@ import (
 
 	libchain "github.com/sisu-network/lib/chain"
 
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/echovl/cardano-go"
@@ -293,8 +294,8 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, sisuRpc, chain, m
 
 	log.Info("Gas price = ", gasPrice, " on chain ", chain)
 
-	// 0.05 ETH
-	amount := new(big.Int).Div(utils.EthToWei, big.NewInt(20))
+	// 0.02 ETH
+	amount := new(big.Int).Div(utils.EthToWei, big.NewInt(50))
 
 	gasLimit := uint64(22000) // in units
 
@@ -316,7 +317,33 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, sisuRpc, chain, m
 	}
 
 	bind.WaitDeployed(context.Background(), client, signedTx)
-	time.Sleep(time.Second * 3)
+
+	waitForTx(client, signedTx.Hash())
+}
+
+func waitForTx(client *ethclient.Client, hash common.Hash) {
+	start := time.Now()
+	end := start.Add(time.Minute * 2)
+
+	for {
+		if time.Now().After(end) {
+			log.Error("Time out for transaction with hash ", hash)
+			panic("")
+		}
+
+		tx, isPending, err := client.TransactionByHash(context.Background(), hash)
+		if err != nil && err != ethereum.NotFound {
+			log.Error("Failed to get transaction with hash ", hash)
+			panic(err)
+		}
+
+		if tx == nil || isPending {
+			time.Sleep(time.Second * 3)
+			continue
+		}
+
+		break
+	}
 }
 
 func queryChain(ctx context.Context, sisuRpc string, chain string) (*types.Chain, error) {
@@ -374,11 +401,13 @@ func (c *fundAccountCmd) addVaultSpender(client *ethclient.Client, mnemonic stri
 
 	tx, err := vaultInstance.AddSpender(auth, spender)
 	if err != nil {
+		log.Error("Failed to add vault spender, vaultAddr = ", vaultAddr)
 		panic(err)
 	}
 
 	bind.WaitDeployed(context.Background(), client, tx)
-	time.Sleep(time.Second * 5)
+
+	waitForTx(client, tx.Hash())
 }
 
 func (c *fundAccountCmd) queryAllownace(client *ethclient.Client,

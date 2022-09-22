@@ -64,7 +64,7 @@ Example:
 			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 
 			// Get Chain id and keyring backend from .env file.
-			chainID := "eth-sisu-local"
+			chainID := "sisu-local"
 			keyringBackend := keyring.BackendTest
 
 			deyesChains := getDeyesChains(cmd, genesisFolder)
