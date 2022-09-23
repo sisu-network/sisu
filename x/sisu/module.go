@@ -294,9 +294,10 @@ func (am AppModule) signTxOut(ctx sdk.Context) {
 				log.Infof("Pending tx on chain %s expired. Clearing the pending tx.", chain)
 				am.keeper.SetPendingTxOutInfo(ctx, chain, nil)
 
-				queue := am.keeper.GetTxOutQueue(ctx, chain)
-				queue = append(queue, pendingInfo.TxOut)
-				am.keeper.SetTxOutQueue(ctx, chain, queue)
+				// TODO: Put this back to the failure queue
+				// queue := am.keeper.GetTxOutQueue(ctx, chain)
+				// queue = append(queue, pendingInfo.TxOut)
+				// am.keeper.SetTxOutQueue(ctx, chain, queue)
 			}
 
 			continue
