@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"os"
 
 	"github.com/BurntSushi/toml"
@@ -38,11 +37,9 @@ func (c *CardanoConfig) GetCardanoNetwork() cardano.Network {
 	switch c.Chain {
 	case "cardano-testnet":
 		return cardano.Preprod
-	case "cardano-mainet":
-		return cardano.Mainnet
 	}
 
-	panic(fmt.Errorf("Unkwown network %s", c.Chain))
+	return cardano.Mainnet
 }
 
 // Example of supported chains in the toml config file.
