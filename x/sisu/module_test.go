@@ -72,12 +72,12 @@ func TestModule_signTxOut(t *testing.T) {
 	pending1 := kpr.GetPendingTxOutInfo(ctx, "ganache1")
 	require.Equal(t, &types.PendingTxOutInfo{
 		TxOut:        txOut1_1,
-		ExpiredBlock: 10,
+		ExpiredBlock: 50,
 	}, pending1)
 	pending2 := kpr.GetPendingTxOutInfo(ctx, "ganache2")
 	require.Equal(t, &types.PendingTxOutInfo{
 		TxOut:        txOut2_1,
-		ExpiredBlock: 10,
+		ExpiredBlock: 50,
 	}, pending2)
 
 	// Clone ctx with height = 20. The pending transaction expires. We should add it back to the
@@ -85,7 +85,7 @@ func TestModule_signTxOut(t *testing.T) {
 	cloneCtx := sdk.Context{}
 	cacheMS := ctx.MultiStore().CacheMultiStore()
 	header := ctx.BlockHeader()
-	header.Height = 20
+	header.Height = 60
 	cloneCtx = sdk.NewContext(
 		cacheMS, header, ctx.IsCheckTx(), nil,
 	)

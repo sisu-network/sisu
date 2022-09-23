@@ -287,16 +287,17 @@ func (am AppModule) signTxOut(ctx sdk.Context) {
 	params := am.keeper.GetParams(ctx)
 	height := ctx.BlockHeight()
 
-	for i, chain := range params.SupportedChains {
+	for _, chain := range params.SupportedChains {
 		pendingInfo := am.keeper.GetPendingTxOutInfo(ctx, chain)
 		if pendingInfo != nil {
 			if pendingInfo.ExpiredBlock < height {
 				log.Infof("Pending tx on chain %s expired. Clearing the pending tx.", chain)
 				am.keeper.SetPendingTxOutInfo(ctx, chain, nil)
 
-				queue := am.keeper.GetTxOutQueue(ctx, chain)
-				queue = append(queue, pendingInfo.TxOut)
-				am.keeper.SetTxOutQueue(ctx, chain, queue)
+				// TODO: Put this back to the failure queue
+				// queue := am.keeper.GetTxOutQueue(ctx, chain)
+				// queue = append(queue, pendingInfo.TxOut)
+				// am.keeper.SetTxOutQueue(ctx, chain, queue)
 			}
 
 			continue
@@ -309,8 +310,10 @@ func (am AppModule) signTxOut(ctx sdk.Context) {
 
 		txOut := queue[0]
 		am.keeper.SetPendingTxOutInfo(ctx, txOut.Content.OutChain, &types.PendingTxOutInfo{
-			TxOut:        txOut,
-			ExpiredBlock: height + params.PendingTxTimeoutHeights[i],
+			TxOut: txOut,
+			// ExpiredBlock: height + params.PendingTxTimeoutHeights[i],
+			// TODO: Make this height configurable
+			ExpiredBlock: height + 50,
 		})
 		am.keeper.SetTxOutQueue(ctx, txOut.Content.OutChain, queue[1:])
 
