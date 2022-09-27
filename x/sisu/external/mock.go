@@ -1,4 +1,4 @@
-package tssclients
+package external
 
 import (
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"

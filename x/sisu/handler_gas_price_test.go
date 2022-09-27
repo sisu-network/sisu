@@ -6,8 +6,8 @@ import (
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
-	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
@@ -25,7 +25,7 @@ func mockForHandlerGasPrice() (sdk.Context, ManagerContainer) {
 		return []ctypes.PubKey{}
 	}
 
-	dheartClient := &tssclients.MockDheartClient{}
+	dheartClient := &external.MockDheartClient{}
 	appKeys := common.NewMockAppKeys()
 	mc := MockManagerContainer(k, pmm, globalData, partyManager, dheartClient, appKeys)
 

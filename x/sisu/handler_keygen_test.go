@@ -7,8 +7,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
-	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
@@ -24,7 +24,7 @@ func mockForHandlerKeygen() (sdk.Context, ManagerContainer) {
 		return []ctypes.PubKey{}
 	}
 
-	dheartClient := &tssclients.MockDheartClient{}
+	dheartClient := &external.MockDheartClient{}
 
 	mc := MockManagerContainer(k, pmm, globalData, partyManager, dheartClient)
 
@@ -35,7 +35,7 @@ func TestHandlerKeygen_normal(t *testing.T) {
 	submitCount := 0
 
 	ctx, mc := mockForHandlerKeygen()
-	dheartClient := mc.DheartClient().(*tssclients.MockDheartClient)
+	dheartClient := mc.DheartClient().(*external.MockDheartClient)
 	dheartClient.KeyGenFunc = func(keygenId, chain string, pubKeys []ctypes.PubKey) error {
 		submitCount = 1
 		return nil
@@ -64,7 +64,7 @@ func TestHandlerKeygen_CatchingUp(t *testing.T) {
 	globalData.IsCatchingUpFunc = func() bool {
 		return true
 	}
-	dheartClient := mc.DheartClient().(*tssclients.MockDheartClient)
+	dheartClient := mc.DheartClient().(*external.MockDheartClient)
 	dheartClient.KeyGenFunc = func(keygenId, chain string, pubKeys []ctypes.PubKey) error {
 		submitCount = 1
 		return nil

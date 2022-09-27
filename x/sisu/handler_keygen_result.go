@@ -6,8 +6,8 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
-	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
@@ -15,7 +15,7 @@ type HandlerKeygenResult struct {
 	keeper      keeper.Keeper
 	pmm         PostedMessageManager
 	globalData  common.GlobalData
-	deyesClient tssclients.DeyesClient
+	deyesClient external.DeyesClient
 	config      config.TssConfig
 	txSubmit    common.TxSubmit
 	appKeys     common.AppKeys

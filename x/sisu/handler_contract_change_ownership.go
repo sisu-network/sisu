@@ -32,7 +32,7 @@ package sisu
 // 	txOutputProducer TxOutputProducer
 // 	globalData       common.GlobalData
 // 	partyManager     PartyManager
-// 	dheartClient     tssclients.DheartClient
+// 	dheartClient     external.DheartClient
 // }
 
 // func newHandlerContractChangeOwnership(mc ManagerContainer) *handlerContractChangeOwnership {

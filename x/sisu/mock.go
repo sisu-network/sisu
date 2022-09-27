@@ -5,8 +5,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
+	external "github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
-	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 
 	"github.com/echovl/cardano-go"
@@ -31,9 +31,9 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.pmm = t
 		case common.GlobalData:
 			mc.globalData = t
-		case tssclients.DeyesClient:
+		case external.DeyesClient:
 			mc.deyesClient = t
-		case tssclients.DheartClient:
+		case external.DheartClient:
 			mc.dheartClient = t
 		case config.TssConfig:
 			mc.config = t

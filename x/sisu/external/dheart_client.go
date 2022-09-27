@@ -1,4 +1,4 @@
-package tssclients
+package external
 
 import (
 	"context"

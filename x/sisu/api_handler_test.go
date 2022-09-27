@@ -23,8 +23,8 @@ import (
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/contracts/eth/vault"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
-	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/stretchr/testify/require"
 )
 
@@ -46,7 +46,7 @@ func mockForApiHandlerTest() (sdk.Context, ManagerContainer) {
 		return []ctypes.PubKey{}
 	}
 
-	dheartClient := &tssclients.MockDheartClient{}
+	dheartClient := &external.MockDheartClient{}
 	appKeys := common.NewMockAppKeys()
 
 	mc := MockManagerContainer(k, pmm, globalData, partyManager, dheartClient, txSubmit, appKeys, ctx, txTracker)
