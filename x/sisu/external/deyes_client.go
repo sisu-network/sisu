@@ -3,6 +3,7 @@ package external
 import (
 	"context"
 
+	"github.com/echovl/cardano-go"
 	"github.com/ethereum/go-ethereum/rpc"
 	etypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/lib/log"
@@ -15,6 +16,8 @@ type DeyesClient interface {
 	GetNonce(chain string, address string) int64
 	SetSisuReady(isReady bool) error
 	GetGasPrices(chains []string) ([]int64, error)
+	CardanoProtocolParams(chain string) (*cardano.ProtocolParams, error)
+	CardanoUtxos(chain string, addr string, maxBlock uint64) ([]cardano.UTxO, error)
 }
 
 type defaultDeyesClient struct {
@@ -103,4 +106,41 @@ func (c *defaultDeyesClient) GetGasPrices(chains []string) ([]int64, error) {
 	}
 
 	return result, nil
+}
+
+func (c *defaultDeyesClient) CardanoProtocolParams(chain string) (*cardano.ProtocolParams, error) {
+	result := &cardano.ProtocolParams{}
+
+	err := c.client.CallContext(context.Background(), &result, "deyes_cardanoProtocolParams", chain)
+	if err != nil {
+		log.Error("Cannot get cardano protocol params = ", chain, "err = ", err)
+		return nil, err
+	}
+
+	return result, nil
+}
+
+func (c *defaultDeyesClient) CardanoUtxos(chain string, addr string, maxBlock uint64) ([]cardano.UTxO, error) {
+	result := struct {
+		Utxos []cardano.UTxO
+		Bytes [][]byte // Amounts
+	}{}
+
+	err := c.client.CallContext(context.Background(), &result, "deyes_cardanoUtxos", chain, addr, maxBlock)
+	if err != nil {
+		log.Errorf("Cannot get cardano utxos, chain = %s, addr = %s, err = %s", chain, addr, err.Error())
+		return nil, err
+	}
+
+	// Unmarshal amount since it's not serializable through network.
+	utxos := result.Utxos
+	for i, bz := range result.Bytes {
+		utxos[i].Amount = cardano.NewValue(0)
+		err := utxos[i].Amount.UnmarshalCBOR(bz)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return utxos, nil
 }

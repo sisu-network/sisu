@@ -74,7 +74,7 @@ func BuildTx(node CardanoClient, sender cardano.Address, receivers []cardano.Add
 
 	log.Debug("picked utxo: ")
 	for _, p := range pickedUtxos {
-		log.Debug("txHash = ", p.TxHash.String(), " coin amount = ", p.Amount.Coin)
+		log.Debug("txHash = ", p.TxHash.String(), ", utxo index = ", p.Index, ", coin amount = ", p.Amount.Coin)
 	}
 
 	for _, utxo := range pickedUtxos {

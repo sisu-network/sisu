@@ -2,6 +2,7 @@ package external
 
 import (
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/echovl/cardano-go"
 	eTypes "github.com/sisu-network/deyes/types"
 	htypes "github.com/sisu-network/dheart/types"
 )
@@ -14,12 +15,14 @@ func check() {
 ///// DeyesClient
 
 type MockDeyesClient struct {
-	PingFunc            func(source string) error
-	DispatchFunc        func(request *eTypes.DispatchedTxRequest) (*eTypes.DispatchedTxResult, error)
-	SetVaultAddressFunc func(chain string, addr string) error
-	GetNonceFunc        func(chain string, address string) int64
-	SetSisuReadyFunc    func(isReady bool) error
-	GetGasPricesFunc    func(chains []string) ([]int64, error)
+	PingFunc                  func(source string) error
+	DispatchFunc              func(request *eTypes.DispatchedTxRequest) (*eTypes.DispatchedTxResult, error)
+	SetVaultAddressFunc       func(chain string, addr string) error
+	GetNonceFunc              func(chain string, address string) int64
+	SetSisuReadyFunc          func(isReady bool) error
+	GetGasPricesFunc          func(chains []string) ([]int64, error)
+	CardanoProtocolParamsFunc func(chain string) (*cardano.ProtocolParams, error)
+	CardanoUtxosFunc          func(chain string, addr string, maxBlock uint64) ([]cardano.UTxO, error)
 }
 
 func (c *MockDeyesClient) Ping(source string) error {
@@ -65,6 +68,22 @@ func (c *MockDeyesClient) SetSisuReady(isReady bool) error {
 func (c *MockDeyesClient) GetGasPrices(chains []string) ([]int64, error) {
 	if c.GetGasPricesFunc != nil {
 		return c.GetGasPricesFunc(chains)
+	}
+
+	return nil, nil
+}
+
+func (m *MockDeyesClient) CardanoProtocolParams(chain string) (*cardano.ProtocolParams, error) {
+	if m.CardanoProtocolParamsFunc != nil {
+		return m.CardanoProtocolParamsFunc(chain)
+	}
+
+	return nil, nil
+}
+
+func (m *MockDeyesClient) CardanoUtxos(chain string, addr string, maxBlock uint64) ([]cardano.UTxO, error) {
+	if m.CardanoUtxosFunc != nil {
+		return m.CardanoUtxosFunc(chain, addr, maxBlock)
 	}
 
 	return nil, nil

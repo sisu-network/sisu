@@ -16,23 +16,26 @@ import (
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/utils"
 	chaintypes "github.com/sisu-network/sisu/x/sisu/chains/types"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type bridge struct {
-	chain  string
-	signer string
-	keeper keeper.Keeper
-	client CardanoClient
+	chain       string
+	signer      string
+	keeper      keeper.Keeper
+	client      CardanoClient
+	deyesClient external.DeyesClient
 }
 
-func NewBridge(chain string, signer string, keeper keeper.Keeper, client CardanoClient) chaintypes.Bridge {
+func NewBridge(chain string, signer string, keeper keeper.Keeper, client CardanoClient, deyesClient external.DeyesClient) chaintypes.Bridge {
 	return &bridge{
-		keeper: keeper,
-		chain:  chain,
-		signer: signer,
-		client: client,
+		keeper:      keeper,
+		chain:       chain,
+		signer:      signer,
+		client:      client,
+		deyesClient: deyesClient,
 	}
 }
 
@@ -55,7 +58,12 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) 
 	} else {
 		maxBlockHeight = uint64(checkPoint.BlockHeight)
 	}
-	utxos, err := b.client.UTxOs(sisuAddr, maxBlockHeight)
+
+	utxos, err := b.deyesClient.CardanoUtxos(b.chain, sisuAddr.String(), maxBlockHeight)
+	for _, utxo := range utxos {
+		fmt.Printf("utxo = %v+\n", utxo.Amount.MultiAsset)
+	}
+
 	if err != nil {
 		return nil, err
 	}

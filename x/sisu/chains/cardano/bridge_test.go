@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/echovl/cardano-go"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -88,7 +89,7 @@ func TestBridge_getCardanoTx(t *testing.T) {
 	recipient2, err := cardano.NewAddress("addr_test1vpjdtcsa7kq9l9l3ahmfkvg6fn03k7ky87luhggt2hl4mhg7u9ly6")
 
 	t.Run("get_tx_success", func(t *testing.T) {
-		bridge := NewBridge("cardano", "signer", k, client).(*bridge)
+		bridge := NewBridge("cardano", "signer", k, client, &external.MockDeyesClient{}).(*bridge)
 
 		balance = cardano.NewValueWithAssets(
 			cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*10),
@@ -126,7 +127,7 @@ func TestBridge_getCardanoTx(t *testing.T) {
 	})
 
 	t.Run("get_tx_not_enough_balance", func(t *testing.T) {
-		bridge := NewBridge("cardano", "signer", k, client).(*bridge)
+		bridge := NewBridge("cardano", "signer", k, client, &external.MockDeyesClient{}).(*bridge)
 
 		balance = cardano.NewValueWithAssets(
 			cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*10),
@@ -150,7 +151,7 @@ func TestBridge_getCardanoTx(t *testing.T) {
 	})
 
 	t.Run("transfer_multiple_assets", func(t *testing.T) {
-		bridge := NewBridge("cardano", "signer", k, client).(*bridge)
+		bridge := NewBridge("cardano", "signer", k, client, &external.MockDeyesClient{}).(*bridge)
 
 		balance = cardano.NewValueWithAssets(
 			cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*10),
@@ -194,7 +195,7 @@ func TestBridge_getCardanoTx(t *testing.T) {
 	})
 
 	t.Run("transfer_native_ada_smaller_than_1", func(t *testing.T) {
-		bridge := NewBridge("cardano", "signer", k, client).(*bridge)
+		bridge := NewBridge("cardano", "signer", k, client, &external.MockDeyesClient{}).(*bridge)
 
 		balance = cardano.NewValueWithAssets(
 			cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*10),
