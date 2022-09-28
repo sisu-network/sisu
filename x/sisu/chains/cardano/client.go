@@ -19,14 +19,8 @@ type CardanoClient interface {
 	// Balance returns the current balance of an account.
 	Balance(address cardano.Address) (*cardano.Value, error)
 
-	// UTxOs returns a list of unspent transaction outputs for a given address
-	UTxOs(addr cardano.Address, maxBlock uint64) ([]cardano.UTxO, error)
-
 	// Tip returns the node's current tip
 	Tip() (*cardano.NodeTip, error)
-
-	// ProtocolParams returns the Node's Protocol Parameters
-	ProtocolParams() (*cardano.ProtocolParams, error)
 
 	SubmitTx(tx *cardano.Tx) (*cardano.Hash32, error)
 }

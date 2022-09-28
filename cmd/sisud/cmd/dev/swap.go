@@ -286,7 +286,7 @@ func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *
 	}
 
 	utxos, err := deyesClient.CardanoUtxos(srcChain, senderAddress.String(), tip.Block+1000)
-	tx, err := scardano.BuildTx(node, senderAddress, []cardano.Address{receiver},
+	tx, err := scardano.BuildTx(node, deyesClient, srcChain, senderAddress, []cardano.Address{receiver},
 		[]*cardano.Value{amount}, metadata, utxos, tip.Block)
 	if err != nil {
 		panic(err)

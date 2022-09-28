@@ -5,6 +5,7 @@ import (
 
 	"github.com/echovl/cardano-go"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/stretchr/testify/require"
 )
 
@@ -72,10 +73,12 @@ func TestTxBuilder_Fee(t *testing.T) {
 			},
 		}
 
+		deyesClient := &external.MockDeyesClient{}
+
 		transferMultiAsset := cardano.NewMultiAsset().Set(policyID, cardano.NewAssets().Set(cAssetName, 1_000_000*3))
 		transfer := cardano.NewValueWithAssets(cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*2), transferMultiAsset)
 
-		tx, err := BuildTx(node, sender, []cardano.Address{receiver}, []*cardano.Value{transfer}, nil, utxos, uint64(100))
+		tx, err := BuildTx(node, deyesClient, "cardano-testnet", sender, []cardano.Address{receiver}, []*cardano.Value{transfer}, nil, utxos, uint64(100))
 		require.NoError(t, err)
 		require.Len(t, tx.Body.Outputs, 2)
 
@@ -106,7 +109,10 @@ func TestTxBuilder_Fee(t *testing.T) {
 		transferMultiAsset := cardano.NewMultiAsset().Set(policyID, cardano.NewAssets().Set(cAssetName, 1_000_000*3))
 		transfer := cardano.NewValueWithAssets(cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*2), transferMultiAsset)
 
-		_, err := BuildTx(node, sender, []cardano.Address{receiver}, []*cardano.Value{transfer}, nil, utxos, uint64(100))
+		deyesClient := &external.MockDeyesClient{}
+
+		_, err := BuildTx(node, deyesClient, "cardano-testnet", sender, []cardano.Address{receiver},
+			[]*cardano.Value{transfer}, nil, utxos, uint64(100))
 		_, ok := err.(*NotEnoughBalanceErr)
 		require.True(t, ok)
 	})

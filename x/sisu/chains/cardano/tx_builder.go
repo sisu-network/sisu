@@ -5,10 +5,11 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/external"
 )
 
 // BuildTx contructs a cardano transaction that sends from sender address to receive address.
-func BuildTx(node CardanoClient, sender cardano.Address, receivers []cardano.Address,
+func BuildTx(node CardanoClient, deyesClient external.DeyesClient, chain string, sender cardano.Address, receivers []cardano.Address,
 	amounts []*cardano.Value, metadata cardano.Metadata, utxos []cardano.UTxO, maxBlock uint64) (*cardano.Tx, error) {
 	// Calculate if the account has enough balance
 	balance, err := node.Balance(sender)
@@ -24,7 +25,7 @@ func BuildTx(node CardanoClient, sender cardano.Address, receivers []cardano.Add
 		return nil, NewNotEnoughBalanceErr(total, balance)
 	}
 
-	pparams, err := node.ProtocolParams()
+	pparams, err := deyesClient.CardanoProtocolParams(chain)
 	if err != nil {
 		return nil, err
 	}

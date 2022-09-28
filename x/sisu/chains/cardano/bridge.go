@@ -198,7 +198,7 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 	}
 
 	// We need at least 1 ada to send multi assets.
-	tx, err := BuildTx(b.client, senderAddr, receiverAddrs, amounts, nil, utxos, maxBlock)
+	tx, err := BuildTx(b.client, b.deyesClient, chain, senderAddr, receiverAddrs, amounts, nil, utxos, maxBlock)
 
 	if err != nil {
 		log.Error("error when building tx: ", err)
