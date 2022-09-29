@@ -10,8 +10,8 @@ import (
 	ecommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
-	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +21,7 @@ func mockForPostedMessageManager() (sdk.Context, ManagerContainer) {
 	k := testmock.KeeperTestGenesis(ctx)
 	pmm := NewPostedMessageManager(k)
 	globalData := &common.MockGlobalData{}
-	dheartClient := &tssclients.MockDheartClient{}
+	dheartClient := &external.MockDheartClient{}
 	partyManager := &MockPartyManager{}
 	partyManager.GetActivePartyPubkeysFunc = func() []ctypes.PubKey {
 		return []ctypes.PubKey{}

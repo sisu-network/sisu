@@ -19,8 +19,8 @@ import (
 	"github.com/sisu-network/sisu/utils"
 	scardano "github.com/sisu-network/sisu/x/sisu/chains/cardano"
 	"github.com/sisu-network/sisu/x/sisu/chains/eth"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
-	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
@@ -47,8 +47,8 @@ type ApiHandler struct {
 	mc         ManagerContainer
 
 	// Dheart & Deyes client
-	dheartClient tssclients.DheartClient
-	deyesClient  tssclients.DeyesClient
+	dheartClient external.DheartClient
+	deyesClient  external.DeyesClient
 
 	privateDb keeper.Storage
 }

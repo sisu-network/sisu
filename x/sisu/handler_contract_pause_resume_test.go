@@ -5,7 +5,7 @@ package sisu
 // 	k := testmock.KeeperTestGenesis(ctx)
 // 	pmm := NewPostedMessageManager(k)
 // 	globalData := &common.MockGlobalData{}
-// 	dheartClient := &tssclients.MockDheartClient{}
+// 	dheartClient := &external.MockDheartClient{}
 // 	partyManager := &MockPartyManager{}
 // 	partyManager.GetActivePartyPubkeysFunc = func() []ctypes.PubKey {
 // 		return []ctypes.PubKey{}

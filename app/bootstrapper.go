@@ -9,7 +9,7 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
 	tss "github.com/sisu-network/sisu/x/sisu"
-	"github.com/sisu-network/sisu/x/sisu/tssclients"
+	"github.com/sisu-network/sisu/x/sisu/external"
 )
 
 const (
@@ -22,7 +22,7 @@ type Bootstrapper interface {
 		apiHandler *tss.ApiEndPoint,
 		encryptedAes []byte,
 		tendermintKeyType string,
-	) (tssclients.DheartClient, tssclients.DeyesClient)
+	) (external.DheartClient, external.DeyesClient)
 }
 
 type DefaultBootstrapper struct {
@@ -39,15 +39,15 @@ func (b *DefaultBootstrapper) BootstrapInternalNetwork(
 	apiHandler *tss.ApiEndPoint,
 	encryptedAes []byte,
 	tendermintKeyType string,
-) (tssclients.DheartClient, tssclients.DeyesClient) {
+) (external.DheartClient, external.DeyesClient) {
 	// Dheart
-	var dheartClient tssclients.DheartClient
+	var dheartClient external.DheartClient
 	var err error
 	for {
 		url := fmt.Sprintf("http://%s:%d", tssConfig.DheartHost, tssConfig.DheartPort)
 		log.Info("Connecting to Dheart server at", url)
 
-		dheartClient, err = tssclients.DialDheart(url)
+		dheartClient, err = external.DialDheart(url)
 		if err != nil {
 			log.Infof("cannot dial dheart, err = %v, sleeping before retry...", err)
 			time.Sleep(RETRY_TIMEOUT)
@@ -72,9 +72,9 @@ func (b *DefaultBootstrapper) BootstrapInternalNetwork(
 	}
 
 	// Deyes
-	var deyesClient tssclients.DeyesClient
+	var deyesClient external.DeyesClient
 	for {
-		deyesClient, err = tssclients.DialDeyes(tssConfig.DeyesUrl)
+		deyesClient, err = external.DialDeyes(tssConfig.DeyesUrl)
 		if err != nil {
 			log.Infof("cannot dial deyes, err = %v, sleeping before retry...", err)
 			time.Sleep(RETRY_TIMEOUT)

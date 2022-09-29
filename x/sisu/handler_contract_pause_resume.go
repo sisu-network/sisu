@@ -65,7 +65,7 @@ package sisu
 // 	txOutputProducer TxOutputProducer
 // 	globalData       common.GlobalData
 // 	partyManager     PartyManager
-// 	dheartClient     tssclients.DheartClient
+// 	dheartClient     external.DheartClient
 // }
 
 // func newHandlerPauseResumeContract(mc ManagerContainer) *handlerPauseResumeContract {

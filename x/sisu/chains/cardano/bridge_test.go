@@ -7,18 +7,20 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/echovl/cardano-go"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
 
-func mockForTestDefaultTxOutputProducer() (sdk.Context, keeper.Keeper, *MockCardanoClient) {
+func mockForTestDefaultTxOutputProducer() (sdk.Context, keeper.Keeper, *external.MockDeyesClient) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestAfterContractDeployed(ctx)
 
-	client := &MockCardanoClient{}
-	client.ProtocolParamsFunc = func() (*cardano.ProtocolParams, error) {
+	client := new(external.MockDeyesClient)
+
+	client.CardanoProtocolParamsFunc = func(chain string) (*cardano.ProtocolParams, error) {
 		return &cardano.ProtocolParams{
 			MinFeeA:          5,
 			MinFeeB:          10,
@@ -26,7 +28,7 @@ func mockForTestDefaultTxOutputProducer() (sdk.Context, keeper.Keeper, *MockCard
 		}, nil
 	}
 
-	client.TipFunc = func() (*cardano.NodeTip, error) {
+	client.CardanoTipFunc = func(chain string, blockHeight uint64) (*cardano.NodeTip, error) {
 		return &cardano.NodeTip{
 			Block: 1,
 			Epoch: 2,
@@ -58,15 +60,14 @@ func mockUtxos(hash cardano.Hash32, sender cardano.Address, balance *cardano.Val
 	}
 }
 
-func mockClient(client *MockCardanoClient, utxos []cardano.UTxO, balance *cardano.Value) {
-	client.UTxOsFunc = func(addr cardano.Address, maxBlock uint64) ([]cardano.UTxO, error) {
+func mockClient(client *external.MockDeyesClient, utxos []cardano.UTxO, balance *cardano.Value) {
+	client.CardanoUtxosFunc = func(chain, addr string, maxBlock uint64) ([]cardano.UTxO, error) {
 		return utxos, nil
 	}
 
-	client.BalanceFunc = func(address cardano.Address) (*cardano.Value, error) {
+	client.CardanoBalanceFunc = func(chain, address string, maxBlock int64) (*cardano.Value, error) {
 		return balance, nil
 	}
-
 }
 
 func TestBridge_getCardanoTx(t *testing.T) {

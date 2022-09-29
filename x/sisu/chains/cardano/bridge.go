@@ -16,23 +16,24 @@ import (
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/utils"
 	chaintypes "github.com/sisu-network/sisu/x/sisu/chains/types"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type bridge struct {
-	chain  string
-	signer string
-	keeper keeper.Keeper
-	client CardanoClient
+	chain       string
+	signer      string
+	keeper      keeper.Keeper
+	deyesClient external.DeyesClient
 }
 
-func NewBridge(chain string, signer string, keeper keeper.Keeper, client CardanoClient) chaintypes.Bridge {
+func NewBridge(chain string, signer string, keeper keeper.Keeper, deyesClient external.DeyesClient) chaintypes.Bridge {
 	return &bridge{
-		keeper: keeper,
-		chain:  chain,
-		signer: signer,
-		client: client,
+		keeper:      keeper,
+		chain:       chain,
+		signer:      signer,
+		deyesClient: deyesClient,
 	}
 }
 
@@ -55,7 +56,12 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) 
 	} else {
 		maxBlockHeight = uint64(checkPoint.BlockHeight)
 	}
-	utxos, err := b.client.UTxOs(sisuAddr, maxBlockHeight)
+
+	utxos, err := b.deyesClient.CardanoUtxos(b.chain, sisuAddr.String(), maxBlockHeight)
+	for _, utxo := range utxos {
+		fmt.Printf("utxo = %v+\n", utxo.Amount.MultiAsset)
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +196,7 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 	}
 
 	// We need at least 1 ada to send multi assets.
-	tx, err := BuildTx(b.client, senderAddr, receiverAddrs, amounts, nil, utxos, maxBlock)
+	tx, err := BuildTx(b.deyesClient, chain, senderAddr, receiverAddrs, amounts, nil, utxos, maxBlock)
 
 	if err != nil {
 		log.Error("error when building tx: ", err)

@@ -621,8 +621,7 @@ github.com/labstack/gommon v0.3.0/go.mod h1:MULnywXg0yavhxWKc+lOruYdAhDwPK9wf0OL
 github.com/leanovate/gopter v0.2.9/go.mod h1:U2L/78B+KVFIx2VmW6onHJQzXtFb+p5y3y2Sh+Jxxv8=
 github.com/lib/pq v1.0.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
 github.com/lib/pq v1.2.0/go.mod h1:5WUZQaWbwv1U+lTReE5YruASi9Al49XbQIvNi/34Woo=
-github.com/lib/pq v1.10.0 h1:Zx5DJFEYQXio93kgXnQ09fXNiUKsqv4OUEu2UtGcB1E=
-github.com/lib/pq v1.10.0/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
+github.com/lib/pq v1.10.7 h1:p7ZhMD+KsSRozJr34udlUrhboJwWAgCg34+/ZZNvZZw=
 github.com/libp2p/go-buffer-pool v0.0.2 h1:QNK2iAFa8gjAe1SPz6mHSMuCcjs+X1wlHzeOSqcmlfs=
 github.com/libp2p/go-buffer-pool v0.0.2/go.mod h1:MvaB6xw5vOrDl8rYZGLFdKAuk/hRoRZd1Vi32+RXyFM=
 github.com/libp2p/go-flow-metrics v0.0.3/go.mod h1:HeoSNUrOJVK1jEpDqVEiUOIXqhbnS27omG0uWU5slZs=
@@ -919,8 +918,8 @@ github.com/sirupsen/logrus v1.8.1 h1:dJKuHgqk1NNQlqoA6BTlM1Wf9DOH3NBjQyu0h9+AZZE
 github.com/sirupsen/logrus v1.8.1/go.mod h1:yWOB1SBYBC5VeMP7gHvWumXLIWorT60ONWic61uBYv0=
 github.com/sisu-network/cardano-go v0.1.14-fork-08 h1:wELq+cs4FJj8GD813o88OyYfSfADtvjLPQoJQE0U944=
 github.com/sisu-network/cardano-go v0.1.14-fork-08/go.mod h1:gvo3faIs9dNVR0bRjIn8vQca8Pd6TpYWpxMiIV87lr4=
-github.com/sisu-network/deyes v0.1.9-0.20220914224425-18ce8da0fcaf h1:aYe0FcFJNuFW3V29iZCZ5bK/Vp9KWlrYy3k8D1cPDqU=
-github.com/sisu-network/deyes v0.1.9-0.20220914224425-18ce8da0fcaf/go.mod h1:U3CH582au6wMZOdLvvyH2iJzkmmyN+++/UilZ+twaIc=
+github.com/sisu-network/deyes v0.1.9-0.20220929073723-04e1363be932 h1:LWcl3BsUyW/FeNXHzvQvfLC5C1nIs5kgbxi4B9oWyKY=
+github.com/sisu-network/deyes v0.1.9-0.20220929073723-04e1363be932/go.mod h1:rHLuNHF9CoczTqSeufXIwYHUvyQCpCVQGKZJ2DsZKyI=
 github.com/sisu-network/dheart v0.1.7-alpha1 h1:Ad7HGR2hCW24OLrR60rEqdGuMp8vFvHcyYj1uopVQak=
 github.com/sisu-network/dheart v0.1.7-alpha1/go.mod h1:/pEi6MoeZ/Uy5D275sBxxav1WQX7q2pcYdzW0xIfmyU=
 github.com/sisu-network/lib v0.0.1-alpha9.0.20220921223910-3acf2cd9191a h1:HQKqWcNgaXRhbfdpa0ZksxIDdCK9FC21FRnDh1ErVdE=

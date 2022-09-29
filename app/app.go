@@ -8,7 +8,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/codec/types"
-	scardano "github.com/sisu-network/sisu/x/sisu/chains/cardano"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmos "github.com/tendermint/tendermint/libs/os"
 	"github.com/tendermint/tendermint/p2p"
@@ -266,16 +265,14 @@ func New(
 
 	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert)
 
-	cardanoNode := scardano.NewBlockfrostClient(cfg.Cardano.GetCardanoNetwork(), cfg.Cardano.BlockfrostSecret)
-
 	valsMgr := tss.NewValidatorManager(app.k)
 	partyManager := tss.NewPartyManager(app.globalData)
 	txOutProducer := tss.NewTxOutputProducer(app.appKeys, app.k, cfg.Cardano,
-		cardanoNode, txTracker)
+		deyesClient, txTracker)
 	transferQueue := sisu.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss, app.appKeys)
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.k),
 		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
-		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, transferQueue, cardanoNode)
+		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, transferQueue)
 
 	apiHandler := tss.NewApiHandler(privateDb, mc)
 	app.apiHandler.SetAppLogicListener(apiHandler)

@@ -11,19 +11,19 @@ import (
 	hTypes "github.com/sisu-network/dheart/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
-	"github.com/sisu-network/sisu/x/sisu/tssclients"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type txOutSigner struct {
 	keeper       keeper.Keeper
 	partyManager PartyManager
-	dheartClient tssclients.DheartClient
+	dheartClient external.DheartClient
 }
 
 func NewTxOutSigner(keeper keeper.Keeper, partyManager PartyManager,
-	dheartClient tssclients.DheartClient) *txOutSigner {
+	dheartClient external.DheartClient) *txOutSigner {
 	return &txOutSigner{
 		keeper:       keeper,
 		partyManager: partyManager,

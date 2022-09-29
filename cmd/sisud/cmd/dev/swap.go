@@ -8,6 +8,7 @@ import (
 
 	"github.com/sisu-network/sisu/contracts/eth/vault"
 	scardano "github.com/sisu-network/sisu/x/sisu/chains/cardano"
+	"github.com/sisu-network/sisu/x/sisu/external"
 
 	cgblockfrost "github.com/echovl/cardano-go/blockfrost"
 
@@ -61,6 +62,7 @@ transfer params.
 			cardanoChain, _ := cmd.Flags().GetString(flags.CardanoChain)
 			cardanoMnemonic, _ := cmd.Flags().GetString(flags.CardanoMnemonic)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
+			deyesUrl, _ := cmd.Flags().GetString(flags.DeyesApiUrl)
 			if len(cardanoMnemonic) == 0 {
 				cardanoMnemonic = mnemonic
 			}
@@ -100,7 +102,7 @@ transfer params.
 				amountBigInt = new(big.Int).Mul(amountBigInt, utils.ONE_ADA_IN_LOVELACE)
 
 				c.swapFromCardano(src, dst, token, recipient, vault, amountBigInt, cardanoChain,
-					cardanoSecret, cardanoMnemonic)
+					cardanoSecret, cardanoMnemonic, deyesUrl)
 			}
 
 			return nil
@@ -115,6 +117,7 @@ transfer params.
 	cmd.Flags().String(flags.Erc20Symbol, "SISU", "ID of the ERC20 to transferred")
 	cmd.Flags().String(flags.Account, "", "Recipient address in the destination chain")
 	cmd.Flags().Int(flags.Amount, 1, "The amount of token to be transferred")
+	cmd.Flags().String(flags.DeyesApiUrl, "http://127.0.0.1:31001", "Url to deyes api server.")
 	cmd.Flags().String(flags.CardanoChain, "", "Cardano chain.")
 	cmd.Flags().String(flags.CardanoMnemonic, "", "Cardano mnemonic.")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
@@ -238,7 +241,7 @@ func (c *swapCommand) getCardanoVault(ctx context.Context, sisuRpc string) strin
 }
 
 func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *types.Token,
-	destRecipient, cardanoVault string, value *big.Int, network string, blockfrostSecret, mnemonic string) {
+	destRecipient, cardanoVault string, value *big.Int, network string, blockfrostSecret, mnemonic string, deyesUrl string) {
 	privateKey, senderAddress := c.getSenderAddress(blockfrostSecret, mnemonic)
 	receiver, err := cardano.NewAddress(cardanoVault)
 	if err != nil {
@@ -256,21 +259,33 @@ func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *
 		amount = cardano.NewValueWithAssets(cardano.Coin(1_600_000), multiAsset)
 	}
 
-	metadata := cardano.Metadata{
+	var metadata cardano.Metadata
+	var nativeAda int
+
+	if token.Id == "ADA" {
+		nativeAda = 1
+	}
+
+	metadata = cardano.Metadata{
 		0: map[string]interface{}{
-			"chain":     destChain,
-			"recipient": destRecipient,
+			"chain":      destChain,
+			"recipient":  destRecipient,
+			"native_ada": nativeAda,
 		},
 	}
 
-	node := scardano.NewBlockfrostClient(cardano.Preprod, blockfrostSecret)
-	tip, err := node.Tip()
+	deyesClient, err := external.DialDeyes(deyesUrl)
 	if err != nil {
 		panic(err)
 	}
 
-	utxos, err := node.UTxOs(senderAddress, tip.Block+1000)
-	tx, err := scardano.BuildTx(node, senderAddress, []cardano.Address{receiver},
+	tip, err := deyesClient.CardanoTip(srcChain, 20_000_000)
+	if err != nil {
+		panic(err)
+	}
+
+	utxos, err := deyesClient.CardanoUtxos(srcChain, senderAddress.String(), tip.Block+1000)
+	tx, err := scardano.BuildTx(deyesClient, srcChain, senderAddress, []cardano.Address{receiver},
 		[]*cardano.Value{amount}, metadata, utxos, tip.Block)
 	if err != nil {
 		panic(err)
@@ -291,7 +306,7 @@ func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *
 		Signature: privateKey.Sign(txHash),
 	}
 
-	submitedHash, err := node.SubmitTx(tx)
+	submitedHash, err := deyesClient.CardanoSubmitTx(srcChain, tx)
 	if err != nil {
 		panic(err)
 	}

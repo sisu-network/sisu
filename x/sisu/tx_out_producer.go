@@ -10,6 +10,7 @@ import (
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 
@@ -34,7 +35,7 @@ type DefaultTxOutputProducer struct {
 	// Only use for cardano chain
 	cardanoConfig  config.CardanoConfig
 	cardanoNetwork cardano.Network
-	cardanoClient  chainscar.CardanoClient
+	deyesClient    external.DeyesClient
 
 	bridges map[string]chainstypes.Bridge
 }
@@ -47,14 +48,14 @@ type transferInData struct {
 
 func NewTxOutputProducer(appKeys common.AppKeys, keeper keeper.Keeper,
 	cardanoConfig config.CardanoConfig,
-	cardanoClient chainscar.CardanoClient,
+	deyesClient external.DeyesClient,
 	txTracker TxTracker) TxOutputProducer {
 	return &DefaultTxOutputProducer{
 		signer:         appKeys.GetSignerAddress().String(),
 		keeper:         keeper,
 		txTracker:      txTracker,
 		cardanoNetwork: cardanoConfig.GetCardanoNetwork(),
-		cardanoClient:  cardanoClient,
+		deyesClient:    deyesClient,
 		bridges:        make(map[string]chainstypes.Bridge),
 	}
 }
@@ -79,7 +80,7 @@ func (p *DefaultTxOutputProducer) getBridge(chain string) chainstypes.Bridge {
 		}
 
 		if libchain.IsCardanoChain(chain) {
-			p.bridges[chain] = chainscar.NewBridge(chain, p.signer, p.keeper, p.cardanoClient)
+			p.bridges[chain] = chainscar.NewBridge(chain, p.signer, p.keeper, p.deyesClient)
 		}
 	}
 

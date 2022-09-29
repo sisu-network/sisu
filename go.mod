@@ -4,7 +4,6 @@ go 1.18
 
 require (
 	github.com/BurntSushi/toml v1.1.0
-	github.com/blockfrost/blockfrost-go v0.1.0
 	github.com/btcsuite/btcd v0.22.0-beta
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-sdk v0.42.1
@@ -19,7 +18,7 @@ require (
 	github.com/joho/godotenv v1.3.0
 	github.com/libp2p/go-libp2p-core v0.8.0
 	github.com/logdna/logdna-go v1.0.2
-	github.com/sisu-network/deyes v0.1.9-0.20220914224425-18ce8da0fcaf
+	github.com/sisu-network/deyes v0.1.9-0.20220929073723-04e1363be932
 	github.com/sisu-network/dheart v0.1.7-alpha1
 	github.com/sisu-network/lib v0.0.1-alpha9.0.20220921223910-3acf2cd9191a
 	github.com/spf13/cast v1.5.0
@@ -46,6 +45,7 @@ require (
 	github.com/armon/go-metrics v0.3.10 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/speakeasy v0.1.0 // indirect
+	github.com/blockfrost/blockfrost-go v0.1.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.2.0 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
@@ -104,7 +104,6 @@ require (
 	github.com/jmhodges/levigo v1.0.0 // indirect
 	github.com/keybase/go-keychain v0.0.0-20190712205309-48d3d31d256d // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
-	github.com/lib/pq v1.10.0 // indirect
 	github.com/libp2p/go-buffer-pool v0.0.2 // indirect
 	github.com/libp2p/go-openssl v0.0.7 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect

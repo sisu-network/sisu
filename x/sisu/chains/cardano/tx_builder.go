@@ -1,20 +1,25 @@
 package cardano
 
 import (
+	"fmt"
+
 	"github.com/echovl/cardano-go"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/external"
 )
 
 // BuildTx contructs a cardano transaction that sends from sender address to receive address.
-func BuildTx(node CardanoClient, sender cardano.Address, receivers []cardano.Address,
+func BuildTx(deyesClient external.DeyesClient, chain string, sender cardano.Address, receivers []cardano.Address,
 	amounts []*cardano.Value, metadata cardano.Metadata, utxos []cardano.UTxO, maxBlock uint64) (*cardano.Tx, error) {
 	// Calculate if the account has enough balance
-	balance, err := node.Balance(sender)
+	balance, err := deyesClient.CardanoBalance(chain, sender.String(), int64(maxBlock))
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("balance = ", balance)
 
 	total := cardano.NewValue(cardano.Coin(0))
 	for _, amount := range amounts {
@@ -24,7 +29,7 @@ func BuildTx(node CardanoClient, sender cardano.Address, receivers []cardano.Add
 		return nil, NewNotEnoughBalanceErr(total, balance)
 	}
 
-	pparams, err := node.ProtocolParams()
+	pparams, err := deyesClient.CardanoProtocolParams(chain)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +79,7 @@ func BuildTx(node CardanoClient, sender cardano.Address, receivers []cardano.Add
 
 	log.Debug("picked utxo: ")
 	for _, p := range pickedUtxos {
-		log.Debug("txHash = ", p.TxHash.String(), " coin amount = ", p.Amount.Coin)
+		log.Debug("txHash = ", p.TxHash.String(), ", utxo index = ", p.Index, ", coin amount = ", p.Amount.Coin)
 	}
 
 	for _, utxo := range pickedUtxos {
@@ -88,10 +93,12 @@ func BuildTx(node CardanoClient, sender cardano.Address, receivers []cardano.Add
 		builder.AddAuxiliaryData(&cardano.AuxiliaryData{Metadata: metadata})
 	}
 
-	tip, err := node.Tip()
+	// TODO: Use data from context to make sure that the slot is deterministic.
+	tip, err := deyesClient.CardanoTip(chain, maxBlock)
 	if err != nil {
 		return nil, err
 	}
+
 	builder.SetTTL(tip.Slot + 1200)
 	changeAddress := sender
 	builder.AddChangeIfNeeded(changeAddress)
