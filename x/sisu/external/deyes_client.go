@@ -22,6 +22,7 @@ type DeyesClient interface {
 	CardanoUtxos(chain string, addr string, maxBlock uint64) ([]cardano.UTxO, error)
 	CardanoBalance(chain string, address string, maxBlock int64) (*cardano.Value, error)
 	CardanoSubmitTx(chain string, tx *cardano.Tx) (*cardano.Hash32, error)
+	CardanoTip(chain string, blockHeight uint64) (*cardano.NodeTip, error)
 }
 
 type defaultDeyesClient struct {
@@ -165,8 +166,16 @@ func (c *defaultDeyesClient) CardanoBalance(chain string, address string, maxBlo
 }
 
 // Tip returns the node's current tip
-func (c *defaultDeyesClient) CardanoTip(chain string) (*cardano.NodeTip, error) {
-	return nil, nil
+func (c *defaultDeyesClient) CardanoTip(chain string, blockHeight uint64) (*cardano.NodeTip, error) {
+	result := new(cardano.NodeTip)
+
+	err := c.client.CallContext(context.Background(), &result, "deyes_cardanoTip", chain, blockHeight)
+	if err != nil {
+		log.Errorf("Cannot get cardano block tip, chain = %s, height = %s, err = %s", chain, blockHeight, err.Error())
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func (c *defaultDeyesClient) CardanoSubmitTx(chain string, tx *cardano.Tx) (*cardano.Hash32, error) {

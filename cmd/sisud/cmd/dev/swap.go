@@ -274,13 +274,13 @@ func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *
 		},
 	}
 
-	node := scardano.NewBlockfrostClient(cardano.Preprod, blockfrostSecret)
-	tip, err := node.Tip()
+	deyesClient, err := external.DialDeyes(deyesUrl)
 	if err != nil {
 		panic(err)
 	}
 
-	deyesClient, err := external.DialDeyes(deyesUrl)
+	node := scardano.NewBlockfrostClient(cardano.Preprod, blockfrostSecret)
+	tip, err := deyesClient.CardanoTip(srcChain, 20_000_000)
 	if err != nil {
 		panic(err)
 	}

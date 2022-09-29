@@ -15,10 +15,7 @@ const (
 )
 
 // CardanoClient is a interface that interface with Cardano blockchain.
-type CardanoClient interface {
-	// Tip returns the node's current tip
-	Tip() (*cardano.NodeTip, error)
-}
+type CardanoClient interface{}
 
 // blockFrostClient is a struct that implements CardanoClient interface
 type blockFrostClient struct {

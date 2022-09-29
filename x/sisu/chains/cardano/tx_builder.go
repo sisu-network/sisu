@@ -93,10 +93,12 @@ func BuildTx(node CardanoClient, deyesClient external.DeyesClient, chain string,
 		builder.AddAuxiliaryData(&cardano.AuxiliaryData{Metadata: metadata})
 	}
 
-	tip, err := node.Tip()
+	// TODO: Use data from context to make sure that the slot is deterministic.
+	tip, err := deyesClient.CardanoTip(chain, maxBlock)
 	if err != nil {
 		return nil, err
 	}
+
 	builder.SetTTL(tip.Slot + 1200)
 	changeAddress := sender
 	builder.AddChangeIfNeeded(changeAddress)
