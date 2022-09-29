@@ -25,16 +25,14 @@ type bridge struct {
 	chain       string
 	signer      string
 	keeper      keeper.Keeper
-	client      CardanoClient
 	deyesClient external.DeyesClient
 }
 
-func NewBridge(chain string, signer string, keeper keeper.Keeper, client CardanoClient, deyesClient external.DeyesClient) chaintypes.Bridge {
+func NewBridge(chain string, signer string, keeper keeper.Keeper, deyesClient external.DeyesClient) chaintypes.Bridge {
 	return &bridge{
 		keeper:      keeper,
 		chain:       chain,
 		signer:      signer,
-		client:      client,
 		deyesClient: deyesClient,
 	}
 }
@@ -198,7 +196,7 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 	}
 
 	// We need at least 1 ada to send multi assets.
-	tx, err := BuildTx(b.client, b.deyesClient, chain, senderAddr, receiverAddrs, amounts, nil, utxos, maxBlock)
+	tx, err := BuildTx(b.deyesClient, chain, senderAddr, receiverAddrs, amounts, nil, utxos, maxBlock)
 
 	if err != nil {
 		log.Error("error when building tx: ", err)

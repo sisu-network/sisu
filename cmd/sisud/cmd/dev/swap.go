@@ -279,14 +279,13 @@ func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *
 		panic(err)
 	}
 
-	node := scardano.NewBlockfrostClient(cardano.Preprod, blockfrostSecret)
 	tip, err := deyesClient.CardanoTip(srcChain, 20_000_000)
 	if err != nil {
 		panic(err)
 	}
 
 	utxos, err := deyesClient.CardanoUtxos(srcChain, senderAddress.String(), tip.Block+1000)
-	tx, err := scardano.BuildTx(node, deyesClient, srcChain, senderAddress, []cardano.Address{receiver},
+	tx, err := scardano.BuildTx(deyesClient, srcChain, senderAddress, []cardano.Address{receiver},
 		[]*cardano.Value{amount}, metadata, utxos, tip.Block)
 	if err != nil {
 		panic(err)

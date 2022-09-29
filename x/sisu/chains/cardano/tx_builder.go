@@ -11,7 +11,7 @@ import (
 )
 
 // BuildTx contructs a cardano transaction that sends from sender address to receive address.
-func BuildTx(node CardanoClient, deyesClient external.DeyesClient, chain string, sender cardano.Address, receivers []cardano.Address,
+func BuildTx(deyesClient external.DeyesClient, chain string, sender cardano.Address, receivers []cardano.Address,
 	amounts []*cardano.Value, metadata cardano.Metadata, utxos []cardano.UTxO, maxBlock uint64) (*cardano.Tx, error) {
 	// Calculate if the account has enough balance
 	balance, err := deyesClient.CardanoBalance(chain, sender.String(), int64(maxBlock))

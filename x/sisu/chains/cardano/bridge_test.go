@@ -14,12 +14,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func mockForTestDefaultTxOutputProducer() (sdk.Context, keeper.Keeper, *MockCardanoClient) {
+func mockForTestDefaultTxOutputProducer() (sdk.Context, keeper.Keeper, *external.MockDeyesClient) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestAfterContractDeployed(ctx)
 
-	client := &MockCardanoClient{}
-	client.ProtocolParamsFunc = func() (*cardano.ProtocolParams, error) {
+	client := new(external.MockDeyesClient)
+
+	client.CardanoProtocolParamsFunc = func(chain string) (*cardano.ProtocolParams, error) {
 		return &cardano.ProtocolParams{
 			MinFeeA:          5,
 			MinFeeB:          10,
@@ -27,7 +28,7 @@ func mockForTestDefaultTxOutputProducer() (sdk.Context, keeper.Keeper, *MockCard
 		}, nil
 	}
 
-	client.TipFunc = func() (*cardano.NodeTip, error) {
+	client.CardanoTipFunc = func(chain string, blockHeight uint64) (*cardano.NodeTip, error) {
 		return &cardano.NodeTip{
 			Block: 1,
 			Epoch: 2,
@@ -59,15 +60,14 @@ func mockUtxos(hash cardano.Hash32, sender cardano.Address, balance *cardano.Val
 	}
 }
 
-func mockClient(client *MockCardanoClient, utxos []cardano.UTxO, balance *cardano.Value) {
-	client.UTxOsFunc = func(addr cardano.Address, maxBlock uint64) ([]cardano.UTxO, error) {
+func mockClient(client *external.MockDeyesClient, utxos []cardano.UTxO, balance *cardano.Value) {
+	client.CardanoUtxosFunc = func(chain, addr string, maxBlock uint64) ([]cardano.UTxO, error) {
 		return utxos, nil
 	}
 
-	client.BalanceFunc = func(address cardano.Address) (*cardano.Value, error) {
+	client.CardanoBalanceFunc = func(chain, address string, maxBlock int64) (*cardano.Value, error) {
 		return balance, nil
 	}
-
 }
 
 func TestBridge_getCardanoTx(t *testing.T) {
@@ -89,7 +89,7 @@ func TestBridge_getCardanoTx(t *testing.T) {
 	recipient2, err := cardano.NewAddress("addr_test1vpjdtcsa7kq9l9l3ahmfkvg6fn03k7ky87luhggt2hl4mhg7u9ly6")
 
 	t.Run("get_tx_success", func(t *testing.T) {
-		bridge := NewBridge("cardano", "signer", k, client, &external.MockDeyesClient{}).(*bridge)
+		bridge := NewBridge("cardano", "signer", k, client).(*bridge)
 
 		balance = cardano.NewValueWithAssets(
 			cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*10),
@@ -127,7 +127,7 @@ func TestBridge_getCardanoTx(t *testing.T) {
 	})
 
 	t.Run("get_tx_not_enough_balance", func(t *testing.T) {
-		bridge := NewBridge("cardano", "signer", k, client, &external.MockDeyesClient{}).(*bridge)
+		bridge := NewBridge("cardano", "signer", k, client).(*bridge)
 
 		balance = cardano.NewValueWithAssets(
 			cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*10),
@@ -151,7 +151,7 @@ func TestBridge_getCardanoTx(t *testing.T) {
 	})
 
 	t.Run("transfer_multiple_assets", func(t *testing.T) {
-		bridge := NewBridge("cardano", "signer", k, client, &external.MockDeyesClient{}).(*bridge)
+		bridge := NewBridge("cardano", "signer", k, client).(*bridge)
 
 		balance = cardano.NewValueWithAssets(
 			cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*10),
@@ -195,7 +195,7 @@ func TestBridge_getCardanoTx(t *testing.T) {
 	})
 
 	t.Run("transfer_native_ada_smaller_than_1", func(t *testing.T) {
-		bridge := NewBridge("cardano", "signer", k, client, &external.MockDeyesClient{}).(*bridge)
+		bridge := NewBridge("cardano", "signer", k, client).(*bridge)
 
 		balance = cardano.NewValueWithAssets(
 			cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*10),

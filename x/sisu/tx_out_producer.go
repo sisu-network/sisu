@@ -35,7 +35,6 @@ type DefaultTxOutputProducer struct {
 	// Only use for cardano chain
 	cardanoConfig  config.CardanoConfig
 	cardanoNetwork cardano.Network
-	cardanoClient  chainscar.CardanoClient
 	deyesClient    external.DeyesClient
 
 	bridges map[string]chainstypes.Bridge
@@ -49,7 +48,6 @@ type transferInData struct {
 
 func NewTxOutputProducer(appKeys common.AppKeys, keeper keeper.Keeper,
 	cardanoConfig config.CardanoConfig,
-	cardanoClient chainscar.CardanoClient,
 	deyesClient external.DeyesClient,
 	txTracker TxTracker) TxOutputProducer {
 	return &DefaultTxOutputProducer{
@@ -57,7 +55,6 @@ func NewTxOutputProducer(appKeys common.AppKeys, keeper keeper.Keeper,
 		keeper:         keeper,
 		txTracker:      txTracker,
 		cardanoNetwork: cardanoConfig.GetCardanoNetwork(),
-		cardanoClient:  cardanoClient,
 		deyesClient:    deyesClient,
 		bridges:        make(map[string]chainstypes.Bridge),
 	}
@@ -83,7 +80,7 @@ func (p *DefaultTxOutputProducer) getBridge(chain string) chainstypes.Bridge {
 		}
 
 		if libchain.IsCardanoChain(chain) {
-			p.bridges[chain] = chainscar.NewBridge(chain, p.signer, p.keeper, p.cardanoClient, p.deyesClient)
+			p.bridges[chain] = chainscar.NewBridge(chain, p.signer, p.keeper, p.deyesClient)
 		}
 	}
 
