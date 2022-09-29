@@ -18,8 +18,6 @@ const (
 type CardanoClient interface {
 	// Tip returns the node's current tip
 	Tip() (*cardano.NodeTip, error)
-
-	SubmitTx(tx *cardano.Tx) (*cardano.Hash32, error)
 }
 
 // blockFrostClient is a struct that implements CardanoClient interface

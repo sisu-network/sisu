@@ -24,6 +24,7 @@ type MockDeyesClient struct {
 	CardanoProtocolParamsFunc func(chain string) (*cardano.ProtocolParams, error)
 	CardanoUtxosFunc          func(chain string, addr string, maxBlock uint64) ([]cardano.UTxO, error)
 	CardanoBalanceFunc        func(chain string, address string, maxBlock int64) (*cardano.Value, error)
+	CardanoSubmitTxFunc       func(chain string, tx *cardano.Tx) (*cardano.Hash32, error)
 }
 
 func (c *MockDeyesClient) Ping(source string) error {
@@ -91,6 +92,17 @@ func (m *MockDeyesClient) CardanoUtxos(chain string, addr string, maxBlock uint6
 }
 
 func (m *MockDeyesClient) CardanoBalance(chain string, address string, maxBlock int64) (*cardano.Value, error) {
+	if m.CardanoBalanceFunc != nil {
+		return m.CardanoBalanceFunc(chain, address, maxBlock)
+	}
+
+	return nil, nil
+}
+
+func (m *MockDeyesClient) CardanoSubmitTx(chain string, tx *cardano.Tx) (*cardano.Hash32, error) {
+	if m.CardanoSubmitTxFunc != nil {
+		return m.CardanoSubmitTxFunc(chain, tx)
+	}
 	return nil, nil
 }
 

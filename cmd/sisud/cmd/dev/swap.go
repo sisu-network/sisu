@@ -307,7 +307,7 @@ func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *
 		Signature: privateKey.Sign(txHash),
 	}
 
-	submitedHash, err := node.SubmitTx(tx)
+	submitedHash, err := deyesClient.CardanoSubmitTx(srcChain, tx)
 	if err != nil {
 		panic(err)
 	}

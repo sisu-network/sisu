@@ -16,9 +16,12 @@ type DeyesClient interface {
 	GetNonce(chain string, address string) int64
 	SetSisuReady(isReady bool) error
 	GetGasPrices(chains []string) ([]int64, error)
+
+	// Cardano
 	CardanoProtocolParams(chain string) (*cardano.ProtocolParams, error)
 	CardanoUtxos(chain string, addr string, maxBlock uint64) ([]cardano.UTxO, error)
 	CardanoBalance(chain string, address string, maxBlock int64) (*cardano.Value, error)
+	CardanoSubmitTx(chain string, tx *cardano.Tx) (*cardano.Hash32, error)
 }
 
 type defaultDeyesClient struct {
@@ -167,6 +170,13 @@ func (c *defaultDeyesClient) CardanoTip(chain string) (*cardano.NodeTip, error) 
 }
 
 func (c *defaultDeyesClient) CardanoSubmitTx(chain string, tx *cardano.Tx) (*cardano.Hash32, error) {
+	result := new(cardano.Hash32)
 
-	return nil, nil
+	err := c.client.CallContext(context.Background(), &result, "deyes_cardanoSubmitTx", chain, tx)
+	if err != nil {
+		log.Error("Cannot submit cardano transaction, chain = ", chain, "err = ", err)
+		return nil, err
+	}
+
+	return result, nil
 }
