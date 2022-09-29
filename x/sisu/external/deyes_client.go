@@ -18,6 +18,7 @@ type DeyesClient interface {
 	GetGasPrices(chains []string) ([]int64, error)
 	CardanoProtocolParams(chain string) (*cardano.ProtocolParams, error)
 	CardanoUtxos(chain string, addr string, maxBlock uint64) ([]cardano.UTxO, error)
+	CardanoBalance(chain string, address string, maxBlock int64) (*cardano.Value, error)
 }
 
 type defaultDeyesClient struct {
@@ -108,6 +109,8 @@ func (c *defaultDeyesClient) GetGasPrices(chains []string) ([]int64, error) {
 	return result, nil
 }
 
+///// Carnado
+
 func (c *defaultDeyesClient) CardanoProtocolParams(chain string) (*cardano.ProtocolParams, error) {
 	result := &cardano.ProtocolParams{}
 
@@ -143,4 +146,27 @@ func (c *defaultDeyesClient) CardanoUtxos(chain string, addr string, maxBlock ui
 	}
 
 	return utxos, nil
+}
+
+// Balance returns the current balance of an account.
+func (c *defaultDeyesClient) CardanoBalance(chain string, address string, maxBlock int64) (*cardano.Value, error) {
+	result := new(cardano.Value)
+
+	err := c.client.CallContext(context.Background(), &result, "deyes_cardanoBalance", chain, address, maxBlock)
+	if err != nil {
+		log.Error("Cannot get cardano balance, chain = ", chain, "err = ", err)
+		return nil, err
+	}
+
+	return result, nil
+}
+
+// Tip returns the node's current tip
+func (c *defaultDeyesClient) CardanoTip(chain string) (*cardano.NodeTip, error) {
+	return nil, nil
+}
+
+func (c *defaultDeyesClient) CardanoSubmitTx(chain string, tx *cardano.Tx) (*cardano.Hash32, error) {
+
+	return nil, nil
 }

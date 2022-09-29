@@ -1,6 +1,8 @@
 package cardano
 
 import (
+	"fmt"
+
 	"github.com/echovl/cardano-go"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
@@ -12,10 +14,12 @@ import (
 func BuildTx(node CardanoClient, deyesClient external.DeyesClient, chain string, sender cardano.Address, receivers []cardano.Address,
 	amounts []*cardano.Value, metadata cardano.Metadata, utxos []cardano.UTxO, maxBlock uint64) (*cardano.Tx, error) {
 	// Calculate if the account has enough balance
-	balance, err := node.Balance(sender)
+	balance, err := deyesClient.CardanoBalance(chain, sender.String(), int64(maxBlock))
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("balance = ", balance)
 
 	total := cardano.NewValue(cardano.Coin(0))
 	for _, amount := range amounts {

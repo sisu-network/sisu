@@ -16,9 +16,6 @@ const (
 
 // CardanoClient is a interface that interface with Cardano blockchain.
 type CardanoClient interface {
-	// Balance returns the current balance of an account.
-	Balance(address cardano.Address) (*cardano.Value, error)
-
 	// Tip returns the node's current tip
 	Tip() (*cardano.NodeTip, error)
 
