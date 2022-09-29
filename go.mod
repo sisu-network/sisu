@@ -18,7 +18,7 @@ require (
 	github.com/joho/godotenv v1.3.0
 	github.com/libp2p/go-libp2p-core v0.8.0
 	github.com/logdna/logdna-go v1.0.2
-	github.com/sisu-network/deyes v0.1.9-0.20220914224425-18ce8da0fcaf
+	github.com/sisu-network/deyes v0.1.9-0.20220929073723-04e1363be932
 	github.com/sisu-network/dheart v0.1.7-alpha1
 	github.com/sisu-network/lib v0.0.1-alpha9.0.20220921223910-3acf2cd9191a
 	github.com/spf13/cast v1.5.0
@@ -186,6 +186,5 @@ replace (
 	github.com/agl/ed25519 => github.com/binance-chain/edwards25519 v0.0.0-20200305024217-f36fc4b53d43
 	github.com/echovl/cardano-go => github.com/sisu-network/cardano-go v0.1.14-fork-08
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-	github.com/sisu-network/deyes => ../deyes
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
 )
