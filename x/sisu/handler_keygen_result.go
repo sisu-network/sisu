@@ -76,9 +76,9 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 				switch keygen.KeyType {
 				case libchain.KEY_TYPE_ECDSA:
 					vault := h.keeper.GetVault(ctx, chain)
-					h.deyesClient.SetVaultAddress(chain, vault.Address)
+					h.deyesClient.SetVaultAddress(chain, vault.Address, "")
 				case libchain.KEY_TYPE_EDDSA:
-					h.deyesClient.SetVaultAddress(chain, keygen.Address)
+					h.deyesClient.SetVaultAddress(chain, keygen.Address, "")
 				}
 
 				// Set Mpc address

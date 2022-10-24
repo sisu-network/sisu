@@ -154,7 +154,7 @@ func (a *ApiHandler) OnKeygenResult(result dhtypes.KeygenResult) {
 
 		log.Verbose("adding chain account address ", result.Address, " for chain ", chain)
 		if libchain.IsCardanoChain(chain) {
-			a.deyesClient.SetVaultAddress(chain, result.Address)
+			a.deyesClient.SetVaultAddress(chain, result.Address, "")
 		}
 	}
 }
