@@ -84,7 +84,8 @@ log_local = {{ .LogDNA.LogLocal }}
     user = "{{ $chain.SyncDB.User }}"
     password = "{{ $chain.SyncDB.Password }}"
     db_name = "{{ $chain.SyncDB.DbName }}"
-    submit_url = "{{ $chain.SyncDB.SubmitURL }}"{{end}}{{ end }}
+    submit_url = "{{ $chain.SyncDB.SubmitURL }}"{{end}}
+  solana_bridge_program_id="{{ $chain.SolanaBridgeProgramId }}"{{ end }}
 `
 
 	tmpl := template.New("eyesToml")

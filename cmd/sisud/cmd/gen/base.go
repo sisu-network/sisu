@@ -134,6 +134,8 @@ func getDeyesChains(cmd *cobra.Command, genesisFolder string) []econfig.Chain {
 		})
 	}
 
+	// Check if solana is enable
+
 	return deyesChains
 }
 
