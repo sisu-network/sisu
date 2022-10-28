@@ -73,32 +73,9 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 
 		// Setting gateway
 		params := h.keeper.GetParams(ctx)
+		fmt.Println("params.SupportedChains = ", params.SupportedChains)
 		for _, chain := range params.SupportedChains {
-			fmt.Println("Supported chain: ", chain)
-
-			if libchain.IsSolanaChain(chain) {
-				// In solana, each token has its own vault address. We have to loop through all token vaults
-				vaults := h.keeper.GetAllVaultsForChain(ctx, chain)
-				for _, vault := range vaults {
-					h.deyesClient.SetVaultAddress(chain, vault.Address, vault.Token)
-				}
-
-			} else if libchain.IsCardanoChain(chain) {
-				address := utils.GetAddressFromCardanoPubkey(keygen.PubKeyBytes)
-				h.deyesClient.SetVaultAddress(chain, address.String(), "")
-
-			} else if libchain.IsETHBasedChain(chain) {
-				vault := h.keeper.GetVault(ctx, chain, "")
-				h.deyesClient.SetVaultAddress(chain, vault.Address, "")
-
-			} else {
-				// Unknown chains
-			}
-
-			if libchain.IsETHBasedChain(chain) {
-				vault := h.keeper.GetVault(ctx, chain, "")
-				h.deyesClient.SetVaultAddress(chain, vault.Address, "")
-			}
+			h.setVault(ctx, chain, keygen)
 		}
 
 		log.Infof("Keygen %s succeeded", keygen.KeyType)
@@ -107,4 +84,27 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 		return nil, nil
 	}
 	return nil, nil
+}
+
+func (h *HandlerKeygenResult) setVault(ctx sdk.Context, chain string, keygen *types.Keygen) {
+	if libchain.IsSolanaChain(chain) {
+		// In solana, each token has its own vault address. We have to loop through all token vaults
+		vaults := h.keeper.GetAllVaultsForChain(ctx, chain)
+		for _, vault := range vaults {
+			log.Verbosef("Setting vault for %s %s %s", chain, vault.Address, vault.Token)
+			h.deyesClient.SetVaultAddress(chain, vault.Address, vault.Token)
+		}
+
+	} else if libchain.IsCardanoChain(chain) {
+		address := utils.GetAddressFromCardanoPubkey(keygen.PubKeyBytes)
+		h.deyesClient.SetVaultAddress(chain, address.String(), "")
+
+	} else if libchain.IsETHBasedChain(chain) {
+		vault := h.keeper.GetVault(ctx, chain, "")
+		log.Verbosef("Setting vault for %s %s", chain, vault.Address)
+		h.deyesClient.SetVaultAddress(chain, vault.Address, "")
+	} else {
+		// Unknown chains
+		log.Error("Unknown chain: ", chain)
+	}
 }
