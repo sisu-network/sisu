@@ -8,6 +8,7 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -75,19 +76,28 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 		for _, chain := range params.SupportedChains {
 			fmt.Println("Supported chain: ", chain)
 
-			if libchain.GetKeyTypeForChain(chain) == keygen.KeyType {
-				// Set Vault
-				switch keygen.KeyType {
-				case libchain.KEY_TYPE_ECDSA:
-					vault := h.keeper.GetVault(ctx, chain)
-					h.deyesClient.SetVaultAddress(chain, vault.Address, "")
-				case libchain.KEY_TYPE_EDDSA:
-					fmt.Println("keygen.Address = ", keygen.Address)
-					h.deyesClient.SetVaultAddress(chain, keygen.Address, "")
+			if libchain.IsSolanaChain(chain) {
+				// In solana, each token has its own vault address. We have to loop through all token vaults
+				vaults := h.keeper.GetAllVaultsForChain(ctx, chain)
+				for _, vault := range vaults {
+					h.deyesClient.SetVaultAddress(chain, vault.Address, vault.Token)
 				}
 
-				// Set Mpc address
-				h.keeper.SetMpcAddress(ctx, chain, keygen.Address)
+			} else if libchain.IsCardanoChain(chain) {
+				address := utils.GetAddressFromCardanoPubkey(keygen.PubKeyBytes)
+				h.deyesClient.SetVaultAddress(chain, address.String(), "")
+
+			} else if libchain.IsETHBasedChain(chain) {
+				vault := h.keeper.GetVault(ctx, chain, "")
+				h.deyesClient.SetVaultAddress(chain, vault.Address, "")
+
+			} else {
+				// Unknown chains
+			}
+
+			if libchain.IsETHBasedChain(chain) {
+				vault := h.keeper.GetVault(ctx, chain, "")
+				h.deyesClient.SetVaultAddress(chain, vault.Address, "")
 			}
 		}
 

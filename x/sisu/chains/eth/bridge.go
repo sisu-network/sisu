@@ -88,7 +88,7 @@ func (b *bridge) buildERC20TransferIn(
 	amounts []*big.Int,
 ) (*types.TxResponse, error) {
 	targetContractName := ContractVault
-	v := b.keeper.GetVault(ctx, b.chain)
+	v := b.keeper.GetVault(ctx, b.chain, "")
 	if v == nil {
 		return nil, fmt.Errorf("Cannot find vault for chain %s", b.chain)
 	}

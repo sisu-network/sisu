@@ -82,6 +82,10 @@ func getLiquidityKey(chain string) []byte {
 	return []byte(chain)
 }
 
+func getVaultKey(chain string, token string) []byte {
+	return []byte(fmt.Sprintf("%s__%s", chain, token))
+}
+
 ///// TxREcord
 
 func saveTxRecord(store cstypes.KVStore, hash []byte, validator string) int {
@@ -562,23 +566,45 @@ func setVaults(store cstypes.KVStore, vaults []*types.Vault) {
 			continue
 		}
 
-		store.Set([]byte(vault.Chain), bz)
+		key := getVaultKey(vault.Chain, vault.Token)
+
+		store.Set(key, bz)
 	}
 }
 
-func getVault(store cstypes.KVStore, chain string) *types.Vault {
-	bz := store.Get([]byte(chain))
+func getVault(store cstypes.KVStore, chain string, token string) *types.Vault {
+	key := getVaultKey(chain, token)
+	bz := store.Get(key)
 	if bz == nil {
 		return nil
 	}
 
 	vault := &types.Vault{}
 	if err := vault.Unmarshal(bz); err != nil {
-		log.Errorf("getLiquidity: error when unmarshal liquid for chain: %s", chain)
+		log.Errorf("getVault: error when unmarshal liquid for chain: %s", chain)
 		return nil
 	}
 
 	return vault
+}
+
+func getAllVaultsForChain(store cstypes.KVStore, chain string) []*types.Vault {
+	iter := store.Iterator([]byte(fmt.Sprintf("%s__", chain)), nil)
+	vaults := make([]*types.Vault, 0)
+
+	// Go through all vaults
+	for ; iter.Valid(); iter.Next() {
+		bz := iter.Value()
+		vault := new(types.Vault)
+		if err := vault.Unmarshal(bz); err != nil {
+			log.Errorf("getAllVaultsForChain: error when unmarshal liquid for chain: %s", chain)
+			return nil
+		}
+
+		vaults = append(vaults, vault)
+	}
+
+	return vaults
 }
 
 ///// MPC Address

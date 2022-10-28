@@ -25,7 +25,7 @@ func (p *DefaultTxOutputProducer) buildERC20TransferIn(
 	destChain string,
 ) (*types.TxResponse, error) {
 	targetContractName := ContractVault
-	v := p.keeper.GetVault(ctx, destChain)
+	v := p.keeper.GetVault(ctx, destChain, "")
 	if v == nil {
 		return nil, fmt.Errorf("Cannot find vault for chain %s", destChain)
 	}

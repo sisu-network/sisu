@@ -65,7 +65,8 @@ type Keeper interface {
 
 	// Vaults
 	SetVaults(ctx sdk.Context, vaults []*types.Vault)
-	GetVault(ctx sdk.Context, chain string) *types.Vault
+	GetVault(ctx sdk.Context, chain string, token string) *types.Vault
+	GetAllVaultsForChain(ctx sdk.Context, chain string) []*types.Vault
 
 	// MPC Address
 	SetMpcAddress(ctx sdk.Context, chain string, address string)
@@ -269,9 +270,14 @@ func (k *DefaultKeeper) SetVaults(ctx sdk.Context, vaults []*types.Vault) {
 	setVaults(store, vaults)
 }
 
-func (k *DefaultKeeper) GetVault(ctx sdk.Context, chain string) *types.Vault {
+func (k *DefaultKeeper) GetVault(ctx sdk.Context, chain string, token string) *types.Vault {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixVault)
-	return getVault(store, chain)
+	return getVault(store, chain, token)
+}
+
+func (k *DefaultKeeper) GetAllVaultsForChain(ctx sdk.Context, chain string) []*types.Vault {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixVault)
+	return getAllVaultsForChain(store, chain)
 }
 
 ///// Vaults

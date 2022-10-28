@@ -25,9 +25,10 @@ message QueryAllPubKeysResponse {
   map<string, bytes> pubkeys = 1;
 }
 
-// Contract
+// Vault
 message QueryVaultRequest {
   string chain = 1;
+  string token = 2;
 }
 
 message QueryVaultResponse {
