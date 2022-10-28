@@ -40,4 +40,5 @@ const (
 	CardanoMnemonic     = "cardano-mnemonic"
 	CardanoDbConfig     = "cardano-db-config"
 	DeyesApiUrl         = "deyes-api-url"
+	EnabledChains       = "enabled-chains"
 )

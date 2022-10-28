@@ -2,10 +2,14 @@ package gen
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"math"
 	"path/filepath"
 	"sort"
+	"strings"
+
+	libchain "github.com/sisu-network/lib/chain"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -42,10 +46,11 @@ type Setting struct {
 	cardanoDbConfig   *econfig.SyncDbConfig
 	vaults            []*types.Vault
 
-	nodeConfigs []config.Config
-	tokens      []*types.Token // tokens in the genesis data
-	chains      []*types.Chain // chains in the genesis data
-	params      *types.Params
+	nodeConfigs  []config.Config
+	tokens       []*types.Token // tokens in the genesis data
+	chains       []*types.Chain // chains in the genesis data
+	params       *types.Params
+	solanaConfig *config.SolanaConfig
 
 	emailAlert config.EmailAlertConfig
 }
@@ -95,6 +100,26 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 		vaults:        getVaults(filepath.Join(genesisFolder, "vault.json")),
 	}
 
+	// Check if solana is enabled
+	enableChainsString, _ := cmd.Flags().GetString(flags.EnabledChains)
+	enableChains := strings.Split(enableChainsString, ",")
+	for _, chain := range enableChains {
+		if libchain.IsSolanaChain(chain) {
+			// Read Solaan config file.
+			solanaConfig := &config.SolanaConfig{}
+
+			file, _ := ioutil.ReadFile(filepath.Join(genesisFolder, "solana_config.json"))
+			err := json.Unmarshal([]byte(file), solanaConfig)
+			if err != nil {
+				panic(err)
+			}
+
+			setting.solanaConfig = solanaConfig
+
+			fmt.Println("setting.solanaConfig = ", *setting.solanaConfig)
+		}
+	}
+
 	return setting
 }
 
@@ -133,8 +158,6 @@ func getDeyesChains(cmd *cobra.Command, genesisFolder string) []econfig.Chain {
 			SyncDB:     syncDbConfig,
 		})
 	}
-
-	// Check if solana is enable
 
 	return deyesChains
 }

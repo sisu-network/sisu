@@ -349,6 +349,10 @@ func generateSisuToml(settings *Setting, index int, nodeDir string) {
 		cfg.Cardano.Chain = settings.cardanoChain
 	}
 
+	if settings.solanaConfig != nil {
+		cfg.Solana = *settings.solanaConfig
+	}
+
 	config.WriteConfigFile(filepath.Join(configDir, "sisu.toml"), &cfg)
 }
 

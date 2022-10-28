@@ -16,6 +16,7 @@ type Config struct {
 	Tss     TssConfig        `toml:"tss"`
 	LogDNA  log.LogDNAConfig `toml:"log_dna"`
 	Cardano CardanoConfig    `toml:"cardano"`
+	Solana  SolanaConfig     `toml:"solana"`
 }
 
 type SisuConfig struct {
@@ -31,6 +32,13 @@ type SisuConfig struct {
 type CardanoConfig struct {
 	BlockfrostSecret string `toml:"block_frost_secret"`
 	Chain            string `toml:"chain"`
+}
+
+type SolanaConfig struct {
+	Enable          bool   `toml:"enable" json:"enable"`
+	Chain           string `toml:"chain" json:"chain"`
+	Rpc             string `toml:"rpc" json:"rpc"`
+	BridgeProgramId string `toml:"bridge_program_id" json:"bridge_program_id"`
 }
 
 func (c *CardanoConfig) GetCardanoNetwork() cardano.Network {

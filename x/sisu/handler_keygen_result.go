@@ -1,6 +1,8 @@
 package sisu
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
@@ -71,6 +73,8 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 		// Setting gateway
 		params := h.keeper.GetParams(ctx)
 		for _, chain := range params.SupportedChains {
+			fmt.Println("Supported chain: ", chain)
+
 			if libchain.GetKeyTypeForChain(chain) == keygen.KeyType {
 				// Set Vault
 				switch keygen.KeyType {
@@ -78,6 +82,7 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 					vault := h.keeper.GetVault(ctx, chain)
 					h.deyesClient.SetVaultAddress(chain, vault.Address, "")
 				case libchain.KEY_TYPE_EDDSA:
+					fmt.Println("keygen.Address = ", keygen.Address)
 					h.deyesClient.SetVaultAddress(chain, keygen.Address, "")
 				}
 
