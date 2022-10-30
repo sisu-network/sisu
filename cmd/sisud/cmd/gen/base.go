@@ -2,7 +2,6 @@ package gen
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"math"
 	"path/filepath"
@@ -115,8 +114,6 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 			}
 
 			setting.solanaConfig = solanaConfig
-
-			fmt.Println("setting.solanaConfig = ", *setting.solanaConfig)
 		}
 	}
 

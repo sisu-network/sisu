@@ -35,7 +35,7 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.deyesClient = t
 		case external.DheartClient:
 			mc.dheartClient = t
-		case config.TssConfig:
+		case config.Config:
 			mc.config = t
 		case common.TxSubmit:
 			mc.txSubmit = t

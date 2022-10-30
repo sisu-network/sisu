@@ -1,8 +1,6 @@
 package sisu
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
@@ -30,7 +28,7 @@ func NewHandlerKeygenResult(mc ManagerContainer) *HandlerKeygenResult {
 		keeper:      mc.Keeper(),
 		pmm:         mc.PostedMessageManager(),
 		globalData:  mc.GlobalData(),
-		config:      mc.Config(),
+		config:      mc.Config().Tss,
 		txSubmit:    mc.TxSubmit(),
 		appKeys:     mc.AppKeys(),
 		valsMgr:     mc.ValidatorManager(),
@@ -71,11 +69,12 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 		// Save keygen Address
 		h.keeper.SaveKeygen(ctx, keygen)
 
-		// Setting gateway
+		// Setting vaults
 		params := h.keeper.GetParams(ctx)
-		fmt.Println("params.SupportedChains = ", params.SupportedChains)
 		for _, chain := range params.SupportedChains {
-			h.setVault(ctx, chain, keygen)
+			if keygen.KeyType == utils.GetKeyTypeForChain(chain) {
+				h.setVault(ctx, chain, keygen)
+			}
 		}
 
 		log.Infof("Keygen %s succeeded", keygen.KeyType)

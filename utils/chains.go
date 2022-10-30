@@ -6,6 +6,7 @@ import (
 	"github.com/echovl/cardano-go"
 	"github.com/ethereum/go-ethereum/common"
 	etypes "github.com/ethereum/go-ethereum/core/types"
+	libchain "github.com/sisu-network/lib/chain"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -42,4 +43,16 @@ func GetAddressFromCardanoPubkey(pubkey []byte) cardano.Address {
 	}
 
 	return enterpriseAddr
+}
+
+func GetKeyTypeForChain(chain string) string {
+	if libchain.IsETHBasedChain(chain) {
+		return libchain.KEY_TYPE_ECDSA
+	}
+
+	if libchain.IsCardanoChain(chain) || libchain.IsSolanaChain(chain) {
+		return libchain.KEY_TYPE_EDDSA
+	}
+
+	return "" // unknown
 }

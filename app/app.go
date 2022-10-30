@@ -271,7 +271,7 @@ func New(
 		deyesClient, txTracker)
 	transferQueue := sisu.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss, app.appKeys)
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.k),
-		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg.Tss,
+		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg,
 		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, transferQueue)
 
 	apiHandler := tss.NewApiHandler(privateDb, mc)

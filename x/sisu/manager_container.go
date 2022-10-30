@@ -16,7 +16,7 @@ type ManagerContainer interface {
 	DeyesClient() external.DeyesClient
 	GlobalData() common.GlobalData
 	TxSubmit() common.TxSubmit
-	Config() config.TssConfig
+	Config() config.Config
 	AppKeys() common.AppKeys
 	TxOutProducer() TxOutputProducer
 	TxTracker() TxTracker
@@ -34,7 +34,7 @@ type DefaultManagerContainer struct {
 	deyesClient      external.DeyesClient
 	globalData       common.GlobalData
 	txSubmit         common.TxSubmit
-	config           config.TssConfig
+	config           config.Config
 	appKeys          common.AppKeys
 	txOutProducer    TxOutputProducer
 	txTracker        TxTracker
@@ -45,7 +45,7 @@ type DefaultManagerContainer struct {
 
 func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 	dheartClient external.DheartClient, deyesClient external.DeyesClient,
-	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.TssConfig,
+	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.Config,
 	appKeys common.AppKeys, txOutProducer TxOutputProducer, txTracker TxTracker,
 	keeper keeper.Keeper, valsManager ValidatorManager, txInQueue TransferQueue) ManagerContainer {
 	return &DefaultManagerContainer{
@@ -85,7 +85,7 @@ func (mc *DefaultManagerContainer) TxSubmit() common.TxSubmit {
 	return mc.txSubmit
 }
 
-func (mc *DefaultManagerContainer) Config() config.TssConfig {
+func (mc *DefaultManagerContainer) Config() config.Config {
 	return mc.config
 }
 
