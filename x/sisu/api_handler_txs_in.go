@@ -99,6 +99,10 @@ func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.T
 		return a.parseCardanoTx(ctx, chain, tx)
 	}
 
+	if libchain.IsSolanaChain(chain) {
+		return a.parseSolanaTx(ctx, chain, tx)
+	}
+
 	return nil, fmt.Errorf("Unknown chain %s", chain)
 }
 

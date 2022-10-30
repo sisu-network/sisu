@@ -2,13 +2,12 @@ package gen
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"math"
 	"path/filepath"
 	"sort"
 	"strings"
-
-	libchain "github.com/sisu-network/lib/chain"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -102,9 +101,10 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 	// Check if solana is enabled
 	enableChainsString, _ := cmd.Flags().GetString(flags.EnabledChains)
 	enableChains := strings.Split(enableChainsString, ",")
+
 	for _, chain := range enableChains {
-		if libchain.IsSolanaChain(chain) {
-			// Read Solaan config file.
+		if chain == "solana" {
+			// Read Solana config file.
 			solanaConfig := &config.SolanaConfig{}
 
 			file, _ := ioutil.ReadFile(filepath.Join(genesisFolder, "solana_config.json"))
@@ -114,6 +114,8 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 			}
 
 			setting.solanaConfig = solanaConfig
+
+			fmt.Println("setting.solanaConfig = ", setting.solanaConfig)
 		}
 	}
 
@@ -124,6 +126,8 @@ func getDeyesChains(cmd *cobra.Command, genesisFolder string) []econfig.Chain {
 	cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 	cardanoDbConfig, _ := cmd.Flags().GetString(flags.CardanoDbConfig)
 	deyesChains := readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
+	enableChainsString, _ := cmd.Flags().GetString(flags.EnabledChains)
+	enableChains := strings.Split(enableChainsString, ",")
 
 	chains := helper.GetChains(filepath.Join(genesisFolder, "chains.json"))
 	// Add Cardano config
@@ -154,6 +158,27 @@ func getDeyesChains(cmd *cobra.Command, genesisFolder string) []econfig.Chain {
 			RpcSecret:  cardanoSecret,
 			SyncDB:     syncDbConfig,
 		})
+	}
+
+	for _, chain := range enableChains {
+		if chain == "solana" {
+			// Read Solana config file.
+			solanaConfig := &config.SolanaConfig{}
+
+			file, _ := ioutil.ReadFile(filepath.Join(genesisFolder, "solana_config.json"))
+			err := json.Unmarshal([]byte(file), solanaConfig)
+			if err != nil {
+				panic(err)
+			}
+
+			deyesChains = append(deyesChains, econfig.Chain{
+				Chain:                 solanaConfig.Chain,
+				BlockTime:             solanaConfig.BlockTime,
+				AdjustTime:            solanaConfig.AdjustTime,
+				SolanaBridgeProgramId: solanaConfig.BridgeProgramId,
+				Rpcs:                  []string{solanaConfig.Rpc},
+			})
+		}
 	}
 
 	return deyesChains

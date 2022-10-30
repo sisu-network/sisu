@@ -6,6 +6,7 @@ import (
 	"github.com/echovl/cardano-go"
 	"github.com/ethereum/go-ethereum/common"
 	etypes "github.com/ethereum/go-ethereum/core/types"
+	"github.com/mr-tron/base58"
 	libchain "github.com/sisu-network/lib/chain"
 	"golang.org/x/crypto/sha3"
 )
@@ -30,7 +31,7 @@ func GetEthSender(tx *etypes.Transaction) (common.Address, error) {
 	return msg.From(), nil
 }
 
-func GetAddressFromCardanoPubkey(pubkey []byte) cardano.Address {
+func GetCardanoAddressFromPubkey(pubkey []byte) cardano.Address {
 	keyHash, err := cardano.Blake224Hash(pubkey)
 	if err != nil {
 		panic(err)
@@ -55,4 +56,8 @@ func GetKeyTypeForChain(chain string) string {
 	}
 
 	return "" // unknown
+}
+
+func GetSolanaAddressFromPubkey(pubkey []byte) string {
+	return base58.Encode(pubkey)
 }

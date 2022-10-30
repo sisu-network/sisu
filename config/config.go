@@ -38,6 +38,8 @@ type SolanaConfig struct {
 	Enable          bool   `toml:"enable" json:"enable"`
 	Chain           string `toml:"chain" json:"chain"`
 	Rpc             string `toml:"rpc" json:"rpc"`
+	BlockTime       int    `toml:"block_time" json:"block_time"`
+	AdjustTime      int    `toml:"adjust_time" json:"adjust_time"`
 	BridgeProgramId string `toml:"bridge_program_id" json:"bridge_program_id"`
 }
 

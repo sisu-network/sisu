@@ -69,11 +69,12 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 		// Save keygen Address
 		h.keeper.SaveKeygen(ctx, keygen)
 
-		// Setting vaults
+		// Setting vaults & mpc address
 		params := h.keeper.GetParams(ctx)
 		for _, chain := range params.SupportedChains {
 			if keygen.KeyType == utils.GetKeyTypeForChain(chain) {
 				h.setVault(ctx, chain, keygen)
+				h.setMpcAddress(ctx, chain, keygen)
 			}
 		}
 
@@ -83,6 +84,24 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 		return nil, nil
 	}
 	return nil, nil
+}
+
+func (h *HandlerKeygenResult) setMpcAddress(ctx sdk.Context, chain string, keygen *types.Keygen) {
+	address := ""
+
+	// Calculate the MPC address
+	if libchain.IsETHBasedChain(chain) {
+		// Calculate the ETH address
+		address = keygen.Address
+	} else if libchain.IsCardanoChain(chain) {
+		address = utils.GetCardanoAddressFromPubkey(keygen.PubKeyBytes).String()
+	} else if libchain.IsSolanaChain(chain) {
+		address = utils.GetSolanaAddressFromPubkey(keygen.PubKeyBytes)
+	}
+
+	if address != "" {
+		h.keeper.SetMpcAddress(ctx, chain, address)
+	}
 }
 
 func (h *HandlerKeygenResult) setVault(ctx sdk.Context, chain string, keygen *types.Keygen) {
@@ -95,7 +114,7 @@ func (h *HandlerKeygenResult) setVault(ctx sdk.Context, chain string, keygen *ty
 		}
 
 	} else if libchain.IsCardanoChain(chain) {
-		address := utils.GetAddressFromCardanoPubkey(keygen.PubKeyBytes)
+		address := utils.GetCardanoAddressFromPubkey(keygen.PubKeyBytes)
 		h.deyesClient.SetVaultAddress(chain, address.String(), "")
 
 	} else if libchain.IsETHBasedChain(chain) {
