@@ -61,3 +61,13 @@ func GetKeyTypeForChain(chain string) string {
 func GetSolanaAddressFromPubkey(pubkey []byte) string {
 	return base58.Encode(pubkey)
 }
+
+func IsChainSupported(supportedChain []string, chain string) bool {
+	for _, c := range supportedChain {
+		if c == chain {
+			return true
+		}
+	}
+
+	return false
+}

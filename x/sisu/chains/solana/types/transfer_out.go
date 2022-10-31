@@ -30,10 +30,6 @@ type TransferOutInstruction struct {
 	Data        TransferOutData
 }
 
-func NewTransferOutData(amount *big.Int) *TransferOutData {
-	return &TransferOutData{}
-}
-
 func (ix *TransferOutInstruction) Serialize() ([]byte, error) {
 	bz, err := borsh.Serialize(ix.Data)
 	if err != nil {

@@ -7,6 +7,7 @@ import (
 	eyesTypes "github.com/sisu-network/deyes/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
@@ -20,6 +21,12 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	}
 
 	ctx := a.globalData.GetReadOnlyContext()
+
+	// Make sure that this chain is supported by Sisu
+	params := a.keeper.GetParams(ctx)
+	if !utils.IsChainSupported(params.SupportedChains, txs.Chain) {
+		return fmt.Errorf("Unsupported chain: %s", txs.Chain)
+	}
 
 	// Create TxIn messages and broadcast to the Sisu chain.
 	for _, tx := range txs.Arr {

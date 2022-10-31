@@ -11,6 +11,7 @@ import (
 
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/contracts/eth/vault"
+	"github.com/sisu-network/sisu/utils"
 	chainstypes "github.com/sisu-network/sisu/x/sisu/chains/types"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -81,7 +82,7 @@ func parseTransferOut(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.Tra
 	}
 
 	allTokens := keeper.GetAllTokens(ctx)
-	token := getTokenOnChain(allTokens, tokenAddr.String(), chain)
+	token := utils.GetTokenOnChain(allTokens, tokenAddr.String(), chain)
 	if token == nil {
 		return nil, fmt.Errorf("Cannot find token on chain %s with address %s", chain, tokenAddr.String())
 	}
@@ -130,25 +131,6 @@ func parseTransferOut(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.Tra
 			ToRecipient: recipient,
 		},
 	}, nil
-}
-
-func getTokenOnChain(allTokens map[string]*types.Token, tokenAddr, targetChain string) *types.Token {
-	for _, t := range allTokens {
-		if len(t.Chains) != len(t.Addresses) {
-			log.Error("Chains length is not the same as address length ")
-			log.Error("t.Chains = ", t.Chains)
-			log.Error("t.Addresses = ", t.Addresses)
-			return nil
-		}
-
-		for j, chain := range t.Chains {
-			if chain == targetChain && strings.EqualFold(t.Addresses[j], tokenAddr) {
-				return t
-			}
-		}
-	}
-
-	return nil
 }
 
 func parseTransferIn(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.Transaction) (map[string]any, error) {

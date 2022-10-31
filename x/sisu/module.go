@@ -276,8 +276,10 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		}(params)
 	}
 
+	// Process pending transfers
 	am.mc.TransferQueue().ProcessTransfers(ctx)
 
+	// Sign tx outs
 	am.signTxOut(ctx)
 
 	return []abci.ValidatorUpdate{}

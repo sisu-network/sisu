@@ -145,8 +145,8 @@ func TestApiHandler_OnTxIns(t *testing.T) {
 			return nil
 		}
 
-		processor := NewApiHandler(nil, mc)
-		err = processor.OnTxIns(txs)
+		apiHandler := NewApiHandler(nil, mc)
+		err = apiHandler.OnTxIns(txs)
 
 		require.NoError(t, err)
 		require.Equal(t, 1, submitCount)
