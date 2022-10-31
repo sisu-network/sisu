@@ -5,6 +5,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/x/sisu/chains"
 	external "github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -55,6 +56,8 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.valsManager = t
 		case TransferQueue:
 			mc.transferOutQueue = t
+		case chains.BridgeManager:
+			mc.bridgeManager = t
 		}
 	}
 

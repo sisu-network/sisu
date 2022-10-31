@@ -1,21 +1,12 @@
 package sisu
 
 import (
-	"encoding/json"
 	"fmt"
-	"math/big"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/mr-tron/base58"
-	eyessolanatypes "github.com/sisu-network/deyes/chains/solana/types"
-	etypes "github.com/sisu-network/deyes/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/utils"
-	scardano "github.com/sisu-network/sisu/x/sisu/chains/cardano"
-	"github.com/sisu-network/sisu/x/sisu/chains/eth"
-	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
@@ -82,131 +73,10 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 }
 
 func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.Transfer, error) {
-	if libchain.IsETHBasedChain(chain) {
-		parseResult := eth.ParseVaultTx(ctx, a.keeper, chain, tx)
-		if parseResult.Error != nil {
-			return nil, parseResult.Error
-		}
-
-		if parseResult.TransferOuts != nil {
-			return parseResult.TransferOuts, nil
-		}
-
-		return []*types.Transfer{}, nil
+	bridge := a.bridgeManager.GetBridge(ctx, chain)
+	if bridge != nil {
+		return bridge.ParseIncomginTx(ctx, chain, tx)
 	}
 
-	if libchain.IsCardanoChain(chain) {
-		return a.parseCardanoTx(ctx, chain, tx)
-	}
-
-	if libchain.IsSolanaChain(chain) {
-		return a.parseSolanaTx(ctx, chain, tx)
-	}
-
-	return nil, fmt.Errorf("Unknown chain %s", chain)
-}
-
-func (a *ApiHandler) parseCardanoTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.Transfer, error) {
-	ret := make([]*types.Transfer, 0)
-	cardanoTx := &etypes.CardanoTransactionUtxo{}
-	err := json.Unmarshal(tx.Serialized, cardanoTx)
-	if err != nil {
-		return nil, err
-	}
-
-	if cardanoTx.Metadata != nil {
-		nativeTransfer := cardanoTx.Metadata.NativeAda != 0
-		log.Verbose("cardanoTx.Amount = ", cardanoTx.Amount)
-
-		// Convert from ADA unit (10^6) to our standard unit (10^18)
-		for _, amount := range cardanoTx.Amount {
-			quantity, ok := new(big.Int).SetString(amount.Quantity, 10)
-			if !ok {
-				log.Error("Failed to get amount quantity in cardano tx")
-				continue
-			}
-			quantity = utils.LovelaceToWei(quantity)
-
-			// Remove the word wrap
-			tokenUnit := amount.Unit
-			if tokenUnit != "lovelace" {
-				token := scardano.GetTokenFromCardanoAsset(ctx, a.keeper, tokenUnit, chain)
-				if token == nil {
-					log.Error("Failed to find token with id: ", tokenUnit)
-					continue
-				}
-				tokenUnit = token.Id
-			} else {
-				if !nativeTransfer {
-					// This ADA is for transaction transfer fee. It is not meant to be transfered.
-					continue
-				}
-				tokenUnit = "ADA"
-			}
-
-			log.Verbose("tokenUnit = ", tokenUnit, " quantity = ", quantity)
-			log.Verbose("cardanoTx.Metadata = ", cardanoTx.Metadata)
-
-			ret = append(ret, &types.Transfer{
-				FromHash:    cardanoTx.Hash,
-				Token:       tokenUnit,
-				Amount:      quantity.String(),
-				ToChain:     cardanoTx.Metadata.Chain,
-				ToRecipient: cardanoTx.Metadata.Recipient,
-			})
-		}
-	}
-
-	return ret, nil
-}
-
-func (a *ApiHandler) parseSolanaTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.Transfer, error) {
-	ret := make([]*types.Transfer, 0)
-
-	outerTx := new(eyessolanatypes.Transaction)
-	err := json.Unmarshal(tx.Serialized, outerTx)
-	if err != nil {
-		return nil, err
-	}
-
-	cfg := a.mc.Config()
-	accounts := outerTx.TransactionInner.Message.AccountKeys
-
-	// Check that there is at least one instruction sent to the program id
-	for _, ix := range outerTx.TransactionInner.Message.Instructions {
-		if accounts[ix.ProgramIdIndex] != cfg.Solana.BridgeProgramId {
-			continue
-		}
-
-		// Decode the instruction
-		bytesArr, err := base58.Decode(ix.Data)
-		if err != nil {
-			return nil, err
-		}
-
-		if len(bytesArr) == 0 {
-			return nil, fmt.Errorf("Data is empty")
-		}
-
-		ix := new(solanatypes.TransferOutInstruction)
-		err = ix.Deserialize(bytesArr)
-		if err != nil {
-			return nil, err
-		}
-
-		transferData := ix.Data
-
-		switch ix.Instruction {
-		case solanatypes.TranserOut:
-			ret = append(ret, &types.Transfer{
-				FromHash:    outerTx.TransactionInner.Signatures[0],
-				Token:       transferData.TokenAddress,
-				Amount:      transferData.Amount.String(),
-				ToChain:     libchain.GetChainNameFromInt(big.NewInt(int64(transferData.ChainId))),
-				ToRecipient: transferData.Recipient,
-			})
-		}
-	}
-
-	return ret, nil
+	return nil, fmt.Errorf("Bridge not found for chain %s", chain)
 }

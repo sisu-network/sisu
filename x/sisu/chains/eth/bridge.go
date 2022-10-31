@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
+	eyestypes "github.com/sisu-network/deyes/types"
+
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -236,4 +238,17 @@ func (b *bridge) buildERC20TransferIn(
 		EthTx:    rawTx,
 		RawBytes: bz,
 	}, nil
+}
+
+func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx) ([]*types.Transfer, error) {
+	parseResult := ParseVaultTx(ctx, b.keeper, chain, tx)
+	if parseResult.Error != nil {
+		return nil, parseResult.Error
+	}
+
+	if parseResult.TransferOuts != nil {
+		return parseResult.TransferOuts, nil
+	}
+
+	return []*types.Transfer{}, nil
 }

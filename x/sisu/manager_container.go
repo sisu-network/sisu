@@ -5,6 +5,7 @@ import (
 
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/x/sisu/chains"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 )
@@ -23,6 +24,7 @@ type ManagerContainer interface {
 	Keeper() keeper.Keeper
 	ValidatorManager() ValidatorManager
 	TransferQueue() TransferQueue
+	BridgeManager() chains.BridgeManager
 }
 
 type DefaultManagerContainer struct {
@@ -41,13 +43,15 @@ type DefaultManagerContainer struct {
 	keeper           keeper.Keeper
 	valsManager      ValidatorManager
 	transferOutQueue TransferQueue
+	bridgeManager    chains.BridgeManager
 }
 
 func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 	dheartClient external.DheartClient, deyesClient external.DeyesClient,
 	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.Config,
 	appKeys common.AppKeys, txOutProducer TxOutputProducer, txTracker TxTracker,
-	keeper keeper.Keeper, valsManager ValidatorManager, txInQueue TransferQueue) ManagerContainer {
+	keeper keeper.Keeper, valsManager ValidatorManager, txInQueue TransferQueue,
+	bridgeManager chains.BridgeManager) ManagerContainer {
 	return &DefaultManagerContainer{
 		pmm:              pmm,
 		partyManager:     partyManager,
@@ -62,6 +66,7 @@ func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 		keeper:           keeper,
 		valsManager:      valsManager,
 		transferOutQueue: txInQueue,
+		bridgeManager:    bridgeManager,
 	}
 }
 
@@ -115,4 +120,8 @@ func (mc *DefaultManagerContainer) ValidatorManager() ValidatorManager {
 
 func (mc *DefaultManagerContainer) TransferQueue() TransferQueue {
 	return mc.transferOutQueue
+}
+
+func (mc *DefaultManagerContainer) BridgeManager() chains.BridgeManager {
+	return mc.bridgeManager
 }

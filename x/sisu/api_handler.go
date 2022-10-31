@@ -14,6 +14,7 @@ import (
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/chains"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -34,12 +35,13 @@ var (
 // ApiHandler handles API callback from dheart or deyes. There are few functions (BeginBlock & EndBlock)
 // that are still present for historical reason. They should be moved out of this file.
 type ApiHandler struct {
-	keeper     keeper.Keeper
-	txSubmit   common.TxSubmit
-	appKeys    common.AppKeys
-	globalData common.GlobalData
-	txTracker  TxTracker
-	mc         ManagerContainer
+	keeper        keeper.Keeper
+	txSubmit      common.TxSubmit
+	appKeys       common.AppKeys
+	globalData    common.GlobalData
+	txTracker     TxTracker
+	bridgeManager chains.BridgeManager
+	mc            ManagerContainer
 
 	// Dheart & Deyes client
 	dheartClient external.DheartClient
@@ -53,15 +55,16 @@ func NewApiHandler(
 	mc ManagerContainer,
 ) *ApiHandler {
 	a := &ApiHandler{
-		keeper:       mc.Keeper(),
-		privateDb:    privateDb,
-		appKeys:      mc.AppKeys(),
-		txSubmit:     mc.TxSubmit(),
-		globalData:   mc.GlobalData(),
-		dheartClient: mc.DheartClient(),
-		deyesClient:  mc.DeyesClient(),
-		txTracker:    mc.TxTracker(),
-		mc:           mc,
+		keeper:        mc.Keeper(),
+		privateDb:     privateDb,
+		appKeys:       mc.AppKeys(),
+		txSubmit:      mc.TxSubmit(),
+		globalData:    mc.GlobalData(),
+		dheartClient:  mc.DheartClient(),
+		deyesClient:   mc.DeyesClient(),
+		txTracker:     mc.TxTracker(),
+		bridgeManager: mc.BridgeManager(),
+		mc:            mc,
 	}
 
 	return a

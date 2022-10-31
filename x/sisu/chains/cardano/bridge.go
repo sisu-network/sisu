@@ -1,9 +1,12 @@
 package cardano
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"math/big"
+
+	eyesTypes "github.com/sisu-network/deyes/types"
 
 	"github.com/sisu-network/lib/log"
 
@@ -214,4 +217,58 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 	log.Verbose("tx fee = ", tx.Body.Fee)
 
 	return tx, nil
+}
+
+func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.Transfer, error) {
+	ret := make([]*types.Transfer, 0)
+	cardanoTx := &eyesTypes.CardanoTransactionUtxo{}
+	err := json.Unmarshal(tx.Serialized, cardanoTx)
+	if err != nil {
+		return nil, err
+	}
+
+	if cardanoTx.Metadata != nil {
+		nativeTransfer := cardanoTx.Metadata.NativeAda != 0
+		log.Verbose("cardanoTx.Amount = ", cardanoTx.Amount)
+
+		// Convert from ADA unit (10^6) to our standard unit (10^18)
+		for _, amount := range cardanoTx.Amount {
+			quantity, ok := new(big.Int).SetString(amount.Quantity, 10)
+			if !ok {
+				log.Error("Failed to get amount quantity in cardano tx")
+				continue
+			}
+			quantity = utils.LovelaceToWei(quantity)
+
+			// Remove the word wrap
+			tokenUnit := amount.Unit
+			if tokenUnit != "lovelace" {
+				token := GetTokenFromCardanoAsset(ctx, b.keeper, tokenUnit, chain)
+				if token == nil {
+					log.Error("Failed to find token with id: ", tokenUnit)
+					continue
+				}
+				tokenUnit = token.Id
+			} else {
+				if !nativeTransfer {
+					// This ADA is for transaction transfer fee. It is not meant to be transfered.
+					continue
+				}
+				tokenUnit = "ADA"
+			}
+
+			log.Verbose("tokenUnit = ", tokenUnit, " quantity = ", quantity)
+			log.Verbose("cardanoTx.Metadata = ", cardanoTx.Metadata)
+
+			ret = append(ret, &types.Transfer{
+				FromHash:    cardanoTx.Hash,
+				Token:       tokenUnit,
+				Amount:      quantity.String(),
+				ToChain:     cardanoTx.Metadata.Chain,
+				ToRecipient: cardanoTx.Metadata.Recipient,
+			})
+		}
+	}
+
+	return ret, nil
 }

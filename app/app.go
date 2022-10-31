@@ -62,6 +62,7 @@ import (
 	"github.com/sisu-network/sisu/x/auth/ante"
 	"github.com/sisu-network/sisu/x/sisu"
 	tss "github.com/sisu-network/sisu/x/sisu"
+	"github.com/sisu-network/sisu/x/sisu/chains"
 	"github.com/sisu-network/sisu/x/sisu/client/rest"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	sisutypes "github.com/sisu-network/sisu/x/sisu/types"
@@ -121,9 +122,9 @@ type App struct {
 	appKeys           *common.DefaultAppKeys
 	globalData        common.GlobalData
 	internalApiServer server.Server
-	tssProcessor      *tss.ApiHandler
+	apiHandler        *tss.ApiHandler
+	apiEndPoint       *tss.ApiEndPoint
 	txDecoder         sdk.TxDecoder
-	apiHandler        *tss.ApiEndPoint
 	externalHandler   *rest.ExternalHandler
 
 	///////////////////////////////////////////////////////////////
@@ -258,7 +259,7 @@ func New(
 
 	app.setupApiServer(cfg)
 	bootstrapper := NewBootstrapper()
-	dheartClient, deyesClient := bootstrapper.BootstrapInternalNetwork(tssConfig, app.apiHandler, encryptedKey, nodeKey.PrivKey.Type())
+	dheartClient, deyesClient := bootstrapper.BootstrapInternalNetwork(tssConfig, app.apiEndPoint, encryptedKey, nodeKey.PrivKey.Type())
 
 	// storage that contains common data for all the nodes
 	privateDb := keeper.NewStorageDb(filepath.Join(cfg.Sisu.Dir, "private"))
@@ -267,15 +268,17 @@ func New(
 
 	valsMgr := tss.NewValidatorManager(app.k)
 	partyManager := tss.NewPartyManager(app.globalData)
-	txOutProducer := tss.NewTxOutputProducer(app.appKeys, app.k, cfg.Cardano,
-		deyesClient, txTracker)
+	bridgeManager := chains.NewBridgeManager(app.appKeys.GetSignerAddress().String(), app.k, deyesClient, cfg)
+
+	txOutProducer := tss.NewTxOutputProducer(app.appKeys, app.k, cfg.Cardano, bridgeManager, txTracker)
 	transferQueue := sisu.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss, app.appKeys)
+
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.k),
 		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg,
-		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, transferQueue)
+		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, transferQueue, bridgeManager)
 
 	apiHandler := tss.NewApiHandler(privateDb, mc)
-	app.apiHandler.SetAppLogicListener(apiHandler)
+	app.apiEndPoint.SetAppLogicListener(apiHandler)
 
 	sisuHandler := tss.NewSisuHandler(mc)
 	externalHandler := rest.NewExternalHandler(app.k, app.globalData)
@@ -297,7 +300,7 @@ func New(
 		tss.NewAppModule(appCodec, sisuHandler, app.k, apiHandler, valsMgr, mc),
 	}
 
-	app.tssProcessor = apiHandler
+	app.apiHandler = apiHandler
 
 	app.mm = module.NewManager(modules...)
 
@@ -578,8 +581,8 @@ func (app *App) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.Respo
 // of the processor.
 func (app *App) setupApiServer(c config.Config) {
 	handler := ethRpc.NewServer()
-	app.apiHandler = tss.NewApi(app.tssProcessor)
-	handler.RegisterName("tss", app.apiHandler)
+	app.apiEndPoint = tss.NewApi(app.apiHandler)
+	handler.RegisterName("tss", app.apiEndPoint)
 
 	appConfig := c.Sisu
 	s := server.NewServer(handler, appConfig.ApiHost, appConfig.ApiPort)

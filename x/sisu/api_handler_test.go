@@ -2,14 +2,10 @@ package sisu
 
 import (
 	"crypto/ecdsa"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"strings"
 	"testing"
-
-	"github.com/mr-tron/base58/base58"
-	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
 
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -21,7 +17,6 @@ import (
 
 	ecommon "github.com/ethereum/go-ethereum/common"
 
-	eyessolanatypes "github.com/sisu-network/deyes/chains/solana/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
@@ -204,57 +199,4 @@ func TestApiHandler_OnTxIns(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 0, submitCount)
 	})
-}
-
-func TestParseSolana(t *testing.T) {
-	bridgeProgramId := "HguMTvmDfspHuEWycDSP1XtVQJi47hVNAyLbFEf2EJEQ"
-
-	ctx, mc := mockForApiHandlerTest()
-
-	cfg := mc.Config()
-	cfg.Solana.BridgeProgramId = bridgeProgramId
-	mc.(*DefaultManagerContainer).config = cfg
-
-	apiHandler := NewApiHandler(nil, mc)
-
-	transferOut := solanatypes.TransferOutInstruction{
-		Instruction: solanatypes.TranserOut,
-		Data: solanatypes.TransferOutData{
-			Amount: *big.NewInt(100),
-		},
-	}
-
-	bz, err := transferOut.Serialize()
-	require.Nil(t, err)
-
-	outerTx := &eyessolanatypes.Transaction{
-		Meta: &eyessolanatypes.TransactionMeta{},
-		TransactionInner: &eyessolanatypes.TransactionInner{
-			Signatures: []string{"Signature"},
-			Message: &eyessolanatypes.TransactionMessage{
-				AccountKeys: []string{bridgeProgramId},
-				Instructions: []eyessolanatypes.Instruction{
-					{
-						ProgramIdIndex: 0,
-						Data:           base58.Encode(bz),
-					},
-				},
-			},
-		},
-	}
-
-	bz, err = json.Marshal(outerTx)
-	require.Nil(t, err)
-
-	eyesTx := &eyesTypes.Tx{
-		Hash:       outerTx.TransactionInner.Signatures[0],
-		Serialized: bz,
-		To:         outerTx.TransactionInner.Message.AccountKeys[0],
-		Success:    true,
-	}
-
-	transfers, err := apiHandler.parseSolanaTx(ctx, "solana-devnet", eyesTx)
-	require.Nil(t, err)
-
-	require.Equal(t, 1, len(transfers))
 }
