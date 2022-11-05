@@ -1,17 +1,19 @@
 package dev
 
 import (
-	"encoding/json"
-	"os"
-	"path/filepath"
+	"context"
+	"fmt"
+	"math/big"
+
+	libchain "github.com/sisu-network/lib/chain"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
-	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
+	"github.com/ybbus/jsonrpc/v3"
 )
 
 type queryCommand struct{}
@@ -34,43 +36,16 @@ Usage:
 
 			log.Infof("Querying token at address %s on chain %s", tokenSymbol, chainUrl)
 
-			client, err := ethclient.Dial(chainUrl)
-			if err != nil {
-				log.Error("cannot connect to chain, url = ", chainUrl)
-				panic(err)
-			}
-			defer client.Close()
-
 			if len(account) == 0 {
 				panic(flags.Account + " cannot be empty")
 			}
 
-			token := queryToken(cmd.Context(), sisuRpc, tokenSymbol)
-			if token == nil {
-				panic("cannot find token " + tokenSymbol)
-			}
-			addr := ""
-			for i := range token.Addresses {
-				if token.Chains[i] == chain {
-					addr = token.Addresses[i]
-					break
-				}
-			}
-			if addr == "" {
-				panic("cannot find address on chain " + chain)
-			}
+			c := new(queryCommand)
 
-			store, err := erc20.NewErc20(common.HexToAddress(addr), client)
-			if err != nil {
-				panic(err)
+			if libchain.IsETHBasedChain(chain) {
+				c.queryEth(sisuRpc, chain, chainUrl, tokenSymbol, account)
+			} else if libchain.IsSolanaChain(chain) {
 			}
-
-			balance, err := store.BalanceOf(nil, common.HexToAddress(account))
-			if err != nil {
-				panic(err)
-			}
-
-			log.Info("Balance = ", balance)
 
 			return nil
 		},
@@ -85,15 +60,83 @@ Usage:
 	return cmd
 }
 
-func (c *queryCommand) getTokens(genesisFolder string) []*types.Token {
-	tokens := []*types.Token{}
+// queryEth returns an account balance on an ETH chain.
+func (c *queryCommand) queryEth(sisuRpc, chain, chainUrl, tokenSymbol, account string) {
+	addr := c.getTokenAddress(sisuRpc, chain, tokenSymbol)
 
-	dat, err := os.ReadFile(filepath.Join(genesisFolder, "tokens.json"))
+	client, err := ethclient.Dial(chainUrl)
+	if err != nil {
+		log.Error("cannot connect to chain, url = ", chainUrl)
+		panic(err)
+	}
+	defer client.Close()
+
+	store, err := erc20.NewErc20(common.HexToAddress(addr), client)
 	if err != nil {
 		panic(err)
 	}
 
-	json.Unmarshal(dat, &tokens)
+	balance, err := store.BalanceOf(nil, common.HexToAddress(account))
+	if err != nil {
+		panic(err)
+	}
 
-	return tokens
+	log.Info("Balance = ", balance)
+}
+
+func (c *queryCommand) getTokenAddress(sisuRpc, chain, tokenSymbol string) string {
+	token := queryToken(context.Background(), sisuRpc, tokenSymbol)
+	if token == nil {
+		panic("cannot find token " + tokenSymbol)
+	}
+	addr := ""
+	for i := range token.Addresses {
+		if token.Chains[i] == chain {
+			addr = token.Addresses[i]
+			break
+		}
+	}
+	if addr == "" {
+		panic("cannot find address on chain " + chain)
+	}
+
+	return addr
+}
+
+// querySolana query token balance on a solana chain
+func (c *queryCommand) querySolanaAccountBalance(url, tokenAddr string) (*big.Int, error) {
+	rpcClient := jsonrpc.NewClient(url)
+
+	type ResponseValue struct {
+		Amount         string `json:"amount,omitempty"`
+		Decimals       int64  `json:"decimals,omitempty"`
+		UiAmountString string `json:"uiAmountString,omitempty"`
+	}
+
+	type QueryResponse struct {
+		Value ResponseValue `json:"value,omitempty"`
+	}
+
+	response := new(QueryResponse)
+
+	res, err := rpcClient.Call(context.Background(), "getTokenAccountBalance", tokenAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+
+	err = res.GetObject(response)
+	if err != nil {
+		return nil, err
+	}
+
+	ret, ok := new(big.Int).SetString(response.Value.Amount, 10)
+	if !ok {
+		return nil, fmt.Errorf("Invalid respnose amount: %s", response.Value.Amount)
+	}
+
+	return ret, nil
 }

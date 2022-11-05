@@ -8,6 +8,7 @@ import (
 
 	"github.com/mr-tron/base58"
 	eyessolanatypes "github.com/sisu-network/deyes/chains/solana/types"
+	"github.com/sisu-network/sisu/utils"
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
 
 	solanago "github.com/gagliardetto/solana-go"
@@ -30,7 +31,7 @@ func getSolanaTransferoutTx() *eyessolanatypes.Transaction {
 	ix := &solanatypes.TransferOutInstruction{
 		Instruction: byte(solanatypes.TranserOut),
 		Data: solanatypes.TransferOutData{
-			Amount:       *big.NewInt(9000),
+			Amount:       *utils.EtherToWei(big.NewInt(1)),
 			TokenAddress: "BfFFZs7e6n62rMKqYR9pLtQnVw3rPFDTosyKWB8xfgzs",
 			ChainId:      189985,
 			Recipient:    "0x8095f5b69F2970f38DC6eBD2682ed71E4939f988",

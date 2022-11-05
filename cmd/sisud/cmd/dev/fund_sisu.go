@@ -58,6 +58,8 @@ func FundSisu() *cobra.Command {
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 			cardanoMnemonic, _ := cmd.Flags().GetString(flags.CardanoMnemonic)
 			cardanoNetwork, _ := cmd.Flags().GetString(flags.CardanoChain)
+			enabledChains, _ := cmd.Flags().GetString(flags.EnabledChains)
+
 			if len(cardanoMnemonic) == 0 {
 				cardanoMnemonic = mnemonic
 			}
@@ -67,7 +69,7 @@ func FundSisu() *cobra.Command {
 
 			c := &fundAccountCmd{}
 			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, cardanoMnemonic, tokens, vaultString,
-				sisuRpc, cardanoNetwork, cardanoSecret)
+				sisuRpc, cardanoNetwork, cardanoSecret, enabledChains)
 
 			return nil
 		},
@@ -82,12 +84,14 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.CardanoMnemonic, "", "The blockfrost secret to interact with cardano network.")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 	cmd.Flags().String(flags.CardanoChain, "cardano-testnet", "The Cardano network that we are interacting with.")
+	cmd.Flags().String(flags.EnabledChains, "", "List of non-evm chains that you want to enable (e.g. cardano-testnet, solana-devnet, etc...). Each chain is separated by a comma")
 
 	return cmd
 }
 
 func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic string,
-	cardanoMnemonic string, tokens []string, vaultString string, sisuRpc, cardanoNetwork, cardanoSecret string) {
+	cardanoMnemonic string, tokens []string, vaultString string, sisuRpc, cardanoNetwork, cardanoSecret string,
+	enabledChains string) {
 	chains := strings.Split(chainString, ",")
 	vaults := strings.Split(vaultString, ",")
 
@@ -116,6 +120,10 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 		cardanoAddr := hutils.GetAddressFromCardanoPubkey(cardanoKey)
 		log.Info("Sisu Cardano Gateway = ", cardanoAddr)
 		c.fundCardano(cardanoAddr, cardanoMnemonic, cardanoNetwork, cardanoSecret, sisuRpc, tokens)
+	}
+
+	if strings.Index(enabledChains, "solana") >= 0 {
+		// Fund solana
 	}
 
 	// Fund the accounts with some native ETH and other tokens

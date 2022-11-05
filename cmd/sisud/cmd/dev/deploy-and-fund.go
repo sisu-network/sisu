@@ -68,7 +68,7 @@ func DeployAndFund() *cobra.Command {
 			log.Info("========= Fund token to sisu's account =========")
 			fundSisuCmd := &fundAccountCmd{}
 			fundSisuCmd.fundSisuAccounts(cmd.Context(), chainString, chainUrls, mnemonic, cardanoMnemonic,
-				tokenSymbols, vaultString, sisuRpc, cardanoNetwork, cardanoSecret)
+				tokenSymbols, vaultString, sisuRpc, cardanoNetwork, cardanoSecret, "")
 
 			return nil
 		},

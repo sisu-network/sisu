@@ -99,8 +99,6 @@ func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx
 				continue
 			}
 
-			fmt.Println("Adding to ret")
-
 			ret = append(ret, &types.Transfer{
 				FromChain:   chain,
 				FromHash:    outerTx.TransactionInner.Signatures[0],
