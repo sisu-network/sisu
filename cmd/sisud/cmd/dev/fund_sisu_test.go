@@ -83,7 +83,7 @@ func TestTransferToken(t *testing.T) {
 
 // Sanity check on localhost. Disabled by default. Enable if you want to debug the fund command.
 func TestFundOnSolana(t *testing.T) {
-	// t.Skip()
+	t.Skip()
 	// This is the code to generate a new private key
 	// privateKey, err := edwards.GeneratePrivateKey()
 	// require.Nil(t, err)
@@ -105,7 +105,7 @@ func TestFundOnSolana(t *testing.T) {
 }
 
 func TestCreateAssociatedProgram(t *testing.T) {
-	// t.Skip()
+	t.Skip()
 
 	cmd := &fundAccountCmd{}
 	mnemonic, client, wsClient := getBasicData()

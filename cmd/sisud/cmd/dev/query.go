@@ -4,12 +4,14 @@ import (
 	"context"
 
 	libchain "github.com/sisu-network/lib/chain"
+	"google.golang.org/grpc"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
+	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
 )
 
@@ -98,4 +100,45 @@ func (c *queryCommand) getTokenAddress(sisuRpc, chain, tokenSymbol string) strin
 	}
 
 	return addr
+}
+
+func queryChain(ctx context.Context, sisuRpc string, chain string) (*types.Chain, error) {
+	grpcConn, err := grpc.Dial(
+		sisuRpc,
+		grpc.WithInsecure(),
+	)
+	defer grpcConn.Close()
+	if err != nil {
+		panic(err)
+	}
+
+	queryClient := types.NewTssQueryClient(grpcConn)
+	res, err := queryClient.QueryChain(ctx, &types.QueryChainRequest{
+		Chain: chain,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Chain, nil
+}
+
+func queryPubKeys(ctx context.Context, sisuRpc string) map[string][]byte {
+	grpcConn, err := grpc.Dial(
+		sisuRpc,
+		grpc.WithInsecure(),
+	)
+	defer grpcConn.Close()
+	if err != nil {
+		panic(err)
+	}
+
+	queryClient := types.NewTssQueryClient(grpcConn)
+
+	res, err := queryClient.AllPubKeys(ctx, &types.QueryAllPubKeysRequest{})
+	if err != nil {
+		panic(err)
+	}
+
+	return res.Pubkeys
 }
