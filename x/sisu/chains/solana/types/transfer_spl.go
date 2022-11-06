@@ -36,7 +36,25 @@ type TransferSplTokenIx struct {
 // 		},
 // 		data
 // );
-func NewTransferTokenIx(accounts []*solana.AccountMeta, amount *big.Int, decimals byte) *TransferSplTokenIx {
+func NewTransferTokenIx(sourceAta, token, dstAta, feePayerPubkey solanago.PublicKey, amount *big.Int, decimals byte) *TransferSplTokenIx {
+	// This is the key source code in JS.
+	// 	const keys = addSigners(
+	// 		[
+	// 				{ pubkey: source, isSigner: false, isWritable: true },
+	// 				{ pubkey: mint, isSigner: false, isWritable: false },
+	// 				{ pubkey: destination, isSigner: false, isWritable: true },
+	// 		],
+	// 		owner,
+	// 		multiSigners
+	// );
+
+	accounts := []*solana.AccountMeta{
+		solana.NewAccountMeta(sourceAta, true, false),
+		solana.NewAccountMeta(token, false, false),
+		solana.NewAccountMeta(dstAta, true, false),
+		solana.NewAccountMeta(feePayerPubkey, false, true),
+	}
+
 	data := &TransferSplTokenData{
 		Instruction: 12,
 		Amount:      amount.Uint64(),
@@ -50,12 +68,12 @@ func NewTransferTokenIx(accounts []*solana.AccountMeta, amount *big.Int, decimal
 }
 
 // ProgramID is the programID the instruction acts on
-func (ix *TransferSplTokenIx) ProgramID() solana.PublicKey {
+func (ix *TransferSplTokenIx) ProgramID() solanago.PublicKey {
 	return solanago.MustPublicKeyFromBase58("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
 }
 
 // Accounts returns the list of accounts the instructions requires
-func (ix *TransferSplTokenIx) Accounts() []*solana.AccountMeta {
+func (ix *TransferSplTokenIx) Accounts() []*solanago.AccountMeta {
 	return ix.accounts
 }
 

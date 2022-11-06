@@ -2,8 +2,6 @@ package dev
 
 import (
 	"context"
-	"fmt"
-	"math/big"
 
 	libchain "github.com/sisu-network/lib/chain"
 
@@ -13,7 +11,6 @@ import (
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
 	"github.com/spf13/cobra"
-	"github.com/ybbus/jsonrpc/v3"
 )
 
 type queryCommand struct{}
@@ -101,42 +98,4 @@ func (c *queryCommand) getTokenAddress(sisuRpc, chain, tokenSymbol string) strin
 	}
 
 	return addr
-}
-
-// querySolana query token balance on a solana chain
-func (c *queryCommand) querySolanaAccountBalance(url, tokenAddr string) (*big.Int, error) {
-	rpcClient := jsonrpc.NewClient(url)
-
-	type ResponseValue struct {
-		Amount         string `json:"amount,omitempty"`
-		Decimals       int64  `json:"decimals,omitempty"`
-		UiAmountString string `json:"uiAmountString,omitempty"`
-	}
-
-	type QueryResponse struct {
-		Value ResponseValue `json:"value,omitempty"`
-	}
-
-	response := new(QueryResponse)
-
-	res, err := rpcClient.Call(context.Background(), "getTokenAccountBalance", tokenAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	if res.Error != nil {
-		return nil, res.Error
-	}
-
-	err = res.GetObject(response)
-	if err != nil {
-		return nil, err
-	}
-
-	ret, ok := new(big.Int).SetString(response.Value.Amount, 10)
-	if !ok {
-		return nil, fmt.Errorf("Invalid respnose amount: %s", response.Value.Amount)
-	}
-
-	return ret, nil
 }
