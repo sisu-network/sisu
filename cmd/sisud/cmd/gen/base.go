@@ -99,7 +99,7 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 	}
 
 	// Check if solana is enabled
-	enableChainsString, _ := cmd.Flags().GetString(flags.EnabledChains)
+	enableChainsString, _ := cmd.Flags().GetString(flags.EnabledNonEvmChains)
 	enableChains := strings.Split(enableChainsString, ",")
 
 	for _, chain := range enableChains {
@@ -126,7 +126,7 @@ func getDeyesChains(cmd *cobra.Command, genesisFolder string) []econfig.Chain {
 	cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 	cardanoDbConfig, _ := cmd.Flags().GetString(flags.CardanoDbConfig)
 	deyesChains := readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
-	enableChainsString, _ := cmd.Flags().GetString(flags.EnabledChains)
+	enableChainsString, _ := cmd.Flags().GetString(flags.EnabledNonEvmChains)
 	enableChains := strings.Split(enableChainsString, ",")
 
 	chains := helper.GetChains(filepath.Join(genesisFolder, "chains.json"))

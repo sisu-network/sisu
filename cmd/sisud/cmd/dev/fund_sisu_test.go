@@ -101,7 +101,7 @@ func TestFundOnSolana(t *testing.T) {
 	}
 
 	cmd := &fundAccountCmd{}
-	cmd.fundOnSolana("../../../../misc/test", utils.LOCALHOST_MNEMONIC, allPubkey)
+	cmd.fundSolana("../../../../misc/test", utils.LOCALHOST_MNEMONIC, allPubkey)
 }
 
 func TestCreateAssociatedProgram(t *testing.T) {

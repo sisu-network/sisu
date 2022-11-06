@@ -24,6 +24,7 @@ func DeployAndFund() *cobra.Command {
 			chainUrls, _ := cmd.Flags().GetString(flags.ChainUrls)
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
+			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 			cardanoMnemonic, _ := cmd.Flags().GetString(flags.CardanoMnemonic)
 			cardanoNetwork, _ := cmd.Flags().GetString(flags.CardanoChain)
@@ -68,7 +69,7 @@ func DeployAndFund() *cobra.Command {
 			log.Info("========= Fund token to sisu's account =========")
 			fundSisuCmd := &fundAccountCmd{}
 			fundSisuCmd.fundSisuAccounts(cmd.Context(), chainString, chainUrls, mnemonic, cardanoMnemonic,
-				tokenSymbols, vaultString, sisuRpc, cardanoNetwork, cardanoSecret, "")
+				tokenSymbols, vaultString, sisuRpc, cardanoNetwork, cardanoSecret, "", genesisFolder)
 
 			return nil
 		},

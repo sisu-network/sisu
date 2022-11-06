@@ -42,7 +42,6 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) 
 func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx) ([]*types.Transfer, error) {
 	ret := make([]*types.Transfer, 0)
 
-	fmt.Println("AAAAAA 000000")
 	outerTx := new(eyessolanatypes.Transaction)
 	err := json.Unmarshal(tx.Serialized, outerTx)
 	if err != nil {
@@ -77,8 +76,6 @@ func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx
 			return nil, fmt.Errorf("Data is empty")
 		}
 
-		fmt.Println("AAAAAA 111111")
-
 		ix := new(solanatypes.TransferOutInstruction)
 		err = ix.Deserialize(bytesArr)
 		if err != nil {
@@ -87,15 +84,12 @@ func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx
 
 		transferData := ix.Data
 
-		fmt.Println("AAAAAA 222222")
-
 		switch ix.Instruction {
 		case solanatypes.TranserOut:
 			// look up the token in the keeper
 			log.Verbose("Transfer data on solana = ", transferData)
 			token := utils.GetTokenOnChain(allTokens, transferData.TokenAddress, chain)
 			if token == nil {
-				fmt.Println("Cannot find token with address ", transferData.TokenAddress)
 				continue
 			}
 
@@ -109,8 +103,6 @@ func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx
 			})
 		}
 	}
-
-	fmt.Println("len ret = ", len(ret))
 
 	return ret, nil
 }

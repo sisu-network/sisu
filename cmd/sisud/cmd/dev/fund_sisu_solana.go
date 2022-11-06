@@ -29,7 +29,7 @@ func GetSolanaPrivateKey(mnemonic string) solanago.PrivateKey {
 	return privKey
 }
 
-func (c *fundAccountCmd) fundOnSolana(genesisFolder, mnemonic string, allPubKeys map[string][]byte) {
+func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, allPubKeys map[string][]byte) {
 	privateKey := GetSolanaPrivateKey(mnemonic)
 	faucet := privateKey.PublicKey()
 
@@ -129,12 +129,9 @@ func (c *fundAccountCmd) signAndSubmit(client *rpc.Client, wsClient *ws.Client,
 				return &feePayer
 			}
 
-			fmt.Println("Private key is nil for ", key)
 			return nil
 		},
 	)
-
-	fmt.Println("feePayer = ", feePayer.PublicKey())
 
 	// Send transaction, and wait for confirmation
 	sig, err := confirm.SendAndConfirmTransaction(

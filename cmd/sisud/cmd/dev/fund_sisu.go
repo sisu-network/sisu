@@ -11,7 +11,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 
-	"github.com/echovl/cardano-go"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	hutils "github.com/sisu-network/dheart/utils"
@@ -47,7 +46,8 @@ func FundSisu() *cobra.Command {
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 			cardanoMnemonic, _ := cmd.Flags().GetString(flags.CardanoMnemonic)
 			cardanoNetwork, _ := cmd.Flags().GetString(flags.CardanoChain)
-			enabledChains, _ := cmd.Flags().GetString(flags.EnabledChains)
+			enabledChains, _ := cmd.Flags().GetString(flags.EnabledNonEvmChains)
+			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 
 			if len(cardanoMnemonic) == 0 {
 				cardanoMnemonic = mnemonic
@@ -58,7 +58,7 @@ func FundSisu() *cobra.Command {
 
 			c := &fundAccountCmd{}
 			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, cardanoMnemonic, tokens, vaultString,
-				sisuRpc, cardanoNetwork, cardanoSecret, enabledChains)
+				sisuRpc, cardanoNetwork, cardanoSecret, enabledChains, genesisFolder)
 
 			return nil
 		},
@@ -70,17 +70,18 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
 	cmd.Flags().String(flags.VaultAddrs, fmt.Sprintf("%s,%s", ExpectedVaultAddress, ExpectedVaultAddress), "List of vault addresses")
 	cmd.Flags().String(flags.Erc20Symbols, "SISU,ADA", "List of ERC20 to approve")
+	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "The genesis folder that contains config files to generate data.")
 	cmd.Flags().String(flags.CardanoMnemonic, "", "The blockfrost secret to interact with cardano network.")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 	cmd.Flags().String(flags.CardanoChain, "cardano-testnet", "The Cardano network that we are interacting with.")
-	cmd.Flags().String(flags.EnabledChains, "", "List of non-evm chains that you want to enable (e.g. cardano-testnet, solana-devnet, etc...). Each chain is separated by a comma")
+	cmd.Flags().String(flags.EnabledNonEvmChains, "", "List of non-evm chains that you want to enable (e.g. cardano-testnet, solana-devnet, etc...). Each chain is separated by a comma")
 
 	return cmd
 }
 
 func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic string,
 	cardanoMnemonic string, tokens []string, vaultString string, sisuRpc, cardanoNetwork, cardanoSecret string,
-	enabledChains string) {
+	enabledChains, genesisFolder string) {
 	chains := strings.Split(chainString, ",")
 	vaults := strings.Split(vaultString, ",")
 
@@ -113,6 +114,8 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 
 	if strings.Index(enabledChains, "solana") >= 0 {
 		// Fund solana
+		log.Verbose("Funding on solana chain...")
+		c.fundSolana(genesisFolder, mnemonic, allPubKeys)
 	}
 
 	// Fund the accounts with some native ETH and other tokens
@@ -148,39 +151,6 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 		}(i, client)
 	}
 	wg.Wait()
-}
-
-func (c *fundAccountCmd) getMultiAsset(sisuRpc, cardanoNetwork string, tokens []string, amt uint64) *cardano.MultiAsset {
-	tokenAddrs := c.getTokenAddrs(context.Background(), sisuRpc, tokens, cardanoNetwork)
-	m := make(map[string]*cardano.Assets)
-	for i, tokenAddr := range tokenAddrs {
-		if tokens[i] == "ADA" {
-			continue
-		}
-		index := strings.Index(tokenAddr, ":")
-		policyString := tokenAddr[:index]
-		assetName := tokenAddr[index+1:]
-
-		if m[policyString] == nil {
-			m[policyString] = cardano.NewAssets()
-		}
-
-		asset := cardano.NewAssetName(assetName)
-		m[policyString].Set(asset, cardano.BigNum(amt*CardanoDecimals))
-	}
-
-	multiAsset := cardano.NewMultiAsset()
-	for policy, assets := range m {
-		policyHash, err := cardano.NewHash28(policy)
-		if err != nil {
-			err := fmt.Errorf("error when parsing policyID hash: %v", err)
-			panic(err)
-		}
-		policyID := cardano.NewPolicyIDFromHash(policyHash)
-		multiAsset.Set(policyID, assets)
-	}
-
-	return multiAsset
 }
 
 func (c *fundAccountCmd) waitForPubkeys(goCtx context.Context, chains []string, sisuRpc string) []string {

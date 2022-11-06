@@ -1,6 +1,10 @@
 package dev
 
 import (
+	"context"
+	"fmt"
+	"strings"
+
 	"github.com/echovl/cardano-go"
 	"github.com/echovl/cardano-go/blockfrost"
 	"github.com/echovl/cardano-go/wallet"
@@ -44,4 +48,37 @@ func (c *fundAccountCmd) getWalletFromMnemonic(client *wallet.Client, name, pass
 	}
 
 	return w, nil
+}
+
+func (c *fundAccountCmd) getMultiAsset(sisuRpc, cardanoNetwork string, tokens []string, amt uint64) *cardano.MultiAsset {
+	tokenAddrs := c.getTokenAddrs(context.Background(), sisuRpc, tokens, cardanoNetwork)
+	m := make(map[string]*cardano.Assets)
+	for i, tokenAddr := range tokenAddrs {
+		if tokens[i] == "ADA" {
+			continue
+		}
+		index := strings.Index(tokenAddr, ":")
+		policyString := tokenAddr[:index]
+		assetName := tokenAddr[index+1:]
+
+		if m[policyString] == nil {
+			m[policyString] = cardano.NewAssets()
+		}
+
+		asset := cardano.NewAssetName(assetName)
+		m[policyString].Set(asset, cardano.BigNum(amt*CardanoDecimals))
+	}
+
+	multiAsset := cardano.NewMultiAsset()
+	for policy, assets := range m {
+		policyHash, err := cardano.NewHash28(policy)
+		if err != nil {
+			err := fmt.Errorf("error when parsing policyID hash: %v", err)
+			panic(err)
+		}
+		policyID := cardano.NewPolicyIDFromHash(policyHash)
+		multiAsset.Set(policyID, assets)
+	}
+
+	return multiAsset
 }
