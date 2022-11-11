@@ -8,16 +8,15 @@ import (
 	"path/filepath"
 
 	"github.com/cosmos/go-bip39"
-	"github.com/gagliardetto/solana-go"
 	solanago "github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	confirm "github.com/gagliardetto/solana-go/rpc/sendAndConfirmTransaction"
 	"github.com/gagliardetto/solana-go/rpc/ws"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/chains/solana"
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
 )
 
@@ -90,12 +89,6 @@ func (c *fundAccountCmd) transferSolanaToken(client *rpc.Client, wsClient *ws.Cl
 
 	log.Verbosef("Funding token = %s, source = %s, destination = %s\n", token, sourceAta, dstAta)
 
-	// Get blockhash
-	result, err := client.GetRecentBlockhash(context.Background(), rpc.CommitmentFinalized)
-	if err != nil {
-		panic(err)
-	}
-
 	ix := solanatypes.NewTransferTokenIx(
 		solanago.MustPublicKeyFromBase58(sourceAta),
 		solanago.MustPublicKeyFromBase58(token),
@@ -105,44 +98,10 @@ func (c *fundAccountCmd) transferSolanaToken(client *rpc.Client, wsClient *ws.Cl
 		8,
 	)
 
-	tx, err := solana.NewTransaction(
-		[]solana.Instruction{ix},
-		result.Value.Blockhash,
-		solana.TransactionPayer(feePayerPubkey),
-	)
+	err := solana.SignAndSubmit(client, wsClient, []solanago.Instruction{ix}, feePayer)
 	if err != nil {
 		panic(err)
 	}
-
-	err = c.signAndSubmit(client, wsClient, tx, feePayer)
-	if err != nil {
-		panic(err)
-	}
-}
-
-// signAndSubmit signs a transaction and submits it to the network.
-func (c *fundAccountCmd) signAndSubmit(client *rpc.Client, wsClient *ws.Client,
-	tx *solanago.Transaction, feePayer solanago.PrivateKey) error {
-	tx.Sign(
-		func(key solana.PublicKey) *solana.PrivateKey {
-			if feePayer.PublicKey().Equals(key) {
-				return &feePayer
-			}
-
-			return nil
-		},
-	)
-
-	// Send transaction, and wait for confirmation
-	sig, err := confirm.SendAndConfirmTransaction(
-		context.Background(),
-		client,
-		wsClient,
-		tx,
-	)
-	log.Verbose("sig = ", sig)
-
-	return err
 }
 
 func (c *fundAccountCmd) createAssociatedAccount(client *rpc.Client, wsClient *ws.Client, mnemonic string,
@@ -160,7 +119,7 @@ func (c *fundAccountCmd) createAssociatedAccount(client *rpc.Client, wsClient *w
 		panic(err)
 	}
 
-	_, err = querySolanaAccountBalance(client, ownerAta.String())
+	_, err = solana.QuerySolanaAccountBalance(client, ownerAta.String())
 	if err == nil {
 		// Account already existed, do nothing
 		fmt.Printf("Accounts %s has been created\n", ownerAta.String())
@@ -171,16 +130,7 @@ func (c *fundAccountCmd) createAssociatedAccount(client *rpc.Client, wsClient *w
 		ownerAta.String(), tokenMint.String())
 
 	// Create a new account
-	result, err := client.GetRecentBlockhash(context.Background(), rpc.CommitmentFinalized)
 	ix := solanatypes.NewCreateAssociatedAccountIx(feePayer, owner, ownerAta, tokenMint)
-	tx, err := solana.NewTransaction(
-		[]solana.Instruction{ix},
-		result.Value.Blockhash,
-		solana.TransactionPayer(feePayer),
-	)
-	if err != nil {
-		panic(err)
-	}
 
-	return ownerAta, c.signAndSubmit(client, wsClient, tx, privateKey)
+	return ownerAta, solana.SignAndSubmit(client, wsClient, []solanago.Instruction{ix}, privateKey)
 }

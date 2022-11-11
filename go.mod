@@ -8,6 +8,7 @@ require (
 	github.com/btcsuite/btcutil v1.0.3-0.20201208143702-a53e38424cce
 	github.com/cosmos/cosmos-sdk v0.42.1
 	github.com/cosmos/go-bip39 v1.0.0
+	github.com/decred/dcrd/dcrec/edwards/v2 v2.0.2
 	github.com/echovl/cardano-go v0.1.14
 	github.com/ethereum/go-ethereum v1.10.21
 	github.com/gagliardetto/solana-go v1.7.1
@@ -20,7 +21,7 @@ require (
 	github.com/libp2p/go-libp2p-core v0.8.0
 	github.com/logdna/logdna-go v1.0.2
 	github.com/mr-tron/base58 v1.2.0
-	github.com/near/borsh-go v0.3.1
+	github.com/near/borsh-go v0.3.2-0.20220516180422-1ff87d108454
 	github.com/sisu-network/deyes v0.1.9
 	github.com/sisu-network/dheart v0.1.7-alpha1
 	github.com/sisu-network/lib v0.0.1-alpha9.0.20221024224307-a0cdb072a1bd
@@ -31,7 +32,6 @@ require (
 	github.com/tendermint/tendermint v0.34.13
 	github.com/tendermint/tm-db v0.6.4
 	github.com/tyler-smith/go-bip39 v1.1.0
-	github.com/ybbus/jsonrpc/v3 v3.1.1
 	go.uber.org/atomic v1.9.0
 	golang.org/x/crypto v0.1.0
 	google.golang.org/grpc v1.50.1
@@ -66,7 +66,6 @@ require (
 	github.com/danieljoos/wincred v1.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deckarep/golang-set v1.8.0 // indirect
-	github.com/decred/dcrd/dcrec/edwards/v2 v2.0.2 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/dfuse-io/logging v0.0.0-20201110202154-26697de88c79 // indirect
 	github.com/dgraph-io/badger/v2 v2.2007.2 // indirect

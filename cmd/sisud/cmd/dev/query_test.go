@@ -5,6 +5,7 @@ import (
 
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/x/sisu/chains/solana"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,7 +16,7 @@ func TestQuerySolanaBalance(t *testing.T) {
 	endpoint := rpc.LocalNet_RPC
 	client := rpc.New(endpoint)
 
-	amount, err := querySolanaAccountBalance(client, "BJ9ArHvbeUhVLChS2yksw8xqvoRpWYLtGkg7CVHNa31a")
+	amount, err := solana.QuerySolanaAccountBalance(client, "BJ9ArHvbeUhVLChS2yksw8xqvoRpWYLtGkg7CVHNa31a")
 	require.Nil(t, err)
 
 	log.Verbose("amount = ", amount)

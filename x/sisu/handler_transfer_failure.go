@@ -1,8 +1,6 @@
 package sisu
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -22,8 +20,6 @@ func NewHanlderTransferFailure(k keeper.Keeper, pmm PostedMessageManager) *Hanld
 }
 
 func (h *HanlderTransferFailure) DeliverMsg(ctx sdk.Context, msg *types.TransferFailureMsg) (*sdk.Result, error) {
-	fmt.Println("BBBBBBBB DeliverMsg")
-
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
 		data, err := h.doTransferFailure(ctx, msg.Data)
 		h.keeper.ProcessTxRecord(ctx, hash)

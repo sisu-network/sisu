@@ -76,19 +76,17 @@ func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx
 			return nil, fmt.Errorf("Data is empty")
 		}
 
-		ix := new(solanatypes.TransferOutInstruction)
-		err = ix.Deserialize(bytesArr)
+		transferOut := new(solanatypes.TransferOutData)
+		err = transferOut.Deserialize(bytesArr)
 		if err != nil {
 			return nil, err
 		}
 
-		transferData := ix.Data
-
-		switch ix.Instruction {
-		case solanatypes.TranserOut:
+		switch transferOut.Instruction {
+		case solanatypes.TransferOut:
 			// look up the token in the keeper
-			log.Verbose("Transfer data on solana = ", transferData)
-			token := utils.GetTokenOnChain(allTokens, transferData.TokenAddress, chain)
+			log.Verbose("Transfer data on solana = ", *transferOut)
+			token := utils.GetTokenOnChain(allTokens, transferOut.TokenAddress, chain)
 			if token == nil {
 				continue
 			}
@@ -97,9 +95,9 @@ func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx
 				FromChain:   chain,
 				FromHash:    outerTx.TransactionInner.Signatures[0],
 				Token:       token.Id,
-				Amount:      transferData.Amount.String(), // TODO Convert token amount
-				ToChain:     libchain.GetChainNameFromInt(big.NewInt(int64(transferData.ChainId))),
-				ToRecipient: transferData.Recipient,
+				Amount:      fmt.Sprintf("%d", transferOut.Amount), // TODO Convert token amount
+				ToChain:     libchain.GetChainNameFromInt(big.NewInt(int64(transferOut.ChainId))),
+				ToRecipient: transferOut.Recipient,
 			})
 		}
 	}

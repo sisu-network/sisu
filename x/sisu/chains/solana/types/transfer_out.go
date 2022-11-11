@@ -2,8 +2,9 @@ package types
 
 import (
 	"fmt"
-	"math/big"
 
+	"github.com/gagliardetto/solana-go"
+	solanago "github.com/gagliardetto/solana-go"
 	"github.com/near/borsh-go"
 )
 
@@ -11,7 +12,7 @@ type InstructionType byte
 
 const (
 	Initialize    InstructionType = 0
-	TranserOut                    = 1
+	TransferOut                   = 1
 	TranserIn                     = 2
 	AddSpender                    = 3
 	RemoveSpender                 = 4
@@ -19,43 +20,81 @@ const (
 )
 
 type TransferOutData struct {
-	Amount       big.Int
+	Instruction  byte
+	Amount       uint64
 	TokenAddress string
 	ChainId      uint64
 	Recipient    string
 }
 
-type TransferOutInstruction struct {
-	Instruction byte
-	Data        TransferOutData
-}
-
-func (ix *TransferOutInstruction) Serialize() ([]byte, error) {
-	bz, err := borsh.Serialize(ix.Data)
-	if err != nil {
-		return nil, err
+func NewTransferOutData(
+	amount uint64,
+	tokenAddress string,
+	chainId uint64,
+	recipient string,
+) TransferOutData {
+	return TransferOutData{
+		Instruction:  TransferOut,
+		Amount:       amount,
+		TokenAddress: tokenAddress,
+		ChainId:      chainId,
+		Recipient:    recipient,
 	}
-
-	ret := []byte{ix.Instruction}
-	ret = append(ret, bz...)
-
-	return ret, nil
 }
 
-func (ix *TransferOutInstruction) Deserialize(bytesArr []byte) error {
+func (ix *TransferOutData) Serialize() ([]byte, error) {
+	return borsh.Serialize(*ix)
+}
+
+func (ix *TransferOutData) Deserialize(bytesArr []byte) error {
 	if len(bytesArr) == 0 {
 		return fmt.Errorf("Byte array is nil")
 	}
 
-	borshBz := bytesArr[1:]
-	Data := TransferOutData{}
-	err := borsh.Deserialize(&Data, borshBz)
-	if err != nil {
-		return err
+	return borsh.Deserialize(ix, bytesArr)
+}
+
+type TransferOutInstruction struct {
+	bridgeProgramdId solana.PublicKey
+	accounts         []*solanago.AccountMeta
+	data             TransferOutData
+}
+
+func NewTransferOutInstruction(
+	programId solana.PublicKey,
+	owner solanago.PublicKey,
+	ownerAta solanago.PublicKey,
+	bridgeAta solanago.PublicKey,
+	bridgePda solanago.PublicKey,
+	data TransferOutData) *TransferOutInstruction {
+	tokenProgramId := solana.MustPublicKeyFromBase58("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
+
+	accounts := []*solanago.AccountMeta{
+		solanago.NewAccountMeta(owner, false, true),
+		solanago.NewAccountMeta(tokenProgramId, false, false),
+		solanago.NewAccountMeta(ownerAta, true, false),
+		solanago.NewAccountMeta(bridgeAta, true, false),
+		solanago.NewAccountMeta(bridgePda, true, false),
 	}
 
-	ix.Instruction = bytesArr[0]
-	ix.Data = Data
+	return &TransferOutInstruction{
+		bridgeProgramdId: programId,
+		accounts:         accounts,
+		data:             data,
+	}
+}
 
-	return nil
+// ProgramID is the programID the instruction acts on.
+func (ix *TransferOutInstruction) ProgramID() solanago.PublicKey {
+	// Associated program id. This is different from the token program id.
+	return ix.bridgeProgramdId
+}
+
+// Accounts returns the list of accounts the instructions requires
+func (ix *TransferOutInstruction) Accounts() []*solanago.AccountMeta {
+	return ix.accounts
+}
+
+func (ix *TransferOutInstruction) Data() ([]byte, error) {
+	return borsh.Serialize(ix.data)
 }

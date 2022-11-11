@@ -3,7 +3,6 @@ package dev
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
 	"math/big"
 	"strings"
 	"testing"
@@ -15,33 +14,38 @@ import (
 	"github.com/near/borsh-go"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/chains/solana"
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
 	"github.com/stretchr/testify/require"
 )
 
-func getBasicData() (string, *rpc.Client, *ws.Client) {
-	mnemonic := utils.LOCALHOST_MNEMONIC
+func getBasicData(network string) (string, *rpc.Client, *ws.Client) {
+	var rpcEndpoint string
+	var wssEndpoint string
 
-	endpoint := rpc.LocalNet_RPC
-	client := rpc.New(endpoint)
+	if network == "devnet" {
+		rpcEndpoint = rpc.DevNet_RPC
+		wssEndpoint = rpc.DevNet.WS
+	} else {
+		rpcEndpoint = rpc.LocalNet_RPC
+		wssEndpoint = rpc.LocalNet_WS
+	}
+
+	client := rpc.New(rpcEndpoint)
 
 	// Create a new WS client (used for confirming transactions)
-	wsClient, err := ws.Connect(context.Background(), rpc.LocalNet_WS)
+	wsClient, err := ws.Connect(context.Background(), wssEndpoint)
 	if err != nil {
 		panic(err)
 	}
 
-	return mnemonic, client, wsClient
+	return utils.LOCALHOST_MNEMONIC, client, wsClient
 }
 
 func TestQueryPubKeys(t *testing.T) {
 	t.Skip()
 
-	m := queryPubKeys(context.Background(), "0.0.0.0:9090")
-
-	for chain, key := range m {
-		fmt.Println("chain, ", chain, len(key))
-	}
+	queryPubKeys(context.Background(), "0.0.0.0:9090")
 }
 
 func TestSerializeTransferIxData(t *testing.T) {
@@ -72,7 +76,7 @@ func TestTransferToken(t *testing.T) {
 
 	// Transfer token
 	cmd := &fundAccountCmd{}
-	mnemonic, client, wsClient := getBasicData()
+	mnemonic, client, wsClient := getBasicData("localhost")
 
 	tokenMintPubkey := "8a6Kn1uwFAuePztJSBkLjUvJiD6YWZ33JMuSaXErKPCX"
 	srcAta := "BPRyt1DwNCzMpbnMkzxbkj1A6sNRN5KP8Ej4iGeudtLm"
@@ -108,7 +112,7 @@ func TestCreateAssociatedProgram(t *testing.T) {
 	t.Skip()
 
 	cmd := &fundAccountCmd{}
-	mnemonic, client, wsClient := getBasicData()
+	mnemonic, client, wsClient := getBasicData("localhost")
 
 	tokenMintPubkey := solanago.MustPublicKeyFromBase58("8a6Kn1uwFAuePztJSBkLjUvJiD6YWZ33JMuSaXErKPCX")
 
@@ -122,13 +126,13 @@ func TestCreateAssociatedProgram(t *testing.T) {
 	ownerAta, _, err := solanago.FindAssociatedTokenAddress(ownerPubkey, tokenMintPubkey)
 
 	// Query owner ata. This should return error
-	_, err = querySolanaAccountBalance(client, ownerAta.String())
+	_, err = solana.QuerySolanaAccountBalance(client, ownerAta.String())
 	require.True(t, strings.Contains(err.Error(), "could not find account"))
 
 	cmd.createAssociatedAccount(client, wsClient, mnemonic, ownerPubkey, tokenMintPubkey)
 
 	// Query account ata
-	balance, err := querySolanaAccountBalance(client, ownerAta.String())
+	balance, err := solana.QuerySolanaAccountBalance(client, ownerAta.String())
 	require.Nil(t, err)
 	require.Equal(t, big.NewInt(0), balance)
 }

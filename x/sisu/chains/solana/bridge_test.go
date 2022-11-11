@@ -24,7 +24,7 @@ func mockForBridgeTest() (sdk.Context, keeper.Keeper) {
 	return ctx, k
 }
 
-func TestParseSolana(t *testing.T) {
+func TestParseIncoming(t *testing.T) {
 	bridgeProgramId := "HguMTvmDfspHuEWycDSP1XtVQJi47hVNAyLbFEf2EJEQ"
 
 	ctx, k := mockForBridgeTest()
@@ -34,11 +34,12 @@ func TestParseSolana(t *testing.T) {
 
 	bridge := NewBridge("solana-devnet", k, cfg)
 
-	transferOut := solanatypes.TransferOutInstruction{
-		Instruction: solanatypes.TranserOut,
-		Data: solanatypes.TransferOutData{
-			Amount: *big.NewInt(100),
-		},
+	transferOut := solanatypes.TransferOutData{
+		Instruction:  solanatypes.TransferOut,
+		Amount:       *big.NewInt(100),
+		TokenAddress: "8a6Kn1uwFAuePztJSBkLjUvJiD6YWZ33JMuSaXErKPCX",
+		ChainId:      1,
+		Recipient:    "0x8095f5b69F2970f38DC6eBD2682ed71E4939f988",
 	}
 
 	bz, err := transferOut.Serialize()

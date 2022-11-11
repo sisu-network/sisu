@@ -43,6 +43,7 @@ type SolanaConfig struct {
 	BlockTime       int    `toml:"block_time" json:"block_time"`
 	AdjustTime      int    `toml:"adjust_time" json:"adjust_time"`
 	BridgeProgramId string `toml:"bridge_program_id" json:"bridge_program_id"`
+	BridgePda       string `toml:"bridge_pda" json:"bridge_pda"`
 }
 
 func (c *CardanoConfig) GetCardanoNetwork() cardano.Network {
