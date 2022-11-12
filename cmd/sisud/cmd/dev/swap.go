@@ -51,14 +51,9 @@ transfer params.
 			amount, _ := cmd.Flags().GetInt(flags.Amount)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 			cardanoChain, _ := cmd.Flags().GetString(flags.CardanoChain)
-			cardanoMnemonic, _ := cmd.Flags().GetString(flags.CardanoMnemonic)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 			deyesUrl, _ := cmd.Flags().GetString(flags.DeyesApiUrl)
 			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
-
-			if len(cardanoMnemonic) == 0 {
-				cardanoMnemonic = mnemonic
-			}
 
 			c := &swapCommand{}
 
@@ -95,7 +90,7 @@ transfer params.
 				amountBigInt = new(big.Int).Mul(amountBigInt, utils.ONE_ADA_IN_LOVELACE)
 
 				c.swapFromCardano(src, dst, token, recipient, vault, amountBigInt, cardanoChain,
-					cardanoSecret, cardanoMnemonic, deyesUrl)
+					cardanoSecret, mnemonic, deyesUrl)
 			} else if libchain.IsSolanaChain(src) {
 				allPubKeys := queryPubKeys(context.Background(), sisuRpc)
 
@@ -117,7 +112,6 @@ transfer params.
 	cmd.Flags().Int(flags.Amount, 1, "The amount of token to be transferred")
 	cmd.Flags().String(flags.DeyesApiUrl, "http://127.0.0.1:31001", "Url to deyes api server.")
 	cmd.Flags().String(flags.CardanoChain, "", "Cardano chain.")
-	cmd.Flags().String(flags.CardanoMnemonic, "", "Cardano mnemonic.")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "Genesis folder that contains configuration files.")
 

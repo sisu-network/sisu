@@ -44,20 +44,15 @@ func FundSisu() *cobra.Command {
 			tokenString, _ := cmd.Flags().GetString(flags.Erc20Symbols)
 			vaultString, _ := cmd.Flags().GetString(flags.VaultAddrs)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
-			cardanoMnemonic, _ := cmd.Flags().GetString(flags.CardanoMnemonic)
 			cardanoNetwork, _ := cmd.Flags().GetString(flags.CardanoChain)
 			enabledChains, _ := cmd.Flags().GetString(flags.EnabledNonEvmChains)
 			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
-
-			if len(cardanoMnemonic) == 0 {
-				cardanoMnemonic = mnemonic
-			}
 
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 			tokens := strings.Split(tokenString, ",")
 
 			c := &fundAccountCmd{}
-			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, cardanoMnemonic, tokens, vaultString,
+			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokens, vaultString,
 				sisuRpc, cardanoNetwork, cardanoSecret, enabledChains, genesisFolder)
 
 			return nil
@@ -71,7 +66,6 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.VaultAddrs, fmt.Sprintf("%s,%s", ExpectedVaultAddress, ExpectedVaultAddress), "List of vault addresses")
 	cmd.Flags().String(flags.Erc20Symbols, "SISU,ADA", "List of ERC20 to approve")
 	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "The genesis folder that contains config files to generate data.")
-	cmd.Flags().String(flags.CardanoMnemonic, "", "The blockfrost secret to interact with cardano network.")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 	cmd.Flags().String(flags.CardanoChain, "cardano-testnet", "The Cardano network that we are interacting with.")
 	cmd.Flags().String(flags.EnabledNonEvmChains, "", "List of non-evm chains that you want to enable (e.g. cardano-testnet, solana-devnet, etc...). Each chain is separated by a comma")
@@ -80,7 +74,7 @@ func FundSisu() *cobra.Command {
 }
 
 func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic string,
-	cardanoMnemonic string, tokens []string, vaultString string, sisuRpc, cardanoNetwork, cardanoSecret string,
+	tokens []string, vaultString string, sisuRpc, cardanoNetwork, cardanoSecret string,
 	enabledChains, genesisFolder string) {
 	chains := strings.Split(chainString, ",")
 	vaults := strings.Split(vaultString, ",")
@@ -109,7 +103,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 
 		cardanoAddr := hutils.GetAddressFromCardanoPubkey(cardanoKey)
 		log.Info("Sisu Cardano Gateway = ", cardanoAddr)
-		c.fundCardano(cardanoAddr, cardanoMnemonic, cardanoNetwork, cardanoSecret, sisuRpc, tokens)
+		c.fundCardano(cardanoAddr, mnemonic, cardanoNetwork, cardanoSecret, sisuRpc, tokens)
 	}
 
 	if strings.Index(enabledChains, "solana") >= 0 {

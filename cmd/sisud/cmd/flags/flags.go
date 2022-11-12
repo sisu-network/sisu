@@ -38,7 +38,6 @@ const (
 	MinimumGasPrices    = "minimum-gas-prices"
 	CardanoChain        = "cardano-chain"
 	CardanoSecret       = "cardano-secret"
-	CardanoMnemonic     = "cardano-mnemonic"
 	CardanoDbConfig     = "cardano-db-config"
 	DeyesApiUrl         = "deyes-api-url"
 	EnabledNonEvmChains = "enabled-non-evm-chains"
