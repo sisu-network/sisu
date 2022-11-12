@@ -28,6 +28,7 @@ const (
 	ContractHash        = "contract-hash"
 	Tokens              = "tokens"
 	Account             = "account"
+	Recipient           = "recipient"
 	Src                 = "src"
 	SrcUrl              = "src-url"
 	Dst                 = "dst"

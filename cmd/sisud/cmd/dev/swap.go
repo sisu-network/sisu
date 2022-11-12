@@ -47,13 +47,15 @@ transfer params.
 			srcUrl, _ := cmd.Flags().GetString(flags.SrcUrl)
 			dst, _ := cmd.Flags().GetString(flags.Dst)
 			tokenSymbol, _ := cmd.Flags().GetString(flags.Erc20Symbol)
-			recipient, _ := cmd.Flags().GetString(flags.Account)
+			recipient, _ := cmd.Flags().GetString(flags.Recipient)
 			amount, _ := cmd.Flags().GetInt(flags.Amount)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 			cardanoChain, _ := cmd.Flags().GetString(flags.CardanoChain)
 			cardanoMnemonic, _ := cmd.Flags().GetString(flags.CardanoMnemonic)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 			deyesUrl, _ := cmd.Flags().GetString(flags.DeyesApiUrl)
+			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
+
 			if len(cardanoMnemonic) == 0 {
 				cardanoMnemonic = mnemonic
 			}
@@ -61,7 +63,7 @@ transfer params.
 			c := &swapCommand{}
 
 			if len(recipient) == 0 {
-				panic(flags.Account + " cannot be empty")
+				panic(flags.Recipient + " cannot be empty")
 			}
 
 			log.Info("srcUrl = ", srcUrl)
@@ -94,6 +96,11 @@ transfer params.
 
 				c.swapFromCardano(src, dst, token, recipient, vault, amountBigInt, cardanoChain,
 					cardanoSecret, cardanoMnemonic, deyesUrl)
+			} else if libchain.IsSolanaChain(src) {
+				allPubKeys := queryPubKeys(context.Background(), sisuRpc)
+
+				c.swapFromSolana(genesisFolder, src, mnemonic, srcToken, recipient,
+					libchain.GetChainIntFromId(dst).Uint64(), uint64(amount), allPubKeys)
 			}
 
 			return nil
@@ -106,12 +113,13 @@ transfer params.
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
 	cmd.Flags().String(flags.Dst, "ganache2", "Destination chain where the token is transferred to")
 	cmd.Flags().String(flags.Erc20Symbol, "SISU", "ID of the ERC20 to transferred")
-	cmd.Flags().String(flags.Account, "", "Recipient address in the destination chain")
+	cmd.Flags().String(flags.Recipient, "", "Recipient address in the destination chain")
 	cmd.Flags().Int(flags.Amount, 1, "The amount of token to be transferred")
 	cmd.Flags().String(flags.DeyesApiUrl, "http://127.0.0.1:31001", "Url to deyes api server.")
 	cmd.Flags().String(flags.CardanoChain, "", "Cardano chain.")
 	cmd.Flags().String(flags.CardanoMnemonic, "", "Cardano mnemonic.")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
+	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "Genesis folder that contains configuration files.")
 
 	return cmd
 }

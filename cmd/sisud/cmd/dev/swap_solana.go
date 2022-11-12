@@ -1,16 +1,39 @@
 package dev
 
 import (
-	"math/big"
+	"context"
 	"path/filepath"
 
 	solanago "github.com/gagliardetto/solana-go"
+	"github.com/gagliardetto/solana-go/rpc"
+	"github.com/gagliardetto/solana-go/rpc/ws"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/x/sisu/chains/solana"
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
 )
 
-func (c *swapCommand) swapFromSolana(genesisFolder, chain, mnemonic, tokenAddr string, amount *big.Int, allPubKeys map[string][]byte) {
-	// approveIx := c.approveSolanaIx(genesisFolder, chain, mnemonic, tokenAddr, amount.Uint64())
+func (c *swapCommand) swapFromSolana(genesisFolder, chain, mnemonic, tokenAddr, recipient string,
+	dstChain uint64, amount uint64, allPubKeys map[string][]byte) {
+	feePayer := GetSolanaPrivateKey(mnemonic)
+
+	solanaConfig, err := config.ReadSolanaConfig(filepath.Join(genesisFolder, "solana_config.json"))
+	if err != nil {
+		panic(err)
+	}
+
+	client := rpc.New(solanaConfig.Rpc)
+	wsClient, err := ws.Connect(context.Background(), solanaConfig.Ws)
+	if err != nil {
+		panic(err)
+	}
+
+	approveIx := c.approveSolanaIx(genesisFolder, chain, mnemonic, tokenAddr, amount)
+	transferIx := c.transferTokenIx(genesisFolder, mnemonic, tokenAddr, recipient, dstChain, amount)
+
+	err = solana.SignAndSubmit(client, wsClient, []solanago.Instruction{approveIx, transferIx}, feePayer)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (c *swapCommand) approveSolanaIx(genesisFolder, chain, mnemonic, tokenAddr string, amount uint64) solanago.Instruction {

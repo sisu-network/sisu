@@ -3,7 +3,6 @@ package dev
 import (
 	"context"
 	"crypto/ed25519"
-	"fmt"
 	"math/big"
 	"path/filepath"
 
@@ -122,7 +121,7 @@ func (c *fundAccountCmd) createAssociatedAccount(client *rpc.Client, wsClient *w
 	_, err = solana.QuerySolanaAccountBalance(client, ownerAta.String())
 	if err == nil {
 		// Account already existed, do nothing
-		fmt.Printf("Accounts %s has been created\n", ownerAta.String())
+		log.Verbosef("Accounts %s has been created\n", ownerAta.String())
 		return ownerAta, nil
 	}
 
