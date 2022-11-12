@@ -6,7 +6,7 @@ option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 message Token {
   string id = 1;
   string price = 2;
-  int32 decimals = 3;
+  bytes decimals = 3;
   repeated string chains = 4;
   repeated string addresses = 5;
 }

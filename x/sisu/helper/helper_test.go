@@ -25,13 +25,14 @@ func TestGasCostInToken(t *testing.T) {
 		"NATIVE_GANACHE1": {
 			Id:       "NATIVE_GANACHE1",
 			Price:    new(big.Int).Mul(big.NewInt(2), utils.EthToWei).String(), // $2
-			Decimals: 18,
+			Chains:   []string{"ganache1"},
+			Decimals: []byte{18},
 		},
 		"SISU": {
 			Id:        "SISU",
 			Price:     new(big.Int).Mul(big.NewInt(4), utils.EthToWei).String(), // $4
-			Decimals:  18,
 			Chains:    []string{"ganache1", "ganache2"},
+			Decimals:  []byte{18, 18},
 			Addresses: []string{"", ""},
 		},
 	})

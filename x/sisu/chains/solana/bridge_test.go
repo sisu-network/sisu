@@ -2,7 +2,6 @@ package solana
 
 import (
 	"encoding/json"
-	"math/big"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -36,7 +35,7 @@ func TestParseIncoming(t *testing.T) {
 
 	transferOut := solanatypes.TransferOutData{
 		Instruction:  solanatypes.TransferOut,
-		Amount:       *big.NewInt(100),
+		Amount:       100,
 		TokenAddress: "8a6Kn1uwFAuePztJSBkLjUvJiD6YWZ33JMuSaXErKPCX",
 		ChainId:      1,
 		Recipient:    "0x8095f5b69F2970f38DC6eBD2682ed71E4939f988",

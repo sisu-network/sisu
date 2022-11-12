@@ -7,6 +7,7 @@ import (
 	solanago "github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/gagliardetto/solana-go/rpc/ws"
+	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/chains/solana"
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
@@ -51,12 +52,24 @@ func (c *swapCommand) approveSolanaIx(genesisFolder, chain, mnemonic, tokenAddr 
 		panic(err)
 	}
 	bridgePda := solanago.MustPublicKeyFromBase58(solanaConfig.BridgePda)
-	// ix := solanatypes.NewApproveCheckedIx(ownerAta, tokenMintPubkey, bridgePda, amount,
-	// 	byte(token.Decimals))
 
-	// TODO: Use custom decimals for the token in solana chain.
+	// Get token config
+	var decimal byte
+	tokens := helper.GetTokens(filepath.Join(genesisFolder, "tokens.json"))
+	for _, token := range tokens {
+		for j, c := range token.Chains {
+			if c == chain && token.Addresses[j] == tokenAddr {
+				decimal = token.Decimals[j]
+			}
+		}
+	}
+
+	if decimal == 0 {
+		panic("Invalid decimals")
+	}
+
 	ix := solanatypes.NewApproveCheckedIx(ownerPubkey, ownerAta, tokenMintPubkey, bridgePda, amount,
-		byte(8))
+		decimal)
 
 	return ix
 }
