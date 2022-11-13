@@ -91,11 +91,17 @@ func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx
 				continue
 			}
 
+			amount, err := token.ConvertAmountToSisuAmount(chain, big.NewInt(int64(transferOut.Amount)))
+			if err != nil {
+				log.Warnf("Cannot convert amount %d on chain %s", transferOut.Amount, chain)
+				continue
+			}
+
 			ret = append(ret, &types.Transfer{
 				FromChain:   chain,
 				FromHash:    outerTx.TransactionInner.Signatures[0],
 				Token:       token.Id,
-				Amount:      fmt.Sprintf("%d", transferOut.Amount), // TODO Convert token amount
+				Amount:      amount.String(),
 				ToChain:     libchain.GetChainNameFromInt(big.NewInt(int64(transferOut.ChainId))),
 				ToRecipient: transferOut.Recipient,
 			})

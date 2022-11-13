@@ -95,7 +95,7 @@ transfer params.
 				allPubKeys := queryPubKeys(context.Background(), sisuRpc)
 
 				c.swapFromSolana(genesisFolder, src, mnemonic, srcToken, recipient,
-					libchain.GetChainIntFromId(dst).Uint64(), uint64(amount), allPubKeys)
+					libchain.GetChainIntFromId(dst).Uint64(), uint64(amount*100_000_000), allPubKeys)
 			}
 
 			return nil
