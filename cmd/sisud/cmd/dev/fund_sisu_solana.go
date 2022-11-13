@@ -3,7 +3,6 @@ package dev
 import (
 	"context"
 	"crypto/ed25519"
-	"math/big"
 	"path/filepath"
 
 	"github.com/cosmos/go-bip39"
@@ -60,29 +59,34 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, allPubKeys m
 			}
 
 			if libchain.IsSolanaChain(token.Chains[i]) {
+				decimals := token.GetDeciamls(solanaConfig.Chain)
 				tokentMintPubKey := solanago.MustPublicKeyFromBase58(token.Addresses[i])
 
 				// Create source ata
-				sourceAta, err := c.createAssociatedAccount(client, wsClient, mnemonic, faucet, tokentMintPubKey)
+				sourceAta, created, err := c.createAssociatedAccount(client, wsClient, mnemonic, faucet, tokentMintPubKey)
 				if err != nil {
 					panic(err)
 				}
+				if created {
+					c.mintToken(client, wsClient, mnemonic, tokentMintPubKey, decimals, sourceAta, 1_000_000*100_000_000)
+				}
 
 				// Create mpc ata
-				mpcAta, err := c.createAssociatedAccount(client, wsClient, mnemonic, mpcAccount, tokentMintPubKey)
+				mpcAta, _, err := c.createAssociatedAccount(client, wsClient, mnemonic, mpcAccount, tokentMintPubKey)
 				if err != nil {
 					panic(err)
 				}
 
 				// Fund the address
-				c.transferSolanaToken(client, wsClient, mnemonic, token.Addresses[i], sourceAta.String(), mpcAta.String())
+				c.transferSolanaToken(client, wsClient, mnemonic, token.Addresses[i],
+					decimals, sourceAta.String(), mpcAta.String(), 100*100_000_000)
 			}
 		}
 	}
 }
 
-func (c *fundAccountCmd) transferSolanaToken(client *rpc.Client, wsClient *ws.Client, mnemonic, token,
-	sourceAta, dstAta string) {
+func (c *fundAccountCmd) transferSolanaToken(client *rpc.Client, wsClient *ws.Client, mnemonic,
+	token string, tokenDecimals byte, sourceAta, dstAta string, amount uint64) {
 	feePayer := GetSolanaPrivateKey(mnemonic)
 	feePayerPubkey := feePayer.PublicKey()
 
@@ -93,8 +97,8 @@ func (c *fundAccountCmd) transferSolanaToken(client *rpc.Client, wsClient *ws.Cl
 		solanago.MustPublicKeyFromBase58(token),
 		solanago.MustPublicKeyFromBase58(dstAta),
 		feePayerPubkey,
-		big.NewInt(100),
-		8,
+		amount,
+		tokenDecimals,
 	)
 
 	err := solana.SignAndSubmit(client, wsClient, []solanago.Instruction{ix}, feePayer)
@@ -104,7 +108,7 @@ func (c *fundAccountCmd) transferSolanaToken(client *rpc.Client, wsClient *ws.Cl
 }
 
 func (c *fundAccountCmd) createAssociatedAccount(client *rpc.Client, wsClient *ws.Client, mnemonic string,
-	owner, tokenMint solanago.PublicKey) (solanago.PublicKey, error) {
+	owner, tokenMint solanago.PublicKey) (solanago.PublicKey, bool, error) {
 	privateKey := GetSolanaPrivateKey(mnemonic)
 	feePayer := privateKey.PublicKey()
 
@@ -122,7 +126,7 @@ func (c *fundAccountCmd) createAssociatedAccount(client *rpc.Client, wsClient *w
 	if err == nil {
 		// Account already existed, do nothing
 		log.Verbosef("Accounts %s has been created\n", ownerAta.String())
-		return ownerAta, nil
+		return ownerAta, false, nil
 	}
 
 	log.Verbosef("Creating new ATA account, owner = %s, ownerAta = %s, tokenMint = %s", owner.String(),
@@ -131,5 +135,21 @@ func (c *fundAccountCmd) createAssociatedAccount(client *rpc.Client, wsClient *w
 	// Create a new account
 	ix := solanatypes.NewCreateAssociatedAccountIx(feePayer, owner, ownerAta, tokenMint)
 
-	return ownerAta, solana.SignAndSubmit(client, wsClient, []solanago.Instruction{ix}, privateKey)
+	return ownerAta, true, solana.SignAndSubmit(client, wsClient, []solanago.Instruction{ix}, privateKey)
+}
+
+func (c *fundAccountCmd) mintToken(client *rpc.Client, wsClient *ws.Client, mnemonic string,
+	tokenMint solanago.PublicKey, tokenDecimals byte, receiverAta solanago.PublicKey, amount uint64) error {
+	privateKey := GetSolanaPrivateKey(mnemonic)
+	owner := privateKey.PublicKey()
+
+	mintTokenIx := solanatypes.NewMintTokenIx(
+		tokenMint,
+		receiverAta,
+		owner,
+		tokenDecimals,
+		amount,
+	)
+
+	return solana.SignAndSubmit(client, wsClient, []solanago.Instruction{mintTokenIx}, privateKey)
 }

@@ -19,6 +19,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var TokenMintPubkey = solanago.MustPublicKeyFromBase58("AJdUMt177iQ19J63ybkXtUVD6sK8dxD5ibietQANuv9S")
+
 func getBasicData(network string) (string, *rpc.Client, *ws.Client) {
 	var rpcEndpoint string
 	var wssEndpoint string
@@ -78,11 +80,10 @@ func TestTransferToken(t *testing.T) {
 	cmd := &fundAccountCmd{}
 	mnemonic, client, wsClient := getBasicData("localhost")
 
-	tokenMintPubkey := "8a6Kn1uwFAuePztJSBkLjUvJiD6YWZ33JMuSaXErKPCX"
 	srcAta := "BPRyt1DwNCzMpbnMkzxbkj1A6sNRN5KP8Ej4iGeudtLm"
 	dstAta := "BJ9ArHvbeUhVLChS2yksw8xqvoRpWYLtGkg7CVHNa31a"
 
-	cmd.transferSolanaToken(client, wsClient, mnemonic, tokenMintPubkey, srcAta, dstAta)
+	cmd.transferSolanaToken(client, wsClient, mnemonic, TokenMintPubkey.String(), 8, srcAta, dstAta, 1000)
 }
 
 // Sanity check on localhost. Disabled by default. Enable if you want to debug the fund command.
@@ -114,8 +115,6 @@ func TestCreateAssociatedProgram(t *testing.T) {
 	cmd := &fundAccountCmd{}
 	mnemonic, client, wsClient := getBasicData("localhost")
 
-	tokenMintPubkey := solanago.MustPublicKeyFromBase58("8a6Kn1uwFAuePztJSBkLjUvJiD6YWZ33JMuSaXErKPCX")
-
 	// Generate a random private key
 	privKey, err := solanago.NewRandomPrivateKey()
 	if err != nil {
@@ -123,16 +122,32 @@ func TestCreateAssociatedProgram(t *testing.T) {
 	}
 
 	ownerPubkey := privKey.PublicKey()
-	ownerAta, _, err := solanago.FindAssociatedTokenAddress(ownerPubkey, tokenMintPubkey)
+	ownerAta, _, err := solanago.FindAssociatedTokenAddress(ownerPubkey, TokenMintPubkey)
 
 	// Query owner ata. This should return error
 	_, err = solana.QuerySolanaAccountBalance(client, ownerAta.String())
 	require.True(t, strings.Contains(err.Error(), "could not find account"))
 
-	cmd.createAssociatedAccount(client, wsClient, mnemonic, ownerPubkey, tokenMintPubkey)
+	cmd.createAssociatedAccount(client, wsClient, mnemonic, ownerPubkey, TokenMintPubkey)
 
 	// Query account ata
 	balance, err := solana.QuerySolanaAccountBalance(client, ownerAta.String())
 	require.Nil(t, err)
 	require.Equal(t, big.NewInt(0), balance)
+}
+
+func TestMintSolanaToken(t *testing.T) {
+	t.Skip()
+
+	cmd := &fundAccountCmd{}
+	mnemonic, client, wsClient := getBasicData("devnet")
+
+	err := cmd.mintToken(client, wsClient, mnemonic, TokenMintPubkey, 8,
+		solanago.MustPublicKeyFromBase58("B6hYN4gKqN5iRThXuP7rAX4aH7vY2HnJLFLvsGqiuiKd"),
+		100*100_000_000,
+	)
+
+	if err != nil {
+		panic(err)
+	}
 }

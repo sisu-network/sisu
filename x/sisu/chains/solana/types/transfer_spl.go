@@ -1,8 +1,6 @@
 package types
 
 import (
-	"math/big"
-
 	solanago "github.com/gagliardetto/solana-go"
 
 	"github.com/gagliardetto/solana-go"
@@ -36,7 +34,7 @@ type TransferSplTokenIx struct {
 // 		},
 // 		data
 // );
-func NewTransferTokenIx(sourceAta, token, dstAta, feePayerPubkey solanago.PublicKey, amount *big.Int, decimals byte) *TransferSplTokenIx {
+func NewTransferTokenIx(sourceAta, token, dstAta, feePayerPubkey solanago.PublicKey, amount uint64, decimals byte) *TransferSplTokenIx {
 	// This is the key source code in JS.
 	// 	const keys = addSigners(
 	// 		[
@@ -57,7 +55,7 @@ func NewTransferTokenIx(sourceAta, token, dstAta, feePayerPubkey solanago.Public
 
 	data := &TransferSplTokenData{
 		Instruction: 12,
-		Amount:      amount.Uint64(),
+		Amount:      amount,
 		Decimals:    decimals,
 	}
 

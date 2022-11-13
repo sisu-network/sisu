@@ -9,3 +9,13 @@ func (m *Token) GetAddressForChain(c string) string {
 
 	return ""
 }
+
+func (m *Token) GetDeciamls(c string) byte {
+	for i, chain := range m.Chains {
+		if chain == c {
+			return m.Decimals[i]
+		}
+	}
+
+	return 0
+}

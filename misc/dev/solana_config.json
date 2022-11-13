@@ -1,0 +1,10 @@
+{
+  "enable": true,
+  "chain": "solana-devnet",
+  "rpc": "https://api.devnet.solana.com",
+  "ws": "wss://api.devnet.solana.com",
+  "block_time": 50,
+  "adust_time": 10,
+  "bridge_program_id": "5Bt9o8FrGK9E5NDqiq3z7hDD6SXAJXwMNsrmTaqJEPfb",
+  "bridge_pda": "2NP5bTNFTviJjByAoq1eYNq6zH175M4P1sFFaqGTjBcL"
+}
