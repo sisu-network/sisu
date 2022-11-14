@@ -14,7 +14,7 @@ import (
 )
 
 func (c *swapCommand) swapFromSolana(genesisFolder, chain, mnemonic, tokenAddr, recipient string,
-	dstChain uint64, amount uint64, allPubKeys map[string][]byte) {
+	dstChain uint64, amount uint64) {
 	feePayer := GetSolanaPrivateKey(mnemonic)
 
 	solanaConfig, err := config.ReadSolanaConfig(filepath.Join(genesisFolder, "solana_config.json"))

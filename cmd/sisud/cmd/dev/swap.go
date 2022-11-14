@@ -92,10 +92,8 @@ transfer params.
 				c.swapFromCardano(src, dst, token, recipient, vault, amountBigInt, cardanoChain,
 					cardanoSecret, mnemonic, deyesUrl)
 			} else if libchain.IsSolanaChain(src) {
-				allPubKeys := queryPubKeys(context.Background(), sisuRpc)
-
 				c.swapFromSolana(genesisFolder, src, mnemonic, srcToken, recipient,
-					libchain.GetChainIntFromId(dst).Uint64(), uint64(amount*100_000_000), allPubKeys)
+					libchain.GetChainIntFromId(dst).Uint64(), uint64(amount*100_000_000))
 			}
 
 			return nil

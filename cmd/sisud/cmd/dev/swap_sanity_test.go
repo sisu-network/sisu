@@ -1,7 +1,6 @@
 package dev
 
 import (
-	"context"
 	"testing"
 
 	solanago "github.com/gagliardetto/solana-go"
@@ -44,11 +43,11 @@ func TestTransferOut(t *testing.T) {
 }
 
 func TestSwapFromSolana(t *testing.T) {
-	cmd := &swapCommand{}
+	t.Skip()
 
-	allPubKeys := queryPubKeys(context.Background(), "0.0.0.0:9090")
+	cmd := &swapCommand{}
 
 	cmd.swapFromSolana("../../../../misc/test", "solana-devnet", utils.LOCALHOST_MNEMONIC,
 		"AJdUMt177iQ19J63ybkXtUVD6sK8dxD5ibietQANuv9S", "0x8095f5b69F2970f38DC6eBD2682ed71E4939f988",
-		189985, 300, allPubKeys)
+		189985, 300)
 }
