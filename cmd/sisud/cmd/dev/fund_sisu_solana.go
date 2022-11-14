@@ -12,7 +12,6 @@ import (
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
-	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/chains/solana"
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
@@ -37,7 +36,7 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, allPubKeys m
 
 	// Get all tokens
 	tokens := helper.GetTokens(filepath.Join(genesisFolder, "tokens.json"))
-	solanaConfig, err := config.ReadSolanaConfig(filepath.Join(genesisFolder, "solana_config.json"))
+	solanaConfig, err := helper.ReadCmdSolanaConfig(filepath.Join(genesisFolder, "solana_config.json"))
 	if err != nil {
 		panic(err)
 	}

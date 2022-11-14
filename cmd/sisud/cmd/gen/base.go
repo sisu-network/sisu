@@ -160,7 +160,7 @@ func getDeyesChains(cmd *cobra.Command, genesisFolder string) []econfig.Chain {
 	for _, chain := range enableChains {
 		if chain == "solana" {
 			// Read Solana config file.
-			solanaConfig := &config.SolanaConfig{}
+			solanaConfig := &helper.CmdSolanaConfig{}
 
 			file, _ := ioutil.ReadFile(filepath.Join(genesisFolder, "solana_config.json"))
 			err := json.Unmarshal([]byte(file), solanaConfig)

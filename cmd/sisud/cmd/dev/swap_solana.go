@@ -8,7 +8,6 @@ import (
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/gagliardetto/solana-go/rpc/ws"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
-	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/chains/solana"
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
 )
@@ -17,7 +16,7 @@ func (c *swapCommand) swapFromSolana(genesisFolder, chain, mnemonic, tokenAddr, 
 	dstChain uint64, amount uint64) {
 	feePayer := GetSolanaPrivateKey(mnemonic)
 
-	solanaConfig, err := config.ReadSolanaConfig(filepath.Join(genesisFolder, "solana_config.json"))
+	solanaConfig, err := helper.ReadCmdSolanaConfig(filepath.Join(genesisFolder, "solana_config.json"))
 	if err != nil {
 		panic(err)
 	}
@@ -47,7 +46,7 @@ func (c *swapCommand) approveSolanaIx(genesisFolder, chain, mnemonic, tokenAddr 
 		panic(err)
 	}
 
-	solanaConfig, err := config.ReadSolanaConfig(filepath.Join(genesisFolder, "solana_config.json"))
+	solanaConfig, err := helper.ReadCmdSolanaConfig(filepath.Join(genesisFolder, "solana_config.json"))
 	if err != nil {
 		panic(err)
 	}
@@ -84,7 +83,7 @@ func (c *swapCommand) transferTokenIx(genesisFolder, mnemonic, tokenAddr, recipi
 		panic(err)
 	}
 
-	solanaConfig, err := config.ReadSolanaConfig(filepath.Join(genesisFolder, "solana_config.json"))
+	solanaConfig, err := helper.ReadCmdSolanaConfig(filepath.Join(genesisFolder, "solana_config.json"))
 	if err != nil {
 		panic(err)
 	}
