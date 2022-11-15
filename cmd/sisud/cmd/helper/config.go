@@ -3,6 +3,7 @@ package helper
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 
 	cardanogo "github.com/echovl/cardano-go"
 )
@@ -34,8 +35,9 @@ func ReadCmdSolanaConfig(filePath string) (CmdSolanaConfig, error) {
 }
 
 type CardanoConfig struct {
-	BlockfrostSecret string `toml:"block_frost_secret"`
-	Chain            string `toml:"chain"`
+	Enable bool   `toml:"enable" json:"enable"`
+	Secret string `toml:"secret" json:"secret"`
+	Chain  string `toml:"chain" json:"chain"`
 }
 
 func (c *CardanoConfig) GetCardanoNetwork() cardanogo.Network {
@@ -45,4 +47,19 @@ func (c *CardanoConfig) GetCardanoNetwork() cardanogo.Network {
 	}
 
 	return cardanogo.Mainnet
+}
+
+func ReadCardanoConfig(genesisFolder string) CardanoConfig {
+	cfg := CardanoConfig{}
+
+	dat, err := os.ReadFile(filepath.Join(genesisFolder, "cardano.json"))
+	if err != nil {
+		panic(err)
+	}
+
+	if err := json.Unmarshal(dat, &cfg); err != nil {
+		panic(err)
+	}
+
+	return cfg
 }

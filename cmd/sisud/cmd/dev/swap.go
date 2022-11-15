@@ -21,6 +21,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
+	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
 )
 
 type swapCommand struct{}
@@ -51,7 +52,6 @@ transfer params.
 			amount, _ := cmd.Flags().GetInt(flags.Amount)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 			cardanoChain, _ := cmd.Flags().GetString(flags.CardanoChain)
-			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 			deyesUrl, _ := cmd.Flags().GetString(flags.DeyesApiUrl)
 			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 
@@ -89,8 +89,10 @@ transfer params.
 				amountBigInt := big.NewInt(int64(amount))
 				amountBigInt = new(big.Int).Mul(amountBigInt, utils.ONE_ADA_IN_LOVELACE)
 
+				cardanoconfig := helper.ReadCardanoConfig(genesisFolder)
+
 				c.swapFromCardano(src, dst, token, recipient, vault, amountBigInt, cardanoChain,
-					cardanoSecret, mnemonic, deyesUrl)
+					cardanoconfig.Secret, mnemonic, deyesUrl)
 			} else if libchain.IsSolanaChain(src) {
 				c.swapFromSolana(genesisFolder, src, mnemonic, srcToken, recipient,
 					libchain.GetChainIntFromId(dst).Uint64(), uint64(amount*100_000_000))
@@ -110,7 +112,6 @@ transfer params.
 	cmd.Flags().Int(flags.Amount, 1, "The amount of token to be transferred")
 	cmd.Flags().String(flags.DeyesApiUrl, "http://127.0.0.1:31001", "Url to deyes api server.")
 	cmd.Flags().String(flags.CardanoChain, "", "Cardano chain.")
-	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "Genesis folder that contains configuration files.")
 
 	return cmd

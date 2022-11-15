@@ -37,7 +37,6 @@ const (
 	Algo                = "algo"
 	MinimumGasPrices    = "minimum-gas-prices"
 	CardanoChain        = "cardano-chain"
-	CardanoSecret       = "cardano-secret"
 	CardanoDbConfig     = "cardano-db-config"
 	DeyesApiUrl         = "deyes-api-url"
 )

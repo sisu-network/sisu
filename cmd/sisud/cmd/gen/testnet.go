@@ -190,7 +190,6 @@ Example:
 	cmd.Flags().String(flagKeyringPassphrase, "", "Passphrase for keyring backend if using backend file. Leave it empty if use backend test")
 	cmd.Flags().String(flags.GenesisFolder, "./misc/test", "Relative path to the folder that contains genesis configuration.")
 	cmd.Flags().String(flags.CardanoChain, "cardano-testnet", "The cardano chain that Sisu will interact with.")
-	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 	cmd.Flags().String(flags.CardanoDbConfig, "", "Configuration for cardano sync db.")
 	return cmd
 }

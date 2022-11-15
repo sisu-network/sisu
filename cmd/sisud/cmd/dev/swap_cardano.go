@@ -28,8 +28,8 @@ func (c *swapCommand) getCardanoVault(ctx context.Context, sisuRpc string) strin
 }
 
 func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *types.Token,
-	destRecipient, cardanoVault string, value *big.Int, network string, blockfrostSecret, mnemonic string, deyesUrl string) {
-	privateKey, senderAddress := c.getSenderAddress(blockfrostSecret, mnemonic)
+	destRecipient, cardanoVault string, value *big.Int, network string, secret, mnemonic string, deyesUrl string) {
+	privateKey, senderAddress := c.getSenderAddress(secret, mnemonic)
 	receiver, err := cardano.NewAddress(cardanoVault)
 	if err != nil {
 		panic(err)

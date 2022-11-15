@@ -10,3 +10,8 @@ func IsSolanaEnabled(genesisFolder string) bool {
 
 	return solanaConfig.Enable
 }
+
+func IsCardanoEnabled(genesisFolder string) bool {
+	solanaConfig := ReadCardanoConfig(filepath.Join(genesisFolder, "cardano.json"))
+	return solanaConfig.Enable
+}
