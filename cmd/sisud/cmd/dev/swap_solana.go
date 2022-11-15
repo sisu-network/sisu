@@ -16,7 +16,7 @@ func (c *swapCommand) swapFromSolana(genesisFolder, chain, mnemonic, tokenAddr, 
 	dstChain uint64, amount uint64) {
 	feePayer := GetSolanaPrivateKey(mnemonic)
 
-	solanaConfig, err := helper.ReadCmdSolanaConfig(filepath.Join(genesisFolder, "solana_config.json"))
+	solanaConfig, err := helper.ReadCmdSolanaConfig(filepath.Join(genesisFolder, "solana.json"))
 	if err != nil {
 		panic(err)
 	}
@@ -46,7 +46,7 @@ func (c *swapCommand) approveSolanaIx(genesisFolder, chain, mnemonic, tokenAddr 
 		panic(err)
 	}
 
-	solanaConfig, err := helper.ReadCmdSolanaConfig(filepath.Join(genesisFolder, "solana_config.json"))
+	solanaConfig, err := helper.ReadCmdSolanaConfig(filepath.Join(genesisFolder, "solana.json"))
 	if err != nil {
 		panic(err)
 	}
@@ -83,7 +83,7 @@ func (c *swapCommand) transferTokenIx(genesisFolder, mnemonic, tokenAddr, recipi
 		panic(err)
 	}
 
-	solanaConfig, err := helper.ReadCmdSolanaConfig(filepath.Join(genesisFolder, "solana_config.json"))
+	solanaConfig, err := helper.ReadCmdSolanaConfig(filepath.Join(genesisFolder, "solana.json"))
 	if err != nil {
 		panic(err)
 	}

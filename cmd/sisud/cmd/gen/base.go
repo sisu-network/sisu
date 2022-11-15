@@ -106,7 +106,7 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 			// Read Solana config file.
 			solanaConfig := &config.SolanaConfig{}
 
-			file, _ := ioutil.ReadFile(filepath.Join(genesisFolder, "solana_config.json"))
+			file, _ := ioutil.ReadFile(filepath.Join(genesisFolder, "solana.json"))
 			err := json.Unmarshal([]byte(file), solanaConfig)
 			if err != nil {
 				panic(err)
@@ -162,7 +162,7 @@ func getDeyesChains(cmd *cobra.Command, genesisFolder string) []econfig.Chain {
 			// Read Solana config file.
 			solanaConfig := &helper.CmdSolanaConfig{}
 
-			file, _ := ioutil.ReadFile(filepath.Join(genesisFolder, "solana_config.json"))
+			file, _ := ioutil.ReadFile(filepath.Join(genesisFolder, "solana.json"))
 			err := json.Unmarshal([]byte(file), solanaConfig)
 			if err != nil {
 				panic(err)

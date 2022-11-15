@@ -36,7 +36,7 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, allPubKeys m
 
 	// Get all tokens
 	tokens := helper.GetTokens(filepath.Join(genesisFolder, "tokens.json"))
-	solanaConfig, err := helper.ReadCmdSolanaConfig(filepath.Join(genesisFolder, "solana_config.json"))
+	solanaConfig, err := helper.ReadCmdSolanaConfig(filepath.Join(genesisFolder, "solana.json"))
 	if err != nil {
 		panic(err)
 	}
