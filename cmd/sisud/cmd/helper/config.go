@@ -3,6 +3,8 @@ package helper
 import (
 	"encoding/json"
 	"os"
+
+	cardanogo "github.com/echovl/cardano-go"
 )
 
 type CmdSolanaConfig struct {
@@ -29,4 +31,18 @@ func ReadCmdSolanaConfig(filePath string) (CmdSolanaConfig, error) {
 	}
 
 	return cfg, nil
+}
+
+type CardanoConfig struct {
+	BlockfrostSecret string `toml:"block_frost_secret"`
+	Chain            string `toml:"chain"`
+}
+
+func (c *CardanoConfig) GetCardanoNetwork() cardanogo.Network {
+	switch c.Chain {
+	case "cardano-testnet":
+		return cardanogo.Preprod
+	}
+
+	return cardanogo.Mainnet
 }

@@ -270,7 +270,7 @@ func New(
 	partyManager := tss.NewPartyManager(app.globalData)
 	bridgeManager := chains.NewBridgeManager(app.appKeys.GetSignerAddress().String(), app.k, deyesClient, cfg)
 
-	txOutProducer := tss.NewTxOutputProducer(app.appKeys, app.k, cfg.Cardano, bridgeManager, txTracker)
+	txOutProducer := tss.NewTxOutputProducer(app.appKeys, app.k, bridgeManager, txTracker)
 	transferQueue := sisu.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss, app.appKeys)
 
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.k),

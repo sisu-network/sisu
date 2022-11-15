@@ -222,7 +222,6 @@ func (g *localDockerGenerator) getNodeSettings(chainID, keyringBackend string, i
 			DheartPort: 5678,
 			DeyesUrl:   fmt.Sprintf("http://deyes%d:31001", index),
 		},
-		Cardano: config.CardanoConfig{BlockfrostSecret: cardanoSecret},
 	}
 }
 

@@ -344,11 +344,6 @@ func generateSisuToml(settings *Setting, index int, nodeDir string) {
 		cfg.Sisu.EmailAlert = settings.emailAlert
 	}
 
-	if len(settings.cardanoSecret) > 0 {
-		cfg.Cardano.BlockfrostSecret = settings.cardanoSecret
-		cfg.Cardano.Chain = settings.cardanoChain
-	}
-
 	if settings.solanaConfig != nil {
 		cfg.Solana = *settings.solanaConfig
 	}

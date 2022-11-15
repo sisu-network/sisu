@@ -6,9 +6,7 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/echovl/cardano-go"
 	"github.com/sisu-network/sisu/common"
-	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/chains"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -28,9 +26,7 @@ type DefaultTxOutputProducer struct {
 	txTracker TxTracker
 
 	// Only use for cardano chain
-	cardanoConfig  config.CardanoConfig
-	cardanoNetwork cardano.Network
-	bridgeManager  chains.BridgeManager
+	bridgeManager chains.BridgeManager
 }
 
 type transferInData struct {
@@ -40,16 +36,13 @@ type transferInData struct {
 }
 
 func NewTxOutputProducer(appKeys common.AppKeys, keeper keeper.Keeper,
-	cardanoConfig config.CardanoConfig,
-
 	bridgeManager chains.BridgeManager,
 	txTracker TxTracker) TxOutputProducer {
 	return &DefaultTxOutputProducer{
-		signer:         appKeys.GetSignerAddress().String(),
-		keeper:         keeper,
-		txTracker:      txTracker,
-		cardanoNetwork: cardanoConfig.GetCardanoNetwork(),
-		bridgeManager:  bridgeManager,
+		signer:        appKeys.GetSignerAddress().String(),
+		keeper:        keeper,
+		txTracker:     txTracker,
+		bridgeManager: bridgeManager,
 	}
 }
 
