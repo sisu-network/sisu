@@ -25,7 +25,7 @@ const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 type Token struct {
 	Id        string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Price     string   `protobuf:"bytes,2,opt,name=price,proto3" json:"price,omitempty"`
-	Decimals  []byte   `protobuf:"bytes,3,opt,name=decimals,proto3" json:"decimals,omitempty"`
+	Decimals  []uint32 `protobuf:"varint,3,rep,packed,name=decimals,proto3" json:"decimals,omitempty"`
 	Chains    []string `protobuf:"bytes,4,rep,name=chains,proto3" json:"chains,omitempty"`
 	Addresses []string `protobuf:"bytes,5,rep,name=addresses,proto3" json:"addresses,omitempty"`
 }
@@ -77,7 +77,7 @@ func (m *Token) GetPrice() string {
 	return ""
 }
 
-func (m *Token) GetDecimals() []byte {
+func (m *Token) GetDecimals() []uint32 {
 	if m != nil {
 		return m.Decimals
 	}
@@ -111,14 +111,14 @@ var fileDescriptor_a9b13da34c0411e1 = []byte{
 	0x2c, 0x48, 0x2d, 0x56, 0xaa, 0xe7, 0x62, 0x0d, 0x01, 0x89, 0x0a, 0xf1, 0x71, 0x31, 0x65, 0xa6,
 	0x48, 0x30, 0x2a, 0x30, 0x6a, 0x70, 0x06, 0x31, 0x65, 0xa6, 0x08, 0x89, 0x70, 0xb1, 0x16, 0x14,
 	0x65, 0x26, 0xa7, 0x4a, 0x30, 0x81, 0x85, 0x20, 0x1c, 0x21, 0x29, 0x2e, 0x8e, 0x94, 0xd4, 0xe4,
-	0xcc, 0xdc, 0xc4, 0x9c, 0x62, 0x09, 0x66, 0x05, 0x46, 0x0d, 0x9e, 0x20, 0x38, 0x5f, 0x48, 0x8c,
+	0xcc, 0xdc, 0xc4, 0x9c, 0x62, 0x09, 0x66, 0x05, 0x66, 0x0d, 0xde, 0x20, 0x38, 0x5f, 0x48, 0x8c,
 	0x8b, 0x2d, 0x39, 0x23, 0x31, 0x33, 0xaf, 0x58, 0x82, 0x45, 0x81, 0x59, 0x83, 0x33, 0x08, 0xca,
 	0x13, 0x92, 0xe1, 0xe2, 0x4c, 0x4c, 0x49, 0x29, 0x4a, 0x2d, 0x2e, 0x4e, 0x2d, 0x96, 0x60, 0x05,
 	0x4b, 0x21, 0x04, 0x9c, 0x9c, 0x4f, 0x3c, 0x92, 0x63, 0xbc, 0xf0, 0x48, 0x8e, 0xf1, 0xc1, 0x23,
 	0x39, 0xc6, 0x09, 0x8f, 0xe5, 0x18, 0x2e, 0x3c, 0x96, 0x63, 0xb8, 0xf1, 0x58, 0x8e, 0x21, 0x4a,
 	0x33, 0x3d, 0xb3, 0x24, 0xa3, 0x34, 0x49, 0x2f, 0x39, 0x3f, 0x57, 0x1f, 0xe4, 0x7c, 0xdd, 0xbc,
 	0xd4, 0x92, 0xf2, 0xfc, 0xa2, 0x6c, 0x30, 0x47, 0xbf, 0x02, 0x42, 0x81, 0x7d, 0x91, 0xc4, 0x06,
-	0xf6, 0x93, 0x31, 0x20, 0x00, 0x00, 0xff, 0xff, 0x65, 0xb0, 0x1b, 0x20, 0xe7, 0x00, 0x00, 0x00,
+	0xf6, 0x93, 0x31, 0x20, 0x00, 0x00, 0xff, 0xff, 0x88, 0x7f, 0xe2, 0x3a, 0xe7, 0x00, 0x00, 0x00,
 }
 
 func (m *Token) Marshal() (dAtA []byte, err error) {
@@ -160,9 +160,20 @@ func (m *Token) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		}
 	}
 	if len(m.Decimals) > 0 {
-		i -= len(m.Decimals)
-		copy(dAtA[i:], m.Decimals)
-		i = encodeVarintToken(dAtA, i, uint64(len(m.Decimals)))
+		dAtA2 := make([]byte, len(m.Decimals)*10)
+		var j1 int
+		for _, num := range m.Decimals {
+			for num >= 1<<7 {
+				dAtA2[j1] = uint8(uint64(num)&0x7f | 0x80)
+				num >>= 7
+				j1++
+			}
+			dAtA2[j1] = uint8(num)
+			j1++
+		}
+		i -= j1
+		copy(dAtA[i:], dAtA2[:j1])
+		i = encodeVarintToken(dAtA, i, uint64(j1))
 		i--
 		dAtA[i] = 0x1a
 	}
@@ -208,9 +219,12 @@ func (m *Token) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovToken(uint64(l))
 	}
-	l = len(m.Decimals)
-	if l > 0 {
-		n += 1 + l + sovToken(uint64(l))
+	if len(m.Decimals) > 0 {
+		l = 0
+		for _, e := range m.Decimals {
+			l += sovToken(uint64(e))
+		}
+		n += 1 + sovToken(uint64(l)) + l
 	}
 	if len(m.Chains) > 0 {
 		for _, s := range m.Chains {
@@ -327,39 +341,81 @@ func (m *Token) Unmarshal(dAtA []byte) error {
 			m.Price = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
 		case 3:
-			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Decimals", wireType)
-			}
-			var byteLen int
-			for shift := uint(0); ; shift += 7 {
-				if shift >= 64 {
-					return ErrIntOverflowToken
+			if wireType == 0 {
+				var v uint32
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowToken
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					v |= uint32(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
 				}
-				if iNdEx >= l {
+				m.Decimals = append(m.Decimals, v)
+			} else if wireType == 2 {
+				var packedLen int
+				for shift := uint(0); ; shift += 7 {
+					if shift >= 64 {
+						return ErrIntOverflowToken
+					}
+					if iNdEx >= l {
+						return io.ErrUnexpectedEOF
+					}
+					b := dAtA[iNdEx]
+					iNdEx++
+					packedLen |= int(b&0x7F) << shift
+					if b < 0x80 {
+						break
+					}
+				}
+				if packedLen < 0 {
+					return ErrInvalidLengthToken
+				}
+				postIndex := iNdEx + packedLen
+				if postIndex < 0 {
+					return ErrInvalidLengthToken
+				}
+				if postIndex > l {
 					return io.ErrUnexpectedEOF
 				}
-				b := dAtA[iNdEx]
-				iNdEx++
-				byteLen |= int(b&0x7F) << shift
-				if b < 0x80 {
-					break
+				var elementCount int
+				var count int
+				for _, integer := range dAtA[iNdEx:postIndex] {
+					if integer < 128 {
+						count++
+					}
 				}
+				elementCount = count
+				if elementCount != 0 && len(m.Decimals) == 0 {
+					m.Decimals = make([]uint32, 0, elementCount)
+				}
+				for iNdEx < postIndex {
+					var v uint32
+					for shift := uint(0); ; shift += 7 {
+						if shift >= 64 {
+							return ErrIntOverflowToken
+						}
+						if iNdEx >= l {
+							return io.ErrUnexpectedEOF
+						}
+						b := dAtA[iNdEx]
+						iNdEx++
+						v |= uint32(b&0x7F) << shift
+						if b < 0x80 {
+							break
+						}
+					}
+					m.Decimals = append(m.Decimals, v)
+				}
+			} else {
+				return fmt.Errorf("proto: wrong wireType = %d for field Decimals", wireType)
 			}
-			if byteLen < 0 {
-				return ErrInvalidLengthToken
-			}
-			postIndex := iNdEx + byteLen
-			if postIndex < 0 {
-				return ErrInvalidLengthToken
-			}
-			if postIndex > l {
-				return io.ErrUnexpectedEOF
-			}
-			m.Decimals = append(m.Decimals[:0], dAtA[iNdEx:postIndex]...)
-			if m.Decimals == nil {
-				m.Decimals = []byte{}
-			}
-			iNdEx = postIndex
 		case 4:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Chains", wireType)

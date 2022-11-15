@@ -6,7 +6,6 @@ import (
 	"math"
 	"path/filepath"
 	"sort"
-	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/server"
@@ -98,22 +97,17 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 	}
 
 	// Check if solana is enabled
-	enableChainsString, _ := cmd.Flags().GetString(flags.EnabledNonEvmChains)
-	enableChains := strings.Split(enableChainsString, ",")
+	if helper.IsSolanaEnabled(genesisFolder) {
+		// Read Solana config file.
+		solanaConfig := &config.SolanaConfig{}
 
-	for _, chain := range enableChains {
-		if chain == "solana" {
-			// Read Solana config file.
-			solanaConfig := &config.SolanaConfig{}
-
-			file, _ := ioutil.ReadFile(filepath.Join(genesisFolder, "solana.json"))
-			err := json.Unmarshal([]byte(file), solanaConfig)
-			if err != nil {
-				panic(err)
-			}
-
-			setting.solanaConfig = solanaConfig
+		file, _ := ioutil.ReadFile(filepath.Join(genesisFolder, "solana.json"))
+		err := json.Unmarshal([]byte(file), solanaConfig)
+		if err != nil {
+			panic(err)
 		}
+
+		setting.solanaConfig = solanaConfig
 	}
 
 	return setting
@@ -123,8 +117,6 @@ func getDeyesChains(cmd *cobra.Command, genesisFolder string) []econfig.Chain {
 	cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 	cardanoDbConfig, _ := cmd.Flags().GetString(flags.CardanoDbConfig)
 	deyesChains := readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
-	enableChainsString, _ := cmd.Flags().GetString(flags.EnabledNonEvmChains)
-	enableChains := strings.Split(enableChainsString, ",")
 
 	chains := helper.GetChains(filepath.Join(genesisFolder, "chains.json"))
 	// Add Cardano config
@@ -157,25 +149,23 @@ func getDeyesChains(cmd *cobra.Command, genesisFolder string) []econfig.Chain {
 		})
 	}
 
-	for _, chain := range enableChains {
-		if chain == "solana" {
-			// Read Solana config file.
-			solanaConfig := &helper.CmdSolanaConfig{}
+	if helper.IsSolanaEnabled(genesisFolder) {
+		// Read Solana config file.
+		solanaConfig := &helper.CmdSolanaConfig{}
 
-			file, _ := ioutil.ReadFile(filepath.Join(genesisFolder, "solana.json"))
-			err := json.Unmarshal([]byte(file), solanaConfig)
-			if err != nil {
-				panic(err)
-			}
-
-			deyesChains = append(deyesChains, econfig.Chain{
-				Chain:                 solanaConfig.Chain,
-				BlockTime:             solanaConfig.BlockTime,
-				AdjustTime:            solanaConfig.AdjustTime,
-				SolanaBridgeProgramId: solanaConfig.BridgeProgramId,
-				Rpcs:                  []string{solanaConfig.Rpc},
-			})
+		file, _ := ioutil.ReadFile(filepath.Join(genesisFolder, "solana.json"))
+		err := json.Unmarshal([]byte(file), solanaConfig)
+		if err != nil {
+			panic(err)
 		}
+
+		deyesChains = append(deyesChains, econfig.Chain{
+			Chain:                 solanaConfig.Chain,
+			BlockTime:             solanaConfig.BlockTime,
+			AdjustTime:            solanaConfig.AdjustTime,
+			SolanaBridgeProgramId: solanaConfig.BridgeProgramId,
+			Rpcs:                  []string{solanaConfig.Rpc},
+		})
 	}
 
 	return deyesChains

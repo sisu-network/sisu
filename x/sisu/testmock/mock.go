@@ -69,19 +69,19 @@ func KeeperTestGenesis(ctx sdk.Context) keeper.Keeper {
 			Id:       "NATIVE_GANACHE1",
 			Price:    new(big.Int).Mul(big.NewInt(2), utils.EthToWei).String(),
 			Chains:   []string{"ganache1"},
-			Decimals: []byte{18},
+			Decimals: []uint32{18},
 		},
 		"NATIVE_GANACHE2": {
 			Id:       "NATIVE_GANACHE1",
 			Price:    new(big.Int).Mul(big.NewInt(2), utils.EthToWei).String(),
 			Chains:   []string{"ganache2"},
-			Decimals: []byte{18},
+			Decimals: []uint32{18},
 		},
 		"SISU": {
 			Id:       "SISU",
 			Price:    new(big.Int).Mul(big.NewInt(4), utils.EthToWei).String(),
 			Chains:   []string{"ganache1", "ganache2", "cardano-testnet", "solana-devnet"},
-			Decimals: []byte{18, 18, 6, 8},
+			Decimals: []uint32{18, 18, 6, 8},
 			Addresses: []string{
 				strings.ToLower(TestErc20TokenAddress),
 				strings.ToLower(TestErc20TokenAddress),
@@ -93,7 +93,7 @@ func KeeperTestGenesis(ctx sdk.Context) keeper.Keeper {
 			Id:       "ADA",
 			Price:    new(big.Int).Mul(big.NewInt(400_000_000), utils.GweiToWei).String(),
 			Chains:   []string{"ganache1", "ganache2", "cardano-testnet", "solana-devnet"},
-			Decimals: []byte{18, 18, 6, 8},
+			Decimals: []uint32{18, 18, 6, 8},
 			Addresses: []string{
 				"0xf0D676183dD5ae6b370adDdbE770235F23546f9d",
 				"0xf0D676183dD5ae6b370adDdbE770235F23546f9d",

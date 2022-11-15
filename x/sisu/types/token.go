@@ -20,7 +20,7 @@ func (t *Token) GetAddressForChain(c string) string {
 }
 
 // GetDeciamls returns the decimal of this token on a particular chain. Return 0 if not found.
-func (t *Token) GetDeciamls(c string) byte {
+func (t *Token) GetDeciamls(c string) uint32 {
 	for i, chain := range t.Chains {
 		if chain == c {
 			return t.Decimals[i]
@@ -36,7 +36,7 @@ func (t *Token) ConvertAmountToSisuAmount(chain string, amount *big.Int) (*big.I
 		return nil, fmt.Errorf("ConvertAmountToSisuAmount: Amount is nil")
 	}
 
-	var decimal byte
+	var decimal uint32
 	for i, c := range t.Chains {
 		if chain == c {
 			decimal = t.Decimals[i]

@@ -53,7 +53,7 @@ func (c *swapCommand) approveSolanaIx(genesisFolder, chain, mnemonic, tokenAddr 
 	bridgePda := solanago.MustPublicKeyFromBase58(solanaConfig.BridgePda)
 
 	// Get token config
-	var decimal byte
+	var decimal uint32
 	tokens := helper.GetTokens(filepath.Join(genesisFolder, "tokens.json"))
 	for _, token := range tokens {
 		for j, c := range token.Chains {
@@ -68,7 +68,7 @@ func (c *swapCommand) approveSolanaIx(genesisFolder, chain, mnemonic, tokenAddr 
 	}
 
 	ix := solanatypes.NewApproveCheckedIx(ownerPubkey, ownerAta, tokenMintPubkey, bridgePda, amount,
-		decimal)
+		byte(decimal))
 
 	return ix
 }

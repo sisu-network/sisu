@@ -14,7 +14,7 @@ func TestConvertAmountToSisuAmount(t *testing.T) {
 			"cardano",
 			"solana-devnet",
 		},
-		Decimals: []byte{
+		Decimals: []uint32{
 			18, 6, 8,
 		},
 	}

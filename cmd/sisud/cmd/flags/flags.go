@@ -40,5 +40,4 @@ const (
 	CardanoSecret       = "cardano-secret"
 	CardanoDbConfig     = "cardano-db-config"
 	DeyesApiUrl         = "deyes-api-url"
-	EnabledNonEvmChains = "enabled-non-evm-chains"
 )

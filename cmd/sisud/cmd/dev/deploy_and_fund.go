@@ -27,7 +27,6 @@ func DeployAndFund() *cobra.Command {
 			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 			cardanoNetwork, _ := cmd.Flags().GetString(flags.CardanoChain)
-			enabledChains, _ := cmd.Flags().GetString(flags.EnabledNonEvmChains)
 
 			log.Info("chainUrls = ", chainUrls)
 
@@ -66,7 +65,7 @@ func DeployAndFund() *cobra.Command {
 			log.Info("========= Fund token to sisu's account =========")
 			fundSisuCmd := &fundAccountCmd{}
 			fundSisuCmd.fundSisuAccounts(cmd.Context(), chainString, chainUrls, mnemonic,
-				tokenSymbols, vaultString, sisuRpc, cardanoNetwork, cardanoSecret, enabledChains, genesisFolder)
+				tokenSymbols, vaultString, sisuRpc, cardanoNetwork, cardanoSecret, genesisFolder)
 
 			return nil
 		},
@@ -80,7 +79,6 @@ func DeployAndFund() *cobra.Command {
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 	cmd.Flags().String(flags.CardanoChain, "cardano-testnet", "The Cardano network that we are interacting with.")
 	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "The genesis folder that contains config files to generate data.")
-	cmd.Flags().String(flags.EnabledNonEvmChains, "", "List of non-evm chains that you want to enable (e.g. cardano-testnet, solana-devnet, etc...). Each chain is separated by a comma")
 
 	return cmd
 }

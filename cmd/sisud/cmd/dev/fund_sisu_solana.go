@@ -67,7 +67,7 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, allPubKeys m
 					panic(err)
 				}
 				if created {
-					c.mintToken(client, wsClient, mnemonic, tokentMintPubKey, decimals, sourceAta, 1_000_000*100_000_000)
+					c.mintToken(client, wsClient, mnemonic, tokentMintPubKey, byte(decimals), sourceAta, 1_000_000*100_000_000)
 				}
 
 				// Create mpc ata
@@ -78,7 +78,7 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, allPubKeys m
 
 				// Fund the address
 				c.transferSolanaToken(client, wsClient, mnemonic, token.Addresses[i],
-					decimals, sourceAta.String(), mpcAta.String(), 100*100_000_000)
+					byte(decimals), sourceAta.String(), mpcAta.String(), 100*100_000_000)
 			}
 		}
 	}

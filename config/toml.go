@@ -48,7 +48,6 @@ chain = "{{ .Cardano.Chain }}"
 ###                     Siu Cardano Configuration                           ###
 ###############################################################################
 [solana]
-chain = "{{ .Solana.Chain }}"
 bridge_program_id = "{{ .Solana.BridgeProgramId }}"
 
 ###############################################################################

@@ -16,6 +16,7 @@ import (
 	hutils "github.com/sisu-network/dheart/utils"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
+	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 )
@@ -45,7 +46,6 @@ func FundSisu() *cobra.Command {
 			vaultString, _ := cmd.Flags().GetString(flags.VaultAddrs)
 			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 			cardanoNetwork, _ := cmd.Flags().GetString(flags.CardanoChain)
-			enabledChains, _ := cmd.Flags().GetString(flags.EnabledNonEvmChains)
 			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
@@ -53,7 +53,7 @@ func FundSisu() *cobra.Command {
 
 			c := &fundAccountCmd{}
 			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokens, vaultString,
-				sisuRpc, cardanoNetwork, cardanoSecret, enabledChains, genesisFolder)
+				sisuRpc, cardanoNetwork, cardanoSecret, genesisFolder)
 
 			return nil
 		},
@@ -68,14 +68,13 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "The genesis folder that contains config files to generate data.")
 	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 	cmd.Flags().String(flags.CardanoChain, "cardano-testnet", "The Cardano network that we are interacting with.")
-	cmd.Flags().String(flags.EnabledNonEvmChains, "", "List of non-evm chains that you want to enable (e.g. cardano-testnet, solana-devnet, etc...). Each chain is separated by a comma")
 
 	return cmd
 }
 
 func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic string,
 	tokens []string, vaultString string, sisuRpc, cardanoNetwork, cardanoSecret string,
-	enabledChains, genesisFolder string) {
+	genesisFolder string) {
 	chains := strings.Split(chainString, ",")
 	vaults := strings.Split(vaultString, ",")
 
@@ -106,7 +105,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 		c.fundCardano(cardanoAddr, mnemonic, cardanoNetwork, cardanoSecret, sisuRpc, tokens)
 	}
 
-	if strings.Index(enabledChains, "solana") >= 0 {
+	if helper.IsSolanaEnabled(genesisFolder) {
 		// Fund solana
 		log.Verbose("Funding on solana chain...")
 		c.fundSolana(genesisFolder, mnemonic, allPubKeys)
@@ -172,18 +171,6 @@ func (c *fundAccountCmd) waitForPubkeys(goCtx context.Context, chains []string, 
 
 	log.Info("All public keys have been created in Sisu db.")
 	return contractAddrs
-}
-
-// isContractDeployed checks if a contract has been deployed at a specific address so that
-// we do not have to deploy again.
-func (c *fundAccountCmd) isContractDeployed(client *ethclient.Client, tokenAddress common.Address) bool {
-	bz, err := client.CodeAt(context.Background(), tokenAddress, nil)
-	if err != nil {
-		log.Error("Cannot get code at ", tokenAddress.String(), " err = ", err)
-		return false
-	}
-
-	return len(bz) > 10
 }
 
 func (c *fundAccountCmd) getTokenAddrs(ctx context.Context, sisuRpc string, tokenSymbols []string, chain string) []string {

@@ -1,5 +1,5 @@
 {
-  "enable": true,
+  "enable": false,
   "chain": "solana-devnet",
   "rpc": "https://api.devnet.solana.com",
   "ws": "wss://api.devnet.solana.com",
