@@ -40,13 +40,6 @@ log_local = {{ .LogDNA.LogLocal }}
 ###############################################################################
 ###                     Siu Cardano Configuration                           ###
 ###############################################################################
-[cardano]
-block_frost_secret = "{{ .Cardano.BlockfrostSecret }}"
-chain = "{{ .Cardano.Chain }}"
-
-###############################################################################
-###                     Siu Cardano Configuration                           ###
-###############################################################################
 [solana]
 bridge_program_id = "{{ .Solana.BridgeProgramId }}"
 
