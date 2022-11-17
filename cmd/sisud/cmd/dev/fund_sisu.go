@@ -61,7 +61,6 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
 	cmd.Flags().String(flags.VaultAddrs, fmt.Sprintf("%s,%s", ExpectedVaultAddress, ExpectedVaultAddress), "List of vault addresses")
-	cmd.Flags().String(flags.Erc20Symbols, "SISU,ADA", "List of ERC20 to approve")
 	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "The genesis folder that contains config files to generate data.")
 
 	return cmd
@@ -105,7 +104,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	// Fund solana
 	if helper.IsSolanaEnabled(genesisFolder) {
 		log.Verbose("Funding on solana chain...")
-		c.fundSolana(genesisFolder, mnemonic, allPubKeys)
+		c.fundSolana(genesisFolder, mnemonic)
 	}
 
 	// Fund the accounts with some native ETH and other tokens

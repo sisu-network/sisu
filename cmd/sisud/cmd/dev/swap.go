@@ -138,6 +138,10 @@ func (c *swapCommand) getTokenAddrs(tokenId string, srcChain string, dstChain st
 	token := res.Token
 	src, dest := token.GetAddressForChain(srcChain), token.GetAddressForChain(dstChain)
 
+	fmt.Println("srcChain, dstChain = ", srcChain, dstChain)
+	fmt.Println("src, dest = ", src, dest)
+	fmt.Println("token.Chains = ", token.Chains)
+
 	if len(src) == 0 && !libchain.IsCardanoChain(srcChain) {
 		log.Info("source chain = ", srcChain)
 		panic(fmt.Errorf("cannot find token address, available token addresses = %v", token.Addresses))

@@ -13,7 +13,7 @@ func GetTokenOnChain(allTokens map[string]*types.Token, tokenAddr, targetChain s
 			log.Error("Chains length is not the same as address length ")
 			log.Error("t.Chains = ", t.Chains)
 			log.Error("t.Addresses = ", t.Addresses)
-			return nil
+			continue
 		}
 
 		for j, chain := range t.Chains {

@@ -12,7 +12,6 @@ import (
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/gagliardetto/solana-go/rpc/ws"
 	"github.com/near/borsh-go"
-	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/chains/solana"
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
@@ -99,14 +98,8 @@ func TestFundOnSolana(t *testing.T) {
 	require.NotNil(t, privateKey)
 	require.Nil(t, err)
 
-	pubKeyBytes := privateKey.PubKey().Serialize()
-
-	allPubkey := map[string][]byte{
-		libchain.KEY_TYPE_EDDSA: pubKeyBytes,
-	}
-
 	cmd := &fundAccountCmd{}
-	cmd.fundSolana("../../../../misc/test", utils.LOCALHOST_MNEMONIC, allPubkey)
+	cmd.fundSolana("../../../../misc/test", utils.LOCALHOST_MNEMONIC)
 }
 
 func TestCreateAssociatedProgram(t *testing.T) {

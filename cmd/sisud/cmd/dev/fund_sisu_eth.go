@@ -59,7 +59,7 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, sisuRpc, chain, m
 	privateKey, _ := getPrivateKey(mnemonic)
 	signedTx, err := ethtypes.SignTx(tx, getSigner(client), privateKey)
 
-	log.Info("Tx hash = ", signedTx.Hash())
+	log.Info("Tx hash = ", signedTx.Hash(), " on chain ", chain)
 
 	err = client.SendTransaction(context.Background(), signedTx)
 	if err != nil {

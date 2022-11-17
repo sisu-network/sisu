@@ -71,6 +71,10 @@ func (c *fundAccountCmd) getMultiAsset(sisuRpc string, chain string, tokens []*t
 			}
 		}
 
+		if len(tokenAddr) == 0 {
+			continue
+		}
+
 		index := strings.Index(tokenAddr, ":")
 		policyString := tokenAddr[:index]
 		assetName := tokenAddr[index+1:]

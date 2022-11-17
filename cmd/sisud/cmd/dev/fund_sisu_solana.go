@@ -13,7 +13,6 @@ import (
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/chains/solana"
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
 )
@@ -26,14 +25,9 @@ func GetSolanaPrivateKey(mnemonic string) solanago.PrivateKey {
 	return privKey
 }
 
-func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, allPubKeys map[string][]byte) {
+func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string) {
 	privateKey := GetSolanaPrivateKey(mnemonic)
 	faucet := privateKey.PublicKey()
-
-	// Get Mpc address
-	bz := allPubKeys[libchain.KEY_TYPE_EDDSA]
-	mpcAddress := utils.GetSolanaAddressFromPubkey(bz)
-	mpcAccount := solanago.MustPublicKeyFromBase58(mpcAddress)
 
 	// Get all tokens
 	tokens := helper.GetTokens(filepath.Join(genesisFolder, "tokens.json"))
@@ -76,15 +70,16 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, allPubKeys m
 				c.mintToken(client, wsClient, mnemonic, created, tokentMintPubKey, byte(token.Decimals[i]),
 					sourceAta, 1_000_000*100_000_000)
 
-				// Create mpc ata
-				mpcAta, _, err := c.createAssociatedAccount(client, wsClient, mnemonic, mpcAccount, tokentMintPubKey)
+				// Create bridge ata
+				bridgePda := solanago.MustPublicKeyFromBase58(solanaConfig.BridgePda)
+				bridgeAta, _, err := c.createAssociatedAccount(client, wsClient, mnemonic, bridgePda, tokentMintPubKey)
 				if err != nil {
 					panic(err)
 				}
 
 				// Fund the address
 				c.transferSolanaToken(client, wsClient, mnemonic, token.Addresses[i],
-					byte(decimals), sourceAta.String(), mpcAta.String(), 10_000*100_000_000)
+					byte(decimals), sourceAta.String(), bridgeAta.String(), 10_000*100_000_000)
 
 				// Set the spender for the vault.
 
@@ -186,7 +181,7 @@ func (c *fundAccountCmd) mintToken(client *rpc.Client, wsClient *ws.Client, mnem
 
 	return solana.SignAndSubmitWithOptions(client, wsClient, []solanago.Instruction{mintTokenIx},
 		privateKey, rpc.TransactionOpts{
-			SkipPreflight:       true,
-			PreflightCommitment: rpc.CommitmentConfirmed,
+			SkipPreflight:       false,
+			PreflightCommitment: rpc.CommitmentFinalized,
 		})
 }
