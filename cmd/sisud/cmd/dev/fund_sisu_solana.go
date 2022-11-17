@@ -3,6 +3,7 @@ package dev
 import (
 	"context"
 	"crypto/ed25519"
+	"math/big"
 	"path/filepath"
 
 	"github.com/cosmos/go-bip39"
@@ -52,6 +53,10 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, allPubKeys m
 
 	// Get all ATA address created from mpc address and token address
 	for _, token := range tokens {
+		if len(token.Addresses) == 0 {
+			continue
+		}
+
 		for i := range token.Chains {
 			if len(token.Addresses[i]) == 0 {
 				continue
@@ -66,9 +71,10 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, allPubKeys m
 				if err != nil {
 					panic(err)
 				}
-				if created {
-					c.mintToken(client, wsClient, mnemonic, tokentMintPubKey, byte(decimals), sourceAta, 1_000_000*100_000_000)
-				}
+
+				// Mint token for the source if needed.
+				c.mintToken(client, wsClient, mnemonic, created, tokentMintPubKey, byte(token.Decimals[i]),
+					sourceAta, 1_000_000*100_000_000)
 
 				// Create mpc ata
 				mpcAta, _, err := c.createAssociatedAccount(client, wsClient, mnemonic, mpcAccount, tokentMintPubKey)
@@ -78,29 +84,38 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, allPubKeys m
 
 				// Fund the address
 				c.transferSolanaToken(client, wsClient, mnemonic, token.Addresses[i],
-					byte(decimals), sourceAta.String(), mpcAta.String(), 100*100_000_000)
+					byte(decimals), sourceAta.String(), mpcAta.String(), 10_000*100_000_000)
+
+				// Set the spender for the vault.
+
 			}
 		}
 	}
 }
 
 func (c *fundAccountCmd) transferSolanaToken(client *rpc.Client, wsClient *ws.Client, mnemonic,
-	token string, tokenDecimals byte, sourceAta, dstAta string, amount uint64) {
+	token string, tokenDecimals byte, sourceAta, receiverAta string, amount uint64) {
+	balance, err := solana.QuerySolanaAccountBalance(client, receiverAta)
+	if balance.Cmp(big.NewInt(int64(amount))) >= 0 {
+		log.Verbose("Account already has enough balance. Skip transferring")
+		return
+	}
+
 	feePayer := GetSolanaPrivateKey(mnemonic)
 	feePayerPubkey := feePayer.PublicKey()
 
-	log.Verbosef("Funding token = %s, source = %s, destination = %s\n", token, sourceAta, dstAta)
+	log.Verbosef("Funding token = %s, source = %s, destination = %s\n", token, sourceAta, receiverAta)
 
 	ix := solanatypes.NewTransferTokenIx(
 		solanago.MustPublicKeyFromBase58(sourceAta),
 		solanago.MustPublicKeyFromBase58(token),
-		solanago.MustPublicKeyFromBase58(dstAta),
+		solanago.MustPublicKeyFromBase58(receiverAta),
 		feePayerPubkey,
 		amount,
 		tokenDecimals,
 	)
 
-	err := solana.SignAndSubmit(client, wsClient, []solanago.Instruction{ix}, feePayer)
+	err = solana.SignAndSubmit(client, wsClient, []solanago.Instruction{ix}, feePayer)
 	if err != nil {
 		panic(err)
 	}
@@ -124,7 +139,7 @@ func (c *fundAccountCmd) createAssociatedAccount(client *rpc.Client, wsClient *w
 	_, err = solana.QuerySolanaAccountBalance(client, ownerAta.String())
 	if err == nil {
 		// Account already existed, do nothing
-		log.Verbosef("Accounts %s has been created\n", ownerAta.String())
+		log.Verbosef("Accounts %s has been created", ownerAta.String())
 		return ownerAta, false, nil
 	}
 
@@ -138,7 +153,26 @@ func (c *fundAccountCmd) createAssociatedAccount(client *rpc.Client, wsClient *w
 }
 
 func (c *fundAccountCmd) mintToken(client *rpc.Client, wsClient *ws.Client, mnemonic string,
-	tokenMint solanago.PublicKey, tokenDecimals byte, receiverAta solanago.PublicKey, amount uint64) error {
+	newAccount bool, tokenMint solanago.PublicKey, tokenDecimals byte, receiverAta solanago.PublicKey,
+	amount uint64) error {
+	// Check if we need to mint token for this account.
+	shouldMint := false
+	if newAccount {
+		shouldMint = true
+	} else {
+		balance, err := solana.QuerySolanaAccountBalance(client, receiverAta.String())
+		if err != nil {
+			panic(err)
+		}
+		if balance.Cmp(big.NewInt(int64(amount/2))) < 0 {
+			shouldMint = true
+		}
+	}
+
+	if !shouldMint {
+		return nil
+	}
+
 	privateKey := GetSolanaPrivateKey(mnemonic)
 	owner := privateKey.PublicKey()
 
@@ -150,5 +184,9 @@ func (c *fundAccountCmd) mintToken(client *rpc.Client, wsClient *ws.Client, mnem
 		amount,
 	)
 
-	return solana.SignAndSubmit(client, wsClient, []solanago.Instruction{mintTokenIx}, privateKey)
+	return solana.SignAndSubmitWithOptions(client, wsClient, []solanago.Instruction{mintTokenIx},
+		privateKey, rpc.TransactionOpts{
+			SkipPreflight:       true,
+			PreflightCommitment: rpc.CommitmentConfirmed,
+		})
 }

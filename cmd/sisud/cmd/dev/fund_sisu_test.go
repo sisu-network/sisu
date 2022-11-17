@@ -142,7 +142,7 @@ func TestMintSolanaToken(t *testing.T) {
 	cmd := &fundAccountCmd{}
 	mnemonic, client, wsClient := getBasicData("devnet")
 
-	err := cmd.mintToken(client, wsClient, mnemonic, TokenMintPubkey, 8,
+	err := cmd.mintToken(client, wsClient, mnemonic, true, TokenMintPubkey, 8,
 		solanago.MustPublicKeyFromBase58("B6hYN4gKqN5iRThXuP7rAX4aH7vY2HnJLFLvsGqiuiKd"),
 		100*100_000_000,
 	)

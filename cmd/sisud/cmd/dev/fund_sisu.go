@@ -3,6 +3,7 @@ package dev
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -42,17 +43,14 @@ func FundSisu() *cobra.Command {
 			chainString, _ := cmd.Flags().GetString(flags.Chains)
 			urlString, _ := cmd.Flags().GetString(flags.ChainUrls)
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
-			tokenString, _ := cmd.Flags().GetString(flags.Erc20Symbols)
 			vaultString, _ := cmd.Flags().GetString(flags.VaultAddrs)
-			cardanoNetwork, _ := cmd.Flags().GetString(flags.CardanoChain)
 			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
-			tokens := strings.Split(tokenString, ",")
 
 			c := &fundAccountCmd{}
-			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, tokens, vaultString,
-				sisuRpc, cardanoNetwork, genesisFolder)
+			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, vaultString,
+				sisuRpc, genesisFolder)
 
 			return nil
 		},
@@ -65,13 +63,12 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.VaultAddrs, fmt.Sprintf("%s,%s", ExpectedVaultAddress, ExpectedVaultAddress), "List of vault addresses")
 	cmd.Flags().String(flags.Erc20Symbols, "SISU,ADA", "List of ERC20 to approve")
 	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "The genesis folder that contains config files to generate data.")
-	cmd.Flags().String(flags.CardanoChain, "cardano-testnet", "The Cardano network that we are interacting with.")
 
 	return cmd
 }
 
 func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic string,
-	tokens []string, vaultString string, sisuRpc, cardanoNetwork, genesisFolder string) {
+	vaultString string, sisuRpc, genesisFolder string) {
 	chains := strings.Split(chainString, ",")
 	vaults := strings.Split(vaultString, ",")
 
@@ -100,11 +97,13 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 
 		cardanoAddr := hutils.GetAddressFromCardanoPubkey(cardanoKey)
 		log.Info("Sisu Cardano Gateway = ", cardanoAddr)
-		c.fundCardano(cardanoAddr, mnemonic, cardanoNetwork, cardanoConfig.Secret, sisuRpc, tokens)
+
+		tokens := helper.GetTokens(filepath.Join(genesisFolder, "tokens.json"))
+		c.fundCardano(genesisFolder, cardanoAddr, mnemonic, cardanoConfig.Secret, sisuRpc, tokens)
 	}
 
+	// Fund solana
 	if helper.IsSolanaEnabled(genesisFolder) {
-		// Fund solana
 		log.Verbose("Funding on solana chain...")
 		c.fundSolana(genesisFolder, mnemonic, allPubKeys)
 	}

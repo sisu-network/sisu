@@ -22,7 +22,7 @@ require (
 	github.com/logdna/logdna-go v1.0.2
 	github.com/mr-tron/base58 v1.2.0
 	github.com/near/borsh-go v0.3.2-0.20220516180422-1ff87d108454
-	github.com/sisu-network/deyes v0.1.10-0.20221115222910-7b0f7f23f9ef
+	github.com/sisu-network/deyes v0.1.10-0.20221115232147-66255b8429e0
 	github.com/sisu-network/dheart v0.1.7-alpha1
 	github.com/sisu-network/lib v0.0.1-alpha9.0.20221024224307-a0cdb072a1bd
 	github.com/spf13/cast v1.5.0

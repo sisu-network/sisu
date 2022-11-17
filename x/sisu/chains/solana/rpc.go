@@ -38,6 +38,16 @@ func QuerySolanaAccountBalance(client *rpc.Client, tokenAddr string) (*big.Int, 
 
 func SignAndSubmit(client *rpc.Client, wsClient *ws.Client,
 	ixs []solanago.Instruction, feePayer solanago.PrivateKey) error {
+	opts := rpc.TransactionOpts{
+		SkipPreflight:       false,
+		PreflightCommitment: rpc.CommitmentFinalized,
+	}
+
+	return SignAndSubmitWithOptions(client, wsClient, ixs, feePayer, opts)
+}
+
+func SignAndSubmitWithOptions(client *rpc.Client, wsClient *ws.Client,
+	ixs []solanago.Instruction, feePayer solanago.PrivateKey, opts rpc.TransactionOpts) error {
 	// Get blockhash
 	result, err := client.GetRecentBlockhash(context.Background(), rpc.CommitmentFinalized)
 	if err != nil {
@@ -65,13 +75,14 @@ func SignAndSubmit(client *rpc.Client, wsClient *ws.Client,
 	log.Verbose("tx sig = ", tx.Signatures[0])
 
 	// Send transaction, and wait for confirmation
-	sig, err := confirm.SendAndConfirmTransaction(
-		context.Background(),
-		client,
-		wsClient,
-		tx,
-	)
-	log.Verbose("sig = ", sig)
+	sig, err := confirm.SendAndConfirmTransactionWithOpts(context.Background(), client, wsClient, tx,
+		opts)
+
+	log.Verbose("Final sig = ", sig)
+
+	if err != nil {
+		log.Verbose("Cannot send transaction, err = ", err)
+	}
 
 	return err
 }
