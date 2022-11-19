@@ -201,8 +201,8 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	log.Info("Tss params: ", savedParams)
 
 	// Save Checkpoints
-	for _, checkpoint := range genState.Checkpoints {
-		am.keeper.AddGatewayCheckPoint(ctx, checkpoint)
+	for _, checkpoint := range genState.MpcNonces {
+		am.keeper.SetMpcNonce(ctx, checkpoint)
 	}
 
 	// Create validator nodes

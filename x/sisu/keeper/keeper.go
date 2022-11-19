@@ -76,10 +76,9 @@ type Keeper interface {
 	SaveParams(ctx sdk.Context, params *types.Params)
 	GetParams(ctx sdk.Context) *types.Params
 
-	// Gateway checkpoint
-	AddGatewayCheckPoint(ctx sdk.Context, checkPoint *types.GatewayCheckPoint)
-	GetGatewayCheckPoint(ctx sdk.Context, chain string) *types.GatewayCheckPoint
-	GetAllGatewayCheckPoints(ctx sdk.Context) map[string]*types.GatewayCheckPoint
+	// Mpc nonces
+	SetMpcNonce(ctx sdk.Context, checkPoint *types.MpcNonce)
+	GetMpcNonce(ctx sdk.Context, chain string) *types.MpcNonce
 
 	// Command Queue
 	SetCommandQueue(ctx sdk.Context, chain string, commands []*types.Command)
@@ -303,19 +302,14 @@ func (k *DefaultKeeper) GetParams(ctx sdk.Context) *types.Params {
 }
 
 ///// Gateway Checkpoint
-func (k *DefaultKeeper) AddGatewayCheckPoint(ctx sdk.Context, checkPoint *types.GatewayCheckPoint) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGatewayCheckPoint)
+func (k *DefaultKeeper) SetMpcNonce(ctx sdk.Context, checkPoint *types.MpcNonce) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixMpcNonces)
 	addCheckPoint(store, checkPoint)
 }
 
-func (k *DefaultKeeper) GetGatewayCheckPoint(ctx sdk.Context, chain string) *types.GatewayCheckPoint {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGatewayCheckPoint)
+func (k *DefaultKeeper) GetMpcNonce(ctx sdk.Context, chain string) *types.MpcNonce {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixMpcNonces)
 	return getCheckPoint(store, chain)
-}
-
-func (k *DefaultKeeper) GetAllGatewayCheckPoints(ctx sdk.Context) map[string]*types.GatewayCheckPoint {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGatewayCheckPoint)
-	return getAllGatewayCheckPoints(store)
 }
 
 ///// Command Queue

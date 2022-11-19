@@ -24,7 +24,7 @@ var (
 	prefixVault                  = []byte{0x10}
 	prefixParams                 = []byte{0x11}
 	prefixMpcAddress             = []byte{0x12}
-	prefixGatewayCheckPoint      = []byte{0x13}
+	prefixMpcNonces              = []byte{0x13}
 	prefixTransferQueue          = []byte{0x14}
 	prefixTxOutQueue             = []byte{0x15}
 	prefixPendingTxOut           = []byte{0x16}
@@ -666,7 +666,7 @@ func getSisuAccount(store cstypes.KVStore, chain string) string {
 
 ///// Gateway Checkpoint
 
-func addCheckPoint(store cstypes.KVStore, checkPoint *types.GatewayCheckPoint) {
+func addCheckPoint(store cstypes.KVStore, checkPoint *types.MpcNonce) {
 	bz, err := checkPoint.Marshal()
 	if err != nil {
 		log.Error("cannot marshal checkpoint")
@@ -675,13 +675,13 @@ func addCheckPoint(store cstypes.KVStore, checkPoint *types.GatewayCheckPoint) {
 	store.Set([]byte(checkPoint.Chain), bz)
 }
 
-func getCheckPoint(store cstypes.KVStore, chain string) *types.GatewayCheckPoint {
+func getCheckPoint(store cstypes.KVStore, chain string) *types.MpcNonce {
 	bz := store.Get([]byte(chain))
 	if bz == nil {
 		return nil
 	}
 
-	checkPoint := &types.GatewayCheckPoint{}
+	checkPoint := &types.MpcNonce{}
 	err := checkPoint.Unmarshal(bz)
 	if err != nil {
 		log.Error("Failed to unmarshal gateway checkpoint, err = ", err)
@@ -689,23 +689,6 @@ func getCheckPoint(store cstypes.KVStore, chain string) *types.GatewayCheckPoint
 	}
 
 	return checkPoint
-}
-
-func getAllGatewayCheckPoints(store cstypes.KVStore) map[string]*types.GatewayCheckPoint {
-	ret := make(map[string]*types.GatewayCheckPoint)
-	iter := store.Iterator(nil, nil)
-	for ; iter.Valid(); iter.Next() {
-		bz := iter.Value()
-		checkPoint := &types.GatewayCheckPoint{}
-		err := checkPoint.Unmarshal(bz)
-		if err != nil {
-			log.Error("Failed to unmarshal checkpoint, err = ", err)
-			continue
-		}
-		ret[string(iter.Key())] = checkPoint
-	}
-
-	return ret
 }
 
 ///// Command Queue
