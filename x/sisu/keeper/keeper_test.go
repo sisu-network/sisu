@@ -73,3 +73,17 @@ func TestVault(t *testing.T) {
 	solVaults := keeper.GetAllVaultsForChain(ctx, "solana-devnet")
 	assert.Equal(t, []*types.Vault{solVault0, solVault1}, solVaults)
 }
+
+func TestChainMetadata(t *testing.T) {
+	keeper, ctx := GetTestKeeperAndContext()
+
+	keeper.SetSolanaConfirmedBlock(ctx, "solana-devnet", "signer1", "block1")
+	keeper.SetSolanaConfirmedBlock(ctx, "solana-devnet", "signer2", "block2")
+
+	metas := keeper.GetAllSolanaConfirmedBlock(ctx, "solana-devnet")
+
+	require.Equal(t, map[string]string{
+		"signer1": "block1",
+		"signer2": "block2",
+	}, metas)
+}

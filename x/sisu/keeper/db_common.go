@@ -30,6 +30,7 @@ var (
 	prefixPendingTxOut           = []byte{0x16}
 	prefixCommandQueue           = []byte{0x17}
 	prefixTransfer               = []byte{0x18}
+	prefixChainMetadata          = []byte{0x19}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -84,6 +85,10 @@ func getLiquidityKey(chain string) []byte {
 
 func getVaultKey(chain string, token string) []byte {
 	return []byte(fmt.Sprintf("%s__%s", chain, token))
+}
+
+func getChainMetadataKey(chain, signer string) []byte {
+	return []byte(fmt.Sprintf("%s__%s", chain, signer))
 }
 
 ///// TxREcord
@@ -848,6 +853,54 @@ func getPendingTxOutInfo(store cstypes.KVStore, chain string) *types.PendingTxOu
 	}
 
 	return txOutInfo
+}
+
+///// Chain Metadata
+func setSolanaConfirmedBlock(store cstypes.KVStore, chain, signer, hash string) {
+	key := getChainMetadataKey(chain, signer)
+
+	meta := &types.ChainMetadata{}
+	bz := store.Get(key)
+	if bz == nil {
+		meta.Chain = chain
+		meta.Signer = signer
+	} else {
+		err := meta.Unmarshal(bz)
+		if err != nil {
+			log.Error("setSolanaConfirmedBlock: failed to unmarshal into chain metadata")
+			return
+		}
+
+	}
+
+	meta.SolanaConfirmBlock = hash
+	bz, err := meta.Marshal()
+	if err != nil {
+		log.Error("setSolanaConfirmedBlock: cannot marshal meta")
+		return
+	}
+
+	store.Set(key, bz)
+}
+
+func getAllSolanaConfirmedBlock(store cstypes.KVStore, chain string) map[string]string {
+	ret := make(map[string]string)
+
+	begin := []byte(fmt.Sprintf("%s__", chain))
+	end := []byte(fmt.Sprintf("%s__~", chain))
+
+	iter := store.Iterator(begin, end)
+	for ; iter.Valid(); iter.Next() {
+		meta := &types.ChainMetadata{}
+		err := meta.Unmarshal(iter.Value())
+		if err == nil {
+			ret[meta.Signer] = meta.SolanaConfirmBlock
+		} else {
+			log.Error("getAllSolanaConfirmedBlock: cannot unmarshal bz")
+		}
+	}
+
+	return ret
 }
 
 ///// Debug functions
