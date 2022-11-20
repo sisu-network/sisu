@@ -4,6 +4,7 @@ import (
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/echovl/cardano-go"
 	eTypes "github.com/sisu-network/deyes/types"
+	etypes "github.com/sisu-network/deyes/types"
 	htypes "github.com/sisu-network/dheart/types"
 )
 
@@ -15,17 +16,18 @@ func check() {
 ///// DeyesClient
 
 type MockDeyesClient struct {
-	PingFunc                  func(source string) error
-	DispatchFunc              func(request *eTypes.DispatchedTxRequest) (*eTypes.DispatchedTxResult, error)
-	SetVaultAddressFunc       func(chain, addr, token string) error
-	GetNonceFunc              func(chain string, address string) int64
-	SetSisuReadyFunc          func(isReady bool) error
-	GetGasPricesFunc          func(chains []string) ([]int64, error)
-	CardanoProtocolParamsFunc func(chain string) (*cardano.ProtocolParams, error)
-	CardanoUtxosFunc          func(chain string, addr string, maxBlock uint64) ([]cardano.UTxO, error)
-	CardanoBalanceFunc        func(chain string, address string, maxBlock int64) (*cardano.Value, error)
-	CardanoSubmitTxFunc       func(chain string, tx *cardano.Tx) (*cardano.Hash32, error)
-	CardanoTipFunc            func(chain string, blockHeight uint64) (*cardano.NodeTip, error)
+	PingFunc                   func(source string) error
+	DispatchFunc               func(request *eTypes.DispatchedTxRequest) (*eTypes.DispatchedTxResult, error)
+	SetVaultAddressFunc        func(chain, addr, token string) error
+	GetNonceFunc               func(chain string, address string) int64
+	SetSisuReadyFunc           func(isReady bool) error
+	GetGasPricesFunc           func(chains []string) ([]int64, error)
+	CardanoProtocolParamsFunc  func(chain string) (*cardano.ProtocolParams, error)
+	CardanoUtxosFunc           func(chain string, addr string, maxBlock uint64) ([]cardano.UTxO, error)
+	CardanoBalanceFunc         func(chain string, address string, maxBlock int64) (*cardano.Value, error)
+	CardanoSubmitTxFunc        func(chain string, tx *cardano.Tx) (*cardano.Hash32, error)
+	CardanoTipFunc             func(chain string, blockHeight uint64) (*cardano.NodeTip, error)
+	SolanaQueryRecentBlockFunc func(chain string) (*etypes.SolanaQueryRecentBlockResult, error)
 }
 
 func (c *MockDeyesClient) Ping(source string) error {
@@ -111,6 +113,14 @@ func (m *MockDeyesClient) CardanoTip(chain string, blockHeight uint64) (*cardano
 	if m.CardanoTipFunc != nil {
 		return m.CardanoTipFunc(chain, blockHeight)
 	}
+	return nil, nil
+}
+
+func (m *MockDeyesClient) SolanaQueryRecentBlock(chain string) (*etypes.SolanaQueryRecentBlockResult, error) {
+	if m.SolanaQueryRecentBlockFunc != nil {
+		return m.SolanaQueryRecentBlockFunc(chain)
+	}
+
 	return nil, nil
 }
 

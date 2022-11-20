@@ -25,6 +25,7 @@ type DeyesClient interface {
 	CardanoTip(chain string, blockHeight uint64) (*cardano.NodeTip, error)
 
 	// Solana
+	SolanaQueryRecentBlock(chain string) (*etypes.SolanaQueryRecentBlockResult, error)
 }
 
 type defaultDeyesClient struct {
@@ -193,3 +194,14 @@ func (c *defaultDeyesClient) CardanoSubmitTx(chain string, tx *cardano.Tx) (*car
 }
 
 /////
+func (c *defaultDeyesClient) SolanaQueryRecentBlock(chain string) (*etypes.SolanaQueryRecentBlockResult, error) {
+	result := &etypes.SolanaQueryRecentBlockResult{}
+
+	err := c.client.CallContext(context.Background(), &result, "deyes_solanaQueryRecentBlock", chain)
+	if err != nil {
+		log.Error("Cannot query recent solana block, chain = ", chain, "err = ", err)
+		return nil, err
+	}
+
+	return result, nil
+}

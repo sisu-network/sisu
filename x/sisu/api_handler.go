@@ -17,6 +17,7 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/chains"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
+	"github.com/sisu-network/sisu/x/sisu/service"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
@@ -41,6 +42,7 @@ type ApiHandler struct {
 	globalData    common.GlobalData
 	txTracker     TxTracker
 	bridgeManager chains.BridgeManager
+	chainPolling  service.ChainPolling
 	mc            ManagerContainer
 
 	// Dheart & Deyes client
@@ -55,16 +57,18 @@ func NewApiHandler(
 	mc ManagerContainer,
 ) *ApiHandler {
 	a := &ApiHandler{
-		keeper:        mc.Keeper(),
-		privateDb:     privateDb,
-		appKeys:       mc.AppKeys(),
-		txSubmit:      mc.TxSubmit(),
-		globalData:    mc.GlobalData(),
-		dheartClient:  mc.DheartClient(),
-		deyesClient:   mc.DeyesClient(),
-		txTracker:     mc.TxTracker(),
+		mc:           mc,
+		keeper:       mc.Keeper(),
+		privateDb:    privateDb,
+		appKeys:      mc.AppKeys(),
+		txSubmit:     mc.TxSubmit(),
+		globalData:   mc.GlobalData(),
+		dheartClient: mc.DheartClient(),
+		deyesClient:  mc.DeyesClient(),
+		txTracker:    mc.TxTracker(),
+		chainPolling: service.NewChainPolling(mc.AppKeys().GetSignerAddress().String(),
+			mc.DeyesClient(), mc.TxSubmit()),
 		bridgeManager: mc.BridgeManager(),
-		mc:            mc,
 	}
 
 	return a
