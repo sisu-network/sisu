@@ -856,7 +856,7 @@ func getPendingTxOutInfo(store cstypes.KVStore, chain string) *types.PendingTxOu
 }
 
 ///// Chain Metadata
-func setSolanaConfirmedBlock(store cstypes.KVStore, chain, signer, hash string) {
+func setSolanaConfirmedBlock(store cstypes.KVStore, chain, signer, hash string, height int64) {
 	key := getChainMetadataKey(chain, signer)
 
 	meta := &types.ChainMetadata{}
@@ -873,7 +873,8 @@ func setSolanaConfirmedBlock(store cstypes.KVStore, chain, signer, hash string) 
 
 	}
 
-	meta.SolanaConfirmBlock = hash
+	meta.SolanaRecentBlockHash = hash
+	meta.SolanaRecentBlockHeight = height
 	bz, err := meta.Marshal()
 	if err != nil {
 		log.Error("setSolanaConfirmedBlock: cannot marshal meta")
@@ -883,8 +884,8 @@ func setSolanaConfirmedBlock(store cstypes.KVStore, chain, signer, hash string) 
 	store.Set(key, bz)
 }
 
-func getAllSolanaConfirmedBlock(store cstypes.KVStore, chain string) map[string]string {
-	ret := make(map[string]string)
+func getAllSolanaConfirmedBlock(store cstypes.KVStore, chain string) map[string]*types.ChainMetadata {
+	ret := make(map[string]*types.ChainMetadata)
 
 	begin := []byte(fmt.Sprintf("%s__", chain))
 	end := []byte(fmt.Sprintf("%s__~", chain))
@@ -894,7 +895,7 @@ func getAllSolanaConfirmedBlock(store cstypes.KVStore, chain string) map[string]
 		meta := &types.ChainMetadata{}
 		err := meta.Unmarshal(iter.Value())
 		if err == nil {
-			ret[meta.Signer] = meta.SolanaConfirmBlock
+			ret[meta.Signer] = meta
 		} else {
 			log.Error("getAllSolanaConfirmedBlock: cannot unmarshal bz")
 		}

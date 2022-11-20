@@ -23,6 +23,8 @@ type DeyesClient interface {
 	CardanoBalance(chain string, address string, maxBlock int64) (*cardano.Value, error)
 	CardanoSubmitTx(chain string, tx *cardano.Tx) (*cardano.Hash32, error)
 	CardanoTip(chain string, blockHeight uint64) (*cardano.NodeTip, error)
+
+	// Solana
 }
 
 type defaultDeyesClient struct {
@@ -189,3 +191,5 @@ func (c *defaultDeyesClient) CardanoSubmitTx(chain string, tx *cardano.Tx) (*car
 
 	return result, nil
 }
+
+/////

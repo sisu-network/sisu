@@ -8,5 +8,6 @@ message ChainMetadata {
   string chain = 2;
 
   // Used for solana
-  string solanaConfirmBlock = 3;
+  string solanaRecentBlockHash = 3;
+  int64 solanaRecentBlockHeight = 4;
 }

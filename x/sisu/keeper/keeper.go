@@ -102,8 +102,8 @@ type Keeper interface {
 	GetPendingTxOutInfo(ctx sdk.Context, chain string) *types.PendingTxOutInfo
 
 	// Set Solana confirmed block
-	SetSolanaConfirmedBlock(ctx sdk.Context, signer, chain, blockHash string)
-	GetAllSolanaConfirmedBlock(ctx sdk.Context, chain string) map[string]string
+	SetSolanaConfirmedBlock(ctx sdk.Context, signer, chain, blockHash string, height int64)
+	GetAllSolanaConfirmedBlock(ctx sdk.Context, chain string) map[string]*types.ChainMetadata
 }
 
 type DefaultKeeper struct {
@@ -383,12 +383,12 @@ func (k *DefaultKeeper) GetPendingTxOutInfo(ctx sdk.Context, chain string) *type
 }
 
 ///// Chain metadata
-func (k *DefaultKeeper) SetSolanaConfirmedBlock(ctx sdk.Context, chain, signer, blockHash string) {
+func (k *DefaultKeeper) SetSolanaConfirmedBlock(ctx sdk.Context, chain, signer, blockHash string, height int64) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixChainMetadata)
-	setSolanaConfirmedBlock(store, chain, signer, blockHash)
+	setSolanaConfirmedBlock(store, chain, signer, blockHash, height)
 }
 
-func (k *DefaultKeeper) GetAllSolanaConfirmedBlock(ctx sdk.Context, chain string) map[string]string {
+func (k *DefaultKeeper) GetAllSolanaConfirmedBlock(ctx sdk.Context, chain string) map[string]*types.ChainMetadata {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixChainMetadata)
 	return getAllSolanaConfirmedBlock(store, chain)
 }
