@@ -54,19 +54,19 @@ func (ix *TransferOutData) Deserialize(bytesArr []byte) error {
 	return borsh.Deserialize(ix, bytesArr)
 }
 
-type TransferOutInstruction struct {
+type TransferOutIx struct {
 	bridgeProgramdId solana.PublicKey
 	accounts         []*solanago.AccountMeta
 	data             TransferOutData
 }
 
-func NewTransferOutInstruction(
+func NewTransferOutIx(
 	programId solana.PublicKey,
 	owner solanago.PublicKey,
 	ownerAta solanago.PublicKey,
 	bridgeAta solanago.PublicKey,
 	bridgePda solanago.PublicKey,
-	data TransferOutData) *TransferOutInstruction {
+	data TransferOutData) *TransferOutIx {
 	tokenProgramId := solana.MustPublicKeyFromBase58("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
 
 	accounts := []*solanago.AccountMeta{
@@ -77,7 +77,7 @@ func NewTransferOutInstruction(
 		solanago.NewAccountMeta(bridgePda, true, false),
 	}
 
-	return &TransferOutInstruction{
+	return &TransferOutIx{
 		bridgeProgramdId: programId,
 		accounts:         accounts,
 		data:             data,
@@ -85,16 +85,15 @@ func NewTransferOutInstruction(
 }
 
 // ProgramID is the programID the instruction acts on.
-func (ix *TransferOutInstruction) ProgramID() solanago.PublicKey {
-	// Associated program id. This is different from the token program id.
+func (ix *TransferOutIx) ProgramID() solanago.PublicKey {
 	return ix.bridgeProgramdId
 }
 
 // Accounts returns the list of accounts the instructions requires
-func (ix *TransferOutInstruction) Accounts() []*solanago.AccountMeta {
+func (ix *TransferOutIx) Accounts() []*solanago.AccountMeta {
 	return ix.accounts
 }
 
-func (ix *TransferOutInstruction) Data() ([]byte, error) {
+func (ix *TransferOutIx) Data() ([]byte, error) {
 	return borsh.Serialize(ix.data)
 }

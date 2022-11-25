@@ -97,5 +97,5 @@ func (c *swapCommand) transferTokenIx(genesisFolder, mnemonic, tokenAddr, recipi
 
 	data := solanatypes.NewTransferOutData(amount, tokenAddr, dstChainId, recipient)
 
-	return solanatypes.NewTransferOutInstruction(bridgeProgramId, ownerPubkey, ownerAta, bridgeAta, bridgePda, data)
+	return solanatypes.NewTransferOutIx(bridgeProgramId, ownerPubkey, ownerAta, bridgeAta, bridgePda, data)
 }

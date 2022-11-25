@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"sort"
 
+	solanago "github.com/gagliardetto/solana-go"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 
@@ -36,7 +38,99 @@ func NewBridge(chain string, keeper keeper.Keeper, cfg config.Config) chaintypes
 }
 
 func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
+	allTokens := b.keeper.GetAllTokens(ctx)
+	tokens := make([]*types.Token, 0, len(transfers))
+	recipients := make([]string, 0, len(transfers))
+	amounts := make([]*big.Int, 0, len(transfers))
+
+	for _, transfer := range transfers {
+		token := allTokens[transfer.Token]
+		if token == nil {
+			log.Warn("cannot find token", transfer.Token)
+			continue
+		}
+
+		amount, ok := new(big.Int).SetString(transfer.Amount, 10)
+		if !ok {
+			log.Warn("Cannot create big.Int value from amout ", transfer.Amount)
+			continue
+		}
+
+		tokens = append(tokens, token)
+		recipients = append(recipients, transfer.ToRecipient)
+		amounts = append(amounts, amount)
+		// inHashes = append(inHashes, transfer.Id)
+	}
+
+	responseTx, err := b.buildTransferInResponse(ctx, transfers[0].FromChain, tokens, recipients, amounts)
+	if err != nil {
+		log.Error("Failed to build erc20 transfer in, err = ", err)
+		return nil, err
+	}
+
 	return nil, nil
+}
+
+func (b *bridge) buildTransferInResponse(
+	ctx sdk.Context,
+	chain string,
+	tokens []*types.Token,
+	recipients []string,
+	amounts []*big.Int,
+) (*types.TxResponse, error) {
+	// Get mpc address
+	mpcAddr := b.keeper.GetMpcAddress(ctx, chain)
+	if mpcAddr == "" {
+		return nil, fmt.Errorf("Cannot find mpc address for chain %s", chain)
+	}
+
+	tokenAddrs := make([]string, 0)
+	for _, token := range tokens {
+		addr := token.GetAddressForChain(chain)
+		if addr == "" {
+			return nil, fmt.Errorf("Cannot find token %s address for chain %s", token.Id, chain)
+		}
+		tokenAddrs = append(tokenAddrs, addr)
+	}
+
+	// TODO: Don't hardcode token program id here. Make each token has different token program ID
+	transferInIx, err := solanatypes.NewTransferInIx(
+		b.config.Solana.BridgeProgramId,
+		mpcAddr,
+		solanago.MustPublicKeyFromBase58("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
+		tokenAddrs,
+		recipients,
+		amounts,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get recennt block hash
+	hash, err := b.getRecentBlockHash(ctx, chain)
+	if err != nil {
+		return nil, err
+	}
+
+}
+
+func (b *bridge) getRecentBlockHash(ctx sdk.Context, chain string) (string, error) {
+	metas := b.keeper.GetAllSolanaConfirmedBlock(ctx, chain)
+	if len(metas) == 0 {
+		return "", fmt.Errorf("Empty metas array")
+	}
+
+	arr := make([]*types.ChainMetadata, 0)
+	for _, value := range metas {
+		arr = append(arr, value)
+	}
+
+	// Sort arr
+	sort.Slice(arr, func(i, j int) bool {
+		return arr[i].SolanaRecentBlockHeight < arr[j].SolanaRecentBlockHeight
+	})
+
+	return arr[len(arr)/2].SolanaRecentBlockHash, nil
 }
 
 func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx) ([]*types.Transfer, error) {

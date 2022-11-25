@@ -3,6 +3,8 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+
+	libchain "github.com/sisu-network/lib/chain"
 )
 
 func NewUpdateSolanaRecentHashMsg(signer, chain, solanaHash string, solanaHeight int64) *UpdateSolanaRecentHashMsg {
@@ -50,6 +52,10 @@ func (msg *UpdateSolanaRecentHashMsg) ValidateBasic() error {
 	_, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid creator address (%s)", err)
+	}
+
+	if libchain.IsSolanaChain(msg.Data.Chain) {
+		// TODO: Make sure that the block hash is valid
 	}
 
 	return nil
