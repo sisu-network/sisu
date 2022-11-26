@@ -11,8 +11,8 @@ require (
 	github.com/decred/dcrd/dcrec/edwards/v2 v2.0.2
 	github.com/echovl/cardano-go v0.1.14
 	github.com/ethereum/go-ethereum v1.10.21
-	github.com/gagliardetto/binary v0.7.3
-	github.com/gagliardetto/solana-go v1.7.1
+	github.com/gagliardetto/binary v0.7.7
+	github.com/gagliardetto/solana-go v1.8.1
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gogo/protobuf v1.3.3
 	github.com/gorilla/mux v1.8.0

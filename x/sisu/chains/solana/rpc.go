@@ -76,7 +76,7 @@ func SignAndSubmitWithOptions(client *rpc.Client, wsClient *ws.Client,
 
 	// Send transaction, and wait for confirmation
 	sig, err := confirm.SendAndConfirmTransactionWithOpts(context.Background(), client, wsClient, tx,
-		opts)
+		opts, nil)
 
 	log.Verbose("Final sig = ", sig)
 
