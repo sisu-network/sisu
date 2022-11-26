@@ -26,13 +26,15 @@ import (
 type bridge struct {
 	chain  string
 	keeper keeper.Keeper
+	signer string
 	config config.Config
 }
 
-func NewBridge(chain string, keeper keeper.Keeper, cfg config.Config) chaintypes.Bridge {
+func NewBridge(chain, signer string, keeper keeper.Keeper, cfg config.Config) chaintypes.Bridge {
 	return &bridge{
 		chain:  chain,
 		keeper: keeper,
+		signer: signer,
 		config: cfg,
 	}
 }
@@ -42,6 +44,7 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) 
 	tokens := make([]*types.Token, 0, len(transfers))
 	recipients := make([]string, 0, len(transfers))
 	amounts := make([]*big.Int, 0, len(transfers))
+	inHashes := make([]string, 0, len(transfers))
 
 	for _, transfer := range transfers {
 		token := allTokens[transfer.Token]
@@ -59,25 +62,38 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) 
 		tokens = append(tokens, token)
 		recipients = append(recipients, transfer.ToRecipient)
 		amounts = append(amounts, amount)
-		// inHashes = append(inHashes, transfer.Id)
+		inHashes = append(inHashes, transfer.Id)
 	}
 
-	responseTx, err := b.buildTransferInResponse(ctx, transfers[0].FromChain, tokens, recipients, amounts)
+	responseTx, err := b.buildTransferInResponse(ctx, tokens, recipients, amounts)
 	if err != nil {
-		log.Error("Failed to build erc20 transfer in, err = ", err)
+		log.Error("Failed to build solana transfer in, err = ", err)
 		return nil, err
 	}
 
-	return nil, nil
+	outMsg := types.NewTxOutMsg(
+		b.signer,
+		types.TxOutType_TRANSFER_OUT,
+		&types.TxOutContent{
+			OutChain: b.chain,
+			OutHash:  utils.KeccakHash32(string(responseTx.RawBytes)),
+			OutBytes: responseTx.RawBytes,
+		},
+		&types.TxOutInput{
+			TransferIds: inHashes,
+		},
+	)
+
+	return []*types.TxOutMsg{outMsg}, nil
 }
 
 func (b *bridge) buildTransferInResponse(
 	ctx sdk.Context,
-	chain string,
 	tokens []*types.Token,
 	recipients []string,
 	amounts []*big.Int,
 ) (*types.TxResponse, error) {
+	chain := b.chain
 	// Get mpc address
 	mpcAddr := b.keeper.GetMpcAddress(ctx, chain)
 	if mpcAddr == "" {
@@ -93,25 +109,51 @@ func (b *bridge) buildTransferInResponse(
 		tokenAddrs = append(tokenAddrs, addr)
 	}
 
+	nonce := b.keeper.GetMpcNonce(ctx, chain)
+	if nonce == nil {
+		return nil, fmt.Errorf("Nonce is nil for chainn %s", chain)
+	}
+
 	// TODO: Don't hardcode token program id here. Make each token has different token program ID
 	transferInIx, err := solanatypes.NewTransferInIx(
 		b.config.Solana.BridgeProgramId,
 		mpcAddr,
-		solanago.MustPublicKeyFromBase58("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"),
+		uint64(nonce.Nonce),
+		"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+		b.config.Solana.BridgePda,
 		tokenAddrs,
 		recipients,
 		amounts,
 	)
+
 	if err != nil {
 		return nil, err
 	}
 
 	// Get recennt block hash
-	hash, err := b.getRecentBlockHash(ctx, chain)
+	hashStr, err := b.getRecentBlockHash(ctx, chain)
+	if err != nil {
+		return nil, err
+	}
+	hash, err := solanago.HashFromBase58(hashStr)
 	if err != nil {
 		return nil, err
 	}
 
+	tx, err := solanago.NewTransaction(
+		[]solanago.Instruction{transferInIx},
+		hash,
+	)
+
+	messageContent, err := tx.Message.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.TxResponse{
+		OutChain: b.chain,
+		RawBytes: messageContent,
+	}, nil
 }
 
 func (b *bridge) getRecentBlockHash(ctx sdk.Context, chain string) (string, error) {

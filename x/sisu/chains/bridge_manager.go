@@ -78,7 +78,7 @@ func (m *defaultBridgeManager) getBridge(chain string) chainstypes.Bridge {
 	}
 
 	if libchain.IsSolanaChain(chain) {
-		return chainssolana.NewBridge(chain, m.keeper, m.config)
+		return chainssolana.NewBridge(chain, m.signer, m.keeper, m.config)
 	}
 
 	return nil

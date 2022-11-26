@@ -9,6 +9,7 @@ import (
 )
 
 type TransferInData struct {
+	Nonce   uint64
 	Amounts []uint64
 }
 
@@ -21,6 +22,7 @@ type TransferInIx struct {
 func NewTransferInIx(
 	bridgeProgramdId string,
 	mpcAddress string,
+	nonce uint64,
 	tokenProgramId string,
 	bridgePda string,
 	tokens []string,
