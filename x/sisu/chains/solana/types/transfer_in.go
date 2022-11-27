@@ -1,8 +1,6 @@
 package types
 
 import (
-	"math/big"
-
 	"github.com/gagliardetto/solana-go"
 	solanago "github.com/gagliardetto/solana-go"
 	"github.com/near/borsh-go"
@@ -27,7 +25,7 @@ func NewTransferInIx(
 	bridgePda string,
 	tokens []string,
 	receiverAtas []string,
-	amounts []*big.Int,
+	amounts []uint64,
 ) (*TransferInIx, error) {
 	// Verify that all strings are valid.
 	accountStrs := []string{bridgeProgramdId, mpcAddress, tokenProgramId, bridgePda}
@@ -46,25 +44,36 @@ func NewTransferInIx(
 		solanago.NewAccountMeta(solanago.MustPublicKeyFromBase58(bridgePda), false, false),
 	}
 
-	// Add all bridge ata
-	for _, token := range tokens {
-		bridgeAta, _, err := solanago.FindAssociatedTokenAddress(
-			solanago.MustPublicKeyFromBase58(bridgePda),
-			solanago.MustPublicKeyFromBase58(token),
-		)
+	// Add all bridge & receiver ata
+	for i, token := range tokens {
+		// BridgeATa
+		bridgeAta, err := GetAtaPubkey(bridgePda, token)
 		if err != nil {
 			return nil, err
 		}
-
 		accounts = append(
 			accounts,
 			solanago.NewAccountMeta(bridgeAta, false, true),
+		)
+
+		// Receivert Ata
+		receiverAta, err := GetAtaPubkey(receiverAtas[i], token)
+		if err != nil {
+			return nil, err
+		}
+		accounts = append(
+			accounts,
+			solanago.NewAccountMeta(receiverAta, false, true),
 		)
 	}
 
 	return &TransferInIx{
 		bridgeProgramdId: solanago.MustPublicKeyFromBase58(bridgeProgramdId),
 		accounts:         accounts,
+		data: TransferInData{
+			Nonce:   nonce,
+			Amounts: amounts,
+		},
 	}, nil
 }
 

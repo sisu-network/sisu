@@ -233,14 +233,6 @@ func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx
 
 		// Convert from ADA unit (10^6) to our standard unit (10^18)
 		for _, amount := range cardanoTx.Amount {
-			quantity, ok := new(big.Int).SetString(amount.Quantity, 10)
-			if !ok {
-				log.Error("Failed to get amount quantity in cardano tx")
-				continue
-			}
-			quantity = utils.LovelaceToWei(quantity)
-
-			// Remove the word wrap
 			tokenUnit := amount.Unit
 			if tokenUnit != "lovelace" {
 				token := GetTokenFromCardanoAsset(ctx, b.keeper, tokenUnit, chain)
@@ -257,13 +249,28 @@ func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx
 				tokenUnit = "ADA"
 			}
 
+			// Converte token quantity to Sisu decimals
+			quantity, ok := new(big.Int).SetString(amount.Quantity, 10)
+			if !ok {
+				return nil, fmt.Errorf("Failed to get amount quantity in cardano tx, amount = %s", amount.Quantity)
+			}
+			tokens := b.keeper.GetTokens(ctx, []string{tokenUnit})
+			if len(tokens) == 0 {
+				return nil, fmt.Errorf("Cannot find token %s", tokenUnit)
+			}
+			amountBig, err := tokens[tokenUnit].ConvertAmountToSisuAmount(chain, quantity)
+			if err != nil {
+				log.Warnf("Cannot convert amount %d on chain %s", amount.Quantity, chain)
+				continue
+			}
+
 			log.Verbose("tokenUnit = ", tokenUnit, " quantity = ", quantity)
 			log.Verbose("cardanoTx.Metadata = ", cardanoTx.Metadata)
 
 			ret = append(ret, &types.Transfer{
 				FromHash:    cardanoTx.Hash,
 				Token:       tokenUnit,
-				Amount:      quantity.String(),
+				Amount:      amountBig.String(),
 				ToChain:     cardanoTx.Metadata.Chain,
 				ToRecipient: cardanoTx.Metadata.Recipient,
 			})

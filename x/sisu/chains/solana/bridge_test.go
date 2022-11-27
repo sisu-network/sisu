@@ -2,15 +2,18 @@ package solana
 
 import (
 	"encoding/json"
+	"math/big"
 	"testing"
 
 	bin "github.com/gagliardetto/binary"
 	solanago "github.com/gagliardetto/solana-go"
+	"github.com/near/borsh-go"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	eyessolanatypes "github.com/sisu-network/deyes/chains/solana/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/utils"
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
@@ -85,19 +88,23 @@ func TestProcessTransfer(t *testing.T) {
 	cfg.Solana.BridgeProgramId = "HguMTvmDfspHuEWycDSP1XtVQJi47hVNAyLbFEf2EJEQ"
 	cfg.Solana.BridgePda = "6GQbD1BxAiog9Ym1YLnaci4BpcR1HLNNdc7wRrBqPA2D"
 
-	chain := "solana-devnent"
+	chain := "solana-devnet"
 	mpcAddress := "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
 	tokenProgramId := "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+	nonce := 1
+	amountInt := 5
 
 	ctx, k := mockForBridgeTest()
 	k.SetMpcAddress(ctx, chain, mpcAddress)
 	k.SetSolanaConfirmedBlock(ctx, chain, "signer", "Q6XprfkF8RQQKoQVG33xT88H7wi8Uk1B1CC7YAs69Gi", 100)
-	k.SetMpcNonce(ctx, &types.MpcNonce{Chain: chain, Nonce: 1})
+	k.SetMpcNonce(ctx, &types.MpcNonce{Chain: chain, Nonce: int64(nonce)})
 
+	recipient := "CLKfJz4bTt9a2ZEJdv2FLwBziUBAtDH1bDfrUKENkf1H"
 	transfer := &types.Transfer{
 		Id:          "transfer_123",
-		Token:       "8a6Kn1uwFAuePztJSBkLjUvJiD6YWZ33JMuSaXErKPCX",
-		ToRecipient: "CLKfJz4bTt9a2ZEJdv2FLwBziUBAtDH1bDfrUKENkf1H",
+		Token:       "SISU",
+		ToRecipient: recipient,
+		Amount:      new(big.Int).Mul(big.NewInt(int64(amountInt)), utils.EthToWei).String(),
 	}
 
 	bridge := NewBridge(chain, "signer", k, cfg)
@@ -106,15 +113,53 @@ func TestProcessTransfer(t *testing.T) {
 
 	require.Equal(t, 1, len(msgs))
 
+	// Find the bridge ata
+	tokens := k.GetTokens(ctx, []string{"SISU"})
+	tokenAddr := tokens["SISU"].GetAddressForChain(chain)
+	bridgeAta, err := solanatypes.GetAtaPubkey(cfg.Solana.BridgePda, tokenAddr)
+	require.Nil(t, err)
+	receiverAta, err := solanatypes.GetAtaPubkey(recipient, tokenAddr)
+	require.Nil(t, err)
+
 	// Let's deserialize the tx
 	message := solanago.Message{}
 	err = message.UnmarshalLegacy(bin.NewCompactU16Decoder(msgs[0].Data.Content.OutBytes))
 	require.Nil(t, err)
+
+	// Verify message accounts
+	require.Equal(t, 6, len(message.AccountKeys))
+	require.Contains(t, message.AccountKeys, solanago.MustPublicKeyFromBase58(mpcAddress))
+	require.Contains(t, message.AccountKeys, solanago.MustPublicKeyFromBase58(tokenProgramId))
+	require.Contains(t, message.AccountKeys, solanago.MustPublicKeyFromBase58(cfg.Solana.BridgePda))
+	require.Contains(t, message.AccountKeys, solanago.MustPublicKeyFromBase58(cfg.Solana.BridgeProgramId))
+	require.Contains(t, message.AccountKeys, bridgeAta)
+	require.Contains(t, message.AccountKeys, receiverAta)
+
+	// Verify instructions accounts
 	require.Equal(t, 1, len(message.Instructions))
-	require.Equal(t, []solanago.PublicKey{
-		solanago.MustPublicKeyFromBase58(mpcAddress),
-		solanago.MustPublicKeyFromBase58(tokenProgramId),
-		solanago.MustPublicKeyFromBase58(cfg.Solana.BridgePda),
-		solanago.MustPublicKeyFromBase58(cfg.Solana.BridgeProgramId),
-	}, message.AccountKeys)
+	instruction := message.Instructions[0]
+	require.Equal(t, 5, len(message.Instructions[0].Accounts))
+	require.Equal(t,
+		[]solanago.PublicKey{
+			solanago.MustPublicKeyFromBase58(mpcAddress),
+			solanago.MustPublicKeyFromBase58(tokenProgramId),
+			solanago.MustPublicKeyFromBase58(cfg.Solana.BridgePda),
+			bridgeAta,
+			receiverAta,
+		},
+		[]solanago.PublicKey{
+			message.AccountKeys[instruction.Accounts[0]],
+			message.AccountKeys[instruction.Accounts[1]],
+			message.AccountKeys[instruction.Accounts[2]],
+			message.AccountKeys[instruction.Accounts[3]],
+			message.AccountKeys[instruction.Accounts[4]],
+		},
+	)
+
+	// Verify instruction data
+	transferIn := solanatypes.TransferInData{}
+	err = borsh.Deserialize(&transferIn, instruction.Data)
+	require.Nil(t, err)
+	require.Equal(t, uint64(nonce), transferIn.Nonce)
+	require.Equal(t, []uint64{uint64(amountInt * 100_000_000)}, transferIn.Amounts)
 }

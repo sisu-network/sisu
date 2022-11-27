@@ -23,6 +23,11 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
+var (
+	// The amount needs to fix into an uin64 integer. This is the max amount user can transfer.
+	MaxTransferAmountInteger = new(big.Int).Exp(big.NewInt(2), big.NewInt(63), nil)
+)
+
 type bridge struct {
 	chain  string
 	keeper keeper.Keeper
@@ -49,13 +54,13 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) 
 	for _, transfer := range transfers {
 		token := allTokens[transfer.Token]
 		if token == nil {
-			log.Warn("cannot find token", transfer.Token)
+			log.Warn("cannot find token ", transfer.Token)
 			continue
 		}
 
 		amount, ok := new(big.Int).SetString(transfer.Amount, 10)
 		if !ok {
-			log.Warn("Cannot create big.Int value from amout ", transfer.Amount)
+			log.Warn("Cannot create big.Int value from amount ", transfer.Amount)
 			continue
 		}
 
@@ -114,6 +119,26 @@ func (b *bridge) buildTransferInResponse(
 		return nil, fmt.Errorf("Nonce is nil for chainn %s", chain)
 	}
 
+	// Convert amount into token with correct decimal
+	solAmounts := make([]uint64, 0)
+	for i, amount := range amounts {
+		// Get token decimals
+		decimals := tokens[i].GetDecimalsForChain(chain)
+		base := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimals)), nil)
+		bigAmount := new(big.Int).Mul(amount, base)
+		bigAmount = bigAmount.Div(bigAmount, utils.EthToWei)
+
+		if bigAmount.Cmp(MaxTransferAmountInteger) > 0 {
+			return nil, fmt.Errorf(
+				"TransferExceedMax amount, original amount = %s, token decimals decimals = %d",
+				amount.String(),
+				decimals,
+			)
+		}
+
+		solAmounts = append(solAmounts, bigAmount.Uint64())
+	}
+
 	// TODO: Don't hardcode token program id here. Make each token has different token program ID
 	transferInIx, err := solanatypes.NewTransferInIx(
 		b.config.Solana.BridgeProgramId,
@@ -123,7 +148,7 @@ func (b *bridge) buildTransferInResponse(
 		b.config.Solana.BridgePda,
 		tokenAddrs,
 		recipients,
-		amounts,
+		solAmounts,
 	)
 
 	if err != nil {

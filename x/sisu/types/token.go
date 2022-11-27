@@ -19,8 +19,8 @@ func (t *Token) GetAddressForChain(c string) string {
 	return ""
 }
 
-// GetDeciamls returns the decimal of this token on a particular chain. Return 0 if not found.
-func (t *Token) GetDeciamls(c string) uint32 {
+// GetDecimalsForChain returns the decimal of this token on a particular chain. Return 0 if not found.
+func (t *Token) GetDecimalsForChain(c string) uint32 {
 	for i, chain := range t.Chains {
 		if chain == c {
 			return t.Decimals[i]
