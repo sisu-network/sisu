@@ -57,7 +57,7 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string) {
 			}
 
 			if libchain.IsSolanaChain(token.Chains[i]) {
-				decimals := token.GetDeciamls(solanaConfig.Chain)
+				decimals := token.GetDecimalsForChain(solanaConfig.Chain)
 				tokentMintPubKey := solanago.MustPublicKeyFromBase58(token.Addresses[i])
 
 				// Create source ata

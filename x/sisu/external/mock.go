@@ -3,7 +3,6 @@ package external
 import (
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/echovl/cardano-go"
-	eTypes "github.com/sisu-network/deyes/types"
 	etypes "github.com/sisu-network/deyes/types"
 	htypes "github.com/sisu-network/dheart/types"
 )
@@ -17,7 +16,7 @@ func check() {
 
 type MockDeyesClient struct {
 	PingFunc                   func(source string) error
-	DispatchFunc               func(request *eTypes.DispatchedTxRequest) (*eTypes.DispatchedTxResult, error)
+	DispatchFunc               func(request *etypes.DispatchedTxRequest) (*etypes.DispatchedTxResult, error)
 	SetVaultAddressFunc        func(chain, addr, token string) error
 	GetNonceFunc               func(chain string, address string) int64
 	SetSisuReadyFunc           func(isReady bool) error
@@ -38,7 +37,7 @@ func (c *MockDeyesClient) Ping(source string) error {
 	return nil
 }
 
-func (c *MockDeyesClient) Dispatch(request *eTypes.DispatchedTxRequest) (*eTypes.DispatchedTxResult, error) {
+func (c *MockDeyesClient) Dispatch(request *etypes.DispatchedTxRequest) (*etypes.DispatchedTxResult, error) {
 	if c.DispatchFunc != nil {
 		return c.DispatchFunc(request)
 	}
