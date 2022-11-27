@@ -14,7 +14,7 @@ func TestApproveToken(t *testing.T) {
 	t.Skip()
 
 	mnemonic, client, wsClient := getBasicData("localhost")
-	feePayer := GetSolanaPrivateKey(mnemonic)
+	feePayer := solana.GetSolanaPrivateKey(mnemonic)
 
 	cmd := &swapCommand{}
 	ix := cmd.approveSolanaIx("../../../../misc/test", "solana-devnet", mnemonic, "AJdUMt177iQ19J63ybkXtUVD6sK8dxD5ibietQANuv9S", 1000)
@@ -29,7 +29,7 @@ func TestTransferOut(t *testing.T) {
 	t.Skip()
 
 	mnemonic, client, wsClient := getBasicData("devnet")
-	feePayer := GetSolanaPrivateKey(mnemonic)
+	feePayer := solana.GetSolanaPrivateKey(mnemonic)
 
 	cmd := &swapCommand{}
 

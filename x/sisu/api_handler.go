@@ -57,17 +57,16 @@ func NewApiHandler(
 	mc ManagerContainer,
 ) *ApiHandler {
 	a := &ApiHandler{
-		mc:           mc,
-		keeper:       mc.Keeper(),
-		privateDb:    privateDb,
-		appKeys:      mc.AppKeys(),
-		txSubmit:     mc.TxSubmit(),
-		globalData:   mc.GlobalData(),
-		dheartClient: mc.DheartClient(),
-		deyesClient:  mc.DeyesClient(),
-		txTracker:    mc.TxTracker(),
-		chainPolling: service.NewChainPolling(mc.AppKeys().GetSignerAddress().String(),
-			mc.DeyesClient(), mc.TxSubmit()),
+		mc:            mc,
+		keeper:        mc.Keeper(),
+		privateDb:     privateDb,
+		appKeys:       mc.AppKeys(),
+		txSubmit:      mc.TxSubmit(),
+		globalData:    mc.GlobalData(),
+		dheartClient:  mc.DheartClient(),
+		deyesClient:   mc.DeyesClient(),
+		txTracker:     mc.TxTracker(),
+		chainPolling:  mc.ChainPolling(),
 		bridgeManager: mc.BridgeManager(),
 	}
 

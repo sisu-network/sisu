@@ -241,6 +241,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	if !am.globalData.AppInitialized() {
 		cloneCtx := utils.CloneSdkContext(ctx)
 		am.mc.TransferQueue().Start(cloneCtx)
+		am.mc.ChainPolling().Start(ctx, am.keeper)
 		am.globalData.SetAppInitialized()
 	}
 

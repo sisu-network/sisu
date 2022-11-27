@@ -66,7 +66,7 @@ func TestSerializeTransferIxData(t *testing.T) {
 
 func TestGetSolanaPrivateKey(t *testing.T) {
 	mnemonic := utils.LOCALHOST_MNEMONIC
-	privateKey := GetSolanaPrivateKey(mnemonic)
+	privateKey := solana.GetSolanaPrivateKey(mnemonic)
 
 	require.Equal(t, "Cy4RyK92aQHuaPgw6PdSYJ5GbcAw9uL8fTPawEtZwiWw", privateKey.PublicKey().String())
 }

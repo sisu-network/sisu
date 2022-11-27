@@ -28,7 +28,7 @@ var (
 	MaxTransferAmountInteger = new(big.Int).Exp(big.NewInt(2), big.NewInt(63), nil)
 )
 
-type bridge struct {
+type defaultBridge struct {
 	chain  string
 	keeper keeper.Keeper
 	signer string
@@ -36,7 +36,7 @@ type bridge struct {
 }
 
 func NewBridge(chain, signer string, keeper keeper.Keeper, cfg config.Config) chaintypes.Bridge {
-	return &bridge{
+	return &defaultBridge{
 		chain:  chain,
 		keeper: keeper,
 		signer: signer,
@@ -44,7 +44,7 @@ func NewBridge(chain, signer string, keeper keeper.Keeper, cfg config.Config) ch
 	}
 }
 
-func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
+func (b *defaultBridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
 	allTokens := b.keeper.GetAllTokens(ctx)
 	tokens := make([]*types.Token, 0, len(transfers))
 	recipients := make([]string, 0, len(transfers))
@@ -92,12 +92,34 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) 
 	return []*types.TxOutMsg{outMsg}, nil
 }
 
-func (b *bridge) buildTransferInResponse(
+func (b *defaultBridge) buildTransferInResponse(
 	ctx sdk.Context,
 	tokens []*types.Token,
 	recipients []string,
 	amounts []*big.Int,
 ) (*types.TxResponse, error) {
+	tx, err := b.getTransaction(ctx, tokens, recipients, amounts)
+	if err != nil {
+		return nil, err
+	}
+
+	messageContent, err := tx.Message.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
+
+	return &types.TxResponse{
+		OutChain: b.chain,
+		RawBytes: messageContent,
+	}, nil
+}
+
+func (b *defaultBridge) getTransaction(
+	ctx sdk.Context,
+	tokens []*types.Token,
+	recipients []string,
+	amounts []*big.Int,
+) (*solanago.Transaction, error) {
 	chain := b.chain
 	// Get mpc address
 	mpcAddr := b.keeper.GetMpcAddress(ctx, chain)
@@ -170,18 +192,10 @@ func (b *bridge) buildTransferInResponse(
 		hash,
 	)
 
-	messageContent, err := tx.Message.MarshalBinary()
-	if err != nil {
-		return nil, err
-	}
-
-	return &types.TxResponse{
-		OutChain: b.chain,
-		RawBytes: messageContent,
-	}, nil
+	return tx, err
 }
 
-func (b *bridge) getRecentBlockHash(ctx sdk.Context, chain string) (string, error) {
+func (b *defaultBridge) getRecentBlockHash(ctx sdk.Context, chain string) (string, error) {
 	metas := b.keeper.GetAllSolanaConfirmedBlock(ctx, chain)
 	if len(metas) == 0 {
 		return "", fmt.Errorf("Empty metas array")
@@ -200,7 +214,7 @@ func (b *bridge) getRecentBlockHash(ctx sdk.Context, chain string) (string, erro
 	return arr[len(arr)/2].SolanaRecentBlockHash, nil
 }
 
-func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx) ([]*types.Transfer, error) {
+func (b *defaultBridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx) ([]*types.Transfer, error) {
 	ret := make([]*types.Transfer, 0)
 
 	outerTx := new(eyessolanatypes.Transaction)

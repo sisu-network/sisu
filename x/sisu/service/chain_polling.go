@@ -41,21 +41,37 @@ func NewChainPolling(signer string, deyesClient external.DeyesClient, txSubmit c
 }
 
 func (p *defaultChainPolling) Start(ctx sdk.Context, k keeper.Keeper) {
+	solanaChain := ""
 	// Start polling all solana chains
 	params := k.GetParams(ctx)
 	for _, chain := range params.SupportedChains {
 		if libchain.IsSolanaChain(chain) {
-			p.QueryRecentSolanBlock(chain)
+			solanaChain = chain
+			break
 		}
+	}
+
+	if solanaChain == "" {
+		return
+	}
+
+	for {
+		now := time.Now().UnixMilli()
+		diff := now - int64(p.lastPollTime.Load())
+		if now-int64(p.lastPollTime.Load()) < int64(PollingFrequency) {
+			// We just poll recently, no need to poll again.
+			sleepTime := PollingFrequency - int(diff)
+			time.Sleep(time.Duration(sleepTime) * time.Microsecond)
+			continue
+		}
+
+		p.QueryRecentSolanBlock(solanaChain)
 	}
 }
 
 func (p *defaultChainPolling) QueryRecentSolanBlock(chain string) {
 	now := time.Now().UnixMilli()
-	if now-int64(p.lastPollTime.Load()) < int64(PollingFrequency) {
-		// We just poll recently, no need to poll again.
-		return
-	}
+	p.lastPollTime.Store(now)
 
 	result, err := p.deyesClient.SolanaQueryRecentBlock(chain)
 	if err != nil {
@@ -66,6 +82,4 @@ func (p *defaultChainPolling) QueryRecentSolanBlock(chain string) {
 	// Broadcast result
 	msg := types.NewUpdateSolanaRecentHashMsg(p.signer, chain, result.Hash, result.Height)
 	p.txSubmit.SubmitMessageAsync(msg)
-
-	p.lastPollTime.Store(now)
 }

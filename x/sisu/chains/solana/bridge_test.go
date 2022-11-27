@@ -178,7 +178,7 @@ func TestGetRecentBlockHash(t *testing.T) {
 	k.SetSolanaConfirmedBlock(ctx, chain, "signer8", "Hash8", 8)
 	k.SetSolanaConfirmedBlock(ctx, chain, "signer9", "Hash9", 7)
 
-	b := NewBridge(chain, "signer", k, config.Config{}).(*bridge)
+	b := NewBridge(chain, "signer", k, config.Config{}).(*defaultBridge)
 	hash, err := b.getRecentBlockHash(ctx, chain)
 	require.Nil(t, err)
 	require.Equal(t, "Hash8", hash)

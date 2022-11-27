@@ -8,6 +8,7 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/chains"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
+	"github.com/sisu-network/sisu/x/sisu/service"
 )
 
 type ManagerContainer interface {
@@ -25,6 +26,7 @@ type ManagerContainer interface {
 	ValidatorManager() ValidatorManager
 	TransferQueue() TransferQueue
 	BridgeManager() chains.BridgeManager
+	ChainPolling() service.ChainPolling
 }
 
 type DefaultManagerContainer struct {
@@ -44,6 +46,7 @@ type DefaultManagerContainer struct {
 	valsManager      ValidatorManager
 	transferOutQueue TransferQueue
 	bridgeManager    chains.BridgeManager
+	chainPolling     service.ChainPolling
 }
 
 func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
@@ -51,7 +54,7 @@ func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.Config,
 	appKeys common.AppKeys, txOutProducer TxOutputProducer, txTracker TxTracker,
 	keeper keeper.Keeper, valsManager ValidatorManager, txInQueue TransferQueue,
-	bridgeManager chains.BridgeManager) ManagerContainer {
+	bridgeManager chains.BridgeManager, chainPolling service.ChainPolling) ManagerContainer {
 	return &DefaultManagerContainer{
 		pmm:              pmm,
 		partyManager:     partyManager,
@@ -67,6 +70,7 @@ func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 		valsManager:      valsManager,
 		transferOutQueue: txInQueue,
 		bridgeManager:    bridgeManager,
+		chainPolling:     chainPolling,
 	}
 }
 
@@ -124,4 +128,8 @@ func (mc *DefaultManagerContainer) TransferQueue() TransferQueue {
 
 func (mc *DefaultManagerContainer) BridgeManager() chains.BridgeManager {
 	return mc.bridgeManager
+}
+
+func (mc *DefaultManagerContainer) ChainPolling() service.ChainPolling {
+	return mc.chainPolling
 }

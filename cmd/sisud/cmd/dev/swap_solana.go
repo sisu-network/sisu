@@ -14,7 +14,7 @@ import (
 
 func (c *swapCommand) swapFromSolana(genesisFolder, chain, mnemonic, tokenAddr, recipient string,
 	dstChain uint64, amount uint64) {
-	feePayer := GetSolanaPrivateKey(mnemonic)
+	feePayer := solana.GetSolanaPrivateKey(mnemonic)
 
 	solanaConfig, err := helper.ReadCmdSolanaConfig(filepath.Join(genesisFolder, "solana.json"))
 	if err != nil {
@@ -39,7 +39,7 @@ func (c *swapCommand) swapFromSolana(genesisFolder, chain, mnemonic, tokenAddr, 
 func (c *swapCommand) approveSolanaIx(genesisFolder, chain, mnemonic, tokenAddr string, amount uint64) solanago.Instruction {
 	tokenMintPubkey := solanago.MustPublicKeyFromBase58(tokenAddr)
 
-	ownerPrivKey := GetSolanaPrivateKey(mnemonic)
+	ownerPrivKey := solana.GetSolanaPrivateKey(mnemonic)
 	ownerPubkey := ownerPrivKey.PublicKey()
 	ownerAta, _, err := solanago.FindAssociatedTokenAddress(ownerPubkey, tokenMintPubkey)
 	if err != nil {
@@ -76,7 +76,7 @@ func (c *swapCommand) approveSolanaIx(genesisFolder, chain, mnemonic, tokenAddr 
 func (c *swapCommand) transferTokenIx(genesisFolder, mnemonic, tokenAddr, recipient string, dstChainId, amount uint64) solanago.Instruction {
 	tokenMintPubkey := solanago.MustPublicKeyFromBase58(tokenAddr)
 
-	ownerPrivKey := GetSolanaPrivateKey(mnemonic)
+	ownerPrivKey := solana.GetSolanaPrivateKey(mnemonic)
 	ownerPubkey := ownerPrivKey.PublicKey()
 	ownerAta, _, err := solanago.FindAssociatedTokenAddress(ownerPubkey, tokenMintPubkey)
 	if err != nil {

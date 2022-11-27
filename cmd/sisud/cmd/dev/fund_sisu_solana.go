@@ -2,11 +2,9 @@ package dev
 
 import (
 	"context"
-	"crypto/ed25519"
 	"math/big"
 	"path/filepath"
 
-	"github.com/cosmos/go-bip39"
 	solanago "github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/gagliardetto/solana-go/rpc/ws"
@@ -17,16 +15,8 @@ import (
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
 )
 
-func GetSolanaPrivateKey(mnemonic string) solanago.PrivateKey {
-	seed := bip39.NewSeed(mnemonic, "")[:32]
-	key := ed25519.NewKeyFromSeed(seed)
-	privKey := solanago.PrivateKey(key)
-
-	return privKey
-}
-
 func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string) {
-	privateKey := GetSolanaPrivateKey(mnemonic)
+	privateKey := solana.GetSolanaPrivateKey(mnemonic)
 	faucet := privateKey.PublicKey()
 
 	// Get all tokens
@@ -96,7 +86,7 @@ func (c *fundAccountCmd) transferSolanaToken(client *rpc.Client, wsClient *ws.Cl
 		return
 	}
 
-	feePayer := GetSolanaPrivateKey(mnemonic)
+	feePayer := solana.GetSolanaPrivateKey(mnemonic)
 	feePayerPubkey := feePayer.PublicKey()
 
 	log.Verbosef("Funding token = %s, source = %s, destination = %s\n", token, sourceAta, receiverAta)
@@ -118,7 +108,7 @@ func (c *fundAccountCmd) transferSolanaToken(client *rpc.Client, wsClient *ws.Cl
 
 func (c *fundAccountCmd) createAssociatedAccount(client *rpc.Client, wsClient *ws.Client, mnemonic string,
 	owner, tokenMint solanago.PublicKey) (solanago.PublicKey, bool, error) {
-	privateKey := GetSolanaPrivateKey(mnemonic)
+	privateKey := solana.GetSolanaPrivateKey(mnemonic)
 	feePayer := privateKey.PublicKey()
 
 	// Check if the ata account existed. If not create a new one.
@@ -168,7 +158,7 @@ func (c *fundAccountCmd) mintToken(client *rpc.Client, wsClient *ws.Client, mnem
 		return nil
 	}
 
-	privateKey := GetSolanaPrivateKey(mnemonic)
+	privateKey := solana.GetSolanaPrivateKey(mnemonic)
 	owner := privateKey.PublicKey()
 
 	mintTokenIx := solanatypes.NewMintTokenIx(
