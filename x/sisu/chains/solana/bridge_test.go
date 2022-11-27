@@ -163,3 +163,23 @@ func TestProcessTransfer(t *testing.T) {
 	require.Equal(t, uint64(nonce), transferIn.Nonce)
 	require.Equal(t, []uint64{uint64(amountInt * 100_000_000)}, transferIn.Amounts)
 }
+
+func TestGetRecentBlockHash(t *testing.T) {
+	ctx, k := mockForBridgeTest()
+	chain := "solana-devnet"
+	// Medium of [0, 3, 5, 7, 8, 8, 9, 10, 100] is 8
+	k.SetSolanaConfirmedBlock(ctx, chain, "signer1", "Hash1", 8)
+	k.SetSolanaConfirmedBlock(ctx, chain, "signer2", "Hash2", 3)
+	k.SetSolanaConfirmedBlock(ctx, chain, "signer3", "Hash3", 5)
+	k.SetSolanaConfirmedBlock(ctx, chain, "signer4", "Hash4", 100)
+	k.SetSolanaConfirmedBlock(ctx, chain, "signer5", "Hash5", 0)
+	k.SetSolanaConfirmedBlock(ctx, chain, "signer6", "Hash6", 10)
+	k.SetSolanaConfirmedBlock(ctx, chain, "signer7", "Hash7", 9)
+	k.SetSolanaConfirmedBlock(ctx, chain, "signer8", "Hash8", 8)
+	k.SetSolanaConfirmedBlock(ctx, chain, "signer9", "Hash9", 7)
+
+	b := NewBridge(chain, "signer", k, config.Config{}).(*bridge)
+	hash, err := b.getRecentBlockHash(ctx, chain)
+	require.Nil(t, err)
+	require.Equal(t, "Hash8", hash)
+}

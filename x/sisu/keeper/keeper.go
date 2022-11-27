@@ -102,7 +102,7 @@ type Keeper interface {
 	GetPendingTxOutInfo(ctx sdk.Context, chain string) *types.PendingTxOutInfo
 
 	// Set Solana confirmed block
-	SetSolanaConfirmedBlock(ctx sdk.Context, signer, chain, blockHash string, height int64)
+	SetSolanaConfirmedBlock(ctx sdk.Context, chain, signer, blockHash string, height int64)
 	GetAllSolanaConfirmedBlock(ctx sdk.Context, chain string) map[string]*types.ChainMetadata
 }
 
