@@ -126,6 +126,10 @@ func (b *defaultBridge) getTransaction(
 	if mpcAddr == "" {
 		return nil, fmt.Errorf("Cannot find mpc address for chain %s", chain)
 	}
+	mpcPubkey, err := solanago.PublicKeyFromBase58(mpcAddr)
+	if err != nil {
+		return nil, err
+	}
 
 	tokenAddrs := make([]string, 0)
 	for _, token := range tokens {
@@ -190,6 +194,7 @@ func (b *defaultBridge) getTransaction(
 	tx, err := solanago.NewTransaction(
 		[]solanago.Instruction{transferInIx},
 		hash,
+		solanago.TransactionPayer(mpcPubkey),
 	)
 
 	return tx, err

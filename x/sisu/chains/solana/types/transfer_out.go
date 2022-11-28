@@ -8,17 +8,6 @@ import (
 	"github.com/near/borsh-go"
 )
 
-type InstructionType byte
-
-const (
-	Initialize    InstructionType = 0
-	TransferOut                   = 1
-	TranserIn                     = 2
-	AddSpender                    = 3
-	RemoveSpender                 = 4
-	ChangeAdmin                   = 5
-)
-
 type TransferOutData struct {
 	Instruction  byte
 	Amount       uint64

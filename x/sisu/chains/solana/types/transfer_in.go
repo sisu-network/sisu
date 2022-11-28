@@ -6,9 +6,14 @@ import (
 	"github.com/near/borsh-go"
 )
 
-type TransferInData struct {
+type TransferInDataInner struct {
 	Nonce   uint64
 	Amounts []uint64
+}
+
+type TransferInData struct {
+	Instruction byte
+	InnerData   TransferInDataInner
 }
 
 type TransferInIx struct {
@@ -53,17 +58,17 @@ func NewTransferInIx(
 		}
 		accounts = append(
 			accounts,
-			solanago.NewAccountMeta(bridgeAta, false, true),
+			solanago.NewAccountMeta(bridgeAta, true, false),
 		)
 
 		// Receivert Ata
-		receiverAta, err := GetAtaPubkey(receiverAtas[i], token)
+		receiverAta, err := solanago.PublicKeyFromBase58(receiverAtas[i])
 		if err != nil {
 			return nil, err
 		}
 		accounts = append(
 			accounts,
-			solanago.NewAccountMeta(receiverAta, false, true),
+			solanago.NewAccountMeta(receiverAta, true, false),
 		)
 	}
 
@@ -71,8 +76,11 @@ func NewTransferInIx(
 		bridgeProgramdId: solanago.MustPublicKeyFromBase58(bridgeProgramdId),
 		accounts:         accounts,
 		data: TransferInData{
-			Nonce:   nonce,
-			Amounts: amounts,
+			Instruction: TranserIn,
+			InnerData: TransferInDataInner{
+				Nonce:   nonce,
+				Amounts: amounts,
+			},
 		},
 	}, nil
 }

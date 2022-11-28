@@ -157,7 +157,7 @@ func TestProcessTransfer(t *testing.T) {
 	)
 
 	// Verify instruction data
-	transferIn := solanatypes.TransferInData{}
+	transferIn := solanatypes.TransferInDataInner{}
 	err = borsh.Deserialize(&transferIn, instruction.Data)
 	require.Nil(t, err)
 	require.Equal(t, uint64(nonce), transferIn.Nonce)
