@@ -24,3 +24,14 @@ func GetAtaPubkey(wallet, token string) (solanago.PublicKey, error) {
 
 	return ata, nil
 }
+
+func verifySolanaAddress(addrs []string) error {
+	for _, addr := range addrs {
+		_, err := solanago.PublicKeyFromBase58(addr)
+		if err != nil {
+			return fmt.Errorf("Invalid address %s", addr)
+		}
+	}
+
+	return nil
+}

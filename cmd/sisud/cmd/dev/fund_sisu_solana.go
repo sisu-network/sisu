@@ -2,6 +2,7 @@ package dev
 
 import (
 	"context"
+	"fmt"
 	"math/big"
 	"path/filepath"
 
@@ -11,11 +12,12 @@ import (
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/chains/solana"
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
 )
 
-func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string) {
+func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, mpcPubKey []byte) {
 	privateKey := solana.GetSolanaPrivateKey(mnemonic)
 	faucet := privateKey.PublicKey()
 
@@ -57,8 +59,12 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string) {
 				}
 
 				// Mint token for the source if needed.
-				c.mintToken(client, wsClient, mnemonic, created, tokentMintPubKey, byte(token.Decimals[i]),
+				fmt.Println("Minting token ", tokentMintPubKey, " to ", sourceAta)
+				err = c.mintToken(client, wsClient, mnemonic, created, tokentMintPubKey, byte(token.Decimals[i]),
 					sourceAta, 1_000_000*100_000_000)
+				if err != nil {
+					panic(err)
+				}
 
 				// Create bridge ata
 				bridgePda := solanago.MustPublicKeyFromBase58(solanaConfig.BridgePda)
@@ -72,7 +78,8 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string) {
 					byte(decimals), sourceAta.String(), bridgeAta.String(), 10_000*100_000_000)
 
 				// Set the spender for the vault.
-
+				c.setSpender(client, wsClient, genesisFolder, mnemonic,
+					utils.GetSolanaAddressFromPubkey(mpcPubKey))
 			}
 		}
 	}
@@ -174,4 +181,24 @@ func (c *fundAccountCmd) mintToken(client *rpc.Client, wsClient *ws.Client, mnem
 			SkipPreflight:       false,
 			PreflightCommitment: rpc.CommitmentFinalized,
 		})
+}
+
+func (c *fundAccountCmd) setSpender(client *rpc.Client, wsClient *ws.Client, genesisFolder,
+	mnemonic string, mpc string) {
+	solanaConfig, err := helper.ReadCmdSolanaConfig(filepath.Join(genesisFolder, "solana.json"))
+	if err != nil {
+		panic(err)
+	}
+
+	ownerKey := solana.GetSolanaPrivateKey(mnemonic)
+	ix, err := solanatypes.NewAddSpenderIx(solanaConfig.BridgeProgramId, ownerKey.PublicKey().String(),
+		solanaConfig.BridgePda, mpc)
+	if err != nil {
+		panic(err)
+	}
+
+	err = solana.SignAndSubmit(client, wsClient, []solanago.Instruction{ix}, ownerKey)
+	if err != nil {
+		panic(err)
+	}
 }

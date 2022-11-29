@@ -2,12 +2,12 @@ package dev
 
 import (
 	"context"
-	"encoding/hex"
+	"fmt"
 	"math/big"
+	"os"
 	"strings"
 	"testing"
 
-	"github.com/decred/dcrd/dcrec/edwards/v2"
 	solanago "github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/gagliardetto/solana-go/rpc/ws"
@@ -88,18 +88,10 @@ func TestTransferToken(t *testing.T) {
 // Sanity check on localhost. Disabled by default. Enable if you want to debug the fund command.
 func TestFundOnSolana(t *testing.T) {
 	t.Skip()
-	// This is the code to generate a new private key
-	// privateKey, err := edwards.GeneratePrivateKey()
-	// require.Nil(t, err)
 
-	bz, err := hex.DecodeString("00c5fb9d911b4cb3adf209bfa532e3004692c888f71bc6857095ba6674dc2d7b")
-	require.Nil(t, err)
-	privateKey, _, err := edwards.PrivKeyFromScalar(bz)
-	require.NotNil(t, privateKey)
-	require.Nil(t, err)
-
+	mnemonic := os.Getenv("MNEMONIC")
 	cmd := &fundAccountCmd{}
-	cmd.fundSolana("../../../../misc/test", utils.LOCALHOST_MNEMONIC)
+	cmd.fundSolana("../../../../misc/test", mnemonic, utils.RandomBytes(32))
 }
 
 func TestCreateAssociatedProgram(t *testing.T) {
@@ -143,4 +135,19 @@ func TestMintSolanaToken(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func TestSolanaSetSpender(t *testing.T) {
+	t.Skip()
+	mnemonic := os.Getenv("MNEMONIC")
+	cmd := &fundAccountCmd{}
+
+	_, client, wsClient := getBasicData("localhost")
+
+	pubkey := []byte{78, 114, 255, 58, 70, 231, 143, 6, 154, 69, 54, 90, 87, 89, 180, 208, 71, 88,
+		209, 74, 207, 217, 103, 218, 227, 238, 151, 136, 200, 253, 217, 17}
+	mockMpcAddr := utils.GetSolanaAddressFromPubkey(pubkey)
+
+	fmt.Println("mockMpcAddr = ", mockMpcAddr)
+	cmd.setSpender(client, wsClient, "../../../../misc/test", mnemonic, mockMpcAddr)
 }

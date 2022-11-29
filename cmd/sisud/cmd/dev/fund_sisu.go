@@ -104,7 +104,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlS
 	// Fund solana
 	if helper.IsSolanaEnabled(genesisFolder) {
 		log.Verbose("Funding on solana chain...")
-		c.fundSolana(genesisFolder, mnemonic)
+		c.fundSolana(genesisFolder, mnemonic, allPubKeys[libchain.KEY_TYPE_EDDSA])
 	}
 
 	// Fund the accounts with some native ETH and other tokens

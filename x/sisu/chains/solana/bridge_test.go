@@ -99,11 +99,14 @@ func TestProcessTransfer(t *testing.T) {
 	k.SetSolanaConfirmedBlock(ctx, chain, "signer", "Q6XprfkF8RQQKoQVG33xT88H7wi8Uk1B1CC7YAs69Gi", 100)
 	k.SetMpcNonce(ctx, &types.MpcNonce{Chain: chain, Nonce: int64(nonce)})
 
-	recipient := "CLKfJz4bTt9a2ZEJdv2FLwBziUBAtDH1bDfrUKENkf1H"
+	tokens := k.GetTokens(ctx, []string{"SISU"})
+	tokenAddr := tokens["SISU"].GetAddressForChain(chain)
+	receiverAta, err := solanatypes.GetAtaPubkey("5s3YB3BzLKNxT4bKjxfXTeQnNuokkH5J68tHMN7uqV8q", tokenAddr)
+	require.Nil(t, err)
 	transfer := &types.Transfer{
 		Id:          "transfer_123",
 		Token:       "SISU",
-		ToRecipient: recipient,
+		ToRecipient: receiverAta.String(),
 		Amount:      new(big.Int).Mul(big.NewInt(int64(amountInt)), utils.EthToWei).String(),
 	}
 
@@ -114,11 +117,7 @@ func TestProcessTransfer(t *testing.T) {
 	require.Equal(t, 1, len(msgs))
 
 	// Find the bridge ata
-	tokens := k.GetTokens(ctx, []string{"SISU"})
-	tokenAddr := tokens["SISU"].GetAddressForChain(chain)
 	bridgeAta, err := solanatypes.GetAtaPubkey(cfg.Solana.BridgePda, tokenAddr)
-	require.Nil(t, err)
-	receiverAta, err := solanatypes.GetAtaPubkey(recipient, tokenAddr)
 	require.Nil(t, err)
 
 	// Let's deserialize the tx
@@ -157,7 +156,7 @@ func TestProcessTransfer(t *testing.T) {
 	)
 
 	// Verify instruction data
-	transferIn := solanatypes.TransferInDataInner{}
+	transferIn := solanatypes.TransferInData{}
 	err = borsh.Deserialize(&transferIn, instruction.Data)
 	require.Nil(t, err)
 	require.Equal(t, uint64(nonce), transferIn.Nonce)

@@ -6,14 +6,10 @@ import (
 	"github.com/near/borsh-go"
 )
 
-type TransferInDataInner struct {
-	Nonce   uint64
-	Amounts []uint64
-}
-
 type TransferInData struct {
 	Instruction byte
-	InnerData   TransferInDataInner
+	Nonce       uint64
+	Amounts     []uint64
 }
 
 type TransferInIx struct {
@@ -41,6 +37,9 @@ func NewTransferInIx(
 		if err != nil {
 			return nil, err
 		}
+	}
+	if err := verifySolanaAddress(accountStrs); err != nil {
+		return nil, err
 	}
 
 	accounts := []*solanago.AccountMeta{
@@ -77,17 +76,10 @@ func NewTransferInIx(
 		accounts:         accounts,
 		data: TransferInData{
 			Instruction: TranserIn,
-			InnerData: TransferInDataInner{
-				Nonce:   nonce,
-				Amounts: amounts,
-			},
+			Nonce:       nonce,
+			Amounts:     amounts,
 		},
 	}, nil
-}
-
-func verifySolanaAddress(addr string) bool {
-	_, err := solanago.PublicKeyFromBase58(addr)
-	return err == nil
 }
 
 // ProgramID is the programID the instruction acts on.

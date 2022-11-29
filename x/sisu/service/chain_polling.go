@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -55,6 +56,10 @@ func (p *defaultChainPolling) Start(ctx sdk.Context, k keeper.Keeper) {
 		return
 	}
 
+	if true {
+		return
+	}
+
 	for {
 		now := time.Now().UnixMilli()
 		diff := now - int64(p.lastPollTime.Load())
@@ -80,6 +85,7 @@ func (p *defaultChainPolling) QueryRecentSolanBlock(chain string) {
 	}
 
 	// Broadcast result
+	fmt.Println("p.signer = ", p.signer)
 	msg := types.NewUpdateSolanaRecentHashMsg(p.signer, chain, result.Hash, result.Height)
 	p.txSubmit.SubmitMessageAsync(msg)
 }
