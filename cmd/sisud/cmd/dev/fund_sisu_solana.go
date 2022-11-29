@@ -42,6 +42,9 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, mpcPubKey []
 	log.Verbose("Funding SOL for mpc address = ", mpcAddr)
 	c.transferSOL(client, wsClient, mnemonic, mpcAddr)
 
+	log.Verbosef("Bridge program id = ", solanaConfig.BridgeProgramId)
+	log.Verbosef("BridgePda = ", solanaConfig.BridgePda)
+
 	// Get all ATA address created from mpc address and token address
 	for _, token := range tokens {
 		if len(token.Addresses) == 0 {
@@ -64,7 +67,7 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, mpcPubKey []
 				}
 
 				// Mint token for the source if needed.
-				log.Verbose("Minting token ", tokentMintPubKey, " to ", sourceAta)
+				log.Verbose("Minting token ", token.Id, " with address ", tokentMintPubKey, " to ", sourceAta)
 				err = c.mintToken(client, wsClient, mnemonic, created, tokentMintPubKey, byte(token.Decimals[i]),
 					sourceAta, 1_000_000*100_000_000)
 				if err != nil {
@@ -79,6 +82,7 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, mpcPubKey []
 				}
 
 				// Fund the address
+				log.Verbose("Funding the bridge ata address ", bridgeAta.String())
 				c.transferSolanaToken(client, wsClient, mnemonic, token.Addresses[i],
 					byte(decimals), sourceAta.String(), bridgeAta.String(), 10_000*100_000_000)
 
