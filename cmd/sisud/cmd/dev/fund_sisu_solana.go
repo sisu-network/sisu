@@ -42,8 +42,10 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, mpcPubKey []
 	log.Verbose("Funding SOL for mpc address = ", mpcAddr)
 	c.transferSOL(client, wsClient, mnemonic, mpcAddr)
 
-	log.Verbosef("Bridge program id = ", solanaConfig.BridgeProgramId)
-	log.Verbosef("BridgePda = ", solanaConfig.BridgePda)
+	log.Verbosef("Bridge program id = %s\n", solanaConfig.BridgeProgramId)
+	log.Verbosef("BridgePda = %s\n", solanaConfig.BridgePda)
+
+	// TODO: Check if the bridge pda is created. If not, create a new one
 
 	// Get all ATA address created from mpc address and token address
 	for _, token := range tokens {

@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	solanago "github.com/gagliardetto/solana-go"
+	"github.com/near/borsh-go"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 
@@ -220,6 +221,7 @@ func (b *defaultBridge) getRecentBlockHash(ctx sdk.Context, chain string) (strin
 }
 
 func (b *defaultBridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx) ([]*types.Transfer, error) {
+	log.Verbose("Parsing solana incomgin tx...")
 	ret := make([]*types.Transfer, 0)
 
 	outerTx := new(eyessolanatypes.Transaction)
@@ -235,7 +237,6 @@ func (b *defaultBridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyest
 	accounts := outerTx.TransactionInner.Message.AccountKeys
 
 	allTokens := b.keeper.GetAllTokens(ctx)
-
 	// Check that there is at least one instruction sent to the program id
 	for _, ix := range outerTx.TransactionInner.Message.Instructions {
 		if accounts[ix.ProgramIdIndex] != b.config.Solana.BridgeProgramId {
@@ -256,14 +257,16 @@ func (b *defaultBridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyest
 			return nil, fmt.Errorf("Data is empty")
 		}
 
-		transferOut := new(solanatypes.TransferOutData)
-		err = transferOut.Deserialize(bytesArr)
-		if err != nil {
-			return nil, err
-		}
+		instruction := bytesArr[0]
 
-		switch transferOut.Instruction {
+		switch instruction {
 		case solanatypes.TransferOut:
+			transferOut := new(solanatypes.TransferOutData)
+			err = transferOut.Deserialize(bytesArr)
+			if err != nil {
+				return nil, err
+			}
+
 			// look up the token in the keeper
 			log.Verbose("Transfer data on solana = ", *transferOut)
 			token := utils.GetTokenOnChain(allTokens, transferOut.TokenAddress, chain)
@@ -285,6 +288,15 @@ func (b *defaultBridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyest
 				ToChain:     libchain.GetChainNameFromInt(big.NewInt(int64(transferOut.ChainId))),
 				ToRecipient: transferOut.Recipient,
 			})
+
+		case solanatypes.TransferIn:
+			transferIn := new(solanatypes.TransferInData)
+			err = borsh.Deserialize(transferIn, bytesArr)
+			if err != nil {
+				return nil, err
+			}
+
+			log.Warn("This is a transfer in. Do nothing. It should be confirmed by Sisu")
 		}
 	}
 

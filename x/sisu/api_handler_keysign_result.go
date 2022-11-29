@@ -13,7 +13,6 @@ import (
 	dhtypes "github.com/sisu-network/dheart/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
@@ -143,12 +142,12 @@ func (a *ApiHandler) processSolanaKeysignResult(ctx sdk.Context, result *dhtypes
 
 	a.privateDb.SaveTxOutSig(&types.TxOutSig{
 		Chain:       signMsg.OutChain,
-		HashWithSig: utils.KeccakHash32(string(txBytes)),
+		HashWithSig: tx.Signatures[0].String(),
 		HashNoSig:   signMsg.OutHash,
 	})
 
 	log.Verbose("Sending signed solana tx to deyes....")
-	err = a.deploySignedTx(ctx, txBytes, signMsg.OutChain, result.Request.KeysignMessages[index].OutHash)
+	err = a.deploySignedTx(ctx, txBytes, signMsg.OutChain, tx.Signatures[0].String())
 	if err != nil {
 		log.Error("deployment error: ", err)
 		return err
@@ -158,7 +157,7 @@ func (a *ApiHandler) processSolanaKeysignResult(ctx sdk.Context, result *dhtypes
 }
 
 // deploySignedTx creates a deployment request and sends it to deyes.
-func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string, outHash string) error {
+func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string, trackHash string) error {
 	log.Verbose("Sending final tx to the deyes for deployment for chain ", outChain)
 
 	pubkey := a.keeper.GetKeygenPubkey(ctx, libchain.GetKeyTypeForChain(outChain))
@@ -168,7 +167,7 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 
 	request := &etypes.DispatchedTxRequest{
 		Chain:  outChain,
-		TxHash: outHash,
+		TxHash: trackHash,
 		Tx:     bz,
 		PubKey: pubkey,
 	}
@@ -180,10 +179,10 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 		if err != nil || (result != nil && !result.Success) {
 			log.Error("Deployment failed!, err = ", err)
 
-			txOut := a.getTxOutFromSignedHash(outChain, outHash)
+			txOut := a.getTxOutFromSignedHash(outChain, trackHash)
 
 			if txOut == nil {
-				log.Errorf("Cannot find txOut for dispath result with signed hash = %s, chain = %s", outHash, outChain)
+				log.Errorf("Cannot find txOut for dispath result with signed hash = %s, chain = %s", trackHash, outChain)
 				return
 			}
 

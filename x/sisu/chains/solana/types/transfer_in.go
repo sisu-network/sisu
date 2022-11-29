@@ -75,7 +75,7 @@ func NewTransferInIx(
 		bridgeProgramdId: solanago.MustPublicKeyFromBase58(bridgeProgramdId),
 		accounts:         accounts,
 		data: TransferInData{
-			Instruction: TranserIn,
+			Instruction: TransferIn,
 			Nonce:       nonce,
 			Amounts:     amounts,
 		},
