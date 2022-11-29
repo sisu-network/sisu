@@ -2,11 +2,11 @@ package dev
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 	"path/filepath"
 
 	solanago "github.com/gagliardetto/solana-go"
+	"github.com/gagliardetto/solana-go/programs/system"
 	"github.com/gagliardetto/solana-go/rpc"
 	"github.com/gagliardetto/solana-go/rpc/ws"
 	libchain "github.com/sisu-network/lib/chain"
@@ -37,6 +37,11 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, mpcPubKey []
 		panic(err)
 	}
 
+	// Fund SOL tokens for MPC accounts
+	mpcAddr := utils.GetSolanaAddressFromPubkey(mpcPubKey)
+	log.Verbose("Funding SOL for mpc address = ", mpcAddr)
+	c.transferSOL(client, wsClient, mnemonic, mpcAddr)
+
 	// Get all ATA address created from mpc address and token address
 	for _, token := range tokens {
 		if len(token.Addresses) == 0 {
@@ -59,7 +64,7 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, mpcPubKey []
 				}
 
 				// Mint token for the source if needed.
-				fmt.Println("Minting token ", tokentMintPubKey, " to ", sourceAta)
+				log.Verbose("Minting token ", tokentMintPubKey, " to ", sourceAta)
 				err = c.mintToken(client, wsClient, mnemonic, created, tokentMintPubKey, byte(token.Decimals[i]),
 					sourceAta, 1_000_000*100_000_000)
 				if err != nil {
@@ -78,10 +83,26 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, mpcPubKey []
 					byte(decimals), sourceAta.String(), bridgeAta.String(), 10_000*100_000_000)
 
 				// Set the spender for the vault.
-				c.setSpender(client, wsClient, genesisFolder, mnemonic,
-					utils.GetSolanaAddressFromPubkey(mpcPubKey))
+				c.setSpender(client, wsClient, genesisFolder, mnemonic, mpcAddr)
 			}
 		}
+	}
+}
+
+func (c *fundAccountCmd) transferSOL(client *rpc.Client, wsClient *ws.Client, mnemonic, mpcAddr string) {
+	feePayer := solana.GetSolanaPrivateKey(mnemonic)
+	feePayerPubkey := feePayer.PublicKey()
+
+	amount := uint64(20_000_000) // 0.2 SOL
+	ix := system.NewTransferInstruction(
+		amount,
+		feePayerPubkey,
+		solanago.MustPublicKeyFromBase58(mpcAddr),
+	).Build()
+
+	err := solana.SignAndSubmit(client, wsClient, []solanago.Instruction{ix}, feePayer)
+	if err != nil {
+		panic(err)
 	}
 }
 

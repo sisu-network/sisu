@@ -2,7 +2,6 @@ package dev
 
 import (
 	"context"
-	"fmt"
 	"math/big"
 	"os"
 	"strings"
@@ -148,6 +147,5 @@ func TestSolanaSetSpender(t *testing.T) {
 		209, 74, 207, 217, 103, 218, 227, 238, 151, 136, 200, 253, 217, 17}
 	mockMpcAddr := utils.GetSolanaAddressFromPubkey(pubkey)
 
-	fmt.Println("mockMpcAddr = ", mockMpcAddr)
 	cmd.setSpender(client, wsClient, "../../../../misc/test", mnemonic, mockMpcAddr)
 }

@@ -54,6 +54,8 @@ func doTransferIn(t *testing.T, privateKey solanago.PrivateKey, mpcKey solanago.
 		panic(err)
 	}
 
+	require.Equal(t, 1, int(tx.Message.Header.NumRequiredSignatures))
+
 	signTx(tx, privateKey)
 	sig, err := confirm.SendAndConfirmTransaction(context.Background(), client, wsClient, tx)
 	if err != nil {
@@ -73,15 +75,23 @@ func getRecentBlockHash(client *rpc.Client) *rpc.GetRecentBlockhashResult {
 }
 
 func signTx(tx *solanago.Transaction, privateKey solanago.PrivateKey) {
-	tx.Sign(
-		func(key solanago.PublicKey) *solanago.PrivateKey {
-			if privateKey.PublicKey().Equals(key) {
-				return &privateKey
-			}
+	messageContent, err := tx.Message.MarshalBinary()
+	if err != nil {
+		panic(fmt.Errorf("unable to encode message for signing: %w", err))
+	}
+	signerKeys := tx.Message.AccountKeys[0:tx.Message.Header.NumRequiredSignatures]
 
-			return nil
-		},
-	)
+	signedSignatures := []solanago.Signature{}
+	for _, key := range signerKeys {
+		if privateKey != nil {
+			s, err := privateKey.Sign(messageContent)
+			if err != nil {
+				panic(fmt.Errorf("failed to signed with key %q: %w", key.String(), err))
+			}
+			signedSignatures = append(signedSignatures, s)
+		}
+	}
+	tx.Signatures = append(tx.Signatures, signedSignatures...)
 }
 
 func doSetSpender(t *testing.T, mnemonic string, cfg config.Config, spenderKey solanago.PublicKey) {
@@ -102,7 +112,7 @@ func doSetSpender(t *testing.T, mnemonic string, cfg config.Config, spenderKey s
 // Set the mnemonic to run this test.
 // MNEMONIC=YOUR_MNEMONIC go test -v -run TestTransferIn
 func TestTransferIn(t *testing.T) {
-	// t.Skip()
+	t.Skip()
 	mnemonic := os.Getenv("MNEMONIC") // use your mnemonic here or pass it from the environment
 	admin := GetSolanaPrivateKey(mnemonic)
 	mpcKey := admin.PublicKey()
@@ -116,6 +126,7 @@ func TestTransferIn(t *testing.T) {
 }
 
 func TestSetSpenderAndTransferIn(t *testing.T) {
+	t.Skip()
 	mnemonic := os.Getenv("MNEMONIC") // use your mnemonic here or pass it from the environment
 
 	// private key of pubkey H4MctVS4MUteTAmLLUZfheCy9voAUngCY7zVqYKJQStG. Rember to fundn this
@@ -126,8 +137,6 @@ func TestSetSpenderAndTransferIn(t *testing.T) {
 
 	// privKey := GetSolanaPrivateKey(mnemonic)
 
-	fmt.Println("Public key = ", privKey.PublicKey())
-
 	cfg := config.Config{}
 	cfg.Solana.BridgeProgramId = "3pqWds7QP82yfxykgrvLszdmkQv6Vb5bukPZzzhYAYec" // Use your program id here
 	cfg.Solana.BridgePda = "CvocQ9ivbdz5rUnTh6zBgxaiR4asMNbXRrG2VPUYpoau"       // Bridge pda
@@ -136,7 +145,5 @@ func TestSetSpenderAndTransferIn(t *testing.T) {
 
 	spenderPubkey := privKey.PublicKey()
 	doSetSpender(t, mnemonic, cfg, spenderPubkey)
-
-	fmt.Println("Doing transfer in....")
 	doTransferIn(t, privKey, spenderPubkey, cfg, token, receiverAta)
 }

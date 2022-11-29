@@ -1,6 +1,8 @@
 package types
 
 import (
+	fmt "fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 
@@ -52,6 +54,10 @@ func (msg *UpdateSolanaRecentHashMsg) ValidateBasic() error {
 	_, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid creator address (%s)", err)
+	}
+
+	if msg.Data == nil {
+		return fmt.Errorf("%s data cannot be nil", msg.Type())
 	}
 
 	if libchain.IsSolanaChain(msg.Data.Chain) {

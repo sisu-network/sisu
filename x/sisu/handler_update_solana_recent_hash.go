@@ -18,6 +18,6 @@ func NewHandlerUpdateSolanaRecentHash(keeper keeper.Keeper) *HandlerUpdateSolana
 
 func (h *HandlerUpdateSolanaRecentHash) DeliverMsg(ctx sdk.Context, msg *types.UpdateSolanaRecentHashMsg) (*sdk.Result, error) {
 	data := msg.Data
-	h.keeper.SetSolanaConfirmedBlock(ctx, msg.Signer, data.Chain, data.Hash, data.Height)
-	return nil, nil
+	h.keeper.SetSolanaConfirmedBlock(ctx, data.Chain, msg.Signer, data.Hash, data.Height)
+	return &sdk.Result{}, nil
 }

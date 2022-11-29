@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -42,6 +41,8 @@ func NewChainPolling(signer string, deyesClient external.DeyesClient, txSubmit c
 }
 
 func (p *defaultChainPolling) Start(ctx sdk.Context, k keeper.Keeper) {
+	time.Sleep(time.Second * 5)
+
 	solanaChain := ""
 	// Start polling all solana chains
 	params := k.GetParams(ctx)
@@ -56,17 +57,13 @@ func (p *defaultChainPolling) Start(ctx sdk.Context, k keeper.Keeper) {
 		return
 	}
 
-	if true {
-		return
-	}
-
 	for {
 		now := time.Now().UnixMilli()
 		diff := now - int64(p.lastPollTime.Load())
 		if now-int64(p.lastPollTime.Load()) < int64(PollingFrequency) {
 			// We just poll recently, no need to poll again.
 			sleepTime := PollingFrequency - int(diff)
-			time.Sleep(time.Duration(sleepTime) * time.Microsecond)
+			time.Sleep(time.Duration(sleepTime) * time.Millisecond)
 			continue
 		}
 
@@ -84,8 +81,6 @@ func (p *defaultChainPolling) QueryRecentSolanBlock(chain string) {
 		return
 	}
 
-	// Broadcast result
-	fmt.Println("p.signer = ", p.signer)
 	msg := types.NewUpdateSolanaRecentHashMsg(p.signer, chain, result.Hash, result.Height)
 	p.txSubmit.SubmitMessageAsync(msg)
 }

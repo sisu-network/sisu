@@ -42,6 +42,7 @@ log_local = {{ .LogDNA.LogLocal }}
 ###############################################################################
 [solana]
 bridge_program_id = "{{ .Solana.BridgeProgramId }}"
+bridge_pda = "{{ .Solana.BridgePda }}"
 
 ###############################################################################
 ###                         Siu TSS Configuration                          ###

@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/decred/dcrd/dcrec/edwards/v2"
 	bin "github.com/gagliardetto/binary"
 	solanago "github.com/gagliardetto/solana-go"
 	"github.com/near/borsh-go"
@@ -181,4 +182,75 @@ func TestGetRecentBlockHash(t *testing.T) {
 	hash, err := b.getRecentBlockHash(ctx, chain)
 	require.Nil(t, err)
 	require.Equal(t, "Hash8", hash)
+}
+
+// This test verifies that the ED25519 of solana is compatible with the eddsa curve that Sisu uses.
+func TestSigning(t *testing.T) {
+	msg := []byte("This is a test message")
+
+	edwardPrivkey, _ := edwards.GeneratePrivateKey()
+	require.NotNil(t, edwardPrivkey)
+	pubkey := solanago.PublicKeyFromBytes(edwardPrivkey.PubKey().Serialize())
+
+	sig2, err := edwardPrivkey.Sign(msg)
+	require.Nil(t, err)
+	require.True(t, pubkey.Verify(msg, solanago.SignatureFromBytes(sig2.Serialize())))
+}
+
+func TestDeserializeTx(t *testing.T) {
+	mnemonic := utils.LOCALHOST_MNEMONIC
+	admin := GetSolanaPrivateKey(mnemonic)
+	mpcKey := admin.PublicKey()
+
+	chain := "solana-devnet"
+
+	ctx := testmock.TestContext()
+	k := testmock.KeeperTestAfterContractDeployed(ctx)
+	k.SetMpcAddress(ctx, chain, mpcKey.String())
+	k.SetMpcNonce(ctx, &types.MpcNonce{Chain: chain, Nonce: 1})
+	k.SetSolanaConfirmedBlock(ctx, chain, "signer", "EnzRJ6ojbs5GDEtv4vDRuNnMSJyYKfeD7ATNLwZQLWHe", int64(163_936_646))
+	m := k.GetTokens(ctx, []string{"SISU"})
+	token := m["SISU"]
+	for i, c := range token.Chains {
+		if c == chain {
+			token.Addresses[i] = "DEfbTuKfeXxXYkXFU6eGgyzDNbTbsAD9U6z7xexK4nUd" // Put your token address here.
+		}
+	}
+	m["SISU"] = token
+	k.SetTokens(ctx, m)
+
+	cfg := config.Config{}
+	cfg.Solana.BridgeProgramId = "3pqWds7QP82yfxykgrvLszdmkQv6Vb5bukPZzzhYAYec"
+	cfg.Solana.BridgePda = "CvocQ9ivbdz5rUnTh6zBgxaiR4asMNbXRrG2VPUYpoau"
+	receiverAta := "LkxVSjLH4mjxndDQKrG1a7FYTU7zGFYE5tDzr3PLd3i"
+
+	bridge := NewBridge(chain, "signer", k, cfg).(*defaultBridge)
+	tx, err := bridge.getTransaction(
+		ctx,
+		[]*types.Token{token},
+		[]string{receiverAta}, // Receiver account ata here.
+		[]*big.Int{new(big.Int).Mul(big.NewInt(3), utils.SisuDecimalBase)},
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	tx.Sign(
+		func(key solanago.PublicKey) *solanago.PrivateKey {
+			if admin.PublicKey().Equals(key) {
+				return &admin
+			}
+
+			return nil
+		},
+	)
+
+	bz, err := tx.MarshalBinary()
+	require.Nil(t, err)
+
+	decoder := bin.NewBinDecoder(bz)
+	decodedTx := solanago.Transaction{}
+
+	err = decodedTx.UnmarshalWithDecoder(decoder)
+	require.Nil(t, err)
 }

@@ -164,6 +164,7 @@ func getDeyesChains(cmd *cobra.Command, genesisFolder string) []econfig.Chain {
 			AdjustTime:            solanaConfig.AdjustTime,
 			SolanaBridgeProgramId: solanaConfig.BridgeProgramId,
 			Rpcs:                  []string{solanaConfig.Rpc},
+			Wss:                   []string{solanaConfig.Ws},
 		})
 	}
 

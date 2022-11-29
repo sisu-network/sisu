@@ -142,7 +142,7 @@ func (b *defaultBridge) getTransaction(
 
 	nonce := b.keeper.GetMpcNonce(ctx, chain)
 	if nonce == nil {
-		return nil, fmt.Errorf("Nonce is nil for chainn %s", chain)
+		return nil, fmt.Errorf("Nonce is nil for chain %s", chain)
 	}
 
 	// Convert amount into token with correct decimal
@@ -176,7 +176,6 @@ func (b *defaultBridge) getTransaction(
 		recipients,
 		solAmounts,
 	)
-
 	if err != nil {
 		return nil, err
 	}
@@ -186,6 +185,7 @@ func (b *defaultBridge) getTransaction(
 	if err != nil {
 		return nil, err
 	}
+	log.Verbosef("Recent block hash = %s", hashStr)
 	hash, err := solanago.HashFromBase58(hashStr)
 	if err != nil {
 		return nil, err

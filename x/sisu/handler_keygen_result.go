@@ -100,6 +100,7 @@ func (h *HandlerKeygenResult) setMpcAddress(ctx sdk.Context, chain string, keyge
 	}
 
 	if address != "" {
+		log.Verbosef("Setting mpc address for chain %s, addr = %s", chain, address)
 		h.keeper.SetMpcAddress(ctx, chain, address)
 	}
 }

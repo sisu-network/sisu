@@ -56,6 +56,8 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 			return NewHandlerBlockHeight(mc.Keeper()).DeliverMsg(ctx, msg)
 		case *types.TransferFailureMsg:
 			return NewHanlderTransferFailure(mc.Keeper(), mc.PostedMessageManager()).DeliverMsg(ctx, msg)
+		case *types.UpdateSolanaRecentHashMsg:
+			return NewHandlerUpdateSolanaRecentHash(mc.Keeper()).DeliverMsg(ctx, msg)
 
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)
