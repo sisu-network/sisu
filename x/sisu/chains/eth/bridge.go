@@ -57,8 +57,8 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) 
 		amounts = append(amounts, amount)
 		inHashes = append(inHashes, transfer.Id)
 
-		log.Verbosef("Processing transfer in: id = %s, recipient = %s, amount = %s, inHash = %s",
-			token.Id, transfer.ToRecipient, amount, transfer.Id)
+		log.Verbosef("Processing transfer in: id = %s, recipient = %s, amount = %s, inHash = %s, toChain = %s, toRecipient = %s",
+			token.Id, transfer.ToRecipient, amount, transfer.Id, transfer.ToChain, transfer.ToRecipient)
 	}
 
 	responseTx, err := b.buildERC20TransferIn(ctx, tokens, recipients, amounts)
