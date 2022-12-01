@@ -80,6 +80,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 }
 
 func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.Transfer, error) {
+	fmt.Println("a.bridgeManager = ", a.bridgeManager)
 	bridge := a.bridgeManager.GetBridge(ctx, chain)
 	if bridge != nil {
 		return bridge.ParseIncomginTx(ctx, chain, tx)

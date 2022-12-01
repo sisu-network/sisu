@@ -21,10 +21,13 @@ import (
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/contracts/eth/vault"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/chains"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
+	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
 )
 
@@ -49,7 +52,9 @@ func mockForApiHandlerTest() (sdk.Context, ManagerContainer) {
 	dheartClient := &external.MockDheartClient{}
 	appKeys := common.NewMockAppKeys()
 
-	mc := MockManagerContainer(k, pmm, globalData, partyManager, dheartClient, txSubmit, appKeys, ctx, txTracker)
+	bridgeManager := chains.NewBridgeManager("signer", k, &external.MockDeyesClient{}, config.Config{})
+
+	mc := MockManagerContainer(k, pmm, globalData, partyManager, dheartClient, txSubmit, appKeys, ctx, txTracker, bridgeManager)
 	return ctx, mc
 }
 
@@ -106,10 +111,16 @@ func createTransferOutEthTx(gateway string, dstChain *big.Int, srcToken string,
 
 func TestApiHandler_OnTxIns(t *testing.T) {
 	t.Run("empty_tx", func(t *testing.T) {
-		_, mc := mockForApiHandlerTest()
+		ctx, mc := mockForApiHandlerTest()
 		processor := NewApiHandler(nil, mc)
+		mc.Keeper().SaveParams(ctx, &types.Params{
+			SupportedChains: []string{"fantom-testnet"},
+		})
 
-		require.NoError(t, processor.OnTxIns(&eyesTypes.Txs{}))
+		err := processor.OnTxIns(&eyesTypes.Txs{
+			Chain: "fantom-testnet",
+		})
+		require.Nil(t, err)
 	})
 
 	t.Run("eth_transfer", func(t *testing.T) {
