@@ -55,8 +55,6 @@ transfer params.
 			deyesUrl, _ := cmd.Flags().GetString(flags.DeyesApiUrl)
 			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 
-			c := &swapCommand{}
-
 			if len(recipient) == 0 {
 				panic(flags.Recipient + " cannot be empty")
 			}
@@ -70,20 +68,20 @@ transfer params.
 			}
 			defer client.Close()
 
-			token, srcToken, dstToken := c.getTokenAddrs(tokenSymbol, src, dst, sisuRpc)
+			token, srcToken, dstToken := getTokenAddrsFromSisu(tokenSymbol, src, dst, sisuRpc)
 
 			log.Verbosef("srcToken = %s, dstToken = %s", srcToken, dstToken)
 
 			// Swapping from ETH chain
 			if libchain.IsETHBasedChain(src) {
-				vault := c.getVaultAddress(cmd.Context(), src, sisuRpc)
+				vault := getEthVaultAddress(cmd.Context(), src, sisuRpc)
 				log.Info("Vault address = ", vault)
 				amountBigInt := big.NewInt(int64(amount))
 				amountBigInt = new(big.Int).Mul(amountBigInt, utils.EthToWei)
 
-				c.swapFromEth(client, mnemonic, vault, dst, srcToken, dstToken, recipient, amountBigInt)
+				swapFromEth(client, mnemonic, vault, dst, srcToken, dstToken, recipient, amountBigInt)
 			} else if libchain.IsCardanoChain(src) {
-				vault := c.getCardanoVault(cmd.Context(), sisuRpc)
+				vault := getCardanoVault(cmd.Context(), sisuRpc)
 				log.Info("Cardano gateway = ", vault)
 
 				amountBigInt := big.NewInt(int64(amount))
@@ -91,10 +89,10 @@ transfer params.
 
 				cardanoconfig := helper.ReadCardanoConfig(genesisFolder)
 
-				c.swapFromCardano(src, dst, token, recipient, vault, amountBigInt, cardanoChain,
+				swapFromCardano(src, dst, token, recipient, vault, amountBigInt, cardanoChain,
 					cardanoconfig.Secret, mnemonic, deyesUrl)
 			} else if libchain.IsSolanaChain(src) {
-				c.swapFromSolana(genesisFolder, src, mnemonic, srcToken, recipient,
+				swapFromSolana(genesisFolder, src, mnemonic, srcToken, recipient,
 					libchain.GetChainIntFromId(dst).Uint64(), uint64(amount*100_000_000))
 			}
 
@@ -117,7 +115,7 @@ transfer params.
 	return cmd
 }
 
-func (c *swapCommand) getTokenAddrs(tokenId string, srcChain string, dstChain string, sisuRpc string) (*types.Token, string, string) {
+func getTokenAddrsFromSisu(tokenId string, srcChain string, dstChain string, sisuRpc string) (*types.Token, string, string) {
 	grpcConn, err := grpc.Dial(
 		sisuRpc,
 		grpc.WithInsecure(),
@@ -151,7 +149,7 @@ func (c *swapCommand) getTokenAddrs(tokenId string, srcChain string, dstChain st
 	return token, src, dest
 }
 
-func (c *swapCommand) getVaultAddress(context context.Context, chain string, sisuRpc string) string {
+func getEthVaultAddress(context context.Context, chain string, sisuRpc string) string {
 	grpcConn, err := grpc.Dial(
 		sisuRpc,
 		grpc.WithInsecure(),
@@ -178,7 +176,7 @@ func (c *swapCommand) getVaultAddress(context context.Context, chain string, sis
 }
 
 // swapFromEth creates an ETH transaction and sends to gateway contract.
-func (c *swapCommand) swapFromEth(client *ethclient.Client, mnemonic string, vaultAddr string, dstChain string,
+func swapFromEth(client *ethclient.Client, mnemonic string, vaultAddr string, dstChain string,
 	srcToken string, dstToken string, recipient string, amount *big.Int) {
 	v := common.HexToAddress(vaultAddr)
 	contract, err := vault.NewVault(v, client)
