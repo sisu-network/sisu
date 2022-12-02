@@ -214,7 +214,11 @@ func (b *defaultBridge) getRecentBlockHash(ctx sdk.Context, chain string) (strin
 
 	// Sort arr
 	sort.SliceStable(arr, func(i, j int) bool {
-		return arr[i].SolanaRecentBlockHeight < arr[j].SolanaRecentBlockHeight
+		if arr[i].SolanaRecentBlockHeight != arr[j].SolanaRecentBlockHeight {
+			return arr[i].SolanaRecentBlockHeight < arr[j].SolanaRecentBlockHeight
+		}
+
+		return arr[i].Signer < arr[j].Signer
 	})
 
 	return arr[len(arr)/2].SolanaRecentBlockHash, nil

@@ -181,7 +181,7 @@ func TestGetRecentBlockHash(t *testing.T) {
 	b := NewBridge(chain, "signer", k, config.Config{}).(*defaultBridge)
 	hash, err := b.getRecentBlockHash(ctx, chain)
 	require.Nil(t, err)
-	require.Equal(t, "Hash8", hash)
+	require.Equal(t, "Hash1", hash)
 }
 
 // This test verifies that the ED25519 of solana is compatible with the eddsa curve that Sisu uses.
