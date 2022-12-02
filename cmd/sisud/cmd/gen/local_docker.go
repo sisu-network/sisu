@@ -70,7 +70,6 @@ Example:
 			nodeDirPrefix, _ := cmd.Flags().GetString(flagNodeDirPrefix)
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
-			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 
 			g := &localDockerGenerator{}
 
@@ -105,7 +104,7 @@ Example:
 					panic(err)
 				}
 
-				nodeConfig := g.getNodeSettings(chainID, keyringBackend, i, mysqlIp, ips, cardanoSecret)
+				nodeConfig := g.getNodeSettings(chainID, keyringBackend, i, mysqlIp, ips)
 				nodeConfigs[i] = nodeConfig
 
 				g.generateEyesToml(deyesChains, i, dir)
@@ -147,7 +146,6 @@ Example:
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom),
 		"Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.Algo, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
-	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
 
 	return cmd
 }
@@ -208,7 +206,7 @@ func (g *localDockerGenerator) getDockerConfig(ganacheIps []string, chainIds []*
 }
 
 func (g *localDockerGenerator) getNodeSettings(chainID, keyringBackend string, index int,
-	mysqlIp string, ips []string, cardanoSecret string) config.Config {
+	mysqlIp string, ips []string) config.Config {
 	return config.Config{
 		Mode: "dev",
 		Sisu: config.SisuConfig{
@@ -222,7 +220,6 @@ func (g *localDockerGenerator) getNodeSettings(chainID, keyringBackend string, i
 			DheartPort: 5678,
 			DeyesUrl:   fmt.Sprintf("http://deyes%d:31001", index),
 		},
-		Cardano: config.CardanoConfig{BlockfrostSecret: cardanoSecret},
 	}
 }
 

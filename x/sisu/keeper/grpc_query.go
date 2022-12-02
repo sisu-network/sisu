@@ -31,7 +31,7 @@ func (k *GrpcQuerier) AllPubKeys(goCtx context.Context, req *types.QueryAllPubKe
 func (k *GrpcQuerier) QueryVault(goCtx context.Context, req *types.QueryVaultRequest) (*types.QueryVaultResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 
-	v := k.keeper.GetVault(ctx, req.Chain)
+	v := k.keeper.GetVault(ctx, req.Chain, req.Token)
 	if v == nil {
 		return nil, fmt.Errorf("cannot find contract on chain %s", req.Chain)
 	}

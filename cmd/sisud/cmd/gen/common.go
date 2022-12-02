@@ -76,6 +76,7 @@ log_local = {{ .LogDNA.LogLocal }}
   adjust_time = {{ $chain.AdjustTime }}
   starting_block = 0
   rpcs = [{{ range $j, $rpc := $chain.Rpcs }}"{{ $rpc }}", {{end}}]
+  wss = [{{ range $j, $ws := $chain.Wss }}"{{ $ws }}", {{end}}]
   rpc_secret = "{{ $chain.RpcSecret }}"
   client_type = "{{ $chain.ClientType }}"{{ if $chain.SyncDB.Host }}
   [chains.{{ $chain.Chain }}.sync_db]
@@ -84,7 +85,8 @@ log_local = {{ .LogDNA.LogLocal }}
     user = "{{ $chain.SyncDB.User }}"
     password = "{{ $chain.SyncDB.Password }}"
     db_name = "{{ $chain.SyncDB.DbName }}"
-    submit_url = "{{ $chain.SyncDB.SubmitURL }}"{{end}}{{ end }}
+    submit_url = "{{ $chain.SyncDB.SubmitURL }}"{{end}}
+  solana_bridge_program_id="{{ $chain.SolanaBridgeProgramId }}"{{ end }}
 `
 
 	tmpl := template.New("eyesToml")

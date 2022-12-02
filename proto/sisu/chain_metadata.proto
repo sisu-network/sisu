@@ -1,0 +1,25 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message ChainMetadata {
+  string signer = 1;
+  string chain = 2;
+
+  // Used for solana
+  string solanaRecentBlockHash = 3;
+  int64 solanaRecentBlockHeight = 4;
+}
+
+message UpdateSolanaRecentHash {
+  string signer = 1;
+  string chain = 2;
+  string hash = 3;
+  int64 height = 4;
+}
+
+message UpdateSolanaRecentHashMsg {
+  string signer = 1;
+  UpdateSolanaRecentHash data = 2;
+}

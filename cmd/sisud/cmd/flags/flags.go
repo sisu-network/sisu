@@ -28,6 +28,7 @@ const (
 	ContractHash        = "contract-hash"
 	Tokens              = "tokens"
 	Account             = "account"
+	Recipient           = "recipient"
 	Src                 = "src"
 	SrcUrl              = "src-url"
 	Dst                 = "dst"
@@ -36,8 +37,6 @@ const (
 	Algo                = "algo"
 	MinimumGasPrices    = "minimum-gas-prices"
 	CardanoChain        = "cardano-chain"
-	CardanoSecret       = "cardano-secret"
-	CardanoMnemonic     = "cardano-mnemonic"
 	CardanoDbConfig     = "cardano-db-config"
 	DeyesApiUrl         = "deyes-api-url"
 )

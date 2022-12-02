@@ -24,12 +24,13 @@ var (
 	prefixVault                  = []byte{0x10}
 	prefixParams                 = []byte{0x11}
 	prefixMpcAddress             = []byte{0x12}
-	prefixGatewayCheckPoint      = []byte{0x13}
+	prefixMpcNonces              = []byte{0x13}
 	prefixTransferQueue          = []byte{0x14}
 	prefixTxOutQueue             = []byte{0x15}
 	prefixPendingTxOut           = []byte{0x16}
 	prefixCommandQueue           = []byte{0x17}
 	prefixTransfer               = []byte{0x18}
+	prefixChainMetadata          = []byte{0x19}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -80,6 +81,14 @@ func getGasPriceKey(height int64) []byte {
 func getLiquidityKey(chain string) []byte {
 	// chain
 	return []byte(chain)
+}
+
+func getVaultKey(chain string, token string) []byte {
+	return []byte(fmt.Sprintf("%s__%s", chain, token))
+}
+
+func getChainMetadataKey(chain, signer string) []byte {
+	return []byte(fmt.Sprintf("%s__%s", chain, signer))
 }
 
 ///// TxREcord
@@ -562,23 +571,45 @@ func setVaults(store cstypes.KVStore, vaults []*types.Vault) {
 			continue
 		}
 
-		store.Set([]byte(vault.Chain), bz)
+		key := getVaultKey(vault.Chain, vault.Token)
+
+		store.Set(key, bz)
 	}
 }
 
-func getVault(store cstypes.KVStore, chain string) *types.Vault {
-	bz := store.Get([]byte(chain))
+func getVault(store cstypes.KVStore, chain string, token string) *types.Vault {
+	key := getVaultKey(chain, token)
+	bz := store.Get(key)
 	if bz == nil {
 		return nil
 	}
 
 	vault := &types.Vault{}
 	if err := vault.Unmarshal(bz); err != nil {
-		log.Errorf("getLiquidity: error when unmarshal liquid for chain: %s", chain)
+		log.Errorf("getVault: error when unmarshal liquid for chain: %s", chain)
 		return nil
 	}
 
 	return vault
+}
+
+func getAllVaultsForChain(store cstypes.KVStore, chain string) []*types.Vault {
+	iter := store.Iterator([]byte(fmt.Sprintf("%s__", chain)), nil)
+	vaults := make([]*types.Vault, 0)
+
+	// Go through all vaults
+	for ; iter.Valid(); iter.Next() {
+		bz := iter.Value()
+		vault := new(types.Vault)
+		if err := vault.Unmarshal(bz); err != nil {
+			log.Errorf("getAllVaultsForChain: error when unmarshal liquid for chain: %s", chain)
+			return nil
+		}
+
+		vaults = append(vaults, vault)
+	}
+
+	return vaults
 }
 
 ///// MPC Address
@@ -640,7 +671,7 @@ func getSisuAccount(store cstypes.KVStore, chain string) string {
 
 ///// Gateway Checkpoint
 
-func addCheckPoint(store cstypes.KVStore, checkPoint *types.GatewayCheckPoint) {
+func addCheckPoint(store cstypes.KVStore, checkPoint *types.MpcNonce) {
 	bz, err := checkPoint.Marshal()
 	if err != nil {
 		log.Error("cannot marshal checkpoint")
@@ -649,13 +680,13 @@ func addCheckPoint(store cstypes.KVStore, checkPoint *types.GatewayCheckPoint) {
 	store.Set([]byte(checkPoint.Chain), bz)
 }
 
-func getCheckPoint(store cstypes.KVStore, chain string) *types.GatewayCheckPoint {
+func getCheckPoint(store cstypes.KVStore, chain string) *types.MpcNonce {
 	bz := store.Get([]byte(chain))
 	if bz == nil {
 		return nil
 	}
 
-	checkPoint := &types.GatewayCheckPoint{}
+	checkPoint := &types.MpcNonce{}
 	err := checkPoint.Unmarshal(bz)
 	if err != nil {
 		log.Error("Failed to unmarshal gateway checkpoint, err = ", err)
@@ -663,23 +694,6 @@ func getCheckPoint(store cstypes.KVStore, chain string) *types.GatewayCheckPoint
 	}
 
 	return checkPoint
-}
-
-func getAllGatewayCheckPoints(store cstypes.KVStore) map[string]*types.GatewayCheckPoint {
-	ret := make(map[string]*types.GatewayCheckPoint)
-	iter := store.Iterator(nil, nil)
-	for ; iter.Valid(); iter.Next() {
-		bz := iter.Value()
-		checkPoint := &types.GatewayCheckPoint{}
-		err := checkPoint.Unmarshal(bz)
-		if err != nil {
-			log.Error("Failed to unmarshal checkpoint, err = ", err)
-			continue
-		}
-		ret[string(iter.Key())] = checkPoint
-	}
-
-	return ret
 }
 
 ///// Command Queue
@@ -839,6 +853,55 @@ func getPendingTxOutInfo(store cstypes.KVStore, chain string) *types.PendingTxOu
 	}
 
 	return txOutInfo
+}
+
+///// Chain Metadata
+func setSolanaConfirmedBlock(store cstypes.KVStore, chain, signer, hash string, height int64) {
+	key := getChainMetadataKey(chain, signer)
+
+	meta := &types.ChainMetadata{}
+	bz := store.Get(key)
+	if bz == nil {
+		meta.Chain = chain
+		meta.Signer = signer
+	} else {
+		err := meta.Unmarshal(bz)
+		if err != nil {
+			log.Error("setSolanaConfirmedBlock: failed to unmarshal into chain metadata")
+			return
+		}
+
+	}
+
+	meta.SolanaRecentBlockHash = hash
+	meta.SolanaRecentBlockHeight = height
+	bz, err := meta.Marshal()
+	if err != nil {
+		log.Error("setSolanaConfirmedBlock: cannot marshal meta")
+		return
+	}
+
+	store.Set(key, bz)
+}
+
+func getAllSolanaConfirmedBlock(store cstypes.KVStore, chain string) map[string]*types.ChainMetadata {
+	ret := make(map[string]*types.ChainMetadata)
+
+	begin := []byte(fmt.Sprintf("%s__", chain))
+	end := []byte(fmt.Sprintf("%s__~", chain))
+
+	iter := store.Iterator(begin, end)
+	for ; iter.Valid(); iter.Next() {
+		meta := &types.ChainMetadata{}
+		err := meta.Unmarshal(iter.Value())
+		if err == nil {
+			ret[meta.Signer] = meta
+		} else {
+			log.Error("getAllSolanaConfirmedBlock: cannot unmarshal bz")
+		}
+	}
+
+	return ret
 }
 
 ///// Debug functions

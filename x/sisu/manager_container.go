@@ -5,8 +5,10 @@ import (
 
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/x/sisu/chains"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
+	"github.com/sisu-network/sisu/x/sisu/service"
 )
 
 type ManagerContainer interface {
@@ -16,13 +18,15 @@ type ManagerContainer interface {
 	DeyesClient() external.DeyesClient
 	GlobalData() common.GlobalData
 	TxSubmit() common.TxSubmit
-	Config() config.TssConfig
+	Config() config.Config
 	AppKeys() common.AppKeys
 	TxOutProducer() TxOutputProducer
 	TxTracker() TxTracker
 	Keeper() keeper.Keeper
 	ValidatorManager() ValidatorManager
 	TransferQueue() TransferQueue
+	BridgeManager() chains.BridgeManager
+	ChainPolling() service.ChainPolling
 }
 
 type DefaultManagerContainer struct {
@@ -34,20 +38,23 @@ type DefaultManagerContainer struct {
 	deyesClient      external.DeyesClient
 	globalData       common.GlobalData
 	txSubmit         common.TxSubmit
-	config           config.TssConfig
+	config           config.Config
 	appKeys          common.AppKeys
 	txOutProducer    TxOutputProducer
 	txTracker        TxTracker
 	keeper           keeper.Keeper
 	valsManager      ValidatorManager
 	transferOutQueue TransferQueue
+	bridgeManager    chains.BridgeManager
+	chainPolling     service.ChainPolling
 }
 
 func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 	dheartClient external.DheartClient, deyesClient external.DeyesClient,
-	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.TssConfig,
+	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.Config,
 	appKeys common.AppKeys, txOutProducer TxOutputProducer, txTracker TxTracker,
-	keeper keeper.Keeper, valsManager ValidatorManager, txInQueue TransferQueue) ManagerContainer {
+	keeper keeper.Keeper, valsManager ValidatorManager, txInQueue TransferQueue,
+	bridgeManager chains.BridgeManager, chainPolling service.ChainPolling) ManagerContainer {
 	return &DefaultManagerContainer{
 		pmm:              pmm,
 		partyManager:     partyManager,
@@ -62,6 +69,8 @@ func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 		keeper:           keeper,
 		valsManager:      valsManager,
 		transferOutQueue: txInQueue,
+		bridgeManager:    bridgeManager,
+		chainPolling:     chainPolling,
 	}
 }
 
@@ -85,7 +94,7 @@ func (mc *DefaultManagerContainer) TxSubmit() common.TxSubmit {
 	return mc.txSubmit
 }
 
-func (mc *DefaultManagerContainer) Config() config.TssConfig {
+func (mc *DefaultManagerContainer) Config() config.Config {
 	return mc.config
 }
 
@@ -115,4 +124,12 @@ func (mc *DefaultManagerContainer) ValidatorManager() ValidatorManager {
 
 func (mc *DefaultManagerContainer) TransferQueue() TransferQueue {
 	return mc.transferOutQueue
+}
+
+func (mc *DefaultManagerContainer) BridgeManager() chains.BridgeManager {
+	return mc.bridgeManager
+}
+
+func (mc *DefaultManagerContainer) ChainPolling() service.ChainPolling {
+	return mc.chainPolling
 }

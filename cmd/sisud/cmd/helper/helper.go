@@ -3,8 +3,11 @@ package helper
 import (
 	"crypto/ecdsa"
 	"encoding/hex"
+	"encoding/json"
+	"os"
 
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 func GetDevPrivateKey() *ecdsa.PrivateKey {
@@ -20,4 +23,19 @@ func GetDevPrivateKey() *ecdsa.PrivateKey {
 	}
 
 	return privateKey
+}
+
+func GetTokens(file string) []*types.Token {
+	tokens := []*types.Token{}
+
+	dat, err := os.ReadFile(file)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := json.Unmarshal(dat, &tokens); err != nil {
+		panic(err)
+	}
+
+	return tokens
 }

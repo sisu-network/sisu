@@ -5,6 +5,7 @@ import (
 
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/types"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,56 +35,65 @@ func TestKeeper_SaveAndGetTxOut(t *testing.T) {
 	require.Nil(t, txOut)
 }
 
-func TestKeeper_BlockHeights(t *testing.T) {
-	// keeper, ctx := GetTestKeeperAndContext()
-	// keeper.SaveBlockHeights(ctx, "signer1", &types.BlockHeightRecord{
-	// 	BlockHeights: []*types.BlockHeight{
-	// 		{
-	// 			Chain: "ganache1",
-	// 		},
-	// 		{
-	// 			Chain: "ganache2",
-	// 		},
-	// 	},
-	// })
+func TestVault(t *testing.T) {
+	keeper, ctx := GetTestKeeperAndContext()
 
-	// keeper.SaveBlockHeights(ctx, "signer2", &types.BlockHeightRecord{
-	// 	BlockHeights: []*types.BlockHeight{
-	// 		{
-	// 			Chain: "ganache1",
-	// 		},
-	// 	},
-	// })
-	// keeper.SaveBlockHeights(ctx, "signer3", &types.BlockHeightRecord{
-	// 	BlockHeights: []*types.BlockHeight{
-	// 		{
-	// 			Chain: "ganache1",
-	// 		},
-	// 	},
-	// })
+	ethVault := &types.Vault{
+		Id:      "eth0",
+		Chain:   "eth",
+		Address: "0x-eth0",
+		Token:   "Token0",
+	}
 
-	// blockHeightRecord := keeper.GetBlockHeightRecord(ctx, "signer1")
-	// require.Equal(t, []*types.BlockHeight{
-	// 	{
-	// 		Chain: "ganache1",
-	// 	},
-	// 	{
-	// 		Chain: "ganache2",
-	// 	},
-	// }, blockHeightRecord.BlockHeights)
+	solVault0 := &types.Vault{
+		Id:      "solana0",
+		Chain:   "solana-devnet",
+		Address: "0x-solana0",
+		Token:   "Token0",
+	}
 
-	// blockHeightsMap := keeper.GetBlockHeightsForChain(ctx, "ganache1", []string{"ganache1", "ganache2"})
-	// _, blockHeights := types.ConvertBlockHeightsMapToArray(blockHeightsMap)
+	solVault1 := &types.Vault{
+		Id:      "solana1",
+		Chain:   "solana-devnet",
+		Address: "0x-solana1",
+		Token:   "Token1",
+	}
 
-	// sort.Slice(blockHeights, func(i, j int) bool {
-	// 	return strings.Compare(blockHeights[i].Chain, blockHeights[j].Chain) < 0
-	// })
-	// require.Equal(t, []*types.BlockHeight{
-	// 	{
-	// 		Chain: "ganache1",
-	// 	},
-	// 	{
-	// 		Chain: "ganache2",
-	// 	},
-	// }, blockHeightRecord.BlockHeights)
+	vaults := []*types.Vault{
+		ethVault, solVault0, solVault1,
+	}
+
+	keeper.SetVaults(ctx, vaults)
+
+	vault := keeper.GetVault(ctx, "solana-devnet", "Token0")
+	assert.Equal(t, solVault0, vault)
+	vault = keeper.GetVault(ctx, "solana-devnet", "Token1")
+	assert.Equal(t, solVault1, vault)
+
+	solVaults := keeper.GetAllVaultsForChain(ctx, "solana-devnet")
+	assert.Equal(t, []*types.Vault{solVault0, solVault1}, solVaults)
+}
+
+func TestChainMetadata(t *testing.T) {
+	keeper, ctx := GetTestKeeperAndContext()
+
+	keeper.SetSolanaConfirmedBlock(ctx, "solana-devnet", "signer1", "block1", 1)
+	keeper.SetSolanaConfirmedBlock(ctx, "solana-devnet", "signer2", "block2", 2)
+
+	metas := keeper.GetAllSolanaConfirmedBlock(ctx, "solana-devnet")
+
+	require.Equal(t, map[string]*types.ChainMetadata{
+		"signer1": {
+			Chain:                   "solana-devnet",
+			Signer:                  "signer1",
+			SolanaRecentBlockHash:   "block1",
+			SolanaRecentBlockHeight: 1,
+		},
+		"signer2": {
+			Chain:                   "solana-devnet",
+			Signer:                  "signer2",
+			SolanaRecentBlockHash:   "block2",
+			SolanaRecentBlockHeight: 2,
+		},
+	}, metas)
 }

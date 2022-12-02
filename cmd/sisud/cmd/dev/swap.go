@@ -7,20 +7,11 @@ import (
 	"time"
 
 	"github.com/sisu-network/sisu/contracts/eth/vault"
-	scardano "github.com/sisu-network/sisu/x/sisu/chains/cardano"
-	"github.com/sisu-network/sisu/x/sisu/external"
 
-	cgblockfrost "github.com/echovl/cardano-go/blockfrost"
-
-	cardanocrypto "github.com/echovl/cardano-go/crypto"
-
-	"github.com/echovl/cardano-go"
-	"github.com/echovl/cardano-go/wallet"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	hutils "github.com/sisu-network/dheart/utils"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/utils"
@@ -30,6 +21,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
+	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
 )
 
 type swapCommand struct{}
@@ -56,21 +48,17 @@ transfer params.
 			srcUrl, _ := cmd.Flags().GetString(flags.SrcUrl)
 			dst, _ := cmd.Flags().GetString(flags.Dst)
 			tokenSymbol, _ := cmd.Flags().GetString(flags.Erc20Symbol)
-			recipient, _ := cmd.Flags().GetString(flags.Account)
+			recipient, _ := cmd.Flags().GetString(flags.Recipient)
 			amount, _ := cmd.Flags().GetInt(flags.Amount)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 			cardanoChain, _ := cmd.Flags().GetString(flags.CardanoChain)
-			cardanoMnemonic, _ := cmd.Flags().GetString(flags.CardanoMnemonic)
-			cardanoSecret, _ := cmd.Flags().GetString(flags.CardanoSecret)
 			deyesUrl, _ := cmd.Flags().GetString(flags.DeyesApiUrl)
-			if len(cardanoMnemonic) == 0 {
-				cardanoMnemonic = mnemonic
-			}
+			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 
 			c := &swapCommand{}
 
 			if len(recipient) == 0 {
-				panic(flags.Account + " cannot be empty")
+				panic(flags.Recipient + " cannot be empty")
 			}
 
 			log.Info("srcUrl = ", srcUrl)
@@ -101,8 +89,13 @@ transfer params.
 				amountBigInt := big.NewInt(int64(amount))
 				amountBigInt = new(big.Int).Mul(amountBigInt, utils.ONE_ADA_IN_LOVELACE)
 
+				cardanoconfig := helper.ReadCardanoConfig(genesisFolder)
+
 				c.swapFromCardano(src, dst, token, recipient, vault, amountBigInt, cardanoChain,
-					cardanoSecret, cardanoMnemonic, deyesUrl)
+					cardanoconfig.Secret, mnemonic, deyesUrl)
+			} else if libchain.IsSolanaChain(src) {
+				c.swapFromSolana(genesisFolder, src, mnemonic, srcToken, recipient,
+					libchain.GetChainIntFromId(dst).Uint64(), uint64(amount*100_000_000))
 			}
 
 			return nil
@@ -115,12 +108,11 @@ transfer params.
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
 	cmd.Flags().String(flags.Dst, "ganache2", "Destination chain where the token is transferred to")
 	cmd.Flags().String(flags.Erc20Symbol, "SISU", "ID of the ERC20 to transferred")
-	cmd.Flags().String(flags.Account, "", "Recipient address in the destination chain")
+	cmd.Flags().String(flags.Recipient, "", "Recipient address in the destination chain")
 	cmd.Flags().Int(flags.Amount, 1, "The amount of token to be transferred")
 	cmd.Flags().String(flags.DeyesApiUrl, "http://127.0.0.1:31001", "Url to deyes api server.")
 	cmd.Flags().String(flags.CardanoChain, "", "Cardano chain.")
-	cmd.Flags().String(flags.CardanoMnemonic, "", "Cardano mnemonic.")
-	cmd.Flags().String(flags.CardanoSecret, "", "The blockfrost secret to interact with cardano network.")
+	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "Genesis folder that contains configuration files.")
 
 	return cmd
 }
@@ -228,113 +220,4 @@ func (c *swapCommand) swapFromEth(client *ethclient.Client, mnemonic string, vau
 	log.Info("txHash = ", waitTx.TxHash.Hex())
 
 	time.Sleep(time.Second * 3)
-}
-
-func (c *swapCommand) getCardanoVault(ctx context.Context, sisuRpc string) string {
-	allPubKeys := queryPubKeys(ctx, sisuRpc)
-	cardanoKey, ok := allPubKeys[libchain.KEY_TYPE_EDDSA]
-	if !ok {
-		panic("can not find cardano pub key")
-	}
-
-	return hutils.GetAddressFromCardanoPubkey(cardanoKey).String()
-}
-
-func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *types.Token,
-	destRecipient, cardanoVault string, value *big.Int, network string, blockfrostSecret, mnemonic string, deyesUrl string) {
-	privateKey, senderAddress := c.getSenderAddress(blockfrostSecret, mnemonic)
-	receiver, err := cardano.NewAddress(cardanoVault)
-	if err != nil {
-		panic(err)
-	}
-
-	var amount *cardano.Value
-	if token.Id == "ADA" {
-		amount = cardano.NewValue(cardano.Coin(value.Uint64()))
-	} else {
-		multiAsset, err := scardano.GetCardanoMultiAsset(srcChain, token, value.Uint64())
-		if err != nil {
-			panic(err)
-		}
-		amount = cardano.NewValueWithAssets(cardano.Coin(1_600_000), multiAsset)
-	}
-
-	var metadata cardano.Metadata
-	var nativeAda int
-
-	if token.Id == "ADA" {
-		nativeAda = 1
-	}
-
-	metadata = cardano.Metadata{
-		0: map[string]interface{}{
-			"chain":      destChain,
-			"recipient":  destRecipient,
-			"native_ada": nativeAda,
-		},
-	}
-
-	deyesClient, err := external.DialDeyes(deyesUrl)
-	if err != nil {
-		panic(err)
-	}
-
-	tip, err := deyesClient.CardanoTip(srcChain, 20_000_000)
-	if err != nil {
-		panic(err)
-	}
-
-	utxos, err := deyesClient.CardanoUtxos(srcChain, senderAddress.String(), tip.Block+1000)
-	tx, err := scardano.BuildTx(deyesClient, srcChain, senderAddress, []cardano.Address{receiver},
-		[]*cardano.Value{amount}, metadata, utxos, tip.Block)
-	if err != nil {
-		panic(err)
-	}
-	if len(tx.WitnessSet.VKeyWitnessSet) != 1 {
-		panic(fmt.Errorf("VKeyWitnessSet is expected to have length 1 but has length %d", len(tx.WitnessSet.VKeyWitnessSet)))
-	}
-
-	txHash, err := tx.Hash()
-	if err != nil {
-		panic(err)
-	}
-
-	// Sign tx
-	tx.WitnessSet.VKeyWitnessSet = make([]cardano.VKeyWitness, 1)
-	tx.WitnessSet.VKeyWitnessSet[0] = cardano.VKeyWitness{
-		VKey:      privateKey.PubKey(),
-		Signature: privateKey.Sign(txHash),
-	}
-
-	submitedHash, err := deyesClient.CardanoSubmitTx(srcChain, tx)
-	if err != nil {
-		panic(err)
-	}
-
-	if submitedHash.String() != txHash.String() {
-		panic(fmt.Errorf("TxHash and submitted hash do not match, txhash = %s, submitted hash = %s", txHash, submitedHash))
-	}
-
-	log.Info("Cardano tx hash = ", txHash.String())
-}
-
-func (c *swapCommand) getSenderAddress(blockfrostSecret, cardanoMnemonic string) (cardanocrypto.PrvKey, cardano.Address) {
-	node := cgblockfrost.NewNode(cardano.Testnet, blockfrostSecret)
-	opts := &wallet.Options{Node: node}
-	client := wallet.NewClient(opts)
-
-	wallet, err := client.RestoreWallet(DefaultCardanoWalletName, DefaultCardanoPassword, cardanoMnemonic)
-	if err != nil {
-		panic(err)
-	}
-
-	walletAddrs, err := wallet.Addresses()
-	if err != nil {
-		panic(err)
-	}
-	log.Info("sender = ", walletAddrs[0])
-
-	key, _ := wallet.Keys()
-
-	return key, walletAddrs[0]
 }

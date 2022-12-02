@@ -15,7 +15,7 @@ import (
 
 func mockKeeperForBridge(ctx sdk.Context, tokenPrice *big.Int) keeper.Keeper {
 	k := testmock.KeeperTestAfterContractDeployed(ctx)
-	k.AddGatewayCheckPoint(ctx, &types.GatewayCheckPoint{
+	k.SetMpcNonce(ctx, &types.MpcNonce{
 		Chain: "ganache2",
 		Nonce: 1,
 	})

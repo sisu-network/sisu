@@ -201,8 +201,8 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	log.Info("Tss params: ", savedParams)
 
 	// Save Checkpoints
-	for _, checkpoint := range genState.Checkpoints {
-		am.keeper.AddGatewayCheckPoint(ctx, checkpoint)
+	for _, checkpoint := range genState.MpcNonces {
+		am.keeper.SetMpcNonce(ctx, checkpoint)
 	}
 
 	// Create validator nodes
@@ -241,6 +241,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	if !am.globalData.AppInitialized() {
 		cloneCtx := utils.CloneSdkContext(ctx)
 		am.mc.TransferQueue().Start(cloneCtx)
+		go am.mc.ChainPolling().Start(ctx, am.keeper)
 		am.globalData.SetAppInitialized()
 	}
 
@@ -276,8 +277,10 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		}(params)
 	}
 
+	// Process pending transfers
 	am.mc.TransferQueue().ProcessTransfers(ctx)
 
+	// Sign tx outs
 	am.signTxOut(ctx)
 
 	return []abci.ValidatorUpdate{}

@@ -1,0 +1,6 @@
+{
+  "enable": false,
+  "secret": "ADD_YOUR_SECRET_HERE",
+  "chain": "cardano-testnet",
+  "db_config": ""
+}

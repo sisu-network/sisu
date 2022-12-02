@@ -5,17 +5,16 @@ import (
 	"os"
 
 	"github.com/BurntSushi/toml"
-	"github.com/echovl/cardano-go"
 	"github.com/sisu-network/lib/log"
 )
 
 type Config struct {
 	Mode string
 
-	Sisu    SisuConfig       `toml:"sisu"`
-	Tss     TssConfig        `toml:"tss"`
-	LogDNA  log.LogDNAConfig `toml:"log_dna"`
-	Cardano CardanoConfig    `toml:"cardano"`
+	Sisu   SisuConfig       `toml:"sisu"`
+	Tss    TssConfig        `toml:"tss"`
+	LogDNA log.LogDNAConfig `toml:"log_dna"`
+	Solana SolanaConfig     `toml:"solana"`
 }
 
 type SisuConfig struct {
@@ -28,18 +27,9 @@ type SisuConfig struct {
 	EmailAlert        EmailAlertConfig `toml:"email-alert"`
 }
 
-type CardanoConfig struct {
-	BlockfrostSecret string `toml:"block_frost_secret"`
-	Chain            string `toml:"chain"`
-}
-
-func (c *CardanoConfig) GetCardanoNetwork() cardano.Network {
-	switch c.Chain {
-	case "cardano-testnet":
-		return cardano.Preprod
-	}
-
-	return cardano.Mainnet
+type SolanaConfig struct {
+	BridgeProgramId string `toml:"bridge_program_id" json:"bridge_program_id"`
+	BridgePda       string `toml:"bridge_pda" json:"bridge_pda"`
 }
 
 // Example of supported chains in the toml config file.

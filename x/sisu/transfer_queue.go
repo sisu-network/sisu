@@ -116,7 +116,7 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 		txOutMsgs, err := q.txOutputProducer.GetTxOuts(ctx, chain, batch)
 		if err != nil {
 			log.Error("Failed to get txOut on chain ", chain, ", err = ", err)
-			// Submit transfer failure transaction if this is an ETH based chain
+
 			ids := q.getTransferIds(batch)
 			msg := types.NewTransferFailureMsg(q.appKeys.GetSignerAddress().String(), &types.TransferFailure{
 				Ids:     ids,

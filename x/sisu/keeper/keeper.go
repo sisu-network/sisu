@@ -65,7 +65,8 @@ type Keeper interface {
 
 	// Vaults
 	SetVaults(ctx sdk.Context, vaults []*types.Vault)
-	GetVault(ctx sdk.Context, chain string) *types.Vault
+	GetVault(ctx sdk.Context, chain string, token string) *types.Vault
+	GetAllVaultsForChain(ctx sdk.Context, chain string) []*types.Vault
 
 	// MPC Address
 	SetMpcAddress(ctx sdk.Context, chain string, address string)
@@ -75,10 +76,9 @@ type Keeper interface {
 	SaveParams(ctx sdk.Context, params *types.Params)
 	GetParams(ctx sdk.Context) *types.Params
 
-	// Gateway checkpoint
-	AddGatewayCheckPoint(ctx sdk.Context, checkPoint *types.GatewayCheckPoint)
-	GetGatewayCheckPoint(ctx sdk.Context, chain string) *types.GatewayCheckPoint
-	GetAllGatewayCheckPoints(ctx sdk.Context) map[string]*types.GatewayCheckPoint
+	// Mpc nonces
+	SetMpcNonce(ctx sdk.Context, checkPoint *types.MpcNonce)
+	GetMpcNonce(ctx sdk.Context, chain string) *types.MpcNonce
 
 	// Command Queue
 	SetCommandQueue(ctx sdk.Context, chain string, commands []*types.Command)
@@ -100,6 +100,10 @@ type Keeper interface {
 	// PendingTxOut
 	SetPendingTxOutInfo(ctx sdk.Context, chain string, txOut *types.PendingTxOutInfo)
 	GetPendingTxOutInfo(ctx sdk.Context, chain string) *types.PendingTxOutInfo
+
+	// Set Solana confirmed block
+	SetSolanaConfirmedBlock(ctx sdk.Context, chain, signer, blockHash string, height int64)
+	GetAllSolanaConfirmedBlock(ctx sdk.Context, chain string) map[string]*types.ChainMetadata
 }
 
 type DefaultKeeper struct {
@@ -269,9 +273,14 @@ func (k *DefaultKeeper) SetVaults(ctx sdk.Context, vaults []*types.Vault) {
 	setVaults(store, vaults)
 }
 
-func (k *DefaultKeeper) GetVault(ctx sdk.Context, chain string) *types.Vault {
+func (k *DefaultKeeper) GetVault(ctx sdk.Context, chain string, token string) *types.Vault {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixVault)
-	return getVault(store, chain)
+	return getVault(store, chain, token)
+}
+
+func (k *DefaultKeeper) GetAllVaultsForChain(ctx sdk.Context, chain string) []*types.Vault {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixVault)
+	return getAllVaultsForChain(store, chain)
 }
 
 ///// Vaults
@@ -297,19 +306,14 @@ func (k *DefaultKeeper) GetParams(ctx sdk.Context) *types.Params {
 }
 
 ///// Gateway Checkpoint
-func (k *DefaultKeeper) AddGatewayCheckPoint(ctx sdk.Context, checkPoint *types.GatewayCheckPoint) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGatewayCheckPoint)
+func (k *DefaultKeeper) SetMpcNonce(ctx sdk.Context, checkPoint *types.MpcNonce) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixMpcNonces)
 	addCheckPoint(store, checkPoint)
 }
 
-func (k *DefaultKeeper) GetGatewayCheckPoint(ctx sdk.Context, chain string) *types.GatewayCheckPoint {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGatewayCheckPoint)
+func (k *DefaultKeeper) GetMpcNonce(ctx sdk.Context, chain string) *types.MpcNonce {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixMpcNonces)
 	return getCheckPoint(store, chain)
-}
-
-func (k *DefaultKeeper) GetAllGatewayCheckPoints(ctx sdk.Context) map[string]*types.GatewayCheckPoint {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGatewayCheckPoint)
-	return getAllGatewayCheckPoints(store)
 }
 
 ///// Command Queue
@@ -376,6 +380,17 @@ func (k *DefaultKeeper) SetPendingTxOutInfo(ctx sdk.Context, chain string, txOut
 func (k *DefaultKeeper) GetPendingTxOutInfo(ctx sdk.Context, chain string) *types.PendingTxOutInfo {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPendingTxOut)
 	return getPendingTxOutInfo(store, chain)
+}
+
+///// Chain metadata
+func (k *DefaultKeeper) SetSolanaConfirmedBlock(ctx sdk.Context, chain, signer, blockHash string, height int64) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixChainMetadata)
+	setSolanaConfirmedBlock(store, chain, signer, blockHash, height)
+}
+
+func (k *DefaultKeeper) GetAllSolanaConfirmedBlock(ctx sdk.Context, chain string) map[string]*types.ChainMetadata {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixChainMetadata)
+	return getAllSolanaConfirmedBlock(store, chain)
 }
 
 ///// Debug

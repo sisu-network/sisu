@@ -1,4 +1,4 @@
-package eth
+package utils
 
 import (
 	"testing"
@@ -21,12 +21,12 @@ func Test_getTokenOnChain(t *testing.T) {
 		},
 	}
 
-	token := getTokenOnChain(allTokens, "t1_addr1", "ganache1")
+	token := GetTokenOnChain(allTokens, "t1_addr1", "ganache1")
 	require.Equal(t, "t1", token.Id)
 
-	token = getTokenOnChain(allTokens, "t1_addr2", "ganache1")
+	token = GetTokenOnChain(allTokens, "t1_addr2", "ganache1")
 	require.Nil(t, token)
 
-	token = getTokenOnChain(allTokens, "t2_addr2", "ganache2")
+	token = GetTokenOnChain(allTokens, "t2_addr2", "ganache2")
 	require.Equal(t, "t2", token.Id)
 }

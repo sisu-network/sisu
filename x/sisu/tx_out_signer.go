@@ -39,6 +39,10 @@ func (s *txOutSigner) signTxOut(ctx sdk.Context, txOut *types.TxOut) {
 	if libchain.IsCardanoChain(txOut.Content.OutChain) {
 		s.signCardanoTx(ctx, txOut)
 	}
+
+	if libchain.IsSolanaChain(txOut.Content.OutChain) {
+		s.signSolana(ctx, txOut)
+	}
 }
 
 // signEthTx sends a TxOut to dheart for TSS signing.
@@ -56,7 +60,7 @@ func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
 		log.Error(err)
 	}
 
-	checkPoint := s.keeper.GetGatewayCheckPoint(ctx, tx.Content.OutChain)
+	checkPoint := s.keeper.GetMpcNonce(ctx, tx.Content.OutChain)
 	if checkPoint == nil {
 		err := fmt.Errorf("cannot find gateway checkout for chain %s", tx.Content.OutChain)
 		return err
@@ -129,6 +133,26 @@ func (s *txOutSigner) signCardanoTx(ctx sdk.Context, txOut *types.TxOut) {
 	err = s.dheartClient.KeySign(signRequest, pubKeys)
 	if err != nil {
 		log.Error("Keysign: err =", err)
+	}
+}
+
+func (s *txOutSigner) signSolana(ctx sdk.Context, txOut *types.TxOut) {
+	signRequest := &hTypes.KeysignRequest{
+		KeyType: libchain.KEY_TYPE_EDDSA,
+		KeysignMessages: []*hTypes.KeysignMessage{
+			{
+				Id:          s.getKeysignRequestId(txOut.Content.OutChain, ctx.BlockHeight(), txOut.Content.OutHash),
+				OutChain:    txOut.Content.OutChain,
+				OutHash:     txOut.Content.OutHash,
+				BytesToSign: txOut.Content.OutBytes,
+			},
+		},
+	}
+
+	pubKeys := s.partyManager.GetActivePartyPubkeys()
+	err := s.dheartClient.KeySign(signRequest, pubKeys)
+	if err != nil {
+		log.Error("signSolana: err =", err)
 	}
 }
 

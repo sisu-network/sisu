@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
+	eyestypes "github.com/sisu-network/deyes/types"
+
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -55,8 +57,8 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) 
 		amounts = append(amounts, amount)
 		inHashes = append(inHashes, transfer.Id)
 
-		log.Verbosef("Processing transfer in: id = %s, recipient = %s, amount = %s, inHash = %s",
-			token.Id, transfer.ToRecipient, amount, transfer.Id)
+		log.Verbosef("Processing transfer in: id = %s, recipient = %s, amount = %s, inHash = %s, toChain = %s, toRecipient = %s",
+			token.Id, transfer.ToRecipient, amount, transfer.Id, transfer.ToChain, transfer.ToRecipient)
 	}
 
 	responseTx, err := b.buildERC20TransferIn(ctx, tokens, recipients, amounts)
@@ -88,7 +90,7 @@ func (b *bridge) buildERC20TransferIn(
 	amounts []*big.Int,
 ) (*types.TxResponse, error) {
 	targetContractName := ContractVault
-	v := b.keeper.GetVault(ctx, b.chain)
+	v := b.keeper.GetVault(ctx, b.chain, "")
 	if v == nil {
 		return nil, fmt.Errorf("Cannot find vault for chain %s", b.chain)
 	}
@@ -236,4 +238,17 @@ func (b *bridge) buildERC20TransferIn(
 		EthTx:    rawTx,
 		RawBytes: bz,
 	}, nil
+}
+
+func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx) ([]*types.Transfer, error) {
+	parseResult := ParseVaultTx(ctx, b.keeper, chain, tx)
+	if parseResult.Error != nil {
+		return nil, parseResult.Error
+	}
+
+	if parseResult.TransferOuts != nil {
+		return parseResult.TransferOuts, nil
+	}
+
+	return []*types.Transfer{}, nil
 }

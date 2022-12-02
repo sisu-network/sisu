@@ -60,10 +60,10 @@ func (h *HandlerTxOutResult) doTxOutResult(ctx sdk.Context, msgWithSigner *types
 func (h *HandlerTxOutResult) doTxOutConfirm(ctx sdk.Context, msg *types.TxOutResult, txOut *types.TxOut) ([]byte, error) {
 	log.Verbose("Transaction is successfully included in a block, hash (no sig)= ", msg.OutHash, " chain = ", msg.OutChain)
 
-	savedCheckPoint := h.keeper.GetGatewayCheckPoint(ctx, msg.OutChain)
+	savedCheckPoint := h.keeper.GetMpcNonce(ctx, msg.OutChain)
 	if savedCheckPoint == nil || savedCheckPoint.BlockHeight < msg.BlockHeight {
 		// Save checkpoint
-		checkPoint := &types.GatewayCheckPoint{
+		checkPoint := &types.MpcNonce{
 			Chain:       msg.OutChain,
 			BlockHeight: msg.BlockHeight,
 		}
@@ -73,7 +73,7 @@ func (h *HandlerTxOutResult) doTxOutConfirm(ctx sdk.Context, msg *types.TxOutRes
 		}
 
 		// Update observed block height and nonce.
-		h.keeper.AddGatewayCheckPoint(ctx, checkPoint)
+		h.keeper.SetMpcNonce(ctx, checkPoint)
 	}
 
 	// Clear the pending TxOut

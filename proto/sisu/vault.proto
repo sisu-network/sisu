@@ -7,4 +7,5 @@ message Vault {
   string id = 1;
   string chain = 2;
   string address = 3;
+  string token = 4;
 }

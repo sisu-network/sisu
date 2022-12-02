@@ -12,7 +12,7 @@ import (
 type DeyesClient interface {
 	Ping(source string) error
 	Dispatch(request *etypes.DispatchedTxRequest) (*etypes.DispatchedTxResult, error)
-	SetVaultAddress(chain string, addr string) error
+	SetVaultAddress(chain string, addr string, token string) error
 	GetNonce(chain string, address string) int64
 	SetSisuReady(isReady bool) error
 	GetGasPrices(chains []string) ([]int64, error)
@@ -23,6 +23,9 @@ type DeyesClient interface {
 	CardanoBalance(chain string, address string, maxBlock int64) (*cardano.Value, error)
 	CardanoSubmitTx(chain string, tx *cardano.Tx) (*cardano.Hash32, error)
 	CardanoTip(chain string, blockHeight uint64) (*cardano.NodeTip, error)
+
+	// Solana
+	SolanaQueryRecentBlock(chain string) (*etypes.SolanaQueryRecentBlockResult, error)
 }
 
 type defaultDeyesClient struct {
@@ -68,9 +71,9 @@ func (c *defaultDeyesClient) SetSisuReady(isReady bool) error {
 	return nil
 }
 
-func (c *defaultDeyesClient) SetVaultAddress(chain string, addr string) error {
+func (c *defaultDeyesClient) SetVaultAddress(chain string, addr string, token string) error {
 	var result string
-	err := c.client.CallContext(context.Background(), &result, "deyes_setVaultAddress", chain, addr)
+	err := c.client.CallContext(context.Background(), &result, "deyes_setVaultAddress", chain, addr, token)
 	if err != nil {
 		log.Error("Cannot set gateway address for deyes, chain = ", chain, "err = ", err)
 		return err
@@ -184,6 +187,19 @@ func (c *defaultDeyesClient) CardanoSubmitTx(chain string, tx *cardano.Tx) (*car
 	err := c.client.CallContext(context.Background(), &result, "deyes_cardanoSubmitTx", chain, tx)
 	if err != nil {
 		log.Error("Cannot submit cardano transaction, chain = ", chain, "err = ", err)
+		return nil, err
+	}
+
+	return result, nil
+}
+
+/////
+func (c *defaultDeyesClient) SolanaQueryRecentBlock(chain string) (*etypes.SolanaQueryRecentBlockResult, error) {
+	result := &etypes.SolanaQueryRecentBlockResult{}
+
+	err := c.client.CallContext(context.Background(), &result, "deyes_solanaQueryRecentBlock", chain)
+	if err != nil {
+		log.Error("Cannot query recent solana block, chain = ", chain, "err = ", err)
 		return nil, err
 	}
 
