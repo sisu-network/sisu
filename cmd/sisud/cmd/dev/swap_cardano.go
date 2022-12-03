@@ -17,7 +17,7 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-func (c *swapCommand) getCardanoVault(ctx context.Context, sisuRpc string) string {
+func getCardanoVault(ctx context.Context, sisuRpc string) string {
 	allPubKeys := queryPubKeys(ctx, sisuRpc)
 	cardanoKey, ok := allPubKeys[libchain.KEY_TYPE_EDDSA]
 	if !ok {
@@ -27,9 +27,9 @@ func (c *swapCommand) getCardanoVault(ctx context.Context, sisuRpc string) strin
 	return hutils.GetAddressFromCardanoPubkey(cardanoKey).String()
 }
 
-func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *types.Token,
+func swapFromCardano(srcChain string, destChain string, token *types.Token,
 	destRecipient, cardanoVault string, value *big.Int, network string, secret, mnemonic string, deyesUrl string) {
-	privateKey, senderAddress := c.getSenderAddress(secret, mnemonic)
+	privateKey, senderAddress := getCardanoSenderAddress(secret, mnemonic)
 	receiver, err := cardano.NewAddress(cardanoVault)
 	if err != nil {
 		panic(err)
@@ -105,7 +105,7 @@ func (c *swapCommand) swapFromCardano(srcChain string, destChain string, token *
 	log.Info("Cardano tx hash = ", txHash.String())
 }
 
-func (c *swapCommand) getSenderAddress(blockfrostSecret, cardanoMnemonic string) (cardanocrypto.PrvKey, cardano.Address) {
+func getCardanoSenderAddress(blockfrostSecret, cardanoMnemonic string) (cardanocrypto.PrvKey, cardano.Address) {
 	node := cgblockfrost.NewNode(cardano.Testnet, blockfrostSecret)
 	opts := &wallet.Options{Node: node}
 	client := wallet.NewClient(opts)

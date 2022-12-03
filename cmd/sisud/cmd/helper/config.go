@@ -2,8 +2,11 @@ package helper
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"os"
 	"path/filepath"
+
+	econfig "github.com/sisu-network/deyes/config"
 
 	cardanogo "github.com/echovl/cardano-go"
 )
@@ -62,4 +65,15 @@ func ReadCardanoConfig(genesisFolder string) CardanoConfig {
 	}
 
 	return cfg
+}
+
+func ReadDeyesChainConfigs(path string) []econfig.Chain {
+	deyesChains := make([]econfig.Chain, 0)
+	file, _ := ioutil.ReadFile(path)
+	err := json.Unmarshal([]byte(file), &deyesChains)
+	if err != nil {
+		panic(err)
+	}
+
+	return deyesChains
 }

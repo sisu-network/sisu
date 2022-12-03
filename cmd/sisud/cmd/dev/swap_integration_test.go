@@ -16,8 +16,7 @@ func TestApproveToken(t *testing.T) {
 	mnemonic, client, wsClient := getBasicData("localhost")
 	feePayer := solana.GetSolanaPrivateKey(mnemonic)
 
-	cmd := &swapCommand{}
-	ix := cmd.approveSolanaIx("../../../../misc/test", "solana-devnet", mnemonic, "AJdUMt177iQ19J63ybkXtUVD6sK8dxD5ibietQANuv9S", 1000)
+	ix := approveSolanaIx("../../../../misc/test", "solana-devnet", mnemonic, "AJdUMt177iQ19J63ybkXtUVD6sK8dxD5ibietQANuv9S", 1000)
 
 	err := solana.SignAndSubmit(client, wsClient, []solanago.Instruction{ix}, feePayer)
 	if err != nil {
@@ -31,9 +30,7 @@ func TestTransferOut(t *testing.T) {
 	mnemonic, client, wsClient := getBasicData("devnet")
 	feePayer := solana.GetSolanaPrivateKey(mnemonic)
 
-	cmd := &swapCommand{}
-
-	ix := cmd.transferTokenIx("../../../../misc/test", mnemonic,
+	ix := transferTokenIx("../../../../misc/test", mnemonic,
 		"AJdUMt177iQ19J63ybkXtUVD6sK8dxD5ibietQANuv9S", "0x8095f5b69F2970f38DC6eBD2682ed71E4939f988",
 		189985, 300)
 	err := solana.SignAndSubmit(client, wsClient, []solanago.Instruction{ix}, feePayer)
@@ -45,9 +42,7 @@ func TestTransferOut(t *testing.T) {
 func TestSwapFromSolana(t *testing.T) {
 	t.Skip()
 
-	cmd := &swapCommand{}
-
-	cmd.swapFromSolana("../../../../misc/test", "solana-devnet", utils.LOCALHOST_MNEMONIC,
+	swapFromSolana("../../../../misc/test", "solana-devnet", utils.LOCALHOST_MNEMONIC,
 		"AJdUMt177iQ19J63ybkXtUVD6sK8dxD5ibietQANuv9S", "0x8095f5b69F2970f38DC6eBD2682ed71E4939f988",
 		189985, 300)
 }

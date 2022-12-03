@@ -178,6 +178,8 @@ func (a *ApiHandler) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 		switch result.Err {
 		case etypes.ErrNotEnoughBalance:
 			txOutResult.Result = types.TxOutResultType_NOT_ENOUGH_NATIVE_BALANCE
+		case etypes.ErrSubmitTx:
+			txOutResult.Result = types.TxOutResultType_SUBMIT_TX_ERROR
 		default:
 			txOutResult.Result = types.TxOutResultType_UNKNOWN
 		}

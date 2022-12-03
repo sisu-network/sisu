@@ -12,7 +12,7 @@ import (
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
 )
 
-func (c *swapCommand) swapFromSolana(genesisFolder, chain, mnemonic, tokenAddr, recipient string,
+func swapFromSolana(genesisFolder, chain, mnemonic, tokenAddr, recipient string,
 	dstChain uint64, amount uint64) {
 	feePayer := solana.GetSolanaPrivateKey(mnemonic)
 
@@ -27,8 +27,8 @@ func (c *swapCommand) swapFromSolana(genesisFolder, chain, mnemonic, tokenAddr, 
 		panic(err)
 	}
 
-	approveIx := c.approveSolanaIx(genesisFolder, chain, mnemonic, tokenAddr, amount)
-	transferIx := c.transferTokenIx(genesisFolder, mnemonic, tokenAddr, recipient, dstChain, amount)
+	approveIx := approveSolanaIx(genesisFolder, chain, mnemonic, tokenAddr, amount)
+	transferIx := transferTokenIx(genesisFolder, mnemonic, tokenAddr, recipient, dstChain, amount)
 
 	err = solana.SignAndSubmit(client, wsClient, []solanago.Instruction{approveIx, transferIx}, feePayer)
 	if err != nil {
@@ -36,7 +36,7 @@ func (c *swapCommand) swapFromSolana(genesisFolder, chain, mnemonic, tokenAddr, 
 	}
 }
 
-func (c *swapCommand) approveSolanaIx(genesisFolder, chain, mnemonic, tokenAddr string, amount uint64) solanago.Instruction {
+func approveSolanaIx(genesisFolder, chain, mnemonic, tokenAddr string, amount uint64) solanago.Instruction {
 	tokenMintPubkey := solanago.MustPublicKeyFromBase58(tokenAddr)
 
 	ownerPrivKey := solana.GetSolanaPrivateKey(mnemonic)
@@ -73,7 +73,7 @@ func (c *swapCommand) approveSolanaIx(genesisFolder, chain, mnemonic, tokenAddr 
 	return ix
 }
 
-func (c *swapCommand) transferTokenIx(genesisFolder, mnemonic, tokenAddr, recipient string, dstChainId, amount uint64) solanago.Instruction {
+func transferTokenIx(genesisFolder, mnemonic, tokenAddr, recipient string, dstChainId, amount uint64) solanago.Instruction {
 	tokenMintPubkey := solanago.MustPublicKeyFromBase58(tokenAddr)
 
 	ownerPrivKey := solana.GetSolanaPrivateKey(mnemonic)

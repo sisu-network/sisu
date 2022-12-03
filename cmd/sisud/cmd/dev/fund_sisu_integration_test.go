@@ -75,13 +75,12 @@ func TestTransferToken(t *testing.T) {
 	t.Skip()
 
 	// Transfer token
-	cmd := &fundAccountCmd{}
 	mnemonic, client, wsClient := getBasicData("localhost")
 
 	srcAta := "BPRyt1DwNCzMpbnMkzxbkj1A6sNRN5KP8Ej4iGeudtLm"
 	dstAta := "BJ9ArHvbeUhVLChS2yksw8xqvoRpWYLtGkg7CVHNa31a"
 
-	cmd.transferSolanaToken(client, wsClient, mnemonic, TokenMintPubkey.String(), 8, srcAta, dstAta, 1000)
+	transferSolanaToken(client, wsClient, mnemonic, TokenMintPubkey.String(), 8, srcAta, dstAta, 1000)
 }
 
 // Sanity check on localhost. Disabled by default. Enable if you want to debug the fund command.
@@ -96,7 +95,6 @@ func TestFundOnSolana(t *testing.T) {
 func TestCreateAssociatedProgram(t *testing.T) {
 	t.Skip()
 
-	cmd := &fundAccountCmd{}
 	mnemonic, client, wsClient := getBasicData("localhost")
 
 	// Generate a random private key
@@ -112,7 +110,7 @@ func TestCreateAssociatedProgram(t *testing.T) {
 	_, err = solana.QuerySolanaAccountBalance(client, ownerAta.String())
 	require.True(t, strings.Contains(err.Error(), "could not find account"))
 
-	cmd.createAssociatedAccount(client, wsClient, mnemonic, ownerPubkey, TokenMintPubkey)
+	createSolanaAta(client, wsClient, mnemonic, ownerPubkey, TokenMintPubkey)
 
 	// Query account ata
 	balance, err := solana.QuerySolanaAccountBalance(client, ownerAta.String())
