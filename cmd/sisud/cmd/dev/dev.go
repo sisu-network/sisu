@@ -19,6 +19,7 @@ func DevCmd() *cobra.Command {
 	cmd.AddCommand(AddLiquidity())
 	cmd.AddCommand(DeployAndFund())
 	cmd.AddCommand(Swap())
+	cmd.AddCommand(StressSwap())
 	cmd.AddCommand(Query())
 
 	return cmd

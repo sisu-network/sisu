@@ -12,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	econfig "github.com/sisu-network/deyes/config"
+	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
 	"github.com/sisu-network/sisu/config"
@@ -113,7 +114,7 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 
 func getDeyesChains(cmd *cobra.Command, genesisFolder string) []econfig.Chain {
 	cardanoDbConfig, _ := cmd.Flags().GetString(flags.CardanoDbConfig)
-	deyesChains := readDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
+	deyesChains := helper.ReadDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
 
 	chains := helper.GetChains(filepath.Join(genesisFolder, "chains.json"))
 
@@ -158,14 +159,11 @@ func getDeyesChains(cmd *cobra.Command, genesisFolder string) []econfig.Chain {
 			panic(err)
 		}
 
-		deyesChains = append(deyesChains, econfig.Chain{
-			Chain:                 solanaConfig.Chain,
-			BlockTime:             solanaConfig.BlockTime,
-			AdjustTime:            solanaConfig.AdjustTime,
-			SolanaBridgeProgramId: solanaConfig.BridgeProgramId,
-			Rpcs:                  []string{solanaConfig.Rpc},
-			Wss:                   []string{solanaConfig.Ws},
-		})
+		for _, cfg := range deyesChains {
+			if libchain.IsSolanaChain(cfg.Chain) {
+				deyesChains = append(deyesChains, cfg)
+			}
+		}
 	}
 
 	return deyesChains
@@ -190,17 +188,6 @@ func getSupportedChains(cmd *cobra.Command, genesisFolder string) []string {
 	}
 
 	return supportedChainsArr
-}
-
-func readDeyesChainConfigs(path string) []econfig.Chain {
-	deyesChains := make([]econfig.Chain, 0)
-	file, _ := ioutil.ReadFile(path)
-	err := json.Unmarshal([]byte(file), &deyesChains)
-	if err != nil {
-		panic(err)
-	}
-
-	return deyesChains
 }
 
 func getPendingTxTimeoutHeight(deyesChains []econfig.Chain) []int64 {

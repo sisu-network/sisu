@@ -29,6 +29,7 @@ const (
 	Tokens              = "tokens"
 	Account             = "account"
 	Recipient           = "recipient"
+	Recipients          = "recipients"
 	Src                 = "src"
 	SrcUrl              = "src-url"
 	Dst                 = "dst"
@@ -38,5 +39,5 @@ const (
 	MinimumGasPrices    = "minimum-gas-prices"
 	CardanoChain        = "cardano-chain"
 	CardanoDbConfig     = "cardano-db-config"
-	DeyesApiUrl         = "deyes-api-url"
+	DeyesUrl            = "deyes-url"
 )
