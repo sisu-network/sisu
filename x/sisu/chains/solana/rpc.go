@@ -54,8 +54,6 @@ func SignAndSubmitWithOptions(client *rpc.Client, wsClient *ws.Client,
 		panic(err)
 	}
 
-	fmt.Println("result.Value.Blockhash = ", result.Value.Blockhash)
-
 	tx, err := solanago.NewTransaction(
 		ixs,
 		result.Value.Blockhash,
