@@ -46,15 +46,13 @@ func (h *HandlerTxOutResult) doTxOutResult(ctx sdk.Context, msgWithSigner *types
 
 	log.Verbose("msg.Result = ", msg.Result)
 
+	types.TxOutResultType_IN_BLOCK_SUCCESS.String()
 	switch msg.Result {
 	case types.TxOutResultType_IN_BLOCK_SUCCESS:
 		return h.doTxOutConfirm(ctx, msg, txOut)
-	case types.TxOutResultType_GENERIC_ERROR, types.TxOutResultType_NOT_ENOUGH_NATIVE_BALANCE,
-		types.TxOutResultType_IN_BLOCK_FAILURE:
+	default:
 		return h.doTxOutFailure(ctx, msg, txOut)
 	}
-
-	return nil, nil
 }
 
 func (h *HandlerTxOutResult) doTxOutConfirm(ctx sdk.Context, msg *types.TxOutResult, txOut *types.TxOut) ([]byte, error) {

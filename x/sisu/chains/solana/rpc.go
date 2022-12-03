@@ -13,10 +13,10 @@ import (
 )
 
 // querySolanaAccountBalance queries token balance on a solana chain
-func QuerySolanaAccountBalance(client *rpc.Client, tokenAddr string) (*big.Int, error) {
+func QuerySolanaAccountBalance(client *rpc.Client, ataAccount string) (*big.Int, error) {
 	result, err := client.GetTokenAccountBalance(
 		context.Background(),
-		solanago.MustPublicKeyFromBase58(tokenAddr),
+		solanago.MustPublicKeyFromBase58(ataAccount),
 		rpc.CommitmentConfirmed,
 	)
 
@@ -53,6 +53,8 @@ func SignAndSubmitWithOptions(client *rpc.Client, wsClient *ws.Client,
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Println("result.Value.Blockhash = ", result.Value.Blockhash)
 
 	tx, err := solanago.NewTransaction(
 		ixs,

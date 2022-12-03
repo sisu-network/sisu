@@ -59,10 +59,6 @@ func init() {
 	nonceMap = make(map[string]*big.Int)
 }
 
-func getEthClient(port int) (*ethclient.Client, error) {
-	return ethclient.Dial(fmt.Sprintf("http://0.0.0.0:%d", port))
-}
-
 func getPrivateKey(mnemonic string) (*ecdsa.PrivateKey, common.Address) {
 	seed, err := bip39.NewSeedWithErrorChecking(mnemonic, "")
 	if err != nil {

@@ -40,7 +40,7 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, mpcPubKey []
 	// Fund SOL tokens for MPC accounts
 	mpcAddr := utils.GetSolanaAddressFromPubkey(mpcPubKey)
 	log.Verbose("Funding SOL for mpc address = ", mpcAddr)
-	c.transferSOL(client, wsClient, mnemonic, mpcAddr)
+	transferSOL(client, wsClient, mnemonic, mpcAddr, uint64(20_000_000))
 
 	log.Verbosef("Bridge program id = %s\n", solanaConfig.BridgeProgramId)
 	log.Verbosef("BridgePda = %s\n", solanaConfig.BridgePda)
@@ -63,7 +63,7 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, mpcPubKey []
 				tokentMintPubKey := solanago.MustPublicKeyFromBase58(token.Addresses[i])
 
 				// Create source ata
-				sourceAta, created, err := c.createAssociatedAccount(client, wsClient, mnemonic, faucet, tokentMintPubKey)
+				sourceAta, created, err := createSolanaAta(client, wsClient, mnemonic, faucet, tokentMintPubKey)
 				if err != nil {
 					panic(err)
 				}
@@ -78,14 +78,14 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, mpcPubKey []
 
 				// Create bridge ata
 				bridgePda := solanago.MustPublicKeyFromBase58(solanaConfig.BridgePda)
-				bridgeAta, _, err := c.createAssociatedAccount(client, wsClient, mnemonic, bridgePda, tokentMintPubKey)
+				bridgeAta, _, err := createSolanaAta(client, wsClient, mnemonic, bridgePda, tokentMintPubKey)
 				if err != nil {
 					panic(err)
 				}
 
 				// Fund the address
 				log.Verbose("Funding the bridge ata address ", bridgeAta.String())
-				c.transferSolanaToken(client, wsClient, mnemonic, token.Addresses[i],
+				transferSolanaToken(client, wsClient, mnemonic, token.Addresses[i],
 					byte(decimals), sourceAta.String(), bridgeAta.String(), 10_000*100_000_000)
 
 				// Set the spender for the vault.
@@ -95,15 +95,14 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, mpcPubKey []
 	}
 }
 
-func (c *fundAccountCmd) transferSOL(client *rpc.Client, wsClient *ws.Client, mnemonic, mpcAddr string) {
+func transferSOL(client *rpc.Client, wsClient *ws.Client, mnemonic, receiver string, amount uint64) {
 	feePayer := solana.GetSolanaPrivateKey(mnemonic)
 	feePayerPubkey := feePayer.PublicKey()
 
-	amount := uint64(20_000_000) // 0.2 SOL
 	ix := system.NewTransferInstruction(
 		amount,
 		feePayerPubkey,
-		solanago.MustPublicKeyFromBase58(mpcAddr),
+		solanago.MustPublicKeyFromBase58(receiver),
 	).Build()
 
 	err := solana.SignAndSubmit(client, wsClient, []solanago.Instruction{ix}, feePayer)
@@ -112,7 +111,7 @@ func (c *fundAccountCmd) transferSOL(client *rpc.Client, wsClient *ws.Client, mn
 	}
 }
 
-func (c *fundAccountCmd) transferSolanaToken(client *rpc.Client, wsClient *ws.Client, mnemonic,
+func transferSolanaToken(client *rpc.Client, wsClient *ws.Client, mnemonic,
 	token string, tokenDecimals byte, sourceAta, receiverAta string, amount uint64) {
 	balance, err := solana.QuerySolanaAccountBalance(client, receiverAta)
 	if balance.Cmp(big.NewInt(int64(amount))) >= 0 {
@@ -140,7 +139,7 @@ func (c *fundAccountCmd) transferSolanaToken(client *rpc.Client, wsClient *ws.Cl
 	}
 }
 
-func (c *fundAccountCmd) createAssociatedAccount(client *rpc.Client, wsClient *ws.Client, mnemonic string,
+func createSolanaAta(client *rpc.Client, wsClient *ws.Client, mnemonic string,
 	owner, tokenMint solanago.PublicKey) (solanago.PublicKey, bool, error) {
 	privateKey := solana.GetSolanaPrivateKey(mnemonic)
 	feePayer := privateKey.PublicKey()
