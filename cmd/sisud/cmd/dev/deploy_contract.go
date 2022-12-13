@@ -39,8 +39,8 @@ Example:
 			tokenSymbol, _ := cmd.Flags().GetString(flags.Erc20Symbol)
 
 			c := &DeployContractCmd{}
-
-			c.doDeployment(urlString, contract, mnemonic, expectedAddrString, tokenName, tokenSymbol)
+			tokenAddrs := strings.Split(expectedAddrString, ",")
+			c.doDeployment(urlString, contract, mnemonic, tokenAddrs, tokenName, tokenSymbol)
 
 			return nil
 		},
@@ -61,9 +61,9 @@ Example:
 //
 // If a contract has been deployed (defined by an element in expAddrString string), it will not be
 // deployed again.
-func (c *DeployContractCmd) doDeployment(urlString, contract, mnemonic, expAddrString, tokenName, tokenSymbol string) []string {
+func (c *DeployContractCmd) doDeployment(urlString, contract, mnemonic string,
+	expectedAddrs []string, tokenName, tokenSymbol string) []string {
 	urls := strings.Split(urlString, ",")
-	expectedAddrs := strings.Split(expAddrString, ",")
 	if len(expectedAddrs) == 0 {
 		expectedAddrs = make([]string, len(urls))
 	}
