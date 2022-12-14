@@ -50,7 +50,7 @@ func DeployAndFund() *cobra.Command {
 				expectedAddrs := getExpectedAddressForTokens(token, chains)
 				addrs := deployContractCmd.doDeployment(chainUrls, "erc20", mnemonic, expectedAddrs, "", token.Id)
 				allTokenAddrs = append(allTokenAddrs, addrs)
-				fmt.Println("allTokenAddrs = ", allTokenAddrs)
+				log.Verbose("allTokenAddrs = ", allTokenAddrs)
 			}
 			time.Sleep(time.Second * 3)
 

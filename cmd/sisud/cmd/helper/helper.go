@@ -79,7 +79,6 @@ func GetEthClient(genesisFolder string, chain string) *ethclient.Client {
 	deyesChains := ReadDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
 	for _, cfg := range deyesChains {
 		if cfg.Chain == chain {
-			fmt.Println("cfg.Rpcs[0] = ", cfg.Rpcs[0])
 			client, err := ethclient.Dial(cfg.Rpcs[0])
 			if err != nil {
 				panic(err)
