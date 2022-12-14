@@ -7,6 +7,8 @@ import (
 
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
+	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
+	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/spf13/cobra"
 )
 
@@ -25,6 +27,7 @@ func DeployAndFund() *cobra.Command {
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
+			chains := strings.Split(chainString, ",")
 
 			log.Info("chainUrls = ", chainUrls)
 
@@ -35,16 +38,23 @@ func DeployAndFund() *cobra.Command {
 
 			// Deploy vault
 			log.Info("========= Deploying Vault =========")
-			vaultAddrs := deployContractCmd.doDeployment(chainUrls, "vault", mnemonic, fmt.Sprintf("%s,%s", ExpectedVaultAddress, ExpectedVaultAddress), "", "")
-			vaultString := strings.Join(vaultAddrs, ",")
+			expectedVaults := helper.ReadVaults(genesisFolder, chains)
+			vaultAddrs := deployContractCmd.doDeployment(chainUrls, "vault", mnemonic, expectedVaults, "", "")
 
 			// Deploy Sisu and ADA tokens
-			sisuAddrs := deployContractCmd.doDeployment(chainUrls, "erc20", mnemonic, fmt.Sprintf("%s,%s", ExpectedSisuAddress, ExpectedSisuAddress), "Sisu Token", "SISU")
-			adaAddrs := deployContractCmd.doDeployment(chainUrls, "erc20", mnemonic, fmt.Sprintf("%s,%s", ExpectedAdaAddress, ExpectedAdaAddress), "Ada Token", "ADA")
+			tokens := helper.ReadToken(genesisFolder)
+			filteredTokens := filterTokenAddressForChains(tokens, chains)
+			allTokenAddrs := make([][]string, 0)
+			for _, token := range filteredTokens {
+				log.Verbosef("Deploying token %s", token.Id)
+				expectedAddrs := getExpectedAddressForTokens(token, chains)
+				addrs := deployContractCmd.doDeployment(chainUrls, "erc20", mnemonic, expectedAddrs, "", token.Id)
+				allTokenAddrs = append(allTokenAddrs, addrs)
+				log.Verbose("allTokenAddrs = ", allTokenAddrs)
+			}
 			time.Sleep(time.Second * 3)
 
 			log.Info("========= Adding Liquidity to the Vault =========")
-			allTokenAddrs := [][]string{sisuAddrs, adaAddrs}
 			// Add support token to the pool
 			for _, tokenAddrs := range allTokenAddrs {
 				// tokenAddrs is an array of token address on different chains
@@ -52,7 +62,7 @@ func DeployAndFund() *cobra.Command {
 
 				// Add liquidity to the pool
 				addLiquidityCmd := &AddLiquidityCmd{}
-				addLiquidityCmd.approveAndAddLiquidity(chainUrls, mnemonic, tokenAddrString, vaultString)
+				addLiquidityCmd.approveAndAddLiquidity(chainUrls, mnemonic, tokenAddrString, vaultAddrs)
 
 				// Wait for block to mine
 				time.Sleep(time.Second * 3)
@@ -62,7 +72,7 @@ func DeployAndFund() *cobra.Command {
 			log.Info("========= Fund token to sisu's account =========")
 			fundSisuCmd := &fundAccountCmd{}
 			fundSisuCmd.fundSisuAccounts(cmd.Context(), chainString, chainUrls, mnemonic,
-				vaultString, sisuRpc, genesisFolder)
+				sisuRpc, genesisFolder)
 
 			return nil
 		},
@@ -76,4 +86,47 @@ func DeployAndFund() *cobra.Command {
 	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "The genesis folder that contains config files to generate data.")
 
 	return cmd
+}
+
+func filterTokenAddressForChains(tokens []*types.Token, chains []string) []*types.Token {
+	chainMap := make(map[string]bool)
+	for _, chain := range chains {
+		chainMap[chain] = true
+	}
+
+	filteredTokens := make([]*types.Token, 0)
+	for _, token := range tokens {
+		if token.Addresses == nil {
+			continue
+		}
+
+		for i, chain := range token.Chains {
+			if chainMap[chain] && token.Addresses[i] != "" {
+				filteredTokens = append(filteredTokens, token)
+				break
+			}
+		}
+	}
+
+	return filteredTokens
+}
+
+func getExpectedAddressForTokens(token *types.Token, chains []string) []string {
+	tokenAddrs := make([]string, 0)
+	for _, targetChain := range chains {
+		found := false
+		for i, chain := range token.Chains {
+			if chain == targetChain {
+				tokenAddrs = append(tokenAddrs, token.Addresses[i])
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			panic(fmt.Errorf("Cannot find address for token %s on chain %s in tokens file", token.Id, targetChain))
+		}
+	}
+
+	return tokenAddrs
 }

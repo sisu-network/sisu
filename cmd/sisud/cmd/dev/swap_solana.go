@@ -1,12 +1,9 @@
 package dev
 
 import (
-	"context"
 	"path/filepath"
 
 	solanago "github.com/gagliardetto/solana-go"
-	"github.com/gagliardetto/solana-go/rpc"
-	"github.com/gagliardetto/solana-go/rpc/ws"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
 	"github.com/sisu-network/sisu/x/sisu/chains/solana"
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
@@ -16,21 +13,12 @@ func swapFromSolana(genesisFolder, chain, mnemonic, tokenAddr, recipient string,
 	dstChain uint64, amount uint64) {
 	feePayer := solana.GetSolanaPrivateKey(mnemonic)
 
-	solanaConfig, err := helper.ReadCmdSolanaConfig(filepath.Join(genesisFolder, "solana.json"))
-	if err != nil {
-		panic(err)
-	}
-
-	client := rpc.New(solanaConfig.Rpc)
-	wsClient, err := ws.Connect(context.Background(), solanaConfig.Ws)
-	if err != nil {
-		panic(err)
-	}
+	clients, wsClients := helper.GetSolanaClientAndWss(genesisFolder)
 
 	approveIx := approveSolanaIx(genesisFolder, chain, mnemonic, tokenAddr, amount)
 	transferIx := transferTokenIx(genesisFolder, mnemonic, tokenAddr, recipient, dstChain, amount)
 
-	err = solana.SignAndSubmit(client, wsClient, []solanago.Instruction{approveIx, transferIx}, feePayer)
+	err := solana.SignAndSubmit(clients, wsClients, []solanago.Instruction{approveIx, transferIx}, feePayer)
 	if err != nil {
 		panic(err)
 	}

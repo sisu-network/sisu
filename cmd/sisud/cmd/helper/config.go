@@ -2,11 +2,13 @@ package helper
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	econfig "github.com/sisu-network/deyes/config"
+	"github.com/sisu-network/sisu/x/sisu/types"
 
 	cardanogo "github.com/echovl/cardano-go"
 )
@@ -76,4 +78,50 @@ func ReadDeyesChainConfigs(path string) []econfig.Chain {
 	}
 
 	return deyesChains
+}
+
+func ReadVaults(genesisFolder string, chains []string) []string {
+	dat, err := os.ReadFile(filepath.Join(genesisFolder, "vault.json"))
+	if err != nil {
+		panic(err)
+	}
+
+	vaults := make([]*types.Vault, 0)
+	err = json.Unmarshal(dat, &vaults)
+	if err != nil {
+		panic(err)
+	}
+
+	ret := make([]string, 0)
+	for _, chain := range chains {
+		found := false
+		for _, vault := range vaults {
+			if vault.Chain == chain {
+				ret = append(ret, vault.Address)
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			panic(fmt.Errorf("Cannot find vault in chain %s", chain))
+		}
+	}
+
+	return ret
+}
+
+func ReadToken(genesisFolder string) []*types.Token {
+	bz, err := os.ReadFile(filepath.Join(genesisFolder, "tokens.json"))
+	if err != nil {
+		panic(err)
+	}
+
+	tokens := make([]*types.Token, 0)
+	err = json.Unmarshal(bz, &tokens)
+	if err != nil {
+		panic(err)
+	}
+
+	return tokens
 }

@@ -38,5 +38,4 @@ const (
 	Algo                = "algo"
 	MinimumGasPrices    = "minimum-gas-prices"
 	SisuRpc             = "sisu-rpc"
-	VaultAddrs          = "vault-addrs"
 )

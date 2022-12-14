@@ -9,6 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
+	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
 	"github.com/spf13/cobra"
 )
 
@@ -29,29 +30,32 @@ Short:
 ./sisu dev add-liquidity
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			chainString, _ := cmd.Flags().GetString(flags.Chains)
 			urlString, _ := cmd.Flags().GetString(flags.ChainUrls)
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
 			tokenAddrString, _ := cmd.Flags().GetString(flags.Erc20Addrs)
-			vaultAddrsString, _ := cmd.Flags().GetString(flags.VaultAddrs)
+			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 
 			c := &AddLiquidityCmd{}
-			c.approveAndAddLiquidity(urlString, mnemonic, tokenAddrString, vaultAddrsString)
+			chains := strings.Split(chainString, ",")
+			vaults := helper.ReadVaults(genesisFolder, chains)
+			c.approveAndAddLiquidity(urlString, mnemonic, tokenAddrString, vaults)
 
 			return nil
 		},
 	}
 
+	cmd.Flags().String(flags.Chains, "ganache1,ganache2", "Names of all chains we want to fund.")
 	cmd.Flags().String(flags.ChainUrls, "http://0.0.0.0:7545,http://0.0.0.0:8545", "RPCs of all the chains we want to fund.")
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
+	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "The genesis folder that contains config files to generate data.")
 	cmd.Flags().String(flags.Erc20Addrs, fmt.Sprintf("%s,%s", ExpectedSisuAddress, ExpectedSisuAddress), "Token address.")
-	cmd.Flags().String(flags.VaultAddrs, fmt.Sprintf("%s,%s", ExpectedVaultAddress, ExpectedVaultAddress), "Liquidity addresses.")
 
 	return cmd
 }
 
-func (c *AddLiquidityCmd) approveAndAddLiquidity(urlString, mnemonic, tokenAddrString, vaultAddrString string) {
+func (c *AddLiquidityCmd) approveAndAddLiquidity(urlString, mnemonic, tokenAddrString string, vaultAddrs []string) {
 	tokenAddrs := strings.Split(tokenAddrString, ",")
-	vaultAddrs := strings.Split(vaultAddrString, ",")
 	urls := strings.Split(urlString, ",")
 	clients := getEthClients(urlString)
 	defer func() {

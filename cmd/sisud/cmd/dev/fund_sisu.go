@@ -2,7 +2,6 @@ package dev
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -43,13 +42,12 @@ func FundSisu() *cobra.Command {
 			chainString, _ := cmd.Flags().GetString(flags.Chains)
 			urlString, _ := cmd.Flags().GetString(flags.ChainUrls)
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
-			vaultString, _ := cmd.Flags().GetString(flags.VaultAddrs)
 			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 
 			c := &fundAccountCmd{}
-			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic, vaultString,
+			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic,
 				sisuRpc, genesisFolder)
 
 			return nil
@@ -60,16 +58,15 @@ func FundSisu() *cobra.Command {
 	cmd.Flags().String(flags.ChainUrls, "http://0.0.0.0:7545,http://0.0.0.0:8545", "RPCs of all the chains we want to fund.")
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
-	cmd.Flags().String(flags.VaultAddrs, fmt.Sprintf("%s,%s", ExpectedVaultAddress, ExpectedVaultAddress), "List of vault addresses")
 	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "The genesis folder that contains config files to generate data.")
 
 	return cmd
 }
 
 func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic string,
-	vaultString string, sisuRpc, genesisFolder string) {
+	sisuRpc, genesisFolder string) {
 	chains := strings.Split(chainString, ",")
-	vaults := strings.Split(vaultString, ",")
+	vaults := helper.ReadVaults(genesisFolder, chains)
 
 	wg := &sync.WaitGroup{}
 
