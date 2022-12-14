@@ -13,8 +13,8 @@ import (
 )
 
 // querySolanaAccountBalance queries token balance on a solana chain
-func QuerySolanaAccountBalance(client *rpc.Client, ataAccount string) (*big.Int, error) {
-	result, err := client.GetTokenAccountBalance(
+func QuerySolanaAccountBalance(clients []*rpc.Client, ataAccount string) (*big.Int, error) {
+	result, err := clients[0].GetTokenAccountBalance(
 		context.Background(),
 		solanago.MustPublicKeyFromBase58(ataAccount),
 		rpc.CommitmentConfirmed,
@@ -36,22 +36,35 @@ func QuerySolanaAccountBalance(client *rpc.Client, ataAccount string) (*big.Int,
 	return amount, err
 }
 
-func SignAndSubmit(client *rpc.Client, wsClient *ws.Client,
+func SignAndSubmit(clients []*rpc.Client, wsClients []*ws.Client,
 	ixs []solanago.Instruction, feePayer solanago.PrivateKey) error {
 	opts := rpc.TransactionOpts{
 		SkipPreflight:       false,
 		PreflightCommitment: rpc.CommitmentFinalized,
 	}
 
-	return SignAndSubmitWithOptions(client, wsClient, ixs, feePayer, opts)
+	return SignAndSubmitWithOptions(clients, wsClients, ixs, feePayer, opts)
 }
 
-func SignAndSubmitWithOptions(client *rpc.Client, wsClient *ws.Client,
+func SignAndSubmitWithOptions(clients []*rpc.Client, wsClients []*ws.Client,
 	ixs []solanago.Instruction, feePayer solanago.PrivateKey, opts rpc.TransactionOpts) error {
+	for i, client := range clients {
+		sig, err := trySubmit(client, wsClients[i], ixs, feePayer, opts)
+		if err == nil {
+			log.Verbose("Final sig = ", sig)
+			return nil
+		}
+	}
+
+	return fmt.Errorf("Failed to submit Solana transaction.")
+}
+
+func trySubmit(client *rpc.Client, wsClient *ws.Client,
+	ixs []solanago.Instruction, feePayer solanago.PrivateKey, opts rpc.TransactionOpts) (solanago.Signature, error) {
 	// Get blockhash
 	result, err := client.GetRecentBlockhash(context.Background(), rpc.CommitmentFinalized)
 	if err != nil {
-		panic(err)
+		return solanago.Signature{}, err
 	}
 
 	tx, err := solanago.NewTransaction(
@@ -60,7 +73,7 @@ func SignAndSubmitWithOptions(client *rpc.Client, wsClient *ws.Client,
 		solanago.TransactionPayer(feePayer.PublicKey()),
 	)
 	if err != nil {
-		panic(err)
+		return solanago.Signature{}, err
 	}
 
 	tx.Sign(
@@ -72,16 +85,14 @@ func SignAndSubmitWithOptions(client *rpc.Client, wsClient *ws.Client,
 			return nil
 		},
 	)
-	log.Verbose("tx sig = ", tx.Signatures[0])
 
 	// Send transaction, and wait for confirmation
 	sig, err := confirm.SendAndConfirmTransactionWithOpts(context.Background(), client, wsClient, tx,
 		opts, nil)
-	log.Verbose("Final sig = ", sig)
-
 	if err != nil {
 		log.Verbose("Cannot send transaction, err = ", err)
+		return solanago.Signature{}, err
 	}
 
-	return err
+	return sig, nil
 }

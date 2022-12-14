@@ -12,7 +12,6 @@ import (
 
 	solanago "github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
-	"github.com/gagliardetto/solana-go/rpc/ws"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
@@ -96,19 +95,15 @@ func StressSwap() *cobra.Command {
 			if hasSolana {
 				for _, eyesCfg := range deyesChains {
 					if libchain.IsSolanaChain(eyesCfg.Chain) {
-						client := rpc.New(eyesCfg.Rpcs[0])
-						wsClient, err := ws.Connect(context.Background(), eyesCfg.Wss[0])
-						if err != nil {
-							panic(err)
-						}
+						clients, wsClients := helper.GetSolanaClientAndWss(genesisFolder)
 
-						transferSOL(client, wsClient, mnemonic, solanaAddr.String(), uint64(1_000_000)) // 0.01 SOL
+						transferSOL(clients, wsClients, mnemonic, solanaAddr.String(), uint64(1_000_000)) // 0.01 SOL
 						for _, tokenId := range tokens {
 							token := queryToken(context.Background(), sisuRpc, tokenId)
 							tokenAddr := token.GetAddressForChain(eyesCfg.Chain)
 
 							// Create the ata address
-							ata, _, err := createSolanaAta(client, wsClient, mnemonic, solanaAddr,
+							ata, _, err := createSolanaAta(clients, wsClients, mnemonic, solanaAddr,
 								solanago.MustPublicKeyFromBase58(tokenAddr))
 							if err != nil {
 								panic(err)
@@ -116,8 +111,6 @@ func StressSwap() *cobra.Command {
 
 							log.Verbosef("ATA address created for token %s: %s", tokenId, ata.String())
 						}
-						client.Close()
-						wsClient.Close()
 					}
 				}
 			}
@@ -313,39 +306,6 @@ func (c *stressSwapCmd) getChainConfig(chain string, deyesChains []econfig.Chain
 	return nil
 }
 
-func (c *stressSwapCmd) getSolanaClientAndWss(genesisFolder string) (*rpc.Client, *ws.Client) {
-	deyesChains := helper.ReadDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
-	for _, cfg := range deyesChains {
-		if libchain.IsSolanaChain(cfg.Chain) {
-			client := rpc.New(cfg.Rpcs[0])
-			wsClient, err := ws.Connect(context.Background(), cfg.Wss[0])
-			if err != nil {
-				panic(err)
-			}
-
-			return client, wsClient
-		}
-	}
-
-	panic(fmt.Errorf("Cannot find config for solaan chain, genesis folder = %s", genesisFolder))
-}
-
-func getEthClient(genesisFolder string, chain string) *ethclient.Client {
-	deyesChains := helper.ReadDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
-	for _, cfg := range deyesChains {
-		if cfg.Chain == chain {
-			fmt.Println("cfg.Rpcs[0] = ", cfg.Rpcs[0])
-			client, err := ethclient.Dial(cfg.Rpcs[0])
-			if err != nil {
-				panic(err)
-			}
-			return client
-		}
-	}
-
-	panic(fmt.Errorf("Cannot find chain %s in the config", chain))
-}
-
 func getSolanaClient(genesisFolder string) *rpc.Client {
 	solanaConfig, err := helper.ReadCmdSolanaConfig(filepath.Join(genesisFolder, "solana.json"))
 	if err != nil {
@@ -374,7 +334,7 @@ func assertBalance(swapList map[string][]string, genesisFolder string, token *ty
 		}
 
 		if libchain.IsETHBasedChain(chain) {
-			client := getEthClient(genesisFolder, chain)
+			client := helper.GetEthClient(genesisFolder, chain)
 			// Query ERC20 balance
 			balance, err := queryErc20Balance(client, tokenAddr, ethAddr.String())
 			if err != nil {
@@ -386,7 +346,7 @@ func assertBalance(swapList map[string][]string, genesisFolder string, token *ty
 
 		if libchain.IsSolanaChain(chain) {
 			// Query ATA balance
-			client := getSolanaClient(genesisFolder)
+			clients, _ := helper.GetSolanaClientAndWss(genesisFolder)
 			ata, _, err := solanago.FindAssociatedTokenAddress(
 				solanaAddr,
 				solanago.MustPublicKeyFromBase58(tokenAddr),
@@ -395,7 +355,7 @@ func assertBalance(swapList map[string][]string, genesisFolder string, token *ty
 				panic(err)
 			}
 
-			balance, err := solana.QuerySolanaAccountBalance(client, ata.String())
+			balance, err := solana.QuerySolanaAccountBalance(clients, ata.String())
 			if err != nil {
 				panic(err)
 			}

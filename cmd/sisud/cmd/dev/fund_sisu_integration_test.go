@@ -19,7 +19,7 @@ import (
 
 var TokenMintPubkey = solanago.MustPublicKeyFromBase58("AJdUMt177iQ19J63ybkXtUVD6sK8dxD5ibietQANuv9S")
 
-func getBasicData(network string) (string, *rpc.Client, *ws.Client) {
+func getBasicData(network string) (string, []*rpc.Client, []*ws.Client) {
 	var rpcEndpoint string
 	var wssEndpoint string
 
@@ -39,7 +39,7 @@ func getBasicData(network string) (string, *rpc.Client, *ws.Client) {
 		panic(err)
 	}
 
-	return utils.LOCALHOST_MNEMONIC, client, wsClient
+	return utils.LOCALHOST_MNEMONIC, []*rpc.Client{client}, []*ws.Client{wsClient}
 }
 
 func TestQueryPubKeys(t *testing.T) {
@@ -95,7 +95,7 @@ func TestFundOnSolana(t *testing.T) {
 func TestCreateAssociatedProgram(t *testing.T) {
 	t.Skip()
 
-	mnemonic, client, wsClient := getBasicData("localhost")
+	mnemonic, clients, wsClients := getBasicData("localhost")
 
 	// Generate a random private key
 	privKey, err := solanago.NewRandomPrivateKey()
@@ -107,13 +107,13 @@ func TestCreateAssociatedProgram(t *testing.T) {
 	ownerAta, _, err := solanago.FindAssociatedTokenAddress(ownerPubkey, TokenMintPubkey)
 
 	// Query owner ata. This should return error
-	_, err = solana.QuerySolanaAccountBalance(client, ownerAta.String())
+	_, err = solana.QuerySolanaAccountBalance(clients, ownerAta.String())
 	require.True(t, strings.Contains(err.Error(), "could not find account"))
 
-	createSolanaAta(client, wsClient, mnemonic, ownerPubkey, TokenMintPubkey)
+	createSolanaAta(clients, wsClients, mnemonic, ownerPubkey, TokenMintPubkey)
 
 	// Query account ata
-	balance, err := solana.QuerySolanaAccountBalance(client, ownerAta.String())
+	balance, err := solana.QuerySolanaAccountBalance(clients, ownerAta.String())
 	require.Nil(t, err)
 	require.Equal(t, big.NewInt(0), balance)
 }
@@ -139,11 +139,11 @@ func TestSolanaSetSpender(t *testing.T) {
 	mnemonic := os.Getenv("MNEMONIC")
 	cmd := &fundAccountCmd{}
 
-	_, client, wsClient := getBasicData("localhost")
+	_, clients, wsClients := getBasicData("localhost")
 
 	pubkey := []byte{78, 114, 255, 58, 70, 231, 143, 6, 154, 69, 54, 90, 87, 89, 180, 208, 71, 88,
 		209, 74, 207, 217, 103, 218, 227, 238, 151, 136, 200, 253, 217, 17}
 	mockMpcAddr := utils.GetSolanaAddressFromPubkey(pubkey)
 
-	cmd.setSpender(client, wsClient, "../../../../misc/test", mnemonic, mockMpcAddr)
+	cmd.setSpender(clients, wsClients, "../../../../misc/test", mnemonic, mockMpcAddr)
 }

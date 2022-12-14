@@ -16,7 +16,8 @@ func TestQuerySolanaBalance(t *testing.T) {
 	endpoint := rpc.LocalNet_RPC
 	client := rpc.New(endpoint)
 
-	amount, err := solana.QuerySolanaAccountBalance(client, "BJ9ArHvbeUhVLChS2yksw8xqvoRpWYLtGkg7CVHNa31a")
+	amount, err := solana.QuerySolanaAccountBalance([]*rpc.Client{client},
+		"BJ9ArHvbeUhVLChS2yksw8xqvoRpWYLtGkg7CVHNa31a")
 	require.Nil(t, err)
 
 	log.Verbose("amount = ", amount)

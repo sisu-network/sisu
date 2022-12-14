@@ -11,6 +11,7 @@ import (
 	solanago "github.com/gagliardetto/solana-go"
 	"github.com/gagliardetto/solana-go/rpc"
 	confirm "github.com/gagliardetto/solana-go/rpc/sendAndConfirmTransaction"
+	"github.com/gagliardetto/solana-go/rpc/ws"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
@@ -103,7 +104,7 @@ func doSetSpender(t *testing.T, mnemonic string, cfg config.Config, spenderKey s
 	}
 
 	client, wsClient := GetBasicData("localhost")
-	err = SignAndSubmit(client, wsClient, []solanago.Instruction{ix}, ownerKey)
+	err = SignAndSubmit([]*rpc.Client{client}, []*ws.Client{wsClient}, []solanago.Instruction{ix}, ownerKey)
 	if err != nil {
 		panic(err)
 	}
