@@ -272,7 +272,8 @@ func New(
 	bridgeManager := chains.NewBridgeManager(app.appKeys.GetSignerAddress().String(), app.k, deyesClient, cfg)
 
 	txOutProducer := tss.NewTxOutputProducer(app.appKeys, app.k, bridgeManager, txTracker)
-	transferQueue := sisu.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss, app.appKeys)
+	transferQueue := sisu.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss,
+		app.appKeys, privateDb)
 	chainPolling := service.NewChainPolling(app.appKeys.GetSignerAddress().String(),
 		deyesClient, app.txSubmitter)
 
