@@ -303,9 +303,12 @@ func (am AppModule) signTxOut(ctx sdk.Context) {
 				// queue := am.keeper.GetTxOutQueue(ctx, chain)
 				// queue = append(queue, pendingInfo.TxOut)
 				// am.keeper.SetTxOutQueue(ctx, chain, queue)
+			} else if pendingInfo.State >= types.PendingTxOutInfo_SIGNING {
+				log.Verbosef("There is a pending tx out on chain %s with state %s",
+					chain,
+					pendingInfo.State.String())
+				continue
 			}
-
-			continue
 		}
 
 		queue := am.keeper.GetTxOutQueue(ctx, chain)
@@ -318,6 +321,12 @@ func (am AppModule) signTxOut(ctx sdk.Context) {
 
 		if !am.globalData.IsCatchingUp() {
 			log.Verbose("Signing txout hash = ", txOut.Content.OutHash)
+
+			// Update state of the pending tx out
+			pendingInfo.State = types.PendingTxOutInfo_SIGNING
+			am.privateDb.SetPendingTxOut(chain, pendingInfo)
+
+			// Do the signing
 			am.txOutSigner.signTxOut(ctx, txOut)
 		}
 	}

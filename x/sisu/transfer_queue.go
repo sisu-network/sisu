@@ -131,6 +131,7 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 				// ExpiredBlock: height + params.PendingTxTimeoutHeights[i],
 				// TODO: Make this height configurable
 				ExpiredBlock: ctx.BlockHeight() + 50,
+				State:        types.PendingTxOutInfo_IN_QUEUE,
 			})
 		}
 	}

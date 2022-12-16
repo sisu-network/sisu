@@ -9,8 +9,3 @@ import "sisu/tx_out.proto";
 message TxOutQueue {
   repeated TxOut tx_outs = 1;
 }
-
-message PendingTxOutInfo {
-  TxOut tx_out= 1;
-  int64 expired_block = 2;
-}
