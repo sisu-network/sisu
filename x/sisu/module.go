@@ -115,6 +115,7 @@ type AppModule struct {
 	valsManager     ValidatorManager
 	txTracker       TxTracker
 	txOutSigner     *txOutSigner
+	privateDb       keeper.Storage
 	mc              ManagerContainer
 }
 
@@ -136,6 +137,7 @@ func NewAppModule(cdc codec.Marshaler,
 		valsManager:    valsManager,
 		txTracker:      mc.TxTracker(),
 		txOutSigner:    NewTxOutSigner(mc.Keeper(), mc.PartyManager(), mc.DheartClient()),
+		privateDb:      mc.PrivateDb(),
 		mc:             mc,
 	}
 }
@@ -291,11 +293,11 @@ func (am AppModule) signTxOut(ctx sdk.Context) {
 	height := ctx.BlockHeight()
 
 	for _, chain := range params.SupportedChains {
-		pendingInfo := am.keeper.GetPendingTxOutInfo(ctx, chain)
+		pendingInfo := am.privateDb.GetPendingTxOut(chain)
 		if pendingInfo != nil {
 			if pendingInfo.ExpiredBlock < height {
 				log.Infof("Pending tx on chain %s expired. Clearing the pending tx.", chain)
-				am.keeper.SetPendingTxOutInfo(ctx, chain, nil)
+				am.privateDb.SetPendingTxOut(chain, nil)
 
 				// TODO: Put this back to the failure queue
 				// queue := am.keeper.GetTxOutQueue(ctx, chain)
@@ -312,12 +314,6 @@ func (am AppModule) signTxOut(ctx sdk.Context) {
 		}
 
 		txOut := queue[0]
-		am.keeper.SetPendingTxOutInfo(ctx, txOut.Content.OutChain, &types.PendingTxOutInfo{
-			TxOut: txOut,
-			// ExpiredBlock: height + params.PendingTxTimeoutHeights[i],
-			// TODO: Make this height configurable
-			ExpiredBlock: height + 50,
-		})
 		am.keeper.SetTxOutQueue(ctx, txOut.Content.OutChain, queue[1:])
 
 		if !am.globalData.IsCatchingUp() {

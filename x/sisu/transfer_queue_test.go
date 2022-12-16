@@ -6,14 +6,17 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
+	db "github.com/tendermint/tm-db"
 )
 
 func mockForTransferQueue() (sdk.Context, ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
+	privateDb := keeper.NewStorageDb(".", db.MemDBBackend)
 	params := k.GetParams(ctx)
 	params.TransferOutParams = []*types.TransferOutParams{
 		{
@@ -31,7 +34,7 @@ func mockForTransferQueue() (sdk.Context, ManagerContainer) {
 	}
 	txSubmit := &common.MockTxSubmit{}
 
-	mc := MockManagerContainer(ctx, k, txOutputProducer, globalData, txSubmit)
+	mc := MockManagerContainer(ctx, k, txOutputProducer, globalData, txSubmit, privateDb)
 
 	return ctx, mc
 }
@@ -42,10 +45,10 @@ func TestTransferQueue(t *testing.T) {
 		txOutProducer := mc.TxOutProducer().(*MockTxOutputProducer)
 		txSubmit := mc.TxSubmit().(*common.MockTxSubmit)
 		txSubmitCount := 0
-		keeper := mc.Keeper()
+		k := mc.Keeper()
 
-		queue := NewTransferQueue(mc.Keeper(), mc.TxOutProducer(), mc.TxSubmit(),
-			mc.Config().Tss, nil).(*defaultTransferQueue)
+		queue := NewTransferQueue(k, mc.TxOutProducer(), txSubmit,
+			mc.Config().Tss, nil, mc.PrivateDb()).(*defaultTransferQueue)
 		transfer := &types.Transfer{
 			Id:          "ganache1__hash1",
 			ToRecipient: "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80",
@@ -53,13 +56,20 @@ func TestTransferQueue(t *testing.T) {
 			Amount:      utils.EthToWei.String(),
 		}
 
-		keeper.SetTransferQueue(ctx, "ganache2", []*types.Transfer{transfer})
+		k.AddTransfers(ctx, []*types.Transfer{transfer})
+		k.SetTransferQueue(ctx, "ganache2", []*types.Transfer{transfer})
+
 		txOutProducer.GetTxOutsFunc = func(ctx sdk.Context, chain string,
 			transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
 			ret := make([]*types.TxOutMsg, len(transfers))
 			for i := range transfers {
 				ret[i] = &types.TxOutMsg{
 					Signer: "signer",
+					Data: &types.TxOut{
+						Content: &types.TxOutContent{
+							OutChain: "ganache2",
+						},
+					},
 				}
 			}
 			return ret, nil

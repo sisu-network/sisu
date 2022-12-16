@@ -27,6 +27,7 @@ type ManagerContainer interface {
 	TransferQueue() TransferQueue
 	BridgeManager() chains.BridgeManager
 	ChainPolling() service.ChainPolling
+	PrivateDb() keeper.Storage
 }
 
 type DefaultManagerContainer struct {
@@ -47,6 +48,7 @@ type DefaultManagerContainer struct {
 	transferOutQueue TransferQueue
 	bridgeManager    chains.BridgeManager
 	chainPolling     service.ChainPolling
+	privateDb        keeper.Storage
 }
 
 func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
@@ -54,7 +56,8 @@ func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.Config,
 	appKeys common.AppKeys, txOutProducer TxOutputProducer, txTracker TxTracker,
 	keeper keeper.Keeper, valsManager ValidatorManager, txInQueue TransferQueue,
-	bridgeManager chains.BridgeManager, chainPolling service.ChainPolling) ManagerContainer {
+	bridgeManager chains.BridgeManager, chainPolling service.ChainPolling,
+	privateDb keeper.Storage) ManagerContainer {
 	return &DefaultManagerContainer{
 		pmm:              pmm,
 		partyManager:     partyManager,
@@ -71,6 +74,7 @@ func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 		transferOutQueue: txInQueue,
 		bridgeManager:    bridgeManager,
 		chainPolling:     chainPolling,
+		privateDb:        privateDb,
 	}
 }
 
@@ -132,4 +136,8 @@ func (mc *DefaultManagerContainer) BridgeManager() chains.BridgeManager {
 
 func (mc *DefaultManagerContainer) ChainPolling() service.ChainPolling {
 	return mc.chainPolling
+}
+
+func (mc *DefaultManagerContainer) PrivateDb() keeper.Storage {
+	return mc.privateDb
 }

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
@@ -15,8 +16,9 @@ func mockForHandlerTxOutResult() (sdk.Context, ManagerContainer) {
 	k := testmock.KeeperTestGenesis(ctx)
 	pmm := NewPostedMessageManager(k)
 	transferQ := MockTransferQueue{}
+	storage := keeper.GetTestStorage()
 
-	mc := MockManagerContainer(k, pmm, transferQ, &MockTxOutQueue{})
+	mc := MockManagerContainer(k, pmm, transferQ, &MockTxOutQueue{}, storage)
 	return ctx, mc
 }
 
@@ -59,6 +61,7 @@ func TestHandlerTxOutResult(t *testing.T) {
 	t.Run("tx_included_in_block_successfully", func(t *testing.T) {
 		ctx, mc := mockForHandlerTxOutResult()
 		k := mc.Keeper()
+		privateDb := mc.PrivateDb()
 
 		txOut := &types.TxOut{
 			TxType: types.TxOutType_TRANSFER_OUT,
@@ -69,7 +72,7 @@ func TestHandlerTxOutResult(t *testing.T) {
 			Input: &types.TxOutInput{},
 		}
 		k.SaveTxOut(ctx, txOut)
-		k.SetPendingTxOutInfo(ctx, "ganache2", &types.PendingTxOutInfo{
+		privateDb.SetPendingTxOut("ganache2", &types.PendingTxOutInfo{
 			TxOut:        txOut,
 			ExpiredBlock: 0,
 		})
@@ -83,7 +86,7 @@ func TestHandlerTxOutResult(t *testing.T) {
 			},
 		})
 
-		pending := k.GetPendingTxOutInfo(ctx, "ganache2")
+		pending := privateDb.GetPendingTxOut("ganache2")
 		require.Nil(t, pending)
 	})
 
@@ -91,6 +94,7 @@ func TestHandlerTxOutResult(t *testing.T) {
 		ctx, mc := mockForHandlerTxOutResult()
 		k := mc.Keeper()
 		transfers := getTransfers()
+		privateDb := mc.PrivateDb()
 		k.AddTransfers(ctx, transfers)
 
 		txOut := &types.TxOut{
@@ -104,7 +108,7 @@ func TestHandlerTxOutResult(t *testing.T) {
 			},
 		}
 		k.SaveTxOut(ctx, txOut)
-		k.SetPendingTxOutInfo(ctx, "ganache2", &types.PendingTxOutInfo{
+		privateDb.SetPendingTxOut("ganache2", &types.PendingTxOutInfo{
 			TxOut:        txOut,
 			ExpiredBlock: 0,
 		})

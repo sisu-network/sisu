@@ -263,7 +263,7 @@ func New(
 	dheartClient, deyesClient := bootstrapper.BootstrapInternalNetwork(tssConfig, app.apiEndPoint, encryptedKey, nodeKey.PrivKey.Type())
 
 	// storage that contains common data for all the nodes
-	privateDb := keeper.NewStorageDb(filepath.Join(cfg.Sisu.Dir, "private"))
+	privateDb := keeper.NewStorageDb(filepath.Join(cfg.Sisu.Dir, "private"), dbm.GoLevelDBBackend)
 
 	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert)
 
@@ -278,7 +278,8 @@ func New(
 
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.k),
 		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg,
-		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, transferQueue, bridgeManager, chainPolling)
+		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, transferQueue, bridgeManager,
+		chainPolling, privateDb)
 
 	apiHandler := tss.NewApiHandler(privateDb, mc)
 	app.apiEndPoint.SetAppLogicListener(apiHandler)

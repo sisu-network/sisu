@@ -30,3 +30,7 @@ func GetTestKeeperAndContext() (*DefaultKeeper, sdk.Context) {
 
 	return keeper, ctx
 }
+
+func GetTestStorage() Storage {
+	return NewStorageDb(".", dbm.MemDBBackend)
+}

@@ -7,9 +7,11 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
+	db "github.com/tendermint/tm-db"
 )
 
 func mockForTestModule() (sdk.Context, ManagerContainer) {
@@ -17,14 +19,16 @@ func mockForTestModule() (sdk.Context, ManagerContainer) {
 	k := testmock.KeeperTestGenesis(ctx)
 	globalData := &common.MockGlobalData{}
 	txOutQueue := &MockTxOutQueue{}
+	privateDb := keeper.NewStorageDb(".", db.MemDBBackend)
 
-	mc := MockManagerContainer(k, txOutQueue, globalData)
+	mc := MockManagerContainer(k, txOutQueue, globalData, privateDb)
 	return ctx, mc
 }
 
 func TestModule_signTxOut(t *testing.T) {
 	ctx, mc := mockForTestModule()
 	kpr := mc.Keeper()
+	privateDb := mc.PrivateDb()
 	module := NewAppModule(nil, nil, mc.Keeper(), nil, nil, mc)
 
 	rawTx := ethTypes.NewContractCreation(
@@ -64,17 +68,26 @@ func TestModule_signTxOut(t *testing.T) {
 
 	module.signTxOut(ctx)
 
+	privateDb.SetPendingTxOut("ganache1", &types.PendingTxOutInfo{
+		TxOut:        txOut1_1,
+		ExpiredBlock: 50,
+	})
+	privateDb.SetPendingTxOut("ganache2", &types.PendingTxOutInfo{
+		TxOut:        txOut2_1,
+		ExpiredBlock: 50,
+	})
+
 	txOutQueue1 := kpr.GetTxOutQueue(ctx, "ganache1")
 	require.Equal(t, []*types.TxOut{txOut1_2}, txOutQueue1)
 	txOutQueue2 := kpr.GetTxOutQueue(ctx, "ganache2")
 	require.Equal(t, []*types.TxOut{}, txOutQueue2)
 
-	pending1 := kpr.GetPendingTxOutInfo(ctx, "ganache1")
+	pending1 := privateDb.GetPendingTxOut("ganache1")
 	require.Equal(t, &types.PendingTxOutInfo{
 		TxOut:        txOut1_1,
 		ExpiredBlock: 50,
 	}, pending1)
-	pending2 := kpr.GetPendingTxOutInfo(ctx, "ganache2")
+	pending2 := privateDb.GetPendingTxOut("ganache2")
 	require.Equal(t, &types.PendingTxOutInfo{
 		TxOut:        txOut2_1,
 		ExpiredBlock: 50,
@@ -92,9 +105,9 @@ func TestModule_signTxOut(t *testing.T) {
 
 	// The pending tx should be empty
 	module.signTxOut(cloneCtx)
-	pending1 = kpr.GetPendingTxOutInfo(cloneCtx, "ganache1")
+	pending1 = privateDb.GetPendingTxOut("ganache1")
 	require.Nil(t, pending1)
-	pending2 = kpr.GetPendingTxOutInfo(cloneCtx, "ganache2")
+	pending2 = privateDb.GetPendingTxOut("ganache2")
 	require.Nil(t, pending2)
 
 	// The tx is added back to the queue.
