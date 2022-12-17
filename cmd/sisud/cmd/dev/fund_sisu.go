@@ -40,14 +40,13 @@ func FundSisu() *cobra.Command {
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			chainString, _ := cmd.Flags().GetString(flags.Chains)
-			urlString, _ := cmd.Flags().GetString(flags.ChainUrls)
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
 			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 
 			c := &fundAccountCmd{}
-			c.fundSisuAccounts(cmd.Context(), chainString, urlString, mnemonic,
+			c.fundSisuAccounts(cmd.Context(), chainString, mnemonic,
 				sisuRpc, genesisFolder)
 
 			return nil
@@ -63,14 +62,14 @@ func FundSisu() *cobra.Command {
 	return cmd
 }
 
-func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, urlString, mnemonic string,
+func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, mnemonic string,
 	sisuRpc, genesisFolder string) {
 	chains := strings.Split(chainString, ",")
 	vaults := helper.ReadVaults(genesisFolder, chains)
 
 	wg := &sync.WaitGroup{}
 
-	clients := getEthClients(urlString)
+	clients := getEthClients(chains, genesisFolder)
 	defer func() {
 		for _, client := range clients {
 			client.Close()

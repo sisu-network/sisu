@@ -31,7 +31,6 @@ Short:
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			chainString, _ := cmd.Flags().GetString(flags.Chains)
-			urlString, _ := cmd.Flags().GetString(flags.ChainUrls)
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
 			tokenAddrString, _ := cmd.Flags().GetString(flags.Erc20Addrs)
 			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
@@ -39,14 +38,13 @@ Short:
 			c := &AddLiquidityCmd{}
 			chains := strings.Split(chainString, ",")
 			vaults := helper.ReadVaults(genesisFolder, chains)
-			c.approveAndAddLiquidity(urlString, mnemonic, tokenAddrString, vaults)
+			c.approveAndAddLiquidity(mnemonic, genesisFolder, chains, tokenAddrString, vaults)
 
 			return nil
 		},
 	}
 
 	cmd.Flags().String(flags.Chains, "ganache1,ganache2", "Names of all chains we want to fund.")
-	cmd.Flags().String(flags.ChainUrls, "http://0.0.0.0:7545,http://0.0.0.0:8545", "RPCs of all the chains we want to fund.")
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
 	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "The genesis folder that contains config files to generate data.")
 	cmd.Flags().String(flags.Erc20Addrs, fmt.Sprintf("%s,%s", ExpectedSisuAddress, ExpectedSisuAddress), "Token address.")
@@ -54,10 +52,10 @@ Short:
 	return cmd
 }
 
-func (c *AddLiquidityCmd) approveAndAddLiquidity(urlString, mnemonic, tokenAddrString string, vaultAddrs []string) {
+func (c *AddLiquidityCmd) approveAndAddLiquidity(mnemonic, genesisFolder string, chains []string,
+	tokenAddrString string, vaultAddrs []string) {
 	tokenAddrs := strings.Split(tokenAddrString, ",")
-	urls := strings.Split(urlString, ",")
-	clients := getEthClients(urlString)
+	clients := getEthClients(chains, genesisFolder)
 	defer func() {
 		for _, client := range clients {
 			client.Close()
@@ -88,7 +86,8 @@ func (c *AddLiquidityCmd) approveAndAddLiquidity(urlString, mnemonic, tokenAddrS
 			}
 
 			if balance.Cmp(big.NewInt(0)) == 0 {
-				log.Infof("Adding liquidity of token %s to the pool at %s for chain url %s", tokenAddrs[i], vaultAddrs[i], urls[i])
+				log.Infof("Adding liquidity of token %s to the pool at %s for chain %s", tokenAddrs[i],
+					vaultAddrs[i], chains[i])
 				transferErc20(client, mnemonic, tokenAddrs[i], vaultAddrs[i])
 
 				balance, _ = queryErc20Balance(client, tokenAddrs[i], vaultAddrs[i])

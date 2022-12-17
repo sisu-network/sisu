@@ -23,13 +23,10 @@ func DeployAndFund() *cobra.Command {
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			chainString, _ := cmd.Flags().GetString(flags.Chains)
-			chainUrls, _ := cmd.Flags().GetString(flags.ChainUrls)
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
 			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 			chains := strings.Split(chainString, ",")
-
-			log.Info("chainUrls = ", chainUrls)
 
 			log.Info("========= Deploy ERC20 =========")
 
@@ -39,7 +36,8 @@ func DeployAndFund() *cobra.Command {
 			// Deploy vault
 			log.Info("========= Deploying Vault =========")
 			expectedVaults := helper.ReadVaults(genesisFolder, chains)
-			vaultAddrs := deployContractCmd.doDeployment(chainUrls, "vault", mnemonic, expectedVaults, "", "")
+			vaultAddrs := deployContractCmd.doDeployment("vault", mnemonic, genesisFolder, chains,
+				expectedVaults, "", "")
 
 			// Deploy Sisu and ADA tokens
 			tokens := helper.ReadToken(genesisFolder)
@@ -48,7 +46,8 @@ func DeployAndFund() *cobra.Command {
 			for _, token := range filteredTokens {
 				log.Verbosef("Deploying token %s", token.Id)
 				expectedAddrs := getExpectedAddressForTokens(token, chains)
-				addrs := deployContractCmd.doDeployment(chainUrls, "erc20", mnemonic, expectedAddrs, "", token.Id)
+				addrs := deployContractCmd.doDeployment("erc20", mnemonic, genesisFolder, chains,
+					expectedAddrs, "", token.Id)
 				allTokenAddrs = append(allTokenAddrs, addrs)
 				log.Verbose("allTokenAddrs = ", allTokenAddrs)
 			}
@@ -62,7 +61,8 @@ func DeployAndFund() *cobra.Command {
 
 				// Add liquidity to the pool
 				addLiquidityCmd := &AddLiquidityCmd{}
-				addLiquidityCmd.approveAndAddLiquidity(chainUrls, mnemonic, tokenAddrString, vaultAddrs)
+				addLiquidityCmd.approveAndAddLiquidity(mnemonic, genesisFolder, chains,
+					tokenAddrString, vaultAddrs)
 
 				// Wait for block to mine
 				time.Sleep(time.Second * 3)
@@ -71,8 +71,7 @@ func DeployAndFund() *cobra.Command {
 			// Fund Sisu's account
 			log.Info("========= Fund token to sisu's account =========")
 			fundSisuCmd := &fundAccountCmd{}
-			fundSisuCmd.fundSisuAccounts(cmd.Context(), chainString, chainUrls, mnemonic,
-				sisuRpc, genesisFolder)
+			fundSisuCmd.fundSisuAccounts(cmd.Context(), chainString, mnemonic, sisuRpc, genesisFolder)
 
 			return nil
 		},

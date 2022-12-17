@@ -5,7 +5,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"math/big"
-	"strings"
+	"path/filepath"
 	"time"
 
 	etypes "github.com/ethereum/go-ethereum/core/types"
@@ -20,6 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
 	"github.com/sisu-network/sisu/utils"
 	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
@@ -133,18 +134,35 @@ func getAuthTransactor(client *ethclient.Client, mnemonic string) (*bind.Transac
 	return auth, nil
 }
 
-func getEthClients(urlString string) []*ethclient.Client {
-	urls := strings.Split(urlString, ",")
+func getEthClients(chains []string, genesisFolder string) []*ethclient.Client {
 	clients := make([]*ethclient.Client, 0)
 
-	// Get all urls from command arguments.
-	for i := 0; i < len(urls); i++ {
-		client, err := ethclient.Dial(urls[i])
-		if err != nil {
-			log.Error("please check chain is up and running, url = ", urls[i])
-			panic(err)
+	deyesChains := helper.ReadDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
+	for _, chain := range chains {
+		found := false
+		for _, c := range deyesChains {
+			if c.Chain == chain {
+				for _, rpcUrl := range c.Rpcs {
+					client, err := ethclient.Dial(rpcUrl)
+					if err != nil {
+						log.Errorf("Failed to dial %s on chain %s", rpcUrl, chain)
+					} else {
+						// Do a sanity call to make sure that this url actually works.
+						num, err := client.BlockNumber(context.Background())
+						if err == nil && num > 0 {
+							log.Verbosef("Use url %s for chainn %s", rpcUrl, chain)
+							clients = append(clients, client)
+							found = true
+							break
+						}
+					}
+				}
+			}
 		}
-		clients = append(clients, client)
+
+		if !found {
+			panic(fmt.Errorf("Cannot find healthy url for chain %s", chain))
+		}
 	}
 
 	return clients
