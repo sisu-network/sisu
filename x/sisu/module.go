@@ -298,6 +298,7 @@ func (am AppModule) signTxOut(ctx sdk.Context) {
 			if pendingInfo.ExpiredBlock < height {
 				log.Infof("Pending tx on chain %s expired. Clearing the pending tx.", chain)
 				am.privateDb.SetPendingTxOut(chain, nil)
+				continue
 
 				// TODO: Put this back to the failure queue
 				// queue := am.keeper.GetTxOutQueue(ctx, chain)
