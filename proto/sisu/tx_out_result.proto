@@ -22,8 +22,9 @@ message TxOutResultMsg {
 
 message TxOutResult {
   TxOutResultType result = 1;
-  string outChain = 2;
-  string outHash = 3;
-  int64 blockHeight = 4;
-  int64 nonce = 5;
+  string tx_out_id = 2;
+  string out_chain = 3;
+  string out_hash = 4;
+  int64 block_height = 5;
+  int64 nonce = 6;
 }

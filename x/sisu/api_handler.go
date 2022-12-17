@@ -169,8 +169,15 @@ func (a *ApiHandler) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 			return
 		}
 
+		txOutId, err := txOut.GetId()
+		if err != nil {
+			log.Errorf("Cannot get id for tx out, err = %s", err.Error())
+			return
+		}
+
 		// Report this as failure. Submit to the Sisu chain
 		txOutResult := &types.TxOutResult{
+			TxOutId:  txOutId,
 			OutChain: txOut.Content.OutChain,
 			OutHash:  txOut.Content.OutHash,
 		}
@@ -288,7 +295,13 @@ func (a *ApiHandler) OnTxIncludedInBlock(txTrack *chainstypes.TrackUpdate) {
 
 	txOut := a.getTxOutFromSignedHash(txTrack.Chain, txTrack.Hash)
 
+	txOutId, err := txOut.GetId()
+	if err != nil {
+		log.Errorf("Cannot get id for tx out, err = %s", err.Error())
+		return
+	}
 	txOutResult := &types.TxOutResult{
+		TxOutId:     txOutId,
 		OutChain:    txOut.Content.OutChain,
 		OutHash:     txOut.Content.OutHash,
 		BlockHeight: txTrack.BlockHeight,
