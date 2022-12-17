@@ -31,16 +31,18 @@ Example:
 ./sisu dev deploy --contract liquidity --chain-urls http://localhost:7545,http://localhost:8545
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			urlString, _ := cmd.Flags().GetString(flags.ChainUrls)
+			chainString, _ := cmd.Flags().GetString(flags.Chains)
 			contract, _ := cmd.Flags().GetString(flags.Contract)
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
 			expectedAddrString, _ := cmd.Flags().GetString(flags.ExpectedAddrs)
 			tokenName, _ := cmd.Flags().GetString(flags.Erc20Name)
 			tokenSymbol, _ := cmd.Flags().GetString(flags.Erc20Symbol)
+			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
+			chains := strings.Split(chainString, ",")
 
 			c := &DeployContractCmd{}
 			tokenAddrs := strings.Split(expectedAddrString, ",")
-			c.doDeployment(urlString, contract, mnemonic, tokenAddrs, tokenName, tokenSymbol)
+			c.doDeployment(contract, mnemonic, genesisFolder, chains, tokenAddrs, tokenName, tokenSymbol)
 
 			return nil
 		},
@@ -48,10 +50,11 @@ Example:
 
 	cmd.Flags().String(flags.Contract, "vault", "Contract name that we want to deploy.")
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
-	cmd.Flags().String(flags.ChainUrls, "http://0.0.0.0:7545,http://0.0.0.0:8545", "RPCs of all the chains we want to fund.")
+	cmd.Flags().String(flags.Chains, "ganache1,ganache2", "Names of all chains we want to fund.")
 	cmd.Flags().String(flags.ExpectedAddrs, fmt.Sprintf("%s,%s", ExpectedVaultAddress, ExpectedVaultAddress), "Expected addressed of the contract after deployment. Empty string means do not check for address match.")
 	cmd.Flags().String(flags.Erc20Name, "Sisu Token", "Token name")
 	cmd.Flags().String(flags.Erc20Symbol, "SISU", "Token symbol")
+	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "The genesis folder that contains config files to generate data.")
 
 	return cmd
 }
@@ -61,39 +64,23 @@ Example:
 //
 // If a contract has been deployed (defined by an element in expAddrString string), it will not be
 // deployed again.
-func (c *DeployContractCmd) doDeployment(urlString, contract, mnemonic string,
+func (c *DeployContractCmd) doDeployment(contract, mnemonic, genesisFolder string, chains []string,
 	expectedAddrs []string, tokenName, tokenSymbol string) []string {
-	urls := strings.Split(urlString, ",")
-	if len(expectedAddrs) == 0 {
-		expectedAddrs = make([]string, len(urls))
-	}
-
-	if len(expectedAddrs) == 0 {
-		expectedAddrs = make([]string, len(urls))
-	}
-
-	clients := make([]*ethclient.Client, 0)
-
-	if len(urls) != len(expectedAddrs) {
-		panic("Expected addrs length does not match urls length")
-	}
-
-	// Get all urls from command arguments.
-	for i := 0; i < len(urls); i++ {
-		client, err := ethclient.Dial(urls[i])
-		if err != nil {
-			log.Error("please check chain is up and running, url = ", urls[i])
-			panic(err)
-		}
-		clients = append(clients, client)
-	}
+	clients := getEthClients(chains, genesisFolder)
 	defer func() {
 		for _, client := range clients {
 			client.Close()
 		}
 	}()
 
-	deployedAddrs := make([]string, len(urls))
+	if len(expectedAddrs) == 0 {
+		expectedAddrs = make([]string, len(clients))
+	}
+
+	if len(clients) != len(expectedAddrs) {
+		panic("Expected addrs length does not match urls length")
+	}
+	deployedAddrs := make([]string, len(clients))
 	wg := &sync.WaitGroup{}
 	wg.Add(len(clients))
 
