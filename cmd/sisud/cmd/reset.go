@@ -69,7 +69,7 @@ func deleteMainAppData(root string) error {
 		dataDir + "/state.db",
 		dataDir + "/tx_index.db",
 		dataDir + "/snapshots",
-		dataDir + "/private.db",
+		dataDir + "/private",
 	}
 
 	filepath.Walk(configDir, func(path string, info os.FileInfo, err error) error {

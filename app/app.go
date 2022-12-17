@@ -263,7 +263,7 @@ func New(
 	dheartClient, deyesClient := bootstrapper.BootstrapInternalNetwork(tssConfig, app.apiEndPoint, encryptedKey, nodeKey.PrivKey.Type())
 
 	// storage that contains common data for all the nodes
-	privateDb := keeper.NewStorageDb(filepath.Join(cfg.Sisu.Dir, "private"))
+	privateDb := keeper.NewStorageDb(filepath.Join(cfg.Sisu.Dir, "data", "private"), dbm.GoLevelDBBackend)
 
 	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert)
 
@@ -272,13 +272,15 @@ func New(
 	bridgeManager := chains.NewBridgeManager(app.appKeys.GetSignerAddress().String(), app.k, deyesClient, cfg)
 
 	txOutProducer := tss.NewTxOutputProducer(app.appKeys, app.k, bridgeManager, txTracker)
-	transferQueue := sisu.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss, app.appKeys)
+	transferQueue := sisu.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss,
+		app.appKeys, privateDb)
 	chainPolling := service.NewChainPolling(app.appKeys.GetSignerAddress().String(),
 		deyesClient, app.txSubmitter)
 
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.k),
 		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg,
-		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, transferQueue, bridgeManager, chainPolling)
+		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, transferQueue, bridgeManager,
+		chainPolling, privateDb)
 
 	apiHandler := tss.NewApiHandler(privateDb, mc)
 	app.apiEndPoint.SetAppLogicListener(apiHandler)

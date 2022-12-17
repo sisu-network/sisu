@@ -12,6 +12,7 @@ type HandlerTxOutResult struct {
 	pmm           PostedMessageManager
 	keeper        keeper.Keeper
 	transferQueue TransferQueue
+	privateDb     keeper.Storage
 }
 
 func NewHandlerTxOutResult(mc ManagerContainer) *HandlerTxOutResult {
@@ -19,6 +20,7 @@ func NewHandlerTxOutResult(mc ManagerContainer) *HandlerTxOutResult {
 		keeper:        mc.Keeper(),
 		pmm:           mc.PostedMessageManager(),
 		transferQueue: mc.TransferQueue(),
+		privateDb:     mc.PrivateDb(),
 	}
 }
 
@@ -46,7 +48,6 @@ func (h *HandlerTxOutResult) doTxOutResult(ctx sdk.Context, msgWithSigner *types
 
 	log.Verbose("msg.Result = ", msg.Result)
 
-	types.TxOutResultType_IN_BLOCK_SUCCESS.String()
 	switch msg.Result {
 	case types.TxOutResultType_IN_BLOCK_SUCCESS:
 		return h.doTxOutConfirm(ctx, msg, txOut)
@@ -76,7 +77,7 @@ func (h *HandlerTxOutResult) doTxOutConfirm(ctx sdk.Context, msg *types.TxOutRes
 
 	// Clear the pending TxOut
 	log.Verbose("Clearing pending out for chain ", txOut.Content.OutChain)
-	h.keeper.SetPendingTxOutInfo(ctx, txOut.Content.OutChain, nil)
+	h.privateDb.SetPendingTxOut(txOut.Content.OutChain, nil)
 
 	return nil, nil
 }
@@ -107,7 +108,7 @@ func (h *HandlerTxOutResult) doTxOutFailure(ctx sdk.Context, msg *types.TxOutRes
 
 	// Clear the pending TxOut
 	log.Verbose("Clearing pending out for chain ", txOut.Content.OutChain)
-	h.keeper.SetPendingTxOutInfo(ctx, txOut.Content.OutChain, nil)
+	h.privateDb.SetPendingTxOut(txOut.Content.OutChain, nil)
 
 	return nil, nil
 }

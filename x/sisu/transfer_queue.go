@@ -32,13 +32,9 @@ type defaultTransferQueue struct {
 	txSubmit         common.TxSubmit
 	stopCh           chan bool
 	appKeys          common.AppKeys
-	// A map from chain -> bool. This indicates this transfer queue created some txOut for chain X
-	// but the tx out is not "delivered" yet. This prevents the queue create the same txOut again
-	// in the next block.
-	submittedTxs map[string]bool
-
-	newRequestCh chan TransferRequest
-	lock         *sync.RWMutex
+	privateDb        keeper.Storage
+	newRequestCh     chan TransferRequest
+	lock             *sync.RWMutex
 }
 
 func NewTransferQueue(
@@ -47,6 +43,7 @@ func NewTransferQueue(
 	txSubmit common.TxSubmit,
 	tssConfig config.TssConfig,
 	appKeys common.AppKeys,
+	privateDb keeper.Storage,
 ) TransferQueue {
 	return &defaultTransferQueue{
 		keeper:           keeper,
@@ -56,7 +53,7 @@ func NewTransferQueue(
 		lock:             &sync.RWMutex{},
 		stopCh:           make(chan bool),
 		appKeys:          appKeys,
-		submittedTxs:     make(map[string]bool),
+		privateDb:        privateDb,
 	}
 }
 
@@ -91,15 +88,10 @@ func (q *defaultTransferQueue) loop() {
 func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 	params := q.keeper.GetParams(ctx)
 	for _, chain := range params.SupportedChains {
-		pendingInfo := q.keeper.GetPendingTxOutInfo(ctx, chain)
+		pendingInfo := q.privateDb.GetPendingTxOut(chain)
 		if pendingInfo != nil {
 			// Don't try to create new txouts while there are some pending tx.
 			log.Verbosef("Transfer queue: chain %s has some pending tx", chain)
-			q.submittedTxs[chain] = false
-			continue
-		}
-
-		if q.submittedTxs[chain] {
 			continue
 		}
 
@@ -129,10 +121,18 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 
 		if len(txOutMsgs) > 0 {
 			log.Infof("Broadcasting txout with length %d on chain %s", len(txOutMsgs), chain)
-			q.submittedTxs[chain] = true
 			for _, txOutMsg := range txOutMsgs {
 				q.txSubmit.SubmitMessageAsync(txOutMsg)
 			}
+
+			txOut := txOutMsgs[0].Data
+			q.privateDb.SetPendingTxOut(txOut.Content.OutChain, &types.PendingTxOutInfo{
+				TxOut: txOut,
+				// ExpiredBlock: height + params.PendingTxTimeoutHeights[i],
+				// TODO: Make this height configurable
+				ExpiredBlock: ctx.BlockHeight() + 50,
+				State:        types.PendingTxOutInfo_IN_QUEUE,
+			})
 		}
 	}
 }

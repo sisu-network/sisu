@@ -97,10 +97,6 @@ type Keeper interface {
 	SetTxOutQueue(ctx sdk.Context, chain string, txOuts []*types.TxOut)
 	GetTxOutQueue(ctx sdk.Context, chain string) []*types.TxOut
 
-	// PendingTxOut
-	SetPendingTxOutInfo(ctx sdk.Context, chain string, txOut *types.PendingTxOutInfo)
-	GetPendingTxOutInfo(ctx sdk.Context, chain string) *types.PendingTxOutInfo
-
 	// Set Solana confirmed block
 	SetSolanaConfirmedBlock(ctx sdk.Context, chain, signer, blockHash string, height int64)
 	GetAllSolanaConfirmedBlock(ctx sdk.Context, chain string) map[string]*types.ChainMetadata
@@ -369,17 +365,6 @@ func (k *DefaultKeeper) SetTxOutQueue(ctx sdk.Context, chain string, txOuts []*t
 func (k *DefaultKeeper) GetTxOutQueue(ctx sdk.Context, chain string) []*types.TxOut {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutQueue)
 	return getTxOutQueue(store, chain)
-}
-
-///// PendingTxOut
-func (k *DefaultKeeper) SetPendingTxOutInfo(ctx sdk.Context, chain string, txOutInfo *types.PendingTxOutInfo) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPendingTxOut)
-	setPendingTxOut(store, chain, txOutInfo)
-}
-
-func (k *DefaultKeeper) GetPendingTxOutInfo(ctx sdk.Context, chain string) *types.PendingTxOutInfo {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPendingTxOut)
-	return getPendingTxOutInfo(store, chain)
 }
 
 ///// Chain metadata

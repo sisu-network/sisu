@@ -1,0 +1,19 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+import "sisu/tx_out.proto";
+
+message PendingTxOutInfo {
+  enum STATE {
+    IN_QUEUE = 0;
+    SIGNING = 10;
+    SIGNED = 20;
+    DISPATCHED = 30;
+ }
+
+  TxOut tx_out= 1;
+  int64 expired_block = 2;
+  STATE state = 3;
+}
