@@ -285,11 +285,12 @@ func (g *TestnetGenerator) generateEyesToml(cmd *cobra.Command, index int, dir s
 	tokens := strings.Split(testnetCfg.Oracle.TokenList, ",")
 
 	deyesConfig := econfig.Deyes{
-		DbHost:     sqlConfig.Host,
-		DbPort:     sqlConfig.Port,
-		DbUsername: sqlConfig.Username,
-		DbPassword: sqlConfig.Password,
-		DbSchema:   sqlConfig.Schema,
+		DbHost:              sqlConfig.Host,
+		DbPort:              sqlConfig.Port,
+		DbUsername:          sqlConfig.Username,
+		DbPassword:          sqlConfig.Password,
+		DbSchema:            sqlConfig.Schema,
+		UseExternalRpcsInfo: true,
 
 		Chains:        chains,
 		SisuServerUrl: fmt.Sprintf("http://%s:25456", sisuIp),
