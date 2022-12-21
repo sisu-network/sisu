@@ -61,6 +61,8 @@ price_oracle_secret = "{{ .PriceOracleSecret }}"
 price_poll_frequency = {{ .PricePollFrequency }}
 price_token_list = [ {{range $i, $token := .PriceTokenList}}"{{$token}}", {{end}}]
 
+use_external_rpcs_info = {{ .UseExternalRpcsInfo }}
+
 [log_dna]
 secret = "{{ .LogDNA.Secret }}"
 app_name = "{{ .LogDNA.AppName }}"
