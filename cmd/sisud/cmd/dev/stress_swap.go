@@ -15,7 +15,6 @@ import (
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/ethclient"
 	econfig "github.com/sisu-network/deyes/config"
 
 	"github.com/sisu-network/lib/log"
@@ -261,11 +260,13 @@ func (c *stressSwapCmd) doSwap(mnemonic, sisuRpc, genesisFolder, deyesUrl string
 			return
 		}
 
-		client, err := ethclient.Dial(eyesChainCfg.Rpcs[0])
-		if err != nil {
-			log.Verbosef("cannot dial chain %s with url %s, err = %v", src, eyesChainCfg.Rpcs[0], err)
+		clients := getEthClients([]string{src}, genesisFolder)
+		if len(clients) == 0 {
+			log.Error("None of the clients in the genesis folder is healthy")
 			return
 		}
+
+		client := clients[0]
 
 		amountBigInt := big.NewInt(int64(amount))
 		amountBigInt = new(big.Int).Mul(amountBigInt, utils.EthToWei)
