@@ -45,7 +45,6 @@ transfer params.
 		RunE: func(cmd *cobra.Command, args []string) error {
 			mnemonic, _ := cmd.Flags().GetString(flags.Mnemonic)
 			src, _ := cmd.Flags().GetString(flags.Src)
-			srcUrl, _ := cmd.Flags().GetString(flags.SrcUrl)
 			dst, _ := cmd.Flags().GetString(flags.Dst)
 			tokenSymbol, _ := cmd.Flags().GetString(flags.Erc20Symbol)
 			recipient, _ := cmd.Flags().GetString(flags.Recipient)
@@ -59,21 +58,19 @@ transfer params.
 				panic(flags.Recipient + " cannot be empty")
 			}
 
-			log.Info("srcUrl = ", srcUrl)
-
-			client, err := ethclient.Dial(srcUrl)
-			if err != nil {
-				log.Error("cannot dial source chain, url = ", srcUrl)
-				panic(err)
-			}
-			defer client.Close()
-
 			token, srcToken, dstToken := getTokenAddrsFromSisu(tokenSymbol, src, dst, sisuRpc)
 
 			log.Verbosef("srcToken = %s, dstToken = %s", srcToken, dstToken)
 
 			// Swapping from ETH chain
 			if libchain.IsETHBasedChain(src) {
+				clients := getEthClients([]string{src}, genesisFolder)
+				if len(clients) == 0 {
+					panic("There is no healthy client")
+				}
+
+				client := clients[0]
+
 				vault := getEthVaultAddress(cmd.Context(), src, sisuRpc)
 				log.Info("Vault address = ", vault)
 				amountBigInt := big.NewInt(int64(amount))
@@ -102,7 +99,6 @@ transfer params.
 
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
 	cmd.Flags().String(flags.Src, "ganache1", "Source chain where the token is transferred from")
-	cmd.Flags().String(flags.SrcUrl, "http://127.0.0.1:7545", "Source chain url")
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
 	cmd.Flags().String(flags.Dst, "ganache2", "Destination chain where the token is transferred to")
 	cmd.Flags().String(flags.Erc20Symbol, "SISU", "ID of the ERC20 to transferred")
