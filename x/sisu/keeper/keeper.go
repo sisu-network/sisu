@@ -76,8 +76,12 @@ type Keeper interface {
 	SaveParams(ctx sdk.Context, params *types.Params)
 	GetParams(ctx sdk.Context) *types.Params
 
-	// Mpc nonces
-	SetMpcNonce(ctx sdk.Context, checkPoint *types.MpcNonce)
+	// Reported Mpc Nonce by each signer.
+	SetSignerNonce(ctx sdk.Context, chain string, signer string, nonce int64)
+	GetAllSignerNonces(ctx sdk.Context, chain string) []int64
+
+	// Calculated Mpc nonces
+	SetMpcNonce(ctx sdk.Context, mpcNonce *types.MpcNonce)
 	GetMpcNonce(ctx sdk.Context, chain string) *types.MpcNonce
 
 	// Command Queue
@@ -100,6 +104,10 @@ type Keeper interface {
 	// Set Solana confirmed block
 	SetSolanaConfirmedBlock(ctx sdk.Context, chain, signer, blockHash string, height int64)
 	GetAllSolanaConfirmedBlock(ctx sdk.Context, chain string) map[string]*types.ChainMetadata
+
+	// Max Block height that all nodes observed (Not all chains need this property)
+	SetBlockHeight(ctx sdk.Context, chain string, height int64, hash string)
+	GetBlockHeight(ctx sdk.Context, chain string) *types.BlockHeight
 }
 
 type DefaultKeeper struct {
@@ -301,15 +309,27 @@ func (k *DefaultKeeper) GetParams(ctx sdk.Context) *types.Params {
 	return getParams(store)
 }
 
-///// Gateway Checkpoint
-func (k *DefaultKeeper) SetMpcNonce(ctx sdk.Context, checkPoint *types.MpcNonce) {
+///// Signer nonce
+
+func (k *DefaultKeeper) SetSignerNonce(ctx sdk.Context, chain string, signer string, nonce int64) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixSignerNonce)
+	setSignerNonce(store, chain, signer, nonce)
+}
+
+func (k *DefaultKeeper) GetAllSignerNonces(ctx sdk.Context, chain string) []int64 {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixSignerNonce)
+	return getSignerNonces(store, chain)
+}
+
+///// Mpc nonce
+func (k *DefaultKeeper) SetMpcNonce(ctx sdk.Context, mpcNonce *types.MpcNonce) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixMpcNonces)
-	addCheckPoint(store, checkPoint)
+	setMpcNonce(store, mpcNonce)
 }
 
 func (k *DefaultKeeper) GetMpcNonce(ctx sdk.Context, chain string) *types.MpcNonce {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixMpcNonces)
-	return getCheckPoint(store, chain)
+	return getMpcNonce(store, chain)
 }
 
 ///// Command Queue
@@ -376,6 +396,20 @@ func (k *DefaultKeeper) SetSolanaConfirmedBlock(ctx sdk.Context, chain, signer, 
 func (k *DefaultKeeper) GetAllSolanaConfirmedBlock(ctx sdk.Context, chain string) map[string]*types.ChainMetadata {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixChainMetadata)
 	return getAllSolanaConfirmedBlock(store, chain)
+}
+
+///// Block Height
+func (k *DefaultKeeper) SetBlockHeight(ctx sdk.Context, chain string, height int64, hash string) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixBlockHeight)
+	setBlockHeight(store, chain, &types.BlockHeight{
+		Height: height,
+		Hash:   hash,
+	})
+}
+
+func (k *DefaultKeeper) GetBlockHeight(ctx sdk.Context, chain string) *types.BlockHeight {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixBlockHeight)
+	return getBlockHeight(store, chain)
 }
 
 ///// Debug

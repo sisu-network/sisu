@@ -1,10 +1,8 @@
 package utils
 
 import (
-	"fmt"
+	"encoding/binary"
 	"math/big"
-
-	libchain "github.com/sisu-network/lib/chain"
 )
 
 var (
@@ -31,16 +29,13 @@ func WeiToLovelace(wei *big.Int) *big.Int {
 	return new(big.Int).Div(new(big.Int).Mul(wei, ONE_ADA_IN_LOVELACE), ONE_ETHER_IN_WEI)
 }
 
-// SourceAmountToLovelace converts an amount from source chain to corresponding amount in lovelace
-// in Cardano. For example, 10^18 wei in ETH is equivalent to 10^6 lovelace in Cardano.
-func SourceAmountToLovelace(source string, amount *big.Int) (*big.Int, error) {
-	if libchain.IsCardanoChain(source) {
-		return new(big.Int).SetBytes(amount.Bytes()), nil
-	}
+func Int64ToBytes(num int64) []byte {
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, uint64(num))
 
-	if libchain.IsETHBasedChain(source) {
-		return new(big.Int).Div(new(big.Int).Mul(amount, ONE_ADA_IN_LOVELACE), ONE_ETHER_IN_WEI), nil
-	}
+	return b
+}
 
-	return nil, fmt.Errorf("Unknown source %s", source)
+func BytesToInt64(bz []byte) int64 {
+	return int64(binary.BigEndian.Uint64(bz))
 }
