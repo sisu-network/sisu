@@ -46,11 +46,11 @@ type ApiHandler struct {
 	dheartClient external.DheartClient
 	deyesClient  external.DeyesClient
 
-	privateDb keeper.Storage
+	privateDb keeper.PrivateDb
 }
 
 func NewApiHandler(
-	privateDb keeper.Storage,
+	privateDb keeper.PrivateDb,
 	mc ManagerContainer,
 ) *ApiHandler {
 	a := &ApiHandler{
@@ -160,7 +160,7 @@ func (a *ApiHandler) OnKeygenResult(result dhtypes.KeygenResult) {
 // OnTxDeploymentResult is a callback after there is a deployment result from deyes.
 func (a *ApiHandler) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 	if !result.Success {
-		log.Verbosef("Result from deyes: failed to deploy tx, chain = %s, signed hash = %s, error = %v",
+		log.Verbosef("Result from deyes: failed to deploy tx, chain = %s, signed hash = %s, error = %s",
 			result.Chain, result.TxHash, result.Err)
 		txOut := a.getTxOutFromSignedHash(result.Chain, result.TxHash)
 
@@ -187,6 +187,10 @@ func (a *ApiHandler) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 			txOutResult.Result = types.TxOutResultType_NOT_ENOUGH_NATIVE_BALANCE
 		case etypes.ErrSubmitTx:
 			txOutResult.Result = types.TxOutResultType_SUBMIT_TX_ERROR
+		case etypes.ErrNonceNotMatched:
+			if libchain.IsETHBasedChain(txOut.Content.OutChain) {
+				a.updateEthNonce(txOut.Content.OutChain)
+			}
 		default:
 			txOutResult.Result = types.TxOutResultType_UNKNOWN
 		}
@@ -199,6 +203,28 @@ func (a *ApiHandler) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 	log.Info("The transaction has been sent to blockchain (but not included in a block yet). chain = ",
 		result.Chain)
 	a.txTracker.UpdateStatus(result.Chain, result.TxHash, types.TxStatusDepoyed)
+}
+
+func (a *ApiHandler) updateEthNonce(chain string) {
+	// Get nonce from deyes
+	ctx := a.globalData.GetReadOnlyContext()
+	nonce, err := a.deyesClient.GetNonce(chain, a.keeper.GetMpcAddress(ctx, chain))
+	if err != nil {
+		log.Errorf("Failed to get nonce from deyes for chain %s", chain)
+		return
+	}
+
+	log.Infof("Nonce from network = %d", nonce)
+
+	txIndex := a.privateDb.GetTxHashIndex(keeper.GetEthNonceKey(chain))
+
+	// If nonce is incorrect we need to adjust the mpc nonce.
+	a.txSubmit.SubmitMessageAsync(types.NewAdjustEthNonceMsg(
+		a.appKeys.GetSignerAddress().String(),
+		chain,
+		nonce,
+		txIndex,
+	))
 }
 
 // getTxOutFromSignedHash fetches txout in the TxOut store from the hash of a signed transaction.

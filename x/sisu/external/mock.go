@@ -18,7 +18,7 @@ type MockDeyesClient struct {
 	PingFunc                   func(source string) error
 	DispatchFunc               func(request *etypes.DispatchedTxRequest) (*etypes.DispatchedTxResult, error)
 	SetVaultAddressFunc        func(chain, addr, token string) error
-	GetNonceFunc               func(chain string, address string) int64
+	GetNonceFunc               func(chain string, address string) (int64, error)
 	SetSisuReadyFunc           func(isReady bool) error
 	GetGasPricesFunc           func(chains []string) ([]int64, error)
 	CardanoProtocolParamsFunc  func(chain string) (*cardano.ProtocolParams, error)
@@ -53,12 +53,12 @@ func (c *MockDeyesClient) SetVaultAddress(chain string, addr string, token strin
 	return nil
 }
 
-func (c *MockDeyesClient) GetNonce(chain string, address string) int64 {
+func (c *MockDeyesClient) GetNonce(chain string, address string) (int64, error) {
 	if c.GetNonceFunc != nil {
 		return c.GetNonceFunc(chain, address)
 	}
 
-	return 0
+	return 0, nil
 }
 
 func (c *MockDeyesClient) SetSisuReady(isReady bool) error {

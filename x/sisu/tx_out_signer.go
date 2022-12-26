@@ -60,14 +60,14 @@ func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
 		log.Error(err)
 	}
 
-	checkPoint := s.keeper.GetMpcNonce(ctx, tx.Content.OutChain)
-	if checkPoint == nil {
+	mpcNonce := s.keeper.GetMpcNonce(ctx, tx.Content.OutChain)
+	if mpcNonce == nil {
 		err := fmt.Errorf("cannot find gateway checkout for chain %s", tx.Content.OutChain)
 		return err
 	}
 
 	ethTxWithNonce := ethtypes.NewTx(&ethtypes.LegacyTx{
-		Nonce:    uint64(checkPoint.Nonce),
+		Nonce:    uint64(mpcNonce.Nonce),
 		To:       ethTx.To(),
 		Value:    ethTx.Value(),
 		Gas:      ethTx.Gas(),

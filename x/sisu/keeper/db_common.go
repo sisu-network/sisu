@@ -6,31 +6,8 @@ import (
 
 	cstypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/types"
-)
-
-var (
-	prefixTxRecord               = []byte{0x01} // Vote for a tx by different nodes
-	prefixTxRecordProcessed      = []byte{0x02}
-	prefixKeygen                 = []byte{0x03}
-	prefixKeygenResultWithSigner = []byte{0x04}
-	prefixTxOut                  = []byte{0x08}
-	prefixTxOutSig               = []byte{0x09}
-	prefixGasPrice               = []byte{0x0B}
-	prefixChain                  = []byte{0x0C}
-	prefixToken                  = []byte{0x0D}
-	prefixTokenPrices            = []byte{0x0E}
-	prefixNode                   = []byte{0x0F}
-	prefixVault                  = []byte{0x10}
-	prefixParams                 = []byte{0x11}
-	prefixMpcAddress             = []byte{0x12}
-	prefixMpcNonces              = []byte{0x13}
-	prefixTransferQueue          = []byte{0x14}
-	prefixTxOutQueue             = []byte{0x15}
-	prefixPendingTxOut           = []byte{0x16}
-	prefixCommandQueue           = []byte{0x17}
-	prefixTransfer               = []byte{0x18}
-	prefixChainMetadata          = []byte{0x19}
 )
 
 func getKeygenKey(keyType string, index int) []byte {
@@ -669,31 +646,57 @@ func getSisuAccount(store cstypes.KVStore, chain string) string {
 	return string(bz)
 }
 
-///// Gateway Checkpoint
-
-func addCheckPoint(store cstypes.KVStore, checkPoint *types.MpcNonce) {
-	bz, err := checkPoint.Marshal()
-	if err != nil {
-		log.Error("cannot marshal checkpoint")
-	}
-
-	store.Set([]byte(checkPoint.Chain), bz)
+///// Signer nonce
+func setSignerNonce(store cstypes.KVStore, chain string, signer string, nonce uint64) {
+	key := fmt.Sprintf("%s__%s", chain, signer)
+	store.Set([]byte(key), utils.Uint64ToBytes(nonce))
 }
 
-func getCheckPoint(store cstypes.KVStore, chain string) *types.MpcNonce {
+func getSignerNonces(store cstypes.KVStore, chain string) []uint64 {
+	begin := []byte(fmt.Sprintf("%s__", chain))
+	end := []byte(fmt.Sprintf("%s__~", chain))
+
+	nonces := make([]uint64, 0)
+
+	iter := store.Iterator(begin, end)
+	for ; iter.Valid(); iter.Next() {
+		nonce := utils.BytesToUint64(iter.Value())
+		nonces = append(nonces, nonce)
+	}
+
+	return nonces
+}
+
+///// Mpc Nonce
+func setMpcNonce(store cstypes.KVStore, mpcNonce *types.MpcNonce) {
+	if mpcNonce.Chain == "" {
+		log.Errorf("setMpcNonce: chain is not defined")
+		return
+	}
+
+	bz, err := mpcNonce.Marshal()
+	if err != nil {
+		log.Error("cannot marshal mpcNonce")
+		return
+	}
+
+	store.Set([]byte(mpcNonce.Chain), bz)
+}
+
+func getMpcNonce(store cstypes.KVStore, chain string) *types.MpcNonce {
 	bz := store.Get([]byte(chain))
 	if bz == nil {
 		return nil
 	}
 
-	checkPoint := &types.MpcNonce{}
-	err := checkPoint.Unmarshal(bz)
+	mpcNonce := &types.MpcNonce{}
+	err := mpcNonce.Unmarshal(bz)
 	if err != nil {
-		log.Error("Failed to unmarshal gateway checkpoint, err = ", err)
+		log.Error("Failed to unmarshal mpcNonce, err = ", err)
 		return nil
 	}
 
-	return checkPoint
+	return mpcNonce
 }
 
 ///// Command Queue
@@ -902,6 +905,47 @@ func getAllSolanaConfirmedBlock(store cstypes.KVStore, chain string) map[string]
 	}
 
 	return ret
+}
+
+///// Block Height
+func setBlockHeight(store cstypes.KVStore, chain string, block *types.BlockHeight) {
+	bz, err := block.Marshal()
+	if err != nil {
+		log.Errorf("Failed to save block height for chain %s", chain)
+		return
+	}
+
+	store.Set([]byte(chain), bz)
+}
+
+func getBlockHeight(store cstypes.KVStore, chain string) *types.BlockHeight {
+	bz := store.Get([]byte(chain))
+	if bz == nil {
+		return nil
+	}
+
+	block := &types.BlockHeight{}
+	err := block.Unmarshal(bz)
+	if err != nil {
+		log.Errorf("Failed to unmarshal block height for chain %s", chain)
+		return nil
+	}
+
+	return block
+}
+
+///// Tx Hash Index
+func setTxHashIndex(store cstypes.KVStore, key string, value uint32) {
+	store.Set([]byte(key), utils.Uint32ToBytes(value))
+}
+
+func getTxHashIndex(store cstypes.KVStore, key string) uint32 {
+	bz := store.Get([]byte(key))
+	if bz == nil {
+		return 0
+	}
+
+	return utils.BytesToUint32(bz)
 }
 
 ///// Debug functions

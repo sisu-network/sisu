@@ -2,7 +2,6 @@ package sisu
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -12,7 +11,7 @@ type HandlerTxOutResult struct {
 	pmm           PostedMessageManager
 	keeper        keeper.Keeper
 	transferQueue TransferQueue
-	privateDb     keeper.Storage
+	privateDb     keeper.PrivateDb
 }
 
 func NewHandlerTxOutResult(mc ManagerContainer) *HandlerTxOutResult {
@@ -59,25 +58,19 @@ func (h *HandlerTxOutResult) doTxOutResult(ctx sdk.Context, msgWithSigner *types
 func (h *HandlerTxOutResult) doTxOutConfirm(ctx sdk.Context, msg *types.TxOutResult, txOut *types.TxOut) ([]byte, error) {
 	log.Verbose("Transaction is successfully included in a block, hash (no sig)= ", msg.OutHash, " chain = ", msg.OutChain)
 
-	savedCheckPoint := h.keeper.GetMpcNonce(ctx, msg.OutChain)
-	if savedCheckPoint == nil || savedCheckPoint.BlockHeight < msg.BlockHeight {
-		// Save checkpoint
-		checkPoint := &types.MpcNonce{
-			Chain:       msg.OutChain,
-			BlockHeight: msg.BlockHeight,
-		}
-
-		if libchain.IsETHBasedChain(msg.OutChain) {
-			checkPoint.Nonce = msg.Nonce
-		}
-
-		// Update observed block height and nonce.
-		h.keeper.SetMpcNonce(ctx, checkPoint)
+	// Update observed block height and nonce.
+	checkPoint := &types.MpcNonce{
+		Chain: msg.OutChain,
+		Nonce: msg.Nonce,
 	}
+	h.keeper.SetMpcNonce(ctx, checkPoint)
 
 	// Clear the pending TxOut
 	log.Verbose("Clearing pending out for chain ", txOut.Content.OutChain)
 	h.privateDb.SetPendingTxOut(txOut.Content.OutChain, nil)
+
+	// Save the block height for cardano chain
+	h.keeper.SetBlockHeight(ctx, msg.OutChain, msg.BlockHeight, "")
 
 	return nil, nil
 }

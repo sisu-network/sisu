@@ -19,7 +19,7 @@ func mockForTestModule() (sdk.Context, ManagerContainer) {
 	k := testmock.KeeperTestGenesis(ctx)
 	globalData := &common.MockGlobalData{}
 	txOutQueue := &MockTxOutQueue{}
-	privateDb := keeper.NewStorageDb(".", db.MemDBBackend)
+	privateDb := keeper.NewPrivateDb(".", db.MemDBBackend)
 
 	mc := MockManagerContainer(k, txOutQueue, globalData, privateDb)
 	return ctx, mc

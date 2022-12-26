@@ -8,6 +8,30 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
+var (
+	prefixTxRecord               = []byte{0x01} // Vote for a tx by different nodes
+	prefixTxRecordProcessed      = []byte{0x02}
+	prefixKeygen                 = []byte{0x03}
+	prefixKeygenResultWithSigner = []byte{0x04}
+	prefixTxOut                  = []byte{0x05}
+	prefixGasPrice               = []byte{0x06}
+	prefixChain                  = []byte{0x07}
+	prefixToken                  = []byte{0x08}
+	prefixTokenPrices            = []byte{0x09}
+	prefixNode                   = []byte{0x0A}
+	prefixVault                  = []byte{0x0B}
+	prefixParams                 = []byte{0x0C}
+	prefixMpcAddress             = []byte{0x0D}
+	prefixMpcNonces              = []byte{0x0E}
+	prefixTransferQueue          = []byte{0x0F}
+	prefixTxOutQueue             = []byte{0x10}
+	prefixCommandQueue           = []byte{0x11}
+	prefixTransfer               = []byte{0x12}
+	prefixChainMetadata          = []byte{0x13}
+	prefixSignerNonce            = []byte{0x14}
+	prefixBlockHeight            = []byte{0x15}
+)
+
 var _ Keeper = (*DefaultKeeper)(nil)
 
 type Keeper interface {
@@ -36,10 +60,6 @@ type Keeper interface {
 	// TxOut
 	SaveTxOut(ctx sdk.Context, msg *types.TxOut)
 	GetTxOut(ctx sdk.Context, outChain, hash string) *types.TxOut
-
-	// TxOutSig
-	SaveTxOutSig(ctx sdk.Context, msg *types.TxOutSig)
-	GetTxOutSig(ctx sdk.Context, outChain, hashWithSig string) *types.TxOutSig
 
 	// Gas Price Record
 	SetGasPrice(ctx sdk.Context, msg *types.GasPriceMsg)
@@ -76,8 +96,12 @@ type Keeper interface {
 	SaveParams(ctx sdk.Context, params *types.Params)
 	GetParams(ctx sdk.Context) *types.Params
 
-	// Mpc nonces
-	SetMpcNonce(ctx sdk.Context, checkPoint *types.MpcNonce)
+	// Reported Mpc Nonce by each signer.
+	SetSignerNonce(ctx sdk.Context, chain string, signer string, nonce uint64)
+	GetAllSignerNonces(ctx sdk.Context, chain string) []uint64
+
+	// Calculated Mpc nonces
+	SetMpcNonce(ctx sdk.Context, mpcNonce *types.MpcNonce)
 	GetMpcNonce(ctx sdk.Context, chain string) *types.MpcNonce
 
 	// Command Queue
@@ -100,6 +124,10 @@ type Keeper interface {
 	// Set Solana confirmed block
 	SetSolanaConfirmedBlock(ctx sdk.Context, chain, signer, blockHash string, height int64)
 	GetAllSolanaConfirmedBlock(ctx sdk.Context, chain string) map[string]*types.ChainMetadata
+
+	// Max Block height that all nodes observed (Not all chains need this property)
+	SetBlockHeight(ctx sdk.Context, chain string, height int64, hash string)
+	GetBlockHeight(ctx sdk.Context, chain string) *types.BlockHeight
 }
 
 type DefaultKeeper struct {
@@ -179,19 +207,6 @@ func (k *DefaultKeeper) SaveTxOut(ctx sdk.Context, msg *types.TxOut) {
 func (k *DefaultKeeper) GetTxOut(ctx sdk.Context, outChain, hash string) *types.TxOut {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
 	return getTxOut(store, outChain, hash)
-}
-
-func (k *DefaultKeeper) GetTxOutSig(ctx sdk.Context, outChain, hashWithSig string) *types.TxOutSig {
-	withSigStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutSig)
-	txOutSig := getTxOutSig(withSigStore, outChain, hashWithSig)
-
-	return txOutSig
-}
-
-///// TxOutSig
-func (k *DefaultKeeper) SaveTxOutSig(ctx sdk.Context, msg *types.TxOutSig) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutSig)
-	saveTxOutSig(store, msg)
 }
 
 ///// GasPrice
@@ -301,15 +316,27 @@ func (k *DefaultKeeper) GetParams(ctx sdk.Context) *types.Params {
 	return getParams(store)
 }
 
-///// Gateway Checkpoint
-func (k *DefaultKeeper) SetMpcNonce(ctx sdk.Context, checkPoint *types.MpcNonce) {
+///// Signer nonce
+
+func (k *DefaultKeeper) SetSignerNonce(ctx sdk.Context, chain string, signer string, nonce uint64) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixSignerNonce)
+	setSignerNonce(store, chain, signer, nonce)
+}
+
+func (k *DefaultKeeper) GetAllSignerNonces(ctx sdk.Context, chain string) []uint64 {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixSignerNonce)
+	return getSignerNonces(store, chain)
+}
+
+///// Mpc nonce
+func (k *DefaultKeeper) SetMpcNonce(ctx sdk.Context, mpcNonce *types.MpcNonce) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixMpcNonces)
-	addCheckPoint(store, checkPoint)
+	setMpcNonce(store, mpcNonce)
 }
 
 func (k *DefaultKeeper) GetMpcNonce(ctx sdk.Context, chain string) *types.MpcNonce {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixMpcNonces)
-	return getCheckPoint(store, chain)
+	return getMpcNonce(store, chain)
 }
 
 ///// Command Queue
@@ -376,6 +403,20 @@ func (k *DefaultKeeper) SetSolanaConfirmedBlock(ctx sdk.Context, chain, signer, 
 func (k *DefaultKeeper) GetAllSolanaConfirmedBlock(ctx sdk.Context, chain string) map[string]*types.ChainMetadata {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixChainMetadata)
 	return getAllSolanaConfirmedBlock(store, chain)
+}
+
+///// Block Height
+func (k *DefaultKeeper) SetBlockHeight(ctx sdk.Context, chain string, height int64, hash string) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixBlockHeight)
+	setBlockHeight(store, chain, &types.BlockHeight{
+		Height: height,
+		Hash:   hash,
+	})
+}
+
+func (k *DefaultKeeper) GetBlockHeight(ctx sdk.Context, chain string) *types.BlockHeight {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixBlockHeight)
+	return getBlockHeight(store, chain)
 }
 
 ///// Debug

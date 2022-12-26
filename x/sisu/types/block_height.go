@@ -33,7 +33,7 @@ func (msg *BlockHeightMsg) Route() string {
 
 // Type ...
 func (msg *BlockHeightMsg) Type() string {
-	return MsgTypeBlockHeightMsg
+	return MsgTypeBlockHeight
 }
 
 // GetSigners ...

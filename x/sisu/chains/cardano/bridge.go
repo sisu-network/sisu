@@ -53,11 +53,11 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) 
 	sisuAddr := hutils.GetAddressFromCardanoPubkey(pubkey)
 
 	var maxBlockHeight uint64
-	checkPoint := b.keeper.GetMpcNonce(ctx, b.chain)
-	if checkPoint == nil {
+	block := b.keeper.GetBlockHeight(ctx, b.chain)
+	if block == nil {
 		maxBlockHeight = math.MaxUint64
 	} else {
-		maxBlockHeight = uint64(checkPoint.BlockHeight)
+		maxBlockHeight = uint64(block.Height)
 	}
 
 	utxos, err := b.deyesClient.CardanoUtxos(b.chain, sisuAddr.String(), maxBlockHeight)

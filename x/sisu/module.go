@@ -115,7 +115,7 @@ type AppModule struct {
 	valsManager     ValidatorManager
 	txTracker       TxTracker
 	txOutSigner     *txOutSigner
-	privateDb       keeper.Storage
+	privateDb       keeper.PrivateDb
 	mc              ManagerContainer
 }
 
@@ -203,8 +203,8 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	log.Info("Tss params: ", savedParams)
 
 	// Save Checkpoints
-	for _, checkpoint := range genState.MpcNonces {
-		am.keeper.SetMpcNonce(ctx, checkpoint)
+	for _, mpcNonce := range genState.MpcNonces {
+		am.keeper.SetMpcNonce(ctx, mpcNonce)
 	}
 
 	// Create validator nodes

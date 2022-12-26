@@ -234,12 +234,10 @@ func initGenFiles(
 	bankGenState.Balances = genBalances
 	appGenState[banktypes.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(&bankGenState)
 
-	checkPoints := make([]*types.MpcNonce, 0)
+	nonces := make([]*types.MpcNonce, 0)
 	for _, chain := range chains {
-		checkPoints = append(checkPoints, &types.MpcNonce{
-			Chain:       chain.Id,
-			BlockHeight: 1,
-			Nonce:       0,
+		nonces = append(nonces, &types.MpcNonce{
+			Chain: chain.Id,
 		})
 	}
 
@@ -249,7 +247,7 @@ func initGenFiles(
 	sisuGenState.Chains = chains
 	sisuGenState.Vaults = vaults
 	sisuGenState.Params = params
-	sisuGenState.MpcNonces = checkPoints
+	sisuGenState.MpcNonces = nonces
 
 	appGenState[types.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(sisuGenState)
 
