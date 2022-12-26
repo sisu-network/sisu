@@ -35,3 +35,15 @@ func TestETHTokensToLovelace(t *testing.T) {
 		require.Equal(t, ONE_ADA_IN_LOVELACE, WeiToLovelace(n))
 	})
 }
+
+func TestConvertInt(t *testing.T) {
+	x := uint32(8)
+	bz := Uint32ToBytes(x)
+	y := BytesToUint32(bz)
+	require.Equal(t, x, y)
+
+	x = uint32(100)
+	bz = Uint32ToBytes(x)
+	y = BytesToUint32(bz)
+	require.Equal(t, x, y)
+}

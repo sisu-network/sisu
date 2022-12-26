@@ -11,7 +11,7 @@ type HandlerTxOutResult struct {
 	pmm           PostedMessageManager
 	keeper        keeper.Keeper
 	transferQueue TransferQueue
-	privateDb     keeper.Storage
+	privateDb     keeper.PrivateDb
 }
 
 func NewHandlerTxOutResult(mc ManagerContainer) *HandlerTxOutResult {
@@ -61,6 +61,7 @@ func (h *HandlerTxOutResult) doTxOutConfirm(ctx sdk.Context, msg *types.TxOutRes
 	// Update observed block height and nonce.
 	checkPoint := &types.MpcNonce{
 		Chain: msg.OutChain,
+		Nonce: msg.Nonce,
 	}
 	h.keeper.SetMpcNonce(ctx, checkPoint)
 

@@ -115,7 +115,7 @@ type AppModule struct {
 	valsManager     ValidatorManager
 	txTracker       TxTracker
 	txOutSigner     *txOutSigner
-	privateDb       keeper.Storage
+	privateDb       keeper.PrivateDb
 	mc              ManagerContainer
 }
 

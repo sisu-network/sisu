@@ -46,11 +46,11 @@ type ApiHandler struct {
 	dheartClient external.DheartClient
 	deyesClient  external.DeyesClient
 
-	privateDb keeper.Storage
+	privateDb keeper.PrivateDb
 }
 
 func NewApiHandler(
-	privateDb keeper.Storage,
+	privateDb keeper.PrivateDb,
 	mc ManagerContainer,
 ) *ApiHandler {
 	a := &ApiHandler{
@@ -193,12 +193,36 @@ func (a *ApiHandler) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 
 		a.submitTxOutResult(txOutResult)
 
+		if libchain.IsETHBasedChain(txOut.Content.OutChain) {
+			a.updateEthNonce(txOut.Content.OutChain)
+		}
+
 		return
 	}
 
 	log.Info("The transaction has been sent to blockchain (but not included in a block yet). chain = ",
 		result.Chain)
 	a.txTracker.UpdateStatus(result.Chain, result.TxHash, types.TxStatusDepoyed)
+}
+
+func (a *ApiHandler) updateEthNonce(chain string) {
+	// Get nonce from deyes
+	ctx := a.globalData.GetReadOnlyContext()
+	nonce, err := a.deyesClient.GetNonce(chain, a.keeper.GetMpcAddress(ctx, chain))
+	if err != nil {
+		log.Errorf("Failed to get nonce from deyes for chain %s", chain)
+		return
+	}
+
+	txIndex := a.privateDb.GetTxHashIndex(keeper.GetEthNonceKey(chain))
+
+	// If nonce is incorrect we need to adjust the mpc nonce.
+	a.txSubmit.SubmitMessageAsync(types.NewAdjustEthNonceMsg(
+		a.appKeys.GetSignerAddress().String(),
+		chain,
+		nonce,
+		txIndex,
+	))
 }
 
 // getTxOutFromSignedHash fetches txout in the TxOut store from the hash of a signed transaction.

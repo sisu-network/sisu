@@ -8,6 +8,30 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
+var (
+	prefixTxRecord               = []byte{0x01} // Vote for a tx by different nodes
+	prefixTxRecordProcessed      = []byte{0x02}
+	prefixKeygen                 = []byte{0x03}
+	prefixKeygenResultWithSigner = []byte{0x04}
+	prefixTxOut                  = []byte{0x05}
+	prefixGasPrice               = []byte{0x06}
+	prefixChain                  = []byte{0x07}
+	prefixToken                  = []byte{0x08}
+	prefixTokenPrices            = []byte{0x09}
+	prefixNode                   = []byte{0x0A}
+	prefixVault                  = []byte{0x0B}
+	prefixParams                 = []byte{0x0C}
+	prefixMpcAddress             = []byte{0x0D}
+	prefixMpcNonces              = []byte{0x0E}
+	prefixTransferQueue          = []byte{0x0F}
+	prefixTxOutQueue             = []byte{0x10}
+	prefixCommandQueue           = []byte{0x11}
+	prefixTransfer               = []byte{0x12}
+	prefixChainMetadata          = []byte{0x13}
+	prefixSignerNonce            = []byte{0x14}
+	prefixBlockHeight            = []byte{0x15}
+)
+
 var _ Keeper = (*DefaultKeeper)(nil)
 
 type Keeper interface {
@@ -36,10 +60,6 @@ type Keeper interface {
 	// TxOut
 	SaveTxOut(ctx sdk.Context, msg *types.TxOut)
 	GetTxOut(ctx sdk.Context, outChain, hash string) *types.TxOut
-
-	// TxOutSig
-	SaveTxOutSig(ctx sdk.Context, msg *types.TxOutSig)
-	GetTxOutSig(ctx sdk.Context, outChain, hashWithSig string) *types.TxOutSig
 
 	// Gas Price Record
 	SetGasPrice(ctx sdk.Context, msg *types.GasPriceMsg)
@@ -77,8 +97,8 @@ type Keeper interface {
 	GetParams(ctx sdk.Context) *types.Params
 
 	// Reported Mpc Nonce by each signer.
-	SetSignerNonce(ctx sdk.Context, chain string, signer string, nonce int64)
-	GetAllSignerNonces(ctx sdk.Context, chain string) []int64
+	SetSignerNonce(ctx sdk.Context, chain string, signer string, nonce uint64)
+	GetAllSignerNonces(ctx sdk.Context, chain string) []uint64
 
 	// Calculated Mpc nonces
 	SetMpcNonce(ctx sdk.Context, mpcNonce *types.MpcNonce)
@@ -187,19 +207,6 @@ func (k *DefaultKeeper) SaveTxOut(ctx sdk.Context, msg *types.TxOut) {
 func (k *DefaultKeeper) GetTxOut(ctx sdk.Context, outChain, hash string) *types.TxOut {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
 	return getTxOut(store, outChain, hash)
-}
-
-func (k *DefaultKeeper) GetTxOutSig(ctx sdk.Context, outChain, hashWithSig string) *types.TxOutSig {
-	withSigStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutSig)
-	txOutSig := getTxOutSig(withSigStore, outChain, hashWithSig)
-
-	return txOutSig
-}
-
-///// TxOutSig
-func (k *DefaultKeeper) SaveTxOutSig(ctx sdk.Context, msg *types.TxOutSig) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutSig)
-	saveTxOutSig(store, msg)
 }
 
 ///// GasPrice
@@ -311,12 +318,12 @@ func (k *DefaultKeeper) GetParams(ctx sdk.Context) *types.Params {
 
 ///// Signer nonce
 
-func (k *DefaultKeeper) SetSignerNonce(ctx sdk.Context, chain string, signer string, nonce int64) {
+func (k *DefaultKeeper) SetSignerNonce(ctx sdk.Context, chain string, signer string, nonce uint64) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixSignerNonce)
 	setSignerNonce(store, chain, signer, nonce)
 }
 
-func (k *DefaultKeeper) GetAllSignerNonces(ctx sdk.Context, chain string) []int64 {
+func (k *DefaultKeeper) GetAllSignerNonces(ctx sdk.Context, chain string) []uint64 {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixSignerNonce)
 	return getSignerNonces(store, chain)
 }

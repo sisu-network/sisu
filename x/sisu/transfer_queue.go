@@ -32,7 +32,7 @@ type defaultTransferQueue struct {
 	txSubmit         common.TxSubmit
 	stopCh           chan bool
 	appKeys          common.AppKeys
-	privateDb        keeper.Storage
+	privateDb        keeper.PrivateDb
 	newRequestCh     chan TransferRequest
 	lock             *sync.RWMutex
 }
@@ -43,7 +43,7 @@ func NewTransferQueue(
 	txSubmit common.TxSubmit,
 	tssConfig config.TssConfig,
 	appKeys common.AppKeys,
-	privateDb keeper.Storage,
+	privateDb keeper.PrivateDb,
 ) TransferQueue {
 	return &defaultTransferQueue{
 		keeper:           keeper,

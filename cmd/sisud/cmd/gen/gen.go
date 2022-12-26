@@ -238,7 +238,6 @@ func initGenFiles(
 	for _, chain := range chains {
 		nonces = append(nonces, &types.MpcNonce{
 			Chain: chain.Id,
-			Nonce: 0,
 		})
 	}
 

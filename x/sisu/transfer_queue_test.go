@@ -16,7 +16,7 @@ import (
 func mockForTransferQueue() (sdk.Context, ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
-	privateDb := keeper.NewStorageDb(".", db.MemDBBackend)
+	privateDb := keeper.NewPrivateDb(".", db.MemDBBackend)
 	params := k.GetParams(ctx)
 	params.TransferOutParams = []*types.TransferOutParams{
 		{

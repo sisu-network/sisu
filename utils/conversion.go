@@ -29,13 +29,24 @@ func WeiToLovelace(wei *big.Int) *big.Int {
 	return new(big.Int).Div(new(big.Int).Mul(wei, ONE_ADA_IN_LOVELACE), ONE_ETHER_IN_WEI)
 }
 
-func Int64ToBytes(num int64) []byte {
+func Uint64ToBytes(num uint64) []byte {
 	b := make([]byte, 8)
 	binary.BigEndian.PutUint64(b, uint64(num))
 
 	return b
 }
 
-func BytesToInt64(bz []byte) int64 {
-	return int64(binary.BigEndian.Uint64(bz))
+func BytesToUint64(bz []byte) uint64 {
+	return binary.BigEndian.Uint64(bz)
+}
+
+func Uint32ToBytes(num uint32) []byte {
+	b := make([]byte, 4)
+	binary.BigEndian.PutUint32(b, num)
+
+	return b
+}
+
+func BytesToUint32(bz []byte) uint32 {
+	return binary.BigEndian.Uint32(bz)
 }

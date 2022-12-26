@@ -5,7 +5,7 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-func NewAdjustEthNonceMsg(signer string, chain string, nonce int64, index int64) *AdjustEthNonceMsg {
+func NewAdjustEthNonceMsg(signer string, chain string, nonce int64, index uint32) *AdjustEthNonceMsg {
 	return &AdjustEthNonceMsg{
 		Signer: signer,
 		Data: &AdjustEthNonce{

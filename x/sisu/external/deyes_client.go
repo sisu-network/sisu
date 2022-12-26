@@ -13,7 +13,7 @@ type DeyesClient interface {
 	Ping(source string) error
 	Dispatch(request *etypes.DispatchedTxRequest) (*etypes.DispatchedTxResult, error)
 	SetVaultAddress(chain string, addr string, token string) error
-	GetNonce(chain string, address string) int64
+	GetNonce(chain string, address string) (int64, error)
 	SetSisuReady(isReady bool) error
 	GetGasPrices(chains []string) ([]int64, error)
 
@@ -95,14 +95,14 @@ func (c *defaultDeyesClient) Dispatch(request *etypes.DispatchedTxRequest) (*ety
 	return result, nil
 }
 
-func (c *defaultDeyesClient) GetNonce(chain string, address string) int64 {
+func (c *defaultDeyesClient) GetNonce(chain string, address string) (int64, error) {
 	var result int64
 	err := c.client.CallContext(context.Background(), &result, "deyes_getNonce", chain, address)
 	if err != nil {
 		log.Error("Cannot get nonce for chain and address", chain, address, "err =", err)
 	}
 
-	return result
+	return result, err
 }
 
 func (c *defaultDeyesClient) GetGasPrices(chains []string) ([]int64, error) {

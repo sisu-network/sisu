@@ -58,7 +58,7 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.transferOutQueue = t
 		case chains.BridgeManager:
 			mc.bridgeManager = t
-		case keeper.Storage:
+		case keeper.PrivateDb:
 			mc.privateDb = t
 		}
 	}
