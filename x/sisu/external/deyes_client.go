@@ -99,7 +99,7 @@ func (c *defaultDeyesClient) GetNonce(chain string, address string) (int64, erro
 	var result int64
 	err := c.client.CallContext(context.Background(), &result, "deyes_getNonce", chain, address)
 	if err != nil {
-		log.Error("Cannot get nonce for chain and address", chain, address, "err =", err)
+		log.Errorf("Cannot get nonce for chain %s and address %s err = %v", chain, address, err)
 	}
 
 	return result, err

@@ -36,7 +36,7 @@ func (h *HandlerAdjustEthNonce) DeliverMsg(ctx sdk.Context, msg *types.AdjustEth
 
 func (h *HandlerAdjustEthNonce) updateNonce(ctx sdk.Context, msg *types.AdjustEthNonceMsg) {
 	log.Infof("Update mpc nonce for chain %s, new nonce = %d", msg.Data.Chain, msg.Data.Nonce)
-	h.keeper.SetMpcNonce(ctx, &types.MpcNonce{Nonce: msg.Data.Nonce})
+	h.keeper.SetMpcNonce(ctx, &types.MpcNonce{Chain: msg.Data.Chain, Nonce: msg.Data.Nonce})
 
 	// Update the nonce index in the private db.
 	key := keeper.GetEthNonceKey(msg.Data.Chain)

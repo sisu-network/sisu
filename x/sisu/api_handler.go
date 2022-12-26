@@ -160,7 +160,7 @@ func (a *ApiHandler) OnKeygenResult(result dhtypes.KeygenResult) {
 // OnTxDeploymentResult is a callback after there is a deployment result from deyes.
 func (a *ApiHandler) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 	if !result.Success {
-		log.Verbosef("Result from deyes: failed to deploy tx, chain = %s, signed hash = %s, error = %v",
+		log.Verbosef("Result from deyes: failed to deploy tx, chain = %s, signed hash = %s, error = %s",
 			result.Chain, result.TxHash, result.Err)
 		txOut := a.getTxOutFromSignedHash(result.Chain, result.TxHash)
 
@@ -187,15 +187,15 @@ func (a *ApiHandler) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 			txOutResult.Result = types.TxOutResultType_NOT_ENOUGH_NATIVE_BALANCE
 		case etypes.ErrSubmitTx:
 			txOutResult.Result = types.TxOutResultType_SUBMIT_TX_ERROR
+		case etypes.ErrNonceNotMatched:
+			if libchain.IsETHBasedChain(txOut.Content.OutChain) {
+				a.updateEthNonce(txOut.Content.OutChain)
+			}
 		default:
 			txOutResult.Result = types.TxOutResultType_UNKNOWN
 		}
 
 		a.submitTxOutResult(txOutResult)
-
-		if libchain.IsETHBasedChain(txOut.Content.OutChain) {
-			a.updateEthNonce(txOut.Content.OutChain)
-		}
 
 		return
 	}
@@ -213,6 +213,8 @@ func (a *ApiHandler) updateEthNonce(chain string) {
 		log.Errorf("Failed to get nonce from deyes for chain %s", chain)
 		return
 	}
+
+	log.Infof("Nonce from network = %d", nonce)
 
 	txIndex := a.privateDb.GetTxHashIndex(keeper.GetEthNonceKey(chain))
 

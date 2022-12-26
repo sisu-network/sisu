@@ -668,11 +668,16 @@ func getSignerNonces(store cstypes.KVStore, chain string) []uint64 {
 }
 
 ///// Mpc Nonce
-
 func setMpcNonce(store cstypes.KVStore, mpcNonce *types.MpcNonce) {
+	if mpcNonce.Chain == "" {
+		log.Errorf("setMpcNonce: chain is not defined")
+		return
+	}
+
 	bz, err := mpcNonce.Marshal()
 	if err != nil {
 		log.Error("cannot marshal mpcNonce")
+		return
 	}
 
 	store.Set([]byte(mpcNonce.Chain), bz)
@@ -687,7 +692,7 @@ func getMpcNonce(store cstypes.KVStore, chain string) *types.MpcNonce {
 	mpcNonce := &types.MpcNonce{}
 	err := mpcNonce.Unmarshal(bz)
 	if err != nil {
-		log.Error("Failed to unmarshal gateway mpcNonce, err = ", err)
+		log.Error("Failed to unmarshal mpcNonce, err = ", err)
 		return nil
 	}
 
