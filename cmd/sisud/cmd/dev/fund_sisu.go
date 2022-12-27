@@ -2,6 +2,7 @@ package dev
 
 import (
 	"context"
+	"encoding/hex"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -114,6 +115,7 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, mnem
 	pubKeyBytes := allPubKeys[libchain.KEY_TYPE_ECDSA]
 	pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
 	if err != nil {
+		log.Verbose("Byte hex = ", hex.EncodeToString(pubKeyBytes))
 		panic(err)
 	}
 	sisuAccount = crypto.PubkeyToAddress(*pubKey)
