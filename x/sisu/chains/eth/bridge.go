@@ -109,7 +109,7 @@ func (b *bridge) buildERC20TransferIn(
 		return nil, fmt.Errorf("Invalid chain: %s", chain)
 	}
 
-	gasPrice := big.NewInt(chain.GasPrice)
+	gasPrice := big.NewInt(chain.EthConfig.GasPrice)
 	if gasPrice.Cmp(big.NewInt(0)) <= 0 {
 		return nil, fmt.Errorf("Gas price is non-positive: %s", gasPrice.String())
 	}

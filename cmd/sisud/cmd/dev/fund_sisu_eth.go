@@ -30,7 +30,7 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, sisuRpc, chain, m
 		panic(err)
 	}
 
-	genesisGas := big.NewInt(ch.GasPrice)
+	genesisGas := big.NewInt(ch.EthConfig.GasPrice)
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
 		panic(err)

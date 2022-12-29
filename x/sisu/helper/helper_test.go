@@ -18,8 +18,10 @@ func TestGasCostInToken(t *testing.T) {
 	chain := "ganache1"
 	k.SaveChain(ctx, &types.Chain{
 		Id:          chain,
-		GasPrice:    10 * 1_000_000_000,
 		NativeToken: "NATIVE_GANACHE1",
+		EthConfig: &types.ChainEthConfig{
+			GasPrice: 10 * 1_000_000_000,
+		},
 	})
 	k.SetTokens(ctx, map[string]*types.Token{
 		"NATIVE_GANACHE1": {

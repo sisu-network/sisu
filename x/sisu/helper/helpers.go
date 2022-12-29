@@ -27,7 +27,7 @@ func GetKeygenId(keyType string, block int64, pubKeys []ctypes.PubKey) string {
 
 func GetChainGasCostInToken(ctx sdk.Context, k keeper.Keeper, tokenId, chainId string, gasUnit *big.Int) (*big.Int, error) {
 	chain := k.GetChain(ctx, chainId)
-	gasPrice := chain.GasPrice
+	gasPrice := chain.EthConfig.GasPrice
 
 	tokens := k.GetTokens(ctx, []string{tokenId, chain.NativeToken})
 	token := tokens[tokenId]

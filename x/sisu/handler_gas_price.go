@@ -71,15 +71,17 @@ func (h *HandlerGasPrice) DeliverMsg(ctx sdk.Context, msg *types.GasPriceMsg) (*
 				continue
 			}
 
-			// Save to db
-			savedChain := h.keeper.GetChain(ctx, chain)
-			if savedChain == nil {
-				savedChain = &types.Chain{
-					Id: chain,
+			if libchain.IsETHBasedChain(chain) {
+				// Save to db
+				savedChain := h.keeper.GetChain(ctx, chain)
+				if savedChain == nil {
+					savedChain = &types.Chain{
+						Id: chain,
+					}
 				}
+				savedChain.EthConfig.GasPrice = median
+				h.keeper.SaveChain(ctx, savedChain)
 			}
-			savedChain.GasPrice = median
-			h.keeper.SaveChain(ctx, savedChain)
 		}
 	}
 

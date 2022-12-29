@@ -36,8 +36,8 @@ func TestHandlerGasPrice(t *testing.T) {
 	t.Run("set_gas_price_successfully", func(t *testing.T) {
 		ctx, mc := mockForHandlerGasPrice()
 
-		chains := []string{"ETH", "BSC", "POLYGON"}
-		prices := []int64{1, 2, 3}
+		chains := []string{"ganache1", "ganache2"}
+		prices := []int64{1, 2}
 		signer := mc.AppKeys().GetSignerAddress().String()
 		msg := types.NewGasPriceMsg(signer, chains, 100, prices)
 
@@ -45,23 +45,20 @@ func TestHandlerGasPrice(t *testing.T) {
 		_, err := handler.DeliverMsg(ctx, msg)
 		require.NoError(t, err)
 
-		eth := mc.Keeper().GetChain(ctx, "ETH")
-		require.Equal(t, int64(1), eth.GasPrice)
+		eth := mc.Keeper().GetChain(ctx, "ganache1")
+		require.Equal(t, int64(1), eth.EthConfig.GasPrice)
 
-		bsc := mc.Keeper().GetChain(ctx, "BSC")
-		require.Equal(t, int64(2), bsc.GasPrice)
-
-		polygon := mc.Keeper().GetChain(ctx, "POLYGON")
-		require.Equal(t, int64(3), polygon.GasPrice)
+		bsc := mc.Keeper().GetChain(ctx, "ganache2")
+		require.Equal(t, int64(2), bsc.EthConfig.GasPrice)
 	})
 
 	t.Run("multiple_signers_set_gas_price_successfully", func(t *testing.T) {
 		ctx, mc := mockForHandlerGasPrice()
 
-		chains := []string{"ETH", "BSC", "POLYGON"}
-		prices1 := []int64{1, 10, 20}
-		prices2 := []int64{2, 11, 19}
-		prices3 := []int64{1, 9, 21}
+		chains := []string{"ganache1", "ganache2"}
+		prices1 := []int64{1, 10}
+		prices2 := []int64{2, 11}
+		prices3 := []int64{1, 9}
 
 		signer1 := mc.AppKeys().GetSignerAddress().String()
 		signer2, err := sdk.AccAddressFromBech32("cosmos1zf2ssujzp6y577gzwn457tnxy7yj44yq37t05z")
@@ -81,13 +78,10 @@ func TestHandlerGasPrice(t *testing.T) {
 		_, err = handler.DeliverMsg(ctx, msg3)
 		require.NoError(t, err)
 
-		eth := mc.Keeper().GetChain(ctx, "ETH")
-		require.Equal(t, int64(1), eth.GasPrice) // median of [1, 2, 1]
+		eth := mc.Keeper().GetChain(ctx, "ganache1")
+		require.Equal(t, int64(1), eth.EthConfig.GasPrice) // median of [1, 2, 1]
 
-		bsc := mc.Keeper().GetChain(ctx, "BSC")
-		require.Equal(t, int64(10), bsc.GasPrice) // median of [10, 11, 9]
-
-		polygon := mc.Keeper().GetChain(ctx, "POLYGON")
-		require.Equal(t, int64(20), polygon.GasPrice) // median of [20, 19, 21]
+		bsc := mc.Keeper().GetChain(ctx, "ganache2")
+		require.Equal(t, int64(10), bsc.EthConfig.GasPrice) // median of [10, 11, 9]
 	})
 }
