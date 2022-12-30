@@ -14,4 +14,6 @@ message Chain {
 message ChainEthConfig {
   int64 gas_price = 1;
   bool use_eip_1559 = 2;
+  int64 base_fee = 3;
+  int64 priority_fee = 4;
 }
