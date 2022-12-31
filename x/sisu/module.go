@@ -262,23 +262,6 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	cloneCtx := utils.CloneSdkContext(ctx)
 	am.globalData.SetReadOnlyContext(cloneCtx)
 
-	params := am.keeper.GetParams(ctx)
-
-	// Update gas price
-	if ctx.BlockHeight()%UpdateGasPriceFrequency == 0 {
-		// Get the gas price from deyes
-		go func(params *types.Params) {
-			gasPrices, err := am.processor.deyesClient.GetGasPrices(params.SupportedChains)
-			if err != nil {
-				log.Error("cannot get gas price from deyes")
-			} else {
-				msg := types.NewGasPriceMsg(am.appKeys.GetSignerAddress().String(),
-					params.SupportedChains, ctx.BlockHeight(), gasPrices)
-				am.txSubmit.SubmitMessageAsync(msg)
-			}
-		}(params)
-	}
-
 	// Process pending transfers
 	am.mc.TransferQueue().ProcessTransfers(ctx)
 

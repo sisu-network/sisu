@@ -3,8 +3,6 @@ package types
 import (
 	"fmt"
 	"math/big"
-
-	"github.com/sisu-network/deyes/utils"
 )
 
 // GetAddressForChain returns the address for this token on a particular chain. Return empty string
@@ -63,7 +61,7 @@ func (t *Token) ConvertAmountToSisuAmount(chain string, amount *big.Int) (*big.I
 	}
 
 	pow := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimal)), nil)
-	ret := new(big.Int).Mul(amount, utils.ONE_ETHER_IN_WEI)
+	ret := new(big.Int).Mul(amount, big.NewInt(1_000_000_000_000_000_000))
 	ret = ret.Quo(ret, pow)
 
 	return ret, nil

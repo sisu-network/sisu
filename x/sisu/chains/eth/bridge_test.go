@@ -146,8 +146,8 @@ func TestTokenPriceCalculation(t *testing.T) {
 
 		chain := keeper.GetChain(ctx, "ganache2")
 		chain.EthConfig.UseEip_1559 = true
-		chain.EthConfig.BaseFee = utils.GweiToWei.Int64() * 10    // 10 Gwei
-		chain.EthConfig.PriorityFee = utils.GweiToWei.Int64() * 2 // 2 Gwei
+		chain.EthConfig.BaseFee = utils.GweiToWei.Int64() * 10 // 10 Gwei
+		chain.EthConfig.Tip = utils.GweiToWei.Int64() * 2      // 2 Gwei
 		keeper.SaveChain(ctx, chain)
 
 		// Do transfer

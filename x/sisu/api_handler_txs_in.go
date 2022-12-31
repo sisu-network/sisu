@@ -63,20 +63,58 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	if len(transferRequests.Transfers) > 0 {
 		msg := types.NewTransfersMsg(a.appKeys.GetSignerAddress().String(), transferRequests)
 		a.txSubmit.SubmitMessageAsync(msg)
-	}
 
-	if libchain.IsCardanoChain(txs.Chain) {
-		log.Verbose("Updating block height for cardano")
-		// Broadcast blockheight update
-		msg := types.NewBlockHeightMsg(a.appKeys.GetSignerAddress().String(), &types.BlockHeight{
-			Chain:  txs.Chain,
-			Height: txs.Block,
-			Hash:   txs.BlockHash,
-		})
-		a.txSubmit.SubmitMessageAsync(msg)
+		if libchain.IsCardanoChain(txs.Chain) {
+			log.Verbose("Updating block height for cardano")
+			// Broadcast blockheight update
+			msg := types.NewBlockHeightMsg(a.appKeys.GetSignerAddress().String(), &types.BlockHeight{
+				Chain:  txs.Chain,
+				Height: txs.Block,
+				Hash:   txs.BlockHash,
+			})
+			a.txSubmit.SubmitMessageAsync(msg)
+		}
+
+		// Check to see if we need to update the gas price.
+
 	}
 
 	return nil
+}
+
+// updateEthGasPrice checks in the list of
+func (a *ApiHandler) updateEthGasPrice(ctx sdk.Context, transfers []*types.Transfer) {
+	// Check among all eth chains, if the gas price is lower than 95% of the previous gas price, we
+	// need to send an update gas price to the chain.
+
+	// params := am.keeper.GetParams(ctx)
+	// Update gas price
+	// if ctx.BlockHeight()%UpdateGasPriceFrequency == 0 {
+	// 	// Get the gas price from deyes
+	// 	go func(params *types.Params) {
+	// 		gasPrices, err := am.processor.deyesClient.GetGasInfo(params.SupportedChains)
+	// 		if err != nil {
+	// 			log.Error("cannot get gas price from deyes")
+	// 		} else {
+	// 			msg := types.NewGasPriceMsg(am.appKeys.GetSignerAddress().String(),
+	// 				params.SupportedChains, ctx.BlockHeight(), gasPrices)
+	// 			am.txSubmit.SubmitMessageAsync(msg)
+	// 		}
+	// 	}(params)
+	// }
+
+	chainMap := make(map[string]bool)
+	for _, transfer := range transfers {
+		chainMap[transfer.ToChain] = true
+	}
+
+	// Convert map to array
+	chains := make([]string, 0)
+	for key := range chainMap {
+		chains = append(chains, key)
+	}
+
+	a.auxDataTracker.UpdateData(ctx, chains)
 }
 
 func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.Transfer, error) {

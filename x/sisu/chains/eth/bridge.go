@@ -274,7 +274,7 @@ func (b *bridge) buildERC20TransferIn(
 func (b *bridge) getGasCost(ethCfg *types.ChainEthConfig, maxGasUnit int) (*big.Int, *big.Int, *big.Int) {
 	if ethCfg.UseEip_1559 {
 		// Max fee = 2 * baseFee + Tip
-		tipCap := big.NewInt(ethCfg.PriorityFee)
+		tipCap := big.NewInt(ethCfg.Tip)
 		feeCap := big.NewInt(ethCfg.BaseFee)
 		feeCap = feeCap.Mul(big.NewInt(2), feeCap)
 		feeCap = feeCap.Add(feeCap, tipCap)

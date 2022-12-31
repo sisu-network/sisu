@@ -33,14 +33,15 @@ var (
 // ApiHandler handles API callback from dheart or deyes. There are few functions (BeginBlock & EndBlock)
 // that are still present for historical reason. They should be moved out of this file.
 type ApiHandler struct {
-	keeper        keeper.Keeper
-	txSubmit      common.TxSubmit
-	appKeys       common.AppKeys
-	globalData    common.GlobalData
-	txTracker     TxTracker
-	bridgeManager chains.BridgeManager
-	chainPolling  service.ChainPolling
-	mc            ManagerContainer
+	keeper         keeper.Keeper
+	txSubmit       common.TxSubmit
+	appKeys        common.AppKeys
+	globalData     common.GlobalData
+	txTracker      TxTracker
+	bridgeManager  chains.BridgeManager
+	chainPolling   service.ChainPolling
+	auxDataTracker service.AuxiliaryDataTracker
+	mc             ManagerContainer
 
 	// Dheart & Deyes client
 	dheartClient external.DheartClient
@@ -54,17 +55,18 @@ func NewApiHandler(
 	mc ManagerContainer,
 ) *ApiHandler {
 	a := &ApiHandler{
-		mc:            mc,
-		keeper:        mc.Keeper(),
-		privateDb:     privateDb,
-		appKeys:       mc.AppKeys(),
-		txSubmit:      mc.TxSubmit(),
-		globalData:    mc.GlobalData(),
-		dheartClient:  mc.DheartClient(),
-		deyesClient:   mc.DeyesClient(),
-		txTracker:     mc.TxTracker(),
-		chainPolling:  mc.ChainPolling(),
-		bridgeManager: mc.BridgeManager(),
+		mc:             mc,
+		keeper:         mc.Keeper(),
+		privateDb:      privateDb,
+		appKeys:        mc.AppKeys(),
+		txSubmit:       mc.TxSubmit(),
+		globalData:     mc.GlobalData(),
+		dheartClient:   mc.DheartClient(),
+		deyesClient:    mc.DeyesClient(),
+		txTracker:      mc.TxTracker(),
+		chainPolling:   mc.ChainPolling(),
+		bridgeManager:  mc.BridgeManager(),
+		auxDataTracker: service.NewAuxiliaryDataTracker(mc.DeyesClient(), mc.AppKeys(), mc.Keeper()),
 	}
 
 	return a
