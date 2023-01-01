@@ -63,7 +63,7 @@ type Keeper interface {
 
 	// Gas Price Record
 	SetGasPrice(ctx sdk.Context, msg *types.GasPriceMsg)
-	GetGasPriceRecord(ctx sdk.Context, height int64) *types.GasPriceRecord
+	GetGasPrices(ctx sdk.Context, chain string) map[string]*types.GasPriceRecord
 
 	// Chain
 	SaveChain(ctx sdk.Context, chain *types.Chain)
@@ -212,12 +212,20 @@ func (k *DefaultKeeper) GetTxOut(ctx sdk.Context, outChain, hash string) *types.
 ///// GasPrice
 func (k *DefaultKeeper) SetGasPrice(ctx sdk.Context, msg *types.GasPriceMsg) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGasPrice)
-	saveGasPrice(store, msg)
+
+	for i, chain := range msg.Chains {
+		saveGasPrice(store, chain, msg.Signer, &types.GasPriceRecord{
+			GasPrice: msg.GasPrices[i],
+			BaseFee:  msg.BaseFees[i],
+			Tip:      msg.Tips[i],
+		})
+	}
 }
 
-func (k *DefaultKeeper) GetGasPriceRecord(ctx sdk.Context, height int64) *types.GasPriceRecord {
+func (k *DefaultKeeper) GetGasPrices(ctx sdk.Context, chain string) map[string]*types.GasPriceRecord {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGasPrice)
-	return getGasPriceRecord(store, height)
+
+	return getGasPrices(store, chain)
 }
 
 ///// Network gas price

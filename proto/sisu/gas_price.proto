@@ -7,10 +7,13 @@ option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 message GasPriceMsg {
   string signer = 1;
   repeated string chains = 2;
-  int64 blockHeight = 3;
-  repeated int64 prices = 4;
+  repeated int64 gas_price = 3;
+  repeated int64 base_fee = 4;
+  repeated int64 tip = 5;
 }
 
 message GasPriceRecord {
-  repeated GasPriceMsg messages = 3;
+  int64 gas_prices = 3;
+  int64 base_fees = 4;
+  int64 tips = 5;
 }

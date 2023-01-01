@@ -39,7 +39,7 @@ func TestHandlerGasPrice(t *testing.T) {
 		chains := []string{"ganache1", "ganache2"}
 		prices := []int64{1, 2}
 		signer := mc.AppKeys().GetSignerAddress().String()
-		msg := types.NewGasPriceMsg(signer, chains, 100, prices)
+		msg := types.NewGasPriceMsg(signer, chains, prices, nil, nil)
 
 		handler := NewHandlerGasPrice(mc)
 		_, err := handler.DeliverMsg(ctx, msg)
@@ -66,9 +66,9 @@ func TestHandlerGasPrice(t *testing.T) {
 		signer3, err := sdk.AccAddressFromBech32("cosmos1g64vzyutdjfdvw5kyae73fc39sksg3r7gzmrzy")
 		require.NoError(t, err)
 
-		msg1 := types.NewGasPriceMsg(signer1, chains, 100, prices1)
-		msg2 := types.NewGasPriceMsg(signer2.String(), chains, 100, prices2)
-		msg3 := types.NewGasPriceMsg(signer3.String(), chains, 100, prices3)
+		msg1 := types.NewGasPriceMsg(signer1, chains, prices1, nil, nil)
+		msg2 := types.NewGasPriceMsg(signer2.String(), chains, prices2, nil, nil)
+		msg3 := types.NewGasPriceMsg(signer3.String(), chains, prices3, nil, nil)
 
 		handler := NewHandlerGasPrice(mc)
 		_, err = handler.DeliverMsg(ctx, msg1)

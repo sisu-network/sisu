@@ -50,11 +50,6 @@ func getContractAddressKey(chain string, address string) []byte {
 	return []byte(fmt.Sprintf("%s__%s", chain, address))
 }
 
-func getGasPriceKey(height int64) []byte {
-	// chain, height
-	return []byte(fmt.Sprintf("%d", height))
-}
-
 func getLiquidityKey(chain string) []byte {
 	// chain
 	return []byte(chain)
@@ -65,6 +60,10 @@ func getVaultKey(chain string, token string) []byte {
 }
 
 func getChainMetadataKey(chain, signer string) []byte {
+	return []byte(fmt.Sprintf("%s__%s", chain, signer))
+}
+
+func getGasPriceKey(chain, signer string) []byte {
 	return []byte(fmt.Sprintf("%s__%s", chain, signer))
 }
 
@@ -291,66 +290,43 @@ func getTxOutSig(store cstypes.KVStore, chain string, hashWithSig string) *types
 }
 
 ///// Gas Price
-func saveGasPrice(store cstypes.KVStore, msg *types.GasPriceMsg) {
-	var (
-		record      *types.GasPriceRecord
-		savedRecord []byte
-		err         error
-	)
-
-	key := getGasPriceKey(msg.BlockHeight)
-	currentRecord := getGasPriceRecord(store, msg.BlockHeight)
-	if currentRecord == nil {
-		record = &types.GasPriceRecord{
-			Messages: []*types.GasPriceMsg{msg},
-		}
-		savedRecord, err = record.Marshal()
-		if err != nil {
-			log.Error(err)
-			return
-		}
-	} else {
-		signerExisted := false
-		for _, savedMsg := range currentRecord.Messages {
-			if savedMsg.Signer == msg.Signer {
-				signerExisted = true
-				break
-			}
-		}
-
-		if signerExisted {
-			// This signer has already been saved
-			return
-		}
-
-		record = &types.GasPriceRecord{
-			Messages: append(currentRecord.Messages, msg),
-		}
-		savedRecord, err = record.Marshal()
-		if err != nil {
-			log.Error(err)
-			return
-		}
-	}
-
-	if savedRecord == nil {
-		log.Error("savedRecord is nil")
+func saveGasPrice(store cstypes.KVStore, chain, signer string, record *types.GasPriceRecord) {
+	key := getGasPriceKey(chain, signer)
+	bz, err := record.Marshal()
+	if err != nil {
+		log.Errorf("saveGasPrice: Failed to marshal gas price")
 		return
 	}
 
-	store.Set(key, savedRecord)
+	store.Set(key, bz)
 }
 
-func getGasPriceRecord(store cstypes.KVStore, height int64) *types.GasPriceRecord {
-	key := getGasPriceKey(height)
-	bz := store.Get(key)
-	record := &types.GasPriceRecord{}
-	if err := record.Unmarshal(bz); err != nil {
-		log.Error(err)
-		return nil
+func getGasPrices(store cstypes.KVStore, chain string) map[string]*types.GasPriceRecord {
+	ret := make(map[string]*types.GasPriceRecord)
+	begin := []byte(fmt.Sprintf("%s__", chain))
+	end := []byte(fmt.Sprintf("%s__~", chain))
+
+	iter := store.Iterator(begin, end)
+	for ; iter.Valid(); iter.Next() {
+		key := string(iter.Key())
+		index := strings.Index(key, "__")
+		if index < 0 || index >= len(key)-2 {
+			log.Errorf("getGasPrices: Invalid key %s", key)
+			continue
+		}
+		signer := key[index+2:]
+
+		bz := iter.Value()
+		record := new(types.GasPriceRecord)
+		if err := record.Unmarshal(bz); err != nil {
+			log.Errorf("Failed to unmarshal gas price record, err = %s", err)
+			continue
+		}
+
+		ret[signer] = record
 	}
 
-	return record
+	return ret
 }
 
 ///// Chain
