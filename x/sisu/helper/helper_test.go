@@ -40,7 +40,7 @@ func TestGasCostInToken(t *testing.T) {
 	})
 
 	gas := big.NewInt(8_000_000)
-	amount, err := GetChainGasCostInToken(ctx, k, "SISU", chain, gas)
+	amount, err := GetChainGasCostInToken(ctx, k, "SISU", chain, gas.Mul(gas, big.NewInt(10*1_000_000_000)))
 
 	require.Equal(t, nil, err)
 

@@ -49,7 +49,7 @@ func TestHandlerGasPrice(t *testing.T) {
 		require.Equal(t, 1, len(pricesMap))
 		require.Equal(t, int64(1), pricesMap[signer].GasPrice)
 
-		pricesMap = mc.Keeper().GetGasPrices(ctx, "ganache")
+		pricesMap = mc.Keeper().GetGasPrices(ctx, "ganache2")
 		require.Equal(t, 1, len(pricesMap))
 		require.Equal(t, int64(2), pricesMap[signer].GasPrice)
 	})
