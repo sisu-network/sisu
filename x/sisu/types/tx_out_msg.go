@@ -19,7 +19,7 @@ func NewTxOutMsg(signer string, txType TxOutType,
 	content *TxOutContent, input *TxOutInput) *TxOutMsg {
 	return &TxOutMsg{
 		Signer: signer,
-		Data: &TxOut{
+		Data: &TxOutOld{
 			TxType:  txType,
 			Content: content,
 			Input:   input,

@@ -49,7 +49,7 @@ func (h *HandlerTxOut) doTxOut(ctx sdk.Context, txOutMsg *types.TxOutMsg) ([]byt
 	return nil, nil
 }
 
-func (h *HandlerTxOut) handlerTransfer(ctx sdk.Context, txOut *types.TxOut) {
+func (h *HandlerTxOut) handlerTransfer(ctx sdk.Context, txOut *types.TxOutOld) {
 	// 1. Update TxOut queue
 	h.addTxOutToQueue(ctx, txOut)
 
@@ -70,7 +70,7 @@ func (h *HandlerTxOut) handlerTransfer(ctx sdk.Context, txOut *types.TxOut) {
 	h.keeper.SetTransferQueue(ctx, txOut.Content.OutChain, newQueue)
 }
 
-func (h *HandlerTxOut) addTxOutToQueue(ctx sdk.Context, txOut *types.TxOut) {
+func (h *HandlerTxOut) addTxOutToQueue(ctx sdk.Context, txOut *types.TxOutOld) {
 	// Move the the transfers associated with this tx_out to pending.
 	queue := h.keeper.GetTxOutQueue(ctx, txOut.Content.OutChain)
 	queue = append(queue, txOut)

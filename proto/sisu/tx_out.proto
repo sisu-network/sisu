@@ -9,10 +9,10 @@ enum TxOutType {
 
 message TxOutMsg {
   string signer = 1;
-  TxOut data = 2;
+  TxOutOld data = 2;
 }
 
-message TxOut {
+message TxOutOld {
   TxOutType txType = 1;
   TxOutContent content = 2;
   TxOutInput input = 3;

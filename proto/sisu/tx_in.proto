@@ -1,0 +1,15 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message TxIn {
+  // Id of this TxIn. For most block chains, this id is the transaction hash.
+  string id = 1;
+
+  // Source
+  string from_chain = 2;
+  string hash = 4;
+  string from_sender = 5;
+  bytes serialized = 6;
+}

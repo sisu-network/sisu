@@ -69,14 +69,14 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 ///// TxTracker
 
 type MockTxTracker struct {
-	AddTransactionFunc          func(txOut *types.TxOut)
+	AddTransactionFunc          func(txOut *types.TxOutOld)
 	UpdateStatusFunc            func(chain string, hash string, status types.TxStatus)
 	RemoveTransactionFunc       func(chain string, hash string)
 	OnTxFailedFunc              func(chain string, hash string, status types.TxStatus)
 	CheckExpiredTransactionFunc func()
 }
 
-func (m *MockTxTracker) AddTransaction(txOut *types.TxOut) {
+func (m *MockTxTracker) AddTransaction(txOut *types.TxOutOld) {
 	if m.AddTransactionFunc != nil {
 		m.AddTransactionFunc(txOut)
 	}
@@ -285,7 +285,7 @@ func (m *MockTransferQueue) ClearInMemoryPendingTransfers(chain string) {
 
 type MockTxOutQueue struct {
 	StartFunc         func()
-	AddTxOutFunc      func(txOut *types.TxOut)
+	AddTxOutFunc      func(txOut *types.TxOutOld)
 	ProcessTxOutsFunc func(ctx sdk.Context)
 }
 
@@ -295,7 +295,7 @@ func (m *MockTxOutQueue) Start() {
 	}
 }
 
-func (m *MockTxOutQueue) AddTxOut(txOut *types.TxOut) {
+func (m *MockTxOutQueue) AddTxOut(txOut *types.TxOutOld) {
 	if m.AddTxOutFunc != nil {
 		m.AddTxOutFunc(txOut)
 	}

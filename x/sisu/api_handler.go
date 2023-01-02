@@ -223,7 +223,7 @@ func (a *ApiHandler) updateEthNonce(chain string) {
 }
 
 // getTxOutFromSignedHash fetches txout in the TxOut store from the hash of a signed transaction.
-func (a *ApiHandler) getTxOutFromSignedHash(chain, signedHash string) *types.TxOut {
+func (a *ApiHandler) getTxOutFromSignedHash(chain, signedHash string) *types.TxOutOld {
 	// The txOutSig is in private db while txOut should come from common db.
 	txOutSig := a.privateDb.GetTxOutSig(chain, signedHash)
 	if txOutSig == nil {

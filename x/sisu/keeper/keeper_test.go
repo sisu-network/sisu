@@ -15,7 +15,7 @@ func TestKeeper_SaveAndGetTxOut(t *testing.T) {
 	chain := "bitcoin"
 	hash := utils.RandomHeximalString(32)
 
-	original := &types.TxOut{
+	original := &types.TxOutOld{
 		Content: &types.TxOutContent{
 			OutChain: chain,
 			OutHash:  hash,

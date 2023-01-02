@@ -9,7 +9,7 @@ import (
 
 // GetId returns a unique id of the txOut. This is the hash of tx out type, its content and list
 // of transfer id inputs.
-func (t *TxOut) GetId() (string, error) {
+func (t *TxOutOld) GetId() (string, error) {
 	hash := sha3.NewLegacyKeccak256()
 
 	_, err := hash.Write([]byte(t.TxType.String()))

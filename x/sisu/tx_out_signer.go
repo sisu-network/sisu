@@ -31,7 +31,7 @@ func NewTxOutSigner(keeper keeper.Keeper, partyManager PartyManager,
 	}
 }
 
-func (s *txOutSigner) signTxOut(ctx sdk.Context, txOut *types.TxOut) {
+func (s *txOutSigner) signTxOut(ctx sdk.Context, txOut *types.TxOutOld) {
 	if libchain.IsETHBasedChain(txOut.Content.OutChain) {
 		s.signEthTx(ctx, txOut)
 	}
@@ -46,7 +46,7 @@ func (s *txOutSigner) signTxOut(ctx sdk.Context, txOut *types.TxOut) {
 }
 
 // signEthTx sends a TxOut to dheart for TSS signing.
-func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
+func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOutOld) error {
 	log.Info("Delivering TXOUT for chain ", tx.Content.OutChain, " tx hash = ", tx.Content.OutHash)
 	ethTx := &ethtypes.Transaction{}
 	if err := ethTx.UnmarshalBinary(tx.Content.OutBytes); err != nil {
@@ -104,7 +104,7 @@ func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
 	return nil
 }
 
-func (s *txOutSigner) signCardanoTx(ctx sdk.Context, txOut *types.TxOut) {
+func (s *txOutSigner) signCardanoTx(ctx sdk.Context, txOut *types.TxOutOld) {
 	tx := &cardano.Tx{}
 	if err := tx.UnmarshalCBOR(txOut.Content.OutBytes); err != nil {
 		log.Error("error when unmarshalling cardano tx out: ", err)
@@ -136,7 +136,7 @@ func (s *txOutSigner) signCardanoTx(ctx sdk.Context, txOut *types.TxOut) {
 	}
 }
 
-func (s *txOutSigner) signSolana(ctx sdk.Context, txOut *types.TxOut) {
+func (s *txOutSigner) signSolana(ctx sdk.Context, txOut *types.TxOutOld) {
 	signRequest := &hTypes.KeysignRequest{
 		KeyType: libchain.KEY_TYPE_EDDSA,
 		KeysignMessages: []*hTypes.KeysignMessage{

@@ -58,8 +58,8 @@ type Keeper interface {
 	GetAllKeygenResult(ctx sdk.Context, keygenType string, index int32) []*types.KeygenResultWithSigner
 
 	// TxOut
-	SaveTxOut(ctx sdk.Context, msg *types.TxOut)
-	GetTxOut(ctx sdk.Context, outChain, hash string) *types.TxOut
+	SaveTxOut(ctx sdk.Context, msg *types.TxOutOld)
+	GetTxOut(ctx sdk.Context, outChain, hash string) *types.TxOutOld
 
 	// Gas Price Record
 	SetGasPrice(ctx sdk.Context, msg *types.GasPriceMsg)
@@ -118,8 +118,8 @@ type Keeper interface {
 	GetTransferQueue(ctx sdk.Context, chain string) []*types.Transfer
 
 	// TxOutQueue
-	SetTxOutQueue(ctx sdk.Context, chain string, txOuts []*types.TxOut)
-	GetTxOutQueue(ctx sdk.Context, chain string) []*types.TxOut
+	SetTxOutQueue(ctx sdk.Context, chain string, txOuts []*types.TxOutOld)
+	GetTxOutQueue(ctx sdk.Context, chain string) []*types.TxOutOld
 
 	// Set Solana confirmed block
 	SetSolanaConfirmedBlock(ctx sdk.Context, chain, signer, blockHash string, height int64)
@@ -199,12 +199,12 @@ func (k *DefaultKeeper) GetAllKeygenResult(ctx sdk.Context, keygenType string, i
 }
 
 ///// TxOut
-func (k *DefaultKeeper) SaveTxOut(ctx sdk.Context, msg *types.TxOut) {
+func (k *DefaultKeeper) SaveTxOut(ctx sdk.Context, msg *types.TxOutOld) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
 	saveTxOut(store, msg)
 }
 
-func (k *DefaultKeeper) GetTxOut(ctx sdk.Context, outChain, hash string) *types.TxOut {
+func (k *DefaultKeeper) GetTxOut(ctx sdk.Context, outChain, hash string) *types.TxOutOld {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
 	return getTxOut(store, outChain, hash)
 }
@@ -392,12 +392,12 @@ func (k *DefaultKeeper) GetTransferQueue(ctx sdk.Context, chain string) []*types
 }
 
 ///// TxOutQueue
-func (k *DefaultKeeper) SetTxOutQueue(ctx sdk.Context, chain string, txOuts []*types.TxOut) {
+func (k *DefaultKeeper) SetTxOutQueue(ctx sdk.Context, chain string, txOuts []*types.TxOutOld) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutQueue)
 	setTxOutQueue(store, chain, txOuts)
 }
 
-func (k *DefaultKeeper) GetTxOutQueue(ctx sdk.Context, chain string) []*types.TxOut {
+func (k *DefaultKeeper) GetTxOutQueue(ctx sdk.Context, chain string) []*types.TxOutOld {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutQueue)
 	return getTxOutQueue(store, chain)
 }

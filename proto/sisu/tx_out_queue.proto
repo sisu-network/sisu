@@ -7,5 +7,5 @@ import "sisu/tx_out.proto";
 
 // A queue that contains a list of txouts.
 message TxOutQueue {
-  repeated TxOut tx_outs = 1;
+  repeated TxOutOld tx_outs = 1;
 }

@@ -13,7 +13,7 @@ message PendingTxOutInfo {
     DISPATCHED = 30;
  }
 
-  TxOut tx_out= 1;
+  TxOutOld tx_out= 1;
   int64 expired_block = 2;
   STATE state = 3;
 }

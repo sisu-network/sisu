@@ -24,7 +24,7 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 	destChain := "ganache2"
 	txOutMsg1 := &types.TxOutMsg{
 		Signer: "signer",
-		Data: &types.TxOut{
+		Data: &types.TxOutOld{
 			TxType: types.TxOutType_TRANSFER_OUT,
 			Content: &types.TxOutContent{
 				OutChain: destChain,

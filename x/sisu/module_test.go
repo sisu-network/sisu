@@ -41,21 +41,21 @@ func TestModule_signTxOut(t *testing.T) {
 	bz, err := rawTx.MarshalBinary()
 	require.Nil(t, err)
 
-	txOut1_1 := &types.TxOut{
+	txOut1_1 := &types.TxOutOld{
 		Content: &types.TxOutContent{
 			OutChain: "ganache1",
 			OutHash:  "hash1_1",
 			OutBytes: bz,
 		},
 	}
-	txOut1_2 := &types.TxOut{
+	txOut1_2 := &types.TxOutOld{
 		Content: &types.TxOutContent{
 			OutChain: "ganache1",
 			OutHash:  "hash1_2",
 			OutBytes: bz,
 		},
 	}
-	txOut2_1 := &types.TxOut{
+	txOut2_1 := &types.TxOutOld{
 		Content: &types.TxOutContent{
 			OutChain: "ganache2",
 			OutHash:  "hash2_1",
@@ -63,8 +63,8 @@ func TestModule_signTxOut(t *testing.T) {
 		},
 	}
 
-	kpr.SetTxOutQueue(ctx, "ganache1", []*types.TxOut{txOut1_1, txOut1_2})
-	kpr.SetTxOutQueue(ctx, "ganache2", []*types.TxOut{txOut2_1})
+	kpr.SetTxOutQueue(ctx, "ganache1", []*types.TxOutOld{txOut1_1, txOut1_2})
+	kpr.SetTxOutQueue(ctx, "ganache2", []*types.TxOutOld{txOut2_1})
 	privateDb.SetPendingTxOut("ganache1", &types.PendingTxOutInfo{
 		TxOut:        txOut1_1,
 		ExpiredBlock: 50,
@@ -79,9 +79,9 @@ func TestModule_signTxOut(t *testing.T) {
 	module.signTxOut(ctx)
 
 	txOutQueue1 := kpr.GetTxOutQueue(ctx, "ganache1")
-	require.Equal(t, []*types.TxOut{txOut1_2}, txOutQueue1)
+	require.Equal(t, []*types.TxOutOld{txOut1_2}, txOutQueue1)
 	txOutQueue2 := kpr.GetTxOutQueue(ctx, "ganache2")
-	require.Equal(t, []*types.TxOut{}, txOutQueue2)
+	require.Equal(t, []*types.TxOutOld{}, txOutQueue2)
 
 	pending1 := privateDb.GetPendingTxOut("ganache1")
 	require.Equal(t, &types.PendingTxOutInfo{
@@ -115,7 +115,7 @@ func TestModule_signTxOut(t *testing.T) {
 
 	// The tx is added back to the queue.
 	txOutQueue1 = kpr.GetTxOutQueue(ctx, "ganache1")
-	require.Equal(t, []*types.TxOut{txOut1_2}, txOutQueue1)
+	require.Equal(t, []*types.TxOutOld{txOut1_2}, txOutQueue1)
 	txOutQueue2 = kpr.GetTxOutQueue(ctx, "ganache2")
-	require.Equal(t, []*types.TxOut{}, txOutQueue2)
+	require.Equal(t, []*types.TxOutOld{}, txOutQueue2)
 }

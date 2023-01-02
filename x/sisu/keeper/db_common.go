@@ -229,7 +229,7 @@ func getAllKeygenResult(store cstypes.KVStore, keygenType string, index int32) [
 }
 
 ///// TxOut
-func saveTxOut(store cstypes.KVStore, msg *types.TxOut) {
+func saveTxOut(store cstypes.KVStore, msg *types.TxOutOld) {
 	key := getTxOutKey(msg.Content.OutChain, msg.Content.OutHash)
 	bz, err := msg.Marshal()
 	if err != nil {
@@ -240,7 +240,7 @@ func saveTxOut(store cstypes.KVStore, msg *types.TxOut) {
 	store.Set(key, bz)
 }
 
-func getTxOut(store cstypes.KVStore, outChain, hash string) *types.TxOut {
+func getTxOut(store cstypes.KVStore, outChain, hash string) *types.TxOutOld {
 	key := getTxOutKey(outChain, hash)
 	bz := store.Get(key)
 
@@ -248,7 +248,7 @@ func getTxOut(store cstypes.KVStore, outChain, hash string) *types.TxOut {
 		return nil
 	}
 
-	txOut := &types.TxOut{}
+	txOut := &types.TxOutOld{}
 	err := txOut.Unmarshal(bz)
 	if err != nil {
 		log.Error("getTxOUt: Cannot unmasharl txout")
@@ -773,7 +773,7 @@ func getTransferQueue(queueStore, transferStore cstypes.KVStore, chain string) [
 }
 
 ///// TxOutQueue
-func setTxOutQueue(store cstypes.KVStore, chain string, txOuts []*types.TxOut) {
+func setTxOutQueue(store cstypes.KVStore, chain string, txOuts []*types.TxOutOld) {
 	queue := &types.TxOutQueue{
 		TxOuts: txOuts,
 	}
@@ -786,7 +786,7 @@ func setTxOutQueue(store cstypes.KVStore, chain string, txOuts []*types.TxOut) {
 	store.Set([]byte(chain), bz)
 }
 
-func getTxOutQueue(store cstypes.KVStore, chain string) []*types.TxOut {
+func getTxOutQueue(store cstypes.KVStore, chain string) []*types.TxOutOld {
 	bz := store.Get([]byte(chain))
 	queue := &types.TxOutQueue{}
 	err := queue.Unmarshal(bz)
@@ -796,7 +796,7 @@ func getTxOutQueue(store cstypes.KVStore, chain string) []*types.TxOut {
 	}
 
 	if queue.TxOuts == nil {
-		queue.TxOuts = make([]*types.TxOut, 0)
+		queue.TxOuts = make([]*types.TxOutOld, 0)
 	}
 
 	return queue.TxOuts
