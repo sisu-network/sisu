@@ -15,6 +15,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
+	deyesethtypes "github.com/sisu-network/deyes/chains/eth/types"
+
 	ecommon "github.com/ethereum/go-ethereum/common"
 
 	eyesTypes "github.com/sisu-network/deyes/types"
@@ -50,11 +52,13 @@ func mockForApiHandlerTest() (sdk.Context, ManagerContainer) {
 	}
 
 	dheartClient := &external.MockDheartClient{}
+	deyesClient := &external.MockDeyesClient{}
 	appKeys := common.NewMockAppKeys()
 
-	bridgeManager := chains.NewBridgeManager("signer", k, &external.MockDeyesClient{}, config.Config{})
+	bridgeManager := chains.NewBridgeManager("signer", k, deyesClient, config.Config{})
 
-	mc := MockManagerContainer(k, pmm, globalData, partyManager, dheartClient, txSubmit, appKeys, ctx, txTracker, bridgeManager)
+	mc := MockManagerContainer(k, pmm, globalData, partyManager, dheartClient, txSubmit, appKeys, ctx,
+		txTracker, bridgeManager, deyesClient)
 	return ctx, mc
 }
 
@@ -125,6 +129,14 @@ func TestApiHandler_OnTxIns(t *testing.T) {
 
 	t.Run("eth_transfer", func(t *testing.T) {
 		_, mc := mockForApiHandlerTest()
+		deyesClient := mc.DeyesClient().(*external.MockDeyesClient)
+		deyesClient.GetGasInfoFunc = func(chain string) (*deyesethtypes.GasInfo, error) {
+			return &deyesethtypes.GasInfo{
+				GasPrice: 100,
+				BaseFee:  1000,
+				Tip:      10,
+			}, nil
+		}
 
 		srcChain := "ganache1"
 		toAddress := "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80"
@@ -151,8 +163,13 @@ func TestApiHandler_OnTxIns(t *testing.T) {
 		submitCount := 0
 		txSubmit := mc.TxSubmit().(*common.MockTxSubmit)
 		txSubmit.SubmitMessageAsyncFunc = func(msg sdk.Msg) error {
-			require.Equal(t, "Transfers", msg.Type())
-			submitCount = 1
+			switch msg.Type() {
+			case "GasPriceWithSigner":
+				return nil
+			case "Transfers":
+				submitCount = 1
+			}
+
 			return nil
 		}
 
