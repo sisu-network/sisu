@@ -16,4 +16,5 @@ message ChainEthConfig {
   int64 gas_price = 2;
   int64 base_fee = 3;
   int64 tip = 4;
+  int64 median_gas = 5;
 }

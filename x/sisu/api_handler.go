@@ -55,30 +55,23 @@ func NewApiHandler(
 	mc ManagerContainer,
 ) *ApiHandler {
 	a := &ApiHandler{
-		mc:             mc,
-		keeper:         mc.Keeper(),
-		privateDb:      privateDb,
-		appKeys:        mc.AppKeys(),
-		txSubmit:       mc.TxSubmit(),
-		globalData:     mc.GlobalData(),
-		dheartClient:   mc.DheartClient(),
-		deyesClient:    mc.DeyesClient(),
-		txTracker:      mc.TxTracker(),
-		chainPolling:   mc.ChainPolling(),
-		bridgeManager:  mc.BridgeManager(),
-		auxDataTracker: service.NewAuxiliaryDataTracker(mc.DeyesClient(), mc.AppKeys(), mc.Keeper()),
+		mc:            mc,
+		keeper:        mc.Keeper(),
+		privateDb:     privateDb,
+		appKeys:       mc.AppKeys(),
+		txSubmit:      mc.TxSubmit(),
+		globalData:    mc.GlobalData(),
+		dheartClient:  mc.DheartClient(),
+		deyesClient:   mc.DeyesClient(),
+		txTracker:     mc.TxTracker(),
+		chainPolling:  mc.ChainPolling(),
+		bridgeManager: mc.BridgeManager(),
+		auxDataTracker: service.NewAuxiliaryDataTracker(
+			mc.DeyesClient(), mc.AppKeys(), mc.Keeper(), mc.TxSubmit(),
+		),
 	}
 
 	return a
-}
-
-// TODO: Move this function to module.go
-func (a *ApiHandler) EndBlock(ctx sdk.Context) {
-	if !a.globalData.IsCatchingUp() {
-		// Inform dheart that we have reached end of block so that dheart could run presign works.
-		height := ctx.BlockHeight()
-		a.dheartClient.BlockEnd(height)
-	}
 }
 
 /**

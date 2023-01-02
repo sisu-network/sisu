@@ -3,6 +3,7 @@ package sisu
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	// this line is used by starport scaffolding # 1
@@ -255,8 +256,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	log.Verbose("End block reached, height = ", ctx.BlockHeight())
 
-	am.processor.EndBlock(ctx)
-
+	am.updateGas(ctx)
 	am.txTracker.CheckExpiredTransaction()
 
 	cloneCtx := utils.CloneSdkContext(ctx)
@@ -269,6 +269,47 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	am.signTxOut(ctx)
 
 	return []abci.ValidatorUpdate{}
+}
+
+func (am AppModule) updateGas(ctx sdk.Context) {
+	chains := am.globalData.GetRecalculateGas()
+	if len(chains) == 0 {
+		return
+	}
+
+	log.Verbosef("Updating gas price for chain %s", chains)
+
+	for _, chain := range chains {
+		gasRecords := am.keeper.GetGasPrices(ctx, chain)
+		chainCfg := am.keeper.GetChain(ctx, chain)
+		prices := make([]int64, 0, len(gasRecords))
+
+		if chainCfg.EthConfig.UseEip_1559 {
+			for _, value := range gasRecords {
+				prices = append(prices, value.BaseFee*2+value.Tip)
+			}
+		} else {
+			for _, value := range gasRecords {
+				prices = append(prices, value.GasPrice)
+			}
+		}
+
+		sort.SliceStable(prices, func(i, j int) bool {
+			return prices[i] < prices[j]
+		})
+
+		median := prices[len(prices)/2]
+		if median == 0 {
+			log.Warn("Median gas price for chain ", chain, " is ", median)
+		} else {
+			log.Verbose("Median gas price for chain ", chain, " is ", median)
+		}
+
+		chainCfg.EthConfig.MedianGas = median
+		am.keeper.SaveChain(ctx, chainCfg)
+	}
+
+	am.globalData.ResetGasCalculation()
 }
 
 func (am AppModule) signTxOut(ctx sdk.Context) {

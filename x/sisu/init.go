@@ -16,8 +16,6 @@ const (
 	MethodTransferIn         = "transferIn"
 	MethodTransferInMultiple = "transferInMultiple"
 	MethodTransferOut        = "transferOut"
-
-	UpdateGasPriceFrequency = 100
 )
 
 type ContractInfo struct {

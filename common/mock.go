@@ -92,6 +92,9 @@ type MockGlobalData struct {
 	GetReadOnlyContextFunc  func() sdk.Context
 	AppInitializedFunc      func() bool
 	SetAppInitializedFunc   func()
+	RecalculateGasFunc      func(chain string)
+	GetRecalculateGasFunc   func() []string
+	ResetGasCalculationFunc func()
 }
 
 func (m *MockGlobalData) Init() {
@@ -162,5 +165,25 @@ func (m *MockGlobalData) AppInitialized() bool {
 func (m *MockGlobalData) SetAppInitialized() {
 	if m.SetAppInitializedFunc != nil {
 		m.SetAppInitializedFunc()
+	}
+}
+
+func (m *MockGlobalData) RecalculateGas(chain string) {
+	if m.RecalculateGasFunc != nil {
+		m.RecalculateGasFunc(chain)
+	}
+}
+
+func (m *MockGlobalData) GetRecalculateGas() []string {
+	if m.GetRecalculateGasFunc != nil {
+		return m.GetRecalculateGasFunc()
+	}
+
+	return nil
+}
+
+func (m *MockGlobalData) ResetGasCalculation() {
+	if m.ResetGasCalculationFunc != nil {
+		m.ResetGasCalculationFunc()
 	}
 }

@@ -275,11 +275,9 @@ func (b *bridge) getGasCost(ethCfg *types.ChainEthConfig, maxGasUnit int) (*big.
 	if ethCfg.UseEip_1559 {
 		// Max fee = 2 * baseFee + Tip
 		tipCap := big.NewInt(ethCfg.Tip)
-		feeCap := big.NewInt(ethCfg.BaseFee)
-		feeCap = feeCap.Mul(big.NewInt(2), feeCap)
-		feeCap = feeCap.Add(feeCap, tipCap)
+		feeCap := big.NewInt(ethCfg.BaseFee*2 + ethCfg.Tip)
 
-		return feeCap.Mul(feeCap, big.NewInt(int64(maxGasUnit))), tipCap, feeCap
+		return new(big.Int).Mul(feeCap, big.NewInt(int64(maxGasUnit))), tipCap, feeCap
 	} else {
 		return new(big.Int).Mul(big.NewInt(int64(maxGasUnit)), big.NewInt(ethCfg.GasPrice)), nil, nil
 	}

@@ -3,6 +3,8 @@ package types
 import (
 	"fmt"
 
+	libchain "github.com/sisu-network/lib/chain"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
@@ -57,6 +59,12 @@ func (msg *GasPriceMsg) ValidateBasic() error {
 
 	if msg.Chains == nil {
 		return fmt.Errorf("chains array is nil")
+	}
+
+	for _, chain := range msg.Chains {
+		if !libchain.IsETHBasedChain(chain) {
+			return fmt.Errorf("Chain %s is not an ETH based chain", chain)
+		}
 	}
 
 	if msg.GasPrices == nil && (msg.BaseFees == nil || msg.Tips == nil) {

@@ -31,5 +31,9 @@ func (h *HandlerGasPrice) DeliverMsg(ctx sdk.Context, msg *types.GasPriceMsg) (*
 
 	h.keeper.SetGasPrice(ctx, msg)
 
+	for _, chain := range msg.Chains {
+		h.globalData.RecalculateGas(chain)
+	}
+
 	return &sdk.Result{}, nil
 }

@@ -44,8 +44,8 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, sisuRpc, chain, m
 
 	log.Info("Gas price = ", gasPrice, " on chain ", chain)
 
-	// 0.02 ETH
-	amount := new(big.Int).Div(utils.EthToWei, big.NewInt(50))
+	// 0.01 ETH
+	amount := new(big.Int).Div(utils.EthToWei, big.NewInt(100))
 
 	gasLimit := uint64(22000) // in units
 

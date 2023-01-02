@@ -76,7 +76,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 		}
 
 		// Check to see if we need to update the gas price.
-
+		a.updateEthGasPrice(ctx, transferRequests.Transfers)
 	}
 
 	return nil
@@ -84,25 +84,6 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 
 // updateEthGasPrice checks in the list of
 func (a *ApiHandler) updateEthGasPrice(ctx sdk.Context, transfers []*types.Transfer) {
-	// Check among all eth chains, if the gas price is lower than 95% of the previous gas price, we
-	// need to send an update gas price to the chain.
-
-	// params := am.keeper.GetParams(ctx)
-	// Update gas price
-	// if ctx.BlockHeight()%UpdateGasPriceFrequency == 0 {
-	// 	// Get the gas price from deyes
-	// 	go func(params *types.Params) {
-	// 		gasPrices, err := am.processor.deyesClient.GetGasInfo(params.SupportedChains)
-	// 		if err != nil {
-	// 			log.Error("cannot get gas price from deyes")
-	// 		} else {
-	// 			msg := types.NewGasPriceMsg(am.appKeys.GetSignerAddress().String(),
-	// 				params.SupportedChains, ctx.BlockHeight(), gasPrices)
-	// 			am.txSubmit.SubmitMessageAsync(msg)
-	// 		}
-	// 	}(params)
-	// }
-
 	chainMap := make(map[string]bool)
 	for _, transfer := range transfers {
 		chainMap[transfer.ToChain] = true
