@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/big"
 
+	libchain "github.com/sisu-network/lib/chain"
+
 	eyestypes "github.com/sisu-network/deyes/types"
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -109,7 +111,7 @@ func (b *bridge) buildERC20TransferIn(
 		return nil, fmt.Errorf("Invalid chain: %s", chain)
 	}
 
-	gasPrice := big.NewInt(chain.GasPrice)
+	gasPrice := big.NewInt(chain.EthConfig.GasPrice)
 	if gasPrice.Cmp(big.NewInt(0)) <= 0 {
 		return nil, fmt.Errorf("Gas price is non-positive: %s", gasPrice.String())
 	}
@@ -127,6 +129,12 @@ func (b *bridge) buildERC20TransferIn(
 	amountIns := make([]*big.Int, 0)
 	gasPrices := make([]*big.Int, 0)
 
+	chainCfg := b.keeper.GetChain(ctx, b.chain)
+	ethCfg := chainCfg.EthConfig
+	totalGasCost := big.NewInt(0)
+	gasUnitPerSwap := 80_000
+	gasCost, tipCap, feeCap := b.getGasCost(ethCfg, gasUnitPerSwap)
+
 	for i := range amounts {
 		amountOut := new(big.Int).Set(amounts[i])
 
@@ -137,11 +145,13 @@ func (b *bridge) buildERC20TransferIn(
 		if !ok {
 			return nil, fmt.Errorf("invalid token price %s", tokens[i].Price)
 		}
+
 		if price.Cmp(utils.ZeroBigInt) == 0 {
 			return nil, fmt.Errorf("token %s has price 0", tokens[i].Id)
 		}
 
-		gasPriceInToken, err := helper.GetChainGasCostInToken(ctx, b.keeper, tokens[i].Id, b.chain, big.NewInt(80_000))
+		gasPriceInToken, err := helper.GetChainGasCostInToken(ctx, b.keeper, tokens[i].Id, b.chain,
+			gasCost)
 		if err != nil {
 			log.Error("Cannot get gas cost in token, err = ", err)
 			continue
@@ -156,7 +166,8 @@ func (b *bridge) buildERC20TransferIn(
 		amountOut.Sub(amountOut, gasPriceInToken)
 
 		if amountOut.Cmp(utils.ZeroBigInt) < 0 {
-			log.Error("Insufficient fund for transfer amountOut = ", amountOut, " gasPriceInToken = ", gasPriceInToken)
+			log.Errorf("Insufficient fund for transfer amountOut = %s, gasPriceInToken = %s", amountOut,
+				gasPriceInToken)
 			continue
 		}
 
@@ -177,6 +188,7 @@ func (b *bridge) buildERC20TransferIn(
 			continue
 		}
 
+		totalGasCost = totalGasCost.Add(totalGasCost, gasCost)
 		finalTokenAddrs = append(finalTokenAddrs, ethcommon.HexToAddress(tokenAddr))
 		finalAmounts = append(finalAmounts, amountOut)
 		finalRecipients = append(finalRecipients, recipients[i])
@@ -185,7 +197,7 @@ func (b *bridge) buildERC20TransferIn(
 	}
 
 	if len(finalTokenAddrs) == 0 {
-		return nil, fmt.Errorf("No txOut is produced (might be due to insufficient fund")
+		return nil, fmt.Errorf("No txOut is produced")
 	}
 
 	log.Verbosef("destChain: %s, gateway address on destChain: %s", b.chain, gatewayAddress.String())
@@ -218,14 +230,32 @@ func (b *bridge) buildERC20TransferIn(
 		return nil, err
 	}
 
-	rawTx := ethtypes.NewTransaction(
-		0,
-		gatewayAddress,
-		big.NewInt(0),
-		uint64(100_000*len(recipients)), // 100k per swapping operation.
-		gasPrice,
-		input,
-	)
+	maxGas := uint64(gasUnitPerSwap * len(recipients)) // 80k per swapping operation.
+
+	var rawTx *ethtypes.Transaction
+	if ethCfg.UseEip_1559 {
+		dynamicFeeTx := &ethtypes.DynamicFeeTx{
+			ChainID:   libchain.GetChainIntFromId(b.chain),
+			Nonce:     0,
+			GasTipCap: tipCap,
+			GasFeeCap: feeCap,
+			Gas:       maxGas,
+			To:        &gatewayAddress,
+			Value:     big.NewInt(0),
+			Data:      input,
+		}
+
+		rawTx = ethtypes.NewTx(dynamicFeeTx)
+	} else {
+		rawTx = ethtypes.NewTransaction(
+			0,
+			gatewayAddress,
+			big.NewInt(0),
+			maxGas,
+			gasPrice,
+			input,
+		)
+	}
 
 	bz, err := rawTx.MarshalBinary()
 	if err != nil {
@@ -238,6 +268,19 @@ func (b *bridge) buildERC20TransferIn(
 		EthTx:    rawTx,
 		RawBytes: bz,
 	}, nil
+}
+
+// getGasCost returns total gas cost used for swapping transaction.
+func (b *bridge) getGasCost(ethCfg *types.ChainEthConfig, maxGasUnit int) (*big.Int, *big.Int, *big.Int) {
+	if ethCfg.UseEip_1559 {
+		// Max fee = 2 * baseFee + Tip
+		tipCap := big.NewInt(ethCfg.Tip)
+		feeCap := big.NewInt(ethCfg.BaseFee*2 + ethCfg.Tip)
+
+		return new(big.Int).Mul(feeCap, big.NewInt(int64(maxGasUnit))), tipCap, feeCap
+	} else {
+		return new(big.Int).Mul(big.NewInt(int64(maxGasUnit)), big.NewInt(ethCfg.GasPrice)), nil, nil
+	}
 }
 
 func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx) ([]*types.Transfer, error) {

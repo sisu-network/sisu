@@ -25,9 +25,9 @@ func GetKeygenId(keyType string, block int64, pubKeys []ctypes.PubKey) string {
 	return fmt.Sprintf("%s;%d;%s", keyType, block, hash)
 }
 
-func GetChainGasCostInToken(ctx sdk.Context, k keeper.Keeper, tokenId, chainId string, gasUnit *big.Int) (*big.Int, error) {
+func GetChainGasCostInToken(ctx sdk.Context, k keeper.Keeper, tokenId, chainId string,
+	totalGasCost *big.Int) (*big.Int, error) {
 	chain := k.GetChain(ctx, chainId)
-	gasPrice := chain.GasPrice
 
 	tokens := k.GetTokens(ctx, []string{tokenId, chain.NativeToken})
 	token := tokens[tokenId]
@@ -53,22 +53,19 @@ func GetChainGasCostInToken(ctx sdk.Context, k keeper.Keeper, tokenId, chainId s
 		return nil, fmt.Errorf("Invalid native token price %s, token = %s", nativeToken.Price, nativeToken.Id)
 	}
 
-	gasCost, err := GetGasCostInToken(gasUnit, big.NewInt(gasPrice), tokenPrice, nativeTokenPrice)
-	log.Verbose("gasUnit, gasPrice, tokenPrice, nativeTokenPrice, gasCost = ", gasUnit, gasPrice,
-		tokenPrice, nativeTokenPrice, gasCost)
+	gasCostInToken, err := GetGasCostInToken(totalGasCost, tokenPrice, nativeTokenPrice)
+	log.Verbose("totalGas, tokenPrice, nativeTokenPrice, gasCost = ", totalGasCost, tokenPrice,
+		nativeTokenPrice, gasCostInToken)
 
 	if err != nil {
 		log.Error(err)
 		return nil, err
 	}
 
-	return gasCost, nil
+	return gasCostInToken, nil
 }
 
-func GetGasCostInToken(gas, gasPrice, tokenPrice, nativeTokenPrice *big.Int) (*big.Int, error) {
-	// Get total gas cost
-	gasCost := new(big.Int).Mul(gas, gasPrice)
-
+func GetGasCostInToken(gasCost, tokenPrice, nativeTokenPrice *big.Int) (*big.Int, error) {
 	// amount := gasCost * nativeTokenPrice / tokenPrice
 	gasInToken := new(big.Int).Mul(gasCost, nativeTokenPrice)
 	gasInToken = new(big.Int).Div(gasInToken, tokenPrice)

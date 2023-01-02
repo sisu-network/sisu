@@ -42,13 +42,17 @@ func KeeperTestGenesis(ctx sdk.Context) keeper.Keeper {
 	keeper := keeper.NewKeeper(TestKeyStore)
 	keeper.SaveChain(ctx, &types.Chain{
 		Id:          "ganache1",
-		GasPrice:    int64(5_000_000_000),
 		NativeToken: "NATIVE_GANACHE1",
+		EthConfig: &types.ChainEthConfig{
+			GasPrice: int64(5_000_000_000),
+		},
 	})
 	keeper.SaveChain(ctx, &types.Chain{
 		Id:          "ganache2",
-		GasPrice:    int64(10_000_000_000),
 		NativeToken: "NATIVE_GANACHE2",
+		EthConfig: &types.ChainEthConfig{
+			GasPrice: int64(10_000_000_000),
+		},
 	})
 
 	vaults := []*types.Vault{

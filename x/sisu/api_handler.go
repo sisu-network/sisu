@@ -33,14 +33,15 @@ var (
 // ApiHandler handles API callback from dheart or deyes. There are few functions (BeginBlock & EndBlock)
 // that are still present for historical reason. They should be moved out of this file.
 type ApiHandler struct {
-	keeper        keeper.Keeper
-	txSubmit      common.TxSubmit
-	appKeys       common.AppKeys
-	globalData    common.GlobalData
-	txTracker     TxTracker
-	bridgeManager chains.BridgeManager
-	chainPolling  service.ChainPolling
-	mc            ManagerContainer
+	keeper         keeper.Keeper
+	txSubmit       common.TxSubmit
+	appKeys        common.AppKeys
+	globalData     common.GlobalData
+	txTracker      TxTracker
+	bridgeManager  chains.BridgeManager
+	chainPolling   service.ChainPolling
+	auxDataTracker service.AuxiliaryDataTracker
+	mc             ManagerContainer
 
 	// Dheart & Deyes client
 	dheartClient external.DheartClient
@@ -65,18 +66,12 @@ func NewApiHandler(
 		txTracker:     mc.TxTracker(),
 		chainPolling:  mc.ChainPolling(),
 		bridgeManager: mc.BridgeManager(),
+		auxDataTracker: service.NewAuxiliaryDataTracker(
+			mc.DeyesClient(), mc.AppKeys(), mc.Keeper(), mc.TxSubmit(),
+		),
 	}
 
 	return a
-}
-
-// TODO: Move this function to module.go
-func (a *ApiHandler) EndBlock(ctx sdk.Context) {
-	if !a.globalData.IsCatchingUp() {
-		// Inform dheart that we have reached end of block so that dheart could run presign works.
-		height := ctx.BlockHeight()
-		a.dheartClient.BlockEnd(height)
-	}
 }
 
 /**

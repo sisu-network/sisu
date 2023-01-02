@@ -34,8 +34,13 @@ type GlobalData interface {
 	GetReadOnlyContext() sdk.Context
 	AppInitialized() bool
 	SetAppInitialized()
+
+	RecalculateGas(chain string)
+	GetRecalculateGas() []string
+	ResetGasCalculation()
 }
 
+// This is a struct to store global in-memory data. For persistent private data, use the private db.
 type GlobalDataDefault struct {
 	isCatchingUp    bool
 	lock            *sync.RWMutex
@@ -48,6 +53,8 @@ type GlobalDataDefault struct {
 
 	validatorSets *rpc.ResultValidatorsOutput
 	usedUtxos     map[string]bool
+	// Set of all chains whose gas price should be recalculated.
+	calGasChains *sync.Map
 }
 
 func NewGlobalData(cfg config.Config) GlobalData {
@@ -65,6 +72,7 @@ func NewGlobalData(cfg config.Config) GlobalData {
 		cfg:           cfg,
 		usedUtxos:     make(map[string]bool),
 		isDataInit:    atomic.NewBool(false),
+		calGasChains:  &sync.Map{},
 	}
 }
 
@@ -205,4 +213,25 @@ func (a *GlobalDataDefault) AppInitialized() bool {
 
 func (a *GlobalDataDefault) SetAppInitialized() {
 	a.isDataInit.Store(true)
+}
+
+func (a *GlobalDataDefault) RecalculateGas(chain string) {
+	a.calGasChains.Store(chain, true)
+}
+
+func (a *GlobalDataDefault) GetRecalculateGas() []string {
+	ret := make([]string, 0)
+	a.calGasChains.Range(func(key, value any) bool {
+		ret = append(ret, key.(string))
+		return true
+	})
+
+	return ret
+}
+
+func (a *GlobalDataDefault) ResetGasCalculation() {
+	a.calGasChains.Range(func(key interface{}, value interface{}) bool {
+		a.calGasChains.Delete(key)
+		return true
+	})
 }

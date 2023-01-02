@@ -63,20 +63,39 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	if len(transferRequests.Transfers) > 0 {
 		msg := types.NewTransfersMsg(a.appKeys.GetSignerAddress().String(), transferRequests)
 		a.txSubmit.SubmitMessageAsync(msg)
-	}
 
-	if libchain.IsCardanoChain(txs.Chain) {
-		log.Verbose("Updating block height for cardano")
-		// Broadcast blockheight update
-		msg := types.NewBlockHeightMsg(a.appKeys.GetSignerAddress().String(), &types.BlockHeight{
-			Chain:  txs.Chain,
-			Height: txs.Block,
-			Hash:   txs.BlockHash,
-		})
-		a.txSubmit.SubmitMessageAsync(msg)
+		if libchain.IsCardanoChain(txs.Chain) {
+			log.Verbose("Updating block height for cardano")
+			// Broadcast blockheight update
+			msg := types.NewBlockHeightMsg(a.appKeys.GetSignerAddress().String(), &types.BlockHeight{
+				Chain:  txs.Chain,
+				Height: txs.Block,
+				Hash:   txs.BlockHash,
+			})
+			a.txSubmit.SubmitMessageAsync(msg)
+		}
+
+		// Check to see if we need to update the gas price.
+		a.updateEthGasPrice(ctx, transferRequests.Transfers)
 	}
 
 	return nil
+}
+
+// updateEthGasPrice checks in the list of
+func (a *ApiHandler) updateEthGasPrice(ctx sdk.Context, transfers []*types.Transfer) {
+	chainMap := make(map[string]bool)
+	for _, transfer := range transfers {
+		chainMap[transfer.ToChain] = true
+	}
+
+	// Convert map to array
+	chains := make([]string, 0)
+	for key := range chainMap {
+		chains = append(chains, key)
+	}
+
+	a.auxDataTracker.UpdateData(ctx, chains)
 }
 
 func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.Transfer, error) {

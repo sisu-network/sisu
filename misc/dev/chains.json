@@ -1,12 +1,18 @@
 [
   {
     "id": "ganache1",
-    "gas_price": 2000000000,
-    "native_token": "NATIVE_GANACHE1"
+    "native_token": "NATIVE_GANACHE1",
+    "eth_config": {
+      "gas_price": 2000000000,
+      "use_eip_1559": false
+    }
   },
   {
     "id": "ganache2",
-    "gas_price": 2000000000,
-    "native_token": "NATIVE_GANACHE2"
+    "native_token": "NATIVE_GANACHE2",
+    "eth_config": {
+      "gas_price": 2000000000,
+      "use_eip_1559": false
+    }
   }
 ]

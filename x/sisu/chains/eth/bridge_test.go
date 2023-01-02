@@ -22,7 +22,7 @@ func mockKeeperForBridge(ctx sdk.Context, tokenPrice *big.Int) keeper.Keeper {
 
 	token := &types.Token{
 		Id:        "SISU",
-		Price:     tokenPrice.String(), // 0.01
+		Price:     tokenPrice.String(),
 		Chains:    []string{"ganache1", "ganache2"},
 		Addresses: []string{testmock.TestErc20TokenAddress, testmock.TestErc20TokenAddress},
 	}
@@ -31,7 +31,7 @@ func mockKeeperForBridge(ctx sdk.Context, tokenPrice *big.Int) keeper.Keeper {
 	return k
 }
 
-func TestBridge(t *testing.T) {
+func TestTokenPriceCalculation(t *testing.T) {
 	recipients := []ethcommon.Address{ethcommon.HexToAddress("0x08BAB502c5e7125fD558B19a98D14907CF7f7E93")}
 
 	t.Run("token_has_low_price", func(t *testing.T) {
@@ -50,7 +50,8 @@ func TestBridge(t *testing.T) {
 		data, err := parseTransferIn(ctx, keeper, txResponse.EthTx)
 		require.NoError(t, err)
 
-		// gasPriceInToken = 0.00008 * 10 * 2 / 0.01 ~ 0.16. Since 1 ETH = 10^18 wei, 0.16 ETH is 160_000_000_000_000_000 wei.
+		// gasPriceInToken = 0.00008 * 10 * 2 / 0.01 ~ 0.16. Since 1 ETH = 10^18 wei, 0.16 ETH is
+		// 160_000_000_000_000_000 wei.
 		require.Equal(t, amount.Sub(amount, big.NewInt(160_000_000_000_000_000)), data["amount"])
 	})
 
@@ -70,8 +71,42 @@ func TestBridge(t *testing.T) {
 		data, err := parseTransferIn(ctx, keeper, txResponse.EthTx)
 		require.NoError(t, err)
 
-		// gasPriceInToken = 0.00008 * 10 * 2 / 100 ~ 0.000016. Since 1 ETH = 10^18 wei, 0.000016 ETH is 16_000_000_000_000 wei.
+		// gasPriceInToken = 0.00008 * 10 * 2 / 100 ~ 0.000016. Since 1 ETH = 10^18 wei, 0.000016 ETH is
+		// 16_000_000_000_000 wei.
 		require.Equal(t, amount.Sub(amount, big.NewInt(16_000_000_000_000)), data["amount"])
+	})
+
+	t.Run("transfer_with_commission", func(t *testing.T) {
+		ctx := testmock.TestContext()
+		keeper := mockKeeperForBridge(ctx, utils.EtherToWei(big.NewInt(100)))
+
+		// Set commission rate = 0.1%
+		params := keeper.GetParams(ctx)
+		params.CommissionRate = 10
+		keeper.SaveParams(ctx, params)
+
+		bridge := NewBridge("ganache2", "", keeper).(*bridge)
+		amount := new(big.Int).Mul(big.NewInt(1), utils.EthToWei)
+		txResponse, err := bridge.buildERC20TransferIn(ctx,
+			[]*types.Token{keeper.GetTokens(ctx, []string{"SISU"})["SISU"]},
+			recipients,
+			[]*big.Int{amount},
+		)
+		require.Nil(t, err)
+
+		data, err := parseTransferIn(ctx, keeper, txResponse.EthTx)
+		require.NoError(t, err)
+
+		amountAfterCommission := new(big.Int).Mul(amount, big.NewInt(999))
+		amountAfterCommission = new(big.Int).Div(amountAfterCommission, big.NewInt(1000))
+
+		// gasPriceInToken = 0.00008 * 10 * 2 / 100 ~ 0.000016. Since 1 ETH = 10^18 wei, 0.000016 ETH is
+		// 16_000_000_000_000 wei.
+		require.Equal(
+			t,
+			new(big.Int).Sub(amountAfterCommission, big.NewInt(16_000_000_000_000)),
+			data["amount"],
+		)
 	})
 
 	t.Run("insufficient_fund", func(t *testing.T) {
@@ -103,5 +138,34 @@ func TestBridge(t *testing.T) {
 		)
 		require.Error(t, err)
 		require.Nil(t, txResponse)
+	})
+
+	t.Run("token_with_eip_1559", func(t *testing.T) {
+		ctx := testmock.TestContext()
+		keeper := mockKeeperForBridge(ctx, utils.EtherToWei(big.NewInt(100)))
+
+		chain := keeper.GetChain(ctx, "ganache2")
+		chain.EthConfig.UseEip_1559 = true
+		chain.EthConfig.BaseFee = utils.GweiToWei.Int64() * 10 // 10 Gwei
+		chain.EthConfig.Tip = utils.GweiToWei.Int64() * 2      // 2 Gwei
+		keeper.SaveChain(ctx, chain)
+
+		// Do transfer
+		bridge := NewBridge("ganache2", "", keeper).(*bridge)
+		amount := new(big.Int).Set(utils.EthToWei)
+		txResponse, err := bridge.buildERC20TransferIn(ctx,
+			[]*types.Token{keeper.GetTokens(ctx, []string{"SISU"})["SISU"]},
+			recipients,
+			[]*big.Int{amount},
+		)
+		require.Nil(t, err)
+
+		data, err := parseTransferIn(ctx, keeper, txResponse.EthTx)
+		require.NoError(t, err)
+
+		// feeCap = 2 * baseFee + tip = 22 Gwei
+		// gasPriceInToken = 0.00008 * 22 * 2/ 100 ~ 0.0000352. Since 1 ETH = 10^18 wei, 0.0000352 ETH
+		// is 35_200_000_000_000 wei.
+		require.Equal(t, amount.Sub(amount, big.NewInt(35_200_000_000_000)), data["amount"])
 	})
 }

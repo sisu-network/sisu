@@ -7,6 +7,8 @@ import (
 	"github.com/ethereum/go-ethereum/rpc"
 	etypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/lib/log"
+
+	deyesethtypes "github.com/sisu-network/deyes/chains/eth/types"
 )
 
 type DeyesClient interface {
@@ -15,7 +17,7 @@ type DeyesClient interface {
 	SetVaultAddress(chain string, addr string, token string) error
 	GetNonce(chain string, address string) (int64, error)
 	SetSisuReady(isReady bool) error
-	GetGasPrices(chains []string) ([]int64, error)
+	GetGasInfo(chain string) (*deyesethtypes.GasInfo, error)
 
 	// Cardano
 	CardanoProtocolParams(chain string) (*cardano.ProtocolParams, error)
@@ -105,11 +107,11 @@ func (c *defaultDeyesClient) GetNonce(chain string, address string) (int64, erro
 	return result, err
 }
 
-func (c *defaultDeyesClient) GetGasPrices(chains []string) ([]int64, error) {
-	result := make([]int64, 0)
-	err := c.client.CallContext(context.Background(), &result, "deyes_getGasPrices", chains)
+func (c *defaultDeyesClient) GetGasInfo(chain string) (*deyesethtypes.GasInfo, error) {
+	result := new(deyesethtypes.GasInfo)
+	err := c.client.CallContext(context.Background(), &result, "deyes_getGasInfo", chain)
 	if err != nil {
-		log.Error("Cannot get gas price for chains = ", chains, "err = ", err)
+		log.Error("Cannot get gas price for chains = ", chain, "err = ", err)
 		return nil, err
 	}
 
