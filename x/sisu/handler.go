@@ -62,6 +62,8 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 			return NewHandlerAdjustEthNonce(
 				mc.PostedMessageManager(), mc.Keeper(), mc.PrivateDb(),
 			).DeliverMsg(ctx, msg)
+		case *types.TxInMsg:
+			return NewHandlerTxIn(mc.PostedMessageManager(), mc.Keeper()).DeliverMsg(ctx, msg)
 
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)

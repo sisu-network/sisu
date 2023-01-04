@@ -22,14 +22,34 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
+type TxInType int32
+
+const (
+	TxInType_TOKEN_TRANSFER TxInType = 0
+)
+
+var TxInType_name = map[int32]string{
+	0: "TOKEN_TRANSFER",
+}
+
+var TxInType_value = map[string]int32{
+	"TOKEN_TRANSFER": 0,
+}
+
+func (x TxInType) String() string {
+	return proto.EnumName(TxInType_name, int32(x))
+}
+
+func (TxInType) EnumDescriptor() ([]byte, []int) {
+	return fileDescriptor_5e2a900206ada091, []int{0}
+}
+
 type TxIn struct {
 	// Id of this TxIn. For most block chains, this id is the transaction hash.
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Source
-	FromChain  string `protobuf:"bytes,2,opt,name=from_chain,json=fromChain,proto3" json:"from_chain,omitempty"`
-	Hash       string `protobuf:"bytes,4,opt,name=hash,proto3" json:"hash,omitempty"`
-	FromSender string `protobuf:"bytes,5,opt,name=from_sender,json=fromSender,proto3" json:"from_sender,omitempty"`
-	Serialized []byte `protobuf:"bytes,6,opt,name=serialized,proto3" json:"serialized,omitempty"`
+	Id        string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	FromChain string   `protobuf:"bytes,2,opt,name=from_chain,json=fromChain,proto3" json:"from_chain,omitempty"`
+	Hash      string   `protobuf:"bytes,3,opt,name=hash,proto3" json:"hash,omitempty"`
+	TxType    TxInType `protobuf:"varint,4,opt,name=tx_type,json=txType,proto3,enum=types.TxInType" json:"tx_type,omitempty"`
 }
 
 func (m *TxIn) Reset()         { *m = TxIn{} }
@@ -86,42 +106,93 @@ func (m *TxIn) GetHash() string {
 	return ""
 }
 
-func (m *TxIn) GetFromSender() string {
+func (m *TxIn) GetTxType() TxInType {
 	if m != nil {
-		return m.FromSender
+		return m.TxType
+	}
+	return TxInType_TOKEN_TRANSFER
+}
+
+type TxInMsg struct {
+	Signer string `protobuf:"bytes,1,opt,name=signer,proto3" json:"signer,omitempty"`
+	Data   *TxIn  `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
+}
+
+func (m *TxInMsg) Reset()         { *m = TxInMsg{} }
+func (m *TxInMsg) String() string { return proto.CompactTextString(m) }
+func (*TxInMsg) ProtoMessage()    {}
+func (*TxInMsg) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5e2a900206ada091, []int{1}
+}
+func (m *TxInMsg) XXX_Unmarshal(b []byte) error {
+	return m.Unmarshal(b)
+}
+func (m *TxInMsg) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	if deterministic {
+		return xxx_messageInfo_TxInMsg.Marshal(b, m, deterministic)
+	} else {
+		b = b[:cap(b)]
+		n, err := m.MarshalToSizedBuffer(b)
+		if err != nil {
+			return nil, err
+		}
+		return b[:n], nil
+	}
+}
+func (m *TxInMsg) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TxInMsg.Merge(m, src)
+}
+func (m *TxInMsg) XXX_Size() int {
+	return m.Size()
+}
+func (m *TxInMsg) XXX_DiscardUnknown() {
+	xxx_messageInfo_TxInMsg.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_TxInMsg proto.InternalMessageInfo
+
+func (m *TxInMsg) GetSigner() string {
+	if m != nil {
+		return m.Signer
 	}
 	return ""
 }
 
-func (m *TxIn) GetSerialized() []byte {
+func (m *TxInMsg) GetData() *TxIn {
 	if m != nil {
-		return m.Serialized
+		return m.Data
 	}
 	return nil
 }
 
 func init() {
+	proto.RegisterEnum("types.TxInType", TxInType_name, TxInType_value)
 	proto.RegisterType((*TxIn)(nil), "types.TxIn")
+	proto.RegisterType((*TxInMsg)(nil), "types.TxInMsg")
 }
 
 func init() { proto.RegisterFile("sisu/tx_in.proto", fileDescriptor_5e2a900206ada091) }
 
 var fileDescriptor_5e2a900206ada091 = []byte{
-	// 219 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x28, 0xce, 0x2c, 0x2e,
-	0xd5, 0x2f, 0xa9, 0x88, 0xcf, 0xcc, 0xd3, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x2d, 0xa9,
-	0x2c, 0x48, 0x2d, 0x56, 0xea, 0x62, 0xe4, 0x62, 0x09, 0xa9, 0xf0, 0xcc, 0x13, 0xe2, 0xe3, 0x62,
-	0xca, 0x4c, 0x91, 0x60, 0x54, 0x60, 0xd4, 0xe0, 0x0c, 0x62, 0xca, 0x4c, 0x11, 0x92, 0xe5, 0xe2,
-	0x4a, 0x2b, 0xca, 0xcf, 0x8d, 0x4f, 0xce, 0x48, 0xcc, 0xcc, 0x93, 0x60, 0x02, 0x8b, 0x73, 0x82,
-	0x44, 0x9c, 0x41, 0x02, 0x42, 0x42, 0x5c, 0x2c, 0x19, 0x89, 0xc5, 0x19, 0x12, 0x2c, 0x60, 0x09,
-	0x30, 0x5b, 0x48, 0x9e, 0x8b, 0x1b, 0xac, 0xa5, 0x38, 0x35, 0x2f, 0x25, 0xb5, 0x48, 0x82, 0x15,
-	0x2c, 0x05, 0x36, 0x25, 0x18, 0x2c, 0x22, 0x24, 0xc7, 0xc5, 0x55, 0x9c, 0x5a, 0x94, 0x99, 0x98,
-	0x93, 0x59, 0x95, 0x9a, 0x22, 0xc1, 0xa6, 0xc0, 0xa8, 0xc1, 0x13, 0x84, 0x24, 0xe2, 0xe4, 0x7c,
-	0xe2, 0x91, 0x1c, 0xe3, 0x85, 0x47, 0x72, 0x8c, 0x0f, 0x1e, 0xc9, 0x31, 0x4e, 0x78, 0x2c, 0xc7,
-	0x70, 0xe1, 0xb1, 0x1c, 0xc3, 0x8d, 0xc7, 0x72, 0x0c, 0x51, 0x9a, 0xe9, 0x99, 0x25, 0x19, 0xa5,
-	0x49, 0x7a, 0xc9, 0xf9, 0xb9, 0xfa, 0x20, 0xaf, 0xe8, 0xe6, 0xa5, 0x96, 0x94, 0xe7, 0x17, 0x65,
-	0x83, 0x39, 0xfa, 0x15, 0x10, 0x0a, 0xec, 0xa3, 0x24, 0x36, 0xb0, 0xff, 0x8c, 0x01, 0x01, 0x00,
-	0x00, 0xff, 0xff, 0x27, 0xd8, 0xb6, 0x43, 0xf3, 0x00, 0x00, 0x00,
+	// 274 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x4c, 0x90, 0xc1, 0x4a, 0xc3, 0x40,
+	0x10, 0x86, 0xb3, 0x35, 0xa6, 0x76, 0x0a, 0xb1, 0xcc, 0x41, 0x72, 0x71, 0x2d, 0x3d, 0x45, 0xc1,
+	0x04, 0xea, 0x13, 0xd8, 0x52, 0x41, 0xc4, 0x0a, 0x31, 0x27, 0x2f, 0x21, 0x6d, 0x62, 0xb2, 0x48,
+	0xb3, 0x21, 0xbb, 0xc5, 0xed, 0x5b, 0xf8, 0x58, 0x1e, 0x7b, 0xf4, 0x28, 0xc9, 0x8b, 0xc8, 0xae,
+	0x15, 0x3c, 0xcd, 0xcc, 0x37, 0xf0, 0x7f, 0xf0, 0xc3, 0x48, 0x30, 0xb1, 0x0d, 0xa5, 0x4a, 0x58,
+	0x15, 0xd4, 0x0d, 0x97, 0x1c, 0x8f, 0xe5, 0xae, 0xce, 0xc5, 0x44, 0x80, 0x1d, 0xab, 0xfb, 0x0a,
+	0x5d, 0xe8, 0xb1, 0xcc, 0x23, 0x63, 0xe2, 0x0f, 0xa2, 0x1e, 0xcb, 0xf0, 0x1c, 0xe0, 0xb5, 0xe1,
+	0x9b, 0x64, 0x5d, 0xa6, 0xac, 0xf2, 0x7a, 0x86, 0x0f, 0x34, 0x99, 0x6b, 0x80, 0x08, 0x76, 0x99,
+	0x8a, 0xd2, 0x3b, 0x32, 0x0f, 0xb3, 0xa3, 0x0f, 0x7d, 0xa9, 0x12, 0x1d, 0xeb, 0xd9, 0x63, 0xe2,
+	0xbb, 0xd3, 0xd3, 0xc0, 0x38, 0x02, 0x2d, 0x88, 0x77, 0x75, 0x1e, 0x39, 0x52, 0xe9, 0x39, 0x99,
+	0x41, 0x5f, 0xb3, 0x47, 0x51, 0xe0, 0x19, 0x38, 0x82, 0x15, 0x55, 0xde, 0x1c, 0xdc, 0x87, 0x0b,
+	0x2f, 0xc0, 0xce, 0x52, 0x99, 0x1a, 0xf3, 0x70, 0x3a, 0xfc, 0x97, 0x14, 0x99, 0xc7, 0x15, 0x85,
+	0x93, 0xbf, 0x5c, 0x44, 0x70, 0xe3, 0xa7, 0x87, 0xc5, 0x32, 0x89, 0xa3, 0xdb, 0xe5, 0xf3, 0xdd,
+	0x22, 0x1a, 0x59, 0xb3, 0xf9, 0x67, 0x4b, 0xc9, 0xbe, 0xa5, 0xe4, 0xbb, 0xa5, 0xe4, 0xa3, 0xa3,
+	0xd6, 0xbe, 0xa3, 0xd6, 0x57, 0x47, 0xad, 0x97, 0xcb, 0x82, 0xc9, 0x72, 0xbb, 0x0a, 0xd6, 0x7c,
+	0x13, 0xea, 0x5a, 0xae, 0xab, 0x5c, 0xbe, 0xf3, 0xe6, 0xcd, 0x1c, 0xa1, 0xfa, 0x1d, 0xc6, 0xb7,
+	0x72, 0x4c, 0x57, 0x37, 0x3f, 0x01, 0x00, 0x00, 0xff, 0xff, 0x1e, 0x85, 0x36, 0xfa, 0x3f, 0x01,
+	0x00, 0x00,
 }
 
 func (m *TxIn) Marshal() (dAtA []byte, err error) {
@@ -144,26 +215,17 @@ func (m *TxIn) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if len(m.Serialized) > 0 {
-		i -= len(m.Serialized)
-		copy(dAtA[i:], m.Serialized)
-		i = encodeVarintTxIn(dAtA, i, uint64(len(m.Serialized)))
+	if m.TxType != 0 {
+		i = encodeVarintTxIn(dAtA, i, uint64(m.TxType))
 		i--
-		dAtA[i] = 0x32
-	}
-	if len(m.FromSender) > 0 {
-		i -= len(m.FromSender)
-		copy(dAtA[i:], m.FromSender)
-		i = encodeVarintTxIn(dAtA, i, uint64(len(m.FromSender)))
-		i--
-		dAtA[i] = 0x2a
+		dAtA[i] = 0x20
 	}
 	if len(m.Hash) > 0 {
 		i -= len(m.Hash)
 		copy(dAtA[i:], m.Hash)
 		i = encodeVarintTxIn(dAtA, i, uint64(len(m.Hash)))
 		i--
-		dAtA[i] = 0x22
+		dAtA[i] = 0x1a
 	}
 	if len(m.FromChain) > 0 {
 		i -= len(m.FromChain)
@@ -176,6 +238,48 @@ func (m *TxIn) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i -= len(m.Id)
 		copy(dAtA[i:], m.Id)
 		i = encodeVarintTxIn(dAtA, i, uint64(len(m.Id)))
+		i--
+		dAtA[i] = 0xa
+	}
+	return len(dAtA) - i, nil
+}
+
+func (m *TxInMsg) Marshal() (dAtA []byte, err error) {
+	size := m.Size()
+	dAtA = make([]byte, size)
+	n, err := m.MarshalToSizedBuffer(dAtA[:size])
+	if err != nil {
+		return nil, err
+	}
+	return dAtA[:n], nil
+}
+
+func (m *TxInMsg) MarshalTo(dAtA []byte) (int, error) {
+	size := m.Size()
+	return m.MarshalToSizedBuffer(dAtA[:size])
+}
+
+func (m *TxInMsg) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+	i := len(dAtA)
+	_ = i
+	var l int
+	_ = l
+	if m.Data != nil {
+		{
+			size, err := m.Data.MarshalToSizedBuffer(dAtA[:i])
+			if err != nil {
+				return 0, err
+			}
+			i -= size
+			i = encodeVarintTxIn(dAtA, i, uint64(size))
+		}
+		i--
+		dAtA[i] = 0x12
+	}
+	if len(m.Signer) > 0 {
+		i -= len(m.Signer)
+		copy(dAtA[i:], m.Signer)
+		i = encodeVarintTxIn(dAtA, i, uint64(len(m.Signer)))
 		i--
 		dAtA[i] = 0xa
 	}
@@ -211,12 +315,24 @@ func (m *TxIn) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovTxIn(uint64(l))
 	}
-	l = len(m.FromSender)
+	if m.TxType != 0 {
+		n += 1 + sovTxIn(uint64(m.TxType))
+	}
+	return n
+}
+
+func (m *TxInMsg) Size() (n int) {
+	if m == nil {
+		return 0
+	}
+	var l int
+	_ = l
+	l = len(m.Signer)
 	if l > 0 {
 		n += 1 + l + sovTxIn(uint64(l))
 	}
-	l = len(m.Serialized)
-	if l > 0 {
+	if m.Data != nil {
+		l = m.Data.Size()
 		n += 1 + l + sovTxIn(uint64(l))
 	}
 	return n
@@ -321,7 +437,7 @@ func (m *TxIn) Unmarshal(dAtA []byte) error {
 			}
 			m.FromChain = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 4:
+		case 3:
 			if wireType != 2 {
 				return fmt.Errorf("proto: wrong wireType = %d for field Hash", wireType)
 			}
@@ -353,9 +469,78 @@ func (m *TxIn) Unmarshal(dAtA []byte) error {
 			}
 			m.Hash = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 5:
+		case 4:
+			if wireType != 0 {
+				return fmt.Errorf("proto: wrong wireType = %d for field TxType", wireType)
+			}
+			m.TxType = 0
+			for shift := uint(0); ; shift += 7 {
+				if shift >= 64 {
+					return ErrIntOverflowTxIn
+				}
+				if iNdEx >= l {
+					return io.ErrUnexpectedEOF
+				}
+				b := dAtA[iNdEx]
+				iNdEx++
+				m.TxType |= TxInType(b&0x7F) << shift
+				if b < 0x80 {
+					break
+				}
+			}
+		default:
+			iNdEx = preIndex
+			skippy, err := skipTxIn(dAtA[iNdEx:])
+			if err != nil {
+				return err
+			}
+			if (skippy < 0) || (iNdEx+skippy) < 0 {
+				return ErrInvalidLengthTxIn
+			}
+			if (iNdEx + skippy) > l {
+				return io.ErrUnexpectedEOF
+			}
+			iNdEx += skippy
+		}
+	}
+
+	if iNdEx > l {
+		return io.ErrUnexpectedEOF
+	}
+	return nil
+}
+func (m *TxInMsg) Unmarshal(dAtA []byte) error {
+	l := len(dAtA)
+	iNdEx := 0
+	for iNdEx < l {
+		preIndex := iNdEx
+		var wire uint64
+		for shift := uint(0); ; shift += 7 {
+			if shift >= 64 {
+				return ErrIntOverflowTxIn
+			}
+			if iNdEx >= l {
+				return io.ErrUnexpectedEOF
+			}
+			b := dAtA[iNdEx]
+			iNdEx++
+			wire |= uint64(b&0x7F) << shift
+			if b < 0x80 {
+				break
+			}
+		}
+		fieldNum := int32(wire >> 3)
+		wireType := int(wire & 0x7)
+		if wireType == 4 {
+			return fmt.Errorf("proto: TxInMsg: wiretype end group for non-group")
+		}
+		if fieldNum <= 0 {
+			return fmt.Errorf("proto: TxInMsg: illegal tag %d (wire type %d)", fieldNum, wire)
+		}
+		switch fieldNum {
+		case 1:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field FromSender", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Signer", wireType)
 			}
 			var stringLen uint64
 			for shift := uint(0); ; shift += 7 {
@@ -383,13 +568,13 @@ func (m *TxIn) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.FromSender = string(dAtA[iNdEx:postIndex])
+			m.Signer = string(dAtA[iNdEx:postIndex])
 			iNdEx = postIndex
-		case 6:
+		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field Serialized", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field Data", wireType)
 			}
-			var byteLen int
+			var msglen int
 			for shift := uint(0); ; shift += 7 {
 				if shift >= 64 {
 					return ErrIntOverflowTxIn
@@ -399,24 +584,26 @@ func (m *TxIn) Unmarshal(dAtA []byte) error {
 				}
 				b := dAtA[iNdEx]
 				iNdEx++
-				byteLen |= int(b&0x7F) << shift
+				msglen |= int(b&0x7F) << shift
 				if b < 0x80 {
 					break
 				}
 			}
-			if byteLen < 0 {
+			if msglen < 0 {
 				return ErrInvalidLengthTxIn
 			}
-			postIndex := iNdEx + byteLen
+			postIndex := iNdEx + msglen
 			if postIndex < 0 {
 				return ErrInvalidLengthTxIn
 			}
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Serialized = append(m.Serialized[:0], dAtA[iNdEx:postIndex]...)
-			if m.Serialized == nil {
-				m.Serialized = []byte{}
+			if m.Data == nil {
+				m.Data = &TxIn{}
+			}
+			if err := m.Data.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+				return err
 			}
 			iNdEx = postIndex
 		default:
