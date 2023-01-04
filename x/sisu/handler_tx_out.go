@@ -60,7 +60,7 @@ func (h *HandlerTxOut) handlerTransfer(ctx sdk.Context, txOut *types.TxOutOld) {
 		ids[inHash] = true
 	}
 
-	newQueue := make([]*types.Transfer, 0)
+	newQueue := make([]*types.TransferDetails, 0)
 	for _, transfer := range queue {
 		if !ids[transfer.Id] {
 			newQueue = append(newQueue, transfer)

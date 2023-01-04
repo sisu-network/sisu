@@ -10,10 +10,10 @@ message TransfersMsg {
 }
 
 message Transfers {
-  repeated Transfer transfers =  1;
+  repeated TransferDetails transfers =  1;
 }
 
-message Transfer {
+message TransferDetails {
   string id = 1;
 
   // Source

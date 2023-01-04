@@ -8,6 +8,6 @@ import (
 )
 
 type Bridge interface {
-	ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) ([]*types.TxOutMsg, error)
-	ParseIncomginTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.Transfer, error)
+	ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDetails) ([]*types.TxOutMsg, error)
+	ParseIncomginTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.TransferDetails, error)
 }

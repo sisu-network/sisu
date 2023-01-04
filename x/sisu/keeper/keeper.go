@@ -109,13 +109,13 @@ type Keeper interface {
 	GetCommandQueue(ctx sdk.Context, chain string) []*types.Command
 
 	// Transfer
-	AddTransfers(ctx sdk.Context, transfers []*types.Transfer)
-	GetTransfer(ctx sdk.Context, id string) *types.Transfer
-	GetTransfers(ctx sdk.Context, ids []string) []*types.Transfer
+	AddTransfers(ctx sdk.Context, transfers []*types.TransferDetails)
+	GetTransfer(ctx sdk.Context, id string) *types.TransferDetails
+	GetTransfers(ctx sdk.Context, ids []string) []*types.TransferDetails
 
 	// Transfer Queue
-	SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.Transfer)
-	GetTransferQueue(ctx sdk.Context, chain string) []*types.Transfer
+	SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.TransferDetails)
+	GetTransferQueue(ctx sdk.Context, chain string) []*types.TransferDetails
 
 	// TxOutQueue
 	SetTxOutQueue(ctx sdk.Context, chain string, txOuts []*types.TxOutOld)
@@ -359,12 +359,12 @@ func (k *DefaultKeeper) GetCommandQueue(ctx sdk.Context, chain string) []*types.
 }
 
 ///// Transfer
-func (k *DefaultKeeper) AddTransfers(ctx sdk.Context, transfers []*types.Transfer) {
+func (k *DefaultKeeper) AddTransfers(ctx sdk.Context, transfers []*types.TransferDetails) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
 	addTransfers(store, transfers)
 }
 
-func (k *DefaultKeeper) GetTransfer(ctx sdk.Context, id string) *types.Transfer {
+func (k *DefaultKeeper) GetTransfer(ctx sdk.Context, id string) *types.TransferDetails {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
 	transfers := getTransfers(store, []string{id})
 	if len(transfers) == 0 {
@@ -374,18 +374,18 @@ func (k *DefaultKeeper) GetTransfer(ctx sdk.Context, id string) *types.Transfer 
 	return transfers[0]
 }
 
-func (k *DefaultKeeper) GetTransfers(ctx sdk.Context, ids []string) []*types.Transfer {
+func (k *DefaultKeeper) GetTransfers(ctx sdk.Context, ids []string) []*types.TransferDetails {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
 	return getTransfers(store, ids)
 }
 
 ///// Transfer Queue
-func (k *DefaultKeeper) SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.Transfer) {
+func (k *DefaultKeeper) SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.TransferDetails) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferQueue)
 	setTranferQueue(store, chain, transfers)
 }
 
-func (k *DefaultKeeper) GetTransferQueue(ctx sdk.Context, chain string) []*types.Transfer {
+func (k *DefaultKeeper) GetTransferQueue(ctx sdk.Context, chain string) []*types.TransferDetails {
 	transferStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
 	queueStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferQueue)
 	return getTransferQueue(queueStore, transferStore, chain)

@@ -21,7 +21,7 @@ func mockForHandlerTransferFailure() (sdk.Context, keeper.Keeper, PostedMessageM
 func TestHandlerTransferFailure(t *testing.T) {
 	ctx, k, pmm := mockForHandlerTransferFailure()
 	chain := "ganache1"
-	queue := []*types.Transfer{
+	queue := []*types.TransferDetails{
 		{
 			Id:      "1",
 			ToChain: chain,
@@ -42,7 +42,7 @@ func TestHandlerTransferFailure(t *testing.T) {
 	}))
 
 	queue = h.keeper.GetTransferQueue(ctx, chain)
-	require.Equal(t, []*types.Transfer{
+	require.Equal(t, []*types.TransferDetails{
 		{
 			Id:      "1",
 			ToChain: chain,

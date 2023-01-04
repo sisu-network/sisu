@@ -17,7 +17,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	log.Verbose("There is a new list of txs from deyes, len =", len(txs.Arr))
 
 	transferRequests := &types.Transfers{
-		Transfers: make([]*types.Transfer, 0),
+		Transfers: make([]*types.TransferDetails, 0),
 	}
 
 	ctx := a.globalData.GetReadOnlyContext()
@@ -83,7 +83,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 }
 
 // updateEthGasPrice checks in the list of
-func (a *ApiHandler) updateEthGasPrice(ctx sdk.Context, transfers []*types.Transfer) {
+func (a *ApiHandler) updateEthGasPrice(ctx sdk.Context, transfers []*types.TransferDetails) {
 	chainMap := make(map[string]bool)
 	for _, transfer := range transfers {
 		chainMap[transfer.ToChain] = true
@@ -98,7 +98,7 @@ func (a *ApiHandler) updateEthGasPrice(ctx sdk.Context, transfers []*types.Trans
 	a.auxDataTracker.UpdateData(ctx, chains)
 }
 
-func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.Transfer, error) {
+func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.TransferDetails, error) {
 	bridge := a.bridgeManager.GetBridge(ctx, chain)
 	if bridge != nil {
 		return bridge.ParseIncomginTx(ctx, chain, tx)

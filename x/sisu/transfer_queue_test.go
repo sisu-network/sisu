@@ -49,18 +49,18 @@ func TestTransferQueue(t *testing.T) {
 
 		queue := NewTransferQueue(k, mc.TxOutProducer(), txSubmit,
 			mc.Config().Tss, nil, mc.PrivateDb()).(*defaultTransferQueue)
-		transfer := &types.Transfer{
+		transfer := &types.TransferDetails{
 			Id:          "ganache1__hash1",
 			ToRecipient: "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80",
 			Token:       "SISU",
 			Amount:      utils.EthToWei.String(),
 		}
 
-		k.AddTransfers(ctx, []*types.Transfer{transfer})
-		k.SetTransferQueue(ctx, "ganache2", []*types.Transfer{transfer})
+		k.AddTransfers(ctx, []*types.TransferDetails{transfer})
+		k.SetTransferQueue(ctx, "ganache2", []*types.TransferDetails{transfer})
 
 		txOutProducer.GetTxOutsFunc = func(ctx sdk.Context, chain string,
-			transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
+			transfers []*types.TransferDetails) ([]*types.TxOutMsg, error) {
 			ret := make([]*types.TxOutMsg, len(transfers))
 			for i := range transfers {
 				ret[i] = &types.TxOutMsg{

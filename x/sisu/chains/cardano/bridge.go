@@ -40,7 +40,7 @@ func NewBridge(chain string, signer string, keeper keeper.Keeper, deyesClient ex
 	}
 }
 
-func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
+func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDetails) ([]*types.TxOutMsg, error) {
 	// Find the highest block where majority of the validator nodes has reach to.
 	outMgs := make([]*types.TxOutMsg, 0)
 	inHashes := make([]string, len(transfers))
@@ -102,7 +102,7 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) 
 }
 
 // In Cardano chain, transferring multi-asset required at least 1 ADA (10^6 lovelace)
-func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.Transfer,
+func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.TransferDetails,
 	utxos []cardano.UTxO, maxBlock uint64) (*cardano.Tx, error) {
 	pubkey := b.keeper.GetKeygenPubkey(ctx, libchain.KEY_TYPE_EDDSA)
 	senderAddr := hutils.GetAddressFromCardanoPubkey(pubkey)
@@ -219,8 +219,8 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 	return tx, nil
 }
 
-func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.Transfer, error) {
-	ret := make([]*types.Transfer, 0)
+func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.TransferDetails, error) {
+	ret := make([]*types.TransferDetails, 0)
 	cardanoTx := &eyesTypes.CardanoTransactionUtxo{}
 	err := json.Unmarshal(tx.Serialized, cardanoTx)
 	if err != nil {
@@ -267,7 +267,7 @@ func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx
 			log.Verbose("tokenUnit = ", tokenUnit, " quantity = ", quantity)
 			log.Verbose("cardanoTx.Metadata = ", cardanoTx.Metadata)
 
-			ret = append(ret, &types.Transfer{
+			ret = append(ret, &types.TransferDetails{
 				FromHash:    cardanoTx.Hash,
 				Token:       tokenUnit,
 				Amount:      amountBig.String(),

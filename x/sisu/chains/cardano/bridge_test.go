@@ -98,7 +98,7 @@ func TestBridge_getCardanoTx(t *testing.T) {
 
 		utxos := mockUtxos(hash, sender, balance)
 		mockClient(client, utxos, balance)
-		transfers := []*types.Transfer{
+		transfers := []*types.TransferDetails{
 			{
 				Id:          "ganache1_hash1",
 				ToRecipient: recipient1.String(),
@@ -136,7 +136,7 @@ func TestBridge_getCardanoTx(t *testing.T) {
 		utxos := mockUtxos(hash, sender, balance)
 		mockClient(client, utxos, balance)
 
-		transfers := []*types.Transfer{
+		transfers := []*types.TransferDetails{
 			{
 				Id:          "ganache1_hash1",
 				ToRecipient: recipient1.String(),
@@ -160,7 +160,7 @@ func TestBridge_getCardanoTx(t *testing.T) {
 		utxos := mockUtxos(hash, sender, balance)
 		mockClient(client, utxos, balance)
 
-		transfers := []*types.Transfer{
+		transfers := []*types.TransferDetails{
 			{
 				Id:          "ganache1_hash1",
 				ToRecipient: recipient1.String(),
@@ -204,7 +204,7 @@ func TestBridge_getCardanoTx(t *testing.T) {
 		utxos := mockUtxos(hash, sender, balance)
 		mockClient(client, utxos, balance)
 
-		transfers := []*types.Transfer{
+		transfers := []*types.TransferDetails{
 			{
 				Id:          "ganache1_hash1",
 				ToRecipient: recipient1.String(),

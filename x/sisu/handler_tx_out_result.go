@@ -86,7 +86,7 @@ func (h *HandlerTxOutResult) doTxOutFailure(ctx sdk.Context, msg *types.TxOutRes
 		// Update the retry number of these transfers.
 		for _, transfer := range transfers {
 			transfer.RetryNum++
-			h.keeper.AddTransfers(ctx, []*types.Transfer{transfer})
+			h.keeper.AddTransfers(ctx, []*types.TransferDetails{transfer})
 
 			log.Verbosef("Failed transaction: from chain = %s, from hash = %s", transfer.FromChain, transfer.FromHash)
 		}

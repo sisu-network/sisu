@@ -35,7 +35,7 @@ func TestHandlerTransferOut_HappyCase(t *testing.T) {
 		recipient2 := "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80"
 		token2 := "ADA"
 
-		transfers := []*types.Transfer{
+		transfers := []*types.TransferDetails{
 			{
 				Id:              fmt.Sprintf("%s__%s", srcChain, hash1),
 				FromChain:       srcChain,
@@ -60,7 +60,7 @@ func TestHandlerTransferOut_HappyCase(t *testing.T) {
 
 		handler := NewHandlerTransfers(mc)
 		msg := types.NewTransfersMsg("signer", &types.Transfers{
-			Transfers: []*types.Transfer{transfers[0]},
+			Transfers: []*types.TransferDetails{transfers[0]},
 		})
 
 		_, err := handler.DeliverMsg(ctx, msg)
@@ -68,7 +68,7 @@ func TestHandlerTransferOut_HappyCase(t *testing.T) {
 
 		keeper := mc.Keeper()
 		queue := keeper.GetTransferQueue(ctx, destChain)
-		require.Equal(t, []*types.Transfer{
+		require.Equal(t, []*types.TransferDetails{
 			{
 				Id:              fmt.Sprintf("%s__%s", srcChain, hash1),
 				FromChain:       srcChain,
@@ -84,7 +84,7 @@ func TestHandlerTransferOut_HappyCase(t *testing.T) {
 		// Add the second request
 		handler = NewHandlerTransfers(mc)
 		msg = types.NewTransfersMsg("signer", &types.Transfers{
-			Transfers: []*types.Transfer{transfers[1]},
+			Transfers: []*types.TransferDetails{transfers[1]},
 		})
 		_, err = handler.DeliverMsg(ctx, msg)
 		require.Nil(t, err)

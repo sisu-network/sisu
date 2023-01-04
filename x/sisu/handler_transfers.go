@@ -43,7 +43,7 @@ func (h *HandlerTransfers) doTransfers(ctx sdk.Context, msg *types.Transfers) ([
 	// Save this to the keeper
 	h.keeper.AddTransfers(ctx, msg.Transfers)
 
-	allTransfers := make(map[string][]*types.Transfer)
+	allTransfers := make(map[string][]*types.TransferDetails)
 	// Add the message to the queue for later processing.
 	for _, request := range msg.Transfers {
 		if allTransfers[request.ToChain] == nil {

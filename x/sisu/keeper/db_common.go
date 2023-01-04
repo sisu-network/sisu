@@ -707,7 +707,7 @@ func getCommandQueue(store cstypes.KVStore, chain string) []*types.Command {
 }
 
 ///// Transfer
-func addTransfers(store cstypes.KVStore, transfers []*types.Transfer) {
+func addTransfers(store cstypes.KVStore, transfers []*types.TransferDetails) {
 	for _, transfer := range transfers {
 		bz, err := transfer.Marshal()
 		if err != nil {
@@ -719,8 +719,8 @@ func addTransfers(store cstypes.KVStore, transfers []*types.Transfer) {
 	}
 }
 
-func getTransfers(store cstypes.KVStore, ids []string) []*types.Transfer {
-	transfers := make([]*types.Transfer, len(ids))
+func getTransfers(store cstypes.KVStore, ids []string) []*types.TransferDetails {
+	transfers := make([]*types.TransferDetails, len(ids))
 
 	for i, id := range ids {
 		bz := store.Get([]byte(id))
@@ -730,7 +730,7 @@ func getTransfers(store cstypes.KVStore, ids []string) []*types.Transfer {
 			continue
 		}
 
-		transfer := &types.Transfer{}
+		transfer := &types.TransferDetails{}
 		err := transfer.Unmarshal(bz)
 		if err != nil {
 			log.Error("getTransfer: Failed to unmarshal transfer out, err = ", err)
@@ -745,7 +745,7 @@ func getTransfers(store cstypes.KVStore, ids []string) []*types.Transfer {
 }
 
 ///// Transfer Queue
-func setTranferQueue(store cstypes.KVStore, chain string, transfers []*types.Transfer) {
+func setTranferQueue(store cstypes.KVStore, chain string, transfers []*types.TransferDetails) {
 	if len(transfers) == 0 {
 		store.Delete([]byte(chain))
 		return
@@ -760,10 +760,10 @@ func setTranferQueue(store cstypes.KVStore, chain string, transfers []*types.Tra
 	store.Set([]byte(chain), []byte(s))
 }
 
-func getTransferQueue(queueStore, transferStore cstypes.KVStore, chain string) []*types.Transfer {
+func getTransferQueue(queueStore, transferStore cstypes.KVStore, chain string) []*types.TransferDetails {
 	bz := queueStore.Get([]byte(chain))
 	if bz == nil {
-		return []*types.Transfer{}
+		return []*types.TransferDetails{}
 	}
 
 	s := string(bz)

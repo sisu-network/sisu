@@ -40,7 +40,7 @@ func (h *HanlderTransferFailure) doTransferFailure(ctx sdk.Context, data *types.
 
 	// Remove all txout from transfer queue
 	queue := h.keeper.GetTransferQueue(ctx, data.Chain)
-	newQ := make([]*types.Transfer, 0)
+	newQ := make([]*types.TransferDetails, 0)
 
 	for _, t := range queue {
 		if ids[t.Id] == false {

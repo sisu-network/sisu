@@ -22,7 +22,7 @@ func mockForHandlerTxOutResult() (sdk.Context, ManagerContainer) {
 	return ctx, mc
 }
 
-func getTransfers() []*types.Transfer {
+func getTransfers() []*types.TransferDetails {
 	srcChain := "ganache1"
 	destChain := "ganache2"
 	recipient := "0x8095f5b69F2970f38DC6eBD2682ed71E4939f988"
@@ -33,7 +33,7 @@ func getTransfers() []*types.Transfer {
 	recipient2 := "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80"
 	token2 := "ADA"
 
-	return []*types.Transfer{
+	return []*types.TransferDetails{
 		{
 			Id:              fmt.Sprintf("%s__%s", srcChain, hash1),
 			FromChain:       srcChain,

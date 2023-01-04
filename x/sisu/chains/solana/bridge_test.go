@@ -104,7 +104,7 @@ func TestProcessTransfer(t *testing.T) {
 	tokenAddr := tokens["SISU"].GetAddressForChain(chain)
 	receiverAta, err := solanatypes.GetAtaPubkey("5s3YB3BzLKNxT4bKjxfXTeQnNuokkH5J68tHMN7uqV8q", tokenAddr)
 	require.Nil(t, err)
-	transfer := &types.Transfer{
+	transfer := &types.TransferDetails{
 		Id:          "transfer_123",
 		Token:       "SISU",
 		ToRecipient: receiverAta.String(),
@@ -112,7 +112,7 @@ func TestProcessTransfer(t *testing.T) {
 	}
 
 	bridge := NewBridge(chain, "signer", k, cfg)
-	msgs, err := bridge.ProcessTransfers(ctx, []*types.Transfer{transfer})
+	msgs, err := bridge.ProcessTransfers(ctx, []*types.TransferDetails{transfer})
 	require.Nil(t, err)
 
 	require.Equal(t, 1, len(msgs))

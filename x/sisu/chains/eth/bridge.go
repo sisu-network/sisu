@@ -34,7 +34,7 @@ func NewBridge(chain string, signer string, k keeper.Keeper) ctypes.Bridge {
 	}
 }
 
-func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
+func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDetails) ([]*types.TxOutMsg, error) {
 	inHashes := make([]string, 0, len(transfers))
 	tokens := make([]*types.Token, 0, len(transfers))
 	recipients := make([]ethcommon.Address, 0, len(transfers))
@@ -283,7 +283,7 @@ func (b *bridge) getGasCost(ethCfg *types.ChainEthConfig, maxGasUnit int) (*big.
 	}
 }
 
-func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx) ([]*types.Transfer, error) {
+func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx) ([]*types.TransferDetails, error) {
 	parseResult := ParseVaultTx(ctx, b.keeper, chain, tx)
 	if parseResult.Error != nil {
 		return nil, parseResult.Error
@@ -293,5 +293,5 @@ func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx
 		return parseResult.TransferOuts, nil
 	}
 
-	return []*types.Transfer{}, nil
+	return []*types.TransferDetails{}, nil
 }

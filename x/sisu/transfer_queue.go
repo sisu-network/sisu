@@ -137,7 +137,7 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 	}
 }
 
-func (q *defaultTransferQueue) getTransferIds(batch []*types.Transfer) []string {
+func (q *defaultTransferQueue) getTransferIds(batch []*types.TransferDetails) []string {
 	ids := make([]string, len(batch))
 
 	for i, transfer := range batch {

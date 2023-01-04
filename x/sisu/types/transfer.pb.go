@@ -76,7 +76,7 @@ func (m *TransfersMsg) GetData() *Transfers {
 }
 
 type Transfers struct {
-	Transfers []*Transfer `protobuf:"bytes,1,rep,name=transfers,proto3" json:"transfers,omitempty"`
+	Transfers []*TransferDetails `protobuf:"bytes,1,rep,name=transfers,proto3" json:"transfers,omitempty"`
 }
 
 func (m *Transfers) Reset()         { *m = Transfers{} }
@@ -112,14 +112,14 @@ func (m *Transfers) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Transfers proto.InternalMessageInfo
 
-func (m *Transfers) GetTransfers() []*Transfer {
+func (m *Transfers) GetTransfers() []*TransferDetails {
 	if m != nil {
 		return m.Transfers
 	}
 	return nil
 }
 
-type Transfer struct {
+type TransferDetails struct {
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Source
 	FromChain       string `protobuf:"bytes,2,opt,name=from_chain,json=fromChain,proto3" json:"from_chain,omitempty"`
@@ -135,16 +135,16 @@ type Transfer struct {
 	RetryNum int32 `protobuf:"varint,10,opt,name=retryNum,proto3" json:"retryNum,omitempty"`
 }
 
-func (m *Transfer) Reset()         { *m = Transfer{} }
-func (m *Transfer) String() string { return proto.CompactTextString(m) }
-func (*Transfer) ProtoMessage()    {}
-func (*Transfer) Descriptor() ([]byte, []int) {
+func (m *TransferDetails) Reset()         { *m = TransferDetails{} }
+func (m *TransferDetails) String() string { return proto.CompactTextString(m) }
+func (*TransferDetails) ProtoMessage()    {}
+func (*TransferDetails) Descriptor() ([]byte, []int) {
 	return fileDescriptor_ed3575fb7a77d65f, []int{2}
 }
-func (m *Transfer) XXX_Unmarshal(b []byte) error {
+func (m *TransferDetails) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Transfer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *TransferDetails) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
 		return xxx_messageInfo_Transfer.Marshal(b, m, deterministic)
 	} else {
@@ -156,82 +156,82 @@ func (m *Transfer) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-func (m *Transfer) XXX_Merge(src proto.Message) {
+func (m *TransferDetails) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_Transfer.Merge(m, src)
 }
-func (m *Transfer) XXX_Size() int {
+func (m *TransferDetails) XXX_Size() int {
 	return m.Size()
 }
-func (m *Transfer) XXX_DiscardUnknown() {
+func (m *TransferDetails) XXX_DiscardUnknown() {
 	xxx_messageInfo_Transfer.DiscardUnknown(m)
 }
 
 var xxx_messageInfo_Transfer proto.InternalMessageInfo
 
-func (m *Transfer) GetId() string {
+func (m *TransferDetails) GetId() string {
 	if m != nil {
 		return m.Id
 	}
 	return ""
 }
 
-func (m *Transfer) GetFromChain() string {
+func (m *TransferDetails) GetFromChain() string {
 	if m != nil {
 		return m.FromChain
 	}
 	return ""
 }
 
-func (m *Transfer) GetFromBlockHeight() int64 {
+func (m *TransferDetails) GetFromBlockHeight() int64 {
 	if m != nil {
 		return m.FromBlockHeight
 	}
 	return 0
 }
 
-func (m *Transfer) GetFromHash() string {
+func (m *TransferDetails) GetFromHash() string {
 	if m != nil {
 		return m.FromHash
 	}
 	return ""
 }
 
-func (m *Transfer) GetFromSender() string {
+func (m *TransferDetails) GetFromSender() string {
 	if m != nil {
 		return m.FromSender
 	}
 	return ""
 }
 
-func (m *Transfer) GetToken() string {
+func (m *TransferDetails) GetToken() string {
 	if m != nil {
 		return m.Token
 	}
 	return ""
 }
 
-func (m *Transfer) GetAmount() string {
+func (m *TransferDetails) GetAmount() string {
 	if m != nil {
 		return m.Amount
 	}
 	return ""
 }
 
-func (m *Transfer) GetToChain() string {
+func (m *TransferDetails) GetToChain() string {
 	if m != nil {
 		return m.ToChain
 	}
 	return ""
 }
 
-func (m *Transfer) GetToRecipient() string {
+func (m *TransferDetails) GetToRecipient() string {
 	if m != nil {
 		return m.ToRecipient
 	}
 	return ""
 }
 
-func (m *Transfer) GetRetryNum() int32 {
+func (m *TransferDetails) GetRetryNum() int32 {
 	if m != nil {
 		return m.RetryNum
 	}
@@ -241,7 +241,7 @@ func (m *Transfer) GetRetryNum() int32 {
 func init() {
 	proto.RegisterType((*TransfersMsg)(nil), "types.TransfersMsg")
 	proto.RegisterType((*Transfers)(nil), "types.Transfers")
-	proto.RegisterType((*Transfer)(nil), "types.Transfer")
+	proto.RegisterType((*TransferDetails)(nil), "types.Transfer")
 }
 
 func init() { proto.RegisterFile("sisu/transfer.proto", fileDescriptor_ed3575fb7a77d65f) }
@@ -353,7 +353,7 @@ func (m *Transfers) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	return len(dAtA) - i, nil
 }
 
-func (m *Transfer) Marshal() (dAtA []byte, err error) {
+func (m *TransferDetails) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -363,12 +363,12 @@ func (m *Transfer) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Transfer) MarshalTo(dAtA []byte) (int, error) {
+func (m *TransferDetails) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Transfer) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *TransferDetails) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -485,7 +485,7 @@ func (m *Transfers) Size() (n int) {
 	return n
 }
 
-func (m *Transfer) Size() (n int) {
+func (m *TransferDetails) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -714,7 +714,7 @@ func (m *Transfers) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.Transfers = append(m.Transfers, &Transfer{})
+			m.Transfers = append(m.Transfers, &TransferDetails{})
 			if err := m.Transfers[len(m.Transfers)-1].Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
@@ -740,7 +740,7 @@ func (m *Transfers) Unmarshal(dAtA []byte) error {
 	}
 	return nil
 }
-func (m *Transfer) Unmarshal(dAtA []byte) error {
+func (m *TransferDetails) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
