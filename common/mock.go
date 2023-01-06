@@ -87,7 +87,7 @@ type MockGlobalData struct {
 	UpdateValidatorSetsFunc func()
 	IsCatchingUpFunc        func() bool
 	GetValidatorSetFunc     func() []rpc.ValidatorOutput
-	GetMyValidatorAddrFunc  func() string
+	GetMyPubkeyFunc         func() tcrypto.PubKey
 	SetReadOnlyContextFunc  func(ctx sdk.Context)
 	GetReadOnlyContextFunc  func() sdk.Context
 	AppInitializedFunc      func() bool
@@ -131,14 +131,6 @@ func (m *MockGlobalData) GetValidatorSet() []rpc.ValidatorOutput {
 	}
 
 	return nil
-}
-
-func (m *MockGlobalData) GetMyValidatorAddr() string {
-	if m.GetMyValidatorAddrFunc != nil {
-		return m.GetMyValidatorAddrFunc()
-	}
-
-	return ""
 }
 
 func (m *MockGlobalData) SetReadOnlyContext(ctx sdk.Context) {
@@ -186,4 +178,12 @@ func (m *MockGlobalData) ResetGasCalculation() {
 	if m.ResetGasCalculationFunc != nil {
 		m.ResetGasCalculationFunc()
 	}
+}
+
+func (m *MockGlobalData) GetMyPubkey() tcrypto.PubKey {
+	if m.GetMyPubkeyFunc != nil {
+		return m.GetMyPubkey()
+	}
+
+	return nil
 }

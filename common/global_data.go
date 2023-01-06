@@ -14,6 +14,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/sisu-network/lib/log"
+	tcrypto "github.com/tendermint/tendermint/crypto"
 	pvm "github.com/tendermint/tendermint/privval"
 
 	"github.com/BurntSushi/toml"
@@ -28,8 +29,8 @@ type GlobalData interface {
 	UpdateCatchingUp() bool
 	UpdateValidatorSets()
 	IsCatchingUp() bool
+	GetMyPubkey() tcrypto.PubKey
 	GetValidatorSet() []rpc.ValidatorOutput
-	GetMyValidatorAddr() string
 	SetReadOnlyContext(ctx sdk.Context)
 	GetReadOnlyContext() sdk.Context
 	AppInitialized() bool
@@ -46,7 +47,7 @@ type GlobalDataDefault struct {
 	lock            *sync.RWMutex
 	httpClient      *retryablehttp.Client
 	cfg             config.Config
-	myTmtConsAddr   sdk.ConsAddress
+	myPubkey        tcrypto.PubKey
 	cdc             *codec.LegacyAmino
 	readOnlyContext atomic.Value
 	isDataInit      *atomic.Bool
@@ -100,9 +101,9 @@ func (a *GlobalDataDefault) Init() {
 		sisuConfig.Dir+"/"+configToml.PrivValidatorStateFile,
 	)
 	// Get the tendermint address of this node.
-	a.myTmtConsAddr = (sdk.ConsAddress)(privValidator.GetAddress())
+	a.myPubkey, _ = privValidator.GetPubKey()
 
-	log.Info("My tendermint address = ", a.myTmtConsAddr.String())
+	fmt.Println("a.myPubkey = ", a.myPubkey.Address().String())
 }
 
 func (a *GlobalDataDefault) UpdateCatchingUp() bool {
@@ -189,10 +190,6 @@ func (a *GlobalDataDefault) ValidatorSize() int {
 	return len(a.validatorSets.Validators)
 }
 
-func (a *GlobalDataDefault) GetMyValidatorAddr() string {
-	return a.myTmtConsAddr.String()
-}
-
 func (a *GlobalDataDefault) SetReadOnlyContext(ctx sdk.Context) {
 	a.readOnlyContext.Store(ctx)
 }
@@ -234,4 +231,8 @@ func (a *GlobalDataDefault) ResetGasCalculation() {
 		a.calGasChains.Delete(key)
 		return true
 	})
+}
+
+func (a *GlobalDataDefault) GetMyPubkey() tcrypto.PubKey {
+	return a.myPubkey
 }
