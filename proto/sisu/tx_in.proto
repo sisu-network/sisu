@@ -1,0 +1,17 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message TxIn {
+  string id = 1;
+}
+
+message TxIns {
+  repeated TxIn entries = 1;
+}
+
+message TxInMsg {
+  string signer = 1;
+  TxIn data = 2;
+}

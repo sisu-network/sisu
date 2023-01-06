@@ -1,0 +1,37 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+import "sisu/tx_in.proto";
+
+enum TxInType {
+  TOKEN_TRANSFER = 0;
+}
+
+message TxInDetails {
+  TxIn tx_in = 1;
+  TxInDetails data = 2;
+  bytes Serialize = 3;
+  TxInType tx_type = 4;
+}
+
+message TxInDetailsMsg {
+  string signer = 1;
+  TxInDetails Data = 2;
+}
+
+message Transfer {
+  // Source
+  string from_chain = 1;
+  int64 from_block_height = 2;
+  string from_hash = 3;
+  string from_sender = 4;
+
+  string token = 7;
+  string amount = 8;
+
+  // Destination
+  string to_chain = 9;
+  string to_recipient = 10;
+}
