@@ -7,7 +7,7 @@ enum TxInType {
   TOKEN_TRANSFER = 0;
 }
 
-message TxIn {
+message TxInOld {
   // Id of this TxIn. For most block chains, this id is the transaction hash.
   string id = 1;
   string from_chain = 2;
@@ -15,7 +15,7 @@ message TxIn {
   TxInType tx_type = 4;
 }
 
-message TxInMsg {
+message TxInMsgOld {
   string signer = 1;
-  TxIn data = 2;
+  TxInOld data = 2;
 }

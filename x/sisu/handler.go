@@ -62,7 +62,7 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 			return NewHandlerAdjustEthNonce(
 				mc.PostedMessageManager(), mc.Keeper(), mc.PrivateDb(),
 			).DeliverMsg(ctx, msg)
-		case *types.TxInMsg:
+		case *types.TxInMsgOld:
 			return NewHandlerTxIn(mc.PostedMessageManager(), mc.Keeper()).DeliverMsg(ctx, msg)
 
 		default:

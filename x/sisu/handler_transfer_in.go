@@ -21,7 +21,7 @@ func NewHandlerTxIn(
 	}
 }
 
-func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, signerMsg *types.TxInMsg) (*sdk.Result, error) {
+func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, signerMsg *types.TxInMsgOld) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
 		data, err := h.doTxIn(ctx, signerMsg)
 		h.keeper.ProcessTxRecord(ctx, hash)
@@ -32,6 +32,6 @@ func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, signerMsg *types.TxInMsg) (*sd
 	return &sdk.Result{}, nil
 }
 
-func (h *HandlerTxIn) doTxIn(ctx sdk.Context, signerMsg *types.TxInMsg) ([]byte, error) {
+func (h *HandlerTxIn) doTxIn(ctx sdk.Context, signerMsg *types.TxInMsgOld) ([]byte, error) {
 	return nil, nil
 }
