@@ -30,6 +30,7 @@ var (
 	prefixChainMetadata          = []byte{0x13}
 	prefixSignerNonce            = []byte{0x14}
 	prefixBlockHeight            = []byte{0x15}
+	prefixTxInDetails            = []byte{0x15}
 )
 
 var _ Keeper = (*DefaultKeeper)(nil)
@@ -128,6 +129,10 @@ type Keeper interface {
 	// Max Block height that all nodes observed (Not all chains need this property)
 	SetBlockHeight(ctx sdk.Context, chain string, height int64, hash string)
 	GetBlockHeight(ctx sdk.Context, chain string) *types.BlockHeight
+
+	//TxInDetails
+	AddTxInDetails(ctx sdk.Context, msg *types.TxInDetailsMsg)
+	GetTxInDetails(ctx sdk.Context, signer string) *types.TxInDetailsMsg
 }
 
 type DefaultKeeper struct {
@@ -420,6 +425,17 @@ func (k *DefaultKeeper) SetBlockHeight(ctx sdk.Context, chain string, height int
 		Height: height,
 		Hash:   hash,
 	})
+}
+
+///// TxInDetails
+func (k *DefaultKeeper) AddTxInDetails(ctx sdk.Context, msg *types.TxInDetailsMsg) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxInDetails)
+	setTxInDetails(store, msg)
+}
+
+func (k *DefaultKeeper) GetTxInDetails(ctx sdk.Context, signer string) *types.TxInDetailsMsg {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxInDetails)
+	return getTxInDetails(store, signer)
 }
 
 func (k *DefaultKeeper) GetBlockHeight(ctx sdk.Context, chain string) *types.BlockHeight {

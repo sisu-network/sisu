@@ -924,6 +924,29 @@ func getTxHashIndex(store cstypes.KVStore, key string) uint32 {
 	return utils.BytesToUint32(bz)
 }
 
+///// TxInDetails
+func setTxInDetails(store cstypes.KVStore, msg *types.TxInDetailsMsg) {
+	bz, err := msg.Marshal()
+	if err != nil {
+		log.Errorf("setTxInDetails: failed to marshal msg, err = %s", err)
+		return
+	}
+
+	store.Set([]byte(msg.Signer), bz)
+}
+
+func getTxInDetails(store cstypes.KVStore, signer string) *types.TxInDetailsMsg {
+	bz := store.Get([]byte(signer))
+	msg := new(types.TxInDetailsMsg)
+	err := msg.Unmarshal(bz)
+	if err != nil {
+		log.Errorf("getTxInDetails: failed to unmarshal TxInDetails, err = %s", err)
+		return nil
+	}
+
+	return msg
+}
+
 ///// Debug functions
 func printStore(store cstypes.KVStore) {
 	iter := store.Iterator(nil, nil)

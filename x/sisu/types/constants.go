@@ -20,6 +20,7 @@ const (
 	MsgTypeTransferFailure               = "TransferFailure"
 	MsgAdjustEthNonce                    = "AdjustEthNonce"
 	MsgTxIn                              = "TxIn"
+	MsgTxInDetails                       = "TxInDetails"
 	MsgTypeTxOut                         = "TxOut"
 
 	MsgTypeKeysignResult      = "KeysignResult"

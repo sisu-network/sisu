@@ -16,10 +16,6 @@ import (
 func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	log.Verbose("There is a new list of txs from deyes, len =", len(txs.Arr))
 
-	// transferRequests := &types.Transfers{
-	// 	Transfers: make([]*types.TransferDetails, 0),
-	// }
-
 	ctx := a.globalData.GetReadOnlyContext()
 	// Make sure that this chain is supported by Sisu
 	params := a.keeper.GetParams(ctx)
@@ -27,16 +23,27 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 		return fmt.Errorf("Unsupported chain: %s", txs.Chain)
 	}
 
-	vals := a.valManager.GetValidators()
+	vals := a.valManager.GetValidators(ctx)
 	for _, tx := range txs.Arr {
+		// Just send a thin tx in.
 		txInId := fmt.Sprintf("%s__%s", txs.Chain, tx.Hash)
-		sortedVals := utils.GetSortedValidators(txInId, vals)
+		msg := types.NewTxInMsg(a.appKeys.GetSignerAddress().String(), &types.TxIn{Id: txInId})
+		a.txSubmit.SubmitMessageAsync(msg)
+
 		// Check if this node is assigned to confirm the next tx in.
+		sortedVals := utils.GetSortedValidators(txInId, vals)
 		if strings.EqualFold(a.appKeys.GetSignerAddress().String(), sortedVals[0].AccAddress) {
 			// Send a tx details instead
-		} else {
-			// Just send a thin tx in.
-			msg := types.NewTxInMsg(a.appKeys.GetSignerAddress().String(), &types.TxIn{Id: txInId})
+			msg := types.NewTxInDetailsMsg(
+				a.appKeys.GetSignerAddress().String(),
+				&types.TxInDetails{
+					TxIn: &types.TxIn{
+						Id: txInId,
+					},
+					FromChain: txs.Chain,
+					Serialize: tx.Serialized,
+				},
+			)
 			a.txSubmit.SubmitMessageAsync(msg)
 		}
 	}
@@ -93,10 +100,6 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	// }
 
 	return nil
-}
-
-func (a *ApiHandler) submitTxInDetails() {
-
 }
 
 func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.TransferDetails, error) {

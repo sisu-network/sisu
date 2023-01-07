@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -12,7 +13,8 @@ type ValidatorManager interface {
 	AddValidator(ctx sdk.Context, node *types.Node)
 	IsValidator(ctx sdk.Context, signer string) bool
 	GetValidatorLength(ctx sdk.Context) int
-	GetValidators() []*types.Node
+	GetValidators(ctx sdk.Context) []*types.Node
+	GetAssignedValidator(ctx sdk.Context, hash string) *types.Node
 }
 
 type DefaultValidatorManager struct {
@@ -31,9 +33,7 @@ func NewValidatorManager(keeper keeper.Keeper) ValidatorManager {
 
 func (m *DefaultValidatorManager) getVals(ctx sdk.Context) map[string]*types.Node {
 	var vals map[string]*types.Node
-	m.valLock.RLock()
 	vals = m.vals
-	m.valLock.RUnlock()
 
 	if vals != nil && len(vals) > 0 {
 		return vals
@@ -45,30 +45,29 @@ func (m *DefaultValidatorManager) getVals(ctx sdk.Context) map[string]*types.Nod
 		vals[val.AccAddress] = val
 	}
 
-	m.valLock.Lock()
 	m.vals = vals
-	m.valLock.Unlock()
 
 	return vals
 }
 
 func (m *DefaultValidatorManager) GetValidatorLength(ctx sdk.Context) int {
-	vals := m.getVals(ctx)
 	m.valLock.RLock()
 	defer m.valLock.RUnlock()
+
+	vals := m.getVals(ctx)
 
 	return len(vals)
 }
 
 func (m *DefaultValidatorManager) AddValidator(ctx sdk.Context, node *types.Node) {
+	m.valLock.Lock()
+	defer m.valLock.Unlock()
+
 	m.keeper.SaveNode(ctx, node)
 
 	vals := m.getVals(ctx)
-
-	m.valLock.Lock()
 	vals[node.AccAddress] = node
 	m.vals = vals
-	m.valLock.Unlock()
 }
 
 func (m *DefaultValidatorManager) IsValidator(ctx sdk.Context, signer string) bool {
@@ -82,14 +81,23 @@ func (m *DefaultValidatorManager) IsValidator(ctx sdk.Context, signer string) bo
 
 // GetValAccAddrs implements ValidatorManager interface. It returns the list of signer account
 // addresses.
-func (m *DefaultValidatorManager) GetValidators() []*types.Node {
+func (m *DefaultValidatorManager) GetValidators(ctx sdk.Context) []*types.Node {
 	m.valLock.RLock()
 	defer m.valLock.RUnlock()
 
-	vals := make([]*types.Node, 0, len(m.vals))
-	for _, value := range m.vals {
-		vals = append(vals, value)
+	vals := m.getVals(ctx)
+	// Convert map to array
+	arr := make([]*types.Node, 0, len(vals))
+	for _, value := range vals {
+		arr = append(arr, value)
 	}
 
-	return vals
+	return arr
+}
+
+func (m *DefaultValidatorManager) GetAssignedValidator(ctx sdk.Context, hash string) *types.Node {
+	vals := m.GetValidators(ctx)
+
+	sorted := utils.GetSortedValidators(hash, vals)
+	return sorted[0]
 }

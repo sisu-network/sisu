@@ -10,20 +10,29 @@ type PostedMessageManager interface {
 	ShouldProcessMsg(ctx sdk.Context, msg sdk.Msg) (bool, []byte)
 }
 
-type DefaultPostedMessageManager struct {
+type defaultPostedMessageManager struct {
 	keeper keeper.Keeper
 }
 
-func NewPostedMessageManager(keeper keeper.Keeper) *DefaultPostedMessageManager {
-	return &DefaultPostedMessageManager{
+func NewPostedMessageManager(keeper keeper.Keeper) *defaultPostedMessageManager {
+	return &defaultPostedMessageManager{
 		keeper: keeper,
 	}
 }
 
-func (m *DefaultPostedMessageManager) ShouldProcessMsg(ctx sdk.Context, msg sdk.Msg) (bool, []byte) {
+func (m *defaultPostedMessageManager) ShouldProcessMsg(ctx sdk.Context, msg sdk.Msg) (bool, []byte) {
+	return m.ShouldProcessMsgWithPrecount(ctx, msg, 0)
+}
+
+func (m *defaultPostedMessageManager) ShouldProcessMsgWithPrecount(ctx sdk.Context, msg sdk.Msg,
+	precount int) (bool, []byte) {
 	hash, signer, err := keeper.GetTxRecordHash(msg)
 	if err != nil {
 		log.Error("failed to get tx hash, err = ", err)
+		return false, hash
+	}
+
+	if m.keeper.IsTxRecordProcessed(ctx, hash) {
 		return false, hash
 	}
 
@@ -34,7 +43,7 @@ func (m *DefaultPostedMessageManager) ShouldProcessMsg(ctx sdk.Context, msg sdk.
 		return false, nil
 	}
 
-	if count >= int(tssParams.MajorityThreshold) && !m.keeper.IsTxRecordProcessed(ctx, hash) {
+	if count+precount >= int(tssParams.MajorityThreshold) {
 		return true, hash
 	}
 

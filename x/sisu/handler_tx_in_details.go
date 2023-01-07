@@ -6,22 +6,22 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-type HandlerTxIn struct {
+type HandlerTxInDetails struct {
 	pmm    PostedMessageManager
 	keeper keeper.Keeper
 }
 
-func NewHandlerTxIn(
+func NewHandlerTxInDetails(
 	pmm PostedMessageManager,
 	keeper keeper.Keeper,
-) *HandlerTxIn {
-	return &HandlerTxIn{
+) *HandlerTxInDetails {
+	return &HandlerTxInDetails{
 		pmm:    pmm,
 		keeper: keeper,
 	}
 }
 
-func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, signerMsg *types.TxInMsgOld) (*sdk.Result, error) {
+func (h *HandlerTxInDetails) DeliverMsg(ctx sdk.Context, signerMsg *types.TxInDetailsMsg) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
 		data, err := h.doTxIn(ctx, signerMsg)
 		h.keeper.ProcessTxRecord(ctx, hash)
@@ -32,6 +32,6 @@ func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, signerMsg *types.TxInMsgOld) (
 	return &sdk.Result{}, nil
 }
 
-func (h *HandlerTxIn) doTxIn(ctx sdk.Context, signerMsg *types.TxInMsgOld) ([]byte, error) {
+func (h *HandlerTxInDetails) doTxIn(ctx sdk.Context, signerMsg *types.TxInDetailsMsg) ([]byte, error) {
 	return nil, nil
 }

@@ -11,9 +11,8 @@ enum TxInType {
 
 message TxInDetails {
   TxIn tx_in = 1;
-  TxInDetails data = 2;
+  string from_chain = 2;
   bytes Serialize = 3;
-  TxInType tx_type = 4;
 }
 
 message TxInDetailsMsg {
