@@ -22,23 +22,23 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
-type Pubkey struct {
+type ValPubkey struct {
 	Type  string `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"`
 	Bytes []byte `protobuf:"bytes,2,opt,name=bytes,proto3" json:"bytes,omitempty"`
 }
 
-func (m *Pubkey) Reset()         { *m = Pubkey{} }
-func (m *Pubkey) String() string { return proto.CompactTextString(m) }
-func (*Pubkey) ProtoMessage()    {}
-func (*Pubkey) Descriptor() ([]byte, []int) {
+func (m *ValPubkey) Reset()         { *m = ValPubkey{} }
+func (m *ValPubkey) String() string { return proto.CompactTextString(m) }
+func (*ValPubkey) ProtoMessage()    {}
+func (*ValPubkey) Descriptor() ([]byte, []int) {
 	return fileDescriptor_cb22ef4f851efc1c, []int{0}
 }
-func (m *Pubkey) XXX_Unmarshal(b []byte) error {
+func (m *ValPubkey) XXX_Unmarshal(b []byte) error {
 	return m.Unmarshal(b)
 }
-func (m *Pubkey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+func (m *ValPubkey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	if deterministic {
-		return xxx_messageInfo_Pubkey.Marshal(b, m, deterministic)
+		return xxx_messageInfo_ValPubkey.Marshal(b, m, deterministic)
 	} else {
 		b = b[:cap(b)]
 		n, err := m.MarshalToSizedBuffer(b)
@@ -48,26 +48,26 @@ func (m *Pubkey) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 		return b[:n], nil
 	}
 }
-func (m *Pubkey) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Pubkey.Merge(m, src)
+func (m *ValPubkey) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ValPubkey.Merge(m, src)
 }
-func (m *Pubkey) XXX_Size() int {
+func (m *ValPubkey) XXX_Size() int {
 	return m.Size()
 }
-func (m *Pubkey) XXX_DiscardUnknown() {
-	xxx_messageInfo_Pubkey.DiscardUnknown(m)
+func (m *ValPubkey) XXX_DiscardUnknown() {
+	xxx_messageInfo_ValPubkey.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_Pubkey proto.InternalMessageInfo
+var xxx_messageInfo_ValPubkey proto.InternalMessageInfo
 
-func (m *Pubkey) GetType() string {
+func (m *ValPubkey) GetType() string {
 	if m != nil {
 		return m.Type
 	}
 	return ""
 }
 
-func (m *Pubkey) GetBytes() []byte {
+func (m *ValPubkey) GetBytes() []byte {
 	if m != nil {
 		return m.Bytes
 	}
@@ -77,10 +77,10 @@ func (m *Pubkey) GetBytes() []byte {
 type Node struct {
 	// This id field is not used to identify a node. Use the consensusKey to identify a node.
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// consensusKey is the public key used by tendermint. This is different from the key in the keyring.
-	ConsensusKey *Pubkey `protobuf:"bytes,2,opt,name=consensusKey,proto3" json:"consensusKey,omitempty"`
-	AccAddress   string  `protobuf:"bytes,3,opt,name=accAddress,proto3" json:"accAddress,omitempty"`
-	IsValidator  bool    `protobuf:"varint,4,opt,name=isValidator,proto3" json:"isValidator,omitempty"`
+	// Cosmos pubkey
+	ValPubkey   *ValPubkey `protobuf:"bytes,2,opt,name=valPubkey,proto3" json:"valPubkey,omitempty"`
+	AccAddress  string     `protobuf:"bytes,3,opt,name=accAddress,proto3" json:"accAddress,omitempty"`
+	IsValidator bool       `protobuf:"varint,4,opt,name=isValidator,proto3" json:"isValidator,omitempty"`
 }
 
 func (m *Node) Reset()         { *m = Node{} }
@@ -123,9 +123,9 @@ func (m *Node) GetId() string {
 	return ""
 }
 
-func (m *Node) GetConsensusKey() *Pubkey {
+func (m *Node) GetValPubkey() *ValPubkey {
 	if m != nil {
-		return m.ConsensusKey
+		return m.ValPubkey
 	}
 	return nil
 }
@@ -145,33 +145,33 @@ func (m *Node) GetIsValidator() bool {
 }
 
 func init() {
-	proto.RegisterType((*Pubkey)(nil), "types.Pubkey")
+	proto.RegisterType((*ValPubkey)(nil), "types.ValPubkey")
 	proto.RegisterType((*Node)(nil), "types.Node")
 }
 
 func init() { proto.RegisterFile("sisu/node.proto", fileDescriptor_cb22ef4f851efc1c) }
 
 var fileDescriptor_cb22ef4f851efc1c = []byte{
-	// 249 bytes of a gzipped FileDescriptorProto
+	// 243 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2f, 0xce, 0x2c, 0x2e,
 	0xd5, 0xcf, 0xcb, 0x4f, 0x49, 0xd5, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0x2d, 0xa9, 0x2c,
-	0x48, 0x2d, 0x56, 0x32, 0xe2, 0x62, 0x0b, 0x28, 0x4d, 0xca, 0x4e, 0xad, 0x14, 0x12, 0xe2, 0x62,
-	0x01, 0x09, 0x49, 0x30, 0x2a, 0x30, 0x6a, 0x70, 0x06, 0x81, 0xd9, 0x42, 0x22, 0x5c, 0xac, 0x49,
-	0x95, 0x25, 0xa9, 0xc5, 0x12, 0x4c, 0x0a, 0x8c, 0x1a, 0x3c, 0x41, 0x10, 0x8e, 0x52, 0x37, 0x23,
-	0x17, 0x8b, 0x5f, 0x7e, 0x4a, 0xaa, 0x10, 0x1f, 0x17, 0x53, 0x66, 0x0a, 0x54, 0x03, 0x53, 0x66,
-	0x8a, 0x90, 0x21, 0x17, 0x4f, 0x72, 0x7e, 0x5e, 0x71, 0x6a, 0x5e, 0x71, 0x69, 0xb1, 0x77, 0x6a,
-	0x25, 0x58, 0x17, 0xb7, 0x11, 0xaf, 0x1e, 0xd8, 0x2a, 0x3d, 0x88, 0x3d, 0x41, 0x28, 0x4a, 0x84,
-	0xe4, 0xb8, 0xb8, 0x12, 0x93, 0x93, 0x1d, 0x53, 0x52, 0x8a, 0x52, 0x8b, 0x8b, 0x25, 0x98, 0xc1,
-	0x46, 0x21, 0x89, 0x08, 0x29, 0x70, 0x71, 0x67, 0x16, 0x87, 0x25, 0xe6, 0x64, 0xa6, 0x24, 0x96,
-	0xe4, 0x17, 0x49, 0xb0, 0x28, 0x30, 0x6a, 0x70, 0x04, 0x21, 0x0b, 0x39, 0x39, 0x9f, 0x78, 0x24,
-	0xc7, 0x78, 0xe1, 0x91, 0x1c, 0xe3, 0x83, 0x47, 0x72, 0x8c, 0x13, 0x1e, 0xcb, 0x31, 0x5c, 0x78,
-	0x2c, 0xc7, 0x70, 0xe3, 0xb1, 0x1c, 0x43, 0x94, 0x66, 0x7a, 0x66, 0x49, 0x46, 0x69, 0x92, 0x5e,
-	0x72, 0x7e, 0xae, 0x3e, 0xc8, 0xfb, 0xba, 0x79, 0xa9, 0x25, 0xe5, 0xf9, 0x45, 0xd9, 0x60, 0x8e,
-	0x7e, 0x05, 0x84, 0x02, 0xbb, 0x2d, 0x89, 0x0d, 0x1c, 0x28, 0xc6, 0x80, 0x00, 0x00, 0x00, 0xff,
-	0xff, 0x8d, 0x1b, 0x39, 0xd5, 0x27, 0x01, 0x00, 0x00,
+	0x48, 0x2d, 0x56, 0x32, 0xe5, 0xe2, 0x0c, 0x4b, 0xcc, 0x09, 0x28, 0x4d, 0xca, 0x4e, 0xad, 0x14,
+	0x12, 0xe2, 0x62, 0x01, 0x89, 0x4a, 0x30, 0x2a, 0x30, 0x6a, 0x70, 0x06, 0x81, 0xd9, 0x42, 0x22,
+	0x5c, 0xac, 0x49, 0x95, 0x25, 0xa9, 0xc5, 0x12, 0x4c, 0x0a, 0x8c, 0x1a, 0x3c, 0x41, 0x10, 0x8e,
+	0x52, 0x07, 0x23, 0x17, 0x8b, 0x5f, 0x7e, 0x4a, 0xaa, 0x10, 0x1f, 0x17, 0x53, 0x66, 0x0a, 0x54,
+	0x03, 0x53, 0x66, 0x8a, 0x90, 0x1e, 0x17, 0x67, 0x19, 0xcc, 0x3c, 0xb0, 0x16, 0x6e, 0x23, 0x01,
+	0x3d, 0xb0, 0x55, 0x7a, 0x70, 0x7b, 0x82, 0x10, 0x4a, 0x84, 0xe4, 0xb8, 0xb8, 0x12, 0x93, 0x93,
+	0x1d, 0x53, 0x52, 0x8a, 0x52, 0x8b, 0x8b, 0x25, 0x98, 0xc1, 0xe6, 0x20, 0x89, 0x08, 0x29, 0x70,
+	0x71, 0x67, 0x16, 0x87, 0x25, 0xe6, 0x64, 0xa6, 0x24, 0x96, 0xe4, 0x17, 0x49, 0xb0, 0x28, 0x30,
+	0x6a, 0x70, 0x04, 0x21, 0x0b, 0x39, 0x39, 0x9f, 0x78, 0x24, 0xc7, 0x78, 0xe1, 0x91, 0x1c, 0xe3,
+	0x83, 0x47, 0x72, 0x8c, 0x13, 0x1e, 0xcb, 0x31, 0x5c, 0x78, 0x2c, 0xc7, 0x70, 0xe3, 0xb1, 0x1c,
+	0x43, 0x94, 0x66, 0x7a, 0x66, 0x49, 0x46, 0x69, 0x92, 0x5e, 0x72, 0x7e, 0xae, 0x3e, 0xc8, 0xfb,
+	0xba, 0x79, 0xa9, 0x25, 0xe5, 0xf9, 0x45, 0xd9, 0x60, 0x8e, 0x7e, 0x05, 0x84, 0x02, 0xbb, 0x2d,
+	0x89, 0x0d, 0x1c, 0x28, 0xc6, 0x80, 0x00, 0x00, 0x00, 0xff, 0xff, 0x61, 0x55, 0x6b, 0x57, 0x27,
+	0x01, 0x00, 0x00,
 }
 
-func (m *Pubkey) Marshal() (dAtA []byte, err error) {
+func (m *ValPubkey) Marshal() (dAtA []byte, err error) {
 	size := m.Size()
 	dAtA = make([]byte, size)
 	n, err := m.MarshalToSizedBuffer(dAtA[:size])
@@ -181,12 +181,12 @@ func (m *Pubkey) Marshal() (dAtA []byte, err error) {
 	return dAtA[:n], nil
 }
 
-func (m *Pubkey) MarshalTo(dAtA []byte) (int, error) {
+func (m *ValPubkey) MarshalTo(dAtA []byte) (int, error) {
 	size := m.Size()
 	return m.MarshalToSizedBuffer(dAtA[:size])
 }
 
-func (m *Pubkey) MarshalToSizedBuffer(dAtA []byte) (int, error) {
+func (m *ValPubkey) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	i := len(dAtA)
 	_ = i
 	var l int
@@ -245,9 +245,9 @@ func (m *Node) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 		i--
 		dAtA[i] = 0x1a
 	}
-	if m.ConsensusKey != nil {
+	if m.ValPubkey != nil {
 		{
-			size, err := m.ConsensusKey.MarshalToSizedBuffer(dAtA[:i])
+			size, err := m.ValPubkey.MarshalToSizedBuffer(dAtA[:i])
 			if err != nil {
 				return 0, err
 			}
@@ -278,7 +278,7 @@ func encodeVarintNode(dAtA []byte, offset int, v uint64) int {
 	dAtA[offset] = uint8(v)
 	return base
 }
-func (m *Pubkey) Size() (n int) {
+func (m *ValPubkey) Size() (n int) {
 	if m == nil {
 		return 0
 	}
@@ -305,8 +305,8 @@ func (m *Node) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovNode(uint64(l))
 	}
-	if m.ConsensusKey != nil {
-		l = m.ConsensusKey.Size()
+	if m.ValPubkey != nil {
+		l = m.ValPubkey.Size()
 		n += 1 + l + sovNode(uint64(l))
 	}
 	l = len(m.AccAddress)
@@ -325,7 +325,7 @@ func sovNode(x uint64) (n int) {
 func sozNode(x uint64) (n int) {
 	return sovNode(uint64((x << 1) ^ uint64((int64(x) >> 63))))
 }
-func (m *Pubkey) Unmarshal(dAtA []byte) error {
+func (m *ValPubkey) Unmarshal(dAtA []byte) error {
 	l := len(dAtA)
 	iNdEx := 0
 	for iNdEx < l {
@@ -348,10 +348,10 @@ func (m *Pubkey) Unmarshal(dAtA []byte) error {
 		fieldNum := int32(wire >> 3)
 		wireType := int(wire & 0x7)
 		if wireType == 4 {
-			return fmt.Errorf("proto: Pubkey: wiretype end group for non-group")
+			return fmt.Errorf("proto: ValPubkey: wiretype end group for non-group")
 		}
 		if fieldNum <= 0 {
-			return fmt.Errorf("proto: Pubkey: illegal tag %d (wire type %d)", fieldNum, wire)
+			return fmt.Errorf("proto: ValPubkey: illegal tag %d (wire type %d)", fieldNum, wire)
 		}
 		switch fieldNum {
 		case 1:
@@ -504,7 +504,7 @@ func (m *Node) Unmarshal(dAtA []byte) error {
 			iNdEx = postIndex
 		case 2:
 			if wireType != 2 {
-				return fmt.Errorf("proto: wrong wireType = %d for field ConsensusKey", wireType)
+				return fmt.Errorf("proto: wrong wireType = %d for field ValPubkey", wireType)
 			}
 			var msglen int
 			for shift := uint(0); ; shift += 7 {
@@ -531,10 +531,10 @@ func (m *Node) Unmarshal(dAtA []byte) error {
 			if postIndex > l {
 				return io.ErrUnexpectedEOF
 			}
-			if m.ConsensusKey == nil {
-				m.ConsensusKey = &Pubkey{}
+			if m.ValPubkey == nil {
+				m.ValPubkey = &ValPubkey{}
 			}
-			if err := m.ConsensusKey.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
+			if err := m.ValPubkey.Unmarshal(dAtA[iNdEx:postIndex]); err != nil {
 				return err
 			}
 			iNdEx = postIndex

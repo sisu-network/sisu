@@ -216,12 +216,12 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 			continue
 		}
 
-		pk, err := utils.GetCosmosPubKey(node.ConsensusKey.Type, node.ConsensusKey.Bytes)
+		pk, err := node.ValPubkey.GetCosmosPubkey()
 		if err != nil {
 			panic(err)
 		}
 
-		validators[i] = abci.Ed25519ValidatorUpdate(pk.Bytes(), 100)
+		validators[i] = abci.UpdateValidator(pk.Bytes(), 100, node.ValPubkey.Type)
 		valsMgr.AddValidator(ctx, node)
 	}
 

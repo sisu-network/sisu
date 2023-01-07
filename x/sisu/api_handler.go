@@ -33,15 +33,15 @@ var (
 // ApiHandler handles API callback from dheart or deyes. There are few functions (BeginBlock & EndBlock)
 // that are still present for historical reason. They should be moved out of this file.
 type ApiHandler struct {
-	keeper         keeper.Keeper
-	txSubmit       common.TxSubmit
-	appKeys        common.AppKeys
-	globalData     common.GlobalData
-	txTracker      TxTracker
-	bridgeManager  chains.BridgeManager
-	chainPolling   service.ChainPolling
-	auxDataTracker service.AuxiliaryDataTracker
-	mc             ManagerContainer
+	keeper        keeper.Keeper
+	txSubmit      common.TxSubmit
+	appKeys       common.AppKeys
+	globalData    common.GlobalData
+	txTracker     TxTracker
+	bridgeManager chains.BridgeManager
+	chainPolling  service.ChainPolling
+	valManager    ValidatorManager
+	mc            ManagerContainer
 
 	// Dheart & Deyes client
 	dheartClient external.DheartClient
@@ -66,9 +66,7 @@ func NewApiHandler(
 		txTracker:     mc.TxTracker(),
 		chainPolling:  mc.ChainPolling(),
 		bridgeManager: mc.BridgeManager(),
-		auxDataTracker: service.NewAuxiliaryDataTracker(
-			mc.DeyesClient(), mc.AppKeys(), mc.Keeper(), mc.TxSubmit(),
-		),
+		valManager:    mc.ValidatorManager(),
 	}
 
 	return a

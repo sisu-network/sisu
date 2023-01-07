@@ -12,7 +12,7 @@ type ValidatorManager interface {
 	AddValidator(ctx sdk.Context, node *types.Node)
 	IsValidator(ctx sdk.Context, signer string) bool
 	GetValidatorLength(ctx sdk.Context) int
-	GetValAccAddrs() []string
+	GetValidators() []*types.Node
 }
 
 type DefaultValidatorManager struct {
@@ -82,14 +82,14 @@ func (m *DefaultValidatorManager) IsValidator(ctx sdk.Context, signer string) bo
 
 // GetValAccAddrs implements ValidatorManager interface. It returns the list of signer account
 // addresses.
-func (m *DefaultValidatorManager) GetValAccAddrs() []string {
+func (m *DefaultValidatorManager) GetValidators() []*types.Node {
 	m.valLock.RLock()
 	defer m.valLock.RUnlock()
 
-	signers := make([]string, 0, len(m.vals))
-	for key := range m.vals {
-		signers = append(signers, key)
+	vals := make([]*types.Node, 0, len(m.vals))
+	for _, value := range m.vals {
+		vals = append(vals, value)
 	}
 
-	return signers
+	return vals
 }

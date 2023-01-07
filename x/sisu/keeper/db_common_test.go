@@ -172,16 +172,16 @@ func Test_SaveNode(t *testing.T) {
 	store := memstore.NewStore()
 
 	node1 := &types.Node{
-		ConsensusKey: &types.Pubkey{
-			Type:  "ed",
+		ValPubkey: &types.ValPubkey{
+			Type:  "ed25519",
 			Bytes: []byte("pubkey1"),
 		},
 		AccAddress:  "addr1",
 		IsValidator: true,
 	}
 	node2 := &types.Node{
-		ConsensusKey: &types.Pubkey{
-			Type:  "ed",
+		ValPubkey: &types.ValPubkey{
+			Type:  "ed25519",
 			Bytes: []byte("pubkey2"),
 		},
 		AccAddress:  "addr2",

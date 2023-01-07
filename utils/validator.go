@@ -5,26 +5,32 @@ import (
 	"encoding/hex"
 	"sort"
 
-	tcrypto "github.com/tendermint/tendermint/crypto"
+	cryptosdk "github.com/cosmos/cosmos-sdk/crypto/types"
+	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 // GetSortedValidators returns a sorted pubkey based on the hash of each key bytes and a message.
-func GetSortedValidators(msg string, keys []tcrypto.PubKey) []tcrypto.PubKey {
+func GetSortedValidators(msg string, nodes []*types.Node) []*types.Node {
 	type Wrapper struct {
-		key   tcrypto.PubKey
+		key   cryptosdk.PubKey
 		index int
 		hash  string
 	}
 
-	wrappers := make([]Wrapper, 0, len(keys))
-	for i, key := range keys {
+	wrappers := make([]Wrapper, 0, len(nodes))
+	for i, node := range nodes {
 		sha := sha256.New()
-		sha.Write(key.Bytes())
+		sha.Write(node.ValPubkey.Bytes)
 		sha.Write([]byte(msg))
 		hash := hex.EncodeToString(sha.Sum(nil))
 
+		sdkKey, err := node.ValPubkey.GetCosmosPubkey()
+		if err != nil {
+			return nil
+		}
+
 		wrappers = append(wrappers, Wrapper{
-			key:   key,
+			key:   sdkKey,
 			index: i,
 			hash:  hash,
 		})
@@ -34,9 +40,9 @@ func GetSortedValidators(msg string, keys []tcrypto.PubKey) []tcrypto.PubKey {
 		return wrappers[i].hash < wrappers[j].hash
 	})
 
-	ret := make([]tcrypto.PubKey, 0, len(keys))
+	ret := make([]*types.Node, 0, len(nodes))
 	for _, wrapper := range wrappers {
-		ret = append(ret, keys[wrapper.index])
+		ret = append(ret, nodes[wrapper.index])
 	}
 
 	return ret

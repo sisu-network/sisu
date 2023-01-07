@@ -492,7 +492,7 @@ func saveNode(store cstypes.KVStore, node *types.Node) {
 		log.Error("cannot marshal node, err = ", err)
 	}
 
-	store.Set(node.ConsensusKey.Bytes, bz)
+	store.Set(node.ValPubkey.Bytes, bz)
 }
 
 func loadValidators(store cstypes.KVStore) []*types.Node {

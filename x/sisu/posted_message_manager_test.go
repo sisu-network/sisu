@@ -28,7 +28,7 @@ func mockForPostedMessageManager() (sdk.Context, ManagerContainer) {
 	}
 	valsMgr := NewValidatorManager(k)
 	valsMgr.AddValidator(ctx, &types.Node{
-		ConsensusKey: &types.Pubkey{
+		ValPubkey: &types.ConsensusPubkey{
 			Type:  "ed25519",
 			Bytes: []byte("some_key"),
 		},
