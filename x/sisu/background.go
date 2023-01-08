@@ -2,7 +2,6 @@ package sisu
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/chains"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -55,45 +54,4 @@ func (b *defaultBackground) loop() {
 }
 
 func (b *defaultBackground) process(input BackgroundInput) {
-	ctx := input.Context
-
-	newTransfers := make(map[string][]*types.TransferDetails)
-
-	for _, txIn := range input.NewConfirmedTxIns {
-		confirmedTxIn := b.keeper.GetConfirmedTxIn(ctx, txIn.Id)
-		if confirmedTxIn == nil {
-			log.Errorf("Critical error: cannot find the confirmed TxIn in the keeper when processing new Confirmed TxIn")
-			continue
-		}
-
-		details := b.keeper.GetTxInDetails(ctx, txIn.Id)
-		if details == nil {
-			log.Errorf("Critical error: cannot find the TxInDetails in the keeper when processing new Confirmed TxIn")
-			continue
-		}
-
-		// Parse the details
-		chain := details.Data.FromChain
-		bridge := b.bridgeManager.GetBridge(ctx, chain)
-		if bridge == nil {
-			log.Errorf("Cannot find bridge for chain %s", chain)
-			continue
-		}
-
-		transfers, err := bridge.ParseIncomginTx(ctx, chain, details.Data.Serialize)
-		if err != nil {
-			log.Errorf("Failed to parse incoming transaction for chain %s, err = %s", chain, err)
-			continue
-		}
-
-		if len(transfers) == 0 {
-			continue
-		}
-
-		if newTransfers[chain] == nil {
-			newTransfers[chain] = make([]*types.TransferDetails, 0)
-		}
-
-		newTransfers[chain] = append(newTransfers[chain], transfers...)
-	}
 }

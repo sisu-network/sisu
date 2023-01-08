@@ -5,6 +5,8 @@ import (
 	"math/big"
 	"strings"
 
+	deyestypes "github.com/sisu-network/deyes/types"
+
 	libchain "github.com/sisu-network/lib/chain"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -23,14 +25,14 @@ import (
 )
 
 // ParseVaultTx parses a transaction that is sent to the vault.
-func ParseVaultTx(ctx sdk.Context, keeper keeper.Keeper, chain string, serialized []byte) *chainstypes.ParseResult {
+func ParseVaultTx(ctx sdk.Context, keeper keeper.Keeper, chain string, eyesTx *deyestypes.Tx) *chainstypes.ParseResult {
 	vaultAbi, err := abi.JSON(strings.NewReader(vault.VaultABI))
 	if err != nil {
 		return &chainstypes.ParseResult{Error: err}
 	}
 
 	ethTx := &ethtypes.Transaction{}
-	err = ethTx.UnmarshalBinary(serialized)
+	err = ethTx.UnmarshalBinary(eyesTx.Serialized)
 	if err != nil {
 		log.Error("Failed to unmarshall eth tx. err =", err)
 		return &chainstypes.ParseResult{Error: err}

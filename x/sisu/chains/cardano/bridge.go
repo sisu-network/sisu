@@ -219,10 +219,10 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 	return tx, nil
 }
 
-func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, serialized []byte) ([]*types.TransferDetails, error) {
+func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.TransferDetails, error) {
 	ret := make([]*types.TransferDetails, 0)
 	cardanoTx := &eyesTypes.CardanoTransactionUtxo{}
-	err := json.Unmarshal(serialized, cardanoTx)
+	err := json.Unmarshal(tx.Serialized, cardanoTx)
 	if err != nil {
 		return nil, err
 	}

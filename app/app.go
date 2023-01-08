@@ -276,7 +276,7 @@ func New(
 		app.appKeys, privateDb)
 	chainPolling := service.NewChainPolling(app.appKeys.GetSignerAddress().String(),
 		deyesClient, app.txSubmitter)
-	backgroundService := service.NewBackground()
+	backgroundService := sisu.NewBackground(app.k, privateDb, valsMgr, bridgeManager)
 
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.k),
 		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg,

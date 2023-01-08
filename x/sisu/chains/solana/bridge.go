@@ -13,6 +13,7 @@ import (
 
 	"github.com/mr-tron/base58"
 	eyessolanatypes "github.com/sisu-network/deyes/chains/solana/types"
+	eyestypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
@@ -223,12 +224,12 @@ func (b *defaultBridge) getRecentBlockHash(ctx sdk.Context, chain string) (strin
 	return arr[len(arr)/2].SolanaRecentBlockHash, nil
 }
 
-func (b *defaultBridge) ParseIncomginTx(ctx sdk.Context, chain string, serialized []byte) ([]*types.TransferDetails, error) {
+func (b *defaultBridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx) ([]*types.TransferDetails, error) {
 	log.Verbose("Parsing solana incomgin tx...")
 	ret := make([]*types.TransferDetails, 0)
 
 	outerTx := new(eyessolanatypes.Transaction)
-	err := json.Unmarshal(serialized, outerTx)
+	err := json.Unmarshal(tx.Serialized, outerTx)
 	if err != nil {
 		return nil, err
 	}

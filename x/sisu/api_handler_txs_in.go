@@ -39,7 +39,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 		sortedVals := utils.GetSortedValidators(txInId, vals)
 		if strings.EqualFold(a.appKeys.GetSignerAddress().String(), sortedVals[0].AccAddress) {
 			// Parse the transfers
-			transfers, err := bridge.ParseIncomginTx(ctx, txs.Chain, tx.Serialized)
+			transfers, err := bridge.ParseIncomginTx(ctx, txs.Chain, tx)
 			if err != nil {
 				log.Errorf("Failed to parse transfer on chain %s, hex of the tx's binary = %s",
 					txs.Chain, hex.EncodeToString(tx.Serialized))
