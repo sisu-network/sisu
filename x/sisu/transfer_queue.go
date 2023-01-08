@@ -100,8 +100,6 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 			continue
 		}
 
-		log.Debug("Queue length = ", len(queue))
-
 		batchSize := utils.MinInt(params.GetMaxTransferOutBatch(chain), len(queue))
 		batch := queue[0:batchSize]
 

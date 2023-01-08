@@ -106,18 +106,19 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 
-	sisuHandler     *SisuHandler
-	externalHandler *rest.ExternalHandler
-	keeper          keeper.Keeper
-	processor       *ApiHandler
-	appKeys         common.AppKeys
-	txSubmit        common.TxSubmit
-	globalData      common.GlobalData
-	valsManager     ValidatorManager
-	txTracker       TxTracker
-	txOutSigner     *txOutSigner
-	privateDb       keeper.PrivateDb
-	mc              ManagerContainer
+	sisuHandler       *SisuHandler
+	externalHandler   *rest.ExternalHandler
+	keeper            keeper.Keeper
+	processor         *ApiHandler
+	appKeys           common.AppKeys
+	txSubmit          common.TxSubmit
+	globalData        common.GlobalData
+	valsManager       ValidatorManager
+	txTracker         TxTracker
+	txOutSigner       *txOutSigner
+	privateDb         keeper.PrivateDb
+	backgroundService Background
+	mc                ManagerContainer
 }
 
 func NewAppModule(cdc codec.Marshaler,
@@ -125,21 +126,23 @@ func NewAppModule(cdc codec.Marshaler,
 	keeper keeper.Keeper,
 	apiHandler *ApiHandler,
 	valsManager ValidatorManager,
+	backgroundService Background,
 	mc ManagerContainer,
 ) AppModule {
 	return AppModule{
-		AppModuleBasic: NewAppModuleBasic(cdc),
-		sisuHandler:    sisuHandler,
-		txSubmit:       mc.TxSubmit(),
-		processor:      apiHandler,
-		keeper:         keeper,
-		appKeys:        mc.AppKeys(),
-		globalData:     mc.GlobalData(),
-		valsManager:    valsManager,
-		txTracker:      mc.TxTracker(),
-		txOutSigner:    NewTxOutSigner(mc.Keeper(), mc.PartyManager(), mc.DheartClient()),
-		privateDb:      mc.PrivateDb(),
-		mc:             mc,
+		AppModuleBasic:    NewAppModuleBasic(cdc),
+		sisuHandler:       sisuHandler,
+		txSubmit:          mc.TxSubmit(),
+		processor:         apiHandler,
+		keeper:            keeper,
+		appKeys:           mc.AppKeys(),
+		globalData:        mc.GlobalData(),
+		valsManager:       valsManager,
+		txTracker:         mc.TxTracker(),
+		txOutSigner:       NewTxOutSigner(mc.Keeper(), mc.PartyManager(), mc.DheartClient()),
+		privateDb:         mc.PrivateDb(),
+		backgroundService: backgroundService,
+		mc:                mc,
 	}
 }
 
@@ -225,9 +228,6 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 		valsMgr.AddValidator(ctx, node)
 	}
 
-	// Reload data after reading the genesis
-	am.mc.TransferQueue().Start(ctx)
-
 	return validators
 }
 
@@ -242,9 +242,6 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	log.Verbose("BeginBlock, height = ", ctx.BlockHeight())
 
 	if !am.globalData.AppInitialized() {
-		cloneCtx := utils.CloneSdkContext(ctx)
-		am.mc.TransferQueue().Start(cloneCtx)
-		go am.mc.ChainPolling().Start(ctx, am.keeper)
 		am.globalData.SetAppInitialized()
 	}
 
@@ -256,11 +253,20 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	log.Verbose("End block reached, height = ", ctx.BlockHeight())
 
-	am.updateGas(ctx)
 	am.txTracker.CheckExpiredTransaction()
 
 	cloneCtx := utils.CloneSdkContext(ctx)
 	am.globalData.SetReadOnlyContext(cloneCtx)
+
+	// Process the new txins
+	txIns := am.globalData.GetTxInQueue()
+	if len(txIns) > 0 && !am.globalData.IsCatchingUp() {
+		am.backgroundService.ProcessData(BackgroundInput{
+			Context:           cloneCtx,
+			NewConfirmedTxIns: txIns,
+		})
+	}
+	am.globalData.ResetTxInQueue()
 
 	// Process pending transfers
 	am.mc.TransferQueue().ProcessTransfers(ctx)

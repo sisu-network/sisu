@@ -932,11 +932,11 @@ func setTxInDetails(store cstypes.KVStore, msg *types.TxInDetailsMsg) {
 		return
 	}
 
-	store.Set([]byte(msg.Signer), bz)
+	store.Set([]byte(msg.Data.TxIn.Id), bz)
 }
 
-func getTxInDetails(store cstypes.KVStore, signer string) *types.TxInDetailsMsg {
-	bz := store.Get([]byte(signer))
+func getTxInDetails(store cstypes.KVStore, txInId string) *types.TxInDetailsMsg {
+	bz := store.Get([]byte(txInId))
 	msg := new(types.TxInDetailsMsg)
 	err := msg.Unmarshal(bz)
 	if err != nil {
@@ -945,6 +945,32 @@ func getTxInDetails(store cstypes.KVStore, signer string) *types.TxInDetailsMsg 
 	}
 
 	return msg
+}
+
+///// Confirmed TxIn
+func setConfirmedTxIn(store cstypes.KVStore, tx *types.ConfirmedTxIn) {
+	bz, err := tx.Marshal()
+	if err != nil {
+		log.Errorf("setConfirmedTxIn: failed to marhsal confirmed TxIn")
+		return
+	}
+
+	store.Set([]byte(tx.TxInId), bz)
+}
+
+func getConfirmedTxIn(store cstypes.KVStore, id string) *types.ConfirmedTxIn {
+	bz := store.Get([]byte(id))
+	if bz == nil {
+		return nil
+	}
+
+	tx := new(types.ConfirmedTxIn)
+	if err := tx.Unmarshal(bz); err != nil {
+		log.Errorf("getConfirmedTxIn: failed to unmarshal confirmed TxIn")
+		return nil
+	}
+
+	return tx
 }
 
 ///// Debug functions

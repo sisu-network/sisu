@@ -80,7 +80,7 @@ func TestTransferQueue(t *testing.T) {
 			return nil
 		}
 
-		queue.processBatch(ctx)
+		queue.ProcessTransfers(ctx)
 		require.Equal(t, 1, txSubmitCount)
 	})
 }

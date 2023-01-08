@@ -23,14 +23,14 @@ var (
 	prefixParams                 = []byte{0x0C}
 	prefixMpcAddress             = []byte{0x0D}
 	prefixMpcNonces              = []byte{0x0E}
-	prefixTransferQueue          = []byte{0x0F}
 	prefixTxOutQueue             = []byte{0x10}
 	prefixCommandQueue           = []byte{0x11}
 	prefixTransfer               = []byte{0x12}
 	prefixChainMetadata          = []byte{0x13}
 	prefixSignerNonce            = []byte{0x14}
 	prefixBlockHeight            = []byte{0x15}
-	prefixTxInDetails            = []byte{0x15}
+	prefixTxInDetails            = []byte{0x16}
+	prefixConfirmedTxIn          = []byte{0x17}
 )
 
 var _ Keeper = (*DefaultKeeper)(nil)
@@ -131,8 +131,12 @@ type Keeper interface {
 	GetBlockHeight(ctx sdk.Context, chain string) *types.BlockHeight
 
 	//TxInDetails
-	AddTxInDetails(ctx sdk.Context, msg *types.TxInDetailsMsg)
-	GetTxInDetails(ctx sdk.Context, signer string) *types.TxInDetailsMsg
+	SetTxInDetails(ctx sdk.Context, msg *types.TxInDetailsMsg)
+	GetTxInDetails(ctx sdk.Context, txInId string) *types.TxInDetailsMsg
+
+	// Confirmed TxIn
+	SetConfirmedTxIn(ctx sdk.Context, confirmedTxIn *types.ConfirmedTxIn)
+	GetConfirmedTxIn(ctx sdk.Context, txInId string) *types.ConfirmedTxIn
 }
 
 type DefaultKeeper struct {
@@ -384,18 +388,6 @@ func (k *DefaultKeeper) GetTransfers(ctx sdk.Context, ids []string) []*types.Tra
 	return getTransfers(store, ids)
 }
 
-///// Transfer Queue
-func (k *DefaultKeeper) SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.TransferDetails) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferQueue)
-	setTranferQueue(store, chain, transfers)
-}
-
-func (k *DefaultKeeper) GetTransferQueue(ctx sdk.Context, chain string) []*types.TransferDetails {
-	transferStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
-	queueStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferQueue)
-	return getTransferQueue(queueStore, transferStore, chain)
-}
-
 ///// TxOutQueue
 func (k *DefaultKeeper) SetTxOutQueue(ctx sdk.Context, chain string, txOuts []*types.TxOutOld) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutQueue)
@@ -428,19 +420,30 @@ func (k *DefaultKeeper) SetBlockHeight(ctx sdk.Context, chain string, height int
 }
 
 ///// TxInDetails
-func (k *DefaultKeeper) AddTxInDetails(ctx sdk.Context, msg *types.TxInDetailsMsg) {
+func (k *DefaultKeeper) SetTxInDetails(ctx sdk.Context, msg *types.TxInDetailsMsg) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxInDetails)
 	setTxInDetails(store, msg)
 }
 
-func (k *DefaultKeeper) GetTxInDetails(ctx sdk.Context, signer string) *types.TxInDetailsMsg {
+func (k *DefaultKeeper) GetTxInDetails(ctx sdk.Context, txIndId string) *types.TxInDetailsMsg {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxInDetails)
-	return getTxInDetails(store, signer)
+	return getTxInDetails(store, txIndId)
 }
 
 func (k *DefaultKeeper) GetBlockHeight(ctx sdk.Context, chain string) *types.BlockHeight {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixBlockHeight)
 	return getBlockHeight(store, chain)
+}
+
+///// Confirmed TxIn
+func (k *DefaultKeeper) SetConfirmedTxIn(ctx sdk.Context, tx *types.ConfirmedTxIn) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixConfirmedTxIn)
+	setConfirmedTxIn(store, tx)
+}
+
+func (k *DefaultKeeper) GetConfirmedTxIn(ctx sdk.Context, txInId string) *types.ConfirmedTxIn {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixConfirmedTxIn)
+	return getConfirmedTxIn(store, txInId)
 }
 
 ///// Debug

@@ -28,27 +28,29 @@ type ManagerContainer interface {
 	BridgeManager() chains.BridgeManager
 	ChainPolling() service.ChainPolling
 	PrivateDb() keeper.PrivateDb
+	BacgroundService() Background
 }
 
 type DefaultManagerContainer struct {
 	readOnlyContext atomic.Value
 
-	pmm              PostedMessageManager
-	partyManager     PartyManager
-	dheartClient     external.DheartClient
-	deyesClient      external.DeyesClient
-	globalData       common.GlobalData
-	txSubmit         common.TxSubmit
-	config           config.Config
-	appKeys          common.AppKeys
-	txOutProducer    TxOutputProducer
-	txTracker        TxTracker
-	keeper           keeper.Keeper
-	valsManager      ValidatorManager
-	transferOutQueue TransferQueue
-	bridgeManager    chains.BridgeManager
-	chainPolling     service.ChainPolling
-	privateDb        keeper.PrivateDb
+	pmm               PostedMessageManager
+	partyManager      PartyManager
+	dheartClient      external.DheartClient
+	deyesClient       external.DeyesClient
+	globalData        common.GlobalData
+	txSubmit          common.TxSubmit
+	config            config.Config
+	appKeys           common.AppKeys
+	txOutProducer     TxOutputProducer
+	txTracker         TxTracker
+	keeper            keeper.Keeper
+	valsManager       ValidatorManager
+	transferOutQueue  TransferQueue
+	bridgeManager     chains.BridgeManager
+	chainPolling      service.ChainPolling
+	privateDb         keeper.PrivateDb
+	backgroundService Background
 }
 
 func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
@@ -57,24 +59,25 @@ func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 	appKeys common.AppKeys, txOutProducer TxOutputProducer, txTracker TxTracker,
 	keeper keeper.Keeper, valsManager ValidatorManager, txInQueue TransferQueue,
 	bridgeManager chains.BridgeManager, chainPolling service.ChainPolling,
-	privateDb keeper.PrivateDb) ManagerContainer {
+	privateDb keeper.PrivateDb, backgroundService Background) ManagerContainer {
 	return &DefaultManagerContainer{
-		pmm:              pmm,
-		partyManager:     partyManager,
-		dheartClient:     dheartClient,
-		deyesClient:      deyesClient,
-		globalData:       globalData,
-		txSubmit:         txSubmit,
-		config:           cfg,
-		appKeys:          appKeys,
-		txOutProducer:    txOutProducer,
-		txTracker:        txTracker,
-		keeper:           keeper,
-		valsManager:      valsManager,
-		transferOutQueue: txInQueue,
-		bridgeManager:    bridgeManager,
-		chainPolling:     chainPolling,
-		privateDb:        privateDb,
+		pmm:               pmm,
+		partyManager:      partyManager,
+		dheartClient:      dheartClient,
+		deyesClient:       deyesClient,
+		globalData:        globalData,
+		txSubmit:          txSubmit,
+		config:            cfg,
+		appKeys:           appKeys,
+		txOutProducer:     txOutProducer,
+		txTracker:         txTracker,
+		keeper:            keeper,
+		valsManager:       valsManager,
+		transferOutQueue:  txInQueue,
+		bridgeManager:     bridgeManager,
+		chainPolling:      chainPolling,
+		privateDb:         privateDb,
+		backgroundService: backgroundService,
 	}
 }
 
@@ -140,4 +143,8 @@ func (mc *DefaultManagerContainer) ChainPolling() service.ChainPolling {
 
 func (mc *DefaultManagerContainer) PrivateDb() keeper.PrivateDb {
 	return mc.privateDb
+}
+
+func (mc *DefaultManagerContainer) BacgroundService() Background {
+	return mc.backgroundService
 }

@@ -6,8 +6,6 @@ import (
 
 	libchain "github.com/sisu-network/lib/chain"
 
-	eyestypes "github.com/sisu-network/deyes/types"
-
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -283,8 +281,8 @@ func (b *bridge) getGasCost(ethCfg *types.ChainEthConfig, maxGasUnit int) (*big.
 	}
 }
 
-func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx) ([]*types.TransferDetails, error) {
-	parseResult := ParseVaultTx(ctx, b.keeper, chain, tx)
+func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, serialized []byte) ([]*types.TransferDetails, error) {
+	parseResult := ParseVaultTx(ctx, b.keeper, chain, serialized)
 	if parseResult.Error != nil {
 		return nil, parseResult.Error
 	}

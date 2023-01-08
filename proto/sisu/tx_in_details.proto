@@ -13,6 +13,8 @@ message TxInDetails {
   TxIn tx_in = 1;
   string from_chain = 2;
   bytes Serialize = 3;
+
+  repeated TransferDetails transfers = 4;
 }
 
 message TxInDetailsMsg {
@@ -20,12 +22,25 @@ message TxInDetailsMsg {
   TxInDetails Data = 2;
 }
 
-message Transfer {
+// Note: all new fields in this proto MUST be included in SerializeWithoutSigner in the go file.
+message TransfersMsg {
+  string signer = 1;
+  Transfers data = 2;
+}
+
+message Transfers {
+  repeated TransferDetails transfers =  1;
+}
+
+message TransferDetails {
+  string id = 1;
+  string tx_in_id = 2;
+
   // Source
-  string from_chain = 1;
-  int64 from_block_height = 2;
-  string from_hash = 3;
-  string from_sender = 4;
+  string from_chain = 3;
+  int64 from_block_height = 4;
+  string from_hash = 5;
+  string from_sender = 6;
 
   string token = 7;
   string amount = 8;
@@ -33,4 +48,7 @@ message Transfer {
   // Destination
   string to_chain = 9;
   string to_recipient = 10;
+
+  // Retry number
+  int32 retryNum = 11;
 }

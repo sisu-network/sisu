@@ -1,10 +1,10 @@
 package sisu
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strings"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/utils"
@@ -23,6 +23,11 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 		return fmt.Errorf("Unsupported chain: %s", txs.Chain)
 	}
 
+	bridge := a.bridgeManager.GetBridge(ctx, txs.Chain)
+	if bridge == nil {
+		return fmt.Errorf("cannot find bridge for chain %s", txs.Chain)
+	}
+
 	vals := a.valManager.GetValidators(ctx)
 	for _, tx := range txs.Arr {
 		// Just send a thin tx in.
@@ -33,6 +38,14 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 		// Check if this node is assigned to confirm the next tx in.
 		sortedVals := utils.GetSortedValidators(txInId, vals)
 		if strings.EqualFold(a.appKeys.GetSignerAddress().String(), sortedVals[0].AccAddress) {
+			// Parse the transfers
+			transfers, err := bridge.ParseIncomginTx(ctx, txs.Chain, tx.Serialized)
+			if err != nil {
+				log.Errorf("Failed to parse transfer on chain %s, hex of the tx's binary = %s",
+					txs.Chain, hex.EncodeToString(tx.Serialized))
+				continue
+			}
+
 			// Send a tx details instead
 			msg := types.NewTxInDetailsMsg(
 				a.appKeys.GetSignerAddress().String(),
@@ -42,6 +55,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 					},
 					FromChain: txs.Chain,
 					Serialize: tx.Serialized,
+					Transfers: transfers,
 				},
 			)
 			a.txSubmit.SubmitMessageAsync(msg)
@@ -100,13 +114,4 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	// }
 
 	return nil
-}
-
-func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.TransferDetails, error) {
-	bridge := a.bridgeManager.GetBridge(ctx, chain)
-	if bridge != nil {
-		return bridge.ParseIncomginTx(ctx, chain, tx)
-	}
-
-	return nil, fmt.Errorf("Bridge not found for chain %s", chain)
 }

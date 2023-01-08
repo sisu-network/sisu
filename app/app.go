@@ -276,11 +276,12 @@ func New(
 		app.appKeys, privateDb)
 	chainPolling := service.NewChainPolling(app.appKeys.GetSignerAddress().String(),
 		deyesClient, app.txSubmitter)
+	backgroundService := service.NewBackground()
 
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.k),
 		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg,
 		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, transferQueue, bridgeManager,
-		chainPolling, privateDb)
+		chainPolling, privateDb, backgroundService)
 
 	apiHandler := tss.NewApiHandler(privateDb, mc)
 	app.apiEndPoint.SetAppLogicListener(apiHandler)
@@ -302,7 +303,7 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
 
-		tss.NewAppModule(appCodec, sisuHandler, app.k, apiHandler, valsMgr, mc),
+		tss.NewAppModule(appCodec, sisuHandler, app.k, apiHandler, valsMgr, backgroundService, mc),
 	}
 
 	app.apiHandler = apiHandler

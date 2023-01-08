@@ -4,15 +4,17 @@ import (
 	adstore "github.com/cosmos/cosmos-sdk/store/dbadapter"
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	cosmostypes "github.com/cosmos/cosmos-sdk/store/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	dbm "github.com/tendermint/tm-db"
 )
 
 var (
-	prefixPrivateTxOutSig     = []byte{0x01}
-	prefixPrivatePendingTxOut = []byte{0x02}
-	prefixPrivateTxHashIndex  = []byte{0x03}
+	prefixPrivateTxOutSig      = []byte{0x01}
+	prefixPrivatePendingTxOut  = []byte{0x02}
+	prefixPrivateTxHashIndex   = []byte{0x03}
+	prefixPrivateTransferQueue = []byte{0x0F}
 )
 
 type PrivateDb interface {
@@ -57,6 +59,7 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes[string(prefixPrivateTxOutSig)] = prefix.NewStore(parent, prefixPrivateTxOutSig)
 	prefixes[string(prefixPrivatePendingTxOut)] = prefix.NewStore(parent, prefixPrivatePendingTxOut)
 	prefixes[string(prefixPrivateTxHashIndex)] = prefix.NewStore(parent, prefixPrivateTxHashIndex)
+	prefixes[string(prefixPrivateTransferQueue)] = prefix.NewStore(parent, prefixPrivateTransferQueue)
 
 	return prefixes
 }
@@ -96,4 +99,17 @@ func (db *defaultPrivateDb) SetTxHashIndex(key string, value uint32) {
 func (db *defaultPrivateDb) GetTxHashIndex(key string) uint32 {
 	store := db.prefixes[string(prefixPrivateTxHashIndex)]
 	return getTxHashIndex(store, key)
+}
+
+///// Transfer Queue
+func (k *DefaultKeeper) SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.TransferDetails) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPrivateTransferQueue)
+	setTranferQueue(store, chain, transfers)
+}
+
+func (k *DefaultKeeper) GetTransferQueue(ctx sdk.Context, chain string) []*types.TransferDetails {
+	transferStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
+	queueStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPrivateTransferQueue)
+
+	return getTransferQueue(queueStore, transferStore, chain)
 }

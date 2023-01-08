@@ -2,3 +2,8 @@ syntax = "proto3";
 package types;
 
 option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message ConfirmedTxIn {
+  string tx_in_id = 1;
+  string signer = 2;
+}

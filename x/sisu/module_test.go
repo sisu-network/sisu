@@ -29,7 +29,7 @@ func TestModule_signTxOut(t *testing.T) {
 	ctx, mc := mockForTestModule()
 	kpr := mc.Keeper()
 	privateDb := mc.PrivateDb()
-	module := NewAppModule(nil, nil, mc.Keeper(), nil, nil, mc)
+	module := NewAppModule(nil, nil, mc.Keeper(), nil, nil, nil, mc)
 
 	rawTx := ethTypes.NewContractCreation(
 		0,

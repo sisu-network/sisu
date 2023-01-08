@@ -18,20 +18,19 @@ import (
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
-	etypes "github.com/sisu-network/deyes/types"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 )
 
 // ParseVaultTx parses a transaction that is sent to the vault.
-func ParseVaultTx(ctx sdk.Context, keeper keeper.Keeper, chain string, eyesTx *etypes.Tx) *chainstypes.ParseResult {
+func ParseVaultTx(ctx sdk.Context, keeper keeper.Keeper, chain string, serialized []byte) *chainstypes.ParseResult {
 	vaultAbi, err := abi.JSON(strings.NewReader(vault.VaultABI))
 	if err != nil {
 		return &chainstypes.ParseResult{Error: err}
 	}
 
 	ethTx := &ethtypes.Transaction{}
-	err = ethTx.UnmarshalBinary(eyesTx.Serialized)
+	err = ethTx.UnmarshalBinary(serialized)
 	if err != nil {
 		log.Error("Failed to unmarshall eth tx. err =", err)
 		return &chainstypes.ParseResult{Error: err}
