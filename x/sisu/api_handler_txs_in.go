@@ -30,26 +30,43 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 
 	vals := a.valManager.GetValidators(ctx)
 	for _, tx := range txs.Arr {
-		fmt.Println("CCCCC 00000")
+		if !tx.Success {
+			log.Verbose("Failed incoming transaction (not our fault), hash = ", tx.Hash, ", chain = ", txs.Chain)
+			continue
+		}
+
+		// Check if this is a transaction from our sisu. If true, ignore it.
+		sisu := a.keeper.GetMpcAddress(ctx, txs.Chain)
+		if sisu == tx.From {
+			log.Verbosef("This is a transaction sent from our sisu account %s on chain %s, ignore",
+				sisu, txs.Chain)
+			continue
+		}
+
+		transfers, err := bridge.ParseIncomginTx(ctx, txs.Chain, tx.Serialized)
+		if err != nil {
+			log.Errorf("Failed to parse transfer on chain %s, hex of the tx's binary = %s",
+				txs.Chain, hex.EncodeToString(tx.Serialized))
+			continue
+		}
+
+		fmt.Println("CCCCC len(transfers) = ", len(transfers))
+
+		if len(transfers) > 0 {
+			// There is no transfer request from this transaction. Just ignore.
+			continue
+		}
+
 		// Just send a thin tx in.
 		txInId := fmt.Sprintf("%s__%s", txs.Chain, tx.Hash)
 		msg := types.NewTxInMsg(a.appKeys.GetSignerAddress().String(), &types.TxIn{Id: txInId})
 		a.txSubmit.SubmitMessageAsync(msg)
-		fmt.Println("CCCCC 111111")
 
 		// Check if this node is assigned to confirm the next tx in.
 		sortedVals := utils.GetSortedValidators(txInId, vals)
 		if strings.EqualFold(a.appKeys.GetSignerAddress().String(), sortedVals[0].AccAddress) {
-			fmt.Println("CCCCC 22222")
+			fmt.Println("CCCCC 1111")
 			// Parse the transfers
-			transfers, err := bridge.ParseIncomginTx(ctx, txs.Chain, tx.Serialized)
-			if err != nil {
-				log.Errorf("Failed to parse transfer on chain %s, hex of the tx's binary = %s",
-					txs.Chain, hex.EncodeToString(tx.Serialized))
-				continue
-			}
-
-			fmt.Println("CCCCC 333333")
 
 			// Send a tx details instead
 			msg := types.NewTxInDetailsMsg(
