@@ -34,6 +34,7 @@ type defaultTransferQueue struct {
 	appKeys          common.AppKeys
 	privateDb        keeper.PrivateDb
 	newRequestCh     chan TransferRequest
+	valsManager      ValidatorManager
 	lock             *sync.RWMutex
 }
 
@@ -44,6 +45,7 @@ func NewTransferQueue(
 	tssConfig config.TssConfig,
 	appKeys common.AppKeys,
 	privateDb keeper.PrivateDb,
+	valsManager ValidatorManager,
 ) TransferQueue {
 	return &defaultTransferQueue{
 		keeper:           keeper,
@@ -54,6 +56,7 @@ func NewTransferQueue(
 		stopCh:           make(chan bool),
 		appKeys:          appKeys,
 		privateDb:        privateDb,
+		valsManager:      valsManager,
 	}
 }
 
@@ -97,6 +100,12 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 
 		queue := q.keeper.GetTransferQueue(ctx, chain)
 		if len(queue) == 0 {
+			continue
+		}
+
+		// Check if the this node is the assigned node for the first transfer in the queue.
+		assignedNode := q.valsManager.GetAssignedValidator(ctx, queue[0].Id)
+		if assignedNode.AccAddress != q.appKeys.GetSignerAddress().String() {
 			continue
 		}
 

@@ -21,11 +21,6 @@ func NewPostedMessageManager(keeper keeper.Keeper) *defaultPostedMessageManager 
 }
 
 func (m *defaultPostedMessageManager) ShouldProcessMsg(ctx sdk.Context, msg sdk.Msg) (bool, []byte) {
-	return m.ShouldProcessMsgWithPrecount(ctx, msg, 0)
-}
-
-func (m *defaultPostedMessageManager) ShouldProcessMsgWithPrecount(ctx sdk.Context, msg sdk.Msg,
-	precount int) (bool, []byte) {
 	hash, signer, err := keeper.GetTxRecordHash(msg)
 	if err != nil {
 		log.Error("failed to get tx hash, err = ", err)
@@ -43,7 +38,7 @@ func (m *defaultPostedMessageManager) ShouldProcessMsgWithPrecount(ctx sdk.Conte
 		return false, nil
 	}
 
-	if count+precount >= int(tssParams.MajorityThreshold) {
+	if count >= int(tssParams.MajorityThreshold) {
 		return true, hash
 	}
 

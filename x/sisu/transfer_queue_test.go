@@ -48,7 +48,7 @@ func TestTransferQueue(t *testing.T) {
 		k := mc.Keeper()
 
 		queue := NewTransferQueue(k, mc.TxOutProducer(), txSubmit,
-			mc.Config().Tss, nil, mc.PrivateDb()).(*defaultTransferQueue)
+			mc.Config().Tss, nil, mc.PrivateDb(), mc.ValidatorManager()).(*defaultTransferQueue)
 		transfer := &types.TransferDetails{
 			Id:          "ganache1__hash1",
 			ToRecipient: "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80",

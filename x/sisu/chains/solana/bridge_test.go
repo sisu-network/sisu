@@ -9,7 +9,6 @@ import (
 	bin "github.com/gagliardetto/binary"
 	solanago "github.com/gagliardetto/solana-go"
 	"github.com/near/borsh-go"
-	eyesTypes "github.com/sisu-network/deyes/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	eyessolanatypes "github.com/sisu-network/deyes/chains/solana/types"
@@ -71,13 +70,7 @@ func TestParseIncoming(t *testing.T) {
 	bz, err = json.Marshal(outerTx)
 	require.Nil(t, err)
 
-	eyesTx := &eyesTypes.Tx{
-		Hash:       outerTx.TransactionInner.Signatures[0],
-		Serialized: bz,
-		To:         outerTx.TransactionInner.Message.AccountKeys[0],
-		Success:    true,
-	}
-	transfers, err := bridge.ParseIncomginTx(ctx, "solana-devnet", eyesTx)
+	transfers, err := bridge.ParseIncomginTx(ctx, "solana-devnet", bz)
 	require.Nil(t, err)
 
 	require.Equal(t, 1, len(transfers))

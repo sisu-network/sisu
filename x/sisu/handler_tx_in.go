@@ -1,6 +1,8 @@
 package sisu
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -42,9 +44,12 @@ func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, msg *types.TxInMsg) (*sdk.Resu
 func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msg *types.TxInMsg) ([]byte, error) {
 	// Check if we have the TxIn details .
 	txInDetails := h.keeper.GetTxInDetails(ctx, msg.Data.Id)
+	fmt.Println("BBBBB 000000")
 	if txInDetails != nil {
+		fmt.Println("BBBBB 111111")
 		// 1. TODO: Do verificaiton on the tx in details to make sure this data is correct (including
 		// the transfers)
+
 		// 2. Add all the new transfers to the transfer queue.
 		for _, transfer := range txInDetails.Data.Transfers {
 			// TODO: Optimize this path. We can save single transfer instead of the entire queue.
@@ -52,6 +57,8 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msg *types.TxInMsg) ([]byte, error
 			queue = append(queue, transfer)
 			h.keeper.SetTransferQueue(ctx, transfer.ToChain, queue)
 		}
+	} else {
+		// We have not received the txInDetails yet
 	}
 
 	return nil, nil

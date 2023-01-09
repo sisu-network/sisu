@@ -925,14 +925,14 @@ func getTxHashIndex(store cstypes.KVStore, key string) uint32 {
 }
 
 ///// TxInDetails
-func setTxInDetails(store cstypes.KVStore, msg *types.TxInDetailsMsg) {
-	bz, err := msg.Marshal()
+func setTxInDetails(store cstypes.KVStore, txInId string, txIn *types.TxInDetails) {
+	bz, err := txIn.Marshal()
 	if err != nil {
 		log.Errorf("setTxInDetails: failed to marshal msg, err = %s", err)
 		return
 	}
 
-	store.Set([]byte(msg.Data.TxIn.Id), bz)
+	store.Set([]byte(txInId), bz)
 }
 
 func getTxInDetails(store cstypes.KVStore, txInId string) *types.TxInDetailsMsg {

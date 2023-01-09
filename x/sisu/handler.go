@@ -80,7 +80,7 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 
 		case *types.TxInDetailsMsg:
 			return NewHandlerTxInDetails(mc.PostedMessageManager(), mc.Keeper(),
-				mc.GlobalData()).DeliverMsg(ctx, msg)
+				mc.GlobalData(), mc.BridgeManager(), mc.ValidatorManager()).DeliverMsg(ctx, msg)
 
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)

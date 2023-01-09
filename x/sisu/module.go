@@ -258,16 +258,6 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	cloneCtx := utils.CloneSdkContext(ctx)
 	am.globalData.SetReadOnlyContext(cloneCtx)
 
-	// Process the new txins
-	txIns := am.globalData.GetTxInQueue()
-	if len(txIns) > 0 && !am.globalData.IsCatchingUp() {
-		am.backgroundService.ProcessData(BackgroundInput{
-			Context:           cloneCtx,
-			NewConfirmedTxIns: txIns,
-		})
-	}
-	am.globalData.ResetTxInQueue()
-
 	// Process pending transfers
 	am.mc.TransferQueue().ProcessTransfers(ctx)
 
