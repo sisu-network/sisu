@@ -754,6 +754,7 @@ func setTranferQueue(store cstypes.KVStore, chain string, transfers []*types.Tra
 	ids := make([]string, len(transfers))
 	for i, transfer := range transfers {
 		ids[i] = transfer.Id
+		fmt.Println("setTranferQueue transfer.Id = ", transfer.Id)
 	}
 
 	s := strings.Join(ids, ",")
@@ -767,6 +768,7 @@ func getTransferQueue(queueStore, transferStore cstypes.KVStore, chain string) [
 	}
 
 	s := string(bz)
+	fmt.Println("getTransferQueue s = ", s)
 	ids := strings.Split(s, ",")
 
 	return getTransfers(transferStore, ids)

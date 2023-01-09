@@ -57,16 +57,21 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msg *types.TxInMsg) ([]byte, error
 		fmt.Println("BBBBB txInDetails.Data = ", txInDetails.Data)
 
 		// 2. Add all the new transfers to the transfer queue.
-		fmt.Println("BBBBB transfer length = ", len(txInDetails.Data.Transfers))
-		for _, transfer := range txInDetails.Data.Transfers {
-			// TODO: Optimize this path. We can save single transfer instead of the entire queue.
-			queue := h.keeper.GetTransferQueue(ctx, transfer.ToChain)
-			queue = append(queue, transfer)
-			h.keeper.SetTransferQueue(ctx, transfer.ToChain, queue)
-		}
+		saveTransfers(ctx, h.keeper, txInDetails.Data.Transfers)
 	} else {
 		// We have not received the txInDetails yet
 	}
 
 	return nil, nil
+}
+
+func saveTransfers(ctx sdk.Context, k keeper.Keeper, transfers []*types.TransferDetails) {
+	k.AddTransfers(ctx, transfers)
+
+	for _, transfer := range transfers {
+		// TODO: Optimize this path. We can save single transfer instead of the entire queue.
+		queue := k.GetTransferQueue(ctx, transfer.ToChain)
+		queue = append(queue, transfer)
+		k.SetTransferQueue(ctx, transfer.ToChain, queue)
+	}
 }

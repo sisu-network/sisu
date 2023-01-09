@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	"fmt"
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -47,6 +48,7 @@ func NewTransferQueue(
 	privateDb keeper.PrivateDb,
 	valsManager ValidatorManager,
 ) TransferQueue {
+	fmt.Println("valsManager 0 = ", valsManager)
 	return &defaultTransferQueue{
 		keeper:           keeper,
 		txOutputProducer: txOutputProducer,
@@ -102,6 +104,10 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 		if len(queue) == 0 {
 			continue
 		}
+
+		fmt.Println("Queye length = ", len(queue))
+		fmt.Println("q.valsManager = ", q.valsManager)
+		fmt.Println("queue[0] = ", queue[0])
 
 		// Check if the this node is the assigned node for the first transfer in the queue.
 		assignedNode := q.valsManager.GetAssignedValidator(ctx, queue[0].Id)

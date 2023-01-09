@@ -47,7 +47,7 @@ func (h *HandlerTxInDetails) DeliverMsg(ctx sdk.Context, msg *types.TxInDetailsM
 	}
 
 	fmt.Println("TxIn Hash 2 = ", hex.EncodeToString(txInHash))
-	processed, hash := h.pmm.ShouldProcessMsg(ctx, msg)
+	shouldProcess, hash := h.pmm.ShouldProcessMsg(ctx, msg)
 
 	fmt.Println("AAAAA Inside handler tx in details")
 
@@ -55,17 +55,16 @@ func (h *HandlerTxInDetails) DeliverMsg(ctx sdk.Context, msg *types.TxInDetailsM
 		fmt.Println("AAAAA 0000")
 
 		// Case 1: the thin tx is confirmed but no tx details is saved yet.
-		if !processed {
+		if shouldProcess {
 			h.keeper.ProcessTxRecord(ctx, hash)
 
-			// Save the tx in details.
+			// 1 .Save the tx in details.
 			h.keeper.SetTxInDetails(ctx, msg.Data.FromChain, msg.Data)
 
 			// 2. Save the transfers
-			chain := msg.Data.FromChain
-			q := h.keeper.GetTransferQueue(ctx, chain)
-			q = append(q, msg.Data.Transfers...)
-			h.keeper.SetTransferQueue(ctx, chain, q)
+			saveTransfers(ctx, h.keeper, msg.Data.Transfers)
+		} else {
+			// TODO: Check that this node is the assigned validator for the transaction and the
 		}
 	} else {
 		fmt.Println("AAAAA 111111")
