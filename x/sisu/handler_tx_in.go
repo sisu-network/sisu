@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -32,8 +33,11 @@ func NewHandlerTxIn(
 
 func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, msg *types.TxInMsg) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
+		fmt.Println("TxIn Hash 1 = ", hex.EncodeToString(hash))
 		data, err := h.doTxIn(ctx, msg)
 		h.keeper.ProcessTxRecord(ctx, hash)
+
+		fmt.Println("Is processed hash 1 = ", h.keeper.IsTxRecordProcessed(ctx, hash))
 
 		return &sdk.Result{Data: data}, err
 	}
@@ -50,7 +54,10 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msg *types.TxInMsg) ([]byte, error
 		// 1. TODO: Do verificaiton on the tx in details to make sure this data is correct (including
 		// the transfers)
 
+		fmt.Println("BBBBB txInDetails.Data = ", txInDetails.Data)
+
 		// 2. Add all the new transfers to the transfer queue.
+		fmt.Println("BBBBB transfer length = ", len(txInDetails.Data.Transfers))
 		for _, transfer := range txInDetails.Data.Transfers {
 			// TODO: Optimize this path. We can save single transfer instead of the entire queue.
 			queue := h.keeper.GetTransferQueue(ctx, transfer.ToChain)

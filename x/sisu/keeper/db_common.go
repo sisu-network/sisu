@@ -937,6 +937,10 @@ func setTxInDetails(store cstypes.KVStore, txInId string, txIn *types.TxInDetail
 
 func getTxInDetails(store cstypes.KVStore, txInId string) *types.TxInDetailsMsg {
 	bz := store.Get([]byte(txInId))
+	if bz == nil {
+		return nil
+	}
+
 	msg := new(types.TxInDetailsMsg)
 	err := msg.Unmarshal(bz)
 	if err != nil {

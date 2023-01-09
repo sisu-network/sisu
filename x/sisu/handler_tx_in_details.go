@@ -1,9 +1,11 @@
 package sisu
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/chains"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -35,10 +37,21 @@ func NewHandlerTxInDetails(
 }
 
 func (h *HandlerTxInDetails) DeliverMsg(ctx sdk.Context, msg *types.TxInDetailsMsg) (*sdk.Result, error) {
-	txIn := msg.Data.TxIn
+	txInHash, _, err := keeper.GetTxRecordHash(&types.TxInMsg{
+		Signer: msg.Signer,
+		Data:   msg.Data.TxIn,
+	})
+	if err != nil {
+		log.Errorf("Cannot get tx record hash, err = ", err)
+		return &sdk.Result{}, nil
+	}
+
+	fmt.Println("TxIn Hash 2 = ", hex.EncodeToString(txInHash))
 	processed, hash := h.pmm.ShouldProcessMsg(ctx, msg)
 
-	if h.keeper.IsTxRecordProcessed(ctx, []byte(txIn.Id)) {
+	fmt.Println("AAAAA Inside handler tx in details")
+
+	if h.keeper.IsTxRecordProcessed(ctx, txInHash) {
 		fmt.Println("AAAAA 0000")
 
 		// Case 1: the thin tx is confirmed but no tx details is saved yet.
@@ -61,6 +74,8 @@ func (h *HandlerTxInDetails) DeliverMsg(ctx sdk.Context, msg *types.TxInDetailsM
 		// for it to process.
 		assignedNode := h.valsManager.GetAssignedValidator(ctx, msg.Data.TxIn.Id)
 		if assignedNode.AccAddress == msg.Signer {
+			// TODO: Do verification for this message before saving it (verify that all transfer data
+			// is correct and match the TxIn transaction)
 			h.keeper.SetTxInDetails(ctx, msg.Data.FromChain, msg.Data)
 		}
 	}

@@ -30,14 +30,17 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 
 	vals := a.valManager.GetValidators(ctx)
 	for _, tx := range txs.Arr {
+		fmt.Println("CCCCC 00000")
 		// Just send a thin tx in.
 		txInId := fmt.Sprintf("%s__%s", txs.Chain, tx.Hash)
 		msg := types.NewTxInMsg(a.appKeys.GetSignerAddress().String(), &types.TxIn{Id: txInId})
 		a.txSubmit.SubmitMessageAsync(msg)
+		fmt.Println("CCCCC 111111")
 
 		// Check if this node is assigned to confirm the next tx in.
 		sortedVals := utils.GetSortedValidators(txInId, vals)
 		if strings.EqualFold(a.appKeys.GetSignerAddress().String(), sortedVals[0].AccAddress) {
+			fmt.Println("CCCCC 22222")
 			// Parse the transfers
 			transfers, err := bridge.ParseIncomginTx(ctx, txs.Chain, tx.Serialized)
 			if err != nil {
@@ -45,6 +48,8 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 					txs.Chain, hex.EncodeToString(tx.Serialized))
 				continue
 			}
+
+			fmt.Println("CCCCC 333333")
 
 			// Send a tx details instead
 			msg := types.NewTxInDetailsMsg(
@@ -59,8 +64,11 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 				},
 			)
 			a.txSubmit.SubmitMessageAsync(msg)
+			fmt.Println("CCCCC 44444")
 		}
 	}
+
+	fmt.Println("CCCCC Done!!!!")
 
 	// // Create TxIn messages and broadcast to the Sisu chain.
 	// for _, tx := range txs.Arr {

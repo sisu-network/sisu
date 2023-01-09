@@ -446,6 +446,19 @@ func (k *DefaultKeeper) GetConfirmedTxIn(ctx sdk.Context, txInId string) *types.
 	return getConfirmedTxIn(store, txInId)
 }
 
+///// Transfer Queue
+func (k *DefaultKeeper) SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.TransferDetails) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPrivateTransferQueue)
+	setTranferQueue(store, chain, transfers)
+}
+
+func (k *DefaultKeeper) GetTransferQueue(ctx sdk.Context, chain string) []*types.TransferDetails {
+	transferStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
+	queueStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPrivateTransferQueue)
+
+	return getTransferQueue(queueStore, transferStore, chain)
+}
+
 ///// Debug
 
 func (k *DefaultKeeper) getStoreFromName(ctx sdk.Context, name string) cstypes.KVStore {

@@ -259,10 +259,12 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	am.globalData.SetReadOnlyContext(cloneCtx)
 
 	// Process pending transfers
-	am.mc.TransferQueue().ProcessTransfers(ctx)
+	// am.mc.TransferQueue().ProcessTransfers(ctx)
 
 	// Sign tx outs
 	am.signTxOut(ctx)
+
+	fmt.Println("AAAAA Done end of block")
 
 	return []abci.ValidatorUpdate{}
 }
