@@ -21,9 +21,20 @@ func ToByte(i interface{}) []byte {
 	var buf bytes.Buffer
 	err := binary.Write(&buf, binary.BigEndian, i)
 	if err != nil {
-		log.Error("Failed to write binary float, err =", err)
+		log.Errorf("Failed to write binary float, err = %s", err)
 	}
 	return buf.Bytes()
+}
+
+func FromByteToInt(i interface{}) int {
+	var buf bytes.Buffer
+	var result int
+	err := binary.Read(&buf, binary.BigEndian, &result)
+	if err != nil {
+		log.Errorf("Failed to read binary float, err = %s", err)
+	}
+
+	return result
 }
 
 func MaxUint64(a, b uint64) uint64 {

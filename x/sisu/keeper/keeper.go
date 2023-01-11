@@ -31,6 +31,7 @@ var (
 	prefixBlockHeight            = []byte{0x15}
 	prefixTxInDetails            = []byte{0x16}
 	prefixConfirmedTxIn          = []byte{0x17}
+	prefixVoteResult             = []byte{0x18}
 )
 
 var _ Keeper = (*DefaultKeeper)(nil)
@@ -137,6 +138,10 @@ type Keeper interface {
 	// Confirmed TxIn
 	SetConfirmedTxIn(ctx sdk.Context, confirmedTxIn *types.ConfirmedTxIn)
 	GetConfirmedTxIn(ctx sdk.Context, txInId string) *types.ConfirmedTxIn
+
+	// Vote Result
+	AddVoteResult(ctx sdk.Context, key string, signer string, result *types.VoteResult)
+	GetVoteResults(ctx sdk.Context, key string) map[string]types.VoteResult
 }
 
 type DefaultKeeper struct {
@@ -457,6 +462,18 @@ func (k *DefaultKeeper) GetTransferQueue(ctx sdk.Context, chain string) []*types
 	queueStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPrivateTransferQueue)
 
 	return getTransferQueue(queueStore, transferStore, chain)
+}
+
+///// Vote Result
+func (k *DefaultKeeper) AddVoteResult(ctx sdk.Context, hash string, signer string,
+	result *types.VoteResult) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixVoteResult)
+	addVoteResult(store, hash, signer, result)
+}
+
+func (k *DefaultKeeper) GetVoteResults(ctx sdk.Context, hash string) map[string]types.VoteResult {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixVoteResult)
+	return getVoteResults(store, hash)
 }
 
 ///// Debug

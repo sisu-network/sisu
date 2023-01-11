@@ -67,6 +67,10 @@ func getGasPriceKey(chain, signer string) []byte {
 	return []byte(fmt.Sprintf("%s__%s", chain, signer))
 }
 
+func getVoteResultKey(hash, signer string) []byte {
+	return []byte(fmt.Sprintf("%s__%s", hash, signer))
+}
+
 ///// TxREcord
 
 func saveTxRecord(store cstypes.KVStore, hash []byte, validator string) int {
@@ -977,6 +981,38 @@ func getConfirmedTxIn(store cstypes.KVStore, id string) *types.ConfirmedTxIn {
 	}
 
 	return tx
+}
+
+///// Vote Result
+func addVoteResult(store cstypes.KVStore, hash string, signer string, result *types.VoteResult) {
+	bz := utils.ToByte(result)
+	if bz == nil {
+		log.Errorf("addVoteResult: failed to convert result to byte")
+		return
+	}
+
+	key := getVoteResultKey(hash, signer)
+	store.Set(key, bz)
+}
+
+func getVoteResults(store cstypes.KVStore, hash string) map[string]types.VoteResult {
+	begin := []byte(fmt.Sprintf("%s__", hash))
+	end := []byte(fmt.Sprintf("%s__~", hash))
+
+	ret := make(map[string]types.VoteResult)
+	for iter := store.Iterator(begin, end); iter.Valid(); iter.Next() {
+		key := string(iter.Key())
+		if len(key) <= len(hash)+2 {
+			continue
+		}
+
+		signer := key[len(hash)+2:]
+		bz := utils.FromByteToInt(iter.Value())
+		result := types.VoteResult(bz)
+		ret[signer] = result
+	}
+
+	return ret
 }
 
 ///// Debug functions

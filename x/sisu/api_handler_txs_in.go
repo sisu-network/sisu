@@ -52,8 +52,9 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 
 		fmt.Println("CCCCC len(transfers) = ", len(transfers))
 
-		if len(transfers) > 0 {
-			// There is no transfer request from this transaction. Just ignore.
+		if len(transfers) == 0 {
+			// There is no transfer request from this transaction. Just ignore. In the future, we have
+			// to check other type of transaction sent to the vault/gateway.
 			continue
 		}
 

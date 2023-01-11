@@ -127,7 +127,7 @@ func TestPostedMessageManager(t *testing.T) {
 		require.True(t, process)
 
 		h := NewHandlerTxOut(mc)
-		_, err := h.doTxOut(ctx, msg)
+		_, err := doTxOut(ctx, h.keeper, msg.Data)
 		require.NoError(t, err)
 
 		h.keeper.ProcessTxRecord(ctx, hash)

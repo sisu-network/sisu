@@ -22,6 +22,7 @@ const (
 	MsgTxIn                              = "TxIn"
 	MsgTxInDetails                       = "TxInDetails"
 	MsgTypeTxOut                         = "TxOut"
+	MsgTxOutConsensed                    = "TxOutConsensed"
 
 	MsgTypeKeysignResult      = "KeysignResult"
 	MsgUpdateSolanaRecentHash = "UpdateSolanaRecentHash"

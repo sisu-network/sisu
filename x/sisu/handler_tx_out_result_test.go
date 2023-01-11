@@ -76,8 +76,7 @@ func TestHandlerTxOutResult(t *testing.T) {
 			TxOut:        txOut,
 			ExpiredBlock: 0,
 		})
-		txOutId, err := txOut.GetId()
-		require.Nil(t, err)
+		txOutId := txOut.GetId()
 
 		handler := NewHandlerTxOutResult(mc)
 		handler.DeliverMsg(ctx, &types.TxOutResultMsg{
@@ -116,8 +115,7 @@ func TestHandlerTxOutResult(t *testing.T) {
 			ExpiredBlock: 0,
 		})
 
-		txOutId, err := txOut.GetId()
-		require.Nil(t, err)
+		txOutId := txOut.GetId()
 		handler := NewHandlerTxOutResult(mc)
 		handler.DeliverMsg(ctx, &types.TxOutResultMsg{
 			Data: &types.TxOutResult{

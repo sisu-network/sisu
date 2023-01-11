@@ -162,11 +162,7 @@ func (a *ApiHandler) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 			return
 		}
 
-		txOutId, err := txOut.GetId()
-		if err != nil {
-			log.Errorf("Cannot get id for tx out, err = %s", err.Error())
-			return
-		}
+		txOutId := txOut.GetId()
 
 		// Report this as failure. Submit to the Sisu chain
 		txOutResult := &types.TxOutResult{
@@ -313,18 +309,14 @@ func (a *ApiHandler) OnTxIncludedInBlock(txTrack *chainstypes.TrackUpdate) {
 		txTrack.BlockHeight, txTrack.Chain, txTrack.Hash, txTrack.Nonce)
 
 	txOut := a.getTxOutFromSignedHash(txTrack.Chain, txTrack.Hash)
-
-	txOutId, err := txOut.GetId()
-	if err != nil {
-		log.Errorf("Cannot get id for tx out, err = %s", err.Error())
-		return
-	}
+	txOutId := txOut.GetId()
 	txOutResult := &types.TxOutResult{
 		TxOutId:     txOutId,
 		OutChain:    txOut.Content.OutChain,
 		OutHash:     txOut.Content.OutHash,
 		BlockHeight: txTrack.BlockHeight,
 	}
+
 	if libchain.IsETHBasedChain(txTrack.Chain) {
 		ethTx := &ethtypes.Transaction{}
 		err := ethTx.UnmarshalBinary(txTrack.Bytes)
