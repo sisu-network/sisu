@@ -70,7 +70,7 @@ func (m *defaultBridgeManager) GetBridge(ctx sdk.Context, chain string) chainsty
 
 func (m *defaultBridgeManager) getBridge(chain string) chainstypes.Bridge {
 	if libchain.IsETHBasedChain(chain) {
-		return chainseth.NewBridge(chain, m.signer, m.keeper)
+		return chainseth.NewBridge(chain, m.signer, m.keeper, m.deyesClient)
 	}
 
 	if libchain.IsCardanoChain(chain) {

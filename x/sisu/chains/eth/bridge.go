@@ -10,25 +10,29 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethcommon "github.com/ethereum/go-ethereum/common"
+	deyesethtypes "github.com/sisu-network/deyes/chains/eth/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/utils"
 	ctypes "github.com/sisu-network/sisu/x/sisu/chains/types"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/helper"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type bridge struct {
-	signer string
-	chain  string
-	keeper keeper.Keeper
+	signer      string
+	chain       string
+	keeper      keeper.Keeper
+	deyesClient external.DeyesClient
 }
 
-func NewBridge(chain string, signer string, k keeper.Keeper) ctypes.Bridge {
+func NewBridge(chain string, signer string, k keeper.Keeper, deyesClient external.DeyesClient) ctypes.Bridge {
 	return &bridge{
-		chain:  chain,
-		signer: signer,
-		keeper: k,
+		chain:       chain,
+		signer:      signer,
+		keeper:      k,
+		deyesClient: deyesClient,
 	}
 }
 
@@ -109,17 +113,15 @@ func (b *bridge) buildERC20TransferIn(
 		return nil, fmt.Errorf("Invalid chain: %s", chain)
 	}
 
-	gasPrice := big.NewInt(chain.EthConfig.GasPrice)
-	if gasPrice.Cmp(big.NewInt(0)) <= 0 {
-		return nil, fmt.Errorf("Gas price is non-positive: %s", gasPrice.String())
-	}
-
 	commissionRate := b.keeper.GetParams(ctx).CommissionRate
 	if commissionRate < 0 || commissionRate > 10_000 {
 		return nil, fmt.Errorf("Commission rate is invalid, rate = %d", commissionRate)
 	}
 
-	log.Debug("Gas price for swapping  = ", gasPrice)
+	gasInfo, err := b.deyesClient.GetGasInfo(b.chain)
+	if err != nil {
+		return nil, err
+	}
 
 	finalTokenAddrs := make([]ethcommon.Address, 0)
 	finalRecipients := make([]ethcommon.Address, 0)
@@ -131,7 +133,7 @@ func (b *bridge) buildERC20TransferIn(
 	ethCfg := chainCfg.EthConfig
 	totalGasCost := big.NewInt(0)
 	gasUnitPerSwap := 80_000
-	gasCost, tipCap, feeCap := b.getGasCost(ethCfg, gasUnitPerSwap)
+	gasCost, tipCap, feeCap := b.getGasCost(gasInfo, ethCfg.UseEip_1559, gasUnitPerSwap)
 
 	for i := range amounts {
 		amountOut := new(big.Int).Set(amounts[i])
@@ -206,7 +208,6 @@ func (b *bridge) buildERC20TransferIn(
 	}
 
 	var input []byte
-	var err error
 	if len(finalTokenAddrs) == 1 {
 		input, err = vaultInfo.Abi.Pack(
 			MethodTransferIn,
@@ -250,7 +251,7 @@ func (b *bridge) buildERC20TransferIn(
 			gatewayAddress,
 			big.NewInt(0),
 			maxGas,
-			gasPrice,
+			big.NewInt(gasInfo.GasPrice),
 			input,
 		)
 	}
@@ -269,15 +270,15 @@ func (b *bridge) buildERC20TransferIn(
 }
 
 // getGasCost returns total gas cost used for swapping transaction.
-func (b *bridge) getGasCost(ethCfg *types.ChainEthConfig, maxGasUnit int) (*big.Int, *big.Int, *big.Int) {
-	if ethCfg.UseEip_1559 {
+func (b *bridge) getGasCost(gasInfo *deyesethtypes.GasInfo, useEip1559 bool, maxGasUnit int) (*big.Int, *big.Int, *big.Int) {
+	if useEip1559 {
 		// Max fee = 2 * baseFee + Tip
-		tipCap := big.NewInt(ethCfg.Tip)
-		feeCap := big.NewInt(ethCfg.BaseFee*2 + ethCfg.Tip)
+		tipCap := big.NewInt(gasInfo.Tip)
+		feeCap := big.NewInt(gasInfo.BaseFee*2 + gasInfo.Tip)
 
 		return new(big.Int).Mul(feeCap, big.NewInt(int64(maxGasUnit))), tipCap, feeCap
 	} else {
-		return new(big.Int).Mul(big.NewInt(int64(maxGasUnit)), big.NewInt(ethCfg.GasPrice)), nil, nil
+		return new(big.Int).Mul(big.NewInt(int64(maxGasUnit)), big.NewInt(gasInfo.GasPrice)), nil, nil
 	}
 }
 

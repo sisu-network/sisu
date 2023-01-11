@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethcommon "github.com/ethereum/go-ethereum/common"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -38,7 +39,7 @@ func TestTokenPriceCalculation(t *testing.T) {
 		ctx := testmock.TestContext()
 		keeper := mockKeeperForBridge(ctx, new(big.Int).Mul(big.NewInt(10_000_000), utils.GweiToWei))
 
-		bridge := NewBridge("ganache2", "", keeper).(*bridge)
+		bridge := NewBridge("ganache2", "", keeper, &external.MockDeyesClient{}).(*bridge)
 		amount := new(big.Int).Mul(big.NewInt(1), utils.EthToWei)
 		txResponse, err := bridge.buildERC20TransferIn(ctx,
 			[]*types.Token{keeper.GetTokens(ctx, []string{"SISU"})["SISU"]},
@@ -59,7 +60,7 @@ func TestTokenPriceCalculation(t *testing.T) {
 		ctx := testmock.TestContext()
 		keeper := mockKeeperForBridge(ctx, utils.EtherToWei(big.NewInt(100)))
 
-		bridge := NewBridge("ganache2", "", keeper).(*bridge)
+		bridge := NewBridge("ganache2", "", keeper, &external.MockDeyesClient{}).(*bridge)
 		amount := new(big.Int).Mul(big.NewInt(1), utils.EthToWei)
 		txResponse, err := bridge.buildERC20TransferIn(ctx,
 			[]*types.Token{keeper.GetTokens(ctx, []string{"SISU"})["SISU"]},
@@ -85,7 +86,7 @@ func TestTokenPriceCalculation(t *testing.T) {
 		params.CommissionRate = 10
 		keeper.SaveParams(ctx, params)
 
-		bridge := NewBridge("ganache2", "", keeper).(*bridge)
+		bridge := NewBridge("ganache2", "", keeper, &external.MockDeyesClient{}).(*bridge)
 		amount := new(big.Int).Mul(big.NewInt(1), utils.EthToWei)
 		txResponse, err := bridge.buildERC20TransferIn(ctx,
 			[]*types.Token{keeper.GetTokens(ctx, []string{"SISU"})["SISU"]},
@@ -113,7 +114,7 @@ func TestTokenPriceCalculation(t *testing.T) {
 		ctx := testmock.TestContext()
 		keeper := mockKeeperForBridge(ctx, utils.EtherToWei(big.NewInt(8)))
 
-		bridge := NewBridge("ganache2", "", keeper).(*bridge)
+		bridge := NewBridge("ganache2", "", keeper, &external.MockDeyesClient{}).(*bridge)
 		amount := big.NewInt(10_000_000_000)
 		txResponse, err := bridge.buildERC20TransferIn(ctx,
 			[]*types.Token{keeper.GetTokens(ctx, []string{"SISU"})["SISU"]},
@@ -129,7 +130,7 @@ func TestTokenPriceCalculation(t *testing.T) {
 		ctx := testmock.TestContext()
 		keeper := mockKeeperForBridge(ctx, big.NewInt(0))
 
-		bridge := NewBridge("ganache2", "", keeper).(*bridge)
+		bridge := NewBridge("ganache2", "", keeper, &external.MockDeyesClient{}).(*bridge)
 		amount := new(big.Int).Mul(big.NewInt(1), utils.EthToWei)
 		txResponse, err := bridge.buildERC20TransferIn(ctx,
 			[]*types.Token{keeper.GetTokens(ctx, []string{"SISU"})["SISU"]},
@@ -151,7 +152,7 @@ func TestTokenPriceCalculation(t *testing.T) {
 		keeper.SaveChain(ctx, chain)
 
 		// Do transfer
-		bridge := NewBridge("ganache2", "", keeper).(*bridge)
+		bridge := NewBridge("ganache2", "", keeper, &external.MockDeyesClient{}).(*bridge)
 		amount := new(big.Int).Set(utils.EthToWei)
 		txResponse, err := bridge.buildERC20TransferIn(ctx,
 			[]*types.Token{keeper.GetTokens(ctx, []string{"SISU"})["SISU"]},
