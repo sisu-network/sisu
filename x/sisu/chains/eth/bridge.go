@@ -37,35 +37,55 @@ func NewBridge(chain string, signer string, k keeper.Keeper, deyesClient externa
 }
 
 func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDetails) ([]*types.TxOutMsg, error) {
-	inHashes := make([]string, 0, len(transfers))
-	tokens := make([]*types.Token, 0, len(transfers))
-	recipients := make([]ethcommon.Address, 0, len(transfers))
-	amounts := make([]*big.Int, 0, len(transfers))
+	gasInfo, err := b.deyesClient.GetGasInfo(b.chain)
+	if err != nil {
+		return nil, err
+	}
+	chainCfg := b.keeper.GetChain(ctx, b.chain)
+	ethCfg := chainCfg.EthConfig
+	gasUnitPerSwap := 80_000
+	gasCost, _, _ := b.getGasCost(gasInfo, ethCfg.UseEip_1559, gasUnitPerSwap)
 
+	inHashes := make([]string, 0, len(transfers))
+	finalTokens := make([]ethcommon.Address, 0, len(transfers))
+	finalRecipients := make([]ethcommon.Address, 0, len(transfers))
+	finalAmounts := make([]*big.Int, 0, len(transfers))
 	allTokens := b.keeper.GetAllTokens(ctx)
+
 	for _, transfer := range transfers {
+		dstToken, amountOut, err := b.getTransferIn(ctx, allTokens, transfer, gasCost)
+		if err != nil {
+			log.Errorf("Failed to get transfer in, err = %s", err)
+			break
+		}
+
 		token := allTokens[transfer.Token]
 		if token == nil {
 			log.Warn("cannot find token", transfer.Token)
-			continue
+			break
 		}
 
 		amount, ok := new(big.Int).SetString(transfer.Amount, 10)
 		if !ok {
 			log.Warn("Cannot create big.Int value from amout ", transfer.Amount)
-			continue
+			break
 		}
 
-		tokens = append(tokens, token)
-		recipients = append(recipients, ethcommon.HexToAddress(transfer.ToRecipient))
-		amounts = append(amounts, amount)
+		finalTokens = append(finalTokens, dstToken)
+		finalRecipients = append(finalRecipients, ethcommon.HexToAddress(transfer.ToRecipient))
+		finalAmounts = append(finalAmounts, amountOut)
 		inHashes = append(inHashes, transfer.Id)
 
 		log.Verbosef("Processing transfer in: id = %s, recipient = %s, amount = %s, inHash = %s, toChain = %s, toRecipient = %s",
 			token.Id, transfer.ToRecipient, amount, transfer.Id, transfer.ToChain, transfer.ToRecipient)
 	}
 
-	responseTx, err := b.buildERC20TransferIn(ctx, tokens, recipients, amounts)
+	if len(finalTokens) == 0 {
+		return nil, fmt.Errorf("Failed to get any transaction!")
+	}
+
+	responseTx, err := b.buildTransaction(ctx, finalTokens, finalRecipients, finalAmounts,
+		gasUnitPerSwap, ethCfg.UseEip_1559, gasInfo)
 	if err != nil {
 		log.Error("Failed to build erc20 transfer in, err = ", err)
 		return nil, err
@@ -87,11 +107,105 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 	return []*types.TxOutMsg{outMsg}, nil
 }
 
-func (b *bridge) buildERC20TransferIn(
+func (b *bridge) getTransferIn(
 	ctx sdk.Context,
-	tokens []*types.Token,
-	recipients []ethcommon.Address,
-	amounts []*big.Int,
+	allTokens map[string]*types.Token,
+	transfer *types.TransferDetails,
+	gasCost *big.Int,
+) (ethcommon.Address, *big.Int, error) {
+	targetContractName := ContractVault
+	v := b.keeper.GetVault(ctx, b.chain, "")
+	if v == nil {
+		return ethcommon.Address{}, nil, fmt.Errorf("Cannot find vault for chain %s", b.chain)
+	}
+	gw := v.Address
+	if len(gw) == 0 {
+		err := fmt.Errorf("cannot find gw address for type: %s on chain %s", targetContractName, b.chain)
+		log.Error(err)
+		return ethcommon.Address{}, nil, err
+	}
+
+	chain := b.keeper.GetChain(ctx, b.chain)
+	if chain == nil {
+		return ethcommon.Address{}, nil, fmt.Errorf("Invalid chain: %s", chain)
+	}
+
+	commissionRate := b.keeper.GetParams(ctx).CommissionRate
+	if commissionRate < 0 || commissionRate > 10_000 {
+		return ethcommon.Address{}, nil, fmt.Errorf("Commission rate is invalid, rate = %d", commissionRate)
+	}
+
+	token := allTokens[transfer.Token]
+	if token == nil {
+		return ethcommon.Address{}, nil, fmt.Errorf("cannot find token %s", transfer.Token)
+	}
+
+	amount, ok := new(big.Int).SetString(transfer.Amount, 10)
+	if !ok {
+		return ethcommon.Address{}, nil, fmt.Errorf("Cannot create big.Int value from amout %s", transfer.Amount)
+	}
+
+	var tokenAddr string
+	for j, chain := range token.Chains {
+		if chain == b.chain {
+			tokenAddr = token.Addresses[j]
+			break
+		}
+	}
+
+	if len(tokenAddr) == 0 {
+		return ethcommon.Address{}, nil, fmt.Errorf("cannot find token address on chain %s", b.chain)
+	}
+
+	amountOut := new(big.Int).Set(amount)
+
+	// Subtract commission rate
+	amountOut = utils.SubtractCommissionRate(amountOut, commissionRate)
+
+	price, err := b.deyesClient.GetTokenPrice(token.Id)
+	if err != nil {
+		return ethcommon.Address{}, nil, err
+	}
+
+	if price.Cmp(utils.ZeroBigInt) == 0 {
+		return ethcommon.Address{}, nil, fmt.Errorf("token %s has price 0", token.Id)
+	}
+
+	gasPriceInToken, err := helper.GetChainGasCostInToken(ctx, b.keeper, token.Id, b.chain, gasCost)
+	if err != nil {
+		return ethcommon.Address{}, nil, fmt.Errorf("Cannot get gas cost in token, err = %s", err)
+	}
+
+	if gasPriceInToken.Cmp(utils.ZeroBigInt) < 0 {
+		log.Errorf("Gas price in token is negative: token id = %s", token.Id)
+		gasPriceInToken = utils.ZeroBigInt
+	}
+
+	// Subtract gas price in token.
+	amountOut.Sub(amountOut, gasPriceInToken)
+
+	// Check if the amountOut is smaller than 0 or not.
+	if amountOut.Cmp(utils.ZeroBigInt) < 0 {
+		return ethcommon.Address{}, nil,
+			fmt.Errorf("Insufficient fund for transfer amountOut = %s, gasPriceInToken = %s",
+				amountOut, gasPriceInToken)
+	}
+
+	log.Verbosef("tokenAddr: %s, recipient: %s, gasPriceInToken: %s, amountIn: %s, amountOut: %s",
+		tokenAddr, transfer.ToRecipient, gasPriceInToken, amount.String(), amountOut,
+	)
+
+	return ethcommon.HexToAddress(tokenAddr), amountOut, nil
+}
+
+func (b *bridge) buildTransaction(
+	ctx sdk.Context,
+	finalTokenAddrs []ethcommon.Address,
+	finalRecipients []ethcommon.Address,
+	finalAmounts []*big.Int,
+	gasUnitPerSwap int,
+	useEip1559 bool,
+	gasInfo *deyesethtypes.GasInfo,
 ) (*types.TxResponse, error) {
 	targetContractName := ContractVault
 	v := b.keeper.GetVault(ctx, b.chain, "")
@@ -100,114 +214,14 @@ func (b *bridge) buildERC20TransferIn(
 	}
 	gw := v.Address
 	if len(gw) == 0 {
-		err := fmt.Errorf("cannot find gw address for type: %s on chain %s", targetContractName, b.chain)
-		log.Error(err)
-		return nil, err
+		return nil, fmt.Errorf("cannot find gw address for type: %s on chain %s", targetContractName, b.chain)
 	}
 
 	gatewayAddress := ethcommon.HexToAddress(gw)
 	vaultInfo := SupportedContracts[targetContractName]
 
-	chain := b.keeper.GetChain(ctx, b.chain)
-	if chain == nil {
-		return nil, fmt.Errorf("Invalid chain: %s", chain)
-	}
-
-	commissionRate := b.keeper.GetParams(ctx).CommissionRate
-	if commissionRate < 0 || commissionRate > 10_000 {
-		return nil, fmt.Errorf("Commission rate is invalid, rate = %d", commissionRate)
-	}
-
-	gasInfo, err := b.deyesClient.GetGasInfo(b.chain)
-	if err != nil {
-		return nil, err
-	}
-
-	finalTokenAddrs := make([]ethcommon.Address, 0)
-	finalRecipients := make([]ethcommon.Address, 0)
-	finalAmounts := make([]*big.Int, 0)
-	amountIns := make([]*big.Int, 0)
-	gasPrices := make([]*big.Int, 0)
-
-	chainCfg := b.keeper.GetChain(ctx, b.chain)
-	ethCfg := chainCfg.EthConfig
-	totalGasCost := big.NewInt(0)
-	gasUnitPerSwap := 80_000
-	gasCost, tipCap, feeCap := b.getGasCost(gasInfo, ethCfg.UseEip_1559, gasUnitPerSwap)
-
-	for i := range amounts {
-		amountOut := new(big.Int).Set(amounts[i])
-
-		// Subtract commission rate
-		amountOut = utils.SubtractCommissionRate(amountOut, commissionRate)
-
-		price, ok := new(big.Int).SetString(tokens[i].Price, 10)
-		if !ok {
-			return nil, fmt.Errorf("invalid token price %s", tokens[i].Price)
-		}
-
-		if price.Cmp(utils.ZeroBigInt) == 0 {
-			return nil, fmt.Errorf("token %s has price 0", tokens[i].Id)
-		}
-
-		gasPriceInToken, err := helper.GetChainGasCostInToken(ctx, b.keeper, tokens[i].Id, b.chain,
-			gasCost)
-		if err != nil {
-			log.Error("Cannot get gas cost in token, err = ", err)
-			continue
-		}
-
-		if gasPriceInToken.Cmp(utils.ZeroBigInt) < 0 {
-			log.Errorf("Gas price in token is negative: token id = %s", tokens[i].Id)
-			gasPriceInToken = utils.ZeroBigInt
-		}
-
-		// Subtract gas price in token.
-		amountOut.Sub(amountOut, gasPriceInToken)
-
-		if amountOut.Cmp(utils.ZeroBigInt) < 0 {
-			log.Errorf("Insufficient fund for transfer amountOut = %s, gasPriceInToken = %s", amountOut,
-				gasPriceInToken)
-			continue
-		}
-
-		// Find the address of the token.
-		var tokenAddr string
-		for _, token := range tokens {
-			for j, chain := range token.Chains {
-				if chain == b.chain {
-					tokenAddr = token.Addresses[j]
-					break
-				}
-			}
-			if len(tokenAddr) > 0 {
-				break
-			}
-		}
-		if len(tokenAddr) == 0 {
-			continue
-		}
-
-		totalGasCost = totalGasCost.Add(totalGasCost, gasCost)
-		finalTokenAddrs = append(finalTokenAddrs, ethcommon.HexToAddress(tokenAddr))
-		finalAmounts = append(finalAmounts, amountOut)
-		finalRecipients = append(finalRecipients, recipients[i])
-		amountIns = append(amountIns, amounts[i])
-		gasPrices = append(gasPrices, gasPriceInToken)
-	}
-
-	if len(finalTokenAddrs) == 0 {
-		return nil, fmt.Errorf("No txOut is produced")
-	}
-
-	log.Verbosef("destChain: %s, gateway address on destChain: %s", b.chain, gatewayAddress.String())
-	for i := range finalTokenAddrs {
-		log.Verbosef("tokenAddr: %s, recipient: %s, gasPriceInToken: %d, amountIn: %s, amountOut: %s",
-			finalTokenAddrs[i], finalRecipients[i], gasPrices[i], amountIns[i].String(), finalAmounts[i].String(),
-		)
-	}
-
 	var input []byte
+	var err error
 	if len(finalTokenAddrs) == 1 {
 		input, err = vaultInfo.Abi.Pack(
 			MethodTransferIn,
@@ -223,19 +237,26 @@ func (b *bridge) buildERC20TransferIn(
 			finalAmounts,
 		)
 	}
-
 	if err != nil {
-		log.Error(err)
 		return nil, err
 	}
 
-	maxGas := uint64(gasUnitPerSwap * len(recipients)) // 80k per swapping operation.
+	mpcAddr := b.keeper.GetMpcAddress(ctx, b.chain)
+	nonce, err := b.deyesClient.GetNonce(b.chain, mpcAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("AAAA Nonce = ", nonce)
+
+	maxGas := uint64(gasUnitPerSwap * len(finalRecipients)) // max 80k per swapping operation.
+	_, tipCap, feeCap := b.getGasCost(gasInfo, useEip1559, gasUnitPerSwap)
 
 	var rawTx *ethtypes.Transaction
-	if ethCfg.UseEip_1559 {
+	if useEip1559 {
 		dynamicFeeTx := &ethtypes.DynamicFeeTx{
 			ChainID:   libchain.GetChainIntFromId(b.chain),
-			Nonce:     0,
+			Nonce:     uint64(nonce),
 			GasTipCap: tipCap,
 			GasFeeCap: feeCap,
 			Gas:       maxGas,
@@ -247,7 +268,7 @@ func (b *bridge) buildERC20TransferIn(
 		rawTx = ethtypes.NewTx(dynamicFeeTx)
 	} else {
 		rawTx = ethtypes.NewTransaction(
-			0,
+			uint64(nonce),
 			gatewayAddress,
 			big.NewInt(0),
 			maxGas,
@@ -267,6 +288,15 @@ func (b *bridge) buildERC20TransferIn(
 		EthTx:    rawTx,
 		RawBytes: bz,
 	}, nil
+}
+
+func (b *bridge) buildERC20TransferIn(
+	ctx sdk.Context,
+	tokens []*types.Token,
+	recipients []ethcommon.Address,
+	amounts []*big.Int,
+) (*types.TxResponse, error) {
+	return nil, nil
 }
 
 // getGasCost returns total gas cost used for swapping transaction.

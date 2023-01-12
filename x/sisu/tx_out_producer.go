@@ -48,7 +48,6 @@ func NewTxOutputProducer(appKeys common.AppKeys, keeper keeper.Keeper,
 
 func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, chain string,
 	transfers []*types.TransferDetails) ([]*types.TxOutMsg, error) {
-
 	bridge := p.bridgeManager.GetBridge(ctx, chain)
 	msgs, err := bridge.ProcessTransfers(ctx, transfers)
 	if err != nil {

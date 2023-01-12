@@ -266,8 +266,6 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	// Sign tx outs
 	am.signTxOut(ctx)
 
-	fmt.Println("AAAAA Done end of block")
-
 	return []abci.ValidatorUpdate{}
 }
 

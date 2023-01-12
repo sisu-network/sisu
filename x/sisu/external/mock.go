@@ -1,6 +1,8 @@
 package external
 
 import (
+	"math/big"
+
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/echovl/cardano-go"
 	deyesethtypes "github.com/sisu-network/deyes/chains/eth/types"
@@ -28,6 +30,7 @@ type MockDeyesClient struct {
 	CardanoTipFunc             func(chain string, blockHeight uint64) (*cardano.NodeTip, error)
 	SolanaQueryRecentBlockFunc func(chain string) (*etypes.SolanaQueryRecentBlockResult, error)
 	GetGasInfoFunc             func(chain string) (*deyesethtypes.GasInfo, error)
+	GetTokenPriceFunc          func(id string) (*big.Int, error)
 }
 
 func (c *MockDeyesClient) Ping(source string) error {
@@ -119,6 +122,14 @@ func (m *MockDeyesClient) CardanoTip(chain string, blockHeight uint64) (*cardano
 func (m *MockDeyesClient) SolanaQueryRecentBlock(chain string) (*etypes.SolanaQueryRecentBlockResult, error) {
 	if m.SolanaQueryRecentBlockFunc != nil {
 		return m.SolanaQueryRecentBlockFunc(chain)
+	}
+
+	return nil, nil
+}
+
+func (m *MockDeyesClient) GetTokenPrice(id string) (*big.Int, error) {
+	if m.GetTokenPriceFunc != nil {
+		return m.GetTokenPriceFunc(id)
 	}
 
 	return nil, nil

@@ -1,7 +1,6 @@
 package sisu
 
 import (
-	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -45,8 +44,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 
 		transfers, err := bridge.ParseIncomginTx(ctx, txs.Chain, tx.Serialized)
 		if err != nil {
-			log.Errorf("Failed to parse transfer on chain %s, hex of the tx's binary = %s",
-				txs.Chain, hex.EncodeToString(tx.Serialized))
+			log.Errorf("Failed to parse transfer on chain %s, hash = %s", txs.Chain, tx.Hash)
 			continue
 		}
 

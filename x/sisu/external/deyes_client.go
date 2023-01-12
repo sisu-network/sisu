@@ -2,6 +2,7 @@ package external
 
 import (
 	"context"
+	"math/big"
 
 	"github.com/echovl/cardano-go"
 	"github.com/ethereum/go-ethereum/rpc"
@@ -15,8 +16,11 @@ type DeyesClient interface {
 	Ping(source string) error
 	Dispatch(request *etypes.DispatchedTxRequest) (*etypes.DispatchedTxResult, error)
 	SetVaultAddress(chain string, addr string, token string) error
-	GetNonce(chain string, address string) (int64, error)
 	SetSisuReady(isReady bool) error
+	GetTokenPrice(id string) (*big.Int, error)
+
+	// ETH
+	GetNonce(chain string, address string) (int64, error)
 	GetGasInfo(chain string) (*deyesethtypes.GasInfo, error)
 
 	// Cardano
@@ -96,6 +100,18 @@ func (c *defaultDeyesClient) Dispatch(request *etypes.DispatchedTxRequest) (*ety
 
 	return result, nil
 }
+
+func (c *defaultDeyesClient) GetTokenPrice(id string) (*big.Int, error) {
+	result := new(big.Int)
+	err := c.client.CallContext(context.Background(), &result, "deyes_getTokenPrice", id)
+	if err != nil {
+		log.Errorf("Cannot get token price for token %s, err = %s", id, err)
+	}
+
+	return result, err
+}
+
+///// ETH
 
 func (c *defaultDeyesClient) GetNonce(chain string, address string) (int64, error) {
 	var result int64
