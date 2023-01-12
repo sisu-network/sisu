@@ -18,13 +18,13 @@ const (
 )
 
 type txObject struct {
-	txOut  *types.TxOutOld
+	txOut  *types.TxOut
 	status types.TxStatus
 
 	addedTime time.Time
 }
 
-func newTxObject(txOut *types.TxOutOld) *txObject {
+func newTxObject(txOut *types.TxOut) *txObject {
 	return &txObject{
 		txOut:     txOut,
 		status:    types.TxStatusCreated,
@@ -35,7 +35,7 @@ func newTxObject(txOut *types.TxOutOld) *txObject {
 // TxTracker is used to track failed transaction. This includes both TxIn and TxOut. The tracked txs
 // are in-memory only.
 type TxTracker interface {
-	AddTransaction(txOut *types.TxOutOld)
+	AddTransaction(txOut *types.TxOut)
 	UpdateStatus(chain string, hash string, status types.TxStatus)
 	RemoveTransaction(chain string, hash string)
 	OnTxFailed(chain string, hash string, status types.TxStatus)
@@ -60,7 +60,7 @@ func (t *DefaultTxTracker) getTxoKey(chain string, hash string) string {
 	return fmt.Sprintf("%s__%s", chain, hash)
 }
 
-func (t *DefaultTxTracker) AddTransaction(txOut *types.TxOutOld) {
+func (t *DefaultTxTracker) AddTransaction(txOut *types.TxOut) {
 	chain := txOut.Content.OutChain
 	hash := txOut.Content.OutHash
 	key := t.getTxoKey(chain, hash)

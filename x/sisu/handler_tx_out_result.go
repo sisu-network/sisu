@@ -55,7 +55,7 @@ func (h *HandlerTxOutResult) doTxOutResult(ctx sdk.Context, msgWithSigner *types
 	}
 }
 
-func (h *HandlerTxOutResult) doTxOutConfirm(ctx sdk.Context, msg *types.TxOutResult, txOut *types.TxOutOld) ([]byte, error) {
+func (h *HandlerTxOutResult) doTxOutConfirm(ctx sdk.Context, msg *types.TxOutResult, txOut *types.TxOut) ([]byte, error) {
 	log.Verbose("Transaction is successfully included in a block, hash (no sig)= ", msg.OutHash, " chain = ", msg.OutChain)
 
 	// Update observed block height and nonce.
@@ -75,7 +75,7 @@ func (h *HandlerTxOutResult) doTxOutConfirm(ctx sdk.Context, msg *types.TxOutRes
 	return nil, nil
 }
 
-func (h *HandlerTxOutResult) doTxOutFailure(ctx sdk.Context, msg *types.TxOutResult, txOut *types.TxOutOld) ([]byte, error) {
+func (h *HandlerTxOutResult) doTxOutFailure(ctx sdk.Context, msg *types.TxOutResult, txOut *types.TxOut) ([]byte, error) {
 	log.Warn("Transaction failed!, txOut.TxType = ", txOut.TxType)
 
 	switch txOut.TxType {

@@ -44,6 +44,7 @@ func (h *HandlerTxOut) DeliverMsg(ctx sdk.Context, msg *types.TxOutMsg) (*sdk.Re
 			AssignedValidator: assignedVal,
 			TxOutId:           msg.Data.GetId(),
 		})
+
 		h.txSubmit.SubmitMessageAsync(txOutConfirmMsg)
 	}
 
@@ -93,7 +94,7 @@ func (h *HandlerTxOut) checkAssignedValMessage(ctx sdk.Context, msg *types.TxOut
 }
 
 // doTxOut saves a TxOut in the keeper and add it the TxOut Queue.
-func doTxOut(ctx sdk.Context, k keeper.Keeper, txOut *types.TxOutOld) ([]byte, error) {
+func doTxOut(ctx sdk.Context, k keeper.Keeper, txOut *types.TxOut) ([]byte, error) {
 	log.Info("Delivering TxOut")
 
 	// Save this to KVStore
@@ -108,7 +109,7 @@ func doTxOut(ctx sdk.Context, k keeper.Keeper, txOut *types.TxOutOld) ([]byte, e
 	return nil, nil
 }
 
-func handlerTransfer(ctx sdk.Context, k keeper.Keeper, txOut *types.TxOutOld) {
+func handlerTransfer(ctx sdk.Context, k keeper.Keeper, txOut *types.TxOut) {
 	// 1. Update TxOut queue
 	addTxOutToQueue(ctx, k, txOut)
 
@@ -129,7 +130,7 @@ func handlerTransfer(ctx sdk.Context, k keeper.Keeper, txOut *types.TxOutOld) {
 	k.SetTransferQueue(ctx, txOut.Content.OutChain, newQueue)
 }
 
-func addTxOutToQueue(ctx sdk.Context, k keeper.Keeper, txOut *types.TxOutOld) {
+func addTxOutToQueue(ctx sdk.Context, k keeper.Keeper, txOut *types.TxOut) {
 	// Move the the transfers associated with this tx_out to pending.
 	queue := k.GetTxOutQueue(ctx, txOut.Content.OutChain)
 	queue = append(queue, txOut)

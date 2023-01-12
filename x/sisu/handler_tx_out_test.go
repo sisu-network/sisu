@@ -13,10 +13,9 @@ import (
 func mockForHandlerTxOut() (sdk.Context, ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
-	txTracker := &MockTxTracker{}
 	pmm := NewPostedMessageManager(k)
 
-	mc := MockManagerContainer(k, pmm, txTracker, &MockTxOutQueue{})
+	mc := MockManagerContainer(k, pmm, &MockTxOutQueue{})
 	return ctx, mc
 }
 
@@ -24,7 +23,7 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 	destChain := "ganache2"
 	txOutMsg1 := &types.TxOutMsg{
 		Signer: "signer",
-		Data: &types.TxOutOld{
+		Data: &types.TxOut{
 			TxType: types.TxOutType_TRANSFER_OUT,
 			Content: &types.TxOutContent{
 				OutChain: destChain,

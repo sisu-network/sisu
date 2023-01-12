@@ -63,7 +63,7 @@ func TestHandlerTxOutResult(t *testing.T) {
 		k := mc.Keeper()
 		privateDb := mc.PrivateDb()
 
-		txOut := &types.TxOutOld{
+		txOut := &types.TxOut{
 			TxType: types.TxOutType_TRANSFER_OUT,
 			Content: &types.TxOutContent{
 				OutChain: "ganache2",
@@ -99,7 +99,7 @@ func TestHandlerTxOutResult(t *testing.T) {
 		privateDb := mc.PrivateDb()
 		k.AddTransfers(ctx, transfers)
 
-		txOut := &types.TxOutOld{
+		txOut := &types.TxOut{
 			TxType: types.TxOutType_TRANSFER_OUT,
 			Content: &types.TxOutContent{
 				OutChain: "ganache2",

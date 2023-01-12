@@ -65,7 +65,7 @@ func TestTransferQueue(t *testing.T) {
 			for i := range transfers {
 				ret[i] = &types.TxOutMsg{
 					Signer: "signer",
-					Data: &types.TxOutOld{
+					Data: &types.TxOut{
 						Content: &types.TxOutContent{
 							OutChain: "ganache2",
 						},
