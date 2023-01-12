@@ -1,6 +1,8 @@
 package sisu
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -37,6 +39,8 @@ func (m *defaultPostedMessageManager) ShouldProcessMsg(ctx sdk.Context, msg sdk.
 		log.Warn("tssParams is nil")
 		return false, nil
 	}
+
+	fmt.Println("tssParams.MajorityThreshold = ", tssParams.MajorityThreshold)
 
 	if count >= int(tssParams.MajorityThreshold) {
 		return true, hash

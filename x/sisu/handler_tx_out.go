@@ -37,23 +37,29 @@ func (h *HandlerTxOut) DeliverMsg(ctx sdk.Context, msg *types.TxOutMsg) (*sdk.Re
 		return &sdk.Result{Data: data}, err
 	}
 
+	// do message validation. This work can be done in the background.
 	fmt.Println("AAAAA HandlerTxOut DeliverMsg")
-	if ok, assignedVal := h.checkAssignedValMessage(ctx, msg); ok {
-		// Submit the TxOut confirm
-		txOutConfirmMsg := types.NewTxOutConsensedMsg(msg.Signer, &types.TxOutConsensed{
-			AssignedValidator: assignedVal,
-			TxOutId:           msg.Data.GetId(),
-		})
-
-		h.txSubmit.SubmitMessageAsync(txOutConfirmMsg)
+	ok, assignedVal := h.validateTxOut(ctx, msg)
+	vote := types.VoteResult_APPROVE
+	if !ok {
+		vote = types.VoteResult_REJECT
 	}
+
+	// Submit the TxOut confirm
+	txOutConfirmMsg := types.NewTxOutConsensedMsg(msg.Signer, &types.TxOutConsensed{
+		AssignedValidator: assignedVal,
+		TxOutId:           msg.Data.GetId(),
+		Vote:              vote,
+	})
+
+	h.txSubmit.SubmitMessageAsync(txOutConfirmMsg)
 
 	return &sdk.Result{}, nil
 }
 
-// checkAssignedValMessage checks if a TxOutMsg comes from the assigned validator. If this is true,
+// validateTxOut checks if a TxOutMsg comes from the assigned validator. If this is true,
 // we can submit the confirm TxOut message.
-func (h *HandlerTxOut) checkAssignedValMessage(ctx sdk.Context, msg *types.TxOutMsg) (bool, string) {
+func (h *HandlerTxOut) validateTxOut(ctx sdk.Context, msg *types.TxOutMsg) (bool, string) {
 	// Check if this is the message from assigned validator.
 	// TODO: Do a validation to verify that the this TxOut is still within the allowed time interval
 	// since confirmed transfers.

@@ -772,7 +772,6 @@ func getTransferQueue(queueStore, transferStore cstypes.KVStore, chain string) [
 	}
 
 	s := string(bz)
-	fmt.Println("getTransferQueue s = ", s)
 	ids := strings.Split(s, ",")
 
 	return getTransfers(transferStore, ids)
