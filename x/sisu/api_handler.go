@@ -18,11 +18,6 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-const (
-	// The number of block interval that we should update all token prices.
-	TokenPriceUpdateInterval = 600 // About 30 mins for 3s block.
-)
-
 var (
 	ErrInvalidMessageType      = fmt.Errorf("Invalid Message Type")
 	ErrMessageHasBeenProcessed = fmt.Errorf("Message has been processed")

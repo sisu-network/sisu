@@ -1,9 +1,6 @@
 package sisu
 
 import (
-	"math/big"
-	"sort"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
@@ -28,9 +25,6 @@ func (a AppModule) beginBlock(ctx sdk.Context, blockHeight int64) {
 		a.mc.DheartClient().SetSisuReady(true)
 		a.mc.DeyesClient().SetSisuReady(true)
 	}
-
-	// Calculate token prices
-	a.calculateTokenPrices(ctx)
 }
 
 /**
@@ -65,71 +59,4 @@ func (a AppModule) checkTssKeygen(ctx sdk.Context, blockHeight int64) {
 		log.Info("Submitting proposal message for ", keyType)
 		a.txSubmit.SubmitMessageAsync(proposal)
 	}
-}
-
-// calculateTokenPrices gets all token prices posted from all validators and calculate the median.
-func (a AppModule) calculateTokenPrices(ctx sdk.Context) {
-	curBlock := ctx.BlockHeight()
-
-	// We wait for 5 more blocks after we get prices from deyes so that any record can be posted
-	// onto the blockchain.
-	if curBlock%TokenPriceUpdateInterval != 5 {
-		return
-	}
-
-	log.Info("Calcuating token prices....")
-
-	// TODO: Fix the signer set.
-	records := a.keeper.GetAllTokenPricesRecord(ctx)
-
-	tokenPrices := make(map[string][]*big.Int)
-	for _, data := range records {
-		for _, record := range data.Records {
-			// Only calculate token prices that has been updated recently.
-			if curBlock-int64(record.BlockHeight) > TokenPriceUpdateInterval {
-				continue
-			}
-
-			m := tokenPrices[record.Token]
-			if m == nil {
-				m = make([]*big.Int, 0)
-			}
-
-			value, _ := new(big.Int).SetString(record.Price, 10)
-			m = append(m, value)
-
-			tokenPrices[record.Token] = m
-		}
-	}
-
-	// Now sort all the array and get the median
-	medians := make(map[string]*big.Int)
-	for token, list := range tokenPrices {
-		if len(list) == 0 {
-			log.Error("cannot find price list for token ", token)
-			continue
-		}
-
-		sort.Slice(list, func(i, j int) bool {
-			return list[i].Cmp(list[j]) < 0
-		})
-		median := list[len(list)/2]
-		medians[token] = median
-	}
-
-	log.Verbose("Calculated prices = ", medians)
-
-	// Update all the token data.
-	arr := make([]string, 0, len(medians))
-	for token, _ := range medians {
-		arr = append(arr, token)
-	}
-
-	savedTokens := a.keeper.GetTokens(ctx, arr)
-
-	for tokenId, price := range medians {
-		savedTokens[tokenId].Price = price.String()
-	}
-
-	a.keeper.SetTokens(ctx, savedTokens)
 }

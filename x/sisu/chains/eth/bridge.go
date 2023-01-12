@@ -246,8 +246,7 @@ func (b *bridge) buildTransaction(
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("AAAA Nonce = ", nonce)
+	log.Verbosef("Nonce on chain %s = %d", b.chain, nonce)
 
 	maxGas := uint64(gasUnitPerSwap * len(finalRecipients)) // max 80k per swapping operation.
 	_, tipCap, feeCap := b.getGasCost(gasInfo, useEip1559, gasUnitPerSwap)
