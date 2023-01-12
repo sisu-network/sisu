@@ -48,7 +48,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 			continue
 		}
 
-		fmt.Println("CCCCC len(transfers) = ", len(transfers))
+		log.Verbosef("len(transfers) = %d", len(transfers))
 
 		if len(transfers) == 0 {
 			// There is no transfer request from this transaction. Just ignore. In the future, we have
