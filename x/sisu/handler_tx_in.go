@@ -51,15 +51,7 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msg *types.TxInMsg) ([]byte, error
 	fmt.Println("BBBBB 000000")
 	if txInDetails != nil {
 		fmt.Println("BBBBB 111111")
-		// 1. TODO: Do verificaiton on the tx in details to make sure this data is correct (including
-		// the transfers)
-
-		fmt.Println("BBBBB txInDetails.Data = ", txInDetails.Data)
-
-		// 2. Add all the new transfers to the transfer queue.
-		saveTransfers(ctx, h.keeper, txInDetails.Data.Transfers)
-	} else {
-		// We have not received the txInDetails yet
+		doTxInDetails(ctx, h.keeper, txInDetails)
 	}
 
 	return nil, nil

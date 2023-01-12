@@ -931,6 +931,8 @@ func getTxHashIndex(store cstypes.KVStore, key string) uint32 {
 
 ///// TxInDetails
 func setTxInDetails(store cstypes.KVStore, txInId string, txIn *types.TxInDetails) {
+	fmt.Println("msg.Data.TxIn.Id = ", txInId)
+
 	bz, err := txIn.Marshal()
 	if err != nil {
 		log.Errorf("setTxInDetails: failed to marshal msg, err = %s", err)
@@ -949,7 +951,7 @@ func getTxInDetails(store cstypes.KVStore, txInId string) *types.TxInDetailsMsg 
 	msg := new(types.TxInDetailsMsg)
 	err := msg.Unmarshal(bz)
 	if err != nil {
-		log.Errorf("getTxInDetails: failed to unmarshal TxInDetails, err = %s", err)
+		log.Errorf("getTxInDetails: failed to unmarshal TxInDetails with id %s, err = %s", txInId, err)
 		return nil
 	}
 

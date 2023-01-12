@@ -260,11 +260,17 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	cloneCtx := utils.CloneSdkContext(ctx)
 	am.globalData.SetReadOnlyContext(cloneCtx)
 
+	fmt.Println("Processing transfer queue....")
+
 	// Process pending transfers
 	am.mc.TransferQueue().ProcessTransfers(ctx)
 
+	fmt.Println("Doing signing tx out....")
+
 	// Sign tx outs
 	am.signTxOut(ctx)
+
+	fmt.Println("Done END OF Block")
 
 	return []abci.ValidatorUpdate{}
 }

@@ -73,6 +73,7 @@ func (q *defaultTransferQueue) Stop() {
 }
 
 func (q *defaultTransferQueue) ProcessTransfers(ctx sdk.Context) {
+	fmt.Println("CCCCCC ProcessTransfers")
 	q.newRequestCh <- TransferRequest{
 		ctx: ctx,
 	}
@@ -92,6 +93,7 @@ func (q *defaultTransferQueue) loop() {
 
 func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 	params := q.keeper.GetParams(ctx)
+
 	for _, chain := range params.SupportedChains {
 		pendingInfo := q.privateDb.GetPendingTxOut(chain)
 		if pendingInfo != nil {
