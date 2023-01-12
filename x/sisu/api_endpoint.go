@@ -94,7 +94,7 @@ func (a *ApiEndPoint) KeygenResult(result htypes.KeygenResult) bool {
 	return true
 }
 
-// This is a API endpoint to receive transactions with To address we are interested in.
+// PostObservedTxs is a API endpoint to receive transactions with To address we are interested in.
 func (a *ApiEndPoint) PostObservedTxs(txs *etypes.Txs) {
 	log.Infof("There are %d transactions from deyes from chain %s", len(txs.Arr), txs.Chain)
 	// There is a new transaction that we are interested in.

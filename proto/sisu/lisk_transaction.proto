@@ -1,0 +1,15 @@
+syntax = "proto2";
+
+package lisk;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message TransactionMessage {
+  required uint32 moduleID = 1;
+  required uint32 assetID = 2;
+  required uint64 nonce = 3;
+  required uint64 fee = 4;
+  required bytes senderPublicKey = 5;
+  required bytes asset = 6;
+  repeated bytes signatures = 7;
+}

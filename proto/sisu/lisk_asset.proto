@@ -1,0 +1,11 @@
+syntax = "proto2";
+
+package lisk;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message AssetMessage {
+  required uint64 amount = 1;
+  required bytes recipientAddress = 2;
+  required string data = 3;
+}
