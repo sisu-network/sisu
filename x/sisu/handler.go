@@ -69,11 +69,6 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 		case *types.UpdateSolanaRecentHashMsg:
 			return NewHandlerUpdateSolanaRecentHash(mc.Keeper()).DeliverMsg(ctx, msg)
 
-		case *types.AdjustEthNonceMsg:
-			return NewHandlerAdjustEthNonce(
-				mc.PostedMessageManager(), mc.Keeper(), mc.PrivateDb(),
-			).DeliverMsg(ctx, msg)
-
 		case *types.TxInMsg:
 			return NewHandlerTxIn(mc.PostedMessageManager(), mc.Keeper(), mc.ValidatorManager(),
 				mc.GlobalData()).DeliverMsg(ctx, msg)
