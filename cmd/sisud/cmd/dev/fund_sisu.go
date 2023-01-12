@@ -98,6 +98,16 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, mnem
 		c.fundCardano(genesisFolder, cardanoAddr, mnemonic, cardanoConfig.Secret, sisuRpc, tokens)
 	}
 
+	if helper.IsLiskEnabled(genesisFolder) {
+		wg.Add(1)
+
+		go func() {
+			log.Verbose("Funding on lisk chain...")
+			c.fundLisk(genesisFolder, mnemonic, allPubKeys[libchain.KEY_TYPE_EDDSA])
+			wg.Done()
+		}()
+	}
+
 	// Fund solana
 	if helper.IsSolanaEnabled(genesisFolder) {
 		wg.Add(1)

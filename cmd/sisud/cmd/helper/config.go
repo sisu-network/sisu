@@ -69,10 +69,31 @@ func ReadCardanoConfig(genesisFolder string) CardanoConfig {
 	return cfg
 }
 
+type LiskConfig struct {
+	Enable  bool              `toml:"enable" json:"enable"`
+	Chain   string            `toml:"chain" json:"chain"`
+	RPC     string            `toml:"chain" json:"rpc"`
+	Network map[string]string `toml:"network" json:"network"`
+}
+
+func ReadLiskConfig(genesisFolder string) LiskConfig {
+	cfg := LiskConfig{}
+
+	dat, err := os.ReadFile(filepath.Join(genesisFolder, "lisk.json"))
+	if err != nil {
+		panic(err)
+	}
+
+	if err := json.Unmarshal(dat, &cfg); err != nil {
+		panic(err)
+	}
+	return cfg
+}
+
 func ReadDeyesChainConfigs(path string) []econfig.Chain {
 	deyesChains := make([]econfig.Chain, 0)
 	file, _ := ioutil.ReadFile(path)
-	err := json.Unmarshal([]byte(file), &deyesChains)
+	err := json.Unmarshal(file, &deyesChains)
 	if err != nil {
 		panic(err)
 	}

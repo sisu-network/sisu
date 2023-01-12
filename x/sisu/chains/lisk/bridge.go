@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	ltypes "github.com/sisu-network/deyes/chains/lisk/types"
 	deyesConfig "github.com/sisu-network/deyes/config"
 	eyestypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/lib/log"
@@ -88,7 +89,7 @@ func (b *defaultBridge) buildTransferInResponse(
 		return nil, err
 	}
 
-	assetPb := &types.AssetMessage{
+	assetPb := &ltypes.AssetMessage{
 		Amount:           &amount,
 		RecipientAddress: recipientAddress,
 		Data:             &data,
@@ -98,7 +99,7 @@ func (b *defaultBridge) buildTransferInResponse(
 	pubKey := crypto.GetPublicKeyFromSecret(b.config.Sisu.KeyringPassphrase)
 	privateKey := crypto.GetPrivateKeyFromSecret(b.config.Sisu.KeyringPassphrase)
 	fee := uint64(1000000)
-	txPb := &types.TransactionMessage{
+	txPb := &ltypes.TransactionMessage{
 		ModuleID:        &moduleId,
 		AssetID:         &assetId,
 		Fee:             &fee,

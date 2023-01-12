@@ -29,9 +29,9 @@ func (c *fundAccountCmd) fundSolana(genesisFolder, mnemonic string, mpcPubKey []
 
 	// Create client & ws connector
 	clients, wsClients := helper.GetSolanaClientAndWss(genesisFolder)
-
 	// Fund SOL tokens for MPC accounts
 	mpcAddr := utils.GetSolanaAddressFromPubkey(mpcPubKey)
+
 	log.Verbose("Funding SOL for mpc address = ", mpcAddr)
 	transferSOL(clients, wsClients, mnemonic, mpcAddr, uint64(20_000_000))
 

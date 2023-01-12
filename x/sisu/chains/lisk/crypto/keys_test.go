@@ -23,3 +23,9 @@ func TestGetPrivateKeyFromSecret(t *testing.T) {
 	val := GetPrivateKeyFromSecret(passphrase)
 	require.Equal(t, val, privateKey)
 }
+
+func TestAddressFromPublicKey(t *testing.T) {
+	publicKey, _ := hex.DecodeString("aae33db460ee8e037ea87e5f8f0de34e138ef118c4b7113b53cdf3a1f6618e90")
+	val := GetAddressFromPublicKey(publicKey)
+	require.Equal(t, val, "750c899a72aae6911a003645acf7fc7459c29d35")
+}

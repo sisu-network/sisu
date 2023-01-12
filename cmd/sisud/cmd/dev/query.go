@@ -134,8 +134,8 @@ func queryPubKeys(ctx context.Context, sisuRpc string) map[string][]byte {
 	}
 
 	queryClient := types.NewTssQueryClient(grpcConn)
-
 	res, err := queryClient.AllPubKeys(ctx, &types.QueryAllPubKeysRequest{})
+
 	if err != nil {
 		panic(err)
 	}

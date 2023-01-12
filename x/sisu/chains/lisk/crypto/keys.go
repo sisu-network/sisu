@@ -3,7 +3,7 @@ package crypto
 import (
 	"bytes"
 	"crypto/sha256"
-
+	"encoding/hex"
 	"golang.org/x/crypto/ed25519"
 )
 
@@ -21,4 +21,10 @@ func GetPublicKeyFromSecret(secret string) []byte {
 	pKey, _, _ := ed25519.GenerateKey(bytes.NewReader(secretHash[:sha256.Size]))
 
 	return pKey
+}
+
+// GetAddressFromPublicKey takes a Lisk public key and returns the associated address
+func GetAddressFromPublicKey(publicKey []byte) string {
+	publicKeyHash := sha256.Sum256(publicKey)
+	return hex.EncodeToString(publicKeyHash[:20])
 }
