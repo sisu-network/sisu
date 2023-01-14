@@ -44,12 +44,11 @@ func (b *defaultBridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Tra
 	if err != nil {
 		return nil, err
 	}
-	responseTx, err := b.buildTransferInResponse(transfer.ToRecipient, amount, "", moduleId, assetId)
+	responseTx, err := b.buildTransferInResponse("mnemonic", transfer.ToRecipient, amount, "", moduleId, assetId)
 	if err != nil {
 		log.Error("Failed to build lisk transfer in, err = ", err)
 		return nil, err
 	}
-	log.Info(responseTx)
 	outMsg := types.NewTxOutMsg(
 		b.signer,
 		types.TxOutType_TRANSFER_OUT,
@@ -66,6 +65,7 @@ func (b *defaultBridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Tra
 }
 
 func (b *defaultBridge) buildTransferInResponse(
+	mnemonic string,
 	recipient string,
 	amount uint64,
 	data string,
@@ -74,7 +74,16 @@ func (b *defaultBridge) buildTransferInResponse(
 ) (*types.TxResponse, error) {
 	config := deyesConfig.Chain{Chain: b.chain, Rpcs: []string{b.config.Lisk.RPC}}
 	client := NewLiskRPC(config)
-	acc, err := client.GetAccount(recipient)
+	faucet := crypto.GetPublicKeyFromSecret(mnemonic)
+	address := crypto.GetAddressFromPublicKey(faucet)
+
+	senderAddress, err := hex.DecodeString(address)
+	if err != nil {
+		return nil, err
+	}
+
+	senderLisk32 := crypto.AddressToLisk32(senderAddress)
+	acc, err := client.GetAccount(senderLisk32)
 	if err != nil {
 		return nil, err
 	}

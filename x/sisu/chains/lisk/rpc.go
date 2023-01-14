@@ -3,13 +3,10 @@ package lisk
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/sisu-network/lib/log"
-	"io/ioutil"
-	"net/http"
-	"reflect"
-
 	ltype "github.com/sisu-network/deyes/chains/lisk/types"
 	"github.com/sisu-network/deyes/config"
+	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/x/sisu/chains/lisk/utils"
 )
 
 type APIErr struct {
@@ -43,35 +40,12 @@ func NewLiskRPC(cfg config.Chain) LiskRPC {
 	return c
 }
 
-func (c *defaultLiskRPC) execute(endpoint string, method string, params map[string]string) ([]byte, error) {
-	keys := reflect.ValueOf(params).MapKeys()
-	req, err := http.NewRequest(method, c.rpc+endpoint, nil)
-	if err != nil {
-		return nil, err
-	}
-	q := req.URL.Query()
-	for _, key := range keys {
-		q.Add(key.Interface().(string), params[key.Interface().(string)])
-	}
-	req.URL.RawQuery = q.Encode()
-	response, err := http.Get(req.URL.String())
-	if response == nil {
-		return nil, NewApiErr("cannot fetch data " + endpoint)
-	}
-
-	responseData, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return responseData, err
-}
-
 func (c *defaultLiskRPC) CreateTransaction(txHash string) (string, error) {
 	params := map[string]string{
-		"tx": txHash,
+		"transaction": txHash,
 	}
-	response, err := c.execute("/transaction", "POST", params)
+	http := utils.NewHttpRPC(c.rpc)
+	response, err := http.Post("/transactions", params)
 	if err != nil {
 		return "", err
 	}
@@ -81,7 +55,7 @@ func (c *defaultLiskRPC) CreateTransaction(txHash string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	message := responseObject.Message
+	message := responseObject.TransactionId
 
 	return message, nil
 }
@@ -90,7 +64,8 @@ func (c *defaultLiskRPC) GetAccount(address string) (*ltype.Account, error) {
 	params := map[string]string{
 		"address": address,
 	}
-	response, err := c.execute("/accounts", "GET", params)
+	http := utils.NewHttpRPC(c.rpc)
+	response, err := http.Get("/accounts", params)
 	if err != nil {
 		return nil, err
 	}

@@ -70,10 +70,10 @@ func ReadCardanoConfig(genesisFolder string) CardanoConfig {
 }
 
 type LiskConfig struct {
-	Enable  bool              `toml:"enable" json:"enable"`
-	Chain   string            `toml:"chain" json:"chain"`
-	RPC     string            `toml:"chain" json:"rpc"`
-	Network map[string]string `toml:"network" json:"network"`
+	Enable  bool   `toml:"enable" json:"enable"`
+	Chain   string `toml:"chain" json:"chain"`
+	RPC     string `toml:"chain" json:"rpc"`
+	Network string `toml:"network" json:"network"`
 }
 
 func ReadLiskConfig(genesisFolder string) LiskConfig {
@@ -87,6 +87,7 @@ func ReadLiskConfig(genesisFolder string) LiskConfig {
 	if err := json.Unmarshal(dat, &cfg); err != nil {
 		panic(err)
 	}
+
 	return cfg
 }
 
