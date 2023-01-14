@@ -35,15 +35,14 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		mc := sh.mc
 
+		fmt.Println("msg type = ", msg.Type())
+
 		switch msg := msg.(type) {
 		case *types.KeygenWithSigner:
 			return NewHandlerKeygen(mc).DeliverMsg(ctx, msg)
 
 		case *types.KeygenResultWithSigner:
 			return NewHandlerKeygenResult(mc).DeliverMsg(ctx, msg)
-
-		case *types.TransfersMsg:
-			return NewHandlerTransfers(mc).DeliverMsg(ctx, msg)
 
 		case *types.TxOutMsg:
 			return NewHandlerTxOut(mc).DeliverMsg(ctx, msg)
@@ -53,9 +52,6 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 
 		case *types.KeysignResult:
 			return NewHandlerKeysignResult(mc).DeliverMsg(ctx, msg)
-
-		case *types.GasPriceMsg:
-			return NewHandlerGasPrice(mc).DeliverMsg(ctx, msg)
 
 		case *types.UpdateTokenPrice:
 			return NewHandlerTokenPrice(mc).DeliverMsg(ctx, msg)
@@ -69,13 +65,12 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 		case *types.UpdateSolanaRecentHashMsg:
 			return NewHandlerUpdateSolanaRecentHash(mc.Keeper()).DeliverMsg(ctx, msg)
 
-		case *types.TxInMsg:
-			return NewHandlerTxIn(mc.PostedMessageManager(), mc.Keeper(), mc.ValidatorManager(),
-				mc.GlobalData()).DeliverMsg(ctx, msg)
-
 		case *types.TxInDetailsMsg:
 			return NewHandlerTxInDetails(mc.PostedMessageManager(), mc.Keeper(),
-				mc.GlobalData(), mc.BridgeManager(), mc.ValidatorManager()).DeliverMsg(ctx, msg)
+				mc.GlobalData(), mc.BridgeManager(), mc.ValidatorManager(), mc.PrivateDb()).DeliverMsg(ctx, msg)
+
+		case *types.TxOutVoteMsg:
+			return NewHandlerTxOutConsensed(mc.PostedMessageManager(), mc.Keeper()).DeliverMsg(ctx, msg)
 
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)

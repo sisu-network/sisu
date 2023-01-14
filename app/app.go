@@ -273,15 +273,14 @@ func New(
 
 	txOutProducer := tss.NewTxOutputProducer(app.appKeys, app.k, bridgeManager, txTracker)
 	transferQueue := sisu.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss,
-		app.appKeys, privateDb, valsMgr)
+		app.appKeys, privateDb, valsMgr, app.globalData)
 	chainPolling := service.NewChainPolling(app.appKeys.GetSignerAddress().String(),
 		deyesClient, app.txSubmitter)
-	backgroundService := sisu.NewBackground(app.k, privateDb, valsMgr, bridgeManager)
 
 	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.k),
 		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg,
 		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, transferQueue, bridgeManager,
-		chainPolling, privateDb, backgroundService)
+		chainPolling, privateDb)
 
 	apiHandler := tss.NewApiHandler(privateDb, mc)
 	app.apiEndPoint.SetAppLogicListener(apiHandler)
@@ -289,6 +288,10 @@ func New(
 	sisuHandler := tss.NewSisuHandler(mc)
 	externalHandler := rest.NewExternalHandler(app.k, app.globalData)
 	app.externalHandler = externalHandler
+
+	txOutSigner := sisu.NewTxOutSigner(app.k, partyManager, dheartClient)
+	txOutProcessor := sisu.NewTxOutProcessor(app.k, privateDb, txOutSigner, app.globalData)
+	txOutProcessor.Start()
 
 	modules := []module.AppModule{
 		genutil.NewAppModule(
@@ -303,7 +306,7 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
 
-		tss.NewAppModule(appCodec, sisuHandler, app.k, apiHandler, valsMgr, backgroundService, mc),
+		tss.NewAppModule(appCodec, sisuHandler, app.k, apiHandler, valsMgr, txOutProcessor, mc),
 	}
 
 	app.apiHandler = apiHandler

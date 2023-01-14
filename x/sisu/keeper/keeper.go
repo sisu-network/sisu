@@ -26,12 +26,14 @@ var (
 	prefixTxOutQueue             = []byte{0x10}
 	prefixCommandQueue           = []byte{0x11}
 	prefixTransfer               = []byte{0x12}
-	prefixChainMetadata          = []byte{0x13}
-	prefixSignerNonce            = []byte{0x14}
-	prefixBlockHeight            = []byte{0x15}
-	prefixTxInDetails            = []byte{0x16}
-	prefixConfirmedTxIn          = []byte{0x17}
-	prefixVoteResult             = []byte{0x18}
+	prefixTransferQueue          = []byte{0x13}
+	prefixChainMetadata          = []byte{0x14}
+	prefixSignerNonce            = []byte{0x15}
+	prefixBlockHeight            = []byte{0x16}
+	prefixTxInDetails            = []byte{0x17}
+	prefixConfirmedTxIn          = []byte{0x18}
+	prefixVoteResult             = []byte{0x19}
+	prefixProposedTxOut          = []byte{0x1A}
 )
 
 var _ Keeper = (*DefaultKeeper)(nil)
@@ -140,8 +142,13 @@ type Keeper interface {
 	GetConfirmedTxIn(ctx sdk.Context, txInId string) *types.ConfirmedTxIn
 
 	// Vote Result
-	AddVoteResult(ctx sdk.Context, key string, signer string, result *types.VoteResult)
+	AddVoteResult(ctx sdk.Context, key string, signer string, result types.VoteResult)
 	GetVoteResults(ctx sdk.Context, key string) map[string]types.VoteResult
+
+	// Proposed TxOut
+	AddProposedTxOut(ctx sdk.Context, signer string, msg *types.TxOut)
+	GetProposedTxOut(ctx sdk.Context, id string, signer string) *types.TxOut
+	GetProposedTxOutCount(ctx sdk.Context, id string) int
 }
 
 type DefaultKeeper struct {
@@ -453,20 +460,20 @@ func (k *DefaultKeeper) GetConfirmedTxIn(ctx sdk.Context, txInId string) *types.
 
 ///// Transfer Queue
 func (k *DefaultKeeper) SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.TransferDetails) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPrivateTransferQueue)
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferQueue)
 	setTranferQueue(store, chain, transfers)
 }
 
 func (k *DefaultKeeper) GetTransferQueue(ctx sdk.Context, chain string) []*types.TransferDetails {
 	transferStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
-	queueStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixPrivateTransferQueue)
+	queueStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferQueue)
 
 	return getTransferQueue(queueStore, transferStore, chain)
 }
 
 ///// Vote Result
 func (k *DefaultKeeper) AddVoteResult(ctx sdk.Context, hash string, signer string,
-	result *types.VoteResult) {
+	result types.VoteResult) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixVoteResult)
 	addVoteResult(store, hash, signer, result)
 }
@@ -474,6 +481,21 @@ func (k *DefaultKeeper) AddVoteResult(ctx sdk.Context, hash string, signer strin
 func (k *DefaultKeeper) GetVoteResults(ctx sdk.Context, hash string) map[string]types.VoteResult {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixVoteResult)
 	return getVoteResults(store, hash)
+}
+
+func (k *DefaultKeeper) AddProposedTxOut(ctx sdk.Context, signer string, txOut *types.TxOut) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixProposedTxOut)
+	addProposedTxOut(store, signer, txOut)
+}
+
+func (k *DefaultKeeper) GetProposedTxOut(ctx sdk.Context, id string, signer string) *types.TxOut {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixProposedTxOut)
+	return getProposedTxOut(store, id, signer)
+}
+
+func (k *DefaultKeeper) GetProposedTxOutCount(ctx sdk.Context, id string) int {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixProposedTxOut)
+	return getProposedTxOutCount(store, id)
 }
 
 ///// Debug

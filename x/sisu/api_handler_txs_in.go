@@ -2,7 +2,6 @@ package sisu
 
 import (
 	"fmt"
-	"strings"
 
 	eyesTypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/lib/log"
@@ -27,7 +26,6 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 		return fmt.Errorf("cannot find bridge for chain %s", txs.Chain)
 	}
 
-	vals := a.valManager.GetValidators(ctx)
 	for _, tx := range txs.Arr {
 		if !tx.Success {
 			log.Verbose("Failed incoming transaction (not our fault), hash = ", tx.Hash, ", chain = ", txs.Chain)
@@ -58,30 +56,20 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 
 		// Just send a thin tx in.
 		txInId := fmt.Sprintf("%s__%s", txs.Chain, tx.Hash)
-		msg := types.NewTxInMsg(a.appKeys.GetSignerAddress().String(), &types.TxIn{Id: txInId})
-		a.txSubmit.SubmitMessageAsync(msg)
-
-		// Check if this node is assigned to confirm the next tx in.
-		sortedVals := utils.GetSortedValidators(txInId, vals)
-		if strings.EqualFold(a.appKeys.GetSignerAddress().String(), sortedVals[0].AccAddress) {
-			fmt.Println("CCCCC 1111")
-			// Parse the transfers
-
-			// Send a tx details instead
-			msg := types.NewTxInDetailsMsg(
-				a.appKeys.GetSignerAddress().String(),
-				&types.TxInDetails{
-					TxIn: &types.TxIn{
-						Id: txInId,
-					},
-					FromChain: txs.Chain,
-					Serialize: tx.Serialized,
-					Transfers: transfers,
+		// Parse the transfers
+		msg := types.NewTxInDetailsMsg(
+			a.appKeys.GetSignerAddress().String(),
+			&types.TxInDetails{
+				TxIn: &types.TxIn{
+					Id: txInId,
 				},
-			)
-			a.txSubmit.SubmitMessageAsync(msg)
-			fmt.Println("CCCCC 44444")
-		}
+				FromChain: txs.Chain,
+				Serialize: tx.Serialized,
+				Transfers: transfers,
+			},
+		)
+		a.txSubmit.SubmitMessageAsync(msg)
+		fmt.Println("CCCCC 44444")
 	}
 
 	fmt.Println("CCCCC Done!!!!")

@@ -26,15 +26,9 @@ func ToByte(i interface{}) []byte {
 	return buf.Bytes()
 }
 
-func FromByteToInt(i interface{}) int {
-	var buf bytes.Buffer
-	var result int
-	err := binary.Read(&buf, binary.BigEndian, &result)
-	if err != nil {
-		log.Errorf("Failed to read binary float, err = %s", err)
-	}
-
-	return result
+func FromByteToInt(bz []byte) int {
+	value := binary.BigEndian.Uint32(bz)
+	return int(value)
 }
 
 func MaxUint64(a, b uint64) uint64 {

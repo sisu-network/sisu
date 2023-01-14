@@ -5,13 +5,13 @@ option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 
 import "sisu/vote_result.proto";
 
-message TxOutConsensed {
+message TxOutVote {
   string assigned_validator = 1;
   string tx_out_id = 2;
   VoteResult vote = 3;
 }
 
-message TxOutConsensedMsg {
+message TxOutVoteMsg {
   string signer = 1;
-  TxOutConsensed data = 2;
+  TxOutVote data = 2;
 }

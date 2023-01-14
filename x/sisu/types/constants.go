@@ -22,7 +22,7 @@ const (
 	MsgTxIn                              = "TxIn"
 	MsgTxInDetails                       = "TxInDetails"
 	MsgTypeTxOut                         = "TxOut"
-	MsgTxOutConsensed                    = "TxOutConsensed"
+	MsgTxOutVote                         = "TxOutVote"
 
 	MsgTypeKeysignResult      = "KeysignResult"
 	MsgUpdateSolanaRecentHash = "UpdateSolanaRecentHash"

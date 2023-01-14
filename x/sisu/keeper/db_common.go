@@ -71,6 +71,14 @@ func getVoteResultKey(hash, signer string) []byte {
 	return []byte(fmt.Sprintf("%s__%s", hash, signer))
 }
 
+func getProposedTxOutKey(id, signer string) []byte {
+	return []byte(fmt.Sprintf("%s__%s", id, signer))
+}
+
+func getHoldProcessingKey(jobType, chain string) []byte {
+	return []byte(fmt.Sprintf("%s__%s", jobType, chain))
+}
+
 ///// TxREcord
 
 func saveTxRecord(store cstypes.KVStore, hash []byte, validator string) int {
@@ -985,7 +993,7 @@ func getConfirmedTxIn(store cstypes.KVStore, id string) *types.ConfirmedTxIn {
 }
 
 ///// Vote Result
-func addVoteResult(store cstypes.KVStore, hash string, signer string, result *types.VoteResult) {
+func addVoteResult(store cstypes.KVStore, hash string, signer string, result types.VoteResult) {
 	bz := utils.ToByte(result)
 	if bz == nil {
 		log.Errorf("addVoteResult: failed to convert result to byte")
@@ -1014,6 +1022,85 @@ func getVoteResults(store cstypes.KVStore, hash string) map[string]types.VoteRes
 	}
 
 	return ret
+}
+
+///// Proposed TxOut
+
+func addProposedTxOut(store cstypes.KVStore, signer string, txOut *types.TxOut) {
+	key := getProposedTxOutKey(txOut.GetId(), signer)
+	bz, err := txOut.Marshal()
+	if err != nil {
+		log.Errorf("addProposedTxOut: Failed to marshal proposed tx out")
+		return
+	}
+
+	store.Set(key, bz)
+}
+
+func getProposedTxOut(store cstypes.KVStore, id, signer string) *types.TxOut {
+	key := getProposedTxOutKey(id, signer)
+	bz := store.Get(key)
+	if bz == nil {
+		return nil
+	}
+
+	txOut := new(types.TxOut)
+	err := txOut.Unmarshal(bz)
+	if err != nil {
+		log.Errorf("Failed to get proposed tx out")
+		return nil
+	}
+
+	return txOut
+}
+
+func getProposedTxOutCount(store cstypes.KVStore, id string) int {
+	begin := []byte(fmt.Sprintf("%s__", id))
+	end := []byte(fmt.Sprintf("%s__~", id))
+
+	count := 0
+	for iter := store.Iterator(begin, end); iter.Valid(); iter.Next() {
+		count++
+	}
+
+	return count
+}
+
+///// State
+func setState(store cstypes.KVStore, id string, state int) {
+	store.Set([]byte(id), utils.Uint32ToBytes(uint32(state)))
+}
+
+func getState(store cstypes.KVStore, id string) int {
+	bz := store.Get([]byte(id))
+	if bz == nil {
+		return 0
+	}
+
+	ret := utils.BytesToUint32(bz)
+
+	return int(ret)
+}
+
+///// Hold Procesisng
+func setHoldProcessing(store cstypes.KVStore, jobType, chain string, hold bool) {
+	key := getHoldProcessingKey(jobType, chain)
+	value := byte(0)
+	if hold {
+		value = byte(1)
+	}
+
+	store.Set(key, []byte{value})
+}
+
+func getHoldProcessing(store cstypes.KVStore, jobType, chain string) bool {
+	key := getHoldProcessingKey(jobType, chain)
+	bz := store.Get(key)
+	if len(bz) == 0 {
+		return false
+	}
+
+	return bz[0] != byte(0)
 }
 
 ///// Debug functions

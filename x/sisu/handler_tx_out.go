@@ -16,6 +16,7 @@ type HandlerTxOut struct {
 	valsManager ValidatorManager
 	globalData  common.GlobalData
 	txSubmit    common.TxSubmit
+	appKeys     common.AppKeys
 }
 
 func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
@@ -25,17 +26,15 @@ func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
 		valsManager: mc.ValidatorManager(),
 		globalData:  mc.GlobalData(),
 		txSubmit:    mc.TxSubmit(),
+		appKeys:     mc.AppKeys(),
 	}
 }
 
 func (h *HandlerTxOut) DeliverMsg(ctx sdk.Context, msg *types.TxOutMsg) (*sdk.Result, error) {
-	shouldProcess, hash := h.pmm.ShouldProcessMsg(ctx, msg)
-	if shouldProcess {
-		data, err := doTxOut(ctx, h.keeper, msg.Data)
-		h.keeper.ProcessTxRecord(ctx, hash)
+	h.keeper.AddProposedTxOut(ctx, msg.Signer, msg.Data)
 
-		return &sdk.Result{Data: data}, err
-	}
+	// TODO: In case there every one does not approve the assigned node's transaction, we have to
+	// use the proposed txOuts from everyone to calculate the final TxOut.
 
 	// do message validation. This work can be done in the background.
 	fmt.Println("AAAAA HandlerTxOut DeliverMsg")
@@ -45,12 +44,17 @@ func (h *HandlerTxOut) DeliverMsg(ctx sdk.Context, msg *types.TxOutMsg) (*sdk.Re
 		vote = types.VoteResult_REJECT
 	}
 
+	fmt.Println("Vote = ", vote.String(), " signer = ", h.appKeys.GetSignerAddress().String())
+
 	// Submit the TxOut confirm
-	txOutConfirmMsg := types.NewTxOutConsensedMsg(msg.Signer, &types.TxOutConsensed{
-		AssignedValidator: assignedVal,
-		TxOutId:           msg.Data.GetId(),
-		Vote:              vote,
-	})
+	txOutConfirmMsg := types.NewTxOutVoteMsg(
+		h.appKeys.GetSignerAddress().String(),
+		&types.TxOutVote{
+			AssignedValidator: assignedVal,
+			TxOutId:           msg.Data.GetId(),
+			Vote:              vote,
+		},
+	)
 
 	h.txSubmit.SubmitMessageAsync(txOutConfirmMsg)
 
@@ -116,29 +120,24 @@ func doTxOut(ctx sdk.Context, k keeper.Keeper, txOut *types.TxOut) ([]byte, erro
 }
 
 func handlerTransfer(ctx sdk.Context, k keeper.Keeper, txOut *types.TxOut) {
-	// 1. Update TxOut queue
-	addTxOutToQueue(ctx, k, txOut)
+	// 1. Update TxOut txOutQ
+	txOutQ := k.GetTxOutQueue(ctx, txOut.Content.OutChain)
+	txOutQ = append(txOutQ, txOut)
+	k.SetTxOutQueue(ctx, txOut.Content.OutChain, txOutQ)
 
 	// 2. Remove the transfers in txOut from the queue
-	queue := k.GetTransferQueue(ctx, txOut.Content.OutChain)
+	transferQ := k.GetTransferQueue(ctx, txOut.Content.OutChain)
 	ids := make(map[string]bool, 0)
 	for _, inHash := range txOut.Input.TransferIds {
 		ids[inHash] = true
 	}
 
 	newQueue := make([]*types.TransferDetails, 0)
-	for _, transfer := range queue {
+	for _, transfer := range transferQ {
 		if !ids[transfer.Id] {
 			newQueue = append(newQueue, transfer)
 		}
 	}
 
 	k.SetTransferQueue(ctx, txOut.Content.OutChain, newQueue)
-}
-
-func addTxOutToQueue(ctx sdk.Context, k keeper.Keeper, txOut *types.TxOut) {
-	// Move the the transfers associated with this tx_out to pending.
-	queue := k.GetTxOutQueue(ctx, txOut.Content.OutChain)
-	queue = append(queue, txOut)
-	k.SetTxOutQueue(ctx, txOut.Content.OutChain, queue)
 }

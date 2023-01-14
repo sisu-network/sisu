@@ -37,11 +37,6 @@ type GlobalData interface {
 	AppInitialized() bool
 	SetAppInitialized()
 
-	// TODO: Remove these gas related functions
-	RecalculateGas(chain string)
-	GetRecalculateGas() []string
-	ResetGasCalculation()
-
 	// TxIn
 	ConfirmTxIn(txIn *types.TxIn)
 	GetTxInQueue() []*types.TxIn

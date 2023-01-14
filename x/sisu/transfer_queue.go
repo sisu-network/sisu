@@ -15,6 +15,7 @@ import (
 
 const (
 	MaxPendingTxCacheSize = 1000
+	TransferHoldKey       = "TransferQueue"
 )
 
 type TransferRequest struct {
@@ -37,6 +38,7 @@ type defaultTransferQueue struct {
 	newRequestCh     chan TransferRequest
 	valsManager      ValidatorManager
 	lock             *sync.RWMutex
+	globalData       common.GlobalData
 }
 
 func NewTransferQueue(
@@ -47,8 +49,8 @@ func NewTransferQueue(
 	appKeys common.AppKeys,
 	privateDb keeper.PrivateDb,
 	valsManager ValidatorManager,
+	globalData common.GlobalData,
 ) TransferQueue {
-	fmt.Println("valsManager 0 = ", valsManager)
 	return &defaultTransferQueue{
 		keeper:           keeper,
 		txOutputProducer: txOutputProducer,
@@ -59,6 +61,7 @@ func NewTransferQueue(
 		appKeys:          appKeys,
 		privateDb:        privateDb,
 		valsManager:      valsManager,
+		globalData:       globalData,
 	}
 }
 
@@ -73,7 +76,6 @@ func (q *defaultTransferQueue) Stop() {
 }
 
 func (q *defaultTransferQueue) ProcessTransfers(ctx sdk.Context) {
-	fmt.Println("CCCCCC ProcessTransfers")
 	q.newRequestCh <- TransferRequest{
 		ctx: ctx,
 	}
@@ -92,13 +94,16 @@ func (q *defaultTransferQueue) loop() {
 }
 
 func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
+	if q.globalData.IsCatchingUp() {
+		// This app is still catching up with block. Do nothing here.
+		return
+	}
+
 	params := q.keeper.GetParams(ctx)
 
 	for _, chain := range params.SupportedChains {
-		pendingInfo := q.privateDb.GetPendingTxOut(chain)
-		if pendingInfo != nil {
-			// Don't try to create new txouts while there are some pending tx.
-			log.Verbosef("Transfer queue: chain %s has some pending tx", chain)
+		if q.privateDb.GetHoldProcessing(TransferHoldKey, chain) {
+			fmt.Println("Another transfer is being processed")
 			continue
 		}
 
@@ -108,12 +113,18 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 		}
 
 		fmt.Println("Queye length = ", len(queue))
-		fmt.Println("q.valsManager = ", q.valsManager)
 		fmt.Println("queue[0] = ", queue[0])
 
+		transfer := queue[0]
+
 		// Check if the this node is the assigned node for the first transfer in the queue.
-		assignedNode := q.valsManager.GetAssignedValidator(ctx, queue[0].Id)
+		assignedNode := q.valsManager.GetAssignedValidator(ctx, transfer.Id)
 		if assignedNode.AccAddress != q.appKeys.GetSignerAddress().String() {
+			continue
+		}
+
+		transferState := q.privateDb.GetTransferState(transfer.Id)
+		if transferState != types.TransferState_Confirmed {
 			continue
 		}
 
@@ -131,6 +142,9 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 				Message: err.Error(),
 			})
 			q.txSubmit.SubmitMessageAsync(msg)
+
+			q.privateDb.SetTransferState(transfer.Id, types.TransferState_Failure)
+
 			continue
 		}
 
@@ -148,6 +162,8 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 				ExpiredBlock: ctx.BlockHeight() + 50,
 				State:        types.PendingTxOutInfo_IN_QUEUE,
 			})
+
+			q.privateDb.SetTransferState(transfer.Id, types.TransferState_WaitForTxOut)
 		}
 	}
 }

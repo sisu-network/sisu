@@ -3,7 +3,6 @@ package sisu
 import (
 	"encoding/json"
 	"fmt"
-	"sort"
 	"strings"
 
 	// this line is used by starport scaffolding # 1
@@ -24,7 +23,6 @@ import (
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/client/cli"
-	"github.com/sisu-network/sisu/x/sisu/client/rest"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -106,19 +104,16 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 
-	sisuHandler       *SisuHandler
-	externalHandler   *rest.ExternalHandler
-	keeper            keeper.Keeper
-	processor         *ApiHandler
-	appKeys           common.AppKeys
-	txSubmit          common.TxSubmit
-	globalData        common.GlobalData
-	valsManager       ValidatorManager
-	txTracker         TxTracker
-	txOutSigner       *txOutSigner
-	privateDb         keeper.PrivateDb
-	backgroundService Background
-	mc                ManagerContainer
+	sisuHandler    *SisuHandler
+	keeper         keeper.Keeper
+	processor      *ApiHandler
+	appKeys        common.AppKeys
+	txSubmit       common.TxSubmit
+	globalData     common.GlobalData
+	valsManager    ValidatorManager
+	txTracker      TxTracker
+	txOutProcessor TxOutProcessor
+	mc             ManagerContainer
 }
 
 func NewAppModule(cdc codec.Marshaler,
@@ -126,23 +121,21 @@ func NewAppModule(cdc codec.Marshaler,
 	keeper keeper.Keeper,
 	apiHandler *ApiHandler,
 	valsManager ValidatorManager,
-	backgroundService Background,
+	txOutProcessor TxOutProcessor,
 	mc ManagerContainer,
 ) AppModule {
 	return AppModule{
-		AppModuleBasic:    NewAppModuleBasic(cdc),
-		sisuHandler:       sisuHandler,
-		txSubmit:          mc.TxSubmit(),
-		processor:         apiHandler,
-		keeper:            keeper,
-		appKeys:           mc.AppKeys(),
-		globalData:        mc.GlobalData(),
-		valsManager:       valsManager,
-		txTracker:         mc.TxTracker(),
-		txOutSigner:       NewTxOutSigner(mc.Keeper(), mc.PartyManager(), mc.DheartClient()),
-		privateDb:         mc.PrivateDb(),
-		backgroundService: backgroundService,
-		mc:                mc,
+		AppModuleBasic: NewAppModuleBasic(cdc),
+		sisuHandler:    sisuHandler,
+		txSubmit:       mc.TxSubmit(),
+		processor:      apiHandler,
+		keeper:         keeper,
+		appKeys:        mc.AppKeys(),
+		globalData:     mc.GlobalData(),
+		valsManager:    valsManager,
+		txTracker:      mc.TxTracker(),
+		txOutProcessor: txOutProcessor,
+		mc:             mc,
 	}
 }
 
@@ -260,103 +253,11 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	cloneCtx := utils.CloneSdkContext(ctx)
 	am.globalData.SetReadOnlyContext(cloneCtx)
 
-	fmt.Println("Processing transfer queue....")
-
 	// Process pending transfers
-	am.mc.TransferQueue().ProcessTransfers(ctx)
+	am.mc.TransferQueue().ProcessTransfers(cloneCtx)
 
-	fmt.Println("Doing signing tx out....")
-
-	// Sign tx outs
-	am.signTxOut(ctx)
-
-	fmt.Println("Done END OF Block")
+	// Process TxOut Queue
+	am.txOutProcessor.ProcessTxOut(cloneCtx)
 
 	return []abci.ValidatorUpdate{}
-}
-
-func (am AppModule) updateGas(ctx sdk.Context) {
-	chains := am.globalData.GetRecalculateGas()
-	if len(chains) == 0 {
-		return
-	}
-
-	log.Verbosef("Updating gas price for chain %s", chains)
-
-	for _, chain := range chains {
-		gasRecords := am.keeper.GetGasPrices(ctx, chain)
-		chainCfg := am.keeper.GetChain(ctx, chain)
-		prices := make([]int64, 0, len(gasRecords))
-
-		if chainCfg.EthConfig.UseEip_1559 {
-			for _, value := range gasRecords {
-				prices = append(prices, value.BaseFee*2+value.Tip)
-			}
-		} else {
-			for _, value := range gasRecords {
-				prices = append(prices, value.GasPrice)
-			}
-		}
-
-		sort.SliceStable(prices, func(i, j int) bool {
-			return prices[i] < prices[j]
-		})
-
-		median := prices[len(prices)/2]
-		if median == 0 {
-			log.Warn("Median gas price for chain ", chain, " is ", median)
-		} else {
-			log.Verbose("Median gas price for chain ", chain, " is ", median)
-		}
-
-		chainCfg.EthConfig.MedianGas = median
-		am.keeper.SaveChain(ctx, chainCfg)
-	}
-
-	am.globalData.ResetGasCalculation()
-}
-
-func (am AppModule) signTxOut(ctx sdk.Context) {
-	params := am.keeper.GetParams(ctx)
-	height := ctx.BlockHeight()
-
-	for _, chain := range params.SupportedChains {
-		pendingInfo := am.privateDb.GetPendingTxOut(chain)
-		if pendingInfo != nil {
-			if pendingInfo.ExpiredBlock < height {
-				log.Infof("Pending tx on chain %s expired. Clearing the pending tx.", chain)
-				am.privateDb.SetPendingTxOut(chain, nil)
-				continue
-
-				// TODO: Put this back to the failure queue
-				// queue := am.keeper.GetTxOutQueue(ctx, chain)
-				// queue = append(queue, pendingInfo.TxOut)
-				// am.keeper.SetTxOutQueue(ctx, chain, queue)
-			} else if pendingInfo.State >= types.PendingTxOutInfo_SIGNING {
-				log.Verbosef("There is a pending tx out on chain %s with state %s",
-					chain,
-					pendingInfo.State.String())
-				continue
-			}
-		}
-
-		queue := am.keeper.GetTxOutQueue(ctx, chain)
-		if len(queue) == 0 {
-			continue
-		}
-
-		txOut := queue[0]
-		am.keeper.SetTxOutQueue(ctx, txOut.Content.OutChain, queue[1:])
-
-		if !am.globalData.IsCatchingUp() {
-			log.Verbose("Signing txout hash = ", txOut.Content.OutHash)
-
-			// Update state of the pending tx out
-			pendingInfo.State = types.PendingTxOutInfo_SIGNING
-			am.privateDb.SetPendingTxOut(chain, pendingInfo)
-
-			// Do the signing
-			am.txOutSigner.signTxOut(ctx, txOut)
-		}
-	}
 }
