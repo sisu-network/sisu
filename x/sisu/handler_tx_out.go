@@ -145,5 +145,5 @@ func handlerTransfer(ctx sdk.Context, k keeper.Keeper, privateDb keeper.PrivateD
 	k.SetTransferQueue(ctx, txOut.Content.OutChain, newQueue)
 
 	// 3. Update the HoldProcessing for transfer queue so that we do not process any more transfer.
-	privateDb.SetHoldProcessing(TransferHoldKey, txOut.Content.OutChain, true)
+	privateDb.SetHoldProcessing(types.TransferHoldKey, txOut.Content.OutChain, true)
 }

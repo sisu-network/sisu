@@ -15,7 +15,6 @@ import (
 
 const (
 	MaxPendingTxCacheSize = 1000
-	TransferHoldKey       = "TransferQueue"
 )
 
 type TransferRequest struct {
@@ -102,7 +101,7 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 	params := q.keeper.GetParams(ctx)
 
 	for _, chain := range params.SupportedChains {
-		if q.privateDb.GetHoldProcessing(TransferHoldKey, chain) {
+		if q.privateDb.GetHoldProcessing(types.TransferHoldKey, chain) {
 			fmt.Println("Another transfer is being processed")
 			continue
 		}
@@ -152,7 +151,7 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 				q.txSubmit.SubmitMessageAsync(txOutMsg)
 			}
 
-			q.privateDb.SetHoldProcessing(TransferHoldKey, chain, true)
+			q.privateDb.SetHoldProcessing(types.TransferHoldKey, chain, true)
 		}
 	}
 }

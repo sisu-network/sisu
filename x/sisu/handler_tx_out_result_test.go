@@ -62,34 +62,32 @@ func TestHandlerTxOutResult(t *testing.T) {
 		ctx, mc := mockForHandlerTxOutResult()
 		k := mc.Keeper()
 		privateDb := mc.PrivateDb()
+		outChain := "ganache2"
 
 		txOut := &types.TxOut{
 			TxType: types.TxOutType_TRANSFER_OUT,
 			Content: &types.TxOutContent{
-				OutChain: "ganache2",
+				OutChain: outChain,
 				OutHash:  "TxOutHash",
 			},
 			Input: &types.TxOutInput{},
 		}
 		k.SaveTxOut(ctx, txOut)
-		privateDb.SetPendingTxOut("ganache2", &types.PendingTxOutInfo{
-			TxOut:        txOut,
-			ExpiredBlock: 0,
-		})
-		txOutId := txOut.GetId()
+		k.SetTxOutQueue(ctx, outChain, []*types.TxOut{txOut})
+		privateDb.SetHoldProcessing(types.TransferHoldKey, outChain, true)
 
+		txOutId := txOut.GetId()
 		handler := NewHandlerTxOutResult(mc)
 		handler.DeliverMsg(ctx, &types.TxOutResultMsg{
 			Data: &types.TxOutResult{
 				TxOutId:  txOutId,
 				Result:   types.TxOutResultType_IN_BLOCK_SUCCESS,
-				OutChain: "ganache2",
+				OutChain: outChain,
 				OutHash:  "TxOutHash",
 			},
 		})
 
-		pending := privateDb.GetPendingTxOut("ganache2")
-		require.Nil(t, pending)
+		require.False(t, privateDb.GetHoldProcessing(types.TransferHoldKey, outChain))
 	})
 
 	t.Run("tx_result_failure", func(t *testing.T) {
@@ -98,11 +96,12 @@ func TestHandlerTxOutResult(t *testing.T) {
 		transfers := getTransfers()
 		privateDb := mc.PrivateDb()
 		k.AddTransfers(ctx, transfers)
+		outChain := "ganache2"
 
 		txOut := &types.TxOut{
 			TxType: types.TxOutType_TRANSFER_OUT,
 			Content: &types.TxOutContent{
-				OutChain: "ganache2",
+				OutChain: outChain,
 				OutHash:  "TxOutHash",
 			},
 			Input: &types.TxOutInput{
@@ -110,10 +109,7 @@ func TestHandlerTxOutResult(t *testing.T) {
 			},
 		}
 		k.SaveTxOut(ctx, txOut)
-		privateDb.SetPendingTxOut("ganache2", &types.PendingTxOutInfo{
-			TxOut:        txOut,
-			ExpiredBlock: 0,
-		})
+		privateDb.SetHoldProcessing(types.TransferHoldKey, outChain, true)
 
 		txOutId := txOut.GetId()
 		handler := NewHandlerTxOutResult(mc)
@@ -125,6 +121,7 @@ func TestHandlerTxOutResult(t *testing.T) {
 				OutHash:  "TxOutHash",
 			},
 		})
+		require.False(t, privateDb.GetHoldProcessing(types.TransferHoldKey, outChain))
 
 		transfers2 := k.GetTransfers(ctx, []string{transfers[0].Id, transfers[1].Id})
 		require.Equal(t, 2, len(transfers2))

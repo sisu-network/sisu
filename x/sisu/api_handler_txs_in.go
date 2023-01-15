@@ -69,61 +69,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 			},
 		)
 		a.txSubmit.SubmitMessageAsync(msg)
-		fmt.Println("CCCCC 44444")
 	}
-
-	fmt.Println("CCCCC Done!!!!")
-
-	// // Create TxIn messages and broadcast to the Sisu chain.
-	// for _, tx := range txs.Arr {
-	// 	if !tx.Success {
-	// 		log.Verbose("Failed incoming transaction (not our fault), hash = ", tx.Hash, ", chain = ", txs.Chain)
-	// 		continue
-	// 	}
-
-	// 	// Check if this is a transaction from our sisu. If true, ignore it.
-	// 	sisu := a.keeper.GetMpcAddress(ctx, txs.Chain)
-	// 	if sisu == tx.From {
-	// 		log.Verbosef("This is a transaction sent from our sisu account %s on chain %s, ignore",
-	// 			sisu, txs.Chain)
-	// 		continue
-	// 	}
-
-	// 	transfers, err := a.parseDeyesTx(ctx, txs.Chain, tx)
-	// 	if err != nil {
-	// 		log.Error("Faield to parse transfer, err = ", err)
-	// 		continue
-	// 	}
-
-	// 	// Assign the id for all transfers
-	// 	for _, transfer := range transfers {
-	// 		transfer.Id = types.GetTransferId(transfer.FromChain, transfer.FromHash)
-	// 	}
-
-	// 	log.Verbose("Len(transfers) = ", len(transfers), " on chain ", txs.Chain)
-	// 	if transfers != nil {
-	// 		transferRequests.Transfers = append(transferRequests.Transfers, transfers...)
-	// 	}
-	// }
-
-	// if len(transferRequests.Transfers) > 0 {
-	// 	msg := types.NewTransfersMsg(a.appKeys.GetSignerAddress().String(), transferRequests)
-	// 	a.txSubmit.SubmitMessageAsync(msg)
-
-	// 	if libchain.IsCardanoChain(txs.Chain) {
-	// 		log.Verbose("Updating block height for cardano")
-	// 		// Broadcast blockheight update
-	// 		msg := types.NewBlockHeightMsg(a.appKeys.GetSignerAddress().String(), &types.BlockHeight{
-	// 			Chain:  txs.Chain,
-	// 			Height: txs.Block,
-	// 			Hash:   txs.BlockHash,
-	// 		})
-	// 		a.txSubmit.SubmitMessageAsync(msg)
-	// 	}
-
-	// 	// Check to see if we need to update the gas price.
-	// 	a.updateEthGasPrice(ctx, transferRequests.Transfers)
-	// }
 
 	return nil
 }

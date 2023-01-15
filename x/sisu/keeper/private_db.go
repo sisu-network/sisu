@@ -11,7 +11,6 @@ import (
 
 var (
 	prefixPrivateTxOutSig       = []byte{0x01}
-	prefixPrivatePendingTxOut   = []byte{0x02}
 	prefixPrivateTxHashIndex    = []byte{0x03}
 	prefixPrivateTransferState  = []byte{0x04}
 	prefixPrivateTxOutState     = []byte{0x05}
@@ -22,9 +21,6 @@ type PrivateDb interface {
 	// TxOutSig
 	SaveTxOutSig(msg *types.TxOutSig)
 	GetTxOutSig(outChain, hashWithSig string) *types.TxOutSig
-
-	SetPendingTxOut(chain string, txOut *types.PendingTxOutInfo)
-	GetPendingTxOut(chain string) *types.PendingTxOutInfo
 
 	// Transaction index. This value is used to identify 2 cosmos message with the same content but
 	// used at different time (similar to nonce in Ethereum).
@@ -70,7 +66,6 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes := make(map[string]prefix.Store)
 
 	prefixes[string(prefixPrivateTxOutSig)] = prefix.NewStore(parent, prefixPrivateTxOutSig)
-	prefixes[string(prefixPrivatePendingTxOut)] = prefix.NewStore(parent, prefixPrivatePendingTxOut)
 	prefixes[string(prefixPrivateTxHashIndex)] = prefix.NewStore(parent, prefixPrivateTxHashIndex)
 	prefixes[string(prefixPrivateTransferState)] = prefix.NewStore(parent, prefixPrivateTransferState)
 	prefixes[string(prefixPrivateTxOutState)] = prefix.NewStore(parent, prefixPrivateTxOutState)
@@ -90,18 +85,6 @@ func (db *defaultPrivateDb) GetTxOutSig(outChain, hashWithSig string) *types.TxO
 func (db *defaultPrivateDb) SaveTxOutSig(msg *types.TxOutSig) {
 	store := db.prefixes[string(prefixPrivateTxOutSig)]
 	saveTxOutSig(store, msg)
-}
-
-///// Pending TxOut
-
-func (db *defaultPrivateDb) SetPendingTxOut(chain string, txOut *types.PendingTxOutInfo) {
-	store := db.prefixes[string(prefixPrivatePendingTxOut)]
-	setPendingTxOut(store, chain, txOut)
-}
-
-func (db *defaultPrivateDb) GetPendingTxOut(chain string) *types.PendingTxOutInfo {
-	store := db.prefixes[string(prefixPrivatePendingTxOut)]
-	return getPendingTxOutInfo(store, chain)
 }
 
 ///// Tx Hash Index

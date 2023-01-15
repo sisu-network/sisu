@@ -51,8 +51,8 @@ func (h *HandlerTxOutResult) doTxOutResult(ctx sdk.Context, msg *types.TxOutResu
 
 		// Reset the TransferHold & TxOutHold variable so that these 2 queues can continue processing
 		// TxOut.
-		h.privateDb.SetHoldProcessing(TransferHoldKey, result.OutChain, false)
-		h.privateDb.SetHoldProcessing(TxOutHoldKey, result.OutChain, false)
+		h.privateDb.SetHoldProcessing(types.TransferHoldKey, result.OutChain, false)
+		h.privateDb.SetHoldProcessing(types.TxOutHoldKey, result.OutChain, false)
 	}(msg.Data)
 
 	result := msg.Data

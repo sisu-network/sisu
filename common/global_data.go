@@ -106,8 +106,6 @@ func (a *GlobalDataDefault) Init() {
 	)
 	// Get the tendermint address of this node.
 	a.myPubkey, _ = privValidator.GetPubKey()
-
-	fmt.Println("a.myPubkey = ", a.myPubkey.Address().String())
 }
 
 func (a *GlobalDataDefault) UpdateCatchingUp() bool {

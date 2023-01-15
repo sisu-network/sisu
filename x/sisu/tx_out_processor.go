@@ -6,10 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
-)
-
-const (
-	TxOutHoldKey = "TxOut"
+	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type TxOutProcessor interface {
@@ -66,7 +63,7 @@ func (d *defaultTxOutProcessor) ProcessTxOut(ctx sdk.Context) {
 func (d *defaultTxOutProcessor) processTxOut(ctx sdk.Context) {
 	params := d.keeper.GetParams(ctx)
 	for _, chain := range params.SupportedChains {
-		if d.privateDb.GetHoldProcessing(TxOutHoldKey, chain) {
+		if d.privateDb.GetHoldProcessing(types.TxOutHoldKey, chain) {
 			fmt.Println("Another TxOut is being processed")
 			continue
 		}
@@ -76,7 +73,7 @@ func (d *defaultTxOutProcessor) processTxOut(ctx sdk.Context) {
 			continue
 		}
 
-		d.privateDb.SetHoldProcessing(TxOutHoldKey, chain, true)
+		d.privateDb.SetHoldProcessing(types.TxOutHoldKey, chain, true)
 
 		txOut := queue[0]
 		if !d.globalData.IsCatchingUp() {
