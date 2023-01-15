@@ -461,7 +461,7 @@ func (k *DefaultKeeper) GetConfirmedTxIn(ctx sdk.Context, txInId string) *types.
 ///// Transfer Queue
 func (k *DefaultKeeper) SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.TransferDetails) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferQueue)
-	setTranferQueue(store, chain, transfers)
+	setTransferQueue(store, chain, transfers)
 }
 
 func (k *DefaultKeeper) GetTransferQueue(ctx sdk.Context, chain string) []*types.TransferDetails {

@@ -276,8 +276,8 @@ func (a *ApiHandler) OnKeysignResult(result *dhtypes.KeysignResult) {
 
 // OnTxIncludedInBlock implements AppLogicListener
 func (a *ApiHandler) OnTxIncludedInBlock(txTrack *chainstypes.TrackUpdate) {
-	log.Verbosef("Confirming tx height = %d, chain = %s, signed hash = %s, nonce = %d",
-		txTrack.BlockHeight, txTrack.Chain, txTrack.Hash, txTrack.Nonce)
+	log.Verbosef("Confirming tx height = %d, chain = %s, signed hash = %s",
+		txTrack.BlockHeight, txTrack.Chain, txTrack.Hash)
 
 	txOut := a.getTxOutFromSignedHash(txTrack.Chain, txTrack.Hash)
 	txOutId := txOut.GetId()

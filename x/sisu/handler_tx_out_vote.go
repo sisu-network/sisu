@@ -14,17 +14,20 @@ const (
 )
 
 type HandlerTxOutVote struct {
-	pmm    PostedMessageManager
-	keeper keeper.Keeper
+	pmm       PostedMessageManager
+	keeper    keeper.Keeper
+	privateDb keeper.PrivateDb
 }
 
 func NewHandlerTxOutConsensed(
 	pmm PostedMessageManager,
 	keeper keeper.Keeper,
+	privateDb keeper.PrivateDb,
 ) *HandlerTxOutVote {
 	return &HandlerTxOutVote{
-		pmm:    pmm,
-		keeper: keeper,
+		pmm:       pmm,
+		keeper:    keeper,
+		privateDb: privateDb,
 	}
 }
 
@@ -33,13 +36,14 @@ func (h *HandlerTxOutVote) DeliverMsg(ctx sdk.Context, msg *types.TxOutVoteMsg) 
 	prefix := fmt.Sprintf("%s__%s", VoteKey, msg.Data.TxOutId)
 	h.keeper.AddVoteResult(ctx, prefix, msg.Signer, msg.Data.Vote)
 
-	h.checkVoteResult(ctx, msg.Data.TxOutId, msg.Signer)
+	h.checkVoteResult(ctx, msg.Data.TxOutId, msg.Data.AssignedValidator)
 
 	return &sdk.Result{}, nil
 }
 
-func (h *HandlerTxOutVote) checkVoteResult(ctx sdk.Context, txOutId, signer string) {
-	results := h.keeper.GetVoteResults(ctx, VoteKey)
+func (h *HandlerTxOutVote) checkVoteResult(ctx sdk.Context, txOutId, assignedVal string) {
+	prefix := fmt.Sprintf("%s__%s", VoteKey, txOutId)
+	results := h.keeper.GetVoteResults(ctx, prefix)
 	tssParams := h.keeper.GetParams(ctx)
 	if tssParams == nil {
 		log.Warn("tssParams is nil")
@@ -56,10 +60,12 @@ func (h *HandlerTxOutVote) checkVoteResult(ctx sdk.Context, txOutId, signer stri
 	fmt.Println("checkVoteResult, count = ", count)
 
 	if count >= int(tssParams.MajorityThreshold) {
-		txOut := h.keeper.GetProposedTxOut(ctx, txOutId, signer)
-		fmt.Println("txOut = ", txOut)
-
-		doTxOut(ctx, h.keeper, txOut)
+		txOut := h.keeper.GetProposedTxOut(ctx, txOutId, assignedVal)
+		if txOut == nil {
+			log.Errorf("checkVoteResult: TxOut is nil, txOutId = %s", txOutId)
+		} else {
+			doTxOut(ctx, h.keeper, h.privateDb, txOut)
+		}
 	} else {
 		// TODO: handler the case or do timeout in the module.go
 	}

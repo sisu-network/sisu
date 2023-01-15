@@ -113,7 +113,10 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 		}
 
 		fmt.Println("Queye length = ", len(queue))
-		fmt.Println("queue[0] = ", queue[0])
+		fmt.Println("Id in the queue2: ")
+		for _, transfer := range queue {
+			fmt.Println("TransferId = ", transfer.Id)
+		}
 
 		transfer := queue[0]
 
@@ -123,10 +126,7 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 			continue
 		}
 
-		transferState := q.privateDb.GetTransferState(transfer.Id)
-		if transferState != types.TransferState_Confirmed {
-			continue
-		}
+		log.Verbosef("Assigned node for transfer %s is %s", transfer.Id, assignedNode.AccAddress)
 
 		batchSize := utils.MinInt(params.GetMaxTransferOutBatch(chain), len(queue))
 		batch := queue[0:batchSize]
@@ -143,8 +143,6 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 			})
 			q.txSubmit.SubmitMessageAsync(msg)
 
-			q.privateDb.SetTransferState(transfer.Id, types.TransferState_Failure)
-
 			continue
 		}
 
@@ -154,16 +152,7 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 				q.txSubmit.SubmitMessageAsync(txOutMsg)
 			}
 
-			txOut := txOutMsgs[0].Data
-			q.privateDb.SetPendingTxOut(txOut.Content.OutChain, &types.PendingTxOutInfo{
-				TxOut: txOut,
-				// ExpiredBlock: height + params.PendingTxTimeoutHeights[i],
-				// TODO: Make this height configurable
-				ExpiredBlock: ctx.BlockHeight() + 50,
-				State:        types.PendingTxOutInfo_IN_QUEUE,
-			})
-
-			q.privateDb.SetTransferState(transfer.Id, types.TransferState_WaitForTxOut)
+			q.privateDb.SetHoldProcessing(TransferHoldKey, chain, true)
 		}
 	}
 }

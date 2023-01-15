@@ -31,20 +31,21 @@ func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
 }
 
 func (h *HandlerTxOut) DeliverMsg(ctx sdk.Context, msg *types.TxOutMsg) (*sdk.Result, error) {
+	fmt.Println("AAAAA HandlerTxOut DeliverMsg")
 	h.keeper.AddProposedTxOut(ctx, msg.Signer, msg.Data)
 
 	// TODO: In case there every one does not approve the assigned node's transaction, we have to
 	// use the proposed txOuts from everyone to calculate the final TxOut.
 
 	// do message validation. This work can be done in the background.
-	fmt.Println("AAAAA HandlerTxOut DeliverMsg")
 	ok, assignedVal := h.validateTxOut(ctx, msg)
 	vote := types.VoteResult_APPROVE
 	if !ok {
 		vote = types.VoteResult_REJECT
 	}
 
-	fmt.Println("Vote = ", vote.String(), " signer = ", h.appKeys.GetSignerAddress().String())
+	fmt.Println("Vote = ", vote.String(), " signer = ", h.appKeys.GetSignerAddress().String(),
+		" for ", msg.Data.GetId())
 
 	// Submit the TxOut confirm
 	txOutConfirmMsg := types.NewTxOutVoteMsg(
@@ -104,7 +105,8 @@ func (h *HandlerTxOut) validateTxOut(ctx sdk.Context, msg *types.TxOutMsg) (bool
 }
 
 // doTxOut saves a TxOut in the keeper and add it the TxOut Queue.
-func doTxOut(ctx sdk.Context, k keeper.Keeper, txOut *types.TxOut) ([]byte, error) {
+func doTxOut(ctx sdk.Context, k keeper.Keeper, privateDb keeper.PrivateDb,
+	txOut *types.TxOut) ([]byte, error) {
 	log.Info("Delivering TxOut")
 
 	// Save this to KVStore
@@ -113,13 +115,14 @@ func doTxOut(ctx sdk.Context, k keeper.Keeper, txOut *types.TxOut) ([]byte, erro
 	// If this is a txOut deployment, mark the contract as being deployed.
 	switch txOut.TxType {
 	case types.TxOutType_TRANSFER_OUT:
-		handlerTransfer(ctx, k, txOut)
+		handlerTransfer(ctx, k, privateDb, txOut)
 	}
 
 	return nil, nil
 }
 
-func handlerTransfer(ctx sdk.Context, k keeper.Keeper, txOut *types.TxOut) {
+func handlerTransfer(ctx sdk.Context, k keeper.Keeper, privateDb keeper.PrivateDb,
+	txOut *types.TxOut) {
 	// 1. Update TxOut txOutQ
 	txOutQ := k.GetTxOutQueue(ctx, txOut.Content.OutChain)
 	txOutQ = append(txOutQ, txOut)
@@ -140,4 +143,7 @@ func handlerTransfer(ctx sdk.Context, k keeper.Keeper, txOut *types.TxOut) {
 	}
 
 	k.SetTransferQueue(ctx, txOut.Content.OutChain, newQueue)
+
+	// 3. Update the HoldProcessing for transfer queue so that we do not process any more transfer.
+	privateDb.SetHoldProcessing(TransferHoldKey, txOut.Content.OutChain, true)
 }

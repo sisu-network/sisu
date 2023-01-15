@@ -35,8 +35,6 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 		ctx = ctx.WithEventManager(sdk.NewEventManager())
 		mc := sh.mc
 
-		fmt.Println("msg type = ", msg.Type())
-
 		switch msg := msg.(type) {
 		case *types.KeygenWithSigner:
 			return NewHandlerKeygen(mc).DeliverMsg(ctx, msg)
@@ -70,7 +68,8 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 				mc.GlobalData(), mc.BridgeManager(), mc.ValidatorManager(), mc.PrivateDb()).DeliverMsg(ctx, msg)
 
 		case *types.TxOutVoteMsg:
-			return NewHandlerTxOutConsensed(mc.PostedMessageManager(), mc.Keeper()).DeliverMsg(ctx, msg)
+			return NewHandlerTxOutConsensed(mc.PostedMessageManager(), mc.Keeper(),
+				mc.PrivateDb()).DeliverMsg(ctx, msg)
 
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)

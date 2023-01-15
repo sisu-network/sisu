@@ -72,18 +72,26 @@ func (h *HandlerTxInDetails) doTxInDetails(ctx sdk.Context, k keeper.Keeper, msg
 	h.saveTransfers(ctx, k, msg.Data.Transfers)
 
 	// 3. Save the transfer state
-	fmt.Println("BBBBB 00")
 	h.privateDb.SetTransferState(msg.Data.TxIn.GetId(), types.TransferState_Confirmed)
-	fmt.Println("BBBBB 11")
 }
 
 func (h *HandlerTxInDetails) saveTransfers(ctx sdk.Context, k keeper.Keeper, transfers []*types.TransferDetails) {
+	if len(transfers) == 0 {
+		log.Warnf("There is no transfer in the TxIn message.")
+		return
+	}
 	k.AddTransfers(ctx, transfers)
 
+	chain := transfers[0].ToChain
+	queue := k.GetTransferQueue(ctx, chain)
 	for _, transfer := range transfers {
 		// TODO: Optimize this path. We can save single transfer instead of the entire queue.
-		queue := k.GetTransferQueue(ctx, transfer.ToChain)
 		queue = append(queue, transfer)
-		k.SetTransferQueue(ctx, transfer.ToChain, queue)
 	}
+
+	fmt.Println("Id in the queue: ")
+	for _, transfer := range queue {
+		fmt.Println("TransferId = ", transfer.Id)
+	}
+	k.SetTransferQueue(ctx, chain, queue)
 }

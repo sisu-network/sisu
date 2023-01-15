@@ -76,8 +76,10 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 		finalAmounts = append(finalAmounts, amountOut)
 		inHashes = append(inHashes, transfer.Id)
 
-		log.Verbosef("Processing transfer in: id = %s, recipient = %s, amount = %s, inHash = %s, toChain = %s, toRecipient = %s",
-			token.Id, transfer.ToRecipient, amount, transfer.Id, transfer.ToChain, transfer.ToRecipient)
+		log.Verbosef("Processing transfer in: id = %s, token = %s, recipient = %s, amount = %s, "+
+			"inHash = %s, toChain = %s, toRecipient = %s",
+			transfer.Id, token.Id, transfer.ToRecipient, amount, transfer.Id, transfer.ToChain,
+			transfer.ToRecipient)
 	}
 
 	if len(finalTokens) == 0 {

@@ -49,37 +49,18 @@ func (s *txOutSigner) signTxOut(ctx sdk.Context, txOut *types.TxOut) {
 func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
 	log.Info("Delivering TXOUT for chain ", tx.Content.OutChain, " tx hash = ", tx.Content.OutHash)
 	ethTx := &ethtypes.Transaction{}
-	if err := ethTx.UnmarshalBinary(tx.Content.OutBytes); err != nil {
-		log.Error("cannot unmarshal tx, err =", err)
+	err := ethTx.UnmarshalBinary(tx.Content.OutBytes)
+	if err != nil {
+		log.Error("signEthTx: cannot unmarshal tx, err =", err)
 		return err
 	}
 
 	signer := libchain.GetEthChainSigner(tx.Content.OutChain)
 	if signer == nil {
-		err := fmt.Errorf("cannot find signer for chain %s", tx.Content.OutChain)
-		log.Error(err)
+		return fmt.Errorf("cannot find signer for chain %s", tx.Content.OutChain)
 	}
 
-	mpcNonce := s.keeper.GetMpcNonce(ctx, tx.Content.OutChain)
-	if mpcNonce == nil {
-		err := fmt.Errorf("cannot find gateway checkout for chain %s", tx.Content.OutChain)
-		return err
-	}
-
-	ethTxWithNonce := ethtypes.NewTx(&ethtypes.LegacyTx{
-		Nonce:    uint64(mpcNonce.Nonce),
-		To:       ethTx.To(),
-		Value:    ethTx.Value(),
-		Gas:      ethTx.Gas(),
-		GasPrice: ethTx.GasPrice(),
-		Data:     ethTx.Data(),
-	})
-	bz, err := ethTxWithNonce.MarshalBinary()
-	if err != nil {
-		return err
-	}
-
-	hash := signer.Hash(ethTxWithNonce)
+	hash := signer.Hash(ethTx)
 	// 4. Send it to Dheart for signing.
 	keysignReq := &hTypes.KeysignRequest{
 		KeyType: libchain.KEY_TYPE_ECDSA,
@@ -88,7 +69,7 @@ func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
 				Id:          s.getKeysignRequestId(tx.Content.OutChain, ctx.BlockHeight(), tx.Content.OutHash),
 				OutChain:    tx.Content.OutChain,
 				OutHash:     tx.Content.OutHash,
-				Bytes:       bz,
+				Bytes:       tx.Content.OutBytes,
 				BytesToSign: hash[:],
 			},
 		},

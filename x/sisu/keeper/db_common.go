@@ -757,7 +757,7 @@ func getTransfers(store cstypes.KVStore, ids []string) []*types.TransferDetails 
 }
 
 ///// Transfer Queue
-func setTranferQueue(store cstypes.KVStore, chain string, transfers []*types.TransferDetails) {
+func setTransferQueue(store cstypes.KVStore, chain string, transfers []*types.TransferDetails) {
 	if len(transfers) == 0 {
 		store.Delete([]byte(chain))
 		return
@@ -766,7 +766,6 @@ func setTranferQueue(store cstypes.KVStore, chain string, transfers []*types.Tra
 	ids := make([]string, len(transfers))
 	for i, transfer := range transfers {
 		ids[i] = transfer.Id
-		fmt.Println("setTranferQueue transfer.Id = ", transfer.Id)
 	}
 
 	s := strings.Join(ids, ",")
@@ -1001,10 +1000,12 @@ func addVoteResult(store cstypes.KVStore, hash string, signer string, result typ
 	}
 
 	key := getVoteResultKey(hash, signer)
+	fmt.Println("addVoteResult, key = ", string(key))
 	store.Set(key, bz)
 }
 
 func getVoteResults(store cstypes.KVStore, hash string) map[string]types.VoteResult {
+	fmt.Println("Getting vote result, hash = ", hash)
 	begin := []byte(fmt.Sprintf("%s__", hash))
 	end := []byte(fmt.Sprintf("%s__~", hash))
 
@@ -1034,11 +1035,14 @@ func addProposedTxOut(store cstypes.KVStore, signer string, txOut *types.TxOut) 
 		return
 	}
 
+	fmt.Println("Adding proposed TxOut, key = ", string(key))
+
 	store.Set(key, bz)
 }
 
 func getProposedTxOut(store cstypes.KVStore, id, signer string) *types.TxOut {
 	key := getProposedTxOutKey(id, signer)
+	fmt.Println("getting proposed txout, key = ", string(key))
 	bz := store.Get(key)
 	if bz == nil {
 		return nil
