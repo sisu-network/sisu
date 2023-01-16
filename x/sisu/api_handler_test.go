@@ -164,9 +164,7 @@ func TestApiHandler_OnTxIns(t *testing.T) {
 		txSubmit := mc.TxSubmit().(*common.MockTxSubmit)
 		txSubmit.SubmitMessageAsyncFunc = func(msg sdk.Msg) error {
 			switch msg.Type() {
-			case "GasPriceWithSigner":
-				return nil
-			case "Transfers":
+			case "TxInDetails":
 				submitCount = 1
 			}
 

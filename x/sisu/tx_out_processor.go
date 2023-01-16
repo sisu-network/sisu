@@ -1,9 +1,8 @@
 package sisu
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -64,7 +63,7 @@ func (d *defaultTxOutProcessor) processTxOut(ctx sdk.Context) {
 	params := d.keeper.GetParams(ctx)
 	for _, chain := range params.SupportedChains {
 		if d.privateDb.GetHoldProcessing(types.TxOutHoldKey, chain) {
-			fmt.Println("Another TxOut is being processed")
+			log.Verbose("Another TxOut is being processed")
 			continue
 		}
 

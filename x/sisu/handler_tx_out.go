@@ -1,8 +1,6 @@
 package sisu
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
@@ -17,6 +15,7 @@ type HandlerTxOut struct {
 	globalData  common.GlobalData
 	txSubmit    common.TxSubmit
 	appKeys     common.AppKeys
+	privateDb   keeper.PrivateDb
 }
 
 func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
@@ -27,13 +26,25 @@ func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
 		globalData:  mc.GlobalData(),
 		txSubmit:    mc.TxSubmit(),
 		appKeys:     mc.AppKeys(),
+		privateDb:   mc.PrivateDb(),
 	}
 }
 
 func (h *HandlerTxOut) DeliverMsg(ctx sdk.Context, msg *types.TxOutMsg) (*sdk.Result, error) {
-	fmt.Println("AAAAA HandlerTxOut DeliverMsg")
-	h.keeper.AddProposedTxOut(ctx, msg.Signer, msg.Data)
+	shouldProcess, hash := h.pmm.ShouldProcessMsg(ctx, msg)
+	if shouldProcess {
+		doTxOut(ctx, h.keeper, h.privateDb, msg.Data)
+		h.keeper.ProcessTxRecord(ctx, hash)
 
+		return &sdk.Result{}, nil
+	}
+
+	if h.keeper.IsTxRecordProcessed(ctx, hash) {
+		// This msg has been processed before.
+		return &sdk.Result{}, nil
+	}
+
+	h.keeper.AddProposedTxOut(ctx, msg.Signer, msg.Data)
 	// TODO: In case there every one does not approve the assigned node's transaction, we have to
 	// use the proposed txOuts from everyone to calculate the final TxOut.
 
@@ -43,9 +54,6 @@ func (h *HandlerTxOut) DeliverMsg(ctx sdk.Context, msg *types.TxOutMsg) (*sdk.Re
 	if !ok {
 		vote = types.VoteResult_REJECT
 	}
-
-	fmt.Println("Vote = ", vote.String(), " signer = ", h.appKeys.GetSignerAddress().String(),
-		" for ", msg.Data.GetId())
 
 	// Submit the TxOut confirm
 	txOutConfirmMsg := types.NewTxOutVoteMsg(

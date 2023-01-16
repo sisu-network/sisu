@@ -938,8 +938,6 @@ func getTxHashIndex(store cstypes.KVStore, key string) uint32 {
 
 ///// TxInDetails
 func setTxInDetails(store cstypes.KVStore, txInId string, txIn *types.TxInDetails) {
-	fmt.Println("msg.Data.TxIn.Id = ", txInId)
-
 	bz, err := txIn.Marshal()
 	if err != nil {
 		log.Errorf("setTxInDetails: failed to marshal msg, err = %s", err)
@@ -1000,12 +998,10 @@ func addVoteResult(store cstypes.KVStore, hash string, signer string, result typ
 	}
 
 	key := getVoteResultKey(hash, signer)
-	fmt.Println("addVoteResult, key = ", string(key))
 	store.Set(key, bz)
 }
 
 func getVoteResults(store cstypes.KVStore, hash string) map[string]types.VoteResult {
-	fmt.Println("Getting vote result, hash = ", hash)
 	begin := []byte(fmt.Sprintf("%s__", hash))
 	end := []byte(fmt.Sprintf("%s__~", hash))
 
@@ -1035,14 +1031,11 @@ func addProposedTxOut(store cstypes.KVStore, signer string, txOut *types.TxOut) 
 		return
 	}
 
-	fmt.Println("Adding proposed TxOut, key = ", string(key))
-
 	store.Set(key, bz)
 }
 
 func getProposedTxOut(store cstypes.KVStore, id, signer string) *types.TxOut {
 	key := getProposedTxOutKey(id, signer)
-	fmt.Println("getting proposed txout, key = ", string(key))
 	bz := store.Get(key)
 	if bz == nil {
 		return nil

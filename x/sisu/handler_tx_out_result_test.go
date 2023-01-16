@@ -88,6 +88,7 @@ func TestHandlerTxOutResult(t *testing.T) {
 		})
 
 		require.False(t, privateDb.GetHoldProcessing(types.TransferHoldKey, outChain))
+		require.False(t, privateDb.GetHoldProcessing(types.TxOutHoldKey, txOut.GetId()))
 	})
 
 	t.Run("tx_result_failure", func(t *testing.T) {
@@ -109,6 +110,7 @@ func TestHandlerTxOutResult(t *testing.T) {
 			},
 		}
 		k.SaveTxOut(ctx, txOut)
+		k.SetTxOutQueue(ctx, outChain, []*types.TxOut{txOut})
 		privateDb.SetHoldProcessing(types.TransferHoldKey, outChain, true)
 
 		txOutId := txOut.GetId()
@@ -122,11 +124,6 @@ func TestHandlerTxOutResult(t *testing.T) {
 			},
 		})
 		require.False(t, privateDb.GetHoldProcessing(types.TransferHoldKey, outChain))
-
-		transfers2 := k.GetTransfers(ctx, []string{transfers[0].Id, transfers[1].Id})
-		require.Equal(t, 2, len(transfers2))
-		for _, transfer := range transfers2 {
-			require.Equal(t, 1, int(transfer.RetryNum))
-		}
+		require.False(t, privateDb.GetHoldProcessing(types.TxOutHoldKey, txOut.GetId()))
 	})
 }

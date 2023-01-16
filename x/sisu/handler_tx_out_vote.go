@@ -32,7 +32,6 @@ func NewHandlerTxOutConsensed(
 }
 
 func (h *HandlerTxOutVote) DeliverMsg(ctx sdk.Context, msg *types.TxOutVoteMsg) (*sdk.Result, error) {
-	fmt.Println("HandlerTxOutConsensed, signer = ", msg.Signer)
 	prefix := fmt.Sprintf("%s__%s", VoteKey, msg.Data.TxOutId)
 	h.keeper.AddVoteResult(ctx, prefix, msg.Signer, msg.Data.Vote)
 
@@ -44,8 +43,8 @@ func (h *HandlerTxOutVote) DeliverMsg(ctx sdk.Context, msg *types.TxOutVoteMsg) 
 func (h *HandlerTxOutVote) checkVoteResult(ctx sdk.Context, txOutId, assignedVal string) {
 	prefix := fmt.Sprintf("%s__%s", VoteKey, txOutId)
 	results := h.keeper.GetVoteResults(ctx, prefix)
-	tssParams := h.keeper.GetParams(ctx)
-	if tssParams == nil {
+	params := h.keeper.GetParams(ctx)
+	if params == nil {
 		log.Warn("tssParams is nil")
 		return
 	}
@@ -57,9 +56,7 @@ func (h *HandlerTxOutVote) checkVoteResult(ctx sdk.Context, txOutId, assignedVal
 		}
 	}
 
-	fmt.Println("checkVoteResult, count = ", count)
-
-	if count >= int(tssParams.MajorityThreshold) {
+	if count >= int(params.MajorityThreshold) {
 		txOut := h.keeper.GetProposedTxOut(ctx, txOutId, assignedVal)
 		if txOut == nil {
 			log.Errorf("checkVoteResult: TxOut is nil, txOutId = %s", txOutId)

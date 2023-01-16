@@ -1,7 +1,6 @@
 package sisu
 
 import (
-	"fmt"
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -99,10 +98,9 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 	}
 
 	params := q.keeper.GetParams(ctx)
-
 	for _, chain := range params.SupportedChains {
 		if q.privateDb.GetHoldProcessing(types.TransferHoldKey, chain) {
-			fmt.Println("Another transfer is being processed")
+			log.Verbose("Another transfer is being processed")
 			continue
 		}
 
@@ -111,15 +109,8 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 			continue
 		}
 
-		fmt.Println("Queye length = ", len(queue))
-		fmt.Println("Id in the queue2: ")
-		for _, transfer := range queue {
-			fmt.Println("TransferId = ", transfer.Id)
-		}
-
-		transfer := queue[0]
-
 		// Check if the this node is the assigned node for the first transfer in the queue.
+		transfer := queue[0]
 		assignedNode := q.valsManager.GetAssignedValidator(ctx, transfer.Id)
 		if assignedNode.AccAddress != q.appKeys.GetSignerAddress().String() {
 			continue

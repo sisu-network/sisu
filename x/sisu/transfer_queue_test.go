@@ -33,8 +33,11 @@ func mockForTransferQueue() (sdk.Context, ManagerContainer) {
 		},
 	}
 	txSubmit := &common.MockTxSubmit{}
+	mockAppKeys := &common.MockAppKeys{}
+	valManagers := &MockValidatorManager{}
 
-	mc := MockManagerContainer(ctx, k, txOutputProducer, globalData, txSubmit, privateDb)
+	mc := MockManagerContainer(ctx, k, txOutputProducer, globalData, txSubmit, privateDb, mockAppKeys,
+		valManagers)
 
 	return ctx, mc
 }
@@ -43,12 +46,24 @@ func TestTransferQueue(t *testing.T) {
 	t.Run("transfer_is_saved", func(t *testing.T) {
 		ctx, mc := mockForTransferQueue()
 		txOutProducer := mc.TxOutProducer().(*MockTxOutputProducer)
+		appKeys := mc.AppKeys()
+
 		txSubmit := mc.TxSubmit().(*common.MockTxSubmit)
 		txSubmitCount := 0
+
+		valManager := mc.ValidatorManager().(*MockValidatorManager)
+		valManager.GetAssignedValidatorFunc = func(ctx sdk.Context, hash string) *types.Node {
+			return &types.Node{
+				AccAddress: appKeys.GetSignerAddress().String(),
+			}
+		}
+
 		k := mc.Keeper()
 
 		queue := NewTransferQueue(k, mc.TxOutProducer(), txSubmit,
-			mc.Config().Tss, nil, mc.PrivateDb(), mc.ValidatorManager(), mc.GlobalData()).(*defaultTransferQueue)
+			mc.Config().Tss, appKeys, mc.PrivateDb(), mc.ValidatorManager(),
+			mc.GlobalData()).(*defaultTransferQueue)
+
 		transfer := &types.TransferDetails{
 			Id:          "ganache1__hash1",
 			ToRecipient: "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80",
@@ -64,7 +79,7 @@ func TestTransferQueue(t *testing.T) {
 			ret := make([]*types.TxOutMsg, len(transfers))
 			for i := range transfers {
 				ret[i] = &types.TxOutMsg{
-					Signer: "signer",
+					Signer: appKeys.GetSignerAddress().String(),
 					Data: &types.TxOut{
 						Content: &types.TxOutContent{
 							OutChain: "ganache2",
@@ -80,7 +95,7 @@ func TestTransferQueue(t *testing.T) {
 			return nil
 		}
 
-		queue.ProcessTransfers(ctx)
+		queue.processBatch(ctx)
 		require.Equal(t, 1, txSubmitCount)
 	})
 }

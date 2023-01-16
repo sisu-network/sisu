@@ -15,6 +15,8 @@ import (
 type MockAppKeys struct {
 	privKey tcrypto.PrivKey
 	addr    sdk.AccAddress
+
+	GetSignerAddressFunc func() sdk.AccAddress
 }
 
 func NewMockAppKeys() AppKeys {

@@ -291,15 +291,6 @@ func (b *bridge) buildTransaction(
 	}, nil
 }
 
-func (b *bridge) buildERC20TransferIn(
-	ctx sdk.Context,
-	tokens []*types.Token,
-	recipients []ethcommon.Address,
-	amounts []*big.Int,
-) (*types.TxResponse, error) {
-	return nil, nil
-}
-
 // getGasCost returns total gas cost used for swapping transaction.
 func (b *bridge) getGasCost(gasInfo *deyesethtypes.GasInfo, useEip1559 bool, maxGasUnit int) (*big.Int, *big.Int, *big.Int) {
 	if useEip1559 {

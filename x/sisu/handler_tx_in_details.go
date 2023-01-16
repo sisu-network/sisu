@@ -1,8 +1,6 @@
 package sisu
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
@@ -89,9 +87,5 @@ func (h *HandlerTxInDetails) saveTransfers(ctx sdk.Context, k keeper.Keeper, tra
 		queue = append(queue, transfer)
 	}
 
-	fmt.Println("Id in the queue: ")
-	for _, transfer := range queue {
-		fmt.Println("TransferId = ", transfer.Id)
-	}
 	k.SetTransferQueue(ctx, chain, queue)
 }
