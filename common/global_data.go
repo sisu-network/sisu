@@ -14,12 +14,14 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/sisu-network/lib/log"
+	tcrypto "github.com/tendermint/tendermint/crypto"
 	pvm "github.com/tendermint/tendermint/privval"
 
 	"github.com/BurntSushi/toml"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 // TODO: Refactor this interface.
@@ -28,16 +30,17 @@ type GlobalData interface {
 	UpdateCatchingUp() bool
 	UpdateValidatorSets()
 	IsCatchingUp() bool
+	GetMyPubkey() tcrypto.PubKey
 	GetValidatorSet() []rpc.ValidatorOutput
-	GetMyValidatorAddr() string
 	SetReadOnlyContext(ctx sdk.Context)
 	GetReadOnlyContext() sdk.Context
 	AppInitialized() bool
 	SetAppInitialized()
 
-	RecalculateGas(chain string)
-	GetRecalculateGas() []string
-	ResetGasCalculation()
+	// TxIn
+	ConfirmTxIn(txIn *types.TxIn)
+	GetTxInQueue() []*types.TxIn
+	ResetTxInQueue()
 }
 
 // This is a struct to store global in-memory data. For persistent private data, use the private db.
@@ -46,10 +49,11 @@ type GlobalDataDefault struct {
 	lock            *sync.RWMutex
 	httpClient      *retryablehttp.Client
 	cfg             config.Config
-	myTmtConsAddr   sdk.ConsAddress
+	myPubkey        tcrypto.PubKey
 	cdc             *codec.LegacyAmino
 	readOnlyContext atomic.Value
 	isDataInit      *atomic.Bool
+	txInQueue       []*types.TxIn
 
 	validatorSets *rpc.ResultValidatorsOutput
 	usedUtxos     map[string]bool
@@ -73,6 +77,7 @@ func NewGlobalData(cfg config.Config) GlobalData {
 		usedUtxos:     make(map[string]bool),
 		isDataInit:    atomic.NewBool(false),
 		calGasChains:  &sync.Map{},
+		txInQueue:     make([]*types.TxIn, 0),
 	}
 }
 
@@ -100,9 +105,7 @@ func (a *GlobalDataDefault) Init() {
 		sisuConfig.Dir+"/"+configToml.PrivValidatorStateFile,
 	)
 	// Get the tendermint address of this node.
-	a.myTmtConsAddr = (sdk.ConsAddress)(privValidator.GetAddress())
-
-	log.Info("My tendermint address = ", a.myTmtConsAddr.String())
+	a.myPubkey, _ = privValidator.GetPubKey()
 }
 
 func (a *GlobalDataDefault) UpdateCatchingUp() bool {
@@ -189,10 +192,6 @@ func (a *GlobalDataDefault) ValidatorSize() int {
 	return len(a.validatorSets.Validators)
 }
 
-func (a *GlobalDataDefault) GetMyValidatorAddr() string {
-	return a.myTmtConsAddr.String()
-}
-
 func (a *GlobalDataDefault) SetReadOnlyContext(ctx sdk.Context) {
 	a.readOnlyContext.Store(ctx)
 }
@@ -234,4 +233,21 @@ func (a *GlobalDataDefault) ResetGasCalculation() {
 		a.calGasChains.Delete(key)
 		return true
 	})
+}
+
+func (a *GlobalDataDefault) GetMyPubkey() tcrypto.PubKey {
+	return a.myPubkey
+}
+
+func (a *GlobalDataDefault) ConfirmTxIn(txIn *types.TxIn) {
+	a.txInQueue = append(a.txInQueue, txIn)
+}
+
+func (a *GlobalDataDefault) GetTxInQueue() []*types.TxIn {
+	copy := a.txInQueue
+	return copy
+}
+
+func (a *GlobalDataDefault) ResetTxInQueue() {
+	a.txInQueue = make([]*types.TxIn, 0)
 }

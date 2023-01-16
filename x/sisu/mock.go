@@ -109,7 +109,7 @@ func (m *MockTxTracker) CheckExpiredTransaction() {
 ////// TxOutputProducer
 
 type MockTxOutputProducer struct {
-	GetTxOutsFunc                     func(ctx sdk.Context, chain string, transfers []*types.Transfer) ([]*types.TxOutMsg, error)
+	GetTxOutsFunc                     func(ctx sdk.Context, chain string, transfers []*types.TransferDetails) ([]*types.TxOutMsg, error)
 	PauseContractFunc                 func(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error)
 	ResumeContractFunc                func(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error)
 	ContractChangeOwnershipFunc       func(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutMsg, error)
@@ -117,7 +117,7 @@ type MockTxOutputProducer struct {
 	ContractEmergencyWithdrawFundFunc func(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutMsg, error)
 }
 
-func (m *MockTxOutputProducer) GetTxOuts(ctx sdk.Context, chain string, transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
+func (m *MockTxOutputProducer) GetTxOuts(ctx sdk.Context, chain string, transfers []*types.TransferDetails) ([]*types.TxOutMsg, error) {
 	if m.GetTxOutsFunc != nil {
 		return m.GetTxOutsFunc(ctx, chain, transfers)
 	}
@@ -305,4 +305,51 @@ func (m *MockTxOutQueue) ProcessTxOuts(ctx sdk.Context) {
 	if m.ProcessTxOutsFunc != nil {
 		m.ProcessTxOutsFunc(ctx)
 	}
+}
+
+///// Validator Manager
+type MockValidatorManager struct {
+	AddValidatorFunc         func(ctx sdk.Context, node *types.Node)
+	IsValidatorFunc          func(ctx sdk.Context, signer string) bool
+	GetValidatorLengthFunc   func(ctx sdk.Context) int
+	GetValidatorsFunc        func(ctx sdk.Context) []*types.Node
+	GetAssignedValidatorFunc func(ctx sdk.Context, hash string) *types.Node
+}
+
+func (m *MockValidatorManager) AddValidator(ctx sdk.Context, node *types.Node) {
+	if m.AddValidatorFunc != nil {
+		m.AddValidatorFunc(ctx, node)
+	}
+}
+
+func (m *MockValidatorManager) IsValidator(ctx sdk.Context, signer string) bool {
+	if m.IsValidatorFunc != nil {
+		return m.IsValidatorFunc(ctx, signer)
+	}
+
+	return false
+}
+
+func (m *MockValidatorManager) GetValidatorLength(ctx sdk.Context) int {
+	if m.GetValidatorLengthFunc != nil {
+		return m.GetValidatorLength(ctx)
+	}
+
+	return 0
+}
+
+func (m *MockValidatorManager) GetValidators(ctx sdk.Context) []*types.Node {
+	if m.GetValidatorsFunc != nil {
+		return m.GetValidators(ctx)
+	}
+
+	return nil
+}
+
+func (m *MockValidatorManager) GetAssignedValidator(ctx sdk.Context, hash string) *types.Node {
+	if m.GetAssignedValidatorFunc != nil {
+		return m.GetAssignedValidatorFunc(ctx, hash)
+	}
+
+	return nil
 }

@@ -34,7 +34,9 @@ type defaultTransferQueue struct {
 	appKeys          common.AppKeys
 	privateDb        keeper.PrivateDb
 	newRequestCh     chan TransferRequest
+	valsManager      ValidatorManager
 	lock             *sync.RWMutex
+	globalData       common.GlobalData
 }
 
 func NewTransferQueue(
@@ -44,6 +46,8 @@ func NewTransferQueue(
 	tssConfig config.TssConfig,
 	appKeys common.AppKeys,
 	privateDb keeper.PrivateDb,
+	valsManager ValidatorManager,
+	globalData common.GlobalData,
 ) TransferQueue {
 	return &defaultTransferQueue{
 		keeper:           keeper,
@@ -54,6 +58,8 @@ func NewTransferQueue(
 		stopCh:           make(chan bool),
 		appKeys:          appKeys,
 		privateDb:        privateDb,
+		valsManager:      valsManager,
+		globalData:       globalData,
 	}
 }
 
@@ -86,12 +92,15 @@ func (q *defaultTransferQueue) loop() {
 }
 
 func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
+	if q.globalData.IsCatchingUp() {
+		// This app is still catching up with block. Do nothing here.
+		return
+	}
+
 	params := q.keeper.GetParams(ctx)
 	for _, chain := range params.SupportedChains {
-		pendingInfo := q.privateDb.GetPendingTxOut(chain)
-		if pendingInfo != nil {
-			// Don't try to create new txouts while there are some pending tx.
-			log.Verbosef("Transfer queue: chain %s has some pending tx", chain)
+		if q.privateDb.GetHoldProcessing(types.TransferHoldKey, chain) {
+			log.Verbose("Another transfer is being processed")
 			continue
 		}
 
@@ -100,7 +109,14 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 			continue
 		}
 
-		log.Debug("Queue length = ", len(queue))
+		// Check if the this node is the assigned node for the first transfer in the queue.
+		transfer := queue[0]
+		assignedNode := q.valsManager.GetAssignedValidator(ctx, transfer.Id)
+		if assignedNode.AccAddress != q.appKeys.GetSignerAddress().String() {
+			continue
+		}
+
+		log.Verbosef("Assigned node for transfer %s is %s", transfer.Id, assignedNode.AccAddress)
 
 		batchSize := utils.MinInt(params.GetMaxTransferOutBatch(chain), len(queue))
 		batch := queue[0:batchSize]
@@ -116,6 +132,7 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 				Message: err.Error(),
 			})
 			q.txSubmit.SubmitMessageAsync(msg)
+
 			continue
 		}
 
@@ -125,19 +142,12 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 				q.txSubmit.SubmitMessageAsync(txOutMsg)
 			}
 
-			txOut := txOutMsgs[0].Data
-			q.privateDb.SetPendingTxOut(txOut.Content.OutChain, &types.PendingTxOutInfo{
-				TxOut: txOut,
-				// ExpiredBlock: height + params.PendingTxTimeoutHeights[i],
-				// TODO: Make this height configurable
-				ExpiredBlock: ctx.BlockHeight() + 50,
-				State:        types.PendingTxOutInfo_IN_QUEUE,
-			})
+			q.privateDb.SetHoldProcessing(types.TransferHoldKey, chain, true)
 		}
 	}
 }
 
-func (q *defaultTransferQueue) getTransferIds(batch []*types.Transfer) []string {
+func (q *defaultTransferQueue) getTransferIds(batch []*types.TransferDetails) []string {
 	ids := make([]string, len(batch))
 
 	for i, transfer := range batch {

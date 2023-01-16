@@ -12,7 +12,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	eyessolanatypes "github.com/sisu-network/deyes/chains/solana/types"
-	eyesTypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
@@ -71,14 +70,7 @@ func TestParseIncoming(t *testing.T) {
 	bz, err = json.Marshal(outerTx)
 	require.Nil(t, err)
 
-	eyesTx := &eyesTypes.Tx{
-		Hash:       outerTx.TransactionInner.Signatures[0],
-		Serialized: bz,
-		To:         outerTx.TransactionInner.Message.AccountKeys[0],
-		Success:    true,
-	}
-
-	transfers, err := bridge.ParseIncomginTx(ctx, "solana-devnet", eyesTx)
+	transfers, err := bridge.ParseIncomginTx(ctx, "solana-devnet", bz)
 	require.Nil(t, err)
 
 	require.Equal(t, 1, len(transfers))
@@ -104,7 +96,7 @@ func TestProcessTransfer(t *testing.T) {
 	tokenAddr := tokens["SISU"].GetAddressForChain(chain)
 	receiverAta, err := solanatypes.GetAtaPubkey("5s3YB3BzLKNxT4bKjxfXTeQnNuokkH5J68tHMN7uqV8q", tokenAddr)
 	require.Nil(t, err)
-	transfer := &types.Transfer{
+	transfer := &types.TransferDetails{
 		Id:          "transfer_123",
 		Token:       "SISU",
 		ToRecipient: receiverAta.String(),
@@ -112,7 +104,7 @@ func TestProcessTransfer(t *testing.T) {
 	}
 
 	bridge := NewBridge(chain, "signer", k, cfg)
-	msgs, err := bridge.ProcessTransfers(ctx, []*types.Transfer{transfer})
+	msgs, err := bridge.ProcessTransfers(ctx, []*types.TransferDetails{transfer})
 	require.Nil(t, err)
 
 	require.Equal(t, 1, len(msgs))

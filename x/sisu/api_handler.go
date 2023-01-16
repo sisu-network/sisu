@@ -18,11 +18,6 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-const (
-	// The number of block interval that we should update all token prices.
-	TokenPriceUpdateInterval = 600 // About 30 mins for 3s block.
-)
-
 var (
 	ErrInvalidMessageType      = fmt.Errorf("Invalid Message Type")
 	ErrMessageHasBeenProcessed = fmt.Errorf("Message has been processed")
@@ -33,15 +28,15 @@ var (
 // ApiHandler handles API callback from dheart or deyes. There are few functions (BeginBlock & EndBlock)
 // that are still present for historical reason. They should be moved out of this file.
 type ApiHandler struct {
-	keeper         keeper.Keeper
-	txSubmit       common.TxSubmit
-	appKeys        common.AppKeys
-	globalData     common.GlobalData
-	txTracker      TxTracker
-	bridgeManager  chains.BridgeManager
-	chainPolling   service.ChainPolling
-	auxDataTracker service.AuxiliaryDataTracker
-	mc             ManagerContainer
+	keeper        keeper.Keeper
+	txSubmit      common.TxSubmit
+	appKeys       common.AppKeys
+	globalData    common.GlobalData
+	txTracker     TxTracker
+	bridgeManager chains.BridgeManager
+	chainPolling  service.ChainPolling
+	valManager    ValidatorManager
+	mc            ManagerContainer
 
 	// Dheart & Deyes client
 	dheartClient external.DheartClient
@@ -66,9 +61,7 @@ func NewApiHandler(
 		txTracker:     mc.TxTracker(),
 		chainPolling:  mc.ChainPolling(),
 		bridgeManager: mc.BridgeManager(),
-		auxDataTracker: service.NewAuxiliaryDataTracker(
-			mc.DeyesClient(), mc.AppKeys(), mc.Keeper(), mc.TxSubmit(),
-		),
+		valManager:    mc.ValidatorManager(),
 	}
 
 	return a
@@ -164,11 +157,7 @@ func (a *ApiHandler) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 			return
 		}
 
-		txOutId, err := txOut.GetId()
-		if err != nil {
-			log.Errorf("Cannot get id for tx out, err = %s", err.Error())
-			return
-		}
+		txOutId := txOut.GetId()
 
 		// Report this as failure. Submit to the Sisu chain
 		txOutResult := &types.TxOutResult{
@@ -183,9 +172,7 @@ func (a *ApiHandler) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 		case etypes.ErrSubmitTx:
 			txOutResult.Result = types.TxOutResultType_SUBMIT_TX_ERROR
 		case etypes.ErrNonceNotMatched:
-			if libchain.IsETHBasedChain(txOut.Content.OutChain) {
-				a.updateEthNonce(txOut.Content.OutChain)
-			}
+			txOutResult.Result = types.TxOutResultType_SUBMIT_TX_ERROR
 		default:
 			txOutResult.Result = types.TxOutResultType_UNKNOWN
 		}
@@ -198,28 +185,6 @@ func (a *ApiHandler) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 	log.Info("The transaction has been sent to blockchain (but not included in a block yet). chain = ",
 		result.Chain)
 	a.txTracker.UpdateStatus(result.Chain, result.TxHash, types.TxStatusDepoyed)
-}
-
-func (a *ApiHandler) updateEthNonce(chain string) {
-	// Get nonce from deyes
-	ctx := a.globalData.GetReadOnlyContext()
-	nonce, err := a.deyesClient.GetNonce(chain, a.keeper.GetMpcAddress(ctx, chain))
-	if err != nil {
-		log.Errorf("Failed to get nonce from deyes for chain %s", chain)
-		return
-	}
-
-	log.Infof("Nonce from network = %d", nonce)
-
-	txIndex := a.privateDb.GetTxHashIndex(keeper.GetEthNonceKey(chain))
-
-	// If nonce is incorrect we need to adjust the mpc nonce.
-	a.txSubmit.SubmitMessageAsync(types.NewAdjustEthNonceMsg(
-		a.appKeys.GetSignerAddress().String(),
-		chain,
-		nonce,
-		txIndex,
-	))
 }
 
 // getTxOutFromSignedHash fetches txout in the TxOut store from the hash of a signed transaction.
@@ -311,22 +276,18 @@ func (a *ApiHandler) OnKeysignResult(result *dhtypes.KeysignResult) {
 
 // OnTxIncludedInBlock implements AppLogicListener
 func (a *ApiHandler) OnTxIncludedInBlock(txTrack *chainstypes.TrackUpdate) {
-	log.Verbosef("Confirming tx height = %d, chain = %s, signed hash = %s, nonce = %d",
-		txTrack.BlockHeight, txTrack.Chain, txTrack.Hash, txTrack.Nonce)
+	log.Verbosef("Confirming tx height = %d, chain = %s, signed hash = %s",
+		txTrack.BlockHeight, txTrack.Chain, txTrack.Hash)
 
 	txOut := a.getTxOutFromSignedHash(txTrack.Chain, txTrack.Hash)
-
-	txOutId, err := txOut.GetId()
-	if err != nil {
-		log.Errorf("Cannot get id for tx out, err = %s", err.Error())
-		return
-	}
+	txOutId := txOut.GetId()
 	txOutResult := &types.TxOutResult{
 		TxOutId:     txOutId,
 		OutChain:    txOut.Content.OutChain,
 		OutHash:     txOut.Content.OutHash,
 		BlockHeight: txTrack.BlockHeight,
 	}
+
 	if libchain.IsETHBasedChain(txTrack.Chain) {
 		ethTx := &ethtypes.Transaction{}
 		err := ethTx.UnmarshalBinary(txTrack.Bytes)

@@ -19,8 +19,10 @@ const (
 	MsgTypeTransferBatch                 = "TransferBatch"
 	MsgTypeTransferFailure               = "TransferFailure"
 	MsgAdjustEthNonce                    = "AdjustEthNonce"
+	MsgTxIn                              = "TxIn"
+	MsgTypeTxOut                         = "TxOut"
+	MsgTxOutVote                         = "TxOutVote"
 
-	MsgTypeTxOut              = "TxOut"
 	MsgTypeKeysignResult      = "KeysignResult"
 	MsgUpdateSolanaRecentHash = "UpdateSolanaRecentHash"
 )

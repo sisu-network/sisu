@@ -8,20 +8,17 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys/secp256k1"
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"github.com/cosmos/cosmos-sdk/types/msgservice"
 )
 
 func RegisterCodec(cdc *codec.LegacyAmino) {
 }
 
 func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
-	msgservice.RegisterMsgServiceDesc(registry, &_Msg_serviceDesc)
-
 	registry.RegisterImplementations((*sdk.Msg)(nil), &KeygenWithSigner{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &KeygenResultWithSigner{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TransfersMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TxOutMsg{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &TxOutVoteMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TxOutResultMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &GasPriceMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &UpdateTokenPrice{})
@@ -33,7 +30,7 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil), &BlockHeightMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TransferFailureMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &UpdateSolanaRecentHashMsg{})
-	registry.RegisterImplementations((*sdk.Msg)(nil), &AdjustEthNonceMsg{})
+	registry.RegisterImplementations((*sdk.Msg)(nil), &TxInMsg{})
 
 	registry.RegisterInterface("cosmos.crypto.PubKey", (*ctypes.PubKey)(nil))
 	registry.RegisterImplementations((*ctypes.PubKey)(nil), &ed25519.PubKey{})

@@ -81,7 +81,7 @@ func GetTxRecordHash(msg sdk.Msg) ([]byte, string, error) {
 		}
 		return []byte(utils.KeccakHash32(string(serialized))), msg.Signer, nil
 
-	case *types.AdjustEthNonceMsg:
+	case *types.TxInMsg:
 		serialized, err := msg.Data.Marshal()
 		if err != nil {
 			return nil, "", err

@@ -8,24 +8,24 @@ import (
 )
 
 type HandlerTxOutResult struct {
-	pmm           PostedMessageManager
-	keeper        keeper.Keeper
-	transferQueue TransferQueue
-	privateDb     keeper.PrivateDb
+	pmm       PostedMessageManager
+	keeper    keeper.Keeper
+	transferQ TransferQueue
+	privateDb keeper.PrivateDb
 }
 
 func NewHandlerTxOutResult(mc ManagerContainer) *HandlerTxOutResult {
 	return &HandlerTxOutResult{
-		keeper:        mc.Keeper(),
-		pmm:           mc.PostedMessageManager(),
-		transferQueue: mc.TransferQueue(),
-		privateDb:     mc.PrivateDb(),
+		keeper:    mc.Keeper(),
+		pmm:       mc.PostedMessageManager(),
+		transferQ: mc.TransferQueue(),
+		privateDb: mc.PrivateDb(),
 	}
 }
 
-func (h *HandlerTxOutResult) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutResultMsg) (*sdk.Result, error) {
-	if process, hash := h.pmm.ShouldProcessMsg(ctx, signerMsg); process {
-		data, err := h.doTxOutResult(ctx, signerMsg)
+func (h *HandlerTxOutResult) DeliverMsg(ctx sdk.Context, msg *types.TxOutResultMsg) (*sdk.Result, error) {
+	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
+		data, err := h.doTxOutResult(ctx, msg)
 		h.keeper.ProcessTxRecord(ctx, hash)
 
 		return &sdk.Result{Data: data}, err
@@ -34,74 +34,54 @@ func (h *HandlerTxOutResult) DeliverMsg(ctx sdk.Context, signerMsg *types.TxOutR
 	return &sdk.Result{}, nil
 }
 
-func (h *HandlerTxOutResult) doTxOutResult(ctx sdk.Context, msgWithSigner *types.TxOutResultMsg) ([]byte, error) {
+func (h *HandlerTxOutResult) doTxOutResult(ctx sdk.Context, msg *types.TxOutResultMsg) ([]byte, error) {
 	log.Info("Delivering TxOutResult")
 
-	msg := msgWithSigner.Data
-	txOut := h.keeper.GetTxOut(ctx, msg.OutChain, msg.OutHash)
+	defer func(result *types.TxOutResult) {
+		// Remove the TxOut from the TxOutQueue
+		q := h.keeper.GetTxOutQueue(ctx, msg.Data.OutChain)
+		if q[0].GetId() != msg.Data.TxOutId {
+			// Critical error. The TxOutId should be the same like in the Message
+			log.Errorf("Id does not match. Id in the queue = %s, id in the message = %s", q[0].GetId(),
+				msg.Data.TxOutId)
+		} else {
+			q = q[1:]
+			h.keeper.SetTxOutQueue(ctx, msg.Data.OutChain, q)
+		}
+
+		// Reset the TransferHold & TxOutHold variable so that these 2 queues can continue processing
+		// TxOut.
+		h.privateDb.SetHoldProcessing(types.TransferHoldKey, result.OutChain, false)
+		h.privateDb.SetHoldProcessing(types.TxOutHoldKey, result.OutChain, false)
+	}(msg.Data)
+
+	result := msg.Data
+	txOut := h.keeper.GetTxOut(ctx, result.OutChain, result.OutHash)
 	if txOut == nil {
 		log.Errorf("cannot find txout from txOutConfirm message, chain = %s & hash = %s",
-			msg.OutChain, msg.OutHash)
+			result.OutChain, result.OutHash)
 		return nil, nil
 	}
 
-	log.Verbose("msg.Result = ", msg.Result)
+	log.Verbose("msg.Result = ", result.Result)
 
-	switch msg.Result {
+	switch result.Result {
 	case types.TxOutResultType_IN_BLOCK_SUCCESS:
-		return h.doTxOutConfirm(ctx, msg, txOut)
+		return h.doTxOutConfirm(ctx, result, txOut)
 	default:
-		return h.doTxOutFailure(ctx, msg, txOut)
+		return h.doTxOutFailure(ctx, result, txOut)
 	}
 }
 
 func (h *HandlerTxOutResult) doTxOutConfirm(ctx sdk.Context, msg *types.TxOutResult, txOut *types.TxOut) ([]byte, error) {
 	log.Verbose("Transaction is successfully included in a block, hash (no sig)= ", msg.OutHash, " chain = ", msg.OutChain)
-
-	// Update observed block height and nonce.
-	checkPoint := &types.MpcNonce{
-		Chain: msg.OutChain,
-		Nonce: msg.Nonce,
-	}
-	h.keeper.SetMpcNonce(ctx, checkPoint)
-
-	// Clear the pending TxOut
-	log.Verbose("Clearing pending out for chain ", txOut.Content.OutChain)
-	h.privateDb.SetPendingTxOut(txOut.Content.OutChain, nil)
-
-	// Save the block height for cardano chain
-	h.keeper.SetBlockHeight(ctx, msg.OutChain, msg.BlockHeight, "")
-
 	return nil, nil
 }
 
 func (h *HandlerTxOutResult) doTxOutFailure(ctx sdk.Context, msg *types.TxOutResult, txOut *types.TxOut) ([]byte, error) {
 	log.Warn("Transaction failed!, txOut.TxType = ", txOut.TxType)
 
-	switch txOut.TxType {
-	case types.TxOutType_TRANSFER_OUT:
-		ids := txOut.Input.TransferIds
-		transfers := h.keeper.GetTransfers(ctx, ids)
-
-		// Update the retry number of these transfers.
-		for _, transfer := range transfers {
-			transfer.RetryNum++
-			h.keeper.AddTransfers(ctx, []*types.Transfer{transfer})
-
-			log.Verbosef("Failed transaction: from chain = %s, from hash = %s", transfer.FromChain, transfer.FromHash)
-		}
-
-		// TODO: Figure out when we should process this transfer since we do not have enough funding.
-		// transferQ := h.keeper.GetTransferQueue(ctx, msg.OutChain)
-		// for _, transfer := range transfers {
-		// 	h.keeper.SetTransferQueue(ctx, msg.OutChain, transferQ)
-		// 	transferQ = append(transferQ, transfer)
-		// }
-	}
-
-	// Clear the pending TxOut
-	log.Verbose("Clearing pending out for chain ", txOut.Content.OutChain)
-	h.privateDb.SetPendingTxOut(txOut.Content.OutChain, nil)
+	// TODO: Add TxOut and its transfer to the failure queue.
 
 	return nil, nil
 }

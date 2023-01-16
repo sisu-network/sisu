@@ -97,3 +97,15 @@ func TestChainMetadata(t *testing.T) {
 		},
 	}, metas)
 }
+
+func TestVoteResult(t *testing.T) {
+	k, ctx := GetTestKeeperAndContext()
+
+	k.AddVoteResult(ctx, "tx_out", "signer1", types.VoteResult_APPROVE)
+	k.AddVoteResult(ctx, "tx_out", "signer2", types.VoteResult_APPROVE)
+
+	result := k.GetVoteResults(ctx, "tx_out")
+	require.Equal(t, 2, len(result))
+	require.Equal(t, result["signer1"], types.VoteResult_APPROVE)
+	require.Equal(t, result["signer2"], types.VoteResult_APPROVE)
+}

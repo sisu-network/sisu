@@ -185,12 +185,8 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 				log.Errorf("Cannot find txOut for dispath result with signed hash = %s, chain = %s", trackHash, outChain)
 				return
 			}
-			txOutId, err := txOut.GetId()
-			if err != nil {
-				log.Errorf("Cannot get id for tx out, err = %s", err.Error())
-				return
-			}
 
+			txOutId := txOut.GetId()
 			// Report this as failure. Submit to the Sisu chain
 			txOutResult := &types.TxOutResult{
 				TxOutId:  txOutId,

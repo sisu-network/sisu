@@ -1,0 +1,52 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+enum TxInType {
+  TOKEN_TRANSFER = 0;
+}
+
+message TxIn {
+  string id = 1;
+  string from_chain = 2;
+  bytes Serialize = 3;
+
+  repeated TransferDetails transfers = 4;
+}
+
+message TxInMsg {
+  string signer = 1;
+  TxIn Data = 2;
+}
+
+// Note: all new fields in this proto MUST be included in SerializeWithoutSigner in the go file.
+message TransfersMsg {
+  string signer = 1;
+  Transfers data = 2;
+}
+
+message Transfers {
+  repeated TransferDetails transfers =  1;
+}
+
+message TransferDetails {
+  string id = 1;
+  string tx_in_id = 2;
+
+  // Source
+  string from_chain = 3;
+  int64 from_block_height = 4;
+  string from_hash = 5;
+  string from_sender = 6;
+
+  string token = 7;
+  string amount = 8;
+
+  // Destination
+  string to_chain = 9;
+  string to_recipient = 10;
+
+  // Retry number
+  int32 retryNum = 11;
+}

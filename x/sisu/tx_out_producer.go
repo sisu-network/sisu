@@ -17,7 +17,7 @@ import (
 type TxOutputProducer interface {
 	// GetTxOuts returns a list of TxOut message and a list of un-processed transfer out request that
 	// needs to be processed next time.
-	GetTxOuts(ctx sdk.Context, chain string, transfers []*types.Transfer) ([]*types.TxOutMsg, error)
+	GetTxOuts(ctx sdk.Context, chain string, transfers []*types.TransferDetails) ([]*types.TxOutMsg, error)
 }
 
 type DefaultTxOutputProducer struct {
@@ -47,8 +47,7 @@ func NewTxOutputProducer(appKeys common.AppKeys, keeper keeper.Keeper,
 }
 
 func (p *DefaultTxOutputProducer) GetTxOuts(ctx sdk.Context, chain string,
-	transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
-
+	transfers []*types.TransferDetails) ([]*types.TxOutMsg, error) {
 	bridge := p.bridgeManager.GetBridge(ctx, chain)
 	msgs, err := bridge.ProcessTransfers(ctx, transfers)
 	if err != nil {

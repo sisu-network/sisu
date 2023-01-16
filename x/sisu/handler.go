@@ -38,30 +38,38 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 		switch msg := msg.(type) {
 		case *types.KeygenWithSigner:
 			return NewHandlerKeygen(mc).DeliverMsg(ctx, msg)
+
 		case *types.KeygenResultWithSigner:
 			return NewHandlerKeygenResult(mc).DeliverMsg(ctx, msg)
-		case *types.TransfersMsg:
-			return NewHandlerTransfers(mc).DeliverMsg(ctx, msg)
+
 		case *types.TxOutMsg:
 			return NewHandlerTxOut(mc).DeliverMsg(ctx, msg)
+
 		case *types.TxOutResultMsg:
 			return NewHandlerTxOutResult(mc).DeliverMsg(ctx, msg)
+
 		case *types.KeysignResult:
 			return NewHandlerKeysignResult(mc).DeliverMsg(ctx, msg)
-		case *types.GasPriceMsg:
-			return NewHandlerGasPrice(mc).DeliverMsg(ctx, msg)
+
 		case *types.UpdateTokenPrice:
 			return NewHandlerTokenPrice(mc).DeliverMsg(ctx, msg)
+
 		case *types.BlockHeightMsg:
 			return NewHandlerBlockHeight(mc.Keeper()).DeliverMsg(ctx, msg)
+
 		case *types.TransferFailureMsg:
 			return NewHanlderTransferFailure(mc.Keeper(), mc.PostedMessageManager()).DeliverMsg(ctx, msg)
+
 		case *types.UpdateSolanaRecentHashMsg:
 			return NewHandlerUpdateSolanaRecentHash(mc.Keeper()).DeliverMsg(ctx, msg)
-		case *types.AdjustEthNonceMsg:
-			return NewHandlerAdjustEthNonce(
-				mc.PostedMessageManager(), mc.Keeper(), mc.PrivateDb(),
-			).DeliverMsg(ctx, msg)
+
+		case *types.TxInMsg:
+			return NewHandlerTxInDetails(mc.PostedMessageManager(), mc.Keeper(),
+				mc.GlobalData(), mc.BridgeManager(), mc.ValidatorManager(), mc.PrivateDb()).DeliverMsg(ctx, msg)
+
+		case *types.TxOutVoteMsg:
+			return NewHandlerTxOutConsensed(mc.PostedMessageManager(), mc.Keeper(),
+				mc.PrivateDb()).DeliverMsg(ctx, msg)
 
 		default:
 			errMsg := fmt.Sprintf("unrecognized %s message type: %T", types.ModuleName, msg)

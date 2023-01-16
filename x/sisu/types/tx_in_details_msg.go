@@ -5,29 +5,25 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-func NewAdjustEthNonceMsg(signer string, chain string, nonce int64, index uint32) *AdjustEthNonceMsg {
-	return &AdjustEthNonceMsg{
+func NewTxInMsg(signer string, data *TxIn) *TxInMsg {
+	return &TxInMsg{
 		Signer: signer,
-		Data: &AdjustEthNonce{
-			Chain:    chain,
-			Nonce:    nonce,
-			MsgIndex: index,
-		},
+		Data:   data,
 	}
 }
 
 // Route ...
-func (msg *AdjustEthNonceMsg) Route() string {
+func (msg *TxInMsg) Route() string {
 	return RouterKey
 }
 
 // Type ...
-func (msg *AdjustEthNonceMsg) Type() string {
-	return MsgAdjustEthNonce
+func (msg *TxInMsg) Type() string {
+	return MsgTxIn
 }
 
 // GetSigners ...
-func (msg *AdjustEthNonceMsg) GetSigners() []sdk.AccAddress {
+func (msg *TxInMsg) GetSigners() []sdk.AccAddress {
 	author, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		panic(err)
@@ -35,18 +31,18 @@ func (msg *AdjustEthNonceMsg) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{author}
 }
 
-func (msg *AdjustEthNonceMsg) GetMsgs() []sdk.Msg {
+func (msg *TxInMsg) GetMsgs() []sdk.Msg {
 	return []sdk.Msg{msg}
 }
 
 // GetSignBytes ...
-func (msg *AdjustEthNonceMsg) GetSignBytes() []byte {
+func (msg *TxInMsg) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
 // ValidateBasic ...
-func (msg *AdjustEthNonceMsg) ValidateBasic() error {
+func (msg *TxInMsg) ValidateBasic() error {
 	_, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid creator address (%s)", err)

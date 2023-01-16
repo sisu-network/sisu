@@ -7,6 +7,7 @@ import (
 	keyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/types"
 	tcrypto "github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 )
@@ -14,6 +15,8 @@ import (
 type MockAppKeys struct {
 	privKey tcrypto.PrivKey
 	addr    sdk.AccAddress
+
+	GetSignerAddressFunc func() sdk.AccAddress
 }
 
 func NewMockAppKeys() AppKeys {
@@ -87,7 +90,7 @@ type MockGlobalData struct {
 	UpdateValidatorSetsFunc func()
 	IsCatchingUpFunc        func() bool
 	GetValidatorSetFunc     func() []rpc.ValidatorOutput
-	GetMyValidatorAddrFunc  func() string
+	GetMyPubkeyFunc         func() tcrypto.PubKey
 	SetReadOnlyContextFunc  func(ctx sdk.Context)
 	GetReadOnlyContextFunc  func() sdk.Context
 	AppInitializedFunc      func() bool
@@ -95,6 +98,9 @@ type MockGlobalData struct {
 	RecalculateGasFunc      func(chain string)
 	GetRecalculateGasFunc   func() []string
 	ResetGasCalculationFunc func()
+	ConfirmTxInFunc         func(txIn *types.TxIn)
+	GetTxInQueueFunc        func() []*types.TxIn
+	ResetTxInQueueFunc      func()
 }
 
 func (m *MockGlobalData) Init() {
@@ -131,14 +137,6 @@ func (m *MockGlobalData) GetValidatorSet() []rpc.ValidatorOutput {
 	}
 
 	return nil
-}
-
-func (m *MockGlobalData) GetMyValidatorAddr() string {
-	if m.GetMyValidatorAddrFunc != nil {
-		return m.GetMyValidatorAddrFunc()
-	}
-
-	return ""
 }
 
 func (m *MockGlobalData) SetReadOnlyContext(ctx sdk.Context) {
@@ -185,5 +183,33 @@ func (m *MockGlobalData) GetRecalculateGas() []string {
 func (m *MockGlobalData) ResetGasCalculation() {
 	if m.ResetGasCalculationFunc != nil {
 		m.ResetGasCalculationFunc()
+	}
+}
+
+func (m *MockGlobalData) GetMyPubkey() tcrypto.PubKey {
+	if m.GetMyPubkeyFunc != nil {
+		return m.GetMyPubkey()
+	}
+
+	return nil
+}
+
+func (m *MockGlobalData) ConfirmTxIn(txIn *types.TxIn) {
+	if m.ConfirmTxInFunc != nil {
+		m.ConfirmTxInFunc(txIn)
+	}
+}
+
+func (m *MockGlobalData) GetTxInQueue() []*types.TxIn {
+	if m.GetTxInQueueFunc != nil {
+		return m.GetTxInQueueFunc()
+	}
+
+	return nil
+}
+
+func (m *MockGlobalData) ResetTxInQueue() {
+	if m.ResetTxInQueueFunc != nil {
+		m.ResetTxInQueueFunc()
 	}
 }

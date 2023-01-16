@@ -10,9 +10,11 @@ import (
 )
 
 var (
-	prefixPrivateTxOutSig     = []byte{0x01}
-	prefixPrivatePendingTxOut = []byte{0x02}
-	prefixPrivateTxHashIndex  = []byte{0x03}
+	prefixPrivateTxOutSig       = []byte{0x01}
+	prefixPrivateTxHashIndex    = []byte{0x03}
+	prefixPrivateTransferState  = []byte{0x04}
+	prefixPrivateTxOutState     = []byte{0x05}
+	prefixPrivateHoldProcessing = []byte{0x06}
 )
 
 type PrivateDb interface {
@@ -20,13 +22,22 @@ type PrivateDb interface {
 	SaveTxOutSig(msg *types.TxOutSig)
 	GetTxOutSig(outChain, hashWithSig string) *types.TxOutSig
 
-	SetPendingTxOut(chain string, txOut *types.PendingTxOutInfo)
-	GetPendingTxOut(chain string) *types.PendingTxOutInfo
-
 	// Transaction index. This value is used to identify 2 cosmos message with the same content but
 	// used at different time (similar to nonce in Ethereum).
 	SetTxHashIndex(key string, value uint32)
 	GetTxHashIndex(key string) uint32
+
+	// Transfer State
+	SetTransferState(id string, state types.TransferState)
+	GetTransferState(id string) types.TransferState
+
+	// TxOut State
+	SetTxOutState(id string, state types.TxOutState)
+	GetTxOutState(id string) types.TxOutState
+
+	// Hold Processing job on a chain (e.g. Transfer or TxOut Queue)
+	SetHoldProcessing(jobType, chain string, hold bool)
+	GetHoldProcessing(jobType, chain string) bool
 }
 
 type defaultPrivateDb struct {
@@ -55,8 +66,10 @@ func initPrefixes(parent cosmostypes.KVStore) map[string]prefix.Store {
 	prefixes := make(map[string]prefix.Store)
 
 	prefixes[string(prefixPrivateTxOutSig)] = prefix.NewStore(parent, prefixPrivateTxOutSig)
-	prefixes[string(prefixPrivatePendingTxOut)] = prefix.NewStore(parent, prefixPrivatePendingTxOut)
 	prefixes[string(prefixPrivateTxHashIndex)] = prefix.NewStore(parent, prefixPrivateTxHashIndex)
+	prefixes[string(prefixPrivateTransferState)] = prefix.NewStore(parent, prefixPrivateTransferState)
+	prefixes[string(prefixPrivateTxOutState)] = prefix.NewStore(parent, prefixPrivateTxOutState)
+	prefixes[string(prefixPrivateHoldProcessing)] = prefix.NewStore(parent, prefixPrivateHoldProcessing)
 
 	return prefixes
 }
@@ -74,18 +87,6 @@ func (db *defaultPrivateDb) SaveTxOutSig(msg *types.TxOutSig) {
 	saveTxOutSig(store, msg)
 }
 
-///// Pending TxOut
-
-func (db *defaultPrivateDb) SetPendingTxOut(chain string, txOut *types.PendingTxOutInfo) {
-	store := db.prefixes[string(prefixPrivatePendingTxOut)]
-	setPendingTxOut(store, chain, txOut)
-}
-
-func (db *defaultPrivateDb) GetPendingTxOut(chain string) *types.PendingTxOutInfo {
-	store := db.prefixes[string(prefixPrivatePendingTxOut)]
-	return getPendingTxOutInfo(store, chain)
-}
-
 ///// Tx Hash Index
 
 func (db *defaultPrivateDb) SetTxHashIndex(key string, value uint32) {
@@ -96,4 +97,37 @@ func (db *defaultPrivateDb) SetTxHashIndex(key string, value uint32) {
 func (db *defaultPrivateDb) GetTxHashIndex(key string) uint32 {
 	store := db.prefixes[string(prefixPrivateTxHashIndex)]
 	return getTxHashIndex(store, key)
+}
+
+///// Transfer State
+func (db *defaultPrivateDb) SetTransferState(id string, state types.TransferState) {
+	store := db.prefixes[string(prefixPrivateTransferState)]
+	setState(store, id, int(state))
+}
+
+func (db *defaultPrivateDb) GetTransferState(id string) types.TransferState {
+	store := db.prefixes[string(prefixPrivateTransferState)]
+	return types.TransferState(getState(store, id))
+}
+
+///// TxOut State
+func (db *defaultPrivateDb) SetTxOutState(id string, state types.TxOutState) {
+	store := db.prefixes[string(prefixPrivateTxOutState)]
+	setState(store, id, int(state))
+}
+
+func (db *defaultPrivateDb) GetTxOutState(id string) types.TxOutState {
+	store := db.prefixes[string(prefixPrivateTxOutState)]
+	return types.TxOutState(getState(store, id))
+}
+
+///// Hold Processing job on a chain (e.g. Transfer or TxOut Queue)
+func (db *defaultPrivateDb) SetHoldProcessing(jobType, chain string, hold bool) {
+	store := db.prefixes[string(prefixPrivateHoldProcessing)]
+	setHoldProcessing(store, jobType, chain, hold)
+}
+
+func (db *defaultPrivateDb) GetHoldProcessing(jobType, chain string) bool {
+	store := db.prefixes[string(prefixPrivateHoldProcessing)]
+	return getHoldProcessing(store, jobType, chain)
 }

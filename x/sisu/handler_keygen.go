@@ -20,11 +20,11 @@ func NewHandlerKeygen(mc ManagerContainer) *HandlerKeygen {
 	}
 }
 
-func (h *HandlerKeygen) DeliverMsg(ctx sdk.Context, signerMsg *types.KeygenWithSigner) (*sdk.Result, error) {
-	log.Info("Delivering keygen, signer = ", signerMsg.Signer, " type = ", signerMsg.Data.KeyType)
+func (h *HandlerKeygen) DeliverMsg(ctx sdk.Context, msg *types.KeygenWithSigner) (*sdk.Result, error) {
+	log.Info("Delivering keygen, signer = ", msg.Signer, " type = ", msg.Data.KeyType)
 	pmm := h.mc.PostedMessageManager()
-	if process, hash := pmm.ShouldProcessMsg(ctx, signerMsg); process {
-		data, err := h.doKeygen(ctx, signerMsg)
+	if process, hash := pmm.ShouldProcessMsg(ctx, msg); process {
+		data, err := h.doKeygen(ctx, msg)
 		h.keeper.ProcessTxRecord(ctx, hash)
 
 		return &sdk.Result{Data: data}, err

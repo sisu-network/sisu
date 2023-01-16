@@ -5,25 +5,52 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
+	db "github.com/tendermint/tm-db"
 )
 
 func mockForHandlerTxOut() (sdk.Context, ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
-	txTracker := &MockTxTracker{}
 	pmm := NewPostedMessageManager(k)
+	valsManager := &MockValidatorManager{
+		GetAssignedValidatorFunc: func(ctx sdk.Context, hash string) *types.Node {
+			return &types.Node{
+				AccAddress: "signer",
+			}
+		},
+	}
+	mockAppKeys := common.NewMockAppKeys()
+	txSubmit := &common.MockTxSubmit{}
 
-	mc := MockManagerContainer(k, pmm, txTracker, &MockTxOutQueue{})
+	mc := MockManagerContainer(k, pmm, &MockTxOutQueue{}, txSubmit, valsManager, mockAppKeys,
+		keeper.NewPrivateDb(".", db.MemDBBackend))
 	return ctx, mc
 }
 
-func TestHandlerTxOut_TransferOut(t *testing.T) {
+func TestTxOut_MultipleSigners(t *testing.T) {
+	ctx, mc := mockForHandlerTxOut()
+	k := mc.Keeper()
+	txSubmit := mc.TxSubmit().(*common.MockTxSubmit)
+	submitCount := 0
+
+	txSubmit.SubmitMessageAsyncFunc = func(msg sdk.Msg) error {
+		submitCount++
+		return nil
+	}
+
+	params := k.GetParams(ctx)
+	params.MajorityThreshold = 4
+	k.SaveParams(ctx, params)
+
 	destChain := "ganache2"
+
 	txOutMsg1 := &types.TxOutMsg{
-		Signer: "signer",
+		Signer: "signer1",
 		Data: &types.TxOut{
 			TxType: types.TxOutType_TRANSFER_OUT,
 			Content: &types.TxOutContent{
@@ -36,49 +63,41 @@ func TestHandlerTxOut_TransferOut(t *testing.T) {
 		},
 	}
 
-	t.Run("transfer_out_successful", func(t *testing.T) {
-		ctx, mc := mockForHandlerTxOut()
-		kpr := mc.Keeper()
+	transfers := []*types.TransferDetails{
+		{
+			Id: fmt.Sprintf("%s__%s", "ganache1", "hash1"),
+		},
+		{
+			Id: fmt.Sprintf("%s__%s", "ganache1", "hash2"),
+		},
+		{
+			Id: fmt.Sprintf("%s__%s", "ganache1", "hash3"),
+		},
+	}
 
-		transfers := []*types.Transfer{
-			{
-				Id: fmt.Sprintf("%s__%s", "ganache1", "hash1"),
-			},
-			{
-				Id: fmt.Sprintf("%s__%s", "ganache1", "hash2"),
-			},
-			{
-				Id: fmt.Sprintf("%s__%s", "ganache1", "hash3"),
-			},
+	k.AddTransfers(ctx, transfers)
+	k.SetTransferQueue(ctx, destChain, transfers)
+
+	valManager := mc.ValidatorManager().(*MockValidatorManager)
+	valManager.GetAssignedValidatorFunc = func(ctx sdk.Context, hash string) *types.Node {
+		return &types.Node{
+			AccAddress: "signer1",
 		}
+	}
 
-		kpr.AddTransfers(ctx, transfers)
-		kpr.SetTransferQueue(ctx, destChain, transfers)
+	handler := NewHandlerTxOut(mc)
 
-		handler := NewHandlerTxOut(mc)
-		_, err := handler.DeliverMsg(ctx, txOutMsg1)
-		require.NoError(t, err)
-		transferQueue := kpr.GetTransferQueue(ctx, txOutMsg1.Data.Content.OutChain)
-		require.Equal(t, []*types.Transfer{
-			{
-				Id: fmt.Sprintf("%s__%s", "ganache1", "hash2"),
-			},
-			{
-				Id: fmt.Sprintf("%s__%s", "ganache1", "hash3"),
-			},
-		}, transferQueue)
+	for i := 1; i <= 4; i++ {
+		msg := *txOutMsg1
+		msg.Signer = fmt.Sprintf("signer%d", i)
+		_, err := handler.DeliverMsg(ctx, &msg)
+		require.Nil(t, err)
 
-		// We are not processing the second request since we have some tx in the pending transfer queue.
-		txOutMsg2 := &(*txOutMsg1)
-		txOutMsg2.Data.Input.TransferIds = []string{fmt.Sprintf("%s__%s", "ganache1", "hash2")}
-		handler = NewHandlerTxOut(mc)
-		_, err = handler.DeliverMsg(ctx, txOutMsg2)
-		require.NoError(t, err)
-		transferQueue = kpr.GetTransferQueue(ctx, txOutMsg1.Data.Content.OutChain)
-		require.Equal(t, []*types.Transfer{
-			{
-				Id: fmt.Sprintf("%s__%s", "ganache1", "hash3"),
-			},
-		}, transferQueue)
-	})
+		if i < 4 {
+			require.Equal(t, i, submitCount)
+		} else {
+			// There is no fourth message since with 3 messages, the TxOut is already processed.
+			require.Equal(t, 3, submitCount)
+		}
+	}
 }

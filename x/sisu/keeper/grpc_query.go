@@ -17,7 +17,8 @@ func NewGrpcQuerier(keeper Keeper) *GrpcQuerier {
 	return &GrpcQuerier{keeper: keeper}
 }
 
-func (k *GrpcQuerier) AllPubKeys(goCtx context.Context, req *types.QueryAllPubKeysRequest) (*types.QueryAllPubKeysResponse, error) {
+func (k *GrpcQuerier) AllPubKeys(goCtx context.Context, req *types.QueryAllPubKeysRequest) (
+	*types.QueryAllPubKeysResponse, error) {
 	ctx := sdk.UnwrapSDKContext(goCtx)
 	log.Verbose("Fetching all pub keys.")
 

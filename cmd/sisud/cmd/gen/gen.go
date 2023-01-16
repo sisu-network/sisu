@@ -177,7 +177,8 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 	return valPubKeys, nil
 }
 
-func getNode(kb keyring.Keyring, algoStr string, nodeDirName string, outputDir string, tmConfig *tmconfig.Config) (*types.Node, string, cryptotypes.PubKey) {
+func getNode(kb keyring.Keyring, algoStr string, nodeDirName string, outputDir string,
+	tmConfig *tmconfig.Config) (*types.Node, string, cryptotypes.PubKey) {
 	keyringAlgos, _ := kb.SupportedAlgorithms()
 	algo, err := keyring.NewSigningAlgoFromString(algoStr, keyringAlgos)
 	if err != nil {
@@ -190,7 +191,7 @@ func getNode(kb keyring.Keyring, algoStr string, nodeDirName string, outputDir s
 		panic(err)
 	}
 
-	nodeId, tendermintPubKey, err := InitializeNodeValidatorFilesFromMnemonic(tmConfig, secret)
+	nodeId, valPubkey, err := InitializeNodeValidatorFilesFromMnemonic(tmConfig, secret)
 	if err != nil {
 		_ = os.RemoveAll(outputDir)
 		panic(err)
@@ -198,13 +199,13 @@ func getNode(kb keyring.Keyring, algoStr string, nodeDirName string, outputDir s
 
 	return &types.Node{
 		Id: nodeId,
-		ConsensusKey: &types.Pubkey{
-			Type:  tendermintPubKey.Type(),
-			Bytes: tendermintPubKey.Bytes(),
+		ValPubkey: &types.ValPubkey{
+			Type:  valPubkey.Type(),
+			Bytes: valPubkey.Bytes(),
 		},
 		AccAddress:  addr.String(),
 		IsValidator: true,
-	}, secret, tendermintPubKey
+	}, secret, valPubkey
 }
 
 func initGenFiles(

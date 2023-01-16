@@ -13,7 +13,6 @@ import (
 
 	"github.com/mr-tron/base58"
 	eyessolanatypes "github.com/sisu-network/deyes/chains/solana/types"
-	eyestypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
@@ -45,7 +44,7 @@ func NewBridge(chain, signer string, keeper keeper.Keeper, cfg config.Config) ch
 	}
 }
 
-func (b *defaultBridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) ([]*types.TxOutMsg, error) {
+func (b *defaultBridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDetails) ([]*types.TxOutMsg, error) {
 	allTokens := b.keeper.GetAllTokens(ctx)
 	tokens := make([]*types.Token, 0, len(transfers))
 	recipients := make([]string, 0, len(transfers))
@@ -224,12 +223,12 @@ func (b *defaultBridge) getRecentBlockHash(ctx sdk.Context, chain string) (strin
 	return arr[len(arr)/2].SolanaRecentBlockHash, nil
 }
 
-func (b *defaultBridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx) ([]*types.Transfer, error) {
+func (b *defaultBridge) ParseIncomginTx(ctx sdk.Context, chain string, serialized []byte) ([]*types.TransferDetails, error) {
 	log.Verbose("Parsing solana incomgin tx...")
-	ret := make([]*types.Transfer, 0)
+	ret := make([]*types.TransferDetails, 0)
 
 	outerTx := new(eyessolanatypes.Transaction)
-	err := json.Unmarshal(tx.Serialized, outerTx)
+	err := json.Unmarshal(serialized, outerTx)
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +283,7 @@ func (b *defaultBridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyest
 				continue
 			}
 
-			ret = append(ret, &types.Transfer{
+			ret = append(ret, &types.TransferDetails{
 				FromChain:   chain,
 				FromHash:    outerTx.TransactionInner.Signatures[0],
 				Token:       token.Id,

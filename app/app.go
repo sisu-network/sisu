@@ -273,7 +273,7 @@ func New(
 
 	txOutProducer := tss.NewTxOutputProducer(app.appKeys, app.k, bridgeManager, txTracker)
 	transferQueue := sisu.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss,
-		app.appKeys, privateDb)
+		app.appKeys, privateDb, valsMgr, app.globalData)
 	chainPolling := service.NewChainPolling(app.appKeys.GetSignerAddress().String(),
 		deyesClient, app.txSubmitter)
 
@@ -289,6 +289,10 @@ func New(
 	externalHandler := rest.NewExternalHandler(app.k, app.globalData)
 	app.externalHandler = externalHandler
 
+	txOutSigner := sisu.NewTxOutSigner(app.k, partyManager, dheartClient)
+	txOutProcessor := sisu.NewTxOutProcessor(app.k, privateDb, txOutSigner, app.globalData)
+	txOutProcessor.Start()
+
 	modules := []module.AppModule{
 		genutil.NewAppModule(
 			app.AccountKeeper, app.StakingKeeper, app.BaseApp.DeliverTx,
@@ -302,7 +306,7 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
 
-		tss.NewAppModule(appCodec, sisuHandler, app.k, apiHandler, valsMgr, mc),
+		tss.NewAppModule(appCodec, sisuHandler, app.k, apiHandler, valsMgr, txOutProcessor, mc),
 	}
 
 	app.apiHandler = apiHandler
@@ -570,6 +574,7 @@ func initParamsKeeper(appCodec codec.BinaryMarshaler, legacyAmino *codec.LegacyA
 func (app *App) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	app.txSubmitter.SyncBlockSequence(ctx, app.AccountKeeper)
 
+	// TODO: We do not need to run this at the beginning of every block.
 	app.globalData.UpdateValidatorSets()
 
 	return app.mm.BeginBlock(ctx, req)

@@ -34,13 +34,13 @@ var (
 		"fantom-testnet__binance-testnet",
 		"fantom-testnet__goerli-testnet",
 		"fantom-testnet__polygon-testnet",
-		"fantom-testnet__solana-devnet",
+		// "fantom-testnet__solana-devnet",
 
 		"avaxc-testnet__fantom-testnet",
 		"avaxc-testnet__binance-testnet",
 		"avaxc-testnet__goerli-testnet",
 		"avaxc-testnet__polygon-testnet",
-		"avaxc-testnet__solana-devnet",
+		// "avaxc-testnet__solana-devnet",
 
 		// "binance-testnet__fantom-testnet",
 		// "binance-testnet__avaxc-testnet",

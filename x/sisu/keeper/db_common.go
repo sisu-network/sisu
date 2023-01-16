@@ -67,6 +67,18 @@ func getGasPriceKey(chain, signer string) []byte {
 	return []byte(fmt.Sprintf("%s__%s", chain, signer))
 }
 
+func getVoteResultKey(hash, signer string) []byte {
+	return []byte(fmt.Sprintf("%s__%s", hash, signer))
+}
+
+func getProposedTxOutKey(id, signer string) []byte {
+	return []byte(fmt.Sprintf("%s__%s", id, signer))
+}
+
+func getHoldProcessingKey(jobType, chain string) []byte {
+	return []byte(fmt.Sprintf("%s__%s", jobType, chain))
+}
+
 ///// TxREcord
 
 func saveTxRecord(store cstypes.KVStore, hash []byte, validator string) int {
@@ -492,7 +504,7 @@ func saveNode(store cstypes.KVStore, node *types.Node) {
 		log.Error("cannot marshal node, err = ", err)
 	}
 
-	store.Set(node.ConsensusKey.Bytes, bz)
+	store.Set(node.ValPubkey.Bytes, bz)
 }
 
 func loadValidators(store cstypes.KVStore) []*types.Node {
@@ -707,7 +719,7 @@ func getCommandQueue(store cstypes.KVStore, chain string) []*types.Command {
 }
 
 ///// Transfer
-func addTransfers(store cstypes.KVStore, transfers []*types.Transfer) {
+func addTransfers(store cstypes.KVStore, transfers []*types.TransferDetails) {
 	for _, transfer := range transfers {
 		bz, err := transfer.Marshal()
 		if err != nil {
@@ -719,8 +731,8 @@ func addTransfers(store cstypes.KVStore, transfers []*types.Transfer) {
 	}
 }
 
-func getTransfers(store cstypes.KVStore, ids []string) []*types.Transfer {
-	transfers := make([]*types.Transfer, len(ids))
+func getTransfers(store cstypes.KVStore, ids []string) []*types.TransferDetails {
+	transfers := make([]*types.TransferDetails, len(ids))
 
 	for i, id := range ids {
 		bz := store.Get([]byte(id))
@@ -730,7 +742,7 @@ func getTransfers(store cstypes.KVStore, ids []string) []*types.Transfer {
 			continue
 		}
 
-		transfer := &types.Transfer{}
+		transfer := &types.TransferDetails{}
 		err := transfer.Unmarshal(bz)
 		if err != nil {
 			log.Error("getTransfer: Failed to unmarshal transfer out, err = ", err)
@@ -745,7 +757,7 @@ func getTransfers(store cstypes.KVStore, ids []string) []*types.Transfer {
 }
 
 ///// Transfer Queue
-func setTranferQueue(store cstypes.KVStore, chain string, transfers []*types.Transfer) {
+func setTransferQueue(store cstypes.KVStore, chain string, transfers []*types.TransferDetails) {
 	if len(transfers) == 0 {
 		store.Delete([]byte(chain))
 		return
@@ -760,10 +772,10 @@ func setTranferQueue(store cstypes.KVStore, chain string, transfers []*types.Tra
 	store.Set([]byte(chain), []byte(s))
 }
 
-func getTransferQueue(queueStore, transferStore cstypes.KVStore, chain string) []*types.Transfer {
+func getTransferQueue(queueStore, transferStore cstypes.KVStore, chain string) []*types.TransferDetails {
 	bz := queueStore.Get([]byte(chain))
 	if bz == nil {
-		return []*types.Transfer{}
+		return []*types.TransferDetails{}
 	}
 
 	s := string(bz)
@@ -800,38 +812,6 @@ func getTxOutQueue(store cstypes.KVStore, chain string) []*types.TxOut {
 	}
 
 	return queue.TxOuts
-}
-
-///// Pending TxOut
-func setPendingTxOut(store cstypes.KVStore, chain string, txOutInfo *types.PendingTxOutInfo) {
-	if txOutInfo == nil {
-		store.Delete([]byte(chain))
-		return
-	}
-
-	bz, err := txOutInfo.Marshal()
-	if err != nil {
-		log.Error("setPendingTxOut: failed to marshal txOut")
-		return
-	}
-
-	store.Set([]byte(txOutInfo.TxOut.Content.OutChain), bz)
-}
-
-func getPendingTxOutInfo(store cstypes.KVStore, chain string) *types.PendingTxOutInfo {
-	bz := store.Get([]byte(chain))
-	if bz == nil {
-		return nil
-	}
-
-	txOutInfo := &types.PendingTxOutInfo{}
-	err := txOutInfo.Unmarshal(bz)
-	if err != nil {
-		log.Error("getPendingTxOut: failed to unmarshal txout")
-		return nil
-	}
-
-	return txOutInfo
 }
 
 ///// Chain Metadata
@@ -922,6 +902,170 @@ func getTxHashIndex(store cstypes.KVStore, key string) uint32 {
 	}
 
 	return utils.BytesToUint32(bz)
+}
+
+///// TxInDetails
+func setTxInDetails(store cstypes.KVStore, txInId string, txIn *types.TxIn) {
+	bz, err := txIn.Marshal()
+	if err != nil {
+		log.Errorf("setTxInDetails: failed to marshal msg, err = %s", err)
+		return
+	}
+
+	store.Set([]byte(txInId), bz)
+}
+
+func getTxInDetails(store cstypes.KVStore, txInId string) *types.TxInMsg {
+	bz := store.Get([]byte(txInId))
+	if bz == nil {
+		return nil
+	}
+
+	msg := new(types.TxInMsg)
+	err := msg.Unmarshal(bz)
+	if err != nil {
+		log.Errorf("getTxInDetails: failed to unmarshal TxInDetails with id %s, err = %s", txInId, err)
+		return nil
+	}
+
+	return msg
+}
+
+///// Confirmed TxIn
+func setConfirmedTxIn(store cstypes.KVStore, tx *types.ConfirmedTxIn) {
+	bz, err := tx.Marshal()
+	if err != nil {
+		log.Errorf("setConfirmedTxIn: failed to marhsal confirmed TxIn")
+		return
+	}
+
+	store.Set([]byte(tx.TxInId), bz)
+}
+
+func getConfirmedTxIn(store cstypes.KVStore, id string) *types.ConfirmedTxIn {
+	bz := store.Get([]byte(id))
+	if bz == nil {
+		return nil
+	}
+
+	tx := new(types.ConfirmedTxIn)
+	if err := tx.Unmarshal(bz); err != nil {
+		log.Errorf("getConfirmedTxIn: failed to unmarshal confirmed TxIn")
+		return nil
+	}
+
+	return tx
+}
+
+///// Vote Result
+func addVoteResult(store cstypes.KVStore, hash string, signer string, result types.VoteResult) {
+	bz := utils.ToByte(result)
+	if bz == nil {
+		log.Errorf("addVoteResult: failed to convert result to byte")
+		return
+	}
+
+	key := getVoteResultKey(hash, signer)
+	store.Set(key, bz)
+}
+
+func getVoteResults(store cstypes.KVStore, hash string) map[string]types.VoteResult {
+	begin := []byte(fmt.Sprintf("%s__", hash))
+	end := []byte(fmt.Sprintf("%s__~", hash))
+
+	ret := make(map[string]types.VoteResult)
+	for iter := store.Iterator(begin, end); iter.Valid(); iter.Next() {
+		key := string(iter.Key())
+		if len(key) <= len(hash)+2 {
+			continue
+		}
+
+		signer := key[len(hash)+2:]
+		bz := utils.FromByteToInt(iter.Value())
+		result := types.VoteResult(bz)
+		ret[signer] = result
+	}
+
+	return ret
+}
+
+///// Proposed TxOut
+
+func addProposedTxOut(store cstypes.KVStore, signer string, txOut *types.TxOut) {
+	key := getProposedTxOutKey(txOut.GetId(), signer)
+	bz, err := txOut.Marshal()
+	if err != nil {
+		log.Errorf("addProposedTxOut: Failed to marshal proposed tx out")
+		return
+	}
+
+	store.Set(key, bz)
+}
+
+func getProposedTxOut(store cstypes.KVStore, id, signer string) *types.TxOut {
+	key := getProposedTxOutKey(id, signer)
+	bz := store.Get(key)
+	if bz == nil {
+		return nil
+	}
+
+	txOut := new(types.TxOut)
+	err := txOut.Unmarshal(bz)
+	if err != nil {
+		log.Errorf("Failed to get proposed tx out")
+		return nil
+	}
+
+	return txOut
+}
+
+func getProposedTxOutCount(store cstypes.KVStore, id string) int {
+	begin := []byte(fmt.Sprintf("%s__", id))
+	end := []byte(fmt.Sprintf("%s__~", id))
+
+	count := 0
+	for iter := store.Iterator(begin, end); iter.Valid(); iter.Next() {
+		count++
+	}
+
+	return count
+}
+
+///// State
+func setState(store cstypes.KVStore, id string, state int) {
+	store.Set([]byte(id), utils.Uint32ToBytes(uint32(state)))
+}
+
+func getState(store cstypes.KVStore, id string) int {
+	bz := store.Get([]byte(id))
+	if bz == nil {
+		return 0
+	}
+
+	ret := utils.BytesToUint32(bz)
+
+	return int(ret)
+}
+
+///// Hold Procesisng
+func setHoldProcessing(store cstypes.KVStore, jobType, chain string, hold bool) {
+	key := getHoldProcessingKey(jobType, chain)
+	value := byte(0)
+	if hold {
+		value = byte(1)
+	}
+
+	store.Set(key, []byte{value})
+}
+
+func getHoldProcessing(store cstypes.KVStore, jobType, chain string) bool {
+	key := getHoldProcessingKey(jobType, chain)
+	bz := store.Get(key)
+	if len(bz) == 0 {
+		return false
+	}
+
+	return bz[0] != byte(0)
 }
 
 ///// Debug functions
