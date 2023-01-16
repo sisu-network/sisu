@@ -30,7 +30,6 @@ func RegisterInterfaces(registry cdctypes.InterfaceRegistry) {
 	registry.RegisterImplementations((*sdk.Msg)(nil), &BlockHeightMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TransferFailureMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &UpdateSolanaRecentHashMsg{})
-	registry.RegisterImplementations((*sdk.Msg)(nil), &TxInMsg{})
 	registry.RegisterImplementations((*sdk.Msg)(nil), &TxInDetailsMsg{})
 
 	registry.RegisterInterface("cosmos.crypto.PubKey", (*ctypes.PubKey)(nil))

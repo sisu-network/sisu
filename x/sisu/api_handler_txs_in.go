@@ -60,9 +60,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 		msg := types.NewTxInDetailsMsg(
 			a.appKeys.GetSignerAddress().String(),
 			&types.TxInDetails{
-				TxIn: &types.TxIn{
-					Id: txInId,
-				},
+				Id:        txInId,
 				FromChain: txs.Chain,
 				Serialize: tx.Serialized,
 				Transfers: transfers,

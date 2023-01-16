@@ -3,14 +3,12 @@ package types;
 
 option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 
-import "sisu/tx_in.proto";
-
 enum TxInType {
   TOKEN_TRANSFER = 0;
 }
 
 message TxInDetails {
-  TxIn tx_in = 1;
+  string id = 1;
   string from_chain = 2;
   bytes Serialize = 3;
 

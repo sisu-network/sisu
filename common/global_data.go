@@ -38,8 +38,8 @@ type GlobalData interface {
 	SetAppInitialized()
 
 	// TxIn
-	ConfirmTxIn(txIn *types.TxIn)
-	GetTxInQueue() []*types.TxIn
+	ConfirmTxIn(txIn *types.TxInDetails)
+	GetTxInQueue() []*types.TxInDetails
 	ResetTxInQueue()
 }
 
@@ -53,7 +53,7 @@ type GlobalDataDefault struct {
 	cdc             *codec.LegacyAmino
 	readOnlyContext atomic.Value
 	isDataInit      *atomic.Bool
-	txInQueue       []*types.TxIn
+	txInQueue       []*types.TxInDetails
 
 	validatorSets *rpc.ResultValidatorsOutput
 	usedUtxos     map[string]bool
@@ -77,7 +77,7 @@ func NewGlobalData(cfg config.Config) GlobalData {
 		usedUtxos:     make(map[string]bool),
 		isDataInit:    atomic.NewBool(false),
 		calGasChains:  &sync.Map{},
-		txInQueue:     make([]*types.TxIn, 0),
+		txInQueue:     make([]*types.TxInDetails, 0),
 	}
 }
 
@@ -239,15 +239,15 @@ func (a *GlobalDataDefault) GetMyPubkey() tcrypto.PubKey {
 	return a.myPubkey
 }
 
-func (a *GlobalDataDefault) ConfirmTxIn(txIn *types.TxIn) {
+func (a *GlobalDataDefault) ConfirmTxIn(txIn *types.TxInDetails) {
 	a.txInQueue = append(a.txInQueue, txIn)
 }
 
-func (a *GlobalDataDefault) GetTxInQueue() []*types.TxIn {
+func (a *GlobalDataDefault) GetTxInQueue() []*types.TxInDetails {
 	copy := a.txInQueue
 	return copy
 }
 
 func (a *GlobalDataDefault) ResetTxInQueue() {
-	a.txInQueue = make([]*types.TxIn, 0)
+	a.txInQueue = make([]*types.TxInDetails, 0)
 }

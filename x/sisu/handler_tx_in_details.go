@@ -53,7 +53,7 @@ func (h *HandlerTxInDetails) DeliverMsg(ctx sdk.Context, msg *types.TxInDetailsM
 // 2) The assigned validator fails to submit TxInDetails but majority of nodes have submitted the
 // TxIn details.
 func (h *HandlerTxInDetails) doTxInDetails(ctx sdk.Context, k keeper.Keeper, msg *types.TxInDetailsMsg) {
-	log.Verbosef("Process TxInDetails with TxIn id %s", msg.Data.TxIn.Id)
+	log.Verbosef("Process TxInDetails with TxIn id %s", msg.Data.Id)
 
 	hash, _, err := keeper.GetTxRecordHash(msg)
 	if err != nil {
@@ -70,7 +70,7 @@ func (h *HandlerTxInDetails) doTxInDetails(ctx sdk.Context, k keeper.Keeper, msg
 	h.saveTransfers(ctx, k, msg.Data.Transfers)
 
 	// 3. Save the transfer state
-	h.privateDb.SetTransferState(msg.Data.TxIn.GetId(), types.TransferState_Confirmed)
+	h.privateDb.SetTransferState(msg.Data.Id, types.TransferState_Confirmed)
 }
 
 func (h *HandlerTxInDetails) saveTransfers(ctx sdk.Context, k keeper.Keeper, transfers []*types.TransferDetails) {
