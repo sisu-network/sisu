@@ -125,3 +125,25 @@ func ReadToken(genesisFolder string) []*types.Token {
 
 	return tokens
 }
+
+type LiskConfig struct {
+	Enable  bool   `toml:"enable" json:"enable"`
+	Chain   string `toml:"chain" json:"chain"`
+	RPC     string `toml:"chain" json:"rpc"`
+	Network string `toml:"network" json:"network"`
+}
+
+func ReadLiskConfig(genesisFolder string) LiskConfig {
+	cfg := LiskConfig{}
+
+	dat, err := os.ReadFile(filepath.Join(genesisFolder, "lisk.json"))
+	if err != nil {
+		panic(err)
+	}
+
+	if err := json.Unmarshal(dat, &cfg); err != nil {
+		panic(err)
+	}
+
+	return cfg
+}
