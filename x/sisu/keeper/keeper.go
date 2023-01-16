@@ -134,8 +134,8 @@ type Keeper interface {
 	GetBlockHeight(ctx sdk.Context, chain string) *types.BlockHeight
 
 	//TxInDetails
-	SetTxInDetails(ctx sdk.Context, txInId string, txIn *types.TxInDetails)
-	GetTxInDetails(ctx sdk.Context, txInId string) *types.TxInDetailsMsg
+	SetTxInDetails(ctx sdk.Context, txInId string, txIn *types.TxIn)
+	GetTxInDetails(ctx sdk.Context, txInId string) *types.TxInMsg
 
 	// Confirmed TxIn
 	SetConfirmedTxIn(ctx sdk.Context, confirmedTxIn *types.ConfirmedTxIn)
@@ -432,12 +432,12 @@ func (k *DefaultKeeper) SetBlockHeight(ctx sdk.Context, chain string, height int
 }
 
 ///// TxInDetails
-func (k *DefaultKeeper) SetTxInDetails(ctx sdk.Context, txInId string, txIn *types.TxInDetails) {
+func (k *DefaultKeeper) SetTxInDetails(ctx sdk.Context, txInId string, txIn *types.TxIn) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxInDetails)
 	setTxInDetails(store, txInId, txIn)
 }
 
-func (k *DefaultKeeper) GetTxInDetails(ctx sdk.Context, txIndId string) *types.TxInDetailsMsg {
+func (k *DefaultKeeper) GetTxInDetails(ctx sdk.Context, txIndId string) *types.TxInMsg {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxInDetails)
 	return getTxInDetails(store, txIndId)
 }

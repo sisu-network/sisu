@@ -98,8 +98,8 @@ type MockGlobalData struct {
 	RecalculateGasFunc      func(chain string)
 	GetRecalculateGasFunc   func() []string
 	ResetGasCalculationFunc func()
-	ConfirmTxInFunc         func(txIn *types.TxInDetails)
-	GetTxInQueueFunc        func() []*types.TxInDetails
+	ConfirmTxInFunc         func(txIn *types.TxIn)
+	GetTxInQueueFunc        func() []*types.TxIn
 	ResetTxInQueueFunc      func()
 }
 
@@ -194,13 +194,13 @@ func (m *MockGlobalData) GetMyPubkey() tcrypto.PubKey {
 	return nil
 }
 
-func (m *MockGlobalData) ConfirmTxIn(txIn *types.TxInDetails) {
+func (m *MockGlobalData) ConfirmTxIn(txIn *types.TxIn) {
 	if m.ConfirmTxInFunc != nil {
 		m.ConfirmTxInFunc(txIn)
 	}
 }
 
-func (m *MockGlobalData) GetTxInQueue() []*types.TxInDetails {
+func (m *MockGlobalData) GetTxInQueue() []*types.TxIn {
 	if m.GetTxInQueueFunc != nil {
 		return m.GetTxInQueueFunc()
 	}

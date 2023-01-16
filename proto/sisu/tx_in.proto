@@ -7,7 +7,7 @@ enum TxInType {
   TOKEN_TRANSFER = 0;
 }
 
-message TxInDetails {
+message TxIn {
   string id = 1;
   string from_chain = 2;
   bytes Serialize = 3;
@@ -15,9 +15,9 @@ message TxInDetails {
   repeated TransferDetails transfers = 4;
 }
 
-message TxInDetailsMsg {
+message TxInMsg {
   string signer = 1;
-  TxInDetails Data = 2;
+  TxIn Data = 2;
 }
 
 // Note: all new fields in this proto MUST be included in SerializeWithoutSigner in the go file.

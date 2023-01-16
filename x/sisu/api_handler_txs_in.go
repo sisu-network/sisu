@@ -57,9 +57,9 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 		// Just send a thin tx in.
 		txInId := fmt.Sprintf("%s__%s", txs.Chain, tx.Hash)
 		// Parse the transfers
-		msg := types.NewTxInDetailsMsg(
+		msg := types.NewTxInMsg(
 			a.appKeys.GetSignerAddress().String(),
-			&types.TxInDetails{
+			&types.TxIn{
 				Id:        txInId,
 				FromChain: txs.Chain,
 				Serialize: tx.Serialized,

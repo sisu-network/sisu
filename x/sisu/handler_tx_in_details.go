@@ -36,7 +36,7 @@ func NewHandlerTxInDetails(
 	}
 }
 
-func (h *HandlerTxInDetails) DeliverMsg(ctx sdk.Context, msg *types.TxInDetailsMsg) (*sdk.Result, error) {
+func (h *HandlerTxInDetails) DeliverMsg(ctx sdk.Context, msg *types.TxInMsg) (*sdk.Result, error) {
 	if shouldProcess, hash := h.pmm.ShouldProcessMsg(ctx, msg); shouldProcess {
 		h.doTxInDetails(ctx, h.keeper, msg)
 		h.keeper.ProcessTxRecord(ctx, hash)
@@ -52,7 +52,7 @@ func (h *HandlerTxInDetails) DeliverMsg(ctx sdk.Context, msg *types.TxInDetailsM
 // 1) The assigned validator submitted the TxInDetails within a time frame
 // 2) The assigned validator fails to submit TxInDetails but majority of nodes have submitted the
 // TxIn details.
-func (h *HandlerTxInDetails) doTxInDetails(ctx sdk.Context, k keeper.Keeper, msg *types.TxInDetailsMsg) {
+func (h *HandlerTxInDetails) doTxInDetails(ctx sdk.Context, k keeper.Keeper, msg *types.TxInMsg) {
 	log.Verbosef("Process TxInDetails with TxIn id %s", msg.Data.Id)
 
 	hash, _, err := keeper.GetTxRecordHash(msg)

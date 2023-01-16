@@ -5,25 +5,25 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-func NewTxInDetailsMsg(signer string, data *TxInDetails) *TxInDetailsMsg {
-	return &TxInDetailsMsg{
+func NewTxInMsg(signer string, data *TxIn) *TxInMsg {
+	return &TxInMsg{
 		Signer: signer,
 		Data:   data,
 	}
 }
 
 // Route ...
-func (msg *TxInDetailsMsg) Route() string {
+func (msg *TxInMsg) Route() string {
 	return RouterKey
 }
 
 // Type ...
-func (msg *TxInDetailsMsg) Type() string {
-	return MsgTxInDetails
+func (msg *TxInMsg) Type() string {
+	return MsgTxIn
 }
 
 // GetSigners ...
-func (msg *TxInDetailsMsg) GetSigners() []sdk.AccAddress {
+func (msg *TxInMsg) GetSigners() []sdk.AccAddress {
 	author, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		panic(err)
@@ -31,18 +31,18 @@ func (msg *TxInDetailsMsg) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{author}
 }
 
-func (msg *TxInDetailsMsg) GetMsgs() []sdk.Msg {
+func (msg *TxInMsg) GetMsgs() []sdk.Msg {
 	return []sdk.Msg{msg}
 }
 
 // GetSignBytes ...
-func (msg *TxInDetailsMsg) GetSignBytes() []byte {
+func (msg *TxInMsg) GetSignBytes() []byte {
 	bz := ModuleCdc.MustMarshalJSON(msg)
 	return sdk.MustSortJSON(bz)
 }
 
 // ValidateBasic ...
-func (msg *TxInDetailsMsg) ValidateBasic() error {
+func (msg *TxInMsg) ValidateBasic() error {
 	_, err := sdk.AccAddressFromBech32(msg.Signer)
 	if err != nil {
 		return sdkerrors.Wrapf(sdkerrors.ErrInvalidAddress, "invalid creator address (%s)", err)
