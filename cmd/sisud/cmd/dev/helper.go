@@ -136,6 +136,9 @@ func getAuthTransactor(client *ethclient.Client, mnemonic string) (*bind.Transac
 
 func getEthClients(chains []string, genesisFolder string) []*ethclient.Client {
 	clients := make([]*ethclient.Client, 0)
+	if len(chains) == 0 {
+		return clients
+	}
 
 	deyesChains := helper.ReadDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
 	for _, chain := range chains {

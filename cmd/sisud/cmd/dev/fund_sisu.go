@@ -3,6 +3,7 @@ package dev
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -66,7 +67,10 @@ func FundSisu() *cobra.Command {
 func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, mnemonic string,
 	sisuRpc, genesisFolder string) {
 	chains := strings.Split(chainString, ",")
-	vaults := helper.ReadVaults(genesisFolder, chains)
+	if len(chains) == 1 && len(chains[0]) == 0 {
+		chains = []string{}
+	}
+	fmt.Println("chains = ", chains)
 
 	wg := &sync.WaitGroup{}
 
@@ -109,32 +113,47 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, mnem
 		}()
 	}
 
-	// Fund the accounts with some native ETH and other tokens
+	// Fund Lisk
+	if helper.IsLiskEnabled(genesisFolder) {
+		wg.Add(1)
+
+		go func() {
+			log.Info("Funding on Lisk chain...")
+			c.fundLisk(genesisFolder, mnemonic, allPubKeys[libchain.KEY_TYPE_EDDSA])
+			wg.Done()
+		}()
+	}
+
 	var sisuAccount common.Address
-	// Get chain and local chain URL
-	pubKeyBytes := allPubKeys[libchain.KEY_TYPE_ECDSA]
-	pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
-	if err != nil {
-		log.Verbose("Byte hex = ", hex.EncodeToString(pubKeyBytes))
-		panic(err)
-	}
-	sisuAccount = crypto.PubkeyToAddress(*pubKey)
-	log.Info("Sisu account = ", sisuAccount)
+	if len(clients) > 0 {
+		// Fund the accounts with some native ETH and other tokens
+		// Get chain and local chain URL
+		pubKeyBytes := allPubKeys[libchain.KEY_TYPE_ECDSA]
+		pubKey, err := crypto.UnmarshalPubkey(pubKeyBytes)
+		if err != nil {
+			log.Verbose("Byte hex = ", hex.EncodeToString(pubKeyBytes))
+			panic(err)
+		}
+		sisuAccount = crypto.PubkeyToAddress(*pubKey)
+		log.Info("Sisu account = ", sisuAccount)
 
-	log.Verbose("Funding Sisu's account with some native ETH....")
-	wg.Add(len(clients))
-	for i, client := range clients {
-		go func(i int, client *ethclient.Client, chain string) {
-			defer wg.Done()
+		log.Verbose("Funding Sisu's account with some native ETH....")
+		wg.Add(len(clients))
+		for i, client := range clients {
+			go func(i int, client *ethclient.Client, chain string) {
+				defer wg.Done()
 
-			c.transferEth(client, sisuRpc, chain, mnemonic, sisuAccount.Hex())
-		}(i, client, chains[i])
+				c.transferEth(client, sisuRpc, chain, mnemonic, sisuAccount.Hex())
+			}(i, client, chains[i])
+		}
 	}
+
+	// Wait for all jobs
 	wg.Wait()
 
 	log.Verbose("Setting spender for the vault...")
-
 	// Add vault spender
+	vaults := helper.ReadVaults(genesisFolder, chains)
 	wg.Add(len(clients))
 	for i, client := range clients {
 		go func(i int, client *ethclient.Client) {

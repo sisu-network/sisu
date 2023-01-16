@@ -1,0 +1,6 @@
+{
+  "enable": true,
+  "chain": "lisk-devnet",
+  "rpc": "https://testnet-service.lisk.com/api/v2",
+  "network": "e8832331820e5ba835012106a7c807b46c8b9c8672b6217b01373773fe87daf8"
+}
