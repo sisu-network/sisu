@@ -283,7 +283,7 @@ func (b *bridge) getGasCost(ethCfg *types.ChainEthConfig, maxGasUnit int) (*big.
 	}
 }
 
-func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx) ([]*types.Transfer, error) {
+func (b *bridge) ParseIncomingTx(ctx sdk.Context, chain string, tx *eyestypes.Tx) ([]*types.Transfer, error) {
 	parseResult := ParseVaultTx(ctx, b.keeper, chain, tx)
 	if parseResult.Error != nil {
 		return nil, parseResult.Error

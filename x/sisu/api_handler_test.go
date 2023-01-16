@@ -1,9 +1,14 @@
 package sisu
 
 import (
+	"bytes"
 	"crypto/ecdsa"
+	"encoding/binary"
+	"encoding/hex"
 	"fmt"
+	ltypes "github.com/sisu-network/deyes/chains/lisk/types"
 	"math/big"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -14,11 +19,14 @@ import (
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
+	liskcrypto "github.com/sisu-network/sisu/x/sisu/chains/lisk/crypto"
 
 	deyesethtypes "github.com/sisu-network/deyes/chains/eth/types"
 
 	ecommon "github.com/ethereum/go-ethereum/common"
+	"github.com/golang/protobuf/proto"
 
+	liskclient "github.com/sisu-network/deyes/chains/lisk"
 	eyesTypes "github.com/sisu-network/deyes/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
@@ -84,6 +92,18 @@ func signEthTx(rawTx *ethtypes.Transaction) *ethtypes.Transaction {
 	return signedTx
 }
 
+func signLiskTx(network string, txBytes []byte, privateKey []byte) ([]byte, error) {
+	dst := new(bytes.Buffer)
+	//First byte is the network info
+	networkBytes, _ := hex.DecodeString(network)
+	binary.Write(dst, binary.LittleEndian, networkBytes)
+
+	// Append the transaction ModuleID
+	binary.Write(dst, binary.LittleEndian, txBytes)
+
+	return liskcrypto.SignMessageWithPrivateKey(string(dst.Bytes()), privateKey), nil
+}
+
 func createTransferOutEthTx(gateway string, dstChain *big.Int, srcToken string,
 	recipient string, amount *big.Int) *ethtypes.Transaction {
 	srcTokenAddr := ecommon.HexToAddress(srcToken)
@@ -111,6 +131,78 @@ func createTransferOutEthTx(gateway string, dstChain *big.Int, srcToken string,
 	signedTx := signEthTx(rawTx)
 
 	return signedTx
+}
+
+func createTransferOutLiskTx(gateway string, recipient string, amount uint64) []byte {
+	client := &liskclient.MockLiskClient{
+		GetAccountFunc: func(address string) (*ltypes.Account, error) {
+			return &ltypes.Account{Sequence: &ltypes.AccountSequence{Nonce: "1"}}, nil
+		},
+	}
+
+	moduleId := uint32(2)
+	assetId := uint32(0)
+	privateKey := liskcrypto.GetPrivateKeyFromSecret(gateway)
+	faucet := liskcrypto.GetPublicKeyFromSecret(gateway)
+	address := liskcrypto.GetAddressFromPublicKey(faucet)
+	senderAddress, err := hex.DecodeString(address)
+	network := "network"
+	if err != nil {
+		panic(err)
+	}
+
+	lisk32 := liskcrypto.AddressToLisk32(senderAddress)
+	acc, err := client.GetAccount(lisk32)
+
+	if err != nil {
+		panic(err)
+	}
+
+	nonce, err := strconv.ParseUint(acc.Sequence.Nonce, 10, 64)
+	if err != nil {
+		panic(err)
+	}
+
+	recipientAddress, err := hex.DecodeString(recipient)
+
+	if err != nil {
+		panic(err)
+	}
+
+	fee := uint64(500000)
+
+	data := ""
+	assetPb := &ltypes.AssetMessage{
+		Amount:           &amount,
+		RecipientAddress: recipientAddress,
+		Data:             &data,
+	}
+
+	asset, err := proto.Marshal(assetPb)
+	txPb := &ltypes.TransactionMessage{
+		ModuleID:        &moduleId,
+		AssetID:         &assetId,
+		Fee:             &fee,
+		Asset:           asset,
+		Nonce:           &nonce,
+		SenderPublicKey: faucet,
+	}
+	txHash, err := proto.Marshal(txPb)
+	if err != nil {
+		panic(err)
+	}
+
+	signature, err := signLiskTx(network, txHash, privateKey)
+
+	if err != nil {
+		panic(err)
+	}
+	txPb.Signatures = [][]byte{signature}
+	liskTx, err := proto.Marshal(txPb)
+	if err != nil {
+		panic(err)
+	}
+	return liskTx
 }
 
 func TestApiHandler_OnTxIns(t *testing.T) {
@@ -178,6 +270,31 @@ func TestApiHandler_OnTxIns(t *testing.T) {
 
 		require.NoError(t, err)
 		require.Equal(t, 1, submitCount)
+	})
+
+	t.Run("lisk_transfer", func(t *testing.T) {
+		_, mc := mockForApiHandlerTest()
+
+		srcChain := "lisk"
+		mnemonic := "drink cycle exit ankle black mountain member board cover earn between special"
+		toAddress := "dcf57d8bf33bb46b51f8ecb91b78ea453d95314d"
+		liskTx := createTransferOutLiskTx(mnemonic, toAddress,
+			uint64(10))
+		txs := &eyesTypes.Txs{
+			Chain: srcChain,
+			Block: int64(utils.RandomNaturalNumber(1000)),
+			Arr: []*eyesTypes.Tx{{
+				Hash:       utils.RandomHeximalString(64),
+				Serialized: liskTx,
+				To:         toAddress,
+				Success:    true,
+			}},
+		}
+
+		apiHandler := NewApiHandler(nil, mc)
+		err := apiHandler.OnTxIns(txs)
+		log.Info(err)
+		require.NoError(t, err)
 	})
 
 	t.Run("tx_sent_from_our_sisu_account", func(t *testing.T) {

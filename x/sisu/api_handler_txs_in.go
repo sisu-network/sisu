@@ -101,7 +101,7 @@ func (a *ApiHandler) updateEthGasPrice(ctx sdk.Context, transfers []*types.Trans
 func (a *ApiHandler) parseDeyesTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.Transfer, error) {
 	bridge := a.bridgeManager.GetBridge(ctx, chain)
 	if bridge != nil {
-		return bridge.ParseIncomginTx(ctx, chain, tx)
+		return bridge.ParseIncomingTx(ctx, chain, tx)
 	}
 
 	return nil, fmt.Errorf("Bridge not found for chain %s", chain)

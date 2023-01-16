@@ -9,5 +9,5 @@ import (
 
 type Bridge interface {
 	ProcessTransfers(ctx sdk.Context, transfers []*types.Transfer) ([]*types.TxOutMsg, error)
-	ParseIncomginTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.Transfer, error)
+	ParseIncomingTx(ctx sdk.Context, chain string, tx *eyesTypes.Tx) ([]*types.Transfer, error)
 }

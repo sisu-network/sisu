@@ -181,7 +181,7 @@ func (b *defaultBridge) getTransaction(
 		return nil, err
 	}
 
-	// Get recennt block hash
+	// Get recent block hash
 	hashStr, err := b.getRecentBlockHash(ctx, chain)
 	if err != nil {
 		return nil, err
@@ -224,8 +224,8 @@ func (b *defaultBridge) getRecentBlockHash(ctx sdk.Context, chain string) (strin
 	return arr[len(arr)/2].SolanaRecentBlockHash, nil
 }
 
-func (b *defaultBridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx) ([]*types.Transfer, error) {
-	log.Verbose("Parsing solana incomgin tx...")
+func (b *defaultBridge) ParseIncomingTx(ctx sdk.Context, chain string, tx *eyestypes.Tx) ([]*types.Transfer, error) {
+	log.Verbose("Parsing solana incoming tx...")
 	ret := make([]*types.Transfer, 0)
 
 	outerTx := new(eyessolanatypes.Transaction)
@@ -235,7 +235,7 @@ func (b *defaultBridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyest
 	}
 
 	if outerTx.TransactionInner == nil || outerTx.TransactionInner.Message == nil || outerTx.TransactionInner.Message.AccountKeys == nil {
-		return nil, fmt.Errorf("Invalid outerTx")
+		return nil, fmt.Errorf("invalid outerTx")
 	}
 
 	accounts := outerTx.TransactionInner.Message.AccountKeys

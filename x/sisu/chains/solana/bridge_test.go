@@ -78,7 +78,7 @@ func TestParseIncoming(t *testing.T) {
 		Success:    true,
 	}
 
-	transfers, err := bridge.ParseIncomginTx(ctx, "solana-devnet", eyesTx)
+	transfers, err := bridge.ParseIncomingTx(ctx, "solana-devnet", eyesTx)
 	require.Nil(t, err)
 
 	require.Equal(t, 1, len(transfers))

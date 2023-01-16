@@ -1,16 +1,16 @@
 package lisk
 
 import (
-	"bytes"
-	"encoding/binary"
 	"encoding/hex"
+	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ltypes "github.com/sisu-network/deyes/chains/lisk/types"
-	deyesConfig "github.com/sisu-network/deyes/config"
 	eyestypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/chains/lisk/crypto"
+	"math/big"
 
 	"github.com/golang/protobuf/proto"
 	chaintypes "github.com/sisu-network/sisu/x/sisu/chains/types"
@@ -40,11 +40,7 @@ func (b *defaultBridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Tra
 	moduleId := uint32(2)
 	assetId := uint32(0)
 	transfer := transfers[0]
-	amount, err := strconv.ParseUint(transfer.Amount, 10, 64)
-	if err != nil {
-		return nil, err
-	}
-	responseTx, err := b.buildTransferInResponse("mnemonic", transfer.ToRecipient, amount, "", moduleId, assetId)
+	responseTx, err := b.buildTransferInResponse(ctx, transfer.ToRecipient, transfer.Amount, "", moduleId, assetId)
 	if err != nil {
 		log.Error("Failed to build lisk transfer in, err = ", err)
 		return nil, err
@@ -65,67 +61,72 @@ func (b *defaultBridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Tra
 }
 
 func (b *defaultBridge) buildTransferInResponse(
-	mnemonic string,
+	ctx sdk.Context,
 	recipient string,
-	amount uint64,
+	amount string,
 	data string,
 	moduleId uint32,
 	assetId uint32,
 ) (*types.TxResponse, error) {
-	config := deyesConfig.Chain{Chain: b.chain, Rpcs: []string{b.config.Lisk.RPC}}
-	client := NewLiskRPC(config)
-	faucet := crypto.GetPublicKeyFromSecret(mnemonic)
-	address := crypto.GetAddressFromPublicKey(faucet)
+	//config := deyesConfig.Chain{Chain: b.chain, Rpcs: []string{b.config.Lisk.RPC}}
+	//client := NewLiskRPC(config)
 
-	senderAddress, err := hex.DecodeString(address)
-	if err != nil {
-		return nil, err
-	}
+	//senderAddress, err := hex.DecodeString()
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	senderLisk32 := crypto.AddressToLisk32(senderAddress)
-	acc, err := client.GetAccount(senderLisk32)
-	if err != nil {
-		return nil, err
-	}
+	//senderLisk32 := crypto.AddressToLisk32(senderAddress)
+	//acc, err := client.GetAccount(senderLisk32)
+	//if err != nil {
+	//	return nil, err
+	//}
 
-	nonce, err := strconv.ParseUint(acc.Sequence.Nonce, 10, 32)
-	if err != nil {
-		return nil, err
-	}
+	//nonce, err := strconv.ParseUint(acc.Sequence.Nonce, 10, 32)
+	//if err != nil {
+	//	return nil, err
+	//}
 
 	recipientAddress, err := hex.DecodeString(recipient)
 	if err != nil {
 		return nil, err
 	}
 
+	fee := uint64(500000)
+	amountInt := new(big.Int)
+	amountOut, ok := amountInt.SetString(amount, 10)
+	if !ok {
+		return nil, fmt.Errorf("SetString: error")
+	}
+	commissionRate := b.keeper.GetParams(ctx).CommissionRate
+	if commissionRate < 0 || commissionRate > 10_000 {
+		return nil, fmt.Errorf("commission rate is invalid, rate = %d", commissionRate)
+	}
+	// Subtract commission rate
+	amountOut = utils.SubtractCommissionRate(amountOut, commissionRate)
+	amountOut.Sub(amountOut, new(big.Int).SetUint64(fee))
+	amountOutUint64 := amountOut.Uint64()
 	assetPb := &ltypes.AssetMessage{
-		Amount:           &amount,
+		Amount:           &amountOutUint64,
 		RecipientAddress: recipientAddress,
 		Data:             &data,
 	}
 
 	asset, err := proto.Marshal(assetPb)
 	pubKey := crypto.GetPublicKeyFromSecret(b.config.Sisu.KeyringPassphrase)
-	privateKey := crypto.GetPrivateKeyFromSecret(b.config.Sisu.KeyringPassphrase)
-	fee := uint64(1000000)
+
 	txPb := &ltypes.TransactionMessage{
-		ModuleID:        &moduleId,
-		AssetID:         &assetId,
-		Fee:             &fee,
-		Asset:           asset,
-		Nonce:           &nonce,
+		ModuleID: &moduleId,
+		AssetID:  &assetId,
+		Fee:      &fee,
+		Asset:    asset,
+		//Nonce:           &nonce,
 		SenderPublicKey: pubKey,
 	}
 	txHash, err := proto.Marshal(txPb)
 	if err != nil {
 		return nil, err
 	}
-
-	signature, err := sign(b.config.Lisk.Network["testnet"], txHash, privateKey)
-	if err != nil {
-		return nil, err
-	}
-	txPb.Signatures = [][]byte{signature}
 
 	txHash, err = proto.Marshal(txPb)
 	if err != nil {
@@ -138,19 +139,27 @@ func (b *defaultBridge) buildTransferInResponse(
 	}, nil
 }
 
-func (b *defaultBridge) ParseIncomginTx(ctx sdk.Context, chain string, tx *eyestypes.Tx) ([]*types.Transfer, error) {
+func (b *defaultBridge) ParseIncomingTx(ctx sdk.Context, chain string, tx *eyestypes.Tx) ([]*types.Transfer, error) {
+	log.Verbose("Parsing lisk incoming tx...")
+	ret := make([]*types.Transfer, 0)
+	outerTx := ltypes.TransactionMessage{}
+	proto.Unmarshal(tx.Serialized, &outerTx)
 
-	return nil, nil
-}
+	if outerTx.AssetID == nil || outerTx.ModuleID == nil {
+		return nil, fmt.Errorf("invalid outerTx")
+	}
 
-func sign(network string, txBytes []byte, privateKey []byte) ([]byte, error) {
-	dst := new(bytes.Buffer)
-	//First byte is the network info
-	networkBytes, _ := hex.DecodeString(network)
-	binary.Write(dst, binary.LittleEndian, networkBytes)
+	asset := ltypes.AssetMessage{}
+	proto.Unmarshal(outerTx.Asset, &asset)
 
-	// Append the transaction ModuleID
-	binary.Write(dst, binary.LittleEndian, txBytes)
+	ret = append(ret, &types.Transfer{
+		FromChain:   chain,
+		FromHash:    hex.EncodeToString(outerTx.GetSignatures()[0]),
+		Token:       "LSK",
+		Amount:      strconv.FormatUint(asset.GetAmount(), 10),
+		ToChain:     "",
+		ToRecipient: hex.EncodeToString(asset.GetRecipientAddress()),
+	})
 
-	return crypto.SignMessageWithPrivateKey(string(dst.Bytes()), privateKey), nil
+	return ret, nil
 }
