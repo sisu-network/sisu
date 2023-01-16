@@ -304,7 +304,7 @@ func (b *bridge) getGasCost(gasInfo *deyesethtypes.GasInfo, useEip1559 bool, max
 	}
 }
 
-func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, serialized []byte) ([]*types.TransferDetails, error) {
+func (b *bridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byte) ([]*types.TransferDetails, error) {
 	parseResult := ParseVaultTx(ctx, b.keeper, chain, serialized)
 	if parseResult.Error != nil {
 		return nil, parseResult.Error

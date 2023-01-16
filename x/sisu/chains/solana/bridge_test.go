@@ -70,7 +70,7 @@ func TestParseIncoming(t *testing.T) {
 	bz, err = json.Marshal(outerTx)
 	require.Nil(t, err)
 
-	transfers, err := bridge.ParseIncomginTx(ctx, "solana-devnet", bz)
+	transfers, err := bridge.ParseIncomingTx(ctx, "solana-devnet", bz)
 	require.Nil(t, err)
 
 	require.Equal(t, 1, len(transfers))
