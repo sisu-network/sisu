@@ -814,38 +814,6 @@ func getTxOutQueue(store cstypes.KVStore, chain string) []*types.TxOut {
 	return queue.TxOuts
 }
 
-///// Pending TxOut
-func setPendingTxOut(store cstypes.KVStore, chain string, txOutInfo *types.PendingTxOutInfo) {
-	if txOutInfo == nil {
-		store.Delete([]byte(chain))
-		return
-	}
-
-	bz, err := txOutInfo.Marshal()
-	if err != nil {
-		log.Error("setPendingTxOut: failed to marshal txOut")
-		return
-	}
-
-	store.Set([]byte(txOutInfo.TxOut.Content.OutChain), bz)
-}
-
-func getPendingTxOutInfo(store cstypes.KVStore, chain string) *types.PendingTxOutInfo {
-	bz := store.Get([]byte(chain))
-	if bz == nil {
-		return nil
-	}
-
-	txOutInfo := &types.PendingTxOutInfo{}
-	err := txOutInfo.Unmarshal(bz)
-	if err != nil {
-		log.Error("getPendingTxOut: failed to unmarshal txout")
-		return nil
-	}
-
-	return txOutInfo
-}
-
 ///// Chain Metadata
 func setSolanaConfirmedBlock(store cstypes.KVStore, chain, signer, hash string, height int64) {
 	key := getChainMetadataKey(chain, signer)
