@@ -73,8 +73,8 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 		h.keeper.SaveKeygen(ctx, keygen)
 
 		// Setting vaults & mpc address
-		fmt.Println("params.SupportedChains = ", params.SupportedChains)
 		params := h.keeper.GetParams(ctx)
+		fmt.Println("params.SupportedChains = ", params.SupportedChains)
 		for _, chain := range params.SupportedChains {
 			if keygen.KeyType == utils.GetKeyTypeForChain(chain) {
 				h.setVault(ctx, chain, keygen)
