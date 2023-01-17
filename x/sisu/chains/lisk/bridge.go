@@ -1,6 +1,8 @@
 package lisk
 
 import (
+	"bytes"
+	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 	"math/big"
@@ -64,6 +66,7 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 
 	fee := uint64(500000)
 	amountOut := new(big.Int).Set(amountInt)
+
 	// Subtract commission rate
 	amountOut = utils.SubtractCommissionRate(amountOut, commissionRate)
 	amountOut.Sub(amountOut, new(big.Int).SetUint64(fee))
@@ -91,18 +94,27 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 		SenderPublicKey: []byte(mpcAddr), // TODO: check if this is correct
 	}
 
-	txHash, err := proto.Marshal(txPb)
+	bz, err := proto.Marshal(txPb)
 	if err != nil {
 		return nil, err
 	}
+
+	// The signing bytes are the combination of network id and the serialization of the transaciton.
+	signBuf := new(bytes.Buffer)
+	//First byte is the network info
+	networkBytes, _ := hex.DecodeString(lisktypes.NetworkId[transfer.ToChain])
+	binary.Write(signBuf, binary.LittleEndian, networkBytes)
+
+	// Append the transaction ModuleID
+	binary.Write(signBuf, binary.LittleEndian, bz)
 
 	outMsg := types.NewTxOutMsg(
 		b.signer,
 		types.TxOutType_TRANSFER_OUT,
 		&types.TxOutContent{
 			OutChain: b.chain,
-			OutHash:  string(txHash),
-			OutBytes: txHash,
+			OutHash:  hex.EncodeToString(bz),
+			OutBytes: signBuf.Bytes(),
 		},
 		&types.TxOutInput{
 			TransferIds: []string{transfer.Id},

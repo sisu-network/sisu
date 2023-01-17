@@ -43,6 +43,10 @@ func (s *txOutSigner) signTxOut(ctx sdk.Context, txOut *types.TxOut) {
 	if libchain.IsSolanaChain(txOut.Content.OutChain) {
 		s.signSolana(ctx, txOut)
 	}
+
+	if libchain.IsLiskChain(txOut.Content.OutChain) {
+		s.signLisk(ctx, txOut)
+	}
 }
 
 // signEthTx sends a TxOut to dheart for TSS signing.
@@ -134,6 +138,26 @@ func (s *txOutSigner) signSolana(ctx sdk.Context, txOut *types.TxOut) {
 	err := s.dheartClient.KeySign(signRequest, pubKeys)
 	if err != nil {
 		log.Error("signSolana: err =", err)
+	}
+}
+
+func (s *txOutSigner) signLisk(ctx sdk.Context, txOut *types.TxOut) {
+	signRequest := &hTypes.KeysignRequest{
+		KeyType: libchain.KEY_TYPE_EDDSA,
+		KeysignMessages: []*hTypes.KeysignMessage{
+			{
+				Id:          s.getKeysignRequestId(txOut.Content.OutChain, ctx.BlockHeight(), txOut.Content.OutHash),
+				OutChain:    txOut.Content.OutChain,
+				OutHash:     txOut.Content.OutHash,
+				BytesToSign: txOut.Content.OutBytes,
+			},
+		},
+	}
+
+	pubKeys := s.partyManager.GetActivePartyPubkeys()
+	err := s.dheartClient.KeySign(signRequest, pubKeys)
+	if err != nil {
+		log.Error("signLisk: err =", err)
 	}
 }
 

@@ -1,7 +1,11 @@
 package sisu
 
 import (
+	"encoding/hex"
 	"fmt"
+
+	"github.com/gogo/protobuf/proto"
+	lisktypes "github.com/sisu-network/deyes/chains/lisk/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/echovl/cardano-go"
@@ -156,6 +160,42 @@ func (a *ApiHandler) processSolanaKeysignResult(ctx sdk.Context, result *dhtypes
 	return nil
 }
 
+func (a *ApiHandler) processLiskKeysignResult(ctx sdk.Context, result *dhtypes.KeysignResult,
+	signMsg *dhtypes.KeysignMessage) error {
+	bz, err := hex.DecodeString(signMsg.OutHash)
+	if err != nil {
+		return err
+	}
+
+	tx := &lisktypes.TransactionMessage{}
+	err = proto.Unmarshal(bz, tx)
+	if err != nil {
+		return err
+	}
+
+	tx.Signatures = [][]byte{result.Signatures[0]}
+	bz, err = proto.Marshal(tx)
+	if err != nil {
+		return err
+	}
+
+	hashWithSig := hex.EncodeToString(bz)
+	a.privateDb.SaveTxOutSig(&types.TxOutSig{
+		Chain:       signMsg.OutChain,
+		HashWithSig: hashWithSig,
+		HashNoSig:   signMsg.OutHash,
+	})
+
+	log.Verbose("Sending signed lisk tx to deyes....")
+	err = a.deploySignedTx(ctx, bz, signMsg.OutChain, hashWithSig)
+	if err != nil {
+		log.Error("deployment error: ", err)
+		return err
+	}
+
+	return nil
+}
+
 // deploySignedTx creates a deployment request and sends it to deyes.
 func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string, trackHash string) error {
 	log.Verbose("Sending final tx to the deyes for deployment for chain ", outChain)
@@ -178,7 +218,6 @@ func (a *ApiHandler) deploySignedTx(ctx sdk.Context, bz []byte, outChain string,
 		// Handle failure case.
 		if err != nil || (result != nil && !result.Success) {
 			log.Error("Deployment failed!, err = ", err)
-
 			txOut := a.getTxOutFromSignedHash(outChain, trackHash)
 
 			if txOut == nil {
