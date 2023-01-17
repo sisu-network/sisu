@@ -107,9 +107,8 @@ func KeeperTestGenesis(ctx sdk.Context) keeper.Keeper {
 		},
 	})
 	keeper.SaveParams(ctx, &types.Params{
-		MajorityThreshold:       1,
-		SupportedChains:         []string{"ganache1", "ganache2"},
-		PendingTxTimeoutHeights: []int64{10, 10},
+		MajorityThreshold: 1,
+		SupportedChains:   []string{"ganache1", "ganache2"},
 	})
 	return keeper
 }

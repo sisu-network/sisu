@@ -2,7 +2,6 @@ package gen
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"math"
 	"path/filepath"
@@ -70,8 +69,6 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 	if err != nil {
 		panic(err)
 	}
-	deyesChains := getDeyesChains(cmd, genesisFolder)
-	pendingTxOutHeights := getPendingTxTimeoutHeight(deyesChains)
 
 	setting := &Setting{
 		clientCtx:      clientCtx,
@@ -85,10 +82,9 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 		algoStr:        algo,
 		numValidators:  numValidators,
 		params: &types.Params{
-			MajorityThreshold:       int32(math.Ceil(float64(numValidators) * 2 / 3)),
-			SupportedChains:         supportedChainsArr,
-			PendingTxTimeoutHeights: pendingTxOutHeights,
-			CommissionRate:          10, // 0.1%
+			MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3)),
+			SupportedChains:   supportedChainsArr,
+			CommissionRate:    10, // 0.1%
 		},
 		cardanoChain: cardanoChain,
 		tokens:       getTokens(filepath.Join(genesisFolder, "tokens.json")),
@@ -167,6 +163,16 @@ func getDeyesChains(cmd *cobra.Command, genesisFolder string) []econfig.Chain {
 		}
 	}
 
+	if helper.IsLiskEnabled(genesisFolder) {
+		liskCfg := helper.ReadLiskConfig(genesisFolder)
+		deyesChains = append(deyesChains, econfig.Chain{
+			Chain:      liskCfg.Chain,
+			BlockTime:  10000,
+			AdjustTime: 1000,
+			Rpcs:       []string{liskCfg.RPC},
+		})
+	}
+
 	return deyesChains
 }
 
@@ -189,7 +195,6 @@ func getSupportedChains(cmd *cobra.Command, genesisFolder string) []string {
 	}
 
 	if helper.IsLiskEnabled(genesisFolder) {
-		fmt.Println("AAA Lisk is enabled")
 		liskCfg := helper.ReadLiskConfig(genesisFolder)
 		supportedChainsArr = append(supportedChainsArr, liskCfg.Chain)
 		chains = append(chains, &types.Chain{
@@ -199,13 +204,4 @@ func getSupportedChains(cmd *cobra.Command, genesisFolder string) []string {
 	}
 
 	return supportedChainsArr
-}
-
-func getPendingTxTimeoutHeight(deyesChains []econfig.Chain) []int64 {
-	heights := make([]int64, len(deyesChains))
-	for i, c := range deyesChains {
-		heights[i] = int64(c.BlockTime) * 12000 / 5000 // 5s is the estimated Sisu's blocktime
-	}
-
-	return heights
 }

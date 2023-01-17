@@ -131,6 +131,11 @@ func (h *HandlerKeygenResult) setVault(ctx sdk.Context, chain string, keygen *ty
 		vault := h.keeper.GetVault(ctx, chain, "")
 		log.Verbosef("Setting vault for %s %s", chain, vault.Address)
 		h.deyesClient.SetVaultAddress(chain, vault.Address, "")
+
+	} else if libchain.IsLiskChain(chain) {
+		address := liskcrypto.GetAddressFromPublicKey(keygen.PubKeyBytes)
+		h.deyesClient.SetVaultAddress(chain, address, "")
+
 	} else {
 		// Unknown chains
 		log.Error("Unknown chain: ", chain)
