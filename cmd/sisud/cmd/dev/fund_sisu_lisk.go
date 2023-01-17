@@ -15,6 +15,11 @@ import (
 )
 
 func (c *fundAccountCmd) fundLisk(genesisFolder, mnemonic string, mpcPubKey []byte) {
+	amount := uint64(200 * 100_000_000)
+	transferLisk(genesisFolder, mnemonic, mpcPubKey, amount, "")
+}
+
+func transferLisk(genesisFolder, mnemonic string, mpcPubKey []byte, amount uint64, data string) {
 	liskConfig := helper.ReadLiskConfig(genesisFolder)
 	log.Verbosef("Use url %s for chain %s", liskConfig.RPC, liskConfig.Chain)
 	deyesChainCfg := config.Chain{Chain: liskConfig.Chain, Rpcs: []string{liskConfig.RPC}}
@@ -23,15 +28,11 @@ func (c *fundAccountCmd) fundLisk(genesisFolder, mnemonic string, mpcPubKey []by
 	mpcAddr := liskcrypto.GetAddressFromPublicKey(mpcPubKey)
 	log.Verbose("Funding LSK for mpc address = ", mpcAddr)
 
-	amount := uint64(20000000)
+	receiver := mpcAddr
+
 	moduleId := uint32(2)
 	assetId := uint32(0)
 
-	transferLisk(client, mnemonic, mpcAddr, amount, moduleId, assetId, liskConfig)
-}
-
-func transferLisk(client deyeslisk.Client, mnemonic, receiver string, amount uint64, moduleId uint32,
-	assetId uint32, config helper.LiskConfig) {
 	privateKey := liskcrypto.GetPrivateKeyFromSecret(mnemonic)
 	faucet := liskcrypto.GetPublicKeyFromSecret(mnemonic)
 	address := liskcrypto.GetAddressFromPublicKey(faucet)
@@ -63,7 +64,6 @@ func transferLisk(client deyeslisk.Client, mnemonic, receiver string, amount uin
 	}
 
 	fee := uint64(500000)
-	data := ""
 	assetPb := &lisktypes.AssetMessage{
 		Amount:           &amount,
 		RecipientAddress: recipientAddress,
@@ -84,7 +84,7 @@ func transferLisk(client deyeslisk.Client, mnemonic, receiver string, amount uin
 		panic(err)
 	}
 
-	signature := liskcrypto.SignWithNetwork(config.Network, txHash, privateKey)
+	signature := liskcrypto.SignWithNetwork(liskConfig.Network, txHash, privateKey)
 	if err != nil {
 		panic(err)
 	}

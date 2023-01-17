@@ -15,7 +15,6 @@ type Config struct {
 	Tss    TssConfig        `toml:"tss"`
 	LogDNA log.LogDNAConfig `toml:"log_dna"`
 	Solana SolanaConfig     `toml:"solana"`
-	Lisk   LiskConfig       `toml:"lisk"`
 }
 
 type SisuConfig struct {
@@ -31,11 +30,6 @@ type SisuConfig struct {
 type SolanaConfig struct {
 	BridgeProgramId string `toml:"bridge_program_id" json:"bridge_program_id"`
 	BridgePda       string `toml:"bridge_pda" json:"bridge_pda"`
-}
-
-type LiskConfig struct {
-	RPC     string            `toml:"rpc" json:"rpc"`
-	Network map[string]string `toml:"network" json:"network"`
 }
 
 // Example of supported chains in the toml config file.

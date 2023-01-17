@@ -88,9 +88,16 @@ transfer params.
 
 				swapFromCardano(src, dst, token, recipient, vault, amountBigInt, cardanoChain,
 					cardanoconfig.Secret, mnemonic, deyesUrl)
+
 			} else if libchain.IsSolanaChain(src) {
 				swapFromSolana(genesisFolder, src, mnemonic, srcToken, recipient,
 					libchain.GetChainIntFromId(dst).Uint64(), uint64(amount*100_000_000))
+
+			} else if libchain.IsLiskChain(src) {
+				allPubKeys := queryPubKeys(cmd.Context(), sisuRpc)
+
+				swapFromLisk(genesisFolder, mnemonic, allPubKeys[libchain.KEY_TYPE_EDDSA],
+					uint64(amount*100_000_000))
 			}
 
 			return nil
@@ -214,4 +221,8 @@ func swapFromEth(client *ethclient.Client, mnemonic string, vaultAddr string, ds
 	log.Info("txHash = ", waitTx.TxHash.Hex())
 
 	time.Sleep(time.Second * 3)
+}
+
+func swapFromLisk(genesisFolder, mnemonic string, mpcPubKey []byte, amount uint64) {
+	transferLisk(genesisFolder, mnemonic, mpcPubKey, amount, "")
 }

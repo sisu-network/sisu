@@ -1,7 +1,10 @@
 package sisu
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	liskcrypto "github.com/sisu-network/deyes/chains/lisk/crypto"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
@@ -70,6 +73,7 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 		h.keeper.SaveKeygen(ctx, keygen)
 
 		// Setting vaults & mpc address
+		fmt.Println("params.SupportedChains = ", params.SupportedChains)
 		params := h.keeper.GetParams(ctx)
 		for _, chain := range params.SupportedChains {
 			if keygen.KeyType == utils.GetKeyTypeForChain(chain) {
@@ -90,13 +94,18 @@ func (h *HandlerKeygenResult) setMpcAddress(ctx sdk.Context, chain string, keyge
 	address := ""
 
 	// Calculate the MPC address
-	if libchain.IsETHBasedChain(chain) {
+	switch {
+	case libchain.IsETHBasedChain(chain):
 		// Calculate the ETH address
 		address = keygen.Address
-	} else if libchain.IsCardanoChain(chain) {
+	case libchain.IsCardanoChain(chain):
 		address = utils.GetCardanoAddressFromPubkey(keygen.PubKeyBytes).String()
-	} else if libchain.IsSolanaChain(chain) {
+	case libchain.IsSolanaChain(chain):
 		address = utils.GetSolanaAddressFromPubkey(keygen.PubKeyBytes)
+	case libchain.IsLiskChain(chain):
+		address = liskcrypto.GetAddressFromPublicKey(keygen.PubKeyBytes)
+	default:
+		log.Errorf("Unknown chain type %s", chain)
 	}
 
 	if address != "" {

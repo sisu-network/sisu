@@ -2,6 +2,7 @@ package gen
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"math"
 	"path/filepath"
@@ -184,6 +185,16 @@ func getSupportedChains(cmd *cobra.Command, genesisFolder string) []string {
 		chains = append(chains, &types.Chain{
 			Id:          cardanoConfig.Chain,
 			NativeToken: "ADA",
+		})
+	}
+
+	if helper.IsLiskEnabled(genesisFolder) {
+		fmt.Println("AAA Lisk is enabled")
+		liskCfg := helper.ReadLiskConfig(genesisFolder)
+		supportedChainsArr = append(supportedChainsArr, liskCfg.Chain)
+		chains = append(chains, &types.Chain{
+			Id:          liskCfg.Chain,
+			NativeToken: "LSK",
 		})
 	}
 
