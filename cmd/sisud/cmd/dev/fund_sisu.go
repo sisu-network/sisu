@@ -3,7 +3,6 @@ package dev
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -70,7 +69,6 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, mnem
 	if len(chains) == 1 && len(chains[0]) == 0 {
 		chains = []string{}
 	}
-	fmt.Println("chains = ", chains)
 
 	wg := &sync.WaitGroup{}
 

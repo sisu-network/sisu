@@ -1,8 +1,6 @@
 package sisu
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	liskcrypto "github.com/sisu-network/deyes/chains/lisk/crypto"
 	libchain "github.com/sisu-network/lib/chain"
@@ -74,7 +72,6 @@ func (h *HandlerKeygenResult) doKeygenResult(ctx sdk.Context, keygen *types.Keyg
 
 		// Setting vaults & mpc address
 		params := h.keeper.GetParams(ctx)
-		fmt.Println("params.SupportedChains = ", params.SupportedChains)
 		for _, chain := range params.SupportedChains {
 			if keygen.KeyType == utils.GetKeyTypeForChain(chain) {
 				h.setVault(ctx, chain, keygen)

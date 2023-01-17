@@ -2,10 +2,13 @@ package dev
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"math/big"
 	"time"
 
+	"github.com/gogo/protobuf/proto"
 	"github.com/sisu-network/sisu/contracts/eth/vault"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -20,6 +23,7 @@ import (
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 
+	lisktypes "github.com/sisu-network/deyes/chains/lisk/types"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
 )
@@ -96,7 +100,7 @@ transfer params.
 			} else if libchain.IsLiskChain(src) {
 				allPubKeys := queryPubKeys(cmd.Context(), sisuRpc)
 
-				swapFromLisk(genesisFolder, mnemonic, allPubKeys[libchain.KEY_TYPE_EDDSA],
+				swapFromLisk(genesisFolder, mnemonic, dst, allPubKeys[libchain.KEY_TYPE_EDDSA], recipient,
 					uint64(amount*100_000_000))
 			}
 
@@ -139,7 +143,7 @@ func getTokenAddrsFromSisu(tokenId string, srcChain string, dstChain string, sis
 	token := res.Token
 	src, dest := token.GetAddressForChain(srcChain), token.GetAddressForChain(dstChain)
 
-	if len(src) == 0 && !libchain.IsCardanoChain(srcChain) {
+	if len(src) == 0 && !libchain.IsCardanoChain(srcChain) && !libchain.IsLiskChain(srcChain) {
 		log.Info("source chain = ", srcChain)
 		panic(fmt.Errorf("cannot find token address, available token addresses = %v", token.Addresses))
 	}
@@ -223,6 +227,33 @@ func swapFromEth(client *ethclient.Client, mnemonic string, vaultAddr string, ds
 	time.Sleep(time.Second * 3)
 }
 
-func swapFromLisk(genesisFolder, mnemonic string, mpcPubKey []byte, amount uint64) {
-	transferLisk(genesisFolder, mnemonic, mpcPubKey, amount, "")
+func swapFromLisk(genesisFolder, mnemonic string, toChain string, mpcPubKey []byte,
+	recipient string, amount uint64) {
+	toChainId := libchain.GetChainIntFromId(toChain).Int64()
+
+	var recipientBytes []byte
+	if libchain.IsETHBasedChain(toChain) {
+		var err error
+		recipientBytes, err = hex.DecodeString(recipient[2:])
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		panic(fmt.Errorf("Unsupported chain %s", toChain))
+	}
+
+	payload := lisktypes.TransferData{
+		ChainId:   toChainId,
+		Recipient: recipientBytes,
+		Amount:    amount,
+	}
+
+	bz, err := proto.Marshal(&payload)
+	if err != nil {
+		panic(err)
+	}
+
+	msg := base64.StdEncoding.EncodeToString(bz)
+	fmt.Println("msg = ", msg)
+	transferLisk(genesisFolder, mnemonic, mpcPubKey, 100_000, msg)
 }
