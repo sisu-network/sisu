@@ -9,6 +9,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	lisktypes "github.com/sisu-network/deyes/chains/lisk/types"
+	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	chainstypes "github.com/sisu-network/sisu/x/sisu/chains/types"
 	"github.com/sisu-network/sisu/x/sisu/external"
@@ -22,15 +23,17 @@ type bridge struct {
 	chain       string
 	deyesClient external.DeyesClient
 	keeper      keeper.Keeper
+	config      config.Config
 }
 
-func NewBridge(chain string, signer string, keeper keeper.Keeper, deyesClient external.DeyesClient,
+func NewBridge(chain string, signer string, keeper keeper.Keeper, deyesClient external.DeyesClient, cfg config.Config,
 ) chainstypes.Bridge {
 	return &bridge{
 		signer:      signer,
 		chain:       chain,
 		deyesClient: deyesClient,
 		keeper:      keeper,
+		config:      cfg,
 	}
 }
 
@@ -102,7 +105,9 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 	// The signing bytes are the combination of network id and the serialization of the transaciton.
 	signBuf := new(bytes.Buffer)
 	//First byte is the network info
-	networkBytes, _ := hex.DecodeString(lisktypes.NetworkId[transfer.ToChain])
+	networkBytes, _ := hex.DecodeString(
+		b.config.Lisk.Network[transfer.ToChain],
+	)
 	binary.Write(signBuf, binary.LittleEndian, networkBytes)
 
 	// Append the transaction ModuleID

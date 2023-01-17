@@ -16,7 +16,7 @@ import (
 
 func (c *fundAccountCmd) fundLisk(genesisFolder, mnemonic string, mpcPubKey []byte) {
 	liskConfig := helper.ReadLiskConfig(genesisFolder)
-	fmt.Println("liskConfig.RPC = ", liskConfig.RPC)
+	log.Verbosef("Use url %s for chain %s", liskConfig.RPC, liskConfig.Chain)
 	deyesChainCfg := config.Chain{Chain: liskConfig.Chain, Rpcs: []string{liskConfig.RPC}}
 
 	client := deyeslisk.NewLiskClient(deyesChainCfg)

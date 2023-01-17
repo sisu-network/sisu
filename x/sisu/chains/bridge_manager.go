@@ -83,7 +83,7 @@ func (m *defaultBridgeManager) getBridge(chain string) chainstypes.Bridge {
 	}
 
 	if libchain.IsLiskChain(chain) {
-		return chainslisk.NewBridge(chain, m.signer, m.keeper, m.deyesClient)
+		return chainslisk.NewBridge(chain, m.signer, m.keeper, m.deyesClient, m.config)
 	}
 
 	return nil

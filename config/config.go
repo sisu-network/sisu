@@ -15,6 +15,7 @@ type Config struct {
 	Tss    TssConfig        `toml:"tss"`
 	LogDNA log.LogDNAConfig `toml:"log_dna"`
 	Solana SolanaConfig     `toml:"solana"`
+	Lisk   LiskConfig       `toml:"lisk"`
 }
 
 type SisuConfig struct {
@@ -32,12 +33,18 @@ type SolanaConfig struct {
 	BridgePda       string `toml:"bridge_pda" json:"bridge_pda"`
 }
 
+type LiskConfig struct {
+	RPC     string            `toml:"rpc" json:"rpc"`
+	Network map[string]string `toml:"network" json:"network"`
+}
+
 // Example of supported chains in the toml config file.
 // [supported_chains]
 // [supported_chains.eth]
-//   symbol = "eth"
-// 	 id = 1
-// 	 deyes_url = "http://localhost:31001"
+//
+//	  symbol = "eth"
+//		 id = 1
+//		 deyes_url = "http://localhost:31001"
 type TssConfig struct {
 	DheartHost string `toml:"dheart-host"`
 	DheartPort int    `toml:"dheart-port"`
