@@ -2,7 +2,6 @@ package dev
 
 import (
 	"encoding/hex"
-	"fmt"
 	"strconv"
 
 	deyeslisk "github.com/sisu-network/deyes/chains/lisk"
@@ -15,7 +14,7 @@ import (
 )
 
 func (c *fundAccountCmd) fundLisk(genesisFolder, mnemonic string, mpcPubKey []byte) {
-	amount := uint64(200 * 100_000_000)
+	amount := uint64(1 * 100_000_000)
 	transferLisk(genesisFolder, mnemonic, mpcPubKey, amount, "")
 }
 
@@ -34,24 +33,13 @@ func transferLisk(genesisFolder, mnemonic string, mpcPubKey []byte, amount uint6
 	assetId := uint32(0)
 
 	privateKey := liskcrypto.GetPrivateKeyFromSecret(mnemonic)
-	faucet := liskcrypto.GetPublicKeyFromSecret(mnemonic)
-	address := liskcrypto.GetAddressFromPublicKey(faucet)
+	faucetPubKey := liskcrypto.GetPublicKeyFromSecret(mnemonic)
 
-	fmt.Println("Faucet address = ", address)
-
-	senderAddress, err := hex.DecodeString(address)
-	if err != nil {
-		panic(err)
-	}
-
-	lisk32 := liskcrypto.AddressToLisk32(senderAddress)
-	fmt.Println("Lisk Sender address = ", lisk32)
+	lisk32 := liskcrypto.GetLisk32AddressFromPublickey(faucetPubKey)
 	acc, err := client.GetAccount(lisk32)
 	if err != nil {
 		panic(err)
 	}
-
-	fmt.Println("Sender address = ", acc.Token)
 
 	nonce, err := strconv.ParseUint(acc.Sequence.Nonce, 10, 64)
 	if err != nil {
@@ -63,7 +51,7 @@ func transferLisk(genesisFolder, mnemonic string, mpcPubKey []byte, amount uint6
 		panic(err)
 	}
 
-	fee := uint64(500000)
+	fee := uint64(500_000)
 	assetPb := &lisktypes.AssetMessage{
 		Amount:           &amount,
 		RecipientAddress: recipientAddress,
@@ -77,7 +65,7 @@ func transferLisk(genesisFolder, mnemonic string, mpcPubKey []byte, amount uint6
 		Fee:             &fee,
 		Asset:           asset,
 		Nonce:           &nonce,
-		SenderPublicKey: faucet,
+		SenderPublicKey: faucetPubKey,
 	}
 	txHash, err := proto.Marshal(txPb)
 	if err != nil {
@@ -95,6 +83,9 @@ func transferLisk(genesisFolder, mnemonic string, mpcPubKey []byte, amount uint6
 	if err != nil {
 		panic(err)
 	}
+
+	log.Infof("Funding Sisu from account %s to account %s= ", lisk32,
+		liskcrypto.GetLisk32AddressFromPublickey(mpcPubKey))
 
 	tx, err := client.CreateTransaction(hex.EncodeToString(txHash))
 	if err != nil {

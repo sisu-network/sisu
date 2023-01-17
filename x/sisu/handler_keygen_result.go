@@ -103,7 +103,7 @@ func (h *HandlerKeygenResult) setMpcAddress(ctx sdk.Context, chain string, keyge
 	case libchain.IsSolanaChain(chain):
 		address = utils.GetSolanaAddressFromPubkey(keygen.PubKeyBytes)
 	case libchain.IsLiskChain(chain):
-		address = liskcrypto.GetAddressFromPublicKey(keygen.PubKeyBytes)
+		address = liskcrypto.GetLisk32AddressFromPublickey(keygen.PubKeyBytes)
 	default:
 		log.Errorf("Unknown chain type %s", chain)
 	}
@@ -133,7 +133,7 @@ func (h *HandlerKeygenResult) setVault(ctx sdk.Context, chain string, keygen *ty
 		h.deyesClient.SetVaultAddress(chain, vault.Address, "")
 
 	} else if libchain.IsLiskChain(chain) {
-		address := liskcrypto.GetAddressFromPublicKey(keygen.PubKeyBytes)
+		address := liskcrypto.GetLisk32AddressFromPublickey(keygen.PubKeyBytes)
 		h.deyesClient.SetVaultAddress(chain, address, "")
 
 	} else {
