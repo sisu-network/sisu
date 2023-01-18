@@ -8,7 +8,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/near/borsh-go"
 	"github.com/sisu-network/sisu/contracts/eth/vault"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -229,7 +229,7 @@ func swapFromEth(client *ethclient.Client, mnemonic string, vaultAddr string, ds
 
 func swapFromLisk(genesisFolder, mnemonic string, toChain string, mpcPubKey []byte,
 	recipient string, amount uint64) {
-	toChainId := libchain.GetChainIntFromId(toChain).Int64()
+	toChainId := libchain.GetChainIntFromId(toChain).Uint64()
 
 	var recipientBytes []byte
 	if libchain.IsETHBasedChain(toChain) {
@@ -245,15 +245,15 @@ func swapFromLisk(genesisFolder, mnemonic string, toChain string, mpcPubKey []by
 	payload := lisktypes.TransferData{
 		ChainId:   toChainId,
 		Recipient: recipientBytes,
+		Token:     "LSK",
 		Amount:    amount,
 	}
 
-	bz, err := proto.Marshal(&payload)
+	bz, err := borsh.Serialize(payload)
 	if err != nil {
 		panic(err)
 	}
 
 	msg := base64.StdEncoding.EncodeToString(bz)
-	fmt.Println("msg = ", msg)
 	transferLisk(genesisFolder, mnemonic, mpcPubKey, 100_000, msg)
 }

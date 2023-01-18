@@ -2,12 +2,17 @@ package lisk
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math/big"
 
+	libchain "github.com/sisu-network/lib/chain"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/near/borsh-go"
 	lisktypes "github.com/sisu-network/deyes/chains/lisk/types"
 	"github.com/sisu-network/sisu/utils"
 	chainstypes "github.com/sisu-network/sisu/x/sisu/chains/types"
@@ -131,5 +136,39 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 
 func (b *bridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byte) (
 	[]*types.TransferDetails, error) {
-	return nil, nil
+	tx := &lisktypes.Transaction{}
+	err := json.Unmarshal(serialized, tx)
+	if err != nil {
+		return nil, err
+	}
+
+	bz, err := base64.StdEncoding.DecodeString(tx.Asset.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	payload := &lisktypes.TransferData{}
+	err = borsh.Deserialize(payload, bz)
+	if err != nil {
+		return nil, err
+	}
+
+	dstChain := libchain.GetChainNameFromInt(big.NewInt(int64(payload.ChainId)))
+	if len(dstChain) == 0 {
+		return nil, fmt.Errorf("Invalid destination chain %s", dstChain)
+	}
+
+	token := b.keeper.GetToken(ctx, payload.Token)
+	if token == nil {
+		return nil, fmt.Errorf("Invalid token %s", payload.Token)
+	}
+
+	return []*types.TransferDetails{
+		{
+			Id:        fmt.Sprintf("%s__%s", chain, tx.Id),
+			FromChain: chain,
+			ToChain:   dstChain,
+			Token:     payload.Token,
+		},
+	}, nil
 }

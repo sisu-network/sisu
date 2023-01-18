@@ -80,6 +80,7 @@ type Keeper interface {
 
 	// Token
 	SetTokens(ctx sdk.Context, tokens map[string]*types.Token)
+	GetToken(ctx sdk.Context, token string) *types.Token
 	GetTokens(ctx sdk.Context, tokens []string) map[string]*types.Token
 	GetAllTokens(ctx sdk.Context) map[string]*types.Token
 
@@ -282,6 +283,11 @@ func (k *DefaultKeeper) GetAllTokenPricesRecord(ctx sdk.Context) map[string]*typ
 func (k *DefaultKeeper) SetTokens(ctx sdk.Context, tokens map[string]*types.Token) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixToken)
 	setTokens(store, tokens)
+}
+
+func (k *DefaultKeeper) GetToken(ctx sdk.Context, tokenId string) *types.Token {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixToken)
+	return getToken(store, tokenId)
 }
 
 func (k *DefaultKeeper) GetTokens(ctx sdk.Context, tokenIds []string) map[string]*types.Token {

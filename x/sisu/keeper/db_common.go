@@ -460,6 +460,22 @@ func setTokens(store cstypes.KVStore, tokens map[string]*types.Token) {
 	}
 }
 
+func getToken(store cstypes.KVStore, tokenId string) *types.Token {
+	bz := store.Get([]byte(tokenId))
+	if bz == nil {
+		return nil
+	}
+
+	token := &types.Token{}
+	err := token.Unmarshal(bz)
+	if err != nil {
+		log.Errorf("getTokens: cannot unmarshal token %s", tokenId)
+		return nil
+	}
+
+	return token
+}
+
 func getTokens(store cstypes.KVStore, tokenIds []string) map[string]*types.Token {
 	tokens := make(map[string]*types.Token)
 	for _, id := range tokenIds {
