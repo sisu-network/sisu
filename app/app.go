@@ -286,7 +286,7 @@ func New(
 	app.apiEndPoint.SetAppLogicListener(apiHandler)
 
 	sisuHandler := tss.NewSisuHandler(mc)
-	externalHandler := rest.NewExternalHandler(app.k, app.globalData)
+	externalHandler := rest.NewExternalHandler(app.k, app.globalData, deyesClient)
 	app.externalHandler = externalHandler
 
 	txOutSigner := sisu.NewTxOutSigner(app.k, partyManager, dheartClient)

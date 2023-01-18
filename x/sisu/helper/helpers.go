@@ -10,7 +10,7 @@ import (
 
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 )
 
@@ -25,40 +25,23 @@ func GetKeygenId(keyType string, block int64, pubKeys []ctypes.PubKey) string {
 	return fmt.Sprintf("%s;%d;%s", keyType, block, hash)
 }
 
-func GetChainGasCostInToken(ctx sdk.Context, k keeper.Keeper, tokenId, chainId string,
-	totalGasCost *big.Int) (*big.Int, error) {
+func GetChainGasCostInToken(ctx sdk.Context, k keeper.Keeper, deyesClient external.DeyesClient,
+	tokenId string, chainId string, totalGasCost *big.Int) (*big.Int, error) {
+	// 1. Get native token price
 	chain := k.GetChain(ctx, chainId)
-
-	tokens := k.GetTokens(ctx, []string{tokenId, chain.NativeToken})
-	token := tokens[tokenId]
-	nativeToken := tokens[chain.NativeToken]
-	if token == nil {
-		return nil, fmt.Errorf("GetChainGasCostInToken: cannot find token %s", tokenId)
-	}
-	if nativeToken == nil {
-		return nil, fmt.Errorf("GetChainGasCostInToken: cannot find token %s", chain.NativeToken)
+	if chain == nil {
+		return nil, fmt.Errorf("Invalid chain %s", chainId)
 	}
 
-	tokenPrice, ok := new(big.Int).SetString(token.Price, 10)
-	if !ok {
-		return nil, fmt.Errorf("Invalid token price: %s", token.Price)
-	}
+	nativeTokenPrice, err := deyesClient.GetTokenPrice(chain.NativeToken)
 
-	if cmp := tokenPrice.Cmp(utils.ZeroBigInt); cmp <= 0 {
-		return nil, fmt.Errorf("Token price must be positive: %s", tokenPrice)
-	}
-
-	nativeTokenPrice, ok := new(big.Int).SetString(nativeToken.Price, 10)
-	if !ok {
-		return nil, fmt.Errorf("Invalid native token price %s, token = %s", nativeToken.Price, nativeToken.Id)
-	}
+	// 2. Get token price
+	tokenPrice, err := deyesClient.GetTokenPrice(tokenId)
 
 	gasCostInToken, err := GetGasCostInToken(totalGasCost, tokenPrice, nativeTokenPrice)
-	log.Verbose("totalGas, tokenPrice, nativeTokenPrice, gasCost = ", totalGasCost, tokenPrice,
+	log.Verbose("totalGas, tokenPrice, nativeTokenPrice, gasCostInToken = ", totalGasCost, tokenPrice,
 		nativeTokenPrice, gasCostInToken)
-
 	if err != nil {
-		log.Error(err)
 		return nil, err
 	}
 

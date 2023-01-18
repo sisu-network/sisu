@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -23,10 +24,11 @@ func TestGasCostInToken(t *testing.T) {
 			GasPrice: 10 * 1_000_000_000,
 		},
 	})
+	nativeTokenPrice := new(big.Int).Mul(big.NewInt(2), utils.EthToWei)
 	k.SetTokens(ctx, map[string]*types.Token{
 		"NATIVE_GANACHE1": {
 			Id:       "NATIVE_GANACHE1",
-			Price:    new(big.Int).Mul(big.NewInt(2), utils.EthToWei).String(), // $2
+			Price:    nativeTokenPrice.String(), // $2
 			Chains:   []string{"ganache1"},
 			Decimals: []uint32{18},
 		},
@@ -39,8 +41,10 @@ func TestGasCostInToken(t *testing.T) {
 		},
 	})
 
+	mockDeyes := &external.MockDeyesClient{}
 	gas := big.NewInt(8_000_000)
-	amount, err := GetChainGasCostInToken(ctx, k, "SISU", chain, gas.Mul(gas, big.NewInt(10*1_000_000_000)))
+	amount, err := GetChainGasCostInToken(ctx, k, mockDeyes, "SISU", chain,
+		gas.Mul(gas, big.NewInt(10*1_000_000_000)))
 
 	require.Equal(t, nil, err)
 

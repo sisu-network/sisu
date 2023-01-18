@@ -163,12 +163,20 @@ func (b *bridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byt
 		return nil, fmt.Errorf("Invalid token %s", payload.Token)
 	}
 
+	amount, err := token.ConvertAmountToSisuAmount(b.chain, big.NewInt(int64(payload.Amount)))
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("Parsed amount = ", amount)
+
 	return []*types.TransferDetails{
 		{
 			Id:        fmt.Sprintf("%s__%s", chain, tx.Id),
 			FromChain: chain,
 			ToChain:   dstChain,
 			Token:     payload.Token,
+			Amount:    amount.String(),
 		},
 	}, nil
 }
