@@ -168,15 +168,25 @@ func (b *bridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byt
 		return nil, err
 	}
 
+	var recipient string
+	switch {
+	case libchain.IsETHBasedChain(dstChain):
+		recipient = fmt.Sprintf("0x%s", hex.EncodeToString(payload.Recipient))
+	default:
+		return nil, fmt.Errorf("unsupported lisk payload address for chain %s, recipient hex = %s",
+			dstChain, hex.EncodeToString(payload.Recipient))
+	}
+
 	fmt.Println("Parsed amount = ", amount)
 
 	return []*types.TransferDetails{
 		{
-			Id:        fmt.Sprintf("%s__%s", chain, tx.Id),
-			FromChain: chain,
-			ToChain:   dstChain,
-			Token:     payload.Token,
-			Amount:    amount.String(),
+			Id:          fmt.Sprintf("%s__%s", chain, tx.Id),
+			FromChain:   chain,
+			ToChain:     dstChain,
+			Token:       payload.Token,
+			ToRecipient: recipient,
+			Amount:      amount.String(),
 		},
 	}, nil
 }
