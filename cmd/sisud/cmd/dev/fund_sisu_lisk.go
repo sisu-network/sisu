@@ -1,7 +1,9 @@
 package dev
 
 import (
+	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"strconv"
 
 	deyeslisk "github.com/sisu-network/deyes/chains/lisk"
@@ -67,27 +69,30 @@ func transferLisk(genesisFolder, mnemonic string, mpcPubKey []byte, amount uint6
 		Nonce:           &nonce,
 		SenderPublicKey: faucetPubKey,
 	}
-	txHash, err := proto.Marshal(txPb)
+	signedBz, err := proto.Marshal(txPb)
 	if err != nil {
 		panic(err)
 	}
 
-	signature, err := liskcrypto.SignWithNetwork(liskConfig.Network, txHash, privateKey)
+	signature, err := liskcrypto.SignWithNetwork(liskConfig.Network, signedBz, privateKey)
 	if err != nil {
 		panic(err)
 	}
 
 	txPb.Signatures = [][]byte{signature}
 
-	txHash, err = proto.Marshal(txPb)
+	signedBz, err = proto.Marshal(txPb)
 	if err != nil {
 		panic(err)
 	}
 
+	hash := sha256.Sum256(signedBz)
+	fmt.Println("Calculated hash = ", hex.EncodeToString(hash[:]))
+
 	log.Infof("Funding Sisu from account %s to account %s= ", lisk32,
 		liskcrypto.GetLisk32AddressFromPublickey(mpcPubKey))
 
-	tx, err := client.CreateTransaction(hex.EncodeToString(txHash))
+	tx, err := client.CreateTransaction(hex.EncodeToString(signedBz))
 	if err != nil {
 		panic(err)
 	}

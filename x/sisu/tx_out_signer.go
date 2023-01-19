@@ -1,8 +1,13 @@
 package sisu
 
 import (
+	"bytes"
+	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"strconv"
+
+	lisktypes "github.com/sisu-network/deyes/chains/lisk/types"
 
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
@@ -142,6 +147,21 @@ func (s *txOutSigner) signSolana(ctx sdk.Context, txOut *types.TxOut) {
 }
 
 func (s *txOutSigner) signLisk(ctx sdk.Context, txOut *types.TxOut) {
+	networkId := lisktypes.NetworkId[txOut.Content.OutChain]
+	if len(networkId) == 0 {
+		log.Errorf(fmt.Sprintf("cannot find lisk network id for chain %s", txOut.Content.OutChain))
+		return
+	}
+
+	// The signing bytes are the combination of network id and the serialization of the transaciton.
+	signBuf := new(bytes.Buffer)
+	//First byte is the network info
+	networkBytes, _ := hex.DecodeString(networkId)
+	binary.Write(signBuf, binary.LittleEndian, networkBytes)
+
+	// Append the transaction ModuleID
+	binary.Write(signBuf, binary.LittleEndian, txOut.Content.OutBytes)
+
 	signRequest := &hTypes.KeysignRequest{
 		KeyType: libchain.KEY_TYPE_EDDSA,
 		KeysignMessages: []*hTypes.KeysignMessage{
@@ -149,7 +169,8 @@ func (s *txOutSigner) signLisk(ctx sdk.Context, txOut *types.TxOut) {
 				Id:          s.getKeysignRequestId(txOut.Content.OutChain, ctx.BlockHeight(), txOut.Content.OutHash),
 				OutChain:    txOut.Content.OutChain,
 				OutHash:     txOut.Content.OutHash,
-				BytesToSign: txOut.Content.OutBytes,
+				Bytes:       txOut.Content.OutBytes,
+				BytesToSign: signBuf.Bytes(),
 			},
 		},
 	}

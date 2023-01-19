@@ -1,9 +1,7 @@
 package lisk
 
 import (
-	"bytes"
 	"encoding/base64"
-	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -104,27 +102,18 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 		return nil, err
 	}
 
-	networkId := lisktypes.NetworkId[transfer.ToChain]
-	if len(networkId) == 0 {
-		return nil, fmt.Errorf("cannot find lisk network id for chain %s", transfer.ToChain)
+	hash, err := txPb.GetHash()
+	if err != nil {
+		return nil, err
 	}
-
-	// The signing bytes are the combination of network id and the serialization of the transaciton.
-	signBuf := new(bytes.Buffer)
-	//First byte is the network info
-	networkBytes, _ := hex.DecodeString(networkId)
-	binary.Write(signBuf, binary.LittleEndian, networkBytes)
-
-	// Append the transaction ModuleID
-	binary.Write(signBuf, binary.LittleEndian, bz)
 
 	outMsg := types.NewTxOutMsg(
 		b.signer,
 		types.TxOutType_TRANSFER_OUT,
 		&types.TxOutContent{
 			OutChain: b.chain,
-			OutHash:  hex.EncodeToString(bz),
-			OutBytes: signBuf.Bytes(),
+			OutHash:  hash,
+			OutBytes: bz,
 		},
 		&types.TxOutInput{
 			TransferIds: []string{transfer.Id},

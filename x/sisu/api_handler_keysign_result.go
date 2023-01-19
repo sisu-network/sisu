@@ -1,7 +1,6 @@
 package sisu
 
 import (
-	"encoding/hex"
 	"fmt"
 
 	lisktypes "github.com/sisu-network/deyes/chains/lisk/types"
@@ -162,24 +161,19 @@ func (a *ApiHandler) processSolanaKeysignResult(ctx sdk.Context, result *dhtypes
 
 func (a *ApiHandler) processLiskKeysignResult(ctx sdk.Context, result *dhtypes.KeysignResult,
 	signMsg *dhtypes.KeysignMessage) error {
-	bz, err := hex.DecodeString(signMsg.OutHash)
-	if err != nil {
-		return err
-	}
-
 	tx := &lisktypes.TransactionMessage{}
-	err = proto.Unmarshal(bz, tx)
+	err := proto.Unmarshal(signMsg.Bytes, tx)
 	if err != nil {
 		return err
 	}
 
 	tx.Signatures = [][]byte{result.Signatures[0]}
-	bz, err = proto.Marshal(tx)
+	bz, err := proto.Marshal(tx)
 	if err != nil {
 		return err
 	}
 
-	hashWithSig := hex.EncodeToString(bz)
+	hashWithSig, err := tx.GetHash()
 	a.privateDb.SaveTxOutSig(&types.TxOutSig{
 		Chain:       signMsg.OutChain,
 		HashWithSig: hashWithSig,
