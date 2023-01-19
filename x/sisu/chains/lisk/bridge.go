@@ -12,7 +12,7 @@ import (
 	libchain "github.com/sisu-network/lib/chain"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/near/borsh-go"
+	liskcrypto "github.com/sisu-network/deyes/chains/lisk/crypto"
 	lisktypes "github.com/sisu-network/deyes/chains/lisk/types"
 	"github.com/sisu-network/sisu/utils"
 	chainstypes "github.com/sisu-network/sisu/x/sisu/chains/types"
@@ -54,7 +54,7 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 		return nil, err
 	}
 
-	recipient, err := hex.DecodeString(transfer.ToRecipient)
+	recipient, err := liskcrypto.Lisk32AddressToPublicAddress(transfer.ToRecipient)
 	if err != nil {
 		return nil, err
 	}
@@ -148,22 +148,26 @@ func (b *bridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byt
 	}
 
 	payload := &lisktypes.TransferData{}
-	err = borsh.Deserialize(payload, bz)
+	err = proto.Unmarshal(bz, payload)
 	if err != nil {
 		return nil, err
 	}
 
-	dstChain := libchain.GetChainNameFromInt(big.NewInt(int64(payload.ChainId)))
+	dstChain := libchain.GetChainNameFromInt(big.NewInt(int64(*payload.ChainId)))
 	if len(dstChain) == 0 {
 		return nil, fmt.Errorf("Invalid destination chain %s", dstChain)
 	}
 
-	token := b.keeper.GetToken(ctx, payload.Token)
+	tokenStr := "LSK"
+	if payload.Token != nil {
+		tokenStr = *payload.Token
+	}
+	token := b.keeper.GetToken(ctx, tokenStr)
 	if token == nil {
-		return nil, fmt.Errorf("Invalid token %s", payload.Token)
+		return nil, fmt.Errorf("Invalid token %s", tokenStr)
 	}
 
-	amount, err := token.ConvertAmountToSisuAmount(b.chain, big.NewInt(int64(payload.Amount)))
+	amount, err := token.ConvertAmountToSisuAmount(b.chain, big.NewInt(int64(*payload.Amount)))
 	if err != nil {
 		return nil, err
 	}
@@ -177,14 +181,12 @@ func (b *bridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byt
 			dstChain, hex.EncodeToString(payload.Recipient))
 	}
 
-	fmt.Println("Parsed amount = ", amount)
-
 	return []*types.TransferDetails{
 		{
 			Id:          fmt.Sprintf("%s__%s", chain, tx.Id),
 			FromChain:   chain,
 			ToChain:     dstChain,
-			Token:       payload.Token,
+			Token:       tokenStr,
 			ToRecipient: recipient,
 			Amount:      amount.String(),
 		},

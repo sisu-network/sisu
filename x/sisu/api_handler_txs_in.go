@@ -13,7 +13,6 @@ import (
 // TODO: handle error correctly
 func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 	log.Verbose("There is a new list of txs from deyes, len =", len(txs.Arr))
-
 	ctx := a.globalData.GetReadOnlyContext()
 	// Make sure that this chain is supported by Sisu
 	params := a.keeper.GetParams(ctx)

@@ -237,26 +237,33 @@ func (a *ApiHandler) OnKeysignResult(result *dhtypes.KeysignResult) {
 
 		// Sends it to deyes for deployment.
 		if result.Outcome == dhtypes.OutcomeSuccess {
-			if libchain.IsETHBasedChain(keysignMsg.OutChain) {
+
+			switch {
+			case libchain.IsETHBasedChain(keysignMsg.OutChain):
 				if err := a.processETHSigningResult(ctx, result, keysignMsg, i); err != nil {
 					// TODO: Handle failure here.
 					log.Error("Failed to process ETH signing result, err = ", err)
 					return
 				}
-			}
 
-			if libchain.IsCardanoChain(keysignMsg.OutChain) {
+			case libchain.IsCardanoChain(keysignMsg.OutChain):
 				if err := a.processCardanoSigningResult(ctx, result, keysignMsg, i); err != nil {
 					// TODO: Handle failure here.
 					log.Error("Failed to process cardano signing result, err = ", err)
 					return
 				}
-			}
 
-			if libchain.IsSolanaChain(keysignMsg.OutChain) {
+			case libchain.IsSolanaChain(keysignMsg.OutChain):
 				if err := a.processSolanaKeysignResult(ctx, result, keysignMsg, i); err != nil {
 					// TODO: Handle failure here.
 					log.Error("Failed to process solana signing result, err = ", err)
+					return
+				}
+
+			case libchain.IsLiskChain(keysignMsg.OutChain):
+				if err := a.processLiskKeysignResult(ctx, result, keysignMsg); err != nil {
+					// TODO: Handle failure here.
+					log.Error("Failed to process lisk signing result, err = ", err)
 					return
 				}
 			}

@@ -8,7 +8,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/near/borsh-go"
+	"github.com/gogo/protobuf/proto"
 	"github.com/sisu-network/sisu/contracts/eth/vault"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -148,7 +148,7 @@ func getTokenAddrsFromSisu(tokenId string, srcChain string, dstChain string, sis
 		panic(fmt.Errorf("cannot find token address, available token addresses = %v", token.Addresses))
 	}
 
-	if len(dest) == 0 && !libchain.IsCardanoChain(dstChain) {
+	if len(dest) == 0 && !libchain.IsCardanoChain(dstChain) && !libchain.IsLiskChain(dstChain) {
 		log.Info("dest chain = ", dstChain)
 		panic(fmt.Errorf("cannot find token address, available token addresses = %v", token.Addresses))
 	}
@@ -230,6 +230,9 @@ func swapFromEth(client *ethclient.Client, mnemonic string, vaultAddr string, ds
 func swapFromLisk(genesisFolder, mnemonic string, toChain string, mpcPubKey []byte,
 	recipient string, amount uint64) {
 	toChainId := libchain.GetChainIntFromId(toChain).Uint64()
+	if toChainId == 0 {
+		panic(fmt.Errorf("Invalid chain %s", toChain))
+	}
 
 	var recipientBytes []byte
 	if libchain.IsETHBasedChain(toChain) {
@@ -243,13 +246,12 @@ func swapFromLisk(genesisFolder, mnemonic string, toChain string, mpcPubKey []by
 	}
 
 	payload := lisktypes.TransferData{
-		ChainId:   toChainId,
+		ChainId:   &toChainId,
 		Recipient: recipientBytes,
-		Token:     "LSK",
-		Amount:    amount,
+		Amount:    &amount,
 	}
 
-	bz, err := borsh.Serialize(payload)
+	bz, err := proto.Marshal(&payload)
 	if err != nil {
 		panic(err)
 	}

@@ -147,8 +147,6 @@ func (b *bridge) getTransferIn(
 		return ethcommon.Address{}, nil, fmt.Errorf("Cannot create big.Int value from amout %s", transfer.Amount)
 	}
 
-	fmt.Println("amountIn = ", amountIn)
-
 	var tokenAddr string
 	for j, chain := range token.Chains {
 		if chain == b.chain {

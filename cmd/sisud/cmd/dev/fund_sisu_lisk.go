@@ -14,7 +14,7 @@ import (
 )
 
 func (c *fundAccountCmd) fundLisk(genesisFolder, mnemonic string, mpcPubKey []byte) {
-	amount := uint64(1 * 100_000_000)
+	amount := uint64(3 * 100_000_000)
 	transferLisk(genesisFolder, mnemonic, mpcPubKey, amount, "")
 }
 
@@ -72,7 +72,7 @@ func transferLisk(genesisFolder, mnemonic string, mpcPubKey []byte, amount uint6
 		panic(err)
 	}
 
-	signature := liskcrypto.SignWithNetwork(liskConfig.Network, txHash, privateKey)
+	signature, err := liskcrypto.SignWithNetwork(liskConfig.Network, txHash, privateKey)
 	if err != nil {
 		panic(err)
 	}
