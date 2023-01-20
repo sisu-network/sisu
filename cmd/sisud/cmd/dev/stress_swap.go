@@ -277,7 +277,7 @@ func (c *stressSwapCmd) doSwap(mnemonic, sisuRpc, genesisFolder, deyesUrl string
 		vault := getCardanoVault(context.Background(), sisuRpc)
 
 		amountBigInt := big.NewInt(int64(amount))
-		amountBigInt = new(big.Int).Mul(amountBigInt, utils.ONE_ADA_IN_LOVELACE)
+		amountBigInt = new(big.Int).Mul(amountBigInt, big.NewInt(utils.OneAdaInLoveLace))
 
 		cardanoCfg := helper.ReadCardanoConfig(genesisFolder)
 

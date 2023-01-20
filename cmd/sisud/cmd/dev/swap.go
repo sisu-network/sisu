@@ -86,7 +86,7 @@ transfer params.
 				log.Info("Cardano gateway = ", vault)
 
 				amountBigInt := big.NewInt(int64(amount))
-				amountBigInt = new(big.Int).Mul(amountBigInt, utils.ONE_ADA_IN_LOVELACE)
+				amountBigInt = new(big.Int).Mul(amountBigInt, big.NewInt(utils.OneAdaInLoveLace))
 
 				cardanoconfig := helper.ReadCardanoConfig(genesisFolder)
 

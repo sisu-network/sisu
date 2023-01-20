@@ -92,7 +92,7 @@ func TestBridge_getCardanoTx(t *testing.T) {
 		bridge := NewBridge("cardano", "signer", k, client).(*bridge)
 
 		balance = cardano.NewValueWithAssets(
-			cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*10),
+			cardano.Coin(big.NewInt(utils.OneAdaInLoveLace).Uint64()*10),
 			getMultiAssetWithBalance("uSISU", 100*1_000_000),
 		)
 
@@ -130,7 +130,7 @@ func TestBridge_getCardanoTx(t *testing.T) {
 		bridge := NewBridge("cardano", "signer", k, client).(*bridge)
 
 		balance = cardano.NewValueWithAssets(
-			cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*10),
+			cardano.Coin(big.NewInt(utils.OneAdaInLoveLace).Uint64()*10),
 			getMultiAssetWithBalance("uSISU", 100*1_000_000), // 100 Sisu tokens
 		)
 		utxos := mockUtxos(hash, sender, balance)
@@ -154,7 +154,7 @@ func TestBridge_getCardanoTx(t *testing.T) {
 		bridge := NewBridge("cardano", "signer", k, client).(*bridge)
 
 		balance = cardano.NewValueWithAssets(
-			cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*10),
+			cardano.Coin(big.NewInt(utils.OneAdaInLoveLace).Uint64()*10),
 			getMultiAssetWithBalance("uSISU", 100*1_000_000), // 100 Sisu tokens
 		)
 		utxos := mockUtxos(hash, sender, balance)
@@ -198,7 +198,7 @@ func TestBridge_getCardanoTx(t *testing.T) {
 		bridge := NewBridge("cardano", "signer", k, client).(*bridge)
 
 		balance = cardano.NewValueWithAssets(
-			cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*10),
+			cardano.Coin(big.NewInt(utils.OneAdaInLoveLace).Uint64()*10),
 			getMultiAssetWithBalance("uSISU", 100*1_000_000), // 100 Sisu tokens
 		)
 		utxos := mockUtxos(hash, sender, balance)

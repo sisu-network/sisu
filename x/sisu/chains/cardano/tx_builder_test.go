@@ -1,6 +1,7 @@
 package cardano
 
 import (
+	"math/big"
 	"testing"
 
 	"github.com/echovl/cardano-go"
@@ -66,7 +67,7 @@ func TestTxBuilder_Fee(t *testing.T) {
 
 	// Successful transfer
 	t.Run("successful_transfer", func(t *testing.T) {
-		balance = cardano.NewValueWithAssets(cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*10), multiAsset)
+		balance = cardano.NewValueWithAssets(cardano.Coin(big.NewInt(utils.OneAdaInLoveLace).Uint64()*10), multiAsset)
 		utxos = []cardano.UTxO{
 			{
 				TxHash:  hash,
@@ -77,7 +78,7 @@ func TestTxBuilder_Fee(t *testing.T) {
 		}
 
 		transferMultiAsset := cardano.NewMultiAsset().Set(policyID, cardano.NewAssets().Set(cAssetName, 1_000_000*3))
-		transfer := cardano.NewValueWithAssets(cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*2), transferMultiAsset)
+		transfer := cardano.NewValueWithAssets(cardano.Coin(big.NewInt(utils.OneAdaInLoveLace).Uint64()*2), transferMultiAsset)
 
 		tx, err := BuildTx(deyesClient, "cardano-testnet", sender, []cardano.Address{receiver}, []*cardano.Value{transfer}, nil, utxos, uint64(100))
 		require.NoError(t, err)
@@ -89,7 +90,7 @@ func TestTxBuilder_Fee(t *testing.T) {
 		)
 
 		require.Equal(t,
-			cardano.NewValueWithAssets(cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*2),
+			cardano.NewValueWithAssets(cardano.Coin(big.NewInt(utils.OneAdaInLoveLace).Uint64()*2),
 				cardano.NewMultiAsset().Set(policyID, cardano.NewAssets().Set(cAssetName, 1_000_000*3))),
 			tx.Body.Outputs[1].Amount,
 		)
@@ -97,7 +98,7 @@ func TestTxBuilder_Fee(t *testing.T) {
 
 	// Failed transfer because there is not enough balance
 	t.Run("not_enough_balance", func(t *testing.T) {
-		balance = cardano.NewValueWithAssets(cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*1), multiAsset)
+		balance = cardano.NewValueWithAssets(cardano.Coin(big.NewInt(utils.OneAdaInLoveLace).Uint64()*1), multiAsset)
 		utxos = []cardano.UTxO{
 			{
 				TxHash:  hash,
@@ -108,7 +109,7 @@ func TestTxBuilder_Fee(t *testing.T) {
 		}
 
 		transferMultiAsset := cardano.NewMultiAsset().Set(policyID, cardano.NewAssets().Set(cAssetName, 1_000_000*3))
-		transfer := cardano.NewValueWithAssets(cardano.Coin(utils.ONE_ADA_IN_LOVELACE.Uint64()*2), transferMultiAsset)
+		transfer := cardano.NewValueWithAssets(cardano.Coin(big.NewInt(utils.OneAdaInLoveLace).Uint64()*2), transferMultiAsset)
 
 		_, err := BuildTx(deyesClient, "cardano-testnet", sender, []cardano.Address{receiver},
 			[]*cardano.Value{transfer}, nil, utxos, uint64(100))

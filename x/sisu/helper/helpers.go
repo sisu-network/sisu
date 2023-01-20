@@ -38,7 +38,7 @@ func GetChainGasCostInToken(ctx sdk.Context, k keeper.Keeper, deyesClient extern
 	// 2. Get token price
 	tokenPrice, err := deyesClient.GetTokenPrice(tokenId)
 
-	gasCostInToken, err := GetGasCostInToken(totalGasCost, tokenPrice, nativeTokenPrice)
+	gasCostInToken, err := GasCostInToken(totalGasCost, tokenPrice, nativeTokenPrice)
 	log.Verbose("totalGas, tokenPrice, nativeTokenPrice, gasCostInToken = ", totalGasCost, tokenPrice,
 		nativeTokenPrice, gasCostInToken)
 	if err != nil {
@@ -48,7 +48,7 @@ func GetChainGasCostInToken(ctx sdk.Context, k keeper.Keeper, deyesClient extern
 	return gasCostInToken, nil
 }
 
-func GetGasCostInToken(gasCost, tokenPrice, nativeTokenPrice *big.Int) (*big.Int, error) {
+func GasCostInToken(gasCost, tokenPrice, nativeTokenPrice *big.Int) (*big.Int, error) {
 	// amount := gasCost * nativeTokenPrice / tokenPrice
 	gasInToken := new(big.Int).Mul(gasCost, nativeTokenPrice)
 	gasInToken = new(big.Int).Div(gasInToken, tokenPrice)
