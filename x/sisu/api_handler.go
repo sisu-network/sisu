@@ -124,25 +124,11 @@ func (a *ApiHandler) OnKeygenResult(result dhtypes.KeygenResult) {
 		result.KeygenIndex,
 		resultEnum,
 		result.PubKeyBytes,
-		result.Address,
 	)
 
 	log.Info("There is keygen result from dheart, resultEnum = ", resultEnum, " keyType = ", result.KeyType)
 
 	a.txSubmit.SubmitMessageAsync(signerMsg)
-	ctx := a.globalData.GetReadOnlyContext()
-	params := a.keeper.GetParams(ctx)
-	// Add list the public key address to watch.
-	for _, chain := range params.SupportedChains {
-		if libchain.GetKeyTypeForChain(chain) != result.KeyType {
-			continue
-		}
-
-		log.Verbose("adding chain account address ", result.Address, " for chain ", chain)
-		if libchain.IsCardanoChain(chain) {
-			a.deyesClient.SetVaultAddress(chain, result.Address, "")
-		}
-	}
 }
 
 // OnTxDeploymentResult is a callback after there is a deployment result from deyes.
