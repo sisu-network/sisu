@@ -30,7 +30,6 @@ var (
 	prefixChainMetadata          = []byte{0x14}
 	prefixSignerNonce            = []byte{0x15}
 	prefixBlockHeight            = []byte{0x16}
-	prefixTxInDetails            = []byte{0x17}
 	prefixVoteResult             = []byte{0x19}
 	prefixProposedTxOut          = []byte{0x1A}
 	prefixMpcPublicKey           = []byte{0x1B}
@@ -133,10 +132,6 @@ type Keeper interface {
 	// Max Block height that all nodes observed (Not all chains need this property)
 	SetBlockHeight(ctx sdk.Context, chain string, height int64, hash string)
 	GetBlockHeight(ctx sdk.Context, chain string) *types.BlockHeight
-
-	//TxInDetails
-	SetTxInDetails(ctx sdk.Context, txInId string, txIn *types.TxIn)
-	GetTxInDetails(ctx sdk.Context, txInId string) *types.TxInMsg
 
 	// Vote Result
 	AddVoteResult(ctx sdk.Context, key string, signer string, result types.VoteResult)
@@ -423,17 +418,6 @@ func (k *DefaultKeeper) SetBlockHeight(ctx sdk.Context, chain string, height int
 		Height: height,
 		Hash:   hash,
 	})
-}
-
-///// TxInDetails
-func (k *DefaultKeeper) SetTxInDetails(ctx sdk.Context, txInId string, txIn *types.TxIn) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxInDetails)
-	setTxInDetails(store, txInId, txIn)
-}
-
-func (k *DefaultKeeper) GetTxInDetails(ctx sdk.Context, txIndId string) *types.TxInMsg {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxInDetails)
-	return getTxInDetails(store, txIndId)
 }
 
 func (k *DefaultKeeper) GetBlockHeight(ctx sdk.Context, chain string) *types.BlockHeight {

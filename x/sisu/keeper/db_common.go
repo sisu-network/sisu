@@ -910,33 +910,6 @@ func getTxHashIndex(store cstypes.KVStore, key string) uint32 {
 	return utils.BytesToUint32(bz)
 }
 
-///// TxInDetails
-func setTxInDetails(store cstypes.KVStore, txInId string, txIn *types.TxIn) {
-	bz, err := txIn.Marshal()
-	if err != nil {
-		log.Errorf("setTxInDetails: failed to marshal msg, err = %s", err)
-		return
-	}
-
-	store.Set([]byte(txInId), bz)
-}
-
-func getTxInDetails(store cstypes.KVStore, txInId string) *types.TxInMsg {
-	bz := store.Get([]byte(txInId))
-	if bz == nil {
-		return nil
-	}
-
-	msg := new(types.TxInMsg)
-	err := msg.Unmarshal(bz)
-	if err != nil {
-		log.Errorf("getTxInDetails: failed to unmarshal TxInDetails with id %s, err = %s", txInId, err)
-		return nil
-	}
-
-	return msg
-}
-
 ///// Vote Result
 func addVoteResult(store cstypes.KVStore, hash string, signer string, result types.VoteResult) {
 	bz := utils.ToByte(result)
