@@ -51,9 +51,6 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 		case *types.KeysignResult:
 			return NewHandlerKeysignResult(mc).DeliverMsg(ctx, msg)
 
-		case *types.UpdateTokenPrice:
-			return NewHandlerTokenPrice(mc).DeliverMsg(ctx, msg)
-
 		case *types.BlockHeightMsg:
 			return NewHandlerBlockHeight(mc.Keeper()).DeliverMsg(ctx, msg)
 

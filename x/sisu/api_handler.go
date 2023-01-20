@@ -310,21 +310,3 @@ func (a *ApiHandler) submitTxOutResult(txOutResult *types.TxOutResult) {
 	)
 	a.txSubmit.SubmitMessageAsync(msg)
 }
-
-// OnUpdateTokenPrice is called when there is a token price update from deyes. Post to the network
-// until we reach a consensus about token price. The token price is only used to calculate gas price
-// fee and not used for actual swapping calculation.
-func (a *ApiHandler) OnUpdateTokenPrice(tokenPrices []*etypes.TokenPrice) {
-	prices := make([]*types.TokenPrice, 0, len(tokenPrices))
-
-	// Convert from deyes type to msg type
-	for _, token := range tokenPrices {
-		prices = append(prices, &types.TokenPrice{
-			Id:    token.Id,
-			Price: token.Price.String(),
-		})
-	}
-
-	msg := types.NewUpdateTokenPrice(a.appKeys.GetSignerAddress().String(), prices)
-	a.txSubmit.SubmitMessageAsync(msg)
-}

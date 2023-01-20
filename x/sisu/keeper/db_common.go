@@ -379,68 +379,6 @@ func getAllChains(store cstypes.KVStore) map[string]*types.Chain {
 	return m
 }
 
-///// Token Prices
-func setTokenPrices(store cstypes.KVStore, blockHeight uint64, msg *types.UpdateTokenPrice) {
-	key := []byte(msg.Signer)
-	value := store.Get(key)
-
-	record := &types.TokenPriceRecords{Records: make([]*types.TokenPriceRecord, 0)}
-	if len(value) > 0 {
-		err := record.Unmarshal(value)
-		if err != nil {
-			log.Error("cannot unmarshal record for signer ", msg.Signer)
-			return
-		}
-	}
-
-	indexes := make(map[string]int)
-	for i, record := range record.Records {
-		indexes[record.Token] = i
-	}
-
-	for _, tokenPrice := range msg.TokenPrices {
-		if index, ok := indexes[tokenPrice.Id]; ok {
-			record.Records[index].BlockHeight = blockHeight
-			record.Records[index].Price = tokenPrice.Price
-		} else {
-			record.Records = append(record.Records, &types.TokenPriceRecord{
-				Token:       tokenPrice.Id,
-				BlockHeight: blockHeight,
-				Price:       tokenPrice.Price,
-			})
-		}
-	}
-
-	bz, err := record.Marshal()
-	if err != nil {
-		log.Error("cannot unmarshal token price record for signer ", msg.Signer)
-		return
-	}
-
-	store.Set(key, bz)
-}
-
-// getAllTokenPrices gets all the token prices all of all signers.
-func getAllTokenPrices(store cstypes.KVStore) map[string]*types.TokenPriceRecords {
-	result := make(map[string]*types.TokenPriceRecords)
-
-	for iter := store.Iterator(nil, nil); iter.Valid(); iter.Next() {
-		// Key is signer.
-		signer := string(iter.Key())
-		bz := iter.Value()
-		record := new(types.TokenPriceRecords)
-		err := record.Unmarshal(bz)
-		if err != nil {
-			log.Error("cannot unmarshal token price record for signer ", signer, " err = ", err)
-			continue
-		}
-
-		result[signer] = record
-	}
-
-	return result
-}
-
 ///// Tokens
 
 func setTokens(store cstypes.KVStore, tokens map[string]*types.Token) {
