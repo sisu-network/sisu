@@ -106,7 +106,7 @@ type AppModule struct {
 
 	sisuHandler    *SisuHandler
 	keeper         keeper.Keeper
-	processor      *ApiHandler
+	apiHandler     *ApiHandler
 	appKeys        common.AppKeys
 	txSubmit       common.TxSubmit
 	globalData     common.GlobalData
@@ -128,7 +128,7 @@ func NewAppModule(cdc codec.Marshaler,
 		AppModuleBasic: NewAppModuleBasic(cdc),
 		sisuHandler:    sisuHandler,
 		txSubmit:       mc.TxSubmit(),
-		processor:      apiHandler,
+		apiHandler:     apiHandler,
 		keeper:         keeper,
 		appKeys:        mc.AppKeys(),
 		globalData:     mc.GlobalData(),
@@ -146,7 +146,7 @@ func (am AppModule) Name() string {
 
 // Route returns the capability module's message routing key.
 func (am AppModule) Route() sdk.Route {
-	return sdk.NewRoute(types.RouterKey, am.sisuHandler.NewHandler(am.processor, am.valsManager))
+	return sdk.NewRoute(types.RouterKey, am.sisuHandler.NewHandler(am.apiHandler, am.valsManager))
 }
 
 // QuerierRoute returns the capability module's query routing key.
