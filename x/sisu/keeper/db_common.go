@@ -45,11 +45,6 @@ func getTxOutConfirmKey(outChain string, outHash string) []byte {
 	return []byte(fmt.Sprintf("%s__%s", outChain, outHash))
 }
 
-func getContractAddressKey(chain string, address string) []byte {
-	// chain, address
-	return []byte(fmt.Sprintf("%s__%s", chain, address))
-}
-
 func getLiquidityKey(chain string) []byte {
 	// chain
 	return []byte(chain)
@@ -940,32 +935,6 @@ func getTxInDetails(store cstypes.KVStore, txInId string) *types.TxInMsg {
 	}
 
 	return msg
-}
-
-///// Confirmed TxIn
-func setConfirmedTxIn(store cstypes.KVStore, tx *types.ConfirmedTxIn) {
-	bz, err := tx.Marshal()
-	if err != nil {
-		log.Errorf("setConfirmedTxIn: failed to marhsal confirmed TxIn")
-		return
-	}
-
-	store.Set([]byte(tx.TxInId), bz)
-}
-
-func getConfirmedTxIn(store cstypes.KVStore, id string) *types.ConfirmedTxIn {
-	bz := store.Get([]byte(id))
-	if bz == nil {
-		return nil
-	}
-
-	tx := new(types.ConfirmedTxIn)
-	if err := tx.Unmarshal(bz); err != nil {
-		log.Errorf("getConfirmedTxIn: failed to unmarshal confirmed TxIn")
-		return nil
-	}
-
-	return tx
 }
 
 ///// Vote Result

@@ -31,7 +31,6 @@ var (
 	prefixSignerNonce            = []byte{0x15}
 	prefixBlockHeight            = []byte{0x16}
 	prefixTxInDetails            = []byte{0x17}
-	prefixConfirmedTxIn          = []byte{0x18}
 	prefixVoteResult             = []byte{0x19}
 	prefixProposedTxOut          = []byte{0x1A}
 	prefixMpcPublicKey           = []byte{0x1B}
@@ -142,10 +141,6 @@ type Keeper interface {
 	//TxInDetails
 	SetTxInDetails(ctx sdk.Context, txInId string, txIn *types.TxIn)
 	GetTxInDetails(ctx sdk.Context, txInId string) *types.TxInMsg
-
-	// Confirmed TxIn
-	SetConfirmedTxIn(ctx sdk.Context, confirmedTxIn *types.ConfirmedTxIn)
-	GetConfirmedTxIn(ctx sdk.Context, txInId string) *types.ConfirmedTxIn
 
 	// Vote Result
 	AddVoteResult(ctx sdk.Context, key string, signer string, result types.VoteResult)
@@ -467,17 +462,6 @@ func (k *DefaultKeeper) GetTxInDetails(ctx sdk.Context, txIndId string) *types.T
 func (k *DefaultKeeper) GetBlockHeight(ctx sdk.Context, chain string) *types.BlockHeight {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixBlockHeight)
 	return getBlockHeight(store, chain)
-}
-
-///// Confirmed TxIn
-func (k *DefaultKeeper) SetConfirmedTxIn(ctx sdk.Context, tx *types.ConfirmedTxIn) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixConfirmedTxIn)
-	setConfirmedTxIn(store, tx)
-}
-
-func (k *DefaultKeeper) GetConfirmedTxIn(ctx sdk.Context, txInId string) *types.ConfirmedTxIn {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixConfirmedTxIn)
-	return getConfirmedTxIn(store, txInId)
 }
 
 ///// Transfer Queue
