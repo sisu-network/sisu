@@ -49,7 +49,8 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, sisuRpc, chain, m
 
 	gasLimit := uint64(22000) // in units
 
-	amountFloat := new(big.Float).Quo(new(big.Float).SetInt(amount), new(big.Float).SetInt(utils.ONE_ETHER_IN_WEI))
+	amountFloat := new(big.Float).Quo(new(big.Float).SetInt(amount),
+		new(big.Float).SetInt(big.NewInt(utils.OneEtherInWei)))
 	log.Info("Amount in ETH: ", amountFloat, " on chain ", chain)
 
 	toAddress := common.HexToAddress(recipient)

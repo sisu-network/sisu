@@ -124,25 +124,11 @@ func (a *ApiHandler) OnKeygenResult(result dhtypes.KeygenResult) {
 		result.KeygenIndex,
 		resultEnum,
 		result.PubKeyBytes,
-		result.Address,
 	)
 
 	log.Info("There is keygen result from dheart, resultEnum = ", resultEnum, " keyType = ", result.KeyType)
 
 	a.txSubmit.SubmitMessageAsync(signerMsg)
-	ctx := a.globalData.GetReadOnlyContext()
-	params := a.keeper.GetParams(ctx)
-	// Add list the public key address to watch.
-	for _, chain := range params.SupportedChains {
-		if libchain.GetKeyTypeForChain(chain) != result.KeyType {
-			continue
-		}
-
-		log.Verbose("adding chain account address ", result.Address, " for chain ", chain)
-		if libchain.IsCardanoChain(chain) {
-			a.deyesClient.SetVaultAddress(chain, result.Address, "")
-		}
-	}
 }
 
 // OnTxDeploymentResult is a callback after there is a deployment result from deyes.
@@ -237,26 +223,33 @@ func (a *ApiHandler) OnKeysignResult(result *dhtypes.KeysignResult) {
 
 		// Sends it to deyes for deployment.
 		if result.Outcome == dhtypes.OutcomeSuccess {
-			if libchain.IsETHBasedChain(keysignMsg.OutChain) {
+
+			switch {
+			case libchain.IsETHBasedChain(keysignMsg.OutChain):
 				if err := a.processETHSigningResult(ctx, result, keysignMsg, i); err != nil {
 					// TODO: Handle failure here.
 					log.Error("Failed to process ETH signing result, err = ", err)
 					return
 				}
-			}
 
-			if libchain.IsCardanoChain(keysignMsg.OutChain) {
+			case libchain.IsCardanoChain(keysignMsg.OutChain):
 				if err := a.processCardanoSigningResult(ctx, result, keysignMsg, i); err != nil {
 					// TODO: Handle failure here.
 					log.Error("Failed to process cardano signing result, err = ", err)
 					return
 				}
-			}
 
-			if libchain.IsSolanaChain(keysignMsg.OutChain) {
+			case libchain.IsSolanaChain(keysignMsg.OutChain):
 				if err := a.processSolanaKeysignResult(ctx, result, keysignMsg, i); err != nil {
 					// TODO: Handle failure here.
 					log.Error("Failed to process solana signing result, err = ", err)
+					return
+				}
+
+			case libchain.IsLiskChain(keysignMsg.OutChain):
+				if err := a.processLiskKeysignResult(ctx, result, keysignMsg); err != nil {
+					// TODO: Handle failure here.
+					log.Error("Failed to process lisk signing result, err = ", err)
 					return
 				}
 			}

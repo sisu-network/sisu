@@ -2,6 +2,7 @@ package sisu
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	liskcrypto "github.com/sisu-network/deyes/chains/lisk/crypto"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/common"
@@ -90,18 +91,24 @@ func (h *HandlerKeygenResult) setMpcAddress(ctx sdk.Context, chain string, keyge
 	address := ""
 
 	// Calculate the MPC address
-	if libchain.IsETHBasedChain(chain) {
+	switch {
+	case libchain.IsETHBasedChain(chain):
 		// Calculate the ETH address
 		address = keygen.Address
-	} else if libchain.IsCardanoChain(chain) {
+	case libchain.IsCardanoChain(chain):
 		address = utils.GetCardanoAddressFromPubkey(keygen.PubKeyBytes).String()
-	} else if libchain.IsSolanaChain(chain) {
+	case libchain.IsSolanaChain(chain):
 		address = utils.GetSolanaAddressFromPubkey(keygen.PubKeyBytes)
+	case libchain.IsLiskChain(chain):
+		address = liskcrypto.GetLisk32AddressFromPublickey(keygen.PubKeyBytes)
+	default:
+		log.Errorf("Unknown chain type %s", chain)
 	}
 
 	if address != "" {
 		log.Verbosef("Setting mpc address for chain %s, addr = %s", chain, address)
 		h.keeper.SetMpcAddress(ctx, chain, address)
+		h.keeper.SetMpcPublicKey(ctx, chain, keygen.PubKeyBytes)
 	}
 }
 
@@ -122,6 +129,11 @@ func (h *HandlerKeygenResult) setVault(ctx sdk.Context, chain string, keygen *ty
 		vault := h.keeper.GetVault(ctx, chain, "")
 		log.Verbosef("Setting vault for %s %s", chain, vault.Address)
 		h.deyesClient.SetVaultAddress(chain, vault.Address, "")
+
+	} else if libchain.IsLiskChain(chain) {
+		address := liskcrypto.GetLisk32AddressFromPublickey(keygen.PubKeyBytes)
+		h.deyesClient.SetVaultAddress(chain, address, "")
+
 	} else {
 		// Unknown chains
 		log.Error("Unknown chain: ", chain)

@@ -3,6 +3,8 @@ package types
 import (
 	"fmt"
 	"math/big"
+
+	"github.com/sisu-network/deyes/utils"
 )
 
 // GetAddressForChain returns the address for this token on a particular chain. Return empty string
@@ -42,10 +44,10 @@ func (t *Token) GetUnits(chain string, value int) (*big.Int, error) {
 	return bigValue, nil
 }
 
-// ConvertAmountToSisuAmount converts an amount on a chain to Sisu amount (18 decimals).
-func (t *Token) ConvertAmountToSisuAmount(chain string, amount *big.Int) (*big.Int, error) {
+// ChainAmountToSisuAmount converts an amount on a chain to Sisu amount (18 decimals).
+func (t *Token) ChainAmountToSisuAmount(chain string, amount *big.Int) (*big.Int, error) {
 	if amount == nil {
-		return nil, fmt.Errorf("ConvertAmountToSisuAmount: Amount is nil")
+		return nil, fmt.Errorf("ChainAmountToSisuAmount: Amount is nil")
 	}
 
 	var decimal uint32
@@ -63,6 +65,31 @@ func (t *Token) ConvertAmountToSisuAmount(chain string, amount *big.Int) (*big.I
 	pow := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimal)), nil)
 	ret := new(big.Int).Mul(amount, big.NewInt(1_000_000_000_000_000_000))
 	ret = ret.Quo(ret, pow)
+
+	return ret, nil
+}
+
+// SisuAmountToChainAmount converts a Sisu amount to a specific chain amount
+func (t *Token) SisuAmountToChainAmount(chain string, amount *big.Int) (*big.Int, error) {
+	if amount == nil {
+		return nil, fmt.Errorf("SisuAmountToChainAmount: Amount is nil")
+	}
+
+	var decimal uint32
+	for i, c := range t.Chains {
+		if chain == c {
+			decimal = t.Decimals[i]
+			break
+		}
+	}
+
+	if decimal == 0 {
+		return nil, fmt.Errorf("Cannot find chain %s", chain)
+	}
+
+	pow := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimal)), nil)
+	ret := new(big.Int).Mul(amount, pow)
+	ret = ret.Quo(ret, big.NewInt(utils.OneEtherInWei))
 
 	return ret, nil
 }

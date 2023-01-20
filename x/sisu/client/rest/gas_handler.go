@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/helper"
 )
 
@@ -41,7 +42,14 @@ func (a *ExternalHandler) newGasCostHandler() http.HandlerFunc {
 			return
 		}
 
-		gasCost, err := helper.GetChainGasCostInToken(ctx, a.keeper, tokenId, chainId, big.NewInt(80_000))
+		gasCost, err := helper.GetChainGasCostInToken(
+			ctx,
+			a.keeper,
+			a.deyesClient,
+			tokenId,
+			chainId,
+			new(big.Int).Mul(big.NewInt(80_000), utils.GweiToWei),
+		)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return

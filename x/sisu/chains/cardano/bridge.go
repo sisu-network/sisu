@@ -143,7 +143,8 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 
 		if token.Id == "ADA" {
 			// Subtract 0.2 ADA for transaction fee.
-			amountOut = amountOut.Sub(amountOut, new(big.Int).Div(utils.ONE_ADA_IN_LOVELACE, big.NewInt(5)))
+			amountOut = amountOut.Sub(amountOut, new(big.Int).Div(big.NewInt(utils.OneAdaInLoveLace),
+				big.NewInt(5)))
 		} else {
 			// Subtract the 1.6 ADA for multi asset transaction
 
@@ -167,7 +168,7 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 			}
 
 			// Amount of ADA fee in Token price
-			amountInToken := adaInUsd.Mul(adaInUsd, utils.ONE_ADA_IN_LOVELACE)
+			amountInToken := adaInUsd.Mul(adaInUsd, big.NewInt(utils.OneAdaInLoveLace))
 			amountInToken = amountInToken.Div(amountInToken, tokenPrice)
 
 			amountOut = amountOut.Sub(amountOut, amountInToken)
@@ -181,7 +182,7 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 		var amount *cardano.Value
 		if token.Id == "ADA" {
 			// Minimum ADA per UTXO is 1,000,000 lovelace.
-			if amountOut.Cmp(utils.ONE_ADA_IN_LOVELACE) < 0 {
+			if amountOut.Cmp(big.NewInt(utils.OneAdaInLoveLace)) < 0 {
 				return nil, fmt.Errorf("Lovelace output is %s, min requirement is 1_000_000 lovelace",
 					amountOut.String())
 			}
@@ -219,7 +220,7 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 	return tx, nil
 }
 
-func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, serialized []byte) ([]*types.TransferDetails, error) {
+func (b *bridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byte) ([]*types.TransferDetails, error) {
 	ret := make([]*types.TransferDetails, 0)
 	cardanoTx := &eyesTypes.CardanoTransactionUtxo{}
 	err := json.Unmarshal(serialized, cardanoTx)
@@ -258,7 +259,7 @@ func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, serialized []byt
 			if len(tokens) == 0 {
 				return nil, fmt.Errorf("Cannot find token %s", tokenUnit)
 			}
-			amountBig, err := tokens[tokenUnit].ConvertAmountToSisuAmount(chain, quantity)
+			amountBig, err := tokens[tokenUnit].ChainAmountToSisuAmount(chain, quantity)
 			if err != nil {
 				log.Warnf("Cannot convert amount %d on chain %s", amount.Quantity, chain)
 				continue

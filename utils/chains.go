@@ -55,6 +55,10 @@ func GetKeyTypeForChain(chain string) string {
 		return libchain.KEY_TYPE_EDDSA
 	}
 
+	if libchain.IsLiskChain(chain) {
+		return libchain.KEY_TYPE_EDDSA
+	}
+
 	return "" // unknown
 }
 

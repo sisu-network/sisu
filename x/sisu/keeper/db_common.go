@@ -460,6 +460,22 @@ func setTokens(store cstypes.KVStore, tokens map[string]*types.Token) {
 	}
 }
 
+func getToken(store cstypes.KVStore, tokenId string) *types.Token {
+	bz := store.Get([]byte(tokenId))
+	if bz == nil {
+		return nil
+	}
+
+	token := &types.Token{}
+	err := token.Unmarshal(bz)
+	if err != nil {
+		log.Errorf("getTokens: cannot unmarshal token %s", tokenId)
+		return nil
+	}
+
+	return token
+}
+
 func getTokens(store cstypes.KVStore, tokenIds []string) map[string]*types.Token {
 	tokens := make(map[string]*types.Token)
 	for _, id := range tokenIds {
@@ -579,17 +595,12 @@ func getAllVaultsForChain(store cstypes.KVStore, chain string) []*types.Vault {
 
 ///// MPC Address
 
-func setMpcAddress(store cstypes.KVStore, chain string, address string) {
-	store.Set([]byte(chain), []byte(address))
+func setKeyValue(store cstypes.KVStore, key []byte, value []byte) {
+	store.Set(key, value)
 }
 
-func getMpcAddress(store cstypes.KVStore, chain string) string {
-	bz := store.Get([]byte(chain))
-	if bz == nil {
-		return ""
-	}
-
-	return string(bz)
+func getKeyValue(store cstypes.KVStore, key []byte) []byte {
+	return store.Get(key)
 }
 
 ///// Params

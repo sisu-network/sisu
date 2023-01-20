@@ -223,7 +223,7 @@ func (b *defaultBridge) getRecentBlockHash(ctx sdk.Context, chain string) (strin
 	return arr[len(arr)/2].SolanaRecentBlockHash, nil
 }
 
-func (b *defaultBridge) ParseIncomginTx(ctx sdk.Context, chain string, serialized []byte) ([]*types.TransferDetails, error) {
+func (b *defaultBridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byte) ([]*types.TransferDetails, error) {
 	log.Verbose("Parsing solana incomgin tx...")
 	ret := make([]*types.TransferDetails, 0)
 
@@ -277,7 +277,7 @@ func (b *defaultBridge) ParseIncomginTx(ctx sdk.Context, chain string, serialize
 				continue
 			}
 
-			amount, err := token.ConvertAmountToSisuAmount(chain, big.NewInt(int64(transferOut.Amount)))
+			amount, err := token.ChainAmountToSisuAmount(chain, big.NewInt(int64(transferOut.Amount)))
 			if err != nil {
 				log.Warnf("Cannot convert amount %d on chain %s", transferOut.Amount, chain)
 				continue

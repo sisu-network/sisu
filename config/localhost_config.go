@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	initialBalance = new(big.Int).Mul(big.NewInt(10000), utils.ONE_ETHER_IN_WEI) // 10,000 ETHER
+	initialBalance = new(big.Int).Mul(big.NewInt(10000), big.NewInt(utils.OneEtherInWei)) // 10,000 ETHER
 )
 
 func localSisuConfig() *SisuConfig {

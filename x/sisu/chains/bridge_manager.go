@@ -9,6 +9,7 @@ import (
 	"github.com/sisu-network/sisu/config"
 	chainscardano "github.com/sisu-network/sisu/x/sisu/chains/cardano"
 	chainseth "github.com/sisu-network/sisu/x/sisu/chains/eth"
+	chainslisk "github.com/sisu-network/sisu/x/sisu/chains/lisk"
 	chainssolana "github.com/sisu-network/sisu/x/sisu/chains/solana"
 
 	chainstypes "github.com/sisu-network/sisu/x/sisu/chains/types"
@@ -79,6 +80,10 @@ func (m *defaultBridgeManager) getBridge(chain string) chainstypes.Bridge {
 
 	if libchain.IsSolanaChain(chain) {
 		return chainssolana.NewBridge(chain, m.signer, m.keeper, m.config)
+	}
+
+	if libchain.IsLiskChain(chain) {
+		return chainslisk.NewBridge(chain, m.signer, m.keeper, m.deyesClient)
 	}
 
 	return nil

@@ -15,3 +15,8 @@ func IsCardanoEnabled(genesisFolder string) bool {
 	solanaConfig := ReadCardanoConfig(genesisFolder)
 	return solanaConfig.Enable
 }
+
+func IsLiskEnabled(genesisFolder string) bool {
+	liskCfg := ReadLiskConfig(genesisFolder)
+	return liskCfg.Enable
+}

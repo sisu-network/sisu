@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"strconv"
 
+	liskcrypto "github.com/sisu-network/deyes/chains/lisk/crypto"
+
+	lisktypes "github.com/sisu-network/deyes/chains/lisk/types"
+
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -42,6 +46,10 @@ func (s *txOutSigner) signTxOut(ctx sdk.Context, txOut *types.TxOut) {
 
 	if libchain.IsSolanaChain(txOut.Content.OutChain) {
 		s.signSolana(ctx, txOut)
+	}
+
+	if libchain.IsLiskChain(txOut.Content.OutChain) {
+		s.signLisk(ctx, txOut)
 	}
 }
 
@@ -134,6 +142,39 @@ func (s *txOutSigner) signSolana(ctx sdk.Context, txOut *types.TxOut) {
 	err := s.dheartClient.KeySign(signRequest, pubKeys)
 	if err != nil {
 		log.Error("signSolana: err =", err)
+	}
+}
+
+func (s *txOutSigner) signLisk(ctx sdk.Context, txOut *types.TxOut) {
+	networkId := lisktypes.NetworkId[txOut.Content.OutChain]
+	if len(networkId) == 0 {
+		log.Errorf(fmt.Sprintf("cannot find lisk network id for chain %s", txOut.Content.OutChain))
+		return
+	}
+
+	bytesToSign, err := liskcrypto.GetSigningBytes(networkId, txOut.Content.OutBytes)
+	if err != nil {
+		log.Errorf("Failed to get lisk bytes to sign, err = %s", err)
+		return
+	}
+
+	signRequest := &hTypes.KeysignRequest{
+		KeyType: libchain.KEY_TYPE_EDDSA,
+		KeysignMessages: []*hTypes.KeysignMessage{
+			{
+				Id:          s.getKeysignRequestId(txOut.Content.OutChain, ctx.BlockHeight(), txOut.Content.OutHash),
+				OutChain:    txOut.Content.OutChain,
+				OutHash:     txOut.Content.OutHash,
+				Bytes:       txOut.Content.OutBytes,
+				BytesToSign: bytesToSign,
+			},
+		},
+	}
+
+	pubKeys := s.partyManager.GetActivePartyPubkeys()
+	err = s.dheartClient.KeySign(signRequest, pubKeys)
+	if err != nil {
+		log.Error("signLisk: err =", err)
 	}
 }
 

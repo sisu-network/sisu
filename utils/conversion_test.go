@@ -32,7 +32,7 @@ func TestETHTokensToLovelace(t *testing.T) {
 	t.Run("10^18 tokens to 1 ada", func(t *testing.T) {
 		n := big.NewInt(1_000_000_000_000_000_000)
 
-		require.Equal(t, ONE_ADA_IN_LOVELACE, WeiToLovelace(n))
+		require.Equal(t, big.NewInt(OneAdaInLoveLace), WeiToLovelace(n))
 	})
 }
 

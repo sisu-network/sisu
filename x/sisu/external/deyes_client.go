@@ -19,8 +19,10 @@ type DeyesClient interface {
 	SetSisuReady(isReady bool) error
 	GetTokenPrice(id string) (*big.Int, error)
 
+	// ETH & Lisk
+	GetNonce(chain string, address string) (uint64, error)
+
 	// ETH
-	GetNonce(chain string, address string) (int64, error)
 	GetGasInfo(chain string) (*deyesethtypes.GasInfo, error)
 
 	// Cardano
@@ -113,8 +115,8 @@ func (c *defaultDeyesClient) GetTokenPrice(id string) (*big.Int, error) {
 
 ///// ETH
 
-func (c *defaultDeyesClient) GetNonce(chain string, address string) (int64, error) {
-	var result int64
+func (c *defaultDeyesClient) GetNonce(chain string, address string) (uint64, error) {
+	var result uint64
 	err := c.client.CallContext(context.Background(), &result, "deyes_getNonce", chain, address)
 	if err != nil {
 		log.Errorf("Cannot get nonce for chain %s and address %s err = %v", chain, address, err)
@@ -211,7 +213,7 @@ func (c *defaultDeyesClient) CardanoSubmitTx(chain string, tx *cardano.Tx) (*car
 	return result, nil
 }
 
-/////
+///// Solana
 func (c *defaultDeyesClient) SolanaQueryRecentBlock(chain string) (*etypes.SolanaQueryRecentBlockResult, error) {
 	result := &etypes.SolanaQueryRecentBlockResult{}
 

@@ -29,8 +29,13 @@ func mockForGetTransferIn(ctx sdk.Context, tokenPrice *big.Int, amountIn *big.In
 	}
 	k.SetTokens(ctx, map[string]*types.Token{"SISU": token})
 
+	nativeTokenPrice := big.NewInt(utils.OneEtherInWei * 2)
 	deyesClient := &external.MockDeyesClient{
 		GetTokenPriceFunc: func(id string) (*big.Int, error) {
+			if id == "NATIVE_GANACHE2" {
+				return nativeTokenPrice, nil
+			}
+
 			return tokenPrice, nil
 		},
 	}

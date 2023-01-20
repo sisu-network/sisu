@@ -7,12 +7,16 @@ import (
 	"os"
 	"path/filepath"
 
+	libchain "github.com/sisu-network/lib/chain"
+
 	econfig "github.com/sisu-network/deyes/config"
 	"github.com/sisu-network/sisu/x/sisu/types"
 
 	cardanogo "github.com/echovl/cardano-go"
 )
 
+// This file contains configuration used for commands (which are different from the config used for
+// Sisu app).
 type CmdSolanaConfig struct {
 	Enable          bool   `toml:"enable" json:"enable"`
 	Chain           string `toml:"chain" json:"chain"`
@@ -22,6 +26,19 @@ type CmdSolanaConfig struct {
 	AdjustTime      int    `toml:"adjust_time" json:"adjust_time"`
 	BridgeProgramId string `toml:"bridge_program_id" json:"bridge_program_id"`
 	BridgePda       string `toml:"bridge_pda" json:"bridge_pda"`
+}
+
+type CardanoConfig struct {
+	Enable bool   `toml:"enable" json:"enable"`
+	Secret string `toml:"secret" json:"secret"`
+	Chain  string `toml:"chain" json:"chain"`
+}
+
+type LiskConfig struct {
+	Enable  bool   `toml:"enable" json:"enable"`
+	Chain   string `toml:"chain" json:"chain"`
+	RPC     string `toml:"rpc" json:"rpc"`
+	Network string `toml:"network" json:"network"`
 }
 
 func ReadCmdSolanaConfig(filePath string) (CmdSolanaConfig, error) {
@@ -37,12 +54,6 @@ func ReadCmdSolanaConfig(filePath string) (CmdSolanaConfig, error) {
 	}
 
 	return cfg, nil
-}
-
-type CardanoConfig struct {
-	Enable bool   `toml:"enable" json:"enable"`
-	Secret string `toml:"secret" json:"secret"`
-	Chain  string `toml:"chain" json:"chain"`
 }
 
 func (c *CardanoConfig) GetCardanoNetwork() cardanogo.Network {
@@ -94,6 +105,11 @@ func ReadVaults(genesisFolder string, chains []string) []string {
 
 	ret := make([]string, 0)
 	for _, chain := range chains {
+		if libchain.IsLiskChain(chain) || libchain.IsCardanoChain(chain) {
+			ret = append(ret, "")
+			continue
+		}
+
 		found := false
 		for _, vault := range vaults {
 			if vault.Chain == chain {
@@ -124,4 +140,19 @@ func ReadToken(genesisFolder string) []*types.Token {
 	}
 
 	return tokens
+}
+
+func ReadLiskConfig(genesisFolder string) LiskConfig {
+	cfg := LiskConfig{}
+
+	dat, err := os.ReadFile(filepath.Join(genesisFolder, "lisk.json"))
+	if err != nil {
+		panic(err)
+	}
+
+	if err := json.Unmarshal(dat, &cfg); err != nil {
+		panic(err)
+	}
+
+	return cfg
 }

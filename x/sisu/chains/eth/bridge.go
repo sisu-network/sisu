@@ -142,7 +142,7 @@ func (b *bridge) getTransferIn(
 		return ethcommon.Address{}, nil, fmt.Errorf("cannot find token %s", transfer.Token)
 	}
 
-	amount, ok := new(big.Int).SetString(transfer.Amount, 10)
+	amountIn, ok := new(big.Int).SetString(transfer.Amount, 10)
 	if !ok {
 		return ethcommon.Address{}, nil, fmt.Errorf("Cannot create big.Int value from amout %s", transfer.Amount)
 	}
@@ -159,7 +159,7 @@ func (b *bridge) getTransferIn(
 		return ethcommon.Address{}, nil, fmt.Errorf("cannot find token address on chain %s", b.chain)
 	}
 
-	amountOut := new(big.Int).Set(amount)
+	amountOut := new(big.Int).Set(amountIn)
 
 	// Subtract commission rate
 	amountOut = utils.SubtractCommissionRate(amountOut, commissionRate)
@@ -173,7 +173,8 @@ func (b *bridge) getTransferIn(
 		return ethcommon.Address{}, nil, fmt.Errorf("token %s has price 0", token.Id)
 	}
 
-	gasPriceInToken, err := helper.GetChainGasCostInToken(ctx, b.keeper, token.Id, b.chain, gasCost)
+	gasPriceInToken, err := helper.GetChainGasCostInToken(ctx, b.keeper, b.deyesClient, token.Id,
+		b.chain, gasCost)
 	if err != nil {
 		return ethcommon.Address{}, nil, fmt.Errorf("Cannot get gas cost in token, err = %s", err)
 	}
@@ -194,7 +195,7 @@ func (b *bridge) getTransferIn(
 	}
 
 	log.Verbosef("tokenAddr: %s, recipient: %s, gasPriceInToken: %s, amountIn: %s, amountOut: %s",
-		tokenAddr, transfer.ToRecipient, gasPriceInToken, amount.String(), amountOut,
+		tokenAddr, transfer.ToRecipient, gasPriceInToken, amountIn.String(), amountOut,
 	)
 
 	return ethcommon.HexToAddress(tokenAddr), amountOut, nil
@@ -304,7 +305,7 @@ func (b *bridge) getGasCost(gasInfo *deyesethtypes.GasInfo, useEip1559 bool, max
 	}
 }
 
-func (b *bridge) ParseIncomginTx(ctx sdk.Context, chain string, serialized []byte) ([]*types.TransferDetails, error) {
+func (b *bridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byte) ([]*types.TransferDetails, error) {
 	parseResult := ParseVaultTx(ctx, b.keeper, chain, serialized)
 	if parseResult.Error != nil {
 		return nil, parseResult.Error
