@@ -34,6 +34,7 @@ var (
 	prefixConfirmedTxIn          = []byte{0x18}
 	prefixVoteResult             = []byte{0x19}
 	prefixProposedTxOut          = []byte{0x1A}
+	prefixMpcPublicKey           = []byte{0x1B}
 )
 
 var _ Keeper = (*DefaultKeeper)(nil)
@@ -96,6 +97,10 @@ type Keeper interface {
 	// MPC Address
 	SetMpcAddress(ctx sdk.Context, chain string, address string)
 	GetMpcAddress(ctx sdk.Context, chain string) string
+
+	// MPC Public Key
+	SetMpcPublicKey(ctx sdk.Context, chain string, pubkey []byte)
+	GetMpcPublicKey(ctx sdk.Context, chain string) []byte
 
 	// Params
 	SaveParams(ctx sdk.Context, params *types.Params)
@@ -329,15 +334,26 @@ func (k *DefaultKeeper) GetAllVaultsForChain(ctx sdk.Context, chain string) []*t
 	return getAllVaultsForChain(store, chain)
 }
 
-///// Vaults
+///// MPC Address
 func (k *DefaultKeeper) SetMpcAddress(ctx sdk.Context, chain string, address string) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixMpcAddress)
-	setMpcAddress(store, chain, address)
+	setKeyValue(store, []byte(chain), []byte(address))
 }
 
 func (k *DefaultKeeper) GetMpcAddress(ctx sdk.Context, chain string) string {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixMpcAddress)
-	return getMpcAddress(store, chain)
+	return string(getKeyValue(store, []byte(chain)))
+}
+
+///// MPC Public Key
+func (k *DefaultKeeper) SetMpcPublicKey(ctx sdk.Context, chain string, pubkey []byte) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixMpcPublicKey)
+	setKeyValue(store, []byte(chain), pubkey)
+}
+
+func (k *DefaultKeeper) GetMpcPublicKey(ctx sdk.Context, chain string) []byte {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixMpcPublicKey)
+	return getKeyValue(store, []byte(chain))
 }
 
 ///// Params

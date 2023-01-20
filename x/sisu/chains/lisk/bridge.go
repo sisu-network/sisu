@@ -8,6 +8,7 @@ import (
 	"math/big"
 
 	libchain "github.com/sisu-network/lib/chain"
+	"github.com/sisu-network/lib/log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	liskcrypto "github.com/sisu-network/deyes/chains/lisk/crypto"
@@ -46,6 +47,7 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 
 	transfer := transfers[0]
 	mpcAddr := b.keeper.GetMpcAddress(ctx, b.chain)
+	mpcPubkey := b.keeper.GetMpcPublicKey(ctx, b.chain)
 
 	nonce, err := b.deyesClient.GetNonce(b.chain, mpcAddr)
 	if err != nil {
@@ -62,19 +64,27 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 		return nil, fmt.Errorf("Invalid transfer amount %s", transfer.Amount)
 	}
 
+	token := b.keeper.GetToken(ctx, transfer.Token)
+
+	fee := uint64(500_000)
+	amountOut := new(big.Int).Set(amountInt)
+	// Conver the amount from Sisu amount (18 decimals to Lisk 8 decimals)
+	amountOut, err = token.SisuAmountToChainAmount(transfer.ToChain, amountOut)
+	if err != nil {
+		return nil, err
+	}
+
+	// Subtract commission rate
 	commissionRate := b.keeper.GetParams(ctx).CommissionRate
 	if commissionRate < 0 || commissionRate > 10_000 {
 		return nil, fmt.Errorf("commission rate is invalid, rate = %d", commissionRate)
 	}
-
-	fee := uint64(500000)
-	amountOut := new(big.Int).Set(amountInt)
-
-	// Subtract commission rate
 	amountOut = utils.SubtractCommissionRate(amountOut, commissionRate)
-	amountOut.Sub(amountOut, new(big.Int).SetUint64(fee))
-	amountOutUint64 := amountOut.Uint64()
 
+	// Subtract transaction fee
+	amountOut.Sub(amountOut, new(big.Int).SetUint64(fee))
+
+	amountOutUint64 := amountOut.Uint64()
 	data := ""
 	assetPb := &lisktypes.AssetMessage{
 		Amount:           &amountOutUint64,
@@ -86,23 +96,26 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 		return nil, err
 	}
 
+	log.Verbosef("Lisk transfer details, amount out = %d, recipient = %s, nonce = %d",
+		amountOut.Uint64(), hex.EncodeToString(recipient), nonce)
+
 	moduleId := uint32(2)
 	assetId := uint32(0)
-	txPb := &lisktypes.TransactionMessage{
+	tx := &lisktypes.TransactionMessage{
 		ModuleID:        &moduleId,
 		AssetID:         &assetId,
 		Fee:             &fee,
 		Asset:           asset,
 		Nonce:           &nonce,
-		SenderPublicKey: []byte(mpcAddr), // TODO: check if this is correct
+		SenderPublicKey: mpcPubkey,
 	}
 
-	bz, err := proto.Marshal(txPb)
+	bz, err := proto.Marshal(tx)
 	if err != nil {
 		return nil, err
 	}
 
-	hash, err := txPb.GetHash()
+	hash, err := tx.GetHash()
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +169,7 @@ func (b *bridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byt
 		return nil, fmt.Errorf("Invalid token %s", tokenStr)
 	}
 
-	amount, err := token.ConvertAmountToSisuAmount(b.chain, big.NewInt(int64(*payload.Amount)))
+	amount, err := token.ChainAmountToSisuAmount(b.chain, big.NewInt(int64(*payload.Amount)))
 	if err != nil {
 		return nil, err
 	}

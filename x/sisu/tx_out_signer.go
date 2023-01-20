@@ -1,11 +1,10 @@
 package sisu
 
 import (
-	"bytes"
-	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	"strconv"
+
+	liskcrypto "github.com/sisu-network/deyes/chains/lisk/crypto"
 
 	lisktypes "github.com/sisu-network/deyes/chains/lisk/types"
 
@@ -153,14 +152,11 @@ func (s *txOutSigner) signLisk(ctx sdk.Context, txOut *types.TxOut) {
 		return
 	}
 
-	// The signing bytes are the combination of network id and the serialization of the transaciton.
-	signBuf := new(bytes.Buffer)
-	//First byte is the network info
-	networkBytes, _ := hex.DecodeString(networkId)
-	binary.Write(signBuf, binary.LittleEndian, networkBytes)
-
-	// Append the transaction ModuleID
-	binary.Write(signBuf, binary.LittleEndian, txOut.Content.OutBytes)
+	bytesToSign, err := liskcrypto.GetSigningBytes(networkId, txOut.Content.OutBytes)
+	if err != nil {
+		log.Errorf("Failed to get lisk bytes to sign, err = %s", err)
+		return
+	}
 
 	signRequest := &hTypes.KeysignRequest{
 		KeyType: libchain.KEY_TYPE_EDDSA,
@@ -170,13 +166,13 @@ func (s *txOutSigner) signLisk(ctx sdk.Context, txOut *types.TxOut) {
 				OutChain:    txOut.Content.OutChain,
 				OutHash:     txOut.Content.OutHash,
 				Bytes:       txOut.Content.OutBytes,
-				BytesToSign: signBuf.Bytes(),
+				BytesToSign: bytesToSign,
 			},
 		},
 	}
 
 	pubKeys := s.partyManager.GetActivePartyPubkeys()
-	err := s.dheartClient.KeySign(signRequest, pubKeys)
+	err = s.dheartClient.KeySign(signRequest, pubKeys)
 	if err != nil {
 		log.Error("signLisk: err =", err)
 	}

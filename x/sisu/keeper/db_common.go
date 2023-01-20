@@ -595,17 +595,12 @@ func getAllVaultsForChain(store cstypes.KVStore, chain string) []*types.Vault {
 
 ///// MPC Address
 
-func setMpcAddress(store cstypes.KVStore, chain string, address string) {
-	store.Set([]byte(chain), []byte(address))
+func setKeyValue(store cstypes.KVStore, key []byte, value []byte) {
+	store.Set(key, value)
 }
 
-func getMpcAddress(store cstypes.KVStore, chain string) string {
-	bz := store.Get([]byte(chain))
-	if bz == nil {
-		return ""
-	}
-
-	return string(bz)
+func getKeyValue(store cstypes.KVStore, key []byte) []byte {
+	return store.Get(key)
 }
 
 ///// Params

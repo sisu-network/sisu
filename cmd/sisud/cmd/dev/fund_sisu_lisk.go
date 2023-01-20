@@ -3,7 +3,6 @@ package dev
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
 	"strconv"
 
 	deyeslisk "github.com/sisu-network/deyes/chains/lisk"
@@ -61,7 +60,7 @@ func transferLisk(genesisFolder, mnemonic string, mpcPubKey []byte, amount uint6
 	}
 
 	asset, err := proto.Marshal(assetPb)
-	txPb := &lisktypes.TransactionMessage{
+	tx := &lisktypes.TransactionMessage{
 		ModuleID:        &moduleId,
 		AssetID:         &assetId,
 		Fee:             &fee,
@@ -69,33 +68,33 @@ func transferLisk(genesisFolder, mnemonic string, mpcPubKey []byte, amount uint6
 		Nonce:           &nonce,
 		SenderPublicKey: faucetPubKey,
 	}
-	signedBz, err := proto.Marshal(txPb)
+	bz, err := proto.Marshal(tx)
 	if err != nil {
 		panic(err)
 	}
 
-	signature, err := liskcrypto.SignWithNetwork(liskConfig.Network, signedBz, privateKey)
+	bytesToSign, err := liskcrypto.GetSigningBytes(lisktypes.NetworkId[liskConfig.Chain], bz)
 	if err != nil {
-		panic(err)
+		log.Errorf("Failed to get lisk bytes to sign, err = %s", err)
+		return
 	}
 
-	txPb.Signatures = [][]byte{signature}
-
-	signedBz, err = proto.Marshal(txPb)
+	signature := liskcrypto.SignMessage(bytesToSign, privateKey)
+	tx.Signatures = [][]byte{signature}
+	signedBz, err := proto.Marshal(tx)
 	if err != nil {
 		panic(err)
 	}
 
 	hash := sha256.Sum256(signedBz)
-	fmt.Println("Calculated hash = ", hex.EncodeToString(hash[:]))
-
+	log.Verbosef("Calculated hash = %s", hex.EncodeToString(hash[:]))
 	log.Infof("Funding Sisu from account %s to account %s= ", lisk32,
 		liskcrypto.GetLisk32AddressFromPublickey(mpcPubKey))
 
-	tx, err := client.CreateTransaction(hex.EncodeToString(signedBz))
+	txHash, err := client.CreateTransaction(hex.EncodeToString(signedBz))
 	if err != nil {
 		panic(err)
 	}
 
-	log.Info("Lisk txHash = ", tx)
+	log.Info("Lisk txHash = ", txHash)
 }

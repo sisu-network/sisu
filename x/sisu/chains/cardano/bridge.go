@@ -258,7 +258,7 @@ func (b *bridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byt
 			if len(tokens) == 0 {
 				return nil, fmt.Errorf("Cannot find token %s", tokenUnit)
 			}
-			amountBig, err := tokens[tokenUnit].ConvertAmountToSisuAmount(chain, quantity)
+			amountBig, err := tokens[tokenUnit].ChainAmountToSisuAmount(chain, quantity)
 			if err != nil {
 				log.Warnf("Cannot convert amount %d on chain %s", amount.Quantity, chain)
 				continue

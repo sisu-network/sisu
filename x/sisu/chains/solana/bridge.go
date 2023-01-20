@@ -277,7 +277,7 @@ func (b *defaultBridge) ParseIncomingTx(ctx sdk.Context, chain string, serialize
 				continue
 			}
 
-			amount, err := token.ConvertAmountToSisuAmount(chain, big.NewInt(int64(transferOut.Amount)))
+			amount, err := token.ChainAmountToSisuAmount(chain, big.NewInt(int64(transferOut.Amount)))
 			if err != nil {
 				log.Warnf("Cannot convert amount %d on chain %s", transferOut.Amount, chain)
 				continue
