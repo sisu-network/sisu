@@ -23,7 +23,7 @@ require (
 	github.com/logdna/logdna-go v1.0.2
 	github.com/mr-tron/base58 v1.2.0
 	github.com/near/borsh-go v0.3.2-0.20220516180422-1ff87d108454
-	github.com/sisu-network/deyes v0.1.14-0.20230112185302-0fa5c570c1bc
+	github.com/sisu-network/deyes v0.1.14-0.20230120204923-847da7e56526
 	github.com/sisu-network/dheart v0.1.7-alpha1
 	github.com/sisu-network/lib v0.0.2
 	github.com/spf13/cast v1.5.0
@@ -212,6 +212,5 @@ replace (
 	github.com/agl/ed25519 => github.com/binance-chain/edwards25519 v0.0.0-20200305024217-f36fc4b53d43
 	github.com/echovl/cardano-go => github.com/sisu-network/cardano-go v0.1.14-fork-08
 	github.com/gogo/protobuf => github.com/regen-network/protobuf v1.3.3-alpha.regen.1
-	github.com/sisu-network/deyes => ../deyes
 	google.golang.org/grpc => google.golang.org/grpc v1.33.2
 )
