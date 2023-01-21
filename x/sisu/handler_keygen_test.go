@@ -6,7 +6,7 @@ import (
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
-	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -16,7 +16,7 @@ import (
 func mockForHandlerKeygen() (sdk.Context, ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
-	globalData := &common.MockGlobalData{}
+	globalData := &components.MockGlobalData{}
 	pmm := NewPostedMessageManager(k)
 
 	partyManager := &MockPartyManager{}
@@ -60,7 +60,7 @@ func TestHandlerKeygen_CatchingUp(t *testing.T) {
 	submitCount := 0
 	ctx, mc := mockForHandlerKeygen()
 
-	globalData := mc.GlobalData().(*common.MockGlobalData)
+	globalData := mc.GlobalData().(*components.MockGlobalData)
 	globalData.IsCatchingUpFunc = func() bool {
 		return true
 	}

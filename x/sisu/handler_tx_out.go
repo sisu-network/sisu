@@ -3,7 +3,7 @@ package sisu
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -12,9 +12,9 @@ type HandlerTxOut struct {
 	pmm         PostedMessageManager
 	keeper      keeper.Keeper
 	valsManager ValidatorManager
-	globalData  common.GlobalData
-	txSubmit    common.TxSubmit
-	appKeys     common.AppKeys
+	globalData  components.GlobalData
+	txSubmit    components.TxSubmit
+	appKeys     components.AppKeys
 	privateDb   keeper.PrivateDb
 }
 

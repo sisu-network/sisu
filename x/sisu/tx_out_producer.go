@@ -6,8 +6,8 @@ import (
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/chains"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -35,7 +35,7 @@ type transferInData struct {
 	amount    *big.Int
 }
 
-func NewTxOutputProducer(appKeys common.AppKeys, keeper keeper.Keeper,
+func NewTxOutputProducer(appKeys components.AppKeys, keeper keeper.Keeper,
 	bridgeManager chains.BridgeManager,
 	txTracker TxTracker) TxOutputProducer {
 	return &DefaultTxOutputProducer{

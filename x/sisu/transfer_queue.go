@@ -5,9 +5,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -25,25 +25,25 @@ type TransferQueue interface {
 type defaultTransferQueue struct {
 	keeper           keeper.Keeper
 	txOutputProducer TxOutputProducer
-	txSubmit         common.TxSubmit
+	txSubmit         components.TxSubmit
 	stopCh           chan bool
-	appKeys          common.AppKeys
+	appKeys          components.AppKeys
 	privateDb        keeper.PrivateDb
 	newRequestCh     chan TransferRequest
 	valsManager      ValidatorManager
 	lock             *sync.RWMutex
-	globalData       common.GlobalData
+	globalData       components.GlobalData
 }
 
 func NewTransferQueue(
 	keeper keeper.Keeper,
 	txOutputProducer TxOutputProducer,
-	txSubmit common.TxSubmit,
+	txSubmit components.TxSubmit,
 	tssConfig config.TssConfig,
-	appKeys common.AppKeys,
+	appKeys components.AppKeys,
 	privateDb keeper.PrivateDb,
 	valsManager ValidatorManager,
-	globalData common.GlobalData,
+	globalData components.GlobalData,
 ) TransferQueue {
 	return &defaultTransferQueue{
 		keeper:           keeper,

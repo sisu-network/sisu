@@ -3,9 +3,9 @@ package sisu
 import (
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/chains"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	external "github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -30,7 +30,7 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 		switch t := arg.(type) {
 		case PostedMessageManager:
 			mc.pmm = t
-		case common.GlobalData:
+		case components.GlobalData:
 			mc.globalData = t
 		case external.DeyesClient:
 			mc.deyesClient = t
@@ -38,9 +38,9 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.dheartClient = t
 		case config.Config:
 			mc.config = t
-		case common.TxSubmit:
+		case components.TxSubmit:
 			mc.txSubmit = t
-		case common.AppKeys:
+		case components.AppKeys:
 			mc.appKeys = t
 		case PartyManager:
 			mc.partyManager = t

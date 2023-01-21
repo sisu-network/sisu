@@ -3,7 +3,7 @@ package sisu
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -19,12 +19,12 @@ type defaultTxOutProcessor struct {
 	privateDb    keeper.PrivateDb
 	newRequestCh chan sdk.Context
 	txOutSigner  *txOutSigner
-	globalData   common.GlobalData
+	globalData   components.GlobalData
 	stopCh       chan bool
 }
 
 func NewTxOutProcessor(keeper keeper.Keeper, privateDb keeper.PrivateDb, txOutSigner *txOutSigner,
-	globalData common.GlobalData) TxOutProcessor {
+	globalData components.GlobalData) TxOutProcessor {
 	return &defaultTxOutProcessor{
 		keeper:       keeper,
 		privateDb:    privateDb,

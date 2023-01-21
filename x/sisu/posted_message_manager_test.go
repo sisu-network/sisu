@@ -8,7 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ecommon "github.com/ethereum/go-ethereum/common"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
@@ -21,7 +21,7 @@ func mockForPostedMessageManager() (sdk.Context, ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
 	pmm := NewPostedMessageManager(k)
-	globalData := &common.MockGlobalData{}
+	globalData := &components.MockGlobalData{}
 	dheartClient := &external.MockDheartClient{}
 	partyManager := &MockPartyManager{}
 	partyManager.GetActivePartyPubkeysFunc = func() []ctypes.PubKey {

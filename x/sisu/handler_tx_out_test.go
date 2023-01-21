@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -24,8 +24,8 @@ func mockForHandlerTxOut() (sdk.Context, ManagerContainer) {
 			}
 		},
 	}
-	mockAppKeys := common.NewMockAppKeys()
-	txSubmit := &common.MockTxSubmit{}
+	mockAppKeys := components.NewMockAppKeys()
+	txSubmit := &components.MockTxSubmit{}
 
 	mc := MockManagerContainer(k, pmm, &MockTxOutQueue{}, txSubmit, valsManager, mockAppKeys,
 		keeper.NewPrivateDb(".", db.MemDBBackend))
@@ -35,7 +35,7 @@ func mockForHandlerTxOut() (sdk.Context, ManagerContainer) {
 func TestTxOut_MultipleSigners(t *testing.T) {
 	ctx, mc := mockForHandlerTxOut()
 	k := mc.Keeper()
-	txSubmit := mc.TxSubmit().(*common.MockTxSubmit)
+	txSubmit := mc.TxSubmit().(*components.MockTxSubmit)
 	submitCount := 0
 
 	txSubmit.SubmitMessageAsyncFunc = func(msg sdk.Msg) error {

@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	etypes "github.com/sisu-network/deyes/types"
-	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
@@ -23,7 +23,7 @@ func TestQueryRecentSolanBlock(t *testing.T) {
 			}, nil
 		},
 	}
-	txSubmit := common.MockTxSubmit{
+	txSubmit := components.MockTxSubmit{
 		SubmitMessageAsyncFunc: func(msg sdk.Msg) error {
 			updateMsg, ok := msg.(*types.UpdateSolanaRecentHashMsg)
 			require.True(t, ok)

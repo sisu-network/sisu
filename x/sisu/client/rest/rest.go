@@ -5,18 +5,18 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/gorilla/mux"
-	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 )
 
 type ExternalHandler struct {
 	keeper      keeper.Keeper
-	globalData  common.GlobalData
+	globalData  components.GlobalData
 	deyesClient external.DeyesClient
 }
 
-func NewExternalHandler(keeper keeper.Keeper, globalData common.GlobalData,
+func NewExternalHandler(keeper keeper.Keeper, globalData components.GlobalData,
 	deyesClient external.DeyesClient) *ExternalHandler {
 	return &ExternalHandler{
 		keeper:      keeper,

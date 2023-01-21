@@ -4,8 +4,8 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -27,13 +27,13 @@ func mockForTransferQueue() (sdk.Context, ManagerContainer) {
 	k.SaveParams(ctx, params)
 
 	txOutputProducer := &MockTxOutputProducer{}
-	globalData := &common.MockGlobalData{
+	globalData := &components.MockGlobalData{
 		GetReadOnlyContextFunc: func() sdk.Context {
 			return ctx
 		},
 	}
-	txSubmit := &common.MockTxSubmit{}
-	mockAppKeys := &common.MockAppKeys{}
+	txSubmit := &components.MockTxSubmit{}
+	mockAppKeys := &components.MockAppKeys{}
 	valManagers := &MockValidatorManager{}
 
 	mc := MockManagerContainer(ctx, k, txOutputProducer, globalData, txSubmit, privateDb, mockAppKeys,
@@ -48,7 +48,7 @@ func TestTransferQueue(t *testing.T) {
 		txOutProducer := mc.TxOutProducer().(*MockTxOutputProducer)
 		appKeys := mc.AppKeys()
 
-		txSubmit := mc.TxSubmit().(*common.MockTxSubmit)
+		txSubmit := mc.TxSubmit().(*components.MockTxSubmit)
 		txSubmitCount := 0
 
 		valManager := mc.ValidatorManager().(*MockValidatorManager)

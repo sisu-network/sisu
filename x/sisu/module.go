@@ -20,9 +20,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/client/cli"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -107,9 +107,9 @@ type AppModule struct {
 	sisuHandler    *SisuHandler
 	keeper         keeper.Keeper
 	apiHandler     *ApiHandler
-	appKeys        common.AppKeys
-	txSubmit       common.TxSubmit
-	globalData     common.GlobalData
+	appKeys        components.AppKeys
+	txSubmit       components.TxSubmit
+	globalData     components.GlobalData
 	valsManager    ValidatorManager
 	txTracker      TxTracker
 	txOutProcessor TxOutProcessor

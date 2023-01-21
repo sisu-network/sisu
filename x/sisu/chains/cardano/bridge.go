@@ -16,9 +16,9 @@ import (
 	libchain "github.com/sisu-network/lib/chain"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/utils"
 	chaintypes "github.com/sisu-network/sisu/x/sisu/chains/types"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -176,7 +176,7 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 
 		// If amountOut is smaller or equal 0, quit
 		if amountOut.Cmp(utils.ZeroBigInt) <= 0 {
-			return nil, common.InsufficientFundErr
+			return nil, components.InsufficientFundErr
 		}
 
 		var amount *cardano.Value

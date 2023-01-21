@@ -70,8 +70,8 @@ import (
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/sisu-network/sisu/common"
 	sisuAuth "github.com/sisu-network/sisu/x/auth"
+	"github.com/sisu-network/sisu/x/sisu/components"
 )
 
 const (
@@ -119,9 +119,9 @@ var (
 // They are exported for convenience in creating helper functions, as object
 // capabilities aren't needed for testing.
 type App struct {
-	txSubmitter       *common.TxSubmitter
-	appKeys           *common.DefaultAppKeys
-	globalData        common.GlobalData
+	txSubmitter       *components.TxSubmitter
+	appKeys           *components.DefaultAppKeys
+	globalData        components.GlobalData
 	internalApiServer server.Server
 	apiHandler        *tss.ApiHandler
 	apiEndPoint       *tss.ApiEndPoint
@@ -221,13 +221,13 @@ func New(
 		panic(err)
 	}
 
-	app.appKeys = common.NewAppKeys(cfg.Sisu)
+	app.appKeys = components.NewAppKeys(cfg.Sisu)
 	app.appKeys.Init()
 
-	app.globalData = common.NewGlobalData(cfg)
+	app.globalData = components.NewGlobalData(cfg)
 	app.globalData.Init()
 
-	app.txSubmitter = common.NewTxSubmitter(cfg, app.appKeys)
+	app.txSubmitter = components.NewTxSubmitter(cfg, app.appKeys)
 	go app.txSubmitter.Start()
 
 	// TSS keeper

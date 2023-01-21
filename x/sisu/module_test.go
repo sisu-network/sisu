@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
 	db "github.com/tendermint/tm-db"
@@ -13,7 +13,7 @@ import (
 func mockForTestModule() (sdk.Context, ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
-	globalData := &common.MockGlobalData{}
+	globalData := &components.MockGlobalData{}
 	txOutQueue := &MockTxOutQueue{}
 	privateDb := keeper.NewPrivateDb(".", db.MemDBBackend)
 

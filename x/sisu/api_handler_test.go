@@ -22,11 +22,11 @@ import (
 	eyesTypes "github.com/sisu-network/deyes/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/contracts/eth/vault"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/chains"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -37,13 +37,13 @@ func mockForApiHandlerTest() (sdk.Context, ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestAfterContractDeployed(ctx)
 
-	globalData := &common.MockGlobalData{
+	globalData := &components.MockGlobalData{
 		GetReadOnlyContextFunc: func() sdk.Context {
 			return ctx
 		},
 	}
 	pmm := NewPostedMessageManager(k)
-	txSubmit := &common.MockTxSubmit{}
+	txSubmit := &components.MockTxSubmit{}
 	txTracker := &MockTxTracker{}
 
 	partyManager := &MockPartyManager{}
@@ -53,7 +53,7 @@ func mockForApiHandlerTest() (sdk.Context, ManagerContainer) {
 
 	dheartClient := &external.MockDheartClient{}
 	deyesClient := &external.MockDeyesClient{}
-	appKeys := common.NewMockAppKeys()
+	appKeys := components.NewMockAppKeys()
 
 	bridgeManager := chains.NewBridgeManager("signer", k, deyesClient, config.Config{})
 
@@ -161,7 +161,7 @@ func TestApiHandler_OnTxIns(t *testing.T) {
 		}
 
 		submitCount := 0
-		txSubmit := mc.TxSubmit().(*common.MockTxSubmit)
+		txSubmit := mc.TxSubmit().(*components.MockTxSubmit)
 		txSubmit.SubmitMessageAsyncFunc = func(msg sdk.Msg) error {
 			switch msg.Type() {
 			case types.MsgTxIn:
@@ -213,7 +213,7 @@ func TestApiHandler_OnTxIns(t *testing.T) {
 		}
 
 		submitCount := 0
-		txSubmit := mc.TxSubmit().(*common.MockTxSubmit)
+		txSubmit := mc.TxSubmit().(*components.MockTxSubmit)
 		txSubmit.SubmitMessageAsyncFunc = func(msg sdk.Msg) error {
 			submitCount = 1
 			return nil

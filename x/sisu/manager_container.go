@@ -3,9 +3,9 @@ package sisu
 import (
 	"sync/atomic"
 
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/chains"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/service"
@@ -16,10 +16,10 @@ type ManagerContainer interface {
 	PartyManager() PartyManager
 	DheartClient() external.DheartClient
 	DeyesClient() external.DeyesClient
-	GlobalData() common.GlobalData
-	TxSubmit() common.TxSubmit
+	GlobalData() components.GlobalData
+	TxSubmit() components.TxSubmit
 	Config() config.Config
-	AppKeys() common.AppKeys
+	AppKeys() components.AppKeys
 	TxOutProducer() TxOutputProducer
 	TxTracker() TxTracker
 	Keeper() keeper.Keeper
@@ -37,10 +37,10 @@ type DefaultManagerContainer struct {
 	partyManager     PartyManager
 	dheartClient     external.DheartClient
 	deyesClient      external.DeyesClient
-	globalData       common.GlobalData
-	txSubmit         common.TxSubmit
+	globalData       components.GlobalData
+	txSubmit         components.TxSubmit
 	config           config.Config
-	appKeys          common.AppKeys
+	appKeys          components.AppKeys
 	txOutProducer    TxOutputProducer
 	txTracker        TxTracker
 	keeper           keeper.Keeper
@@ -53,8 +53,8 @@ type DefaultManagerContainer struct {
 
 func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 	dheartClient external.DheartClient, deyesClient external.DeyesClient,
-	globalData common.GlobalData, txSubmit common.TxSubmit, cfg config.Config,
-	appKeys common.AppKeys, txOutProducer TxOutputProducer, txTracker TxTracker,
+	globalData components.GlobalData, txSubmit components.TxSubmit, cfg config.Config,
+	appKeys components.AppKeys, txOutProducer TxOutputProducer, txTracker TxTracker,
 	keeper keeper.Keeper, valsManager ValidatorManager, txInQueue TransferQueue,
 	bridgeManager chains.BridgeManager, chainPolling service.ChainPolling,
 	privateDb keeper.PrivateDb) ManagerContainer {
@@ -90,11 +90,11 @@ func (mc *DefaultManagerContainer) DheartClient() external.DheartClient {
 	return mc.dheartClient
 }
 
-func (mc *DefaultManagerContainer) GlobalData() common.GlobalData {
+func (mc *DefaultManagerContainer) GlobalData() components.GlobalData {
 	return mc.globalData
 }
 
-func (mc *DefaultManagerContainer) TxSubmit() common.TxSubmit {
+func (mc *DefaultManagerContainer) TxSubmit() components.TxSubmit {
 	return mc.txSubmit
 }
 
@@ -102,7 +102,7 @@ func (mc *DefaultManagerContainer) Config() config.Config {
 	return mc.config
 }
 
-func (mc *DefaultManagerContainer) AppKeys() common.AppKeys {
+func (mc *DefaultManagerContainer) AppKeys() components.AppKeys {
 	return mc.appKeys
 }
 
