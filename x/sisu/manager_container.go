@@ -13,7 +13,7 @@ import (
 
 type ManagerContainer interface {
 	PostedMessageManager() PostedMessageManager
-	PartyManager() PartyManager
+	PartyManager() components.PartyManager
 	DheartClient() external.DheartClient
 	DeyesClient() external.DeyesClient
 	GlobalData() components.GlobalData
@@ -33,25 +33,25 @@ type ManagerContainer interface {
 type DefaultManagerContainer struct {
 	readOnlyContext atomic.Value
 
-	pmm              PostedMessageManager
-	partyManager     PartyManager
-	dheartClient     external.DheartClient
-	deyesClient      external.DeyesClient
-	globalData       components.GlobalData
-	txSubmit         components.TxSubmit
-	config           config.Config
-	appKeys          components.AppKeys
-	txOutProducer    TxOutputProducer
-	txTracker        TxTracker
-	keeper           keeper.Keeper
-	valsManager      components.ValidatorManager
+	pmm           PostedMessageManager
+	partyManager  components.PartyManager
+	dheartClient  external.DheartClient
+	deyesClient   external.DeyesClient
+	globalData    components.GlobalData
+	txSubmit      components.TxSubmit
+	config        config.Config
+	appKeys       components.AppKeys
+	txOutProducer TxOutputProducer
+	txTracker     TxTracker
+	keeper        keeper.Keeper
+	valsManager   components.ValidatorManager
 	transferOutQueue TransferQueue
 	bridgeManager    chains.BridgeManager
 	chainPolling     service.ChainPolling
 	privateDb        keeper.PrivateDb
 }
 
-func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
+func NewManagerContainer(pmm PostedMessageManager, partyManager components.PartyManager,
 	dheartClient external.DheartClient, deyesClient external.DeyesClient,
 	globalData components.GlobalData, txSubmit components.TxSubmit, cfg config.Config,
 	appKeys components.AppKeys, txOutProducer TxOutputProducer, txTracker TxTracker,
@@ -82,7 +82,7 @@ func (mc *DefaultManagerContainer) PostedMessageManager() PostedMessageManager {
 	return mc.pmm
 }
 
-func (mc *DefaultManagerContainer) PartyManager() PartyManager {
+func (mc *DefaultManagerContainer) PartyManager() components.PartyManager {
 	return mc.partyManager
 }
 

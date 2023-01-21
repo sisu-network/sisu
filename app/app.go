@@ -268,7 +268,7 @@ func New(
 	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert)
 
 	valsMgr := components.NewValidatorManager(app.k)
-	partyManager := tss.NewPartyManager(app.globalData)
+	partyManager := components.NewPartyManager(app.globalData)
 	bridgeManager := chains.NewBridgeManager(app.appKeys.GetSignerAddress().String(), app.k, deyesClient, cfg)
 
 	txOutProducer := tss.NewTxOutputProducer(app.appKeys, app.k, bridgeManager, txTracker)

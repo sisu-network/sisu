@@ -2,6 +2,7 @@ package sisu
 
 import (
 	"fmt"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"strconv"
 
 	liskcrypto "github.com/sisu-network/deyes/chains/lisk/crypto"
@@ -22,11 +23,11 @@ import (
 
 type txOutSigner struct {
 	keeper       keeper.Keeper
-	partyManager PartyManager
+	partyManager components.PartyManager
 	dheartClient external.DheartClient
 }
 
-func NewTxOutSigner(keeper keeper.Keeper, partyManager PartyManager,
+func NewTxOutSigner(keeper keeper.Keeper, partyManager components.PartyManager,
 	dheartClient external.DheartClient) *txOutSigner {
 	return &txOutSigner{
 		keeper:       keeper,

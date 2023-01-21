@@ -18,7 +18,7 @@ func checkMock() {
 	var _ TxOutputProducer = new(MockTxOutputProducer)
 	var _ TxTracker = new(MockTxTracker)
 	var _ PostedMessageManager = new(MockPostedMessageManager)
-	var _ PartyManager = new(MockPartyManager)
+	var _ components.PartyManager = new(MockPartyManager)
 }
 
 ///// ManagerContainer
@@ -42,7 +42,7 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.txSubmit = t
 		case components.AppKeys:
 			mc.appKeys = t
-		case PartyManager:
+		case components.PartyManager:
 			mc.partyManager = t
 		case TxTracker:
 			mc.txTracker = t
