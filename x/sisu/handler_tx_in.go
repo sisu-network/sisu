@@ -58,11 +58,8 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, k keeper.Keeper, msg *types.TxInMs
 
 	k.ProcessTxRecord(ctx, hash)
 
-	// 1. Save the transfers
+	// Save the transfers
 	h.saveTransfers(ctx, k, msg.Data.Transfers)
-
-	// 2. Save the transfer state
-	h.privateDb.SetTransferState(msg.Data.Id, types.TransferState_Confirmed)
 }
 
 func (h *HandlerTxIn) saveTransfers(ctx sdk.Context, k keeper.Keeper, transfers []*types.TransferDetails) {
