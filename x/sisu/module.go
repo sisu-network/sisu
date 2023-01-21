@@ -111,7 +111,7 @@ type AppModule struct {
 	txSubmit       components.TxSubmit
 	globalData     components.GlobalData
 	valsManager    components.ValidatorManager
-	txTracker      TxTracker
+	txTracker      components.TxTracker
 	txOutProcessor TxOutProcessor
 	mc             ManagerContainer
 }

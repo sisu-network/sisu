@@ -16,7 +16,7 @@ import (
 // A function to make sure that all mocks implement its designated interface.
 func checkMock() {
 	var _ TxOutputProducer = new(MockTxOutputProducer)
-	var _ TxTracker = new(MockTxTracker)
+	var _ components.TxTracker = new(MockTxTracker)
 	var _ PostedMessageManager = new(MockPostedMessageManager)
 	var _ components.PartyManager = new(MockPartyManager)
 }
@@ -44,7 +44,7 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.appKeys = t
 		case components.PartyManager:
 			mc.partyManager = t
-		case TxTracker:
+		case components.TxTracker:
 			mc.txTracker = t
 		case keeper.Keeper:
 			mc.keeper = t

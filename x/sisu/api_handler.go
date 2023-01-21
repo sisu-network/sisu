@@ -32,7 +32,7 @@ type ApiHandler struct {
 	txSubmit      components.TxSubmit
 	appKeys       components.AppKeys
 	globalData    components.GlobalData
-	txTracker     TxTracker
+	txTracker     components.TxTracker
 	bridgeManager chains.BridgeManager
 	chainPolling  service.ChainPolling
 	valManager    components.ValidatorManager

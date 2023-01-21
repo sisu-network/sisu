@@ -23,7 +23,7 @@ type TxOutputProducer interface {
 type DefaultTxOutputProducer struct {
 	signer    string
 	keeper    keeper.Keeper
-	txTracker TxTracker
+	txTracker components.TxTracker
 
 	// Only use for cardano chain
 	bridgeManager chains.BridgeManager
@@ -37,7 +37,7 @@ type transferInData struct {
 
 func NewTxOutputProducer(appKeys components.AppKeys, keeper keeper.Keeper,
 	bridgeManager chains.BridgeManager,
-	txTracker TxTracker) TxOutputProducer {
+	txTracker components.TxTracker) TxOutputProducer {
 	return &DefaultTxOutputProducer{
 		signer:        appKeys.GetSignerAddress().String(),
 		keeper:        keeper,

@@ -21,7 +21,7 @@ type ManagerContainer interface {
 	Config() config.Config
 	AppKeys() components.AppKeys
 	TxOutProducer() TxOutputProducer
-	TxTracker() TxTracker
+	TxTracker() components.TxTracker
 	Keeper() keeper.Keeper
 	ValidatorManager() components.ValidatorManager
 	TransferQueue() TransferQueue
@@ -33,18 +33,18 @@ type ManagerContainer interface {
 type DefaultManagerContainer struct {
 	readOnlyContext atomic.Value
 
-	pmm           PostedMessageManager
-	partyManager  components.PartyManager
-	dheartClient  external.DheartClient
-	deyesClient   external.DeyesClient
-	globalData    components.GlobalData
-	txSubmit      components.TxSubmit
-	config        config.Config
-	appKeys       components.AppKeys
-	txOutProducer TxOutputProducer
-	txTracker     TxTracker
-	keeper        keeper.Keeper
-	valsManager   components.ValidatorManager
+	pmm              PostedMessageManager
+	partyManager     components.PartyManager
+	dheartClient     external.DheartClient
+	deyesClient      external.DeyesClient
+	globalData       components.GlobalData
+	txSubmit         components.TxSubmit
+	config           config.Config
+	appKeys          components.AppKeys
+	txOutProducer    TxOutputProducer
+	txTracker        components.TxTracker
+	keeper           keeper.Keeper
+	valsManager      components.ValidatorManager
 	transferOutQueue TransferQueue
 	bridgeManager    chains.BridgeManager
 	chainPolling     service.ChainPolling
@@ -54,7 +54,7 @@ type DefaultManagerContainer struct {
 func NewManagerContainer(pmm PostedMessageManager, partyManager components.PartyManager,
 	dheartClient external.DheartClient, deyesClient external.DeyesClient,
 	globalData components.GlobalData, txSubmit components.TxSubmit, cfg config.Config,
-	appKeys components.AppKeys, txOutProducer TxOutputProducer, txTracker TxTracker,
+	appKeys components.AppKeys, txOutProducer TxOutputProducer, txTracker components.TxTracker,
 	keeper keeper.Keeper, valsManager components.ValidatorManager, txInQueue TransferQueue,
 	bridgeManager chains.BridgeManager, chainPolling service.ChainPolling,
 	privateDb keeper.PrivateDb) ManagerContainer {
@@ -114,7 +114,7 @@ func (mc *DefaultManagerContainer) DeyesClient() external.DeyesClient {
 	return mc.deyesClient
 }
 
-func (mc *DefaultManagerContainer) TxTracker() TxTracker {
+func (mc *DefaultManagerContainer) TxTracker() components.TxTracker {
 	return mc.txTracker
 }
 

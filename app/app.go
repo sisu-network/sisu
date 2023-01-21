@@ -265,7 +265,7 @@ func New(
 	// storage that contains common data for all the nodes
 	privateDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "data", "private"), dbm.GoLevelDBBackend)
 
-	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert)
+	txTracker := components.NewTxTracker(cfg.Sisu.EmailAlert)
 
 	valsMgr := components.NewValidatorManager(app.k)
 	partyManager := components.NewPartyManager(app.globalData)
