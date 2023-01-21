@@ -1,4 +1,4 @@
-package sisu
+package components
 
 import (
 	"math/big"
@@ -7,7 +7,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/x/sisu/chains"
-	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -23,7 +22,7 @@ type TxOutputProducer interface {
 type DefaultTxOutputProducer struct {
 	signer    string
 	keeper    keeper.Keeper
-	txTracker components.TxTracker
+	txTracker TxTracker
 
 	// Only use for cardano chain
 	bridgeManager chains.BridgeManager
@@ -35,9 +34,9 @@ type transferInData struct {
 	amount    *big.Int
 }
 
-func NewTxOutputProducer(appKeys components.AppKeys, keeper keeper.Keeper,
+func NewTxOutputProducer(appKeys AppKeys, keeper keeper.Keeper,
 	bridgeManager chains.BridgeManager,
-	txTracker components.TxTracker) TxOutputProducer {
+	txTracker TxTracker) TxOutputProducer {
 	return &DefaultTxOutputProducer{
 		signer:        appKeys.GetSignerAddress().String(),
 		keeper:        keeper,

@@ -15,7 +15,7 @@ import (
 
 // A function to make sure that all mocks implement its designated interface.
 func checkMock() {
-	var _ TxOutputProducer = new(MockTxOutputProducer)
+	var _ components.TxOutputProducer = new(MockTxOutputProducer)
 	var _ components.TxTracker = new(MockTxTracker)
 	var _ PostedMessageManager = new(MockPostedMessageManager)
 	var _ components.PartyManager = new(MockPartyManager)
@@ -50,7 +50,7 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.keeper = t
 		case sdk.Context:
 			mc.readOnlyContext.Store(t)
-		case TxOutputProducer:
+		case components.TxOutputProducer:
 			mc.txOutProducer = t
 		case components.ValidatorManager:
 			mc.valsManager = t

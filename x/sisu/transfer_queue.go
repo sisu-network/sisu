@@ -24,7 +24,7 @@ type TransferQueue interface {
 
 type defaultTransferQueue struct {
 	keeper           keeper.Keeper
-	txOutputProducer TxOutputProducer
+	txOutputProducer components.TxOutputProducer
 	txSubmit         components.TxSubmit
 	stopCh           chan bool
 	appKeys          components.AppKeys
@@ -37,7 +37,7 @@ type defaultTransferQueue struct {
 
 func NewTransferQueue(
 	keeper keeper.Keeper,
-	txOutputProducer TxOutputProducer,
+	txOutputProducer components.TxOutputProducer,
 	txSubmit components.TxSubmit,
 	tssConfig config.TssConfig,
 	appKeys components.AppKeys,
