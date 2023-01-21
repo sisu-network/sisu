@@ -52,7 +52,7 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.readOnlyContext.Store(t)
 		case TxOutputProducer:
 			mc.txOutProducer = t
-		case ValidatorManager:
+		case components.ValidatorManager:
 			mc.valsManager = t
 		case TransferQueue:
 			mc.transferOutQueue = t

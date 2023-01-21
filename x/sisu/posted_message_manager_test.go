@@ -27,7 +27,7 @@ func mockForPostedMessageManager() (sdk.Context, ManagerContainer) {
 	partyManager.GetActivePartyPubkeysFunc = func() []ctypes.PubKey {
 		return []ctypes.PubKey{}
 	}
-	valsMgr := NewValidatorManager(k)
+	valsMgr := components.NewValidatorManager(k)
 	valsMgr.AddValidator(ctx, &types.Node{
 		ValPubkey: &types.ValPubkey{
 			Type:  "ed25519",

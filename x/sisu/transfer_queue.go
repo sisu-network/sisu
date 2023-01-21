@@ -30,7 +30,7 @@ type defaultTransferQueue struct {
 	appKeys          components.AppKeys
 	privateDb        keeper.PrivateDb
 	newRequestCh     chan TransferRequest
-	valsManager      ValidatorManager
+	valsManager      components.ValidatorManager
 	lock             *sync.RWMutex
 	globalData       components.GlobalData
 }
@@ -42,7 +42,7 @@ func NewTransferQueue(
 	tssConfig config.TssConfig,
 	appKeys components.AppKeys,
 	privateDb keeper.PrivateDb,
-	valsManager ValidatorManager,
+	valsManager components.ValidatorManager,
 	globalData components.GlobalData,
 ) TransferQueue {
 	return &defaultTransferQueue{

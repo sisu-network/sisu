@@ -110,7 +110,7 @@ type AppModule struct {
 	appKeys        components.AppKeys
 	txSubmit       components.TxSubmit
 	globalData     components.GlobalData
-	valsManager    ValidatorManager
+	valsManager    components.ValidatorManager
 	txTracker      TxTracker
 	txOutProcessor TxOutProcessor
 	mc             ManagerContainer
@@ -120,7 +120,7 @@ func NewAppModule(cdc codec.Marshaler,
 	sisuHandler *SisuHandler,
 	keeper keeper.Keeper,
 	apiHandler *ApiHandler,
-	valsManager ValidatorManager,
+	valsManager components.ValidatorManager,
 	txOutProcessor TxOutProcessor,
 	mc ManagerContainer,
 ) AppModule {

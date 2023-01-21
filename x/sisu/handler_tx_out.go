@@ -11,7 +11,7 @@ import (
 type HandlerTxOut struct {
 	pmm         PostedMessageManager
 	keeper      keeper.Keeper
-	valsManager ValidatorManager
+	valsManager components.ValidatorManager
 	globalData  components.GlobalData
 	txSubmit    components.TxSubmit
 	appKeys     components.AppKeys

@@ -21,7 +21,7 @@ type HandlerKeygenResult struct {
 	config      config.TssConfig
 	txSubmit    components.TxSubmit
 	appKeys     components.AppKeys
-	valsMgr     ValidatorManager
+	valsMgr     components.ValidatorManager
 }
 
 func NewHandlerKeygenResult(mc ManagerContainer) *HandlerKeygenResult {

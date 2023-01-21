@@ -35,7 +35,7 @@ type ApiHandler struct {
 	txTracker     TxTracker
 	bridgeManager chains.BridgeManager
 	chainPolling  service.ChainPolling
-	valManager    ValidatorManager
+	valManager    components.ValidatorManager
 	mc            ManagerContainer
 
 	// Dheart & Deyes client

@@ -14,7 +14,7 @@ type HandlerTxIn struct {
 	keeper        keeper.Keeper
 	globalData    components.GlobalData
 	bridgeManager chains.BridgeManager
-	valsManager   ValidatorManager
+	valsManager   components.ValidatorManager
 	privateDb     keeper.PrivateDb
 }
 
@@ -23,7 +23,7 @@ func NewHandlerTxIn(
 	keeper keeper.Keeper,
 	globalData components.GlobalData,
 	bridgeManager chains.BridgeManager,
-	valsManager ValidatorManager,
+	valsManager components.ValidatorManager,
 	privateDb keeper.PrivateDb,
 ) *HandlerTxIn {
 	return &HandlerTxIn{

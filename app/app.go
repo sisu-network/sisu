@@ -267,7 +267,7 @@ func New(
 
 	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert)
 
-	valsMgr := tss.NewValidatorManager(app.k)
+	valsMgr := components.NewValidatorManager(app.k)
 	partyManager := tss.NewPartyManager(app.globalData)
 	bridgeManager := chains.NewBridgeManager(app.appKeys.GetSignerAddress().String(), app.k, deyesClient, cfg)
 
