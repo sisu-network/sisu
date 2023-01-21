@@ -20,7 +20,6 @@ type AppLogicListener interface {
 	OnTxIns(txs *eyestypes.Txs) error
 	OnKeysignResult(result *htypes.KeysignResult)
 	OnTxDeploymentResult(result *etypes.DispatchedTxResult)
-	OnUpdateTokenPrice(tokenPrices []*etypes.TokenPrice)
 	OnTxIncludedInBlock(txTrack *chainstypes.TrackUpdate)
 }
 
@@ -116,15 +115,6 @@ func (a *ApiEndPoint) PostDeploymentResult(result *etypes.DispatchedTxResult) {
 	listener := a.getAppLogicListener()
 	if listener != nil {
 		go listener.OnTxDeploymentResult(result)
-	}
-}
-
-func (a *ApiEndPoint) UpdateTokenPrices(prices []*etypes.TokenPrice) {
-	log.Info("Received token prices update")
-
-	listener := a.getAppLogicListener()
-	if listener != nil {
-		go listener.OnUpdateTokenPrice(prices)
 	}
 }
 

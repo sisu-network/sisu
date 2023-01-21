@@ -3,11 +3,6 @@ package types;
 
 option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 
-message UpdateTokenPrice {
-  string signer = 1;
-  repeated TokenPrice tokenPrices= 2;
-}
-
 message TokenPrice {
   string id = 1;
   string price = 2;

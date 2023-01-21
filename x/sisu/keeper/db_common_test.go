@@ -2,8 +2,6 @@ package keeper
 
 import (
 	"fmt"
-	"math/big"
-	"sort"
 	"testing"
 
 	memstore "github.com/cosmos/cosmos-sdk/store/mem"
@@ -96,75 +94,6 @@ func Test_saveKeygenResult(t *testing.T) {
 
 	results := getAllKeygenResult(store, keyType, index)
 	require.Equal(t, 2, len(results))
-}
-
-///// Token Prices
-func TestSaveTokenPrices(t *testing.T) {
-	store := memstore.NewStore()
-
-	token := "ETH"
-
-	signer1 := "signer1"
-	msg1Signer1 := &types.UpdateTokenPrice{
-		Signer: signer1,
-		TokenPrices: []*types.TokenPrice{
-			{
-				Id:    token,
-				Price: big.NewInt(5_000_000_000).String(),
-			},
-		},
-	}
-	msg2Signer1 := &types.UpdateTokenPrice{
-		Signer: signer1,
-		TokenPrices: []*types.TokenPrice{
-			{
-				Id:    token,
-				Price: big.NewInt(6_000_000_000).String(),
-			},
-		},
-	}
-
-	signer2 := "signer2"
-	msg1Signer2 := &types.UpdateTokenPrice{
-		Signer: signer2,
-		TokenPrices: []*types.TokenPrice{
-			{
-				Id:    token,
-				Price: big.NewInt(10_000_000_000).String(),
-			},
-		},
-	}
-	msg2Signer2 := &types.UpdateTokenPrice{
-		Signer: signer2,
-		TokenPrices: []*types.TokenPrice{
-			{
-				Id:    token,
-				Price: big.NewInt(11_000_000_000).String(),
-			},
-		}}
-
-	setTokenPrices(store, 1, msg1Signer1)
-	setTokenPrices(store, 1, msg2Signer1)
-	setTokenPrices(store, 1, msg1Signer2)
-	setTokenPrices(store, 1, msg2Signer2)
-
-	allPrices := getAllTokenPrices(store)
-
-	require.Equal(t, 2, len(allPrices))
-
-	allSigners := make([]string, 0)
-	for savedSigner, record := range allPrices {
-		allSigners = append(allSigners, savedSigner)
-		require.Equal(t, 1, len(record.Records))
-	}
-
-	sort.Strings(allSigners)
-	require.Equal(t, []string{signer1, signer2}, allSigners)
-
-	record := allPrices[signer1]
-	require.Equal(t, "6000000000", record.Records[0].Price)
-	record = allPrices[signer2]
-	require.Equal(t, "11000000000", record.Records[0].Price)
 }
 
 ///// Node

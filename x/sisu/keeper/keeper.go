@@ -30,8 +30,6 @@ var (
 	prefixChainMetadata          = []byte{0x14}
 	prefixSignerNonce            = []byte{0x15}
 	prefixBlockHeight            = []byte{0x16}
-	prefixTxInDetails            = []byte{0x17}
-	prefixConfirmedTxIn          = []byte{0x18}
 	prefixVoteResult             = []byte{0x19}
 	prefixProposedTxOut          = []byte{0x1A}
 	prefixMpcPublicKey           = []byte{0x1B}
@@ -66,18 +64,10 @@ type Keeper interface {
 	SaveTxOut(ctx sdk.Context, msg *types.TxOut)
 	GetTxOut(ctx sdk.Context, outChain, hash string) *types.TxOut
 
-	// Gas Price Record
-	SetGasPrice(ctx sdk.Context, msg *types.GasPriceMsg)
-	GetGasPrices(ctx sdk.Context, chain string) map[string]*types.GasPriceRecord
-
 	// Chain
 	SaveChain(ctx sdk.Context, chain *types.Chain)
 	GetChain(ctx sdk.Context, chain string) *types.Chain
 	GetAllChains(ctx sdk.Context) map[string]*types.Chain
-
-	// Token Price
-	SetTokenPrices(ctx sdk.Context, blockHeight uint64, msg *types.UpdateTokenPrice)
-	GetAllTokenPricesRecord(ctx sdk.Context) map[string]*types.TokenPriceRecords
 
 	// Token
 	SetTokens(ctx sdk.Context, tokens map[string]*types.Token)
@@ -138,14 +128,6 @@ type Keeper interface {
 	// Max Block height that all nodes observed (Not all chains need this property)
 	SetBlockHeight(ctx sdk.Context, chain string, height int64, hash string)
 	GetBlockHeight(ctx sdk.Context, chain string) *types.BlockHeight
-
-	//TxInDetails
-	SetTxInDetails(ctx sdk.Context, txInId string, txIn *types.TxIn)
-	GetTxInDetails(ctx sdk.Context, txInId string) *types.TxInMsg
-
-	// Confirmed TxIn
-	SetConfirmedTxIn(ctx sdk.Context, confirmedTxIn *types.ConfirmedTxIn)
-	GetConfirmedTxIn(ctx sdk.Context, txInId string) *types.ConfirmedTxIn
 
 	// Vote Result
 	AddVoteResult(ctx sdk.Context, key string, signer string, result types.VoteResult)
@@ -236,25 +218,6 @@ func (k *DefaultKeeper) GetTxOut(ctx sdk.Context, outChain, hash string) *types.
 	return getTxOut(store, outChain, hash)
 }
 
-///// GasPrice
-func (k *DefaultKeeper) SetGasPrice(ctx sdk.Context, msg *types.GasPriceMsg) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGasPrice)
-
-	for i, chain := range msg.Chains {
-		saveGasPrice(store, chain, msg.Signer, &types.GasPriceRecord{
-			GasPrice: msg.GasPrices[i],
-			BaseFee:  msg.BaseFees[i],
-			Tip:      msg.Tips[i],
-		})
-	}
-}
-
-func (k *DefaultKeeper) GetGasPrices(ctx sdk.Context, chain string) map[string]*types.GasPriceRecord {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixGasPrice)
-
-	return getGasPrices(store, chain)
-}
-
 ///// Network gas price
 
 func (k *DefaultKeeper) SaveChain(ctx sdk.Context, chain *types.Chain) {
@@ -273,17 +236,7 @@ func (k *DefaultKeeper) GetAllChains(ctx sdk.Context) map[string]*types.Chain {
 	return getAllChains(store)
 }
 
-///// Token Prices
-
-func (k *DefaultKeeper) SetTokenPrices(ctx sdk.Context, blockHeight uint64, msg *types.UpdateTokenPrice) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTokenPrices)
-	setTokenPrices(store, blockHeight, msg)
-}
-
-func (k *DefaultKeeper) GetAllTokenPricesRecord(ctx sdk.Context) map[string]*types.TokenPriceRecords {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTokenPrices)
-	return getAllTokenPrices(store)
-}
+///// Token
 
 func (k *DefaultKeeper) SetTokens(ctx sdk.Context, tokens map[string]*types.Token) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixToken)
@@ -453,31 +406,9 @@ func (k *DefaultKeeper) SetBlockHeight(ctx sdk.Context, chain string, height int
 	})
 }
 
-///// TxInDetails
-func (k *DefaultKeeper) SetTxInDetails(ctx sdk.Context, txInId string, txIn *types.TxIn) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxInDetails)
-	setTxInDetails(store, txInId, txIn)
-}
-
-func (k *DefaultKeeper) GetTxInDetails(ctx sdk.Context, txIndId string) *types.TxInMsg {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxInDetails)
-	return getTxInDetails(store, txIndId)
-}
-
 func (k *DefaultKeeper) GetBlockHeight(ctx sdk.Context, chain string) *types.BlockHeight {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixBlockHeight)
 	return getBlockHeight(store, chain)
-}
-
-///// Confirmed TxIn
-func (k *DefaultKeeper) SetConfirmedTxIn(ctx sdk.Context, tx *types.ConfirmedTxIn) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixConfirmedTxIn)
-	setConfirmedTxIn(store, tx)
-}
-
-func (k *DefaultKeeper) GetConfirmedTxIn(ctx sdk.Context, txInId string) *types.ConfirmedTxIn {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixConfirmedTxIn)
-	return getConfirmedTxIn(store, txInId)
 }
 
 ///// Transfer Queue

@@ -45,11 +45,6 @@ func getTxOutConfirmKey(outChain string, outHash string) []byte {
 	return []byte(fmt.Sprintf("%s__%s", outChain, outHash))
 }
 
-func getContractAddressKey(chain string, address string) []byte {
-	// chain, address
-	return []byte(fmt.Sprintf("%s__%s", chain, address))
-}
-
 func getLiquidityKey(chain string) []byte {
 	// chain
 	return []byte(chain)
@@ -382,68 +377,6 @@ func getAllChains(store cstypes.KVStore) map[string]*types.Chain {
 	}
 
 	return m
-}
-
-///// Token Prices
-func setTokenPrices(store cstypes.KVStore, blockHeight uint64, msg *types.UpdateTokenPrice) {
-	key := []byte(msg.Signer)
-	value := store.Get(key)
-
-	record := &types.TokenPriceRecords{Records: make([]*types.TokenPriceRecord, 0)}
-	if len(value) > 0 {
-		err := record.Unmarshal(value)
-		if err != nil {
-			log.Error("cannot unmarshal record for signer ", msg.Signer)
-			return
-		}
-	}
-
-	indexes := make(map[string]int)
-	for i, record := range record.Records {
-		indexes[record.Token] = i
-	}
-
-	for _, tokenPrice := range msg.TokenPrices {
-		if index, ok := indexes[tokenPrice.Id]; ok {
-			record.Records[index].BlockHeight = blockHeight
-			record.Records[index].Price = tokenPrice.Price
-		} else {
-			record.Records = append(record.Records, &types.TokenPriceRecord{
-				Token:       tokenPrice.Id,
-				BlockHeight: blockHeight,
-				Price:       tokenPrice.Price,
-			})
-		}
-	}
-
-	bz, err := record.Marshal()
-	if err != nil {
-		log.Error("cannot unmarshal token price record for signer ", msg.Signer)
-		return
-	}
-
-	store.Set(key, bz)
-}
-
-// getAllTokenPrices gets all the token prices all of all signers.
-func getAllTokenPrices(store cstypes.KVStore) map[string]*types.TokenPriceRecords {
-	result := make(map[string]*types.TokenPriceRecords)
-
-	for iter := store.Iterator(nil, nil); iter.Valid(); iter.Next() {
-		// Key is signer.
-		signer := string(iter.Key())
-		bz := iter.Value()
-		record := new(types.TokenPriceRecords)
-		err := record.Unmarshal(bz)
-		if err != nil {
-			log.Error("cannot unmarshal token price record for signer ", signer, " err = ", err)
-			continue
-		}
-
-		result[signer] = record
-	}
-
-	return result
 }
 
 ///// Tokens
@@ -899,73 +832,6 @@ func getBlockHeight(store cstypes.KVStore, chain string) *types.BlockHeight {
 	}
 
 	return block
-}
-
-///// Tx Hash Index
-func setTxHashIndex(store cstypes.KVStore, key string, value uint32) {
-	store.Set([]byte(key), utils.Uint32ToBytes(value))
-}
-
-func getTxHashIndex(store cstypes.KVStore, key string) uint32 {
-	bz := store.Get([]byte(key))
-	if bz == nil {
-		return 0
-	}
-
-	return utils.BytesToUint32(bz)
-}
-
-///// TxInDetails
-func setTxInDetails(store cstypes.KVStore, txInId string, txIn *types.TxIn) {
-	bz, err := txIn.Marshal()
-	if err != nil {
-		log.Errorf("setTxInDetails: failed to marshal msg, err = %s", err)
-		return
-	}
-
-	store.Set([]byte(txInId), bz)
-}
-
-func getTxInDetails(store cstypes.KVStore, txInId string) *types.TxInMsg {
-	bz := store.Get([]byte(txInId))
-	if bz == nil {
-		return nil
-	}
-
-	msg := new(types.TxInMsg)
-	err := msg.Unmarshal(bz)
-	if err != nil {
-		log.Errorf("getTxInDetails: failed to unmarshal TxInDetails with id %s, err = %s", txInId, err)
-		return nil
-	}
-
-	return msg
-}
-
-///// Confirmed TxIn
-func setConfirmedTxIn(store cstypes.KVStore, tx *types.ConfirmedTxIn) {
-	bz, err := tx.Marshal()
-	if err != nil {
-		log.Errorf("setConfirmedTxIn: failed to marhsal confirmed TxIn")
-		return
-	}
-
-	store.Set([]byte(tx.TxInId), bz)
-}
-
-func getConfirmedTxIn(store cstypes.KVStore, id string) *types.ConfirmedTxIn {
-	bz := store.Get([]byte(id))
-	if bz == nil {
-		return nil
-	}
-
-	tx := new(types.ConfirmedTxIn)
-	if err := tx.Unmarshal(bz); err != nil {
-		log.Errorf("getConfirmedTxIn: failed to unmarshal confirmed TxIn")
-		return nil
-	}
-
-	return tx
 }
 
 ///// Vote Result

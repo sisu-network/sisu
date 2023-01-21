@@ -12,10 +12,6 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-const (
-	MaxPendingTxCacheSize = 1000
-)
-
 type TransferRequest struct {
 	ctx sdk.Context
 }

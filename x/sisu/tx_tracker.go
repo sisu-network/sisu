@@ -186,12 +186,11 @@ func (t *DefaultTxTracker) getEmailBodyString(txo *txObject) (string, error) {
 	}
 
 	type TxOutData struct {
-		Type            string `json:"type"`
-		Chain           string `json:"chain"`
-		ContractAddress string `json:"contract_address"`
-		TokenAddress    string `json:"token_address"`
-		Recipient       string `json:"recipient"`
-		Amount          string `json:"amount"`
+		Type         string `json:"type"`
+		Chain        string `json:"chain"`
+		TokenAddress string `json:"token_address"`
+		Recipient    string `json:"recipient"`
+		Amount       string `json:"amount"`
 	}
 
 	type Body struct {

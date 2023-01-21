@@ -8,7 +8,6 @@ const (
 	MsgTypeTxOutResult                   = "MsgTypeTxOutResult"
 	MsgTransfers                         = "Transfers"
 	MsgTypeGasPriceWithSigner            = "GasPriceWithSigner"
-	MsgTypeUpdateTokenPrice              = "UpdateTokenPrice"
 	MsgTypePauseContract                 = "PauseContract"
 	MsgTypeResumeContract                = "ResumeContract"
 	MsgTypeContractChangeOwnership       = "ContractChangeOwnership"

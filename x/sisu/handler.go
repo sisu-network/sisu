@@ -51,9 +51,6 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 		case *types.KeysignResult:
 			return NewHandlerKeysignResult(mc).DeliverMsg(ctx, msg)
 
-		case *types.UpdateTokenPrice:
-			return NewHandlerTokenPrice(mc).DeliverMsg(ctx, msg)
-
 		case *types.BlockHeightMsg:
 			return NewHandlerBlockHeight(mc.Keeper()).DeliverMsg(ctx, msg)
 
@@ -64,7 +61,7 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorMa
 			return NewHandlerUpdateSolanaRecentHash(mc.Keeper()).DeliverMsg(ctx, msg)
 
 		case *types.TxInMsg:
-			return NewHandlerTxInDetails(mc.PostedMessageManager(), mc.Keeper(),
+			return NewHandlerTxIn(mc.PostedMessageManager(), mc.Keeper(),
 				mc.GlobalData(), mc.BridgeManager(), mc.ValidatorManager(), mc.PrivateDb()).DeliverMsg(ctx, msg)
 
 		case *types.TxOutVoteMsg:
