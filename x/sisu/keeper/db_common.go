@@ -834,20 +834,6 @@ func getBlockHeight(store cstypes.KVStore, chain string) *types.BlockHeight {
 	return block
 }
 
-///// Tx Hash Index
-func setTxHashIndex(store cstypes.KVStore, key string, value uint32) {
-	store.Set([]byte(key), utils.Uint32ToBytes(value))
-}
-
-func getTxHashIndex(store cstypes.KVStore, key string) uint32 {
-	bz := store.Get([]byte(key))
-	if bz == nil {
-		return 0
-	}
-
-	return utils.BytesToUint32(bz)
-}
-
 ///// Vote Result
 func addVoteResult(store cstypes.KVStore, hash string, signer string, result types.VoteResult) {
 	bz := utils.ToByte(result)
