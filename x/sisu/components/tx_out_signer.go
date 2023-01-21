@@ -1,8 +1,7 @@
-package sisu
+package components
 
 import (
 	"fmt"
-	"github.com/sisu-network/sisu/x/sisu/components"
 	"strconv"
 
 	liskcrypto "github.com/sisu-network/deyes/chains/lisk/crypto"
@@ -21,22 +20,26 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-type txOutSigner struct {
+type TxOutSigner interface {
+	SignTxOut(ctx sdk.Context, txOut *types.TxOut)
+}
+
+type defaultTxOutSigner struct {
 	keeper       keeper.Keeper
-	partyManager components.PartyManager
+	partyManager PartyManager
 	dheartClient external.DheartClient
 }
 
-func NewTxOutSigner(keeper keeper.Keeper, partyManager components.PartyManager,
-	dheartClient external.DheartClient) *txOutSigner {
-	return &txOutSigner{
+func NewTxOutSigner(keeper keeper.Keeper, partyManager PartyManager,
+	dheartClient external.DheartClient) TxOutSigner {
+	return &defaultTxOutSigner{
 		keeper:       keeper,
 		partyManager: partyManager,
 		dheartClient: dheartClient,
 	}
 }
 
-func (s *txOutSigner) signTxOut(ctx sdk.Context, txOut *types.TxOut) {
+func (s *defaultTxOutSigner) SignTxOut(ctx sdk.Context, txOut *types.TxOut) {
 	if libchain.IsETHBasedChain(txOut.Content.OutChain) {
 		s.signEthTx(ctx, txOut)
 	}
@@ -55,7 +58,7 @@ func (s *txOutSigner) signTxOut(ctx sdk.Context, txOut *types.TxOut) {
 }
 
 // signEthTx sends a TxOut to dheart for TSS signing.
-func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
+func (s *defaultTxOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
 	log.Info("Delivering TXOUT for chain ", tx.Content.OutChain, " tx hash = ", tx.Content.OutHash)
 	ethTx := &ethtypes.Transaction{}
 	err := ethTx.UnmarshalBinary(tx.Content.OutBytes)
@@ -94,7 +97,7 @@ func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
 	return nil
 }
 
-func (s *txOutSigner) signCardanoTx(ctx sdk.Context, txOut *types.TxOut) {
+func (s *defaultTxOutSigner) signCardanoTx(ctx sdk.Context, txOut *types.TxOut) {
 	tx := &cardano.Tx{}
 	if err := tx.UnmarshalCBOR(txOut.Content.OutBytes); err != nil {
 		log.Error("error when unmarshalling cardano tx out: ", err)
@@ -126,7 +129,7 @@ func (s *txOutSigner) signCardanoTx(ctx sdk.Context, txOut *types.TxOut) {
 	}
 }
 
-func (s *txOutSigner) signSolana(ctx sdk.Context, txOut *types.TxOut) {
+func (s *defaultTxOutSigner) signSolana(ctx sdk.Context, txOut *types.TxOut) {
 	signRequest := &hTypes.KeysignRequest{
 		KeyType: libchain.KEY_TYPE_EDDSA,
 		KeysignMessages: []*hTypes.KeysignMessage{
@@ -146,7 +149,7 @@ func (s *txOutSigner) signSolana(ctx sdk.Context, txOut *types.TxOut) {
 	}
 }
 
-func (s *txOutSigner) signLisk(ctx sdk.Context, txOut *types.TxOut) {
+func (s *defaultTxOutSigner) signLisk(ctx sdk.Context, txOut *types.TxOut) {
 	networkId := lisktypes.NetworkId[txOut.Content.OutChain]
 	if len(networkId) == 0 {
 		log.Errorf(fmt.Sprintf("cannot find lisk network id for chain %s", txOut.Content.OutChain))
@@ -179,6 +182,6 @@ func (s *txOutSigner) signLisk(ctx sdk.Context, txOut *types.TxOut) {
 	}
 }
 
-func (q *txOutSigner) getKeysignRequestId(chain string, blockHeight int64, txHash string) string {
+func (q *defaultTxOutSigner) getKeysignRequestId(chain string, blockHeight int64, txHash string) string {
 	return chain + "_" + strconv.Itoa(int(blockHeight)) + "_" + txHash
 }

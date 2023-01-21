@@ -18,12 +18,12 @@ type defaultTxOutProcessor struct {
 	keeper       keeper.Keeper
 	privateDb    keeper.PrivateDb
 	newRequestCh chan sdk.Context
-	txOutSigner  *txOutSigner
+	txOutSigner  components.TxOutSigner
 	globalData   components.GlobalData
 	stopCh       chan bool
 }
 
-func NewTxOutProcessor(keeper keeper.Keeper, privateDb keeper.PrivateDb, txOutSigner *txOutSigner,
+func NewTxOutProcessor(keeper keeper.Keeper, privateDb keeper.PrivateDb, txOutSigner components.TxOutSigner,
 	globalData components.GlobalData) TxOutProcessor {
 	return &defaultTxOutProcessor{
 		keeper:       keeper,
@@ -76,7 +76,7 @@ func (d *defaultTxOutProcessor) processTxOut(ctx sdk.Context) {
 
 		txOut := queue[0]
 		if !d.globalData.IsCatchingUp() {
-			d.txOutSigner.signTxOut(ctx, txOut)
+			d.txOutSigner.SignTxOut(ctx, txOut)
 		}
 	}
 }
