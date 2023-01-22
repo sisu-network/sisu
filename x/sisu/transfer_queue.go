@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	"github.com/sisu-network/sisu/x/sisu/chains"
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -24,7 +25,7 @@ type TransferQueue interface {
 
 type defaultTransferQueue struct {
 	keeper           keeper.Keeper
-	txOutputProducer components.TxOutputProducer
+	txOutputProducer chains.TxOutputProducer
 	txSubmit         components.TxSubmit
 	stopCh           chan bool
 	appKeys          components.AppKeys
@@ -37,7 +38,7 @@ type defaultTransferQueue struct {
 
 func NewTransferQueue(
 	keeper keeper.Keeper,
-	txOutputProducer components.TxOutputProducer,
+	txOutputProducer chains.TxOutputProducer,
 	txSubmit components.TxSubmit,
 	tssConfig config.TssConfig,
 	appKeys components.AppKeys,

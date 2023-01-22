@@ -271,7 +271,7 @@ func New(
 	partyManager := components.NewPartyManager(app.globalData)
 	bridgeManager := chains.NewBridgeManager(app.appKeys.GetSignerAddress().String(), app.k, deyesClient, cfg)
 
-	txOutProducer := components.NewTxOutputProducer(app.appKeys, app.k, bridgeManager, txTracker)
+	txOutProducer := chains.NewTxOutputProducer(app.appKeys, app.k, bridgeManager, txTracker)
 	transferQueue := sisu.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss,
 		app.appKeys, privateDb, valsMgr, app.globalData)
 	chainPolling := service.NewChainPolling(app.appKeys.GetSignerAddress().String(),

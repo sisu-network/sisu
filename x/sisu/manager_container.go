@@ -20,7 +20,7 @@ type ManagerContainer interface {
 	TxSubmit() components.TxSubmit
 	Config() config.Config
 	AppKeys() components.AppKeys
-	TxOutProducer() components.TxOutputProducer
+	TxOutProducer() chains.TxOutputProducer
 	TxTracker() components.TxTracker
 	Keeper() keeper.Keeper
 	ValidatorManager() components.ValidatorManager
@@ -41,7 +41,7 @@ type DefaultManagerContainer struct {
 	txSubmit         components.TxSubmit
 	config           config.Config
 	appKeys          components.AppKeys
-	txOutProducer    components.TxOutputProducer
+	txOutProducer    chains.TxOutputProducer
 	txTracker        components.TxTracker
 	keeper           keeper.Keeper
 	valsManager      components.ValidatorManager
@@ -54,7 +54,7 @@ type DefaultManagerContainer struct {
 func NewManagerContainer(pmm PostedMessageManager, partyManager components.PartyManager,
 	dheartClient external.DheartClient, deyesClient external.DeyesClient,
 	globalData components.GlobalData, txSubmit components.TxSubmit, cfg config.Config,
-	appKeys components.AppKeys, txOutProducer components.TxOutputProducer, txTracker components.TxTracker,
+	appKeys components.AppKeys, txOutProducer chains.TxOutputProducer, txTracker components.TxTracker,
 	keeper keeper.Keeper, valsManager components.ValidatorManager, txInQueue TransferQueue,
 	bridgeManager chains.BridgeManager, chainPolling service.ChainPolling,
 	privateDb keeper.PrivateDb) ManagerContainer {
@@ -106,7 +106,7 @@ func (mc *DefaultManagerContainer) AppKeys() components.AppKeys {
 	return mc.appKeys
 }
 
-func (mc *DefaultManagerContainer) TxOutProducer() components.TxOutputProducer {
+func (mc *DefaultManagerContainer) TxOutProducer() chains.TxOutputProducer {
 	return mc.txOutProducer
 }
 
