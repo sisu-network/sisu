@@ -289,8 +289,8 @@ func New(
 	externalHandler := rest.NewExternalHandler(app.k, app.globalData, deyesClient)
 	app.externalHandler = externalHandler
 
-	txOutSigner := components.NewTxOutSigner(app.k, partyManager, dheartClient)
-	txOutProcessor := sisu.NewTxOutProcessor(app.k, privateDb, txOutSigner, app.globalData)
+	txOutProcessor := sisu.NewTxOutProcessor(app.k, privateDb, app.globalData, dheartClient,
+		partyManager)
 	txOutProcessor.Start()
 
 	modules := []module.AppModule{

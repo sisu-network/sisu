@@ -1,8 +1,9 @@
 package chains
 
 import (
-	"github.com/sisu-network/sisu/x/sisu/components"
 	"math/big"
+
+	"github.com/sisu-network/sisu/x/sisu/components"
 
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
