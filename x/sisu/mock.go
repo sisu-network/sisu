@@ -4,6 +4,7 @@ import (
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/x/sisu/background"
 	"github.com/sisu-network/sisu/x/sisu/chains"
 	"github.com/sisu-network/sisu/x/sisu/components"
 	external "github.com/sisu-network/sisu/x/sisu/external"
@@ -54,7 +55,7 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.txOutProducer = t
 		case components.ValidatorManager:
 			mc.valsManager = t
-		case TransferQueue:
+		case background.TransferQueue:
 			mc.transferOutQueue = t
 		case chains.BridgeManager:
 			mc.bridgeManager = t

@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	"github.com/sisu-network/sisu/x/sisu/background"
 	"sync/atomic"
 
 	"github.com/sisu-network/sisu/config"
@@ -24,7 +25,7 @@ type ManagerContainer interface {
 	TxTracker() components.TxTracker
 	Keeper() keeper.Keeper
 	ValidatorManager() components.ValidatorManager
-	TransferQueue() TransferQueue
+	TransferQueue() background.TransferQueue
 	BridgeManager() chains.BridgeManager
 	ChainPolling() service.ChainPolling
 	PrivateDb() keeper.PrivateDb
@@ -45,7 +46,7 @@ type DefaultManagerContainer struct {
 	txTracker        components.TxTracker
 	keeper           keeper.Keeper
 	valsManager      components.ValidatorManager
-	transferOutQueue TransferQueue
+	transferOutQueue background.TransferQueue
 	bridgeManager    chains.BridgeManager
 	chainPolling     service.ChainPolling
 	privateDb        keeper.PrivateDb
@@ -55,7 +56,7 @@ func NewManagerContainer(pmm PostedMessageManager, partyManager components.Party
 	dheartClient external.DheartClient, deyesClient external.DeyesClient,
 	globalData components.GlobalData, txSubmit components.TxSubmit, cfg config.Config,
 	appKeys components.AppKeys, txOutProducer chains.TxOutputProducer, txTracker components.TxTracker,
-	keeper keeper.Keeper, valsManager components.ValidatorManager, txInQueue TransferQueue,
+	keeper keeper.Keeper, valsManager components.ValidatorManager, txInQueue background.TransferQueue,
 	bridgeManager chains.BridgeManager, chainPolling service.ChainPolling,
 	privateDb keeper.PrivateDb) ManagerContainer {
 	return &DefaultManagerContainer{
@@ -126,7 +127,7 @@ func (mc *DefaultManagerContainer) ValidatorManager() components.ValidatorManage
 	return mc.valsManager
 }
 
-func (mc *DefaultManagerContainer) TransferQueue() TransferQueue {
+func (mc *DefaultManagerContainer) TransferQueue() background.TransferQueue {
 	return mc.transferOutQueue
 }
 

@@ -1,4 +1,4 @@
-package sisu
+package background
 
 import (
 	"github.com/sisu-network/sisu/x/sisu/chains"

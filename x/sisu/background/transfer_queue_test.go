@@ -1,6 +1,7 @@
-package sisu
+package background
 
 import (
+	"github.com/sisu-network/sisu/x/sisu"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -13,7 +14,7 @@ import (
 	db "github.com/tendermint/tm-db"
 )
 
-func mockForTransferQueue() (sdk.Context, ManagerContainer) {
+func mockForTransferQueue() (sdk.Context, sisu.ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
 	privateDb := keeper.NewPrivateDb(".", db.MemDBBackend)
@@ -26,7 +27,7 @@ func mockForTransferQueue() (sdk.Context, ManagerContainer) {
 	}
 	k.SaveParams(ctx, params)
 
-	txOutputProducer := &MockTxOutputProducer{}
+	txOutputProducer := &sisu.MockTxOutputProducer{}
 	globalData := &components.MockGlobalData{
 		GetReadOnlyContextFunc: func() sdk.Context {
 			return ctx
@@ -34,9 +35,9 @@ func mockForTransferQueue() (sdk.Context, ManagerContainer) {
 	}
 	txSubmit := &components.MockTxSubmit{}
 	mockAppKeys := &components.MockAppKeys{}
-	valManagers := &MockValidatorManager{}
+	valManagers := &sisu.MockValidatorManager{}
 
-	mc := MockManagerContainer(ctx, k, txOutputProducer, globalData, txSubmit, privateDb, mockAppKeys,
+	mc := sisu.MockManagerContainer(ctx, k, txOutputProducer, globalData, txSubmit, privateDb, mockAppKeys,
 		valManagers)
 
 	return ctx, mc
@@ -45,13 +46,13 @@ func mockForTransferQueue() (sdk.Context, ManagerContainer) {
 func TestTransferQueue(t *testing.T) {
 	t.Run("transfer_is_saved", func(t *testing.T) {
 		ctx, mc := mockForTransferQueue()
-		txOutProducer := mc.TxOutProducer().(*MockTxOutputProducer)
+		txOutProducer := mc.TxOutProducer().(*sisu.MockTxOutputProducer)
 		appKeys := mc.AppKeys()
 
 		txSubmit := mc.TxSubmit().(*components.MockTxSubmit)
 		txSubmitCount := 0
 
-		valManager := mc.ValidatorManager().(*MockValidatorManager)
+		valManager := mc.ValidatorManager().(*sisu.MockValidatorManager)
 		valManager.GetAssignedValidatorFunc = func(ctx sdk.Context, hash string) *types.Node {
 			return &types.Node{
 				AccAddress: appKeys.GetSignerAddress().String(),
