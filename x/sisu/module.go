@@ -3,6 +3,7 @@ package sisu
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/sisu-network/sisu/x/sisu/background"
 	"strings"
 
 	// this line is used by starport scaffolding # 1
@@ -112,7 +113,7 @@ type AppModule struct {
 	globalData     components.GlobalData
 	valsManager    components.ValidatorManager
 	txTracker      components.TxTracker
-	txOutProcessor TxOutProcessor
+	txOutProcessor background.TxOutProcessor
 	mc             ManagerContainer
 }
 
@@ -121,7 +122,7 @@ func NewAppModule(cdc codec.Marshaler,
 	keeper keeper.Keeper,
 	apiHandler *ApiHandler,
 	valsManager components.ValidatorManager,
-	txOutProcessor TxOutProcessor,
+	txOutProcessor background.TxOutProcessor,
 	mc ManagerContainer,
 ) AppModule {
 	return AppModule{

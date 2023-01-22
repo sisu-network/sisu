@@ -1,9 +1,8 @@
-package sisu
+package background
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/x/sisu/background"
 	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -81,7 +80,7 @@ func (d *defaultTxOutProcessor) processTxOut(ctx sdk.Context) {
 
 		txOut := queue[0]
 		if !d.globalData.IsCatchingUp() {
-			background.SignTxOut(ctx, d.dheartCli, d.partyManager, txOut)
+			SignTxOut(ctx, d.dheartCli, d.partyManager, txOut)
 		}
 	}
 }

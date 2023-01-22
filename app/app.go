@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/sisu-network/sisu/x/sisu/background"
 	"io"
 	"path/filepath"
 
@@ -289,7 +290,7 @@ func New(
 	externalHandler := rest.NewExternalHandler(app.k, app.globalData, deyesClient)
 	app.externalHandler = externalHandler
 
-	txOutProcessor := sisu.NewTxOutProcessor(app.k, privateDb, app.globalData, dheartClient,
+	txOutProcessor := background.NewTxOutProcessor(app.k, privateDb, app.globalData, dheartClient,
 		partyManager)
 	txOutProcessor.Start()
 
