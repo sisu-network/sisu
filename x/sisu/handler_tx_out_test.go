@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/sisu-network/sisu/x/sisu/background"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -13,21 +15,21 @@ import (
 	db "github.com/tendermint/tm-db"
 )
 
-func mockForHandlerTxOut() (sdk.Context, ManagerContainer) {
+func mockForHandlerTxOut() (sdk.Context, background.ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
-	pmm := NewPostedMessageManager(k)
-	valsManager := &MockValidatorManager{
+	pmm := components.NewPostedMessageManager(k)
+	valsManager := &components.MockValidatorManager{
 		GetAssignedValidatorFunc: func(ctx sdk.Context, hash string) *types.Node {
 			return &types.Node{
 				AccAddress: "signer",
 			}
 		},
 	}
-	mockAppKeys := common.NewMockAppKeys()
-	txSubmit := &common.MockTxSubmit{}
+	mockAppKeys := components.NewMockAppKeys()
+	txSubmit := &components.MockTxSubmit{}
 
-	mc := MockManagerContainer(k, pmm, &MockTxOutQueue{}, txSubmit, valsManager, mockAppKeys,
+	mc := background.MockManagerContainer(k, pmm, &MockTxOutQueue{}, txSubmit, valsManager, mockAppKeys,
 		keeper.NewPrivateDb(".", db.MemDBBackend))
 	return ctx, mc
 }
@@ -35,7 +37,7 @@ func mockForHandlerTxOut() (sdk.Context, ManagerContainer) {
 func TestTxOut_MultipleSigners(t *testing.T) {
 	ctx, mc := mockForHandlerTxOut()
 	k := mc.Keeper()
-	txSubmit := mc.TxSubmit().(*common.MockTxSubmit)
+	txSubmit := mc.TxSubmit().(*components.MockTxSubmit)
 	submitCount := 0
 
 	txSubmit.SubmitMessageAsyncFunc = func(msg sdk.Msg) error {
@@ -78,7 +80,7 @@ func TestTxOut_MultipleSigners(t *testing.T) {
 	k.AddTransfers(ctx, transfers)
 	k.SetTransferQueue(ctx, destChain, transfers)
 
-	valManager := mc.ValidatorManager().(*MockValidatorManager)
+	valManager := mc.ValidatorManager().(*components.MockValidatorManager)
 	valManager.GetAssignedValidatorFunc = func(ctx sdk.Context, hash string) *types.Node {
 		return &types.Node{
 			AccAddress: "signer1",

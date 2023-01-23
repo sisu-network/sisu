@@ -19,8 +19,8 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	"github.com/cosmos/cosmos-sdk/x/genutil"
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/types"
 
 	tmconfig "github.com/tendermint/tendermint/config"
@@ -141,7 +141,7 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 		accTokens := sdk.TokensFromConsensusPower(1000)
 
 		coins := sdk.Coins{
-			sdk.NewCoin(common.SisuCoinName, accTokens),
+			sdk.NewCoin(components.SisuCoinName, accTokens),
 		}
 
 		genBalances = append(genBalances, banktypes.Balance{Address: node.AccAddress, Coins: coins.Sort()})

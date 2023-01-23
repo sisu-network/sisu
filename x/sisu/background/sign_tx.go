@@ -1,9 +1,10 @@
-package sisu
+package background
 
 import (
 	"fmt"
 	"strconv"
 
+	cosmoscrypto "github.com/cosmos/cosmos-sdk/crypto/types"
 	liskcrypto "github.com/sisu-network/deyes/chains/lisk/crypto"
 
 	lisktypes "github.com/sisu-network/deyes/chains/lisk/types"
@@ -15,46 +16,35 @@ import (
 	hTypes "github.com/sisu-network/dheart/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/external"
-	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-type txOutSigner struct {
-	keeper       keeper.Keeper
-	partyManager PartyManager
-	dheartClient external.DheartClient
-}
+func SignTxOut(ctx sdk.Context, dheartClient external.DheartClient,
+	partyManager components.PartyManager, txOut *types.TxOut) {
+	pubKeys := partyManager.GetActivePartyPubkeys()
 
-func NewTxOutSigner(keeper keeper.Keeper, partyManager PartyManager,
-	dheartClient external.DheartClient) *txOutSigner {
-	return &txOutSigner{
-		keeper:       keeper,
-		partyManager: partyManager,
-		dheartClient: dheartClient,
-	}
-}
-
-func (s *txOutSigner) signTxOut(ctx sdk.Context, txOut *types.TxOut) {
 	if libchain.IsETHBasedChain(txOut.Content.OutChain) {
-		s.signEthTx(ctx, txOut)
+		signEthTx(ctx, dheartClient, pubKeys, txOut)
 	}
 
 	if libchain.IsCardanoChain(txOut.Content.OutChain) {
-		s.signCardanoTx(ctx, txOut)
+		signCardanoTx(ctx, dheartClient, pubKeys, txOut)
 	}
 
 	if libchain.IsSolanaChain(txOut.Content.OutChain) {
-		s.signSolana(ctx, txOut)
+		signSolana(ctx, dheartClient, pubKeys, txOut)
 	}
 
 	if libchain.IsLiskChain(txOut.Content.OutChain) {
-		s.signLisk(ctx, txOut)
+		signLisk(ctx, dheartClient, pubKeys, txOut)
 	}
 }
 
 // signEthTx sends a TxOut to dheart for TSS signing.
-func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
+func signEthTx(ctx sdk.Context, dheartClient external.DheartClient, pubKeys []cosmoscrypto.PubKey,
+	tx *types.TxOut) error {
 	log.Info("Delivering TXOUT for chain ", tx.Content.OutChain, " tx hash = ", tx.Content.OutHash)
 	ethTx := &ethtypes.Transaction{}
 	err := ethTx.UnmarshalBinary(tx.Content.OutBytes)
@@ -74,7 +64,7 @@ func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
 		KeyType: libchain.KEY_TYPE_ECDSA,
 		KeysignMessages: []*hTypes.KeysignMessage{
 			{
-				Id:          s.getKeysignRequestId(tx.Content.OutChain, ctx.BlockHeight(), tx.Content.OutHash),
+				Id:          getKeysignRequestId(tx.Content.OutChain, ctx.BlockHeight(), tx.Content.OutHash),
 				OutChain:    tx.Content.OutChain,
 				OutHash:     tx.Content.OutHash,
 				Bytes:       tx.Content.OutBytes,
@@ -83,9 +73,7 @@ func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
 		},
 	}
 
-	pubKeys := s.partyManager.GetActivePartyPubkeys()
-
-	err = s.dheartClient.KeySign(keysignReq, pubKeys)
+	err = dheartClient.KeySign(keysignReq, pubKeys)
 	if err != nil {
 		log.Error("Keysign: err =", err)
 	}
@@ -93,7 +81,8 @@ func (s *txOutSigner) signEthTx(ctx sdk.Context, tx *types.TxOut) error {
 	return nil
 }
 
-func (s *txOutSigner) signCardanoTx(ctx sdk.Context, txOut *types.TxOut) {
+func signCardanoTx(ctx sdk.Context, dheartClient external.DheartClient,
+	pubKeys []cosmoscrypto.PubKey, txOut *types.TxOut) {
 	tx := &cardano.Tx{}
 	if err := tx.UnmarshalCBOR(txOut.Content.OutBytes); err != nil {
 		log.Error("error when unmarshalling cardano tx out: ", err)
@@ -110,7 +99,7 @@ func (s *txOutSigner) signCardanoTx(ctx sdk.Context, txOut *types.TxOut) {
 		KeyType: libchain.KEY_TYPE_EDDSA,
 		KeysignMessages: []*hTypes.KeysignMessage{
 			{
-				Id:          s.getKeysignRequestId(txOut.Content.OutChain, ctx.BlockHeight(), txOut.Content.OutHash),
+				Id:          getKeysignRequestId(txOut.Content.OutChain, ctx.BlockHeight(), txOut.Content.OutHash),
 				OutChain:    txOut.Content.OutChain,
 				OutHash:     txOut.Content.OutHash,
 				BytesToSign: txHash[:],
@@ -118,19 +107,19 @@ func (s *txOutSigner) signCardanoTx(ctx sdk.Context, txOut *types.TxOut) {
 		},
 	}
 
-	pubKeys := s.partyManager.GetActivePartyPubkeys()
-	err = s.dheartClient.KeySign(signRequest, pubKeys)
+	err = dheartClient.KeySign(signRequest, pubKeys)
 	if err != nil {
 		log.Error("Keysign: err =", err)
 	}
 }
 
-func (s *txOutSigner) signSolana(ctx sdk.Context, txOut *types.TxOut) {
+func signSolana(ctx sdk.Context, dheartClient external.DheartClient, pubKeys []cosmoscrypto.PubKey,
+	txOut *types.TxOut) {
 	signRequest := &hTypes.KeysignRequest{
 		KeyType: libchain.KEY_TYPE_EDDSA,
 		KeysignMessages: []*hTypes.KeysignMessage{
 			{
-				Id:          s.getKeysignRequestId(txOut.Content.OutChain, ctx.BlockHeight(), txOut.Content.OutHash),
+				Id:          getKeysignRequestId(txOut.Content.OutChain, ctx.BlockHeight(), txOut.Content.OutHash),
 				OutChain:    txOut.Content.OutChain,
 				OutHash:     txOut.Content.OutHash,
 				BytesToSign: txOut.Content.OutBytes,
@@ -138,14 +127,14 @@ func (s *txOutSigner) signSolana(ctx sdk.Context, txOut *types.TxOut) {
 		},
 	}
 
-	pubKeys := s.partyManager.GetActivePartyPubkeys()
-	err := s.dheartClient.KeySign(signRequest, pubKeys)
+	err := dheartClient.KeySign(signRequest, pubKeys)
 	if err != nil {
 		log.Error("signSolana: err =", err)
 	}
 }
 
-func (s *txOutSigner) signLisk(ctx sdk.Context, txOut *types.TxOut) {
+func signLisk(ctx sdk.Context, dheartClient external.DheartClient, pubKeys []cosmoscrypto.PubKey,
+	txOut *types.TxOut) {
 	networkId := lisktypes.NetworkId[txOut.Content.OutChain]
 	if len(networkId) == 0 {
 		log.Errorf(fmt.Sprintf("cannot find lisk network id for chain %s", txOut.Content.OutChain))
@@ -162,7 +151,7 @@ func (s *txOutSigner) signLisk(ctx sdk.Context, txOut *types.TxOut) {
 		KeyType: libchain.KEY_TYPE_EDDSA,
 		KeysignMessages: []*hTypes.KeysignMessage{
 			{
-				Id:          s.getKeysignRequestId(txOut.Content.OutChain, ctx.BlockHeight(), txOut.Content.OutHash),
+				Id:          getKeysignRequestId(txOut.Content.OutChain, ctx.BlockHeight(), txOut.Content.OutHash),
 				OutChain:    txOut.Content.OutChain,
 				OutHash:     txOut.Content.OutHash,
 				Bytes:       txOut.Content.OutBytes,
@@ -171,13 +160,12 @@ func (s *txOutSigner) signLisk(ctx sdk.Context, txOut *types.TxOut) {
 		},
 	}
 
-	pubKeys := s.partyManager.GetActivePartyPubkeys()
-	err = s.dheartClient.KeySign(signRequest, pubKeys)
+	err = dheartClient.KeySign(signRequest, pubKeys)
 	if err != nil {
 		log.Error("signLisk: err =", err)
 	}
 }
 
-func (q *txOutSigner) getKeysignRequestId(chain string, blockHeight int64, txHash string) string {
+func getKeysignRequestId(chain string, blockHeight int64, txHash string) string {
 	return chain + "_" + strconv.Itoa(int(blockHeight)) + "_" + txHash
 }

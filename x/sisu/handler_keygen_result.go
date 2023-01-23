@@ -5,9 +5,10 @@ import (
 	liskcrypto "github.com/sisu-network/deyes/chains/lisk/crypto"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/background"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -15,16 +16,16 @@ import (
 
 type HandlerKeygenResult struct {
 	keeper      keeper.Keeper
-	pmm         PostedMessageManager
-	globalData  common.GlobalData
+	pmm         components.PostedMessageManager
+	globalData  components.GlobalData
 	deyesClient external.DeyesClient
 	config      config.TssConfig
-	txSubmit    common.TxSubmit
-	appKeys     common.AppKeys
-	valsMgr     ValidatorManager
+	txSubmit    components.TxSubmit
+	appKeys     components.AppKeys
+	valsMgr     components.ValidatorManager
 }
 
-func NewHandlerKeygenResult(mc ManagerContainer) *HandlerKeygenResult {
+func NewHandlerKeygenResult(mc background.ManagerContainer) *HandlerKeygenResult {
 	return &HandlerKeygenResult{
 		keeper:      mc.Keeper(),
 		pmm:         mc.PostedMessageManager(),

@@ -1,9 +1,10 @@
-package sisu
+package background
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/components"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -18,19 +19,22 @@ type defaultTxOutProcessor struct {
 	keeper       keeper.Keeper
 	privateDb    keeper.PrivateDb
 	newRequestCh chan sdk.Context
-	txOutSigner  *txOutSigner
-	globalData   common.GlobalData
+	globalData   components.GlobalData
+	dheartCli    external.DheartClient
+	partyManager components.PartyManager
 	stopCh       chan bool
 }
 
-func NewTxOutProcessor(keeper keeper.Keeper, privateDb keeper.PrivateDb, txOutSigner *txOutSigner,
-	globalData common.GlobalData) TxOutProcessor {
+func NewTxOutProcessor(keeper keeper.Keeper, privateDb keeper.PrivateDb,
+	globalData components.GlobalData, dheartCli external.DheartClient,
+	partyManager components.PartyManager) TxOutProcessor {
 	return &defaultTxOutProcessor{
 		keeper:       keeper,
 		privateDb:    privateDb,
 		newRequestCh: make(chan sdk.Context, 10),
-		txOutSigner:  txOutSigner,
 		globalData:   globalData,
+		dheartCli:    dheartCli,
+		partyManager: partyManager,
 		stopCh:       make(chan bool),
 	}
 }
@@ -76,7 +80,7 @@ func (d *defaultTxOutProcessor) processTxOut(ctx sdk.Context) {
 
 		txOut := queue[0]
 		if !d.globalData.IsCatchingUp() {
-			d.txOutSigner.signTxOut(ctx, txOut)
+			SignTxOut(ctx, d.dheartCli, d.partyManager, txOut)
 		}
 	}
 }

@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/sisu-network/sisu/x/sisu/background"
+	"github.com/sisu-network/sisu/x/sisu/components"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
@@ -12,13 +15,13 @@ import (
 	db "github.com/tendermint/tm-db"
 )
 
-func MockForHandlerTxOutVote() (sdk.Context, ManagerContainer) {
+func MockForHandlerTxOutVote() (sdk.Context, background.ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
-	pmm := NewPostedMessageManager(k)
+	pmm := components.NewPostedMessageManager(k)
 	privateDb := keeper.NewPrivateDb(".", db.MemDBBackend)
 
-	mc := MockManagerContainer(k, pmm, privateDb)
+	mc := background.MockManagerContainer(k, pmm, privateDb)
 
 	return ctx, mc
 }

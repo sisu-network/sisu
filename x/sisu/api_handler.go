@@ -2,6 +2,7 @@ package sisu
 
 import (
 	"fmt"
+	"github.com/sisu-network/sisu/x/sisu/background"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -10,8 +11,8 @@ import (
 	dhtypes "github.com/sisu-network/dheart/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/chains"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/service"
@@ -29,14 +30,14 @@ var (
 // that are still present for historical reason. They should be moved out of this file.
 type ApiHandler struct {
 	keeper        keeper.Keeper
-	txSubmit      common.TxSubmit
-	appKeys       common.AppKeys
-	globalData    common.GlobalData
-	txTracker     TxTracker
+	txSubmit      components.TxSubmit
+	appKeys       components.AppKeys
+	globalData    components.GlobalData
+	txTracker     components.TxTracker
 	bridgeManager chains.BridgeManager
 	chainPolling  service.ChainPolling
-	valManager    ValidatorManager
-	mc            ManagerContainer
+	valManager    components.ValidatorManager
+	mc            background.ManagerContainer
 
 	// Dheart & Deyes client
 	dheartClient external.DheartClient
@@ -47,7 +48,7 @@ type ApiHandler struct {
 
 func NewApiHandler(
 	privateDb keeper.PrivateDb,
-	mc ManagerContainer,
+	mc background.ManagerContainer,
 ) *ApiHandler {
 	a := &ApiHandler{
 		mc:            mc,

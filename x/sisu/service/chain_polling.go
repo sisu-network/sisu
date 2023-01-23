@@ -6,7 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -27,11 +27,12 @@ type ChainPolling interface {
 type defaultChainPolling struct {
 	signer       string
 	deyesClient  external.DeyesClient
-	txSubmit     common.TxSubmit
+	txSubmit     components.TxSubmit
 	lastPollTime *atomic.Int64
 }
 
-func NewChainPolling(signer string, deyesClient external.DeyesClient, txSubmit common.TxSubmit) ChainPolling {
+func NewChainPolling(signer string, deyesClient external.DeyesClient,
+	txSubmit components.TxSubmit) ChainPolling {
 	return &defaultChainPolling{
 		signer:       signer,
 		deyesClient:  deyesClient,

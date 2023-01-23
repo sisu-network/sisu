@@ -3,8 +3,8 @@ package cardano
 import (
 	"github.com/echovl/cardano-go"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/external"
 )
 
@@ -70,7 +70,7 @@ func BuildTx(deyesClient external.DeyesClient, chain string, sender cardano.Addr
 	}
 
 	if !ok {
-		return nil, common.InsufficientFundErr
+		return nil, components.InsufficientFundErr
 	}
 
 	log.Debug("picked utxo: ")

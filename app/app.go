@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/sisu-network/sisu/x/sisu/background"
 	"io"
 	"path/filepath"
 
@@ -70,8 +71,8 @@ import (
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
 
-	"github.com/sisu-network/sisu/common"
 	sisuAuth "github.com/sisu-network/sisu/x/auth"
+	"github.com/sisu-network/sisu/x/sisu/components"
 )
 
 const (
@@ -119,9 +120,9 @@ var (
 // They are exported for convenience in creating helper functions, as object
 // capabilities aren't needed for testing.
 type App struct {
-	txSubmitter       *common.TxSubmitter
-	appKeys           *common.DefaultAppKeys
-	globalData        common.GlobalData
+	txSubmitter       *components.TxSubmitter
+	appKeys           *components.DefaultAppKeys
+	globalData        components.GlobalData
 	internalApiServer server.Server
 	apiHandler        *tss.ApiHandler
 	apiEndPoint       *tss.ApiEndPoint
@@ -221,13 +222,13 @@ func New(
 		panic(err)
 	}
 
-	app.appKeys = common.NewAppKeys(cfg.Sisu)
+	app.appKeys = components.NewAppKeys(cfg.Sisu)
 	app.appKeys.Init()
 
-	app.globalData = common.NewGlobalData(cfg)
+	app.globalData = components.NewGlobalData(cfg)
 	app.globalData.Init()
 
-	app.txSubmitter = common.NewTxSubmitter(cfg, app.appKeys)
+	app.txSubmitter = components.NewTxSubmitter(cfg, app.appKeys)
 	go app.txSubmitter.Start()
 
 	// TSS keeper
@@ -265,19 +266,19 @@ func New(
 	// storage that contains common data for all the nodes
 	privateDb := keeper.NewPrivateDb(filepath.Join(cfg.Sisu.Dir, "data", "private"), dbm.GoLevelDBBackend)
 
-	txTracker := tss.NewTxTracker(cfg.Sisu.EmailAlert)
+	txTracker := components.NewTxTracker(cfg.Sisu.EmailAlert)
 
-	valsMgr := tss.NewValidatorManager(app.k)
-	partyManager := tss.NewPartyManager(app.globalData)
+	valsMgr := components.NewValidatorManager(app.k)
+	partyManager := components.NewPartyManager(app.globalData)
 	bridgeManager := chains.NewBridgeManager(app.appKeys.GetSignerAddress().String(), app.k, deyesClient, cfg)
 
-	txOutProducer := tss.NewTxOutputProducer(app.appKeys, app.k, bridgeManager, txTracker)
-	transferQueue := sisu.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss,
+	txOutProducer := chains.NewTxOutputProducer(app.appKeys, app.k, bridgeManager, txTracker)
+	transferQueue := background.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss,
 		app.appKeys, privateDb, valsMgr, app.globalData)
 	chainPolling := service.NewChainPolling(app.appKeys.GetSignerAddress().String(),
 		deyesClient, app.txSubmitter)
 
-	mc := tss.NewManagerContainer(tss.NewPostedMessageManager(app.k),
+	mc := background.NewManagerContainer(components.NewPostedMessageManager(app.k),
 		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg,
 		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, transferQueue, bridgeManager,
 		chainPolling, privateDb)
@@ -289,8 +290,8 @@ func New(
 	externalHandler := rest.NewExternalHandler(app.k, app.globalData, deyesClient)
 	app.externalHandler = externalHandler
 
-	txOutSigner := sisu.NewTxOutSigner(app.k, partyManager, dheartClient)
-	txOutProcessor := sisu.NewTxOutProcessor(app.k, privateDb, txOutSigner, app.globalData)
+	txOutProcessor := background.NewTxOutProcessor(app.k, privateDb, app.globalData, dheartClient,
+		partyManager)
 	txOutProcessor.Start()
 
 	modules := []module.AppModule{

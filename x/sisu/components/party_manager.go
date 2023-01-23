@@ -1,8 +1,7 @@
-package sisu
+package components
 
 import (
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
-	"github.com/sisu-network/sisu/common"
 )
 
 type Party struct {
@@ -15,11 +14,11 @@ type PartyManager interface {
 }
 
 type DefaultPartyManager struct {
-	globalData    common.GlobalData
+	globalData    GlobalData
 	activePubkeys ctypes.PubKey
 }
 
-func NewPartyManager(globalData common.GlobalData) PartyManager {
+func NewPartyManager(globalData GlobalData) PartyManager {
 	return &DefaultPartyManager{
 		globalData: globalData,
 	}

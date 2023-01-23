@@ -3,27 +3,27 @@ package sisu
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/x/sisu/chains"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type HandlerTxIn struct {
-	pmm           PostedMessageManager
+	pmm           components.PostedMessageManager
 	keeper        keeper.Keeper
-	globalData    common.GlobalData
+	globalData    components.GlobalData
 	bridgeManager chains.BridgeManager
-	valsManager   ValidatorManager
+	valsManager   components.ValidatorManager
 	privateDb     keeper.PrivateDb
 }
 
 func NewHandlerTxIn(
-	pmm PostedMessageManager,
+	pmm components.PostedMessageManager,
 	keeper keeper.Keeper,
-	globalData common.GlobalData,
+	globalData components.GlobalData,
 	bridgeManager chains.BridgeManager,
-	valsManager ValidatorManager,
+	valsManager components.ValidatorManager,
 	privateDb keeper.PrivateDb,
 ) *HandlerTxIn {
 	return &HandlerTxIn{

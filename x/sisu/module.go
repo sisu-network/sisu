@@ -3,6 +3,7 @@ package sisu
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/sisu-network/sisu/x/sisu/background"
 	"strings"
 
 	// this line is used by starport scaffolding # 1
@@ -20,9 +21,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/common"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/client/cli"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -107,22 +108,22 @@ type AppModule struct {
 	sisuHandler    *SisuHandler
 	keeper         keeper.Keeper
 	apiHandler     *ApiHandler
-	appKeys        common.AppKeys
-	txSubmit       common.TxSubmit
-	globalData     common.GlobalData
-	valsManager    ValidatorManager
-	txTracker      TxTracker
-	txOutProcessor TxOutProcessor
-	mc             ManagerContainer
+	appKeys        components.AppKeys
+	txSubmit       components.TxSubmit
+	globalData     components.GlobalData
+	valsManager    components.ValidatorManager
+	txTracker      components.TxTracker
+	txOutProcessor background.TxOutProcessor
+	mc             background.ManagerContainer
 }
 
 func NewAppModule(cdc codec.Marshaler,
 	sisuHandler *SisuHandler,
 	keeper keeper.Keeper,
 	apiHandler *ApiHandler,
-	valsManager ValidatorManager,
-	txOutProcessor TxOutProcessor,
-	mc ManagerContainer,
+	valsManager components.ValidatorManager,
+	txOutProcessor background.TxOutProcessor,
+	mc background.ManagerContainer,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),

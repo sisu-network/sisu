@@ -2,6 +2,8 @@ package sisu
 
 import (
 	"fmt"
+	"github.com/sisu-network/sisu/x/sisu/background"
+	"github.com/sisu-network/sisu/x/sisu/components"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -10,16 +12,16 @@ import (
 )
 
 type SisuHandler struct {
-	mc ManagerContainer
+	mc background.ManagerContainer
 }
 
-func NewSisuHandler(mc ManagerContainer) *SisuHandler {
+func NewSisuHandler(mc background.ManagerContainer) *SisuHandler {
 	return &SisuHandler{
 		mc: mc,
 	}
 }
 
-func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager ValidatorManager) sdk.Handler {
+func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager components.ValidatorManager) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) (*sdk.Result, error) {
 		signers := msg.GetSigners()
 		if len(signers) != 1 {

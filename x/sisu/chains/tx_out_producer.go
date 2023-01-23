@@ -1,13 +1,13 @@
-package sisu
+package chains
 
 import (
 	"math/big"
 
+	"github.com/sisu-network/sisu/x/sisu/components"
+
 	ethcommon "github.com/ethereum/go-ethereum/common"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/sisu-network/sisu/common"
-	"github.com/sisu-network/sisu/x/sisu/chains"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
@@ -23,10 +23,10 @@ type TxOutputProducer interface {
 type DefaultTxOutputProducer struct {
 	signer    string
 	keeper    keeper.Keeper
-	txTracker TxTracker
+	txTracker components.TxTracker
 
 	// Only use for cardano chain
-	bridgeManager chains.BridgeManager
+	bridgeManager BridgeManager
 }
 
 type transferInData struct {
@@ -35,9 +35,9 @@ type transferInData struct {
 	amount    *big.Int
 }
 
-func NewTxOutputProducer(appKeys common.AppKeys, keeper keeper.Keeper,
-	bridgeManager chains.BridgeManager,
-	txTracker TxTracker) TxOutputProducer {
+func NewTxOutputProducer(appKeys components.AppKeys, keeper keeper.Keeper,
+	bridgeManager BridgeManager,
+	txTracker components.TxTracker) TxOutputProducer {
 	return &DefaultTxOutputProducer{
 		signer:        appKeys.GetSignerAddress().String(),
 		keeper:        keeper,

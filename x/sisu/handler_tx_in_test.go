@@ -3,20 +3,23 @@ package sisu
 import (
 	"testing"
 
+	"github.com/sisu-network/sisu/x/sisu/background"
+	"github.com/sisu-network/sisu/x/sisu/components"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-func mockForHandlerTransferOut() (sdk.Context, ManagerContainer) {
+func mockForHandlerTransferOut() (sdk.Context, background.ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestAfterContractDeployed(ctx)
-	pmm := NewPostedMessageManager(k)
+	pmm := components.NewPostedMessageManager(k)
 	k.SaveParams(ctx, &types.Params{
 		MajorityThreshold: 1,
 	})
 
-	mc := MockManagerContainer(ctx, k, pmm, &MockTransferQueue{})
+	mc := background.MockManagerContainer(ctx, k, pmm, &MockTransferQueue{})
 	return ctx, mc
 }
 

@@ -3,21 +3,23 @@ package sisu
 import (
 	"testing"
 
+	"github.com/sisu-network/sisu/x/sisu/background"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/sisu-network/sisu/common"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
 	db "github.com/tendermint/tm-db"
 )
 
-func mockForTestModule() (sdk.Context, ManagerContainer) {
+func mockForTestModule() (sdk.Context, background.ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
-	globalData := &common.MockGlobalData{}
+	globalData := &components.MockGlobalData{}
 	txOutQueue := &MockTxOutQueue{}
 	privateDb := keeper.NewPrivateDb(".", db.MemDBBackend)
 
-	mc := MockManagerContainer(k, txOutQueue, globalData, privateDb)
+	mc := background.MockManagerContainer(k, txOutQueue, globalData, privateDb)
 	return ctx, mc
 }
 

@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/sisu-network/sisu/x/sisu/background"
+	"github.com/sisu-network/sisu/x/sisu/components"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
@@ -11,14 +14,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func mockForHandlerTxOutResult() (sdk.Context, ManagerContainer) {
+func mockForHandlerTxOutResult() (sdk.Context, background.ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
-	pmm := NewPostedMessageManager(k)
+	pmm := components.NewPostedMessageManager(k)
 	transferQ := MockTransferQueue{}
 	storage := keeper.GetTestStorage()
 
-	mc := MockManagerContainer(k, pmm, transferQ, &MockTxOutQueue{}, storage)
+	mc := background.MockManagerContainer(k, pmm, transferQ, &MockTxOutQueue{}, storage)
 	return ctx, mc
 }
 
