@@ -213,3 +213,50 @@ func (m *MockGlobalData) ResetTxInQueue() {
 		m.ResetTxInQueueFunc()
 	}
 }
+
+///// Validator Manager
+type MockValidatorManager struct {
+	AddValidatorFunc         func(ctx sdk.Context, node *types.Node)
+	IsValidatorFunc          func(ctx sdk.Context, signer string) bool
+	GetValidatorLengthFunc   func(ctx sdk.Context) int
+	GetValidatorsFunc        func(ctx sdk.Context) []*types.Node
+	GetAssignedValidatorFunc func(ctx sdk.Context, hash string) *types.Node
+}
+
+func (m *MockValidatorManager) AddValidator(ctx sdk.Context, node *types.Node) {
+	if m.AddValidatorFunc != nil {
+		m.AddValidatorFunc(ctx, node)
+	}
+}
+
+func (m *MockValidatorManager) IsValidator(ctx sdk.Context, signer string) bool {
+	if m.IsValidatorFunc != nil {
+		return m.IsValidatorFunc(ctx, signer)
+	}
+
+	return false
+}
+
+func (m *MockValidatorManager) GetValidatorLength(ctx sdk.Context) int {
+	if m.GetValidatorLengthFunc != nil {
+		return m.GetValidatorLength(ctx)
+	}
+
+	return 0
+}
+
+func (m *MockValidatorManager) GetValidators(ctx sdk.Context) []*types.Node {
+	if m.GetValidatorsFunc != nil {
+		return m.GetValidators(ctx)
+	}
+
+	return nil
+}
+
+func (m *MockValidatorManager) GetAssignedValidator(ctx sdk.Context, hash string) *types.Node {
+	if m.GetAssignedValidatorFunc != nil {
+		return m.GetAssignedValidatorFunc(ctx, hash)
+	}
+
+	return nil
+}

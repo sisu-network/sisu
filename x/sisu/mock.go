@@ -3,6 +3,7 @@ package sisu
 import (
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/sisu-network/sisu/x/sisu/background"
 	"github.com/sisu-network/sisu/x/sisu/chains"
 	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -12,7 +13,7 @@ import (
 
 // A function to make sure that all mocks implement its designated interface.
 func checkMock() {
-	var _ chains.TxOutputProducer = new(MockTxOutputProducer)
+	var _ chains.TxOutputProducer = new(background.MockTxOutputProducer)
 	var _ components.TxTracker = new(MockTxTracker)
 	var _ components.PostedMessageManager = new(MockPostedMessageManager)
 	var _ components.PartyManager = new(MockPartyManager)
@@ -56,65 +57,6 @@ func (m *MockTxTracker) CheckExpiredTransaction() {
 	if m.CheckExpiredTransactionFunc != nil {
 		m.CheckExpiredTransactionFunc()
 	}
-}
-
-////// TxOutputProducer
-
-type MockTxOutputProducer struct {
-	GetTxOutsFunc                     func(ctx sdk.Context, chain string, transfers []*types.TransferDetails) ([]*types.TxOutMsg, error)
-	PauseContractFunc                 func(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error)
-	ResumeContractFunc                func(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error)
-	ContractChangeOwnershipFunc       func(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutMsg, error)
-	ContractSetLiquidPoolAddressFunc  func(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutMsg, error)
-	ContractEmergencyWithdrawFundFunc func(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutMsg, error)
-}
-
-func (m *MockTxOutputProducer) GetTxOuts(ctx sdk.Context, chain string, transfers []*types.TransferDetails) ([]*types.TxOutMsg, error) {
-	if m.GetTxOutsFunc != nil {
-		return m.GetTxOutsFunc(ctx, chain, transfers)
-	}
-
-	return nil, nil
-}
-
-func (m *MockTxOutputProducer) PauseContract(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error) {
-	if m.PauseContractFunc != nil {
-		return m.PauseContractFunc(ctx, chain, hash)
-	}
-
-	return nil, nil
-}
-
-func (m *MockTxOutputProducer) ResumeContract(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error) {
-	if m.ResumeContractFunc != nil {
-		return m.ResumeContractFunc(ctx, chain, hash)
-	}
-
-	return nil, nil
-}
-
-func (m *MockTxOutputProducer) ContractChangeOwnership(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutMsg, error) {
-	if m.ContractChangeOwnershipFunc != nil {
-		return m.ContractChangeOwnershipFunc(ctx, chain, contractHash, newOwner)
-	}
-
-	return nil, nil
-}
-
-func (m *MockTxOutputProducer) ContractSetLiquidPoolAddress(ctx sdk.Context, chain, contractHash, newAddress string) (*types.TxOutMsg, error) {
-	if m.ContractSetLiquidPoolAddressFunc != nil {
-		return m.ContractSetLiquidPoolAddressFunc(ctx, chain, contractHash, newAddress)
-	}
-
-	return nil, nil
-}
-
-func (m *MockTxOutputProducer) ContractEmergencyWithdrawFund(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutMsg, error) {
-	if m.ContractEmergencyWithdrawFundFunc != nil {
-		return m.ContractEmergencyWithdrawFundFunc(ctx, chain, contractHash, tokens, newOwner)
-	}
-
-	return nil, nil
 }
 
 ///// PostedMessageManager
@@ -257,51 +199,4 @@ func (m *MockTxOutQueue) ProcessTxOuts(ctx sdk.Context) {
 	if m.ProcessTxOutsFunc != nil {
 		m.ProcessTxOutsFunc(ctx)
 	}
-}
-
-///// Validator Manager
-type MockValidatorManager struct {
-	AddValidatorFunc         func(ctx sdk.Context, node *types.Node)
-	IsValidatorFunc          func(ctx sdk.Context, signer string) bool
-	GetValidatorLengthFunc   func(ctx sdk.Context) int
-	GetValidatorsFunc        func(ctx sdk.Context) []*types.Node
-	GetAssignedValidatorFunc func(ctx sdk.Context, hash string) *types.Node
-}
-
-func (m *MockValidatorManager) AddValidator(ctx sdk.Context, node *types.Node) {
-	if m.AddValidatorFunc != nil {
-		m.AddValidatorFunc(ctx, node)
-	}
-}
-
-func (m *MockValidatorManager) IsValidator(ctx sdk.Context, signer string) bool {
-	if m.IsValidatorFunc != nil {
-		return m.IsValidatorFunc(ctx, signer)
-	}
-
-	return false
-}
-
-func (m *MockValidatorManager) GetValidatorLength(ctx sdk.Context) int {
-	if m.GetValidatorLengthFunc != nil {
-		return m.GetValidatorLength(ctx)
-	}
-
-	return 0
-}
-
-func (m *MockValidatorManager) GetValidators(ctx sdk.Context) []*types.Node {
-	if m.GetValidatorsFunc != nil {
-		return m.GetValidators(ctx)
-	}
-
-	return nil
-}
-
-func (m *MockValidatorManager) GetAssignedValidator(ctx sdk.Context, hash string) *types.Node {
-	if m.GetAssignedValidatorFunc != nil {
-		return m.GetAssignedValidatorFunc(ctx, hash)
-	}
-
-	return nil
 }
