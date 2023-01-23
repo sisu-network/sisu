@@ -11,10 +11,10 @@ import (
 )
 
 type SisuHandler struct {
-	mc ManagerContainer
+	mc components.ManagerContainer
 }
 
-func NewSisuHandler(mc ManagerContainer) *SisuHandler {
+func NewSisuHandler(mc components.ManagerContainer) *SisuHandler {
 	return &SisuHandler{
 		mc: mc,
 	}

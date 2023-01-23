@@ -10,7 +10,7 @@ import (
 	db "github.com/tendermint/tm-db"
 )
 
-func mockForTestModule() (sdk.Context, ManagerContainer) {
+func mockForTestModule() (sdk.Context, components.ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
 	globalData := &components.MockGlobalData{}

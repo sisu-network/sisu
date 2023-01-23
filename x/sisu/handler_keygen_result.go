@@ -24,7 +24,7 @@ type HandlerKeygenResult struct {
 	valsMgr     components.ValidatorManager
 }
 
-func NewHandlerKeygenResult(mc ManagerContainer) *HandlerKeygenResult {
+func NewHandlerKeygenResult(mc components.ManagerContainer) *HandlerKeygenResult {
 	return &HandlerKeygenResult{
 		keeper:      mc.Keeper(),
 		pmm:         mc.PostedMessageManager(),

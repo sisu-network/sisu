@@ -13,7 +13,7 @@ import (
 	db "github.com/tendermint/tm-db"
 )
 
-func MockForHandlerTxOutVote() (sdk.Context, ManagerContainer) {
+func MockForHandlerTxOutVote() (sdk.Context, components.ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
 	pmm := components.NewPostedMessageManager(k)

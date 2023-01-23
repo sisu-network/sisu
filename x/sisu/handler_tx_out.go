@@ -18,7 +18,7 @@ type HandlerTxOut struct {
 	privateDb   keeper.PrivateDb
 }
 
-func NewHandlerTxOut(mc ManagerContainer) *HandlerTxOut {
+func NewHandlerTxOut(mc components.ManagerContainer) *HandlerTxOut {
 	return &HandlerTxOut{
 		keeper:      mc.Keeper(),
 		pmm:         mc.PostedMessageManager(),

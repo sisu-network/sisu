@@ -13,7 +13,7 @@ import (
 	db "github.com/tendermint/tm-db"
 )
 
-func mockForHandlerTxOut() (sdk.Context, ManagerContainer) {
+func mockForHandlerTxOut() (sdk.Context, components.ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
 	pmm := components.NewPostedMessageManager(k)

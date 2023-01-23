@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func mockForHandlerKeygen() (sdk.Context, ManagerContainer) {
+func mockForHandlerKeygen() (sdk.Context, components.ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
 	globalData := &components.MockGlobalData{}

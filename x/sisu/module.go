@@ -114,7 +114,7 @@ type AppModule struct {
 	valsManager    components.ValidatorManager
 	txTracker      components.TxTracker
 	txOutProcessor background.TxOutProcessor
-	mc             ManagerContainer
+	mc             components.ManagerContainer
 }
 
 func NewAppModule(cdc codec.Marshaler,
@@ -123,7 +123,7 @@ func NewAppModule(cdc codec.Marshaler,
 	apiHandler *ApiHandler,
 	valsManager components.ValidatorManager,
 	txOutProcessor background.TxOutProcessor,
-	mc ManagerContainer,
+	mc components.ManagerContainer,
 ) AppModule {
 	return AppModule{
 		AppModuleBasic: NewAppModuleBasic(cdc),

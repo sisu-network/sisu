@@ -33,7 +33,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func mockForApiHandlerTest() (sdk.Context, ManagerContainer) {
+func mockForApiHandlerTest() (sdk.Context, components.ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestAfterContractDeployed(ctx)
 

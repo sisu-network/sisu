@@ -14,7 +14,7 @@ import (
 	db "github.com/tendermint/tm-db"
 )
 
-func mockForTransferQueue() (sdk.Context, sisu.ManagerContainer) {
+func mockForTransferQueue() (sdk.Context, components.ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
 	privateDb := keeper.NewPrivateDb(".", db.MemDBBackend)

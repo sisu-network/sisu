@@ -36,7 +36,7 @@ type ApiHandler struct {
 	bridgeManager chains.BridgeManager
 	chainPolling  service.ChainPolling
 	valManager    components.ValidatorManager
-	mc            ManagerContainer
+	mc            components.ManagerContainer
 
 	// Dheart & Deyes client
 	dheartClient external.DheartClient
@@ -47,7 +47,7 @@ type ApiHandler struct {
 
 func NewApiHandler(
 	privateDb keeper.PrivateDb,
-	mc ManagerContainer,
+	mc components.ManagerContainer,
 ) *ApiHandler {
 	a := &ApiHandler{
 		mc:            mc,

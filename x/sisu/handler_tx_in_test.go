@@ -9,7 +9,7 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-func mockForHandlerTransferOut() (sdk.Context, ManagerContainer) {
+func mockForHandlerTransferOut() (sdk.Context, components.ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestAfterContractDeployed(ctx)
 	pmm := components.NewPostedMessageManager(k)

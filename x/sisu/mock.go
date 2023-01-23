@@ -24,8 +24,8 @@ func checkMock() {
 
 ///// ManagerContainer
 
-func MockManagerContainer(args ...interface{}) ManagerContainer {
-	mc := &DefaultManagerContainer{}
+func MockManagerContainer(args ...interface{}) components.ManagerContainer {
+	mc := &components.DefaultManagerContainer{}
 
 	for _, arg := range args {
 		switch t := arg.(type) {

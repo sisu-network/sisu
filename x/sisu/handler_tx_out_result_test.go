@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func mockForHandlerTxOutResult() (sdk.Context, ManagerContainer) {
+func mockForHandlerTxOutResult() (sdk.Context, components.ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
 	pmm := components.NewPostedMessageManager(k)
