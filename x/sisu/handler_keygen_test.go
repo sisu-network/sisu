@@ -1,8 +1,9 @@
 package sisu
 
 import (
-	"github.com/sisu-network/sisu/x/sisu/background"
 	"testing"
+
+	"github.com/sisu-network/sisu/x/sisu/background"
 
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -27,7 +28,7 @@ func mockForHandlerKeygen() (sdk.Context, background.ManagerContainer) {
 
 	dheartClient := &external.MockDheartClient{}
 
-	mc := MockManagerContainer(k, pmm, globalData, partyManager, dheartClient)
+	mc := background.MockManagerContainer(k, pmm, globalData, partyManager, dheartClient)
 
 	return ctx, mc
 }

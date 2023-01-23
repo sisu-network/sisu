@@ -1,8 +1,9 @@
 package sisu
 
 import (
-	"github.com/sisu-network/sisu/x/sisu/background"
 	"testing"
+
+	"github.com/sisu-network/sisu/x/sisu/background"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/x/sisu/components"
@@ -18,7 +19,7 @@ func mockForTestModule() (sdk.Context, background.ManagerContainer) {
 	txOutQueue := &MockTxOutQueue{}
 	privateDb := keeper.NewPrivateDb(".", db.MemDBBackend)
 
-	mc := MockManagerContainer(k, txOutQueue, globalData, privateDb)
+	mc := background.MockManagerContainer(k, txOutQueue, globalData, privateDb)
 	return ctx, mc
 }
 

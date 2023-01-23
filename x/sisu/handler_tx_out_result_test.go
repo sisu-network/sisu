@@ -2,9 +2,10 @@ package sisu
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/sisu-network/sisu/x/sisu/background"
 	"github.com/sisu-network/sisu/x/sisu/components"
-	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -20,7 +21,7 @@ func mockForHandlerTxOutResult() (sdk.Context, background.ManagerContainer) {
 	transferQ := MockTransferQueue{}
 	storage := keeper.GetTestStorage()
 
-	mc := MockManagerContainer(k, pmm, transferQ, &MockTxOutQueue{}, storage)
+	mc := background.MockManagerContainer(k, pmm, transferQ, &MockTxOutQueue{}, storage)
 	return ctx, mc
 }
 

@@ -2,9 +2,10 @@ package sisu
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/sisu-network/sisu/x/sisu/background"
 	"github.com/sisu-network/sisu/x/sisu/components"
-	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -20,7 +21,7 @@ func MockForHandlerTxOutVote() (sdk.Context, background.ManagerContainer) {
 	pmm := components.NewPostedMessageManager(k)
 	privateDb := keeper.NewPrivateDb(".", db.MemDBBackend)
 
-	mc := MockManagerContainer(k, pmm, privateDb)
+	mc := background.MockManagerContainer(k, pmm, privateDb)
 
 	return ctx, mc
 }

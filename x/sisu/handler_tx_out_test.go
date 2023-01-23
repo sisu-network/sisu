@@ -2,8 +2,9 @@ package sisu
 
 import (
 	"fmt"
-	"github.com/sisu-network/sisu/x/sisu/background"
 	"testing"
+
+	"github.com/sisu-network/sisu/x/sisu/background"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/x/sisu/components"
@@ -18,7 +19,7 @@ func mockForHandlerTxOut() (sdk.Context, background.ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
 	pmm := components.NewPostedMessageManager(k)
-	valsManager := &MockValidatorManager{
+	valsManager := &components.MockValidatorManager{
 		GetAssignedValidatorFunc: func(ctx sdk.Context, hash string) *types.Node {
 			return &types.Node{
 				AccAddress: "signer",
@@ -28,7 +29,7 @@ func mockForHandlerTxOut() (sdk.Context, background.ManagerContainer) {
 	mockAppKeys := components.NewMockAppKeys()
 	txSubmit := &components.MockTxSubmit{}
 
-	mc := MockManagerContainer(k, pmm, &MockTxOutQueue{}, txSubmit, valsManager, mockAppKeys,
+	mc := background.MockManagerContainer(k, pmm, &MockTxOutQueue{}, txSubmit, valsManager, mockAppKeys,
 		keeper.NewPrivateDb(".", db.MemDBBackend))
 	return ctx, mc
 }
@@ -79,7 +80,7 @@ func TestTxOut_MultipleSigners(t *testing.T) {
 	k.AddTransfers(ctx, transfers)
 	k.SetTransferQueue(ctx, destChain, transfers)
 
-	valManager := mc.ValidatorManager().(*MockValidatorManager)
+	valManager := mc.ValidatorManager().(*components.MockValidatorManager)
 	valManager.GetAssignedValidatorFunc = func(ctx sdk.Context, hash string) *types.Node {
 		return &types.Node{
 			AccAddress: "signer1",

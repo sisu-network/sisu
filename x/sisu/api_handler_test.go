@@ -3,10 +3,11 @@ package sisu
 import (
 	"crypto/ecdsa"
 	"fmt"
-	"github.com/sisu-network/sisu/x/sisu/background"
 	"math/big"
 	"strings"
 	"testing"
+
+	"github.com/sisu-network/sisu/x/sisu/background"
 
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -58,7 +59,7 @@ func mockForApiHandlerTest() (sdk.Context, background.ManagerContainer) {
 
 	bridgeManager := chains.NewBridgeManager("signer", k, deyesClient, config.Config{})
 
-	mc := MockManagerContainer(k, pmm, globalData, partyManager, dheartClient, txSubmit, appKeys, ctx,
+	mc := background.MockManagerContainer(k, pmm, globalData, partyManager, dheartClient, txSubmit, appKeys, ctx,
 		txTracker, bridgeManager, deyesClient)
 	return ctx, mc
 }
