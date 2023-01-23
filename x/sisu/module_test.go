@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	"github.com/sisu-network/sisu/x/sisu/background"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -10,7 +11,7 @@ import (
 	db "github.com/tendermint/tm-db"
 )
 
-func mockForTestModule() (sdk.Context, components.ManagerContainer) {
+func mockForTestModule() (sdk.Context, background.ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
 	globalData := &components.MockGlobalData{}

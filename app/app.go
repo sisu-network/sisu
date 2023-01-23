@@ -278,7 +278,7 @@ func New(
 	chainPolling := service.NewChainPolling(app.appKeys.GetSignerAddress().String(),
 		deyesClient, app.txSubmitter)
 
-	mc := components.NewManagerContainer(components.NewPostedMessageManager(app.k),
+	mc := background.NewManagerContainer(components.NewPostedMessageManager(app.k),
 		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg,
 		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, transferQueue, bridgeManager,
 		chainPolling, privateDb)

@@ -16,7 +16,7 @@ type HandlerTxOutResult struct {
 	privateDb keeper.PrivateDb
 }
 
-func NewHandlerTxOutResult(mc components.ManagerContainer) *HandlerTxOutResult {
+func NewHandlerTxOutResult(mc background.ManagerContainer) *HandlerTxOutResult {
 	return &HandlerTxOutResult{
 		keeper:    mc.Keeper(),
 		pmm:       mc.PostedMessageManager(),

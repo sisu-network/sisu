@@ -7,6 +7,7 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
+	"github.com/sisu-network/sisu/x/sisu/background"
 	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -24,7 +25,7 @@ type HandlerKeygenResult struct {
 	valsMgr     components.ValidatorManager
 }
 
-func NewHandlerKeygenResult(mc components.ManagerContainer) *HandlerKeygenResult {
+func NewHandlerKeygenResult(mc background.ManagerContainer) *HandlerKeygenResult {
 	return &HandlerKeygenResult{
 		keeper:      mc.Keeper(),
 		pmm:         mc.PostedMessageManager(),

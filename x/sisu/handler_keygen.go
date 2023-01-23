@@ -3,18 +3,18 @@ package sisu
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/x/sisu/components"
+	"github.com/sisu-network/sisu/x/sisu/background"
 	"github.com/sisu-network/sisu/x/sisu/helper"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type HandlerKeygen struct {
-	mc     components.ManagerContainer
+	mc     background.ManagerContainer
 	keeper keeper.Keeper
 }
 
-func NewHandlerKeygen(mc components.ManagerContainer) *HandlerKeygen {
+func NewHandlerKeygen(mc background.ManagerContainer) *HandlerKeygen {
 	return &HandlerKeygen{
 		keeper: mc.Keeper(),
 		mc:     mc,

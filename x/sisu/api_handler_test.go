@@ -3,6 +3,7 @@ package sisu
 import (
 	"crypto/ecdsa"
 	"fmt"
+	"github.com/sisu-network/sisu/x/sisu/background"
 	"math/big"
 	"strings"
 	"testing"
@@ -33,7 +34,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func mockForApiHandlerTest() (sdk.Context, components.ManagerContainer) {
+func mockForApiHandlerTest() (sdk.Context, background.ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestAfterContractDeployed(ctx)
 

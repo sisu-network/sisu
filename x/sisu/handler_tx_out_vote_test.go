@@ -2,6 +2,7 @@ package sisu
 
 import (
 	"fmt"
+	"github.com/sisu-network/sisu/x/sisu/background"
 	"github.com/sisu-network/sisu/x/sisu/components"
 	"testing"
 
@@ -13,7 +14,7 @@ import (
 	db "github.com/tendermint/tm-db"
 )
 
-func MockForHandlerTxOutVote() (sdk.Context, components.ManagerContainer) {
+func MockForHandlerTxOutVote() (sdk.Context, background.ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
 	pmm := components.NewPostedMessageManager(k)

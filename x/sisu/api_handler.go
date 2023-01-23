@@ -2,6 +2,7 @@ package sisu
 
 import (
 	"fmt"
+	"github.com/sisu-network/sisu/x/sisu/background"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	ethtypes "github.com/ethereum/go-ethereum/core/types"
@@ -36,7 +37,7 @@ type ApiHandler struct {
 	bridgeManager chains.BridgeManager
 	chainPolling  service.ChainPolling
 	valManager    components.ValidatorManager
-	mc            components.ManagerContainer
+	mc            background.ManagerContainer
 
 	// Dheart & Deyes client
 	dheartClient external.DheartClient
@@ -47,7 +48,7 @@ type ApiHandler struct {
 
 func NewApiHandler(
 	privateDb keeper.PrivateDb,
-	mc components.ManagerContainer,
+	mc background.ManagerContainer,
 ) *ApiHandler {
 	a := &ApiHandler{
 		mc:            mc,

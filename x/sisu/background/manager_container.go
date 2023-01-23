@@ -1,7 +1,7 @@
-package components
+package background
 
 import (
-	"github.com/sisu-network/sisu/x/sisu/background"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"sync/atomic"
 
 	"github.com/sisu-network/sisu/config"
@@ -12,19 +12,19 @@ import (
 )
 
 type ManagerContainer interface {
-	PostedMessageManager() PostedMessageManager
-	PartyManager() PartyManager
+	PostedMessageManager() components.PostedMessageManager
+	PartyManager() components.PartyManager
 	DheartClient() external.DheartClient
 	DeyesClient() external.DeyesClient
-	GlobalData() GlobalData
-	TxSubmit() TxSubmit
+	GlobalData() components.GlobalData
+	TxSubmit() components.TxSubmit
 	Config() config.Config
-	AppKeys() AppKeys
+	AppKeys() components.AppKeys
 	TxOutProducer() chains.TxOutputProducer
-	TxTracker() TxTracker
+	TxTracker() components.TxTracker
 	Keeper() keeper.Keeper
-	ValidatorManager() ValidatorManager
-	TransferQueue() background.TransferQueue
+	ValidatorManager() components.ValidatorManager
+	TransferQueue() TransferQueue
 	BridgeManager() chains.BridgeManager
 	ChainPolling() service.ChainPolling
 	PrivateDb() keeper.PrivateDb
@@ -33,29 +33,29 @@ type ManagerContainer interface {
 type DefaultManagerContainer struct {
 	readOnlyContext atomic.Value
 
-	pmm              PostedMessageManager
-	partyManager     PartyManager
+	pmm              components.PostedMessageManager
+	partyManager     components.PartyManager
 	dheartClient     external.DheartClient
 	deyesClient      external.DeyesClient
-	globalData       GlobalData
-	txSubmit         TxSubmit
+	globalData       components.GlobalData
+	txSubmit         components.TxSubmit
 	config           config.Config
-	appKeys          AppKeys
+	appKeys          components.AppKeys
 	txOutProducer    chains.TxOutputProducer
-	txTracker        TxTracker
+	txTracker        components.TxTracker
 	keeper           keeper.Keeper
-	valsManager      ValidatorManager
-	transferOutQueue background.TransferQueue
+	valsManager      components.ValidatorManager
+	transferOutQueue TransferQueue
 	bridgeManager    chains.BridgeManager
 	chainPolling     service.ChainPolling
 	privateDb        keeper.PrivateDb
 }
 
-func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
+func NewManagerContainer(pmm components.PostedMessageManager, partyManager components.PartyManager,
 	dheartClient external.DheartClient, deyesClient external.DeyesClient,
-	globalData GlobalData, txSubmit TxSubmit, cfg config.Config,
-	appKeys AppKeys, txOutProducer chains.TxOutputProducer, txTracker TxTracker,
-	keeper keeper.Keeper, valsManager ValidatorManager, txInQueue background.TransferQueue,
+	globalData components.GlobalData, txSubmit components.TxSubmit, cfg config.Config,
+	appKeys components.AppKeys, txOutProducer chains.TxOutputProducer, txTracker components.TxTracker,
+	keeper keeper.Keeper, valsManager components.ValidatorManager, txInQueue TransferQueue,
 	bridgeManager chains.BridgeManager, chainPolling service.ChainPolling,
 	privateDb keeper.PrivateDb) ManagerContainer {
 	return &DefaultManagerContainer{
@@ -78,11 +78,11 @@ func NewManagerContainer(pmm PostedMessageManager, partyManager PartyManager,
 	}
 }
 
-func (mc *DefaultManagerContainer) PostedMessageManager() PostedMessageManager {
+func (mc *DefaultManagerContainer) PostedMessageManager() components.PostedMessageManager {
 	return mc.pmm
 }
 
-func (mc *DefaultManagerContainer) PartyManager() PartyManager {
+func (mc *DefaultManagerContainer) PartyManager() components.PartyManager {
 	return mc.partyManager
 }
 
@@ -90,11 +90,11 @@ func (mc *DefaultManagerContainer) DheartClient() external.DheartClient {
 	return mc.dheartClient
 }
 
-func (mc *DefaultManagerContainer) GlobalData() GlobalData {
+func (mc *DefaultManagerContainer) GlobalData() components.GlobalData {
 	return mc.globalData
 }
 
-func (mc *DefaultManagerContainer) TxSubmit() TxSubmit {
+func (mc *DefaultManagerContainer) TxSubmit() components.TxSubmit {
 	return mc.txSubmit
 }
 
@@ -102,7 +102,7 @@ func (mc *DefaultManagerContainer) Config() config.Config {
 	return mc.config
 }
 
-func (mc *DefaultManagerContainer) AppKeys() AppKeys {
+func (mc *DefaultManagerContainer) AppKeys() components.AppKeys {
 	return mc.appKeys
 }
 
@@ -114,7 +114,7 @@ func (mc *DefaultManagerContainer) DeyesClient() external.DeyesClient {
 	return mc.deyesClient
 }
 
-func (mc *DefaultManagerContainer) TxTracker() TxTracker {
+func (mc *DefaultManagerContainer) TxTracker() components.TxTracker {
 	return mc.txTracker
 }
 
@@ -122,11 +122,11 @@ func (mc *DefaultManagerContainer) Keeper() keeper.Keeper {
 	return mc.keeper
 }
 
-func (mc *DefaultManagerContainer) ValidatorManager() ValidatorManager {
+func (mc *DefaultManagerContainer) ValidatorManager() components.ValidatorManager {
 	return mc.valsManager
 }
 
-func (mc *DefaultManagerContainer) TransferQueue() background.TransferQueue {
+func (mc *DefaultManagerContainer) TransferQueue() TransferQueue {
 	return mc.transferOutQueue
 }
 

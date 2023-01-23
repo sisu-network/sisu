@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	"github.com/sisu-network/sisu/x/sisu/background"
 	"github.com/sisu-network/sisu/x/sisu/components"
 	"testing"
 
@@ -9,7 +10,7 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-func mockForHandlerTransferOut() (sdk.Context, components.ManagerContainer) {
+func mockForHandlerTransferOut() (sdk.Context, background.ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestAfterContractDeployed(ctx)
 	pmm := components.NewPostedMessageManager(k)

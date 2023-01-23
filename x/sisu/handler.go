@@ -2,6 +2,7 @@ package sisu
 
 import (
 	"fmt"
+	"github.com/sisu-network/sisu/x/sisu/background"
 	"github.com/sisu-network/sisu/x/sisu/components"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -11,10 +12,10 @@ import (
 )
 
 type SisuHandler struct {
-	mc components.ManagerContainer
+	mc background.ManagerContainer
 }
 
-func NewSisuHandler(mc components.ManagerContainer) *SisuHandler {
+func NewSisuHandler(mc background.ManagerContainer) *SisuHandler {
 	return &SisuHandler{
 		mc: mc,
 	}

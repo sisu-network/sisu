@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	"github.com/sisu-network/sisu/x/sisu/background"
 	"testing"
 
 	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -13,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func mockForHandlerKeygen() (sdk.Context, components.ManagerContainer) {
+func mockForHandlerKeygen() (sdk.Context, background.ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
 	globalData := &components.MockGlobalData{}
