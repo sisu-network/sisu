@@ -15,7 +15,7 @@ import (
 
 type HandlerKeygenResult struct {
 	keeper      keeper.Keeper
-	pmm         PostedMessageManager
+	pmm         components.PostedMessageManager
 	globalData  components.GlobalData
 	deyesClient external.DeyesClient
 	config      config.TssConfig

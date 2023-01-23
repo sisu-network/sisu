@@ -42,7 +42,7 @@ func mockForApiHandlerTest() (sdk.Context, ManagerContainer) {
 			return ctx
 		},
 	}
-	pmm := NewPostedMessageManager(k)
+	pmm := components.NewPostedMessageManager(k)
 	txSubmit := &components.MockTxSubmit{}
 	txTracker := &MockTxTracker{}
 

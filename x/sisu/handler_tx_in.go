@@ -10,7 +10,7 @@ import (
 )
 
 type HandlerTxIn struct {
-	pmm           PostedMessageManager
+	pmm           components.PostedMessageManager
 	keeper        keeper.Keeper
 	globalData    components.GlobalData
 	bridgeManager chains.BridgeManager
@@ -19,7 +19,7 @@ type HandlerTxIn struct {
 }
 
 func NewHandlerTxIn(
-	pmm PostedMessageManager,
+	pmm components.PostedMessageManager,
 	keeper keeper.Keeper,
 	globalData components.GlobalData,
 	bridgeManager chains.BridgeManager,

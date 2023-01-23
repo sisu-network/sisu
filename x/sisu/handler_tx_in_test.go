@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -11,7 +12,7 @@ import (
 func mockForHandlerTransferOut() (sdk.Context, ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestAfterContractDeployed(ctx)
-	pmm := NewPostedMessageManager(k)
+	pmm := components.NewPostedMessageManager(k)
 	k.SaveParams(ctx, &types.Params{
 		MajorityThreshold: 1,
 	})

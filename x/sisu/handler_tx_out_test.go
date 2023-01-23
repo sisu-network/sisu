@@ -16,7 +16,7 @@ import (
 func mockForHandlerTxOut() (sdk.Context, ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
-	pmm := NewPostedMessageManager(k)
+	pmm := components.NewPostedMessageManager(k)
 	valsManager := &MockValidatorManager{
 		GetAssignedValidatorFunc: func(ctx sdk.Context, hash string) *types.Node {
 			return &types.Node{

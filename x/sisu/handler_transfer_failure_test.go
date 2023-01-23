@@ -1,6 +1,7 @@
 package sisu
 
 import (
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"testing"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -8,10 +9,10 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/testmock"
 )
 
-func mockForHandlerTransferFailure() (sdk.Context, keeper.Keeper, PostedMessageManager) {
+func mockForHandlerTransferFailure() (sdk.Context, keeper.Keeper, components.PostedMessageManager) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
-	pmm := NewPostedMessageManager(k)
+	pmm := components.NewPostedMessageManager(k)
 
 	return ctx, k, pmm
 }

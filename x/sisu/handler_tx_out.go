@@ -9,7 +9,7 @@ import (
 )
 
 type HandlerTxOut struct {
-	pmm         PostedMessageManager
+	pmm         components.PostedMessageManager
 	keeper      keeper.Keeper
 	valsManager components.ValidatorManager
 	globalData  components.GlobalData

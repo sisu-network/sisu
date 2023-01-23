@@ -18,7 +18,7 @@ import (
 func checkMock() {
 	var _ chains.TxOutputProducer = new(MockTxOutputProducer)
 	var _ components.TxTracker = new(MockTxTracker)
-	var _ PostedMessageManager = new(MockPostedMessageManager)
+	var _ components.PostedMessageManager = new(MockPostedMessageManager)
 	var _ components.PartyManager = new(MockPartyManager)
 }
 
@@ -29,7 +29,7 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 
 	for _, arg := range args {
 		switch t := arg.(type) {
-		case PostedMessageManager:
+		case components.PostedMessageManager:
 			mc.pmm = t
 		case components.GlobalData:
 			mc.globalData = t

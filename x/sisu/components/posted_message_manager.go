@@ -1,4 +1,4 @@
-package sisu
+package components
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"

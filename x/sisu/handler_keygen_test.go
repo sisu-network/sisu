@@ -17,7 +17,7 @@ func mockForHandlerKeygen() (sdk.Context, ManagerContainer) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestGenesis(ctx)
 	globalData := &components.MockGlobalData{}
-	pmm := NewPostedMessageManager(k)
+	pmm := components.NewPostedMessageManager(k)
 
 	partyManager := &MockPartyManager{}
 	partyManager.GetActivePartyPubkeysFunc = func() []ctypes.PubKey {

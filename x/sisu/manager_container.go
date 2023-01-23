@@ -13,7 +13,7 @@ import (
 )
 
 type ManagerContainer interface {
-	PostedMessageManager() PostedMessageManager
+	PostedMessageManager() components.PostedMessageManager
 	PartyManager() components.PartyManager
 	DheartClient() external.DheartClient
 	DeyesClient() external.DeyesClient
@@ -34,17 +34,17 @@ type ManagerContainer interface {
 type DefaultManagerContainer struct {
 	readOnlyContext atomic.Value
 
-	pmm              PostedMessageManager
-	partyManager     components.PartyManager
-	dheartClient     external.DheartClient
-	deyesClient      external.DeyesClient
-	globalData       components.GlobalData
-	txSubmit         components.TxSubmit
-	config           config.Config
-	appKeys          components.AppKeys
-	txOutProducer    chains.TxOutputProducer
-	txTracker        components.TxTracker
-	keeper           keeper.Keeper
+	pmm           components.PostedMessageManager
+	partyManager  components.PartyManager
+	dheartClient  external.DheartClient
+	deyesClient   external.DeyesClient
+	globalData    components.GlobalData
+	txSubmit      components.TxSubmit
+	config        config.Config
+	appKeys       components.AppKeys
+	txOutProducer chains.TxOutputProducer
+	txTracker     components.TxTracker
+	keeper        keeper.Keeper
 	valsManager      components.ValidatorManager
 	transferOutQueue background.TransferQueue
 	bridgeManager    chains.BridgeManager
@@ -52,7 +52,7 @@ type DefaultManagerContainer struct {
 	privateDb        keeper.PrivateDb
 }
 
-func NewManagerContainer(pmm PostedMessageManager, partyManager components.PartyManager,
+func NewManagerContainer(pmm components.PostedMessageManager, partyManager components.PartyManager,
 	dheartClient external.DheartClient, deyesClient external.DeyesClient,
 	globalData components.GlobalData, txSubmit components.TxSubmit, cfg config.Config,
 	appKeys components.AppKeys, txOutProducer chains.TxOutputProducer, txTracker components.TxTracker,
@@ -79,7 +79,7 @@ func NewManagerContainer(pmm PostedMessageManager, partyManager components.Party
 	}
 }
 
-func (mc *DefaultManagerContainer) PostedMessageManager() PostedMessageManager {
+func (mc *DefaultManagerContainer) PostedMessageManager() components.PostedMessageManager {
 	return mc.pmm
 }
 

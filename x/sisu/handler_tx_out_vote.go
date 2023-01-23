@@ -2,6 +2,7 @@ package sisu
 
 import (
 	"fmt"
+	"github.com/sisu-network/sisu/x/sisu/components"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
@@ -14,13 +15,13 @@ const (
 )
 
 type HandlerTxOutVote struct {
-	pmm       PostedMessageManager
+	pmm       components.PostedMessageManager
 	keeper    keeper.Keeper
 	privateDb keeper.PrivateDb
 }
 
 func NewHandlerTxOutConsensed(
-	pmm PostedMessageManager,
+	pmm components.PostedMessageManager,
 	keeper keeper.Keeper,
 	privateDb keeper.PrivateDb,
 ) *HandlerTxOutVote {

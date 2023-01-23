@@ -4,12 +4,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/background"
+	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type HandlerTxOutResult struct {
-	pmm       PostedMessageManager
+	pmm       components.PostedMessageManager
 	keeper    keeper.Keeper
 	transferQ background.TransferQueue
 	privateDb keeper.PrivateDb
