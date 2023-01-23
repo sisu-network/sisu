@@ -79,19 +79,20 @@ func removeTxOut(ctx sdk.Context, privateDb keeper.PrivateDb, k keeper.Keeper,
 	txOut *types.TxOut) {
 	// Remove the TxOut from the TxOutQueue
 	q := k.GetTxOutQueue(ctx, txOut.Content.OutChain)
-	if len(q) == 0 {
-		log.Errorf("removeTransfer: The txout queue is empty")
+	if len(q) == 0 || q[0].GetId() != txOut.GetId() {
+		// This is a rare case but it is possible to happen. The tx out is removed because it passes
+		// expiration block. When this TxOut is confirmed, this queue does not have the txOut inside.
+		if len(q) == 0 {
+			log.Errorf("removeTransfer: The txout queue is empty")
+		} else {
+			log.Errorf("Id does not match. Id in the queue = %s, id in the message = %s", q[0].GetId(),
+				txOut.GetId())
+		}
 		return
 	}
 
-	if q[0].GetId() != txOut.GetId() {
-		// Critical error. The TxOutId should be the same like in the Message
-		log.Errorf("Id does not match. Id in the queue = %s, id in the message = %s", q[0].GetId(),
-			txOut.GetId())
-	} else {
-		q = q[1:]
-		k.SetTxOutQueue(ctx, txOut.Content.OutChain, q)
-	}
+	q = q[1:]
+	k.SetTxOutQueue(ctx, txOut.Content.OutChain, q)
 
 	// Unset the hold prcessing flag so that sisu can continue processing transfer/txout on this chain
 	privateDb.SetHoldProcessing(types.TransferHoldKey, txOut.Content.OutChain, false)
