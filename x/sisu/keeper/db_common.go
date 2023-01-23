@@ -74,6 +74,18 @@ func getHoldProcessingKey(jobType, chain string) []byte {
 	return []byte(fmt.Sprintf("%s__%s", jobType, chain))
 }
 
+func getMultiPartKey(args ...string) []byte {
+	ret := ""
+	for i, arg := range args {
+		ret = ret + arg
+		if i < len(args)-1 {
+			ret += "__"
+		}
+	}
+
+	return []byte(ret)
+}
+
 ///// TxREcord
 
 func saveTxRecord(store cstypes.KVStore, hash []byte, validator string) int {
@@ -943,6 +955,30 @@ func getHoldProcessing(store cstypes.KVStore, jobType, chain string) bool {
 	}
 
 	return bz[0] != byte(0)
+}
+
+///// Expiration block
+func setExpirationBlock(store cstypes.KVStore, objectType string, id string, height int64) {
+	key := getMultiPartKey(objectType, id)
+	bz := utils.ToByte(height)
+
+	store.Set(key, bz)
+}
+
+func getExpirationBlock(store cstypes.KVStore, objectType string, id string) int64 {
+	key := getMultiPartKey(objectType, id)
+	bz := store.Get(key)
+
+	if bz == nil {
+		return -1
+	}
+
+	return utils.FromByteToInt64(bz)
+}
+
+func removeExpirationBlock(store cstypes.KVStore, objectType string, id string) {
+	key := getMultiPartKey(objectType, id)
+	store.Delete(key)
 }
 
 ///// Debug functions

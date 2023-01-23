@@ -39,28 +39,15 @@ func (h *HandlerTxOutResult) DeliverMsg(ctx sdk.Context, msg *types.TxOutResultM
 func (h *HandlerTxOutResult) doTxOutResult(ctx sdk.Context, msg *types.TxOutResultMsg) ([]byte, error) {
 	log.Info("Delivering TxOutResult")
 
-	defer func(result *types.TxOutResult) {
-		// Remove the TxOut from the TxOutQueue
-		q := h.keeper.GetTxOutQueue(ctx, msg.Data.OutChain)
-		if q[0].GetId() != msg.Data.TxOutId {
-			// Critical error. The TxOutId should be the same like in the Message
-			log.Errorf("Id does not match. Id in the queue = %s, id in the message = %s", q[0].GetId(),
-				msg.Data.TxOutId)
-		} else {
-			q = q[1:]
-			h.keeper.SetTxOutQueue(ctx, msg.Data.OutChain, q)
-		}
-
-		// Reset the TransferHold & TxOutHold variable so that these 2 queues can continue processing
-		// TxOut.
-		h.privateDb.SetHoldProcessing(types.TransferHoldKey, result.OutChain, false)
-		h.privateDb.SetHoldProcessing(types.TxOutHoldKey, result.OutChain, false)
-	}(msg.Data)
-
 	result := msg.Data
 	txOut := h.keeper.GetTxOut(ctx, result.OutChain, result.OutHash)
+
+	defer func(result *types.TxOutResult) {
+		removeTxOut(ctx, h.privateDb, h.keeper, txOut)
+	}(msg.Data)
+
 	if txOut == nil {
-		log.Errorf("cannot find txout from txOutConfirm message, chain = %s & hash = %s",
+		log.Errorf("Critical: cannot find txout from txOutConfirm message, chain = %s & hash = %s",
 			result.OutChain, result.OutHash)
 		return nil, nil
 	}
@@ -86,4 +73,30 @@ func (h *HandlerTxOutResult) doTxOutFailure(ctx sdk.Context, msg *types.TxOutRes
 	// TODO: Add TxOut and its transfer to the failure queue.
 
 	return nil, nil
+}
+
+func removeTxOut(ctx sdk.Context, privateDb keeper.PrivateDb, k keeper.Keeper,
+	txOut *types.TxOut) {
+	// Remove the TxOut from the TxOutQueue
+	q := k.GetTxOutQueue(ctx, txOut.Content.OutChain)
+	if len(q) == 0 {
+		log.Errorf("removeTransfer: The txout queue is empty")
+		return
+	}
+
+	if q[0].GetId() != txOut.GetId() {
+		// Critical error. The TxOutId should be the same like in the Message
+		log.Errorf("Id does not match. Id in the queue = %s, id in the message = %s", q[0].GetId(),
+			txOut.GetId())
+	} else {
+		q = q[1:]
+		k.SetTxOutQueue(ctx, txOut.Content.OutChain, q)
+	}
+
+	// Unset the hold prcessing flag so that sisu can continue processing transfer/txout on this chain
+	privateDb.SetHoldProcessing(types.TransferHoldKey, txOut.Content.OutChain, false)
+	privateDb.SetHoldProcessing(types.TxOutHoldKey, txOut.Content.OutChain, false)
+
+	// Remove the TxOut from the expired transactions.
+	k.RemoveExpirationBlock(ctx, types.ExpirationBlock_TxOut, txOut.GetId())
 }

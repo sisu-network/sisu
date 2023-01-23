@@ -3,8 +3,9 @@ package sisu
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/sisu-network/sisu/x/sisu/background"
 	"strings"
+
+	"github.com/sisu-network/sisu/x/sisu/background"
 
 	// this line is used by starport scaffolding # 1
 
@@ -249,7 +250,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	log.Verbose("End block reached, height = ", ctx.BlockHeight())
 
-	am.txTracker.CheckExpiredTransaction()
+	am.checkExpirationBlock(ctx)
 
 	cloneCtx := utils.CloneSdkContext(ctx)
 	am.globalData.SetReadOnlyContext(cloneCtx)
@@ -261,4 +262,23 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	am.txOutProcessor.ProcessTxOut(cloneCtx)
 
 	return []abci.ValidatorUpdate{}
+}
+
+func (am AppModule) checkExpirationBlock(ctx sdk.Context) {
+	// TODO: Bring back the email system to notify failed transactions.
+	// am.txTracker.CheckExpiredTransaction()
+
+	params := am.keeper.GetParams(ctx)
+	height := ctx.BlockHeight()
+	for _, chain := range params.SupportedChains {
+		txOutQueue := am.keeper.GetTxOutQueue(ctx, chain)
+		for _, txOut := range txOutQueue {
+			expiredBlock := am.keeper.GetExpirationBlock(ctx, types.ExpirationBlock_TxOut, txOut.GetId())
+			if expiredBlock != -1 && height >= expiredBlock {
+				// Remove this TxOut
+				log.Warnf("TxOut %s expired at block %d", txOut.GetId(), expiredBlock)
+				removeTxOut(ctx, am.apiHandler.privateDb, am.keeper, txOut)
+			}
+		}
+	}
 }

@@ -17,7 +17,6 @@ var (
 	prefixGasPrice               = []byte{0x06}
 	prefixChain                  = []byte{0x07}
 	prefixToken                  = []byte{0x08}
-	prefixTokenPrices            = []byte{0x09}
 	prefixNode                   = []byte{0x0A}
 	prefixVault                  = []byte{0x0B}
 	prefixParams                 = []byte{0x0C}
@@ -33,6 +32,7 @@ var (
 	prefixVoteResult             = []byte{0x19}
 	prefixProposedTxOut          = []byte{0x1A}
 	prefixMpcPublicKey           = []byte{0x1B}
+	prefixExpirationBlock        = []byte{0x1C}
 )
 
 var _ Keeper = (*DefaultKeeper)(nil)
@@ -137,6 +137,11 @@ type Keeper interface {
 	AddProposedTxOut(ctx sdk.Context, signer string, msg *types.TxOut)
 	GetProposedTxOut(ctx sdk.Context, id string, signer string) *types.TxOut
 	GetProposedTxOutCount(ctx sdk.Context, id string) int
+
+	// Expiration block
+	SetExpirationBlock(ctx sdk.Context, opType string, key string, height int64)
+	GetExpirationBlock(ctx sdk.Context, opType string, key string) int64
+	RemoveExpirationBlock(ctx sdk.Context, opType string, id string)
 }
 
 type DefaultKeeper struct {
@@ -449,6 +454,23 @@ func (k *DefaultKeeper) GetProposedTxOut(ctx sdk.Context, id string, signer stri
 func (k *DefaultKeeper) GetProposedTxOutCount(ctx sdk.Context, id string) int {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixProposedTxOut)
 	return getProposedTxOutCount(store, id)
+}
+
+///// Expiration block
+func (k *DefaultKeeper) SetExpirationBlock(ctx sdk.Context, objectType string, id string,
+	height int64) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixExpirationBlock)
+	setExpirationBlock(store, objectType, id, height)
+}
+
+func (k *DefaultKeeper) GetExpirationBlock(ctx sdk.Context, objectType string, id string) int64 {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixExpirationBlock)
+	return getExpirationBlock(store, objectType, id)
+}
+
+func (k *DefaultKeeper) RemoveExpirationBlock(ctx sdk.Context, objectType string, id string) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixExpirationBlock)
+	removeExpirationBlock(store, objectType, id)
 }
 
 ///// Debug
