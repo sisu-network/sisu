@@ -150,14 +150,20 @@ func (b *defaultBridge) getTransaction(
 
 	// Convert amount into token with correct decimal
 	solAmounts := make([]uint64, 0)
+	commissionRate := b.keeper.GetParams(ctx).CommissionRate
+	if commissionRate < 0 || commissionRate > 10_000 {
+		return nil, fmt.Errorf("Commission rate is invalid, rate = %d", commissionRate)
+	}
+
 	for i, amount := range amounts {
 		// Get token decimals
 		decimals := tokens[i].GetDecimalsForChain(chain)
 		base := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimals)), nil)
-		bigAmount := new(big.Int).Mul(amount, base)
-		bigAmount = bigAmount.Div(bigAmount, utils.EthToWei)
+		amountOut := new(big.Int).Mul(amount, base)
+		amountOut = amountOut.Div(amountOut, utils.EthToWei)
+		amountOut = utils.SubtractCommissionRate(amountOut, commissionRate)
 
-		if bigAmount.Cmp(MaxTransferAmountInteger) > 0 {
+		if amountOut.Cmp(MaxTransferAmountInteger) > 0 {
 			return nil, fmt.Errorf(
 				"TransferExceedMax amount, original amount = %s, token decimals decimals = %d",
 				amount.String(),
@@ -165,7 +171,7 @@ func (b *defaultBridge) getTransaction(
 			)
 		}
 
-		solAmounts = append(solAmounts, bigAmount.Uint64())
+		solAmounts = append(solAmounts, amountOut.Uint64())
 	}
 
 	// TODO: Don't hardcode token program id here. Make each token has different token program ID
