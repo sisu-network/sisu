@@ -77,16 +77,18 @@ func (h *HandlerTxOutResult) doTxOutFailure(ctx sdk.Context, msg *types.TxOutRes
 
 func removeTxOut(ctx sdk.Context, privateDb keeper.PrivateDb, k keeper.Keeper,
 	txOut *types.TxOut) {
+	id := txOut.GetId()
+	log.Verbosef("Removing txout %s on chain %s", id, txOut.Content.OutChain)
 	// Remove the TxOut from the TxOutQueue
 	q := k.GetTxOutQueue(ctx, txOut.Content.OutChain)
-	if len(q) == 0 || q[0].GetId() != txOut.GetId() {
+	if len(q) == 0 || q[0].GetId() != id {
 		// This is a rare case but it is possible to happen. The tx out is removed because it passes
 		// expiration block. When this TxOut is confirmed, this queue does not have the txOut inside.
 		if len(q) == 0 {
 			log.Errorf("removeTransfer: The txout queue is empty")
 		} else {
 			log.Errorf("Id does not match. Id in the queue = %s, id in the message = %s", q[0].GetId(),
-				txOut.GetId())
+				id)
 		}
 		return
 	}
@@ -99,5 +101,5 @@ func removeTxOut(ctx sdk.Context, privateDb keeper.PrivateDb, k keeper.Keeper,
 	privateDb.SetHoldProcessing(types.TxOutHoldKey, txOut.Content.OutChain, false)
 
 	// Remove the TxOut from the expired transactions.
-	k.RemoveExpirationBlock(ctx, types.ExpirationBlock_TxOut, txOut.GetId())
+	k.RemoveExpirationBlock(ctx, types.ExpirationBlock_TxOut, id)
 }

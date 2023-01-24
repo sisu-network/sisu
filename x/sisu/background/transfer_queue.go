@@ -1,8 +1,9 @@
 package background
 
 import (
-	"github.com/sisu-network/sisu/x/sisu/chains"
 	"sync"
+
+	"github.com/sisu-network/sisu/x/sisu/chains"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
@@ -97,7 +98,7 @@ func (q *defaultTransferQueue) processBatch(ctx sdk.Context) {
 	params := q.keeper.GetParams(ctx)
 	for _, chain := range params.SupportedChains {
 		if q.privateDb.GetHoldProcessing(types.TransferHoldKey, chain) {
-			log.Verbose("Another transfer is being processed")
+			log.Verbosef("Another transfer is being processed at chain %s", chain)
 			continue
 		}
 

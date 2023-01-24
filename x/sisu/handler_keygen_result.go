@@ -1,6 +1,8 @@
 package sisu
 
 import (
+	"encoding/hex"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	liskcrypto "github.com/sisu-network/deyes/chains/lisk/crypto"
 	libchain "github.com/sisu-network/lib/chain"
@@ -12,6 +14,8 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
+
+	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 )
 
 type HandlerKeygenResult struct {
@@ -96,6 +100,14 @@ func (h *HandlerKeygenResult) setMpcAddress(ctx sdk.Context, chain string, keyge
 	case libchain.IsETHBasedChain(chain):
 		// Calculate the ETH address
 		address = keygen.Address
+
+		pubkey, err := ethcrypto.UnmarshalPubkey(keygen.PubKeyBytes)
+		if err == nil {
+			address = ethcrypto.PubkeyToAddress(*pubkey).Hex()
+		} else {
+			log.Errorf("Cannot get ETH public key from key bytes. Key bytes hex = %s",
+				hex.EncodeToString(keygen.PubKeyBytes))
+		}
 	case libchain.IsCardanoChain(chain):
 		address = utils.GetCardanoAddressFromPubkey(keygen.PubKeyBytes).String()
 	case libchain.IsSolanaChain(chain):
