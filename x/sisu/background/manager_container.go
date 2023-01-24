@@ -1,14 +1,14 @@
 package background
 
 import (
-	"github.com/sisu-network/sisu/x/sisu/components"
 	"sync/atomic"
+
+	"github.com/sisu-network/sisu/x/sisu/components"
 
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/x/sisu/chains"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
-	"github.com/sisu-network/sisu/x/sisu/service"
 )
 
 type ManagerContainer interface {
@@ -26,7 +26,6 @@ type ManagerContainer interface {
 	ValidatorManager() components.ValidatorManager
 	TransferQueue() TransferQueue
 	BridgeManager() chains.BridgeManager
-	ChainPolling() service.ChainPolling
 	PrivateDb() keeper.PrivateDb
 }
 
@@ -47,7 +46,6 @@ type DefaultManagerContainer struct {
 	valsManager      components.ValidatorManager
 	transferOutQueue TransferQueue
 	bridgeManager    chains.BridgeManager
-	chainPolling     service.ChainPolling
 	privateDb        keeper.PrivateDb
 }
 
@@ -56,8 +54,7 @@ func NewManagerContainer(pmm components.PostedMessageManager, partyManager compo
 	globalData components.GlobalData, txSubmit components.TxSubmit, cfg config.Config,
 	appKeys components.AppKeys, txOutProducer chains.TxOutputProducer, txTracker components.TxTracker,
 	keeper keeper.Keeper, valsManager components.ValidatorManager, txInQueue TransferQueue,
-	bridgeManager chains.BridgeManager, chainPolling service.ChainPolling,
-	privateDb keeper.PrivateDb) ManagerContainer {
+	bridgeManager chains.BridgeManager, privateDb keeper.PrivateDb) ManagerContainer {
 	return &DefaultManagerContainer{
 		pmm:              pmm,
 		partyManager:     partyManager,
@@ -73,7 +70,6 @@ func NewManagerContainer(pmm components.PostedMessageManager, partyManager compo
 		valsManager:      valsManager,
 		transferOutQueue: txInQueue,
 		bridgeManager:    bridgeManager,
-		chainPolling:     chainPolling,
 		privateDb:        privateDb,
 	}
 }
@@ -132,10 +128,6 @@ func (mc *DefaultManagerContainer) TransferQueue() TransferQueue {
 
 func (mc *DefaultManagerContainer) BridgeManager() chains.BridgeManager {
 	return mc.bridgeManager
-}
-
-func (mc *DefaultManagerContainer) ChainPolling() service.ChainPolling {
-	return mc.chainPolling
 }
 
 func (mc *DefaultManagerContainer) PrivateDb() keeper.PrivateDb {

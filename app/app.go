@@ -1,9 +1,10 @@
 package app
 
 import (
-	"github.com/sisu-network/sisu/x/sisu/background"
 	"io"
 	"path/filepath"
+
+	"github.com/sisu-network/sisu/x/sisu/background"
 
 	tlog "github.com/tendermint/tendermint/libs/log"
 
@@ -66,7 +67,6 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/chains"
 	"github.com/sisu-network/sisu/x/sisu/client/rest"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
-	"github.com/sisu-network/sisu/x/sisu/service"
 	sisutypes "github.com/sisu-network/sisu/x/sisu/types"
 	tmjson "github.com/tendermint/tendermint/libs/json"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
@@ -275,13 +275,10 @@ func New(
 	txOutProducer := chains.NewTxOutputProducer(app.appKeys, app.k, bridgeManager, txTracker)
 	transferQueue := background.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss,
 		app.appKeys, privateDb, valsMgr, app.globalData)
-	chainPolling := service.NewChainPolling(app.appKeys.GetSignerAddress().String(),
-		deyesClient, app.txSubmitter)
 
 	mc := background.NewManagerContainer(components.NewPostedMessageManager(app.k),
 		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg,
-		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, transferQueue, bridgeManager,
-		chainPolling, privateDb)
+		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, transferQueue, bridgeManager, privateDb)
 
 	apiHandler := tss.NewApiHandler(privateDb, mc)
 	app.apiEndPoint.SetAppLogicListener(apiHandler)

@@ -2,6 +2,7 @@ package sisu
 
 import (
 	"fmt"
+
 	"github.com/sisu-network/sisu/x/sisu/background"
 	"github.com/sisu-network/sisu/x/sisu/components"
 
@@ -58,9 +59,6 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager components.
 
 		case *types.TransferFailureMsg:
 			return NewHanlderTransferFailure(mc.Keeper(), mc.PostedMessageManager()).DeliverMsg(ctx, msg)
-
-		case *types.UpdateSolanaRecentHashMsg:
-			return NewHandlerUpdateSolanaRecentHash(mc.Keeper()).DeliverMsg(ctx, msg)
 
 		case *types.TxInMsg:
 			return NewHandlerTxIn(mc.PostedMessageManager(), mc.Keeper(),

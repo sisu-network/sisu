@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"sort"
 
 	solanago "github.com/gagliardetto/solana-go"
 	"github.com/near/borsh-go"
@@ -16,6 +15,7 @@ import (
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
+	"github.com/sisu-network/sisu/x/sisu/external"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	chaintypes "github.com/sisu-network/sisu/x/sisu/chains/types"
@@ -29,18 +29,21 @@ var (
 )
 
 type defaultBridge struct {
-	chain  string
-	keeper keeper.Keeper
-	signer string
-	config config.Config
+	chain    string
+	keeper   keeper.Keeper
+	signer   string
+	config   config.Config
+	deyesCli external.DeyesClient
 }
 
-func NewBridge(chain, signer string, keeper keeper.Keeper, cfg config.Config) chaintypes.Bridge {
+func NewBridge(chain, signer string, keeper keeper.Keeper, cfg config.Config,
+	deyesCli external.DeyesClient) chaintypes.Bridge {
 	return &defaultBridge{
-		chain:  chain,
-		keeper: keeper,
-		signer: signer,
-		config: cfg,
+		chain:    chain,
+		keeper:   keeper,
+		signer:   signer,
+		config:   cfg,
+		deyesCli: deyesCli,
 	}
 }
 
@@ -181,12 +184,12 @@ func (b *defaultBridge) getTransaction(
 	}
 
 	// Get recennt block hash
-	hashStr, err := b.getRecentBlockHash(ctx, chain)
+	result, err := b.deyesCli.SolanaQueryRecentBlock(b.chain)
 	if err != nil {
 		return nil, err
 	}
-	log.Verbosef("Recent block hash = %s", hashStr)
-	hash, err := solanago.HashFromBase58(hashStr)
+
+	hash, err := solanago.HashFromBase58(result.Hash)
 	if err != nil {
 		return nil, err
 	}
@@ -198,29 +201,6 @@ func (b *defaultBridge) getTransaction(
 	)
 
 	return tx, err
-}
-
-func (b *defaultBridge) getRecentBlockHash(ctx sdk.Context, chain string) (string, error) {
-	metas := b.keeper.GetAllSolanaConfirmedBlock(ctx, chain)
-	if len(metas) == 0 {
-		return "", fmt.Errorf("Empty metas array")
-	}
-
-	arr := make([]*types.ChainMetadata, 0)
-	for _, value := range metas {
-		arr = append(arr, value)
-	}
-
-	// Sort arr
-	sort.SliceStable(arr, func(i, j int) bool {
-		if arr[i].SolanaRecentBlockHeight != arr[j].SolanaRecentBlockHeight {
-			return arr[i].SolanaRecentBlockHeight < arr[j].SolanaRecentBlockHeight
-		}
-
-		return arr[i].Signer < arr[j].Signer
-	})
-
-	return arr[len(arr)/2].SolanaRecentBlockHash, nil
 }
 
 func (b *defaultBridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byte) ([]*types.TransferDetails, error) {

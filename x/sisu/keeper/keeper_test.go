@@ -74,30 +74,6 @@ func TestVault(t *testing.T) {
 	assert.Equal(t, []*types.Vault{solVault0, solVault1}, solVaults)
 }
 
-func TestChainMetadata(t *testing.T) {
-	keeper, ctx := GetTestKeeperAndContext()
-
-	keeper.SetSolanaConfirmedBlock(ctx, "solana-devnet", "signer1", "block1", 1)
-	keeper.SetSolanaConfirmedBlock(ctx, "solana-devnet", "signer2", "block2", 2)
-
-	metas := keeper.GetAllSolanaConfirmedBlock(ctx, "solana-devnet")
-
-	require.Equal(t, map[string]*types.ChainMetadata{
-		"signer1": {
-			Chain:                   "solana-devnet",
-			Signer:                  "signer1",
-			SolanaRecentBlockHash:   "block1",
-			SolanaRecentBlockHeight: 1,
-		},
-		"signer2": {
-			Chain:                   "solana-devnet",
-			Signer:                  "signer2",
-			SolanaRecentBlockHash:   "block2",
-			SolanaRecentBlockHeight: 2,
-		},
-	}, metas)
-}
-
 func TestVoteResult(t *testing.T) {
 	k, ctx := GetTestKeeperAndContext()
 

@@ -26,7 +26,6 @@ var (
 	prefixCommandQueue           = []byte{0x11}
 	prefixTransfer               = []byte{0x12}
 	prefixTransferQueue          = []byte{0x13}
-	prefixChainMetadata          = []byte{0x14}
 	prefixSignerNonce            = []byte{0x15}
 	prefixBlockHeight            = []byte{0x16}
 	prefixVoteResult             = []byte{0x19}
@@ -120,10 +119,6 @@ type Keeper interface {
 	// TxOutQueue
 	SetTxOutQueue(ctx sdk.Context, chain string, txOuts []*types.TxOut)
 	GetTxOutQueue(ctx sdk.Context, chain string) []*types.TxOut
-
-	// Set Solana confirmed block
-	SetSolanaConfirmedBlock(ctx sdk.Context, chain, signer, blockHash string, height int64)
-	GetAllSolanaConfirmedBlock(ctx sdk.Context, chain string) map[string]*types.ChainMetadata
 
 	// Max Block height that all nodes observed (Not all chains need this property)
 	SetBlockHeight(ctx sdk.Context, chain string, height int64, hash string)
@@ -389,17 +384,6 @@ func (k *DefaultKeeper) SetTxOutQueue(ctx sdk.Context, chain string, txOuts []*t
 func (k *DefaultKeeper) GetTxOutQueue(ctx sdk.Context, chain string) []*types.TxOut {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutQueue)
 	return getTxOutQueue(store, chain)
-}
-
-///// Chain metadata
-func (k *DefaultKeeper) SetSolanaConfirmedBlock(ctx sdk.Context, chain, signer, blockHash string, height int64) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixChainMetadata)
-	setSolanaConfirmedBlock(store, chain, signer, blockHash, height)
-}
-
-func (k *DefaultKeeper) GetAllSolanaConfirmedBlock(ctx sdk.Context, chain string) map[string]*types.ChainMetadata {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixChainMetadata)
-	return getAllSolanaConfirmedBlock(store, chain)
 }
 
 ///// Block Height

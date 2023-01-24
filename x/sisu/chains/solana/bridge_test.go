@@ -12,9 +12,11 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	eyessolanatypes "github.com/sisu-network/deyes/chains/solana/types"
+	deyestypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -30,6 +32,17 @@ func mockForBridgeTest() (sdk.Context, keeper.Keeper) {
 	return ctx, k
 }
 
+func mockDeyesCli() external.DeyesClient {
+	return &external.MockDeyesClient{
+		SolanaQueryRecentBlockFunc: func(chain string) (*deyestypes.SolanaQueryRecentBlockResult, error) {
+			return &deyestypes.SolanaQueryRecentBlockResult{
+				Hash:   "EnzRJ6ojbs5GDEtv4vDRuNnMSJyYKfeD7ATNLwZQLWHe",
+				Height: 1000,
+			}, nil
+		},
+	}
+}
+
 func TestParseIncoming(t *testing.T) {
 	bridgeProgramId := "HguMTvmDfspHuEWycDSP1XtVQJi47hVNAyLbFEf2EJEQ"
 
@@ -38,7 +51,7 @@ func TestParseIncoming(t *testing.T) {
 	cfg := config.Config{}
 	cfg.Solana.BridgeProgramId = bridgeProgramId
 
-	bridge := NewBridge("solana-devnet", "signer", k, cfg)
+	bridge := NewBridge("solana-devnet", "signer", k, cfg, mockDeyesCli())
 
 	transferOut := solanatypes.TransferOutData{
 		Instruction:  solanatypes.TransferOut,
@@ -89,7 +102,6 @@ func TestProcessTransfer(t *testing.T) {
 
 	ctx, k := mockForBridgeTest()
 	k.SetMpcAddress(ctx, chain, mpcAddress)
-	k.SetSolanaConfirmedBlock(ctx, chain, "signer", "Q6XprfkF8RQQKoQVG33xT88H7wi8Uk1B1CC7YAs69Gi", 100)
 	k.SetMpcNonce(ctx, &types.MpcNonce{Chain: chain, Nonce: int64(nonce)})
 
 	tokens := k.GetTokens(ctx, []string{"SISU"})
@@ -103,7 +115,7 @@ func TestProcessTransfer(t *testing.T) {
 		Amount:      new(big.Int).Mul(big.NewInt(int64(amountInt)), utils.EthToWei).String(),
 	}
 
-	bridge := NewBridge(chain, "signer", k, cfg)
+	bridge := NewBridge(chain, "signer", k, cfg, mockDeyesCli())
 	msgs, err := bridge.ProcessTransfers(ctx, []*types.TransferDetails{transfer})
 	require.Nil(t, err)
 
@@ -156,26 +168,6 @@ func TestProcessTransfer(t *testing.T) {
 	require.Equal(t, []uint64{uint64(amountInt * 100_000_000)}, transferIn.Amounts)
 }
 
-func TestGetRecentBlockHash(t *testing.T) {
-	ctx, k := mockForBridgeTest()
-	chain := "solana-devnet"
-	// Medium of [0, 3, 5, 7, 8, 8, 9, 10, 100] is 8
-	k.SetSolanaConfirmedBlock(ctx, chain, "signer1", "Hash1", 8)
-	k.SetSolanaConfirmedBlock(ctx, chain, "signer2", "Hash2", 3)
-	k.SetSolanaConfirmedBlock(ctx, chain, "signer3", "Hash3", 5)
-	k.SetSolanaConfirmedBlock(ctx, chain, "signer4", "Hash4", 100)
-	k.SetSolanaConfirmedBlock(ctx, chain, "signer5", "Hash5", 0)
-	k.SetSolanaConfirmedBlock(ctx, chain, "signer6", "Hash6", 10)
-	k.SetSolanaConfirmedBlock(ctx, chain, "signer7", "Hash7", 9)
-	k.SetSolanaConfirmedBlock(ctx, chain, "signer8", "Hash8", 8)
-	k.SetSolanaConfirmedBlock(ctx, chain, "signer9", "Hash9", 7)
-
-	b := NewBridge(chain, "signer", k, config.Config{}).(*defaultBridge)
-	hash, err := b.getRecentBlockHash(ctx, chain)
-	require.Nil(t, err)
-	require.Equal(t, "Hash1", hash)
-}
-
 // This test verifies that the ED25519 of solana is compatible with the eddsa curve that Sisu uses.
 func TestSigning(t *testing.T) {
 	msg := []byte("This is a test message")
@@ -200,7 +192,6 @@ func TestDeserializeTx(t *testing.T) {
 	k := testmock.KeeperTestAfterContractDeployed(ctx)
 	k.SetMpcAddress(ctx, chain, mpcKey.String())
 	k.SetMpcNonce(ctx, &types.MpcNonce{Chain: chain, Nonce: 1})
-	k.SetSolanaConfirmedBlock(ctx, chain, "signer", "EnzRJ6ojbs5GDEtv4vDRuNnMSJyYKfeD7ATNLwZQLWHe", int64(163_936_646))
 	m := k.GetTokens(ctx, []string{"SISU"})
 	token := m["SISU"]
 	for i, c := range token.Chains {
@@ -216,7 +207,7 @@ func TestDeserializeTx(t *testing.T) {
 	cfg.Solana.BridgePda = "CvocQ9ivbdz5rUnTh6zBgxaiR4asMNbXRrG2VPUYpoau"
 	receiverAta := "LkxVSjLH4mjxndDQKrG1a7FYTU7zGFYE5tDzr3PLd3i"
 
-	bridge := NewBridge(chain, "signer", k, cfg).(*defaultBridge)
+	bridge := NewBridge(chain, "signer", k, cfg, mockDeyesCli()).(*defaultBridge)
 	tx, err := bridge.getTransaction(
 		ctx,
 		[]*types.Token{token},

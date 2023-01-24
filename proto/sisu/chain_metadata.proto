@@ -11,15 +11,3 @@ message ChainMetadata {
   string solanaRecentBlockHash = 3;
   int64 solanaRecentBlockHeight = 4;
 }
-
-message UpdateSolanaRecentHash {
-  string signer = 1;
-  string chain = 2;
-  string hash = 3;
-  int64 height = 4;
-}
-
-message UpdateSolanaRecentHashMsg {
-  string signer = 1;
-  UpdateSolanaRecentHash data = 2;
-}

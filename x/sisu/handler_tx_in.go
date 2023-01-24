@@ -1,6 +1,8 @@
 package sisu
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/chains"
@@ -73,6 +75,7 @@ func (h *HandlerTxIn) saveTransfers(ctx sdk.Context, k keeper.Keeper, transfers 
 	queue := k.GetTransferQueue(ctx, chain)
 	for _, transfer := range transfers {
 		// TODO: Optimize this path. We can save single transfer instead of the entire queue.
+		fmt.Println("To chain = ", transfer.ToChain)
 		queue = append(queue, transfer)
 	}
 
