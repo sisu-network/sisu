@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"net"
+	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -180,6 +181,9 @@ func (g *localnetGenerator) generateEyesToml(outputDir string, chainConfigs []ec
 		chains[cfg.Chain] = cfg
 	}
 
+	priceUrl := os.Getenv("ORACLE_URL")
+	priceSecret := os.Getenv("ORACLE_SECRET")
+
 	deyesConfig := econfig.Deyes{
 		DbHost:     "localhost",
 		DbPort:     3306,
@@ -187,8 +191,10 @@ func (g *localnetGenerator) generateEyesToml(outputDir string, chainConfigs []ec
 		DbPassword: "password",
 		DbSchema:   "deyes",
 
-		Chains:        chains,
-		SisuServerUrl: fmt.Sprintf("http://%s:25456", "0.0.0.0"),
+		Chains:            chains,
+		PriceOracleUrl:    priceUrl,
+		PriceOracleSecret: priceSecret,
+		SisuServerUrl:     fmt.Sprintf("http://%s:25456", "0.0.0.0"),
 	}
 
 	writeDeyesConfig(deyesConfig, outputDir)
