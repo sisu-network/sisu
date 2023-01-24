@@ -34,10 +34,17 @@ func GetChainGasCostInToken(ctx sdk.Context, k keeper.Keeper, deyesClient extern
 	}
 
 	nativeTokenPrice, err := deyesClient.GetTokenPrice(chain.NativeToken)
+	if err != nil {
+		return nil, err
+	}
 
 	// 2. Get token price
 	tokenPrice, err := deyesClient.GetTokenPrice(tokenId)
+	if err != nil {
+		return nil, err
+	}
 
+	// 3. Calculate how many token needed to use to cover the gas cost.
 	gasCostInToken, err := GasCostInToken(totalGasCost, tokenPrice, nativeTokenPrice)
 	log.Verbose("totalGas, tokenPrice, nativeTokenPrice, gasCostInToken = ", totalGasCost, tokenPrice,
 		nativeTokenPrice, gasCostInToken)

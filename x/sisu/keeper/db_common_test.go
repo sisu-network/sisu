@@ -208,3 +208,18 @@ func TestDb_getGateway(t *testing.T) {
 	sisu = getSisuAccount(store, "ganache2")
 	require.Equal(t, "addr2", sisu)
 }
+
+func TestDb_ExpirationBlock(t *testing.T) {
+	store := memstore.NewStore()
+
+	setExpirationBlock(store, "tx", "key", 1)
+	savedValue := getExpirationBlock(store, "tx", "key")
+	require.Equal(t, int64(1), savedValue)
+
+	setExpirationBlock(store, "tx", "key", -2)
+	savedValue = getExpirationBlock(store, "tx", "key")
+	require.Equal(t, int64(-2), savedValue)
+
+	savedValue = getExpirationBlock(store, "tx", "key2")
+	require.Equal(t, int64(-1), savedValue)
+}

@@ -317,6 +317,9 @@ func (g *localDockerGenerator) generateEyesToml(deyesChains []econfig.Chain, ind
 		chains[cfg.Chain] = cfg
 	}
 
+	priceUrl := os.Getenv("ORACLE_URL")
+	priceSecret := os.Getenv("ORACLE_SECRET")
+
 	deyesConfig := econfig.Deyes{
 		DbHost:        "mysql",
 		DbPort:        3306,
@@ -325,7 +328,9 @@ func (g *localDockerGenerator) generateEyesToml(deyesChains []econfig.Chain, ind
 		DbSchema:      fmt.Sprintf("deyes%d", index),
 		SisuServerUrl: fmt.Sprintf("http://sisu%d:25456", index),
 
-		Chains: chains,
+		Chains:            chains,
+		PriceOracleUrl:    priceUrl,
+		PriceOracleSecret: priceSecret,
 	}
 
 	writeDeyesConfig(deyesConfig, dir)

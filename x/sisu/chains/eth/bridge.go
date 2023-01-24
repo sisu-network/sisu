@@ -41,6 +41,7 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 	if err != nil {
 		return nil, err
 	}
+	log.Verbosef("Gas info for chain %s %v", b.chain, *gasInfo)
 	chainCfg := b.keeper.GetChain(ctx, b.chain)
 	ethCfg := chainCfg.EthConfig
 	gasUnitPerSwap := 80_000
@@ -249,7 +250,7 @@ func (b *bridge) buildTransaction(
 	if err != nil {
 		return nil, err
 	}
-	log.Verbosef("Nonce on chain %s = %d", b.chain, nonce)
+	log.Verbosef("Nonce for %s on chain %s = %d", mpcAddr, b.chain, nonce)
 
 	maxGas := uint64(gasUnitPerSwap * len(finalRecipients)) // max 80k per swapping operation.
 	_, tipCap, feeCap := b.getGasCost(gasInfo, useEip1559, gasUnitPerSwap)

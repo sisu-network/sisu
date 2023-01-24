@@ -155,4 +155,9 @@ func handlerTransfer(ctx sdk.Context, k keeper.Keeper, privateDb keeper.PrivateD
 
 	// 3. Update the HoldProcessing for transfer queue so that we do not process any more transfer.
 	privateDb.SetHoldProcessing(types.TransferHoldKey, txOut.Content.OutChain, true)
+
+	// 4. Set Expiration Block
+	params := k.GetParams(ctx)
+	k.SetExpirationBlock(ctx, types.ExpirationBlock_TxOut, txOut.GetId(),
+		ctx.BlockHeight()+int64(params.ExpirationBlock))
 }

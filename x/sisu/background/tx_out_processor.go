@@ -67,7 +67,7 @@ func (d *defaultTxOutProcessor) processTxOut(ctx sdk.Context) {
 	params := d.keeper.GetParams(ctx)
 	for _, chain := range params.SupportedChains {
 		if d.privateDb.GetHoldProcessing(types.TxOutHoldKey, chain) {
-			log.Verbose("Another TxOut is being processed")
+			log.Verbosef("Another TxOut is being processed on chain %s", chain)
 			continue
 		}
 

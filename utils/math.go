@@ -31,6 +31,11 @@ func FromByteToInt(bz []byte) int {
 	return int(value)
 }
 
+func FromByteToInt64(bz []byte) int64 {
+	value := binary.BigEndian.Uint64(bz)
+	return int64(value)
+}
+
 func MaxUint64(a, b uint64) uint64 {
 	if a < b {
 		return b
