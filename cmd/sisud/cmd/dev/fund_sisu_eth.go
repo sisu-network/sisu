@@ -16,11 +16,6 @@ import (
 
 // transferEth transfers a specific ETH amount to an address.
 func (c *fundAccountCmd) transferEth(client *ethclient.Client, sisuRpc, chain, mnemonic, recipient string) {
-	ch, err := queryChain(context.Background(), sisuRpc, chain)
-	if err != nil {
-		panic(fmt.Errorf("failed to get chain, err = %v", err))
-	}
-
 	_, account := getPrivateKey(mnemonic)
 	log.Info("from address = ", account.String(), " to Address = ", recipient)
 
@@ -30,14 +25,11 @@ func (c *fundAccountCmd) transferEth(client *ethclient.Client, sisuRpc, chain, m
 		panic(err)
 	}
 
-	genesisGas := big.NewInt(ch.EthConfig.GasPrice)
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
 		panic(err)
 	}
-	if gasPrice.Cmp(genesisGas) < 0 {
-		gasPrice = genesisGas
-	}
+
 	// Add some 10% premimum to the gas price
 	gasPrice = gasPrice.Mul(gasPrice, big.NewInt(110))
 	gasPrice = gasPrice.Quo(gasPrice, big.NewInt(100))
