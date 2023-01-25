@@ -329,6 +329,7 @@ func (g *localDockerGenerator) generateEyesToml(deyesChains []econfig.Chain, ind
 		SisuServerUrl: fmt.Sprintf("http://sisu%d:25456", index),
 
 		Chains:            chains,
+		UseExternalRpcsInfo: true,
 		PriceOracleUrl:    priceUrl,
 		PriceOracleSecret: priceSecret,
 	}

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"sort"
 
 	solanago "github.com/gagliardetto/solana-go"
 	"github.com/near/borsh-go"
@@ -16,6 +15,7 @@ import (
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
+	"github.com/sisu-network/sisu/x/sisu/external"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	chaintypes "github.com/sisu-network/sisu/x/sisu/chains/types"
@@ -29,18 +29,21 @@ var (
 )
 
 type defaultBridge struct {
-	chain  string
-	keeper keeper.Keeper
-	signer string
-	config config.Config
+	chain    string
+	keeper   keeper.Keeper
+	signer   string
+	config   config.Config
+	deyesCli external.DeyesClient
 }
 
-func NewBridge(chain, signer string, keeper keeper.Keeper, cfg config.Config) chaintypes.Bridge {
+func NewBridge(chain, signer string, keeper keeper.Keeper, cfg config.Config,
+	deyesCli external.DeyesClient) chaintypes.Bridge {
 	return &defaultBridge{
-		chain:  chain,
-		keeper: keeper,
-		signer: signer,
-		config: cfg,
+		chain:    chain,
+		keeper:   keeper,
+		signer:   signer,
+		config:   cfg,
+		deyesCli: deyesCli,
 	}
 }
 
@@ -147,14 +150,20 @@ func (b *defaultBridge) getTransaction(
 
 	// Convert amount into token with correct decimal
 	solAmounts := make([]uint64, 0)
+	commissionRate := b.keeper.GetParams(ctx).CommissionRate
+	if commissionRate < 0 || commissionRate > 10_000 {
+		return nil, fmt.Errorf("Commission rate is invalid, rate = %d", commissionRate)
+	}
+
 	for i, amount := range amounts {
 		// Get token decimals
 		decimals := tokens[i].GetDecimalsForChain(chain)
 		base := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(decimals)), nil)
-		bigAmount := new(big.Int).Mul(amount, base)
-		bigAmount = bigAmount.Div(bigAmount, utils.EthToWei)
+		amountOut := new(big.Int).Mul(amount, base)
+		amountOut = amountOut.Div(amountOut, utils.EthToWei)
+		amountOut = utils.SubtractCommissionRate(amountOut, commissionRate)
 
-		if bigAmount.Cmp(MaxTransferAmountInteger) > 0 {
+		if amountOut.Cmp(MaxTransferAmountInteger) > 0 {
 			return nil, fmt.Errorf(
 				"TransferExceedMax amount, original amount = %s, token decimals decimals = %d",
 				amount.String(),
@@ -162,7 +171,7 @@ func (b *defaultBridge) getTransaction(
 			)
 		}
 
-		solAmounts = append(solAmounts, bigAmount.Uint64())
+		solAmounts = append(solAmounts, amountOut.Uint64())
 	}
 
 	// TODO: Don't hardcode token program id here. Make each token has different token program ID
@@ -181,12 +190,12 @@ func (b *defaultBridge) getTransaction(
 	}
 
 	// Get recennt block hash
-	hashStr, err := b.getRecentBlockHash(ctx, chain)
+	result, err := b.deyesCli.SolanaQueryRecentBlock(b.chain)
 	if err != nil {
 		return nil, err
 	}
-	log.Verbosef("Recent block hash = %s", hashStr)
-	hash, err := solanago.HashFromBase58(hashStr)
+
+	hash, err := solanago.HashFromBase58(result.Hash)
 	if err != nil {
 		return nil, err
 	}
@@ -198,29 +207,6 @@ func (b *defaultBridge) getTransaction(
 	)
 
 	return tx, err
-}
-
-func (b *defaultBridge) getRecentBlockHash(ctx sdk.Context, chain string) (string, error) {
-	metas := b.keeper.GetAllSolanaConfirmedBlock(ctx, chain)
-	if len(metas) == 0 {
-		return "", fmt.Errorf("Empty metas array")
-	}
-
-	arr := make([]*types.ChainMetadata, 0)
-	for _, value := range metas {
-		arr = append(arr, value)
-	}
-
-	// Sort arr
-	sort.SliceStable(arr, func(i, j int) bool {
-		if arr[i].SolanaRecentBlockHeight != arr[j].SolanaRecentBlockHeight {
-			return arr[i].SolanaRecentBlockHeight < arr[j].SolanaRecentBlockHeight
-		}
-
-		return arr[i].Signer < arr[j].Signer
-	})
-
-	return arr[len(arr)/2].SolanaRecentBlockHash, nil
 }
 
 func (b *defaultBridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byte) ([]*types.TransferDetails, error) {

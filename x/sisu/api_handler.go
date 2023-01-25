@@ -2,6 +2,7 @@ package sisu
 
 import (
 	"fmt"
+
 	"github.com/sisu-network/sisu/x/sisu/background"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -15,7 +16,6 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
-	"github.com/sisu-network/sisu/x/sisu/service"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
@@ -35,7 +35,6 @@ type ApiHandler struct {
 	globalData    components.GlobalData
 	txTracker     components.TxTracker
 	bridgeManager chains.BridgeManager
-	chainPolling  service.ChainPolling
 	valManager    components.ValidatorManager
 	mc            background.ManagerContainer
 
@@ -60,7 +59,6 @@ func NewApiHandler(
 		dheartClient:  mc.DheartClient(),
 		deyesClient:   mc.DeyesClient(),
 		txTracker:     mc.TxTracker(),
-		chainPolling:  mc.ChainPolling(),
 		bridgeManager: mc.BridgeManager(),
 		valManager:    mc.ValidatorManager(),
 	}

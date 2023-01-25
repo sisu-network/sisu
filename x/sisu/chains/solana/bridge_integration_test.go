@@ -12,10 +12,12 @@ import (
 	"github.com/gagliardetto/solana-go/rpc"
 	confirm "github.com/gagliardetto/solana-go/rpc/sendAndConfirmTransaction"
 	"github.com/gagliardetto/solana-go/rpc/ws"
+	deyestypes "github.com/sisu-network/deyes/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	solanatypes "github.com/sisu-network/sisu/x/sisu/chains/solana/types"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/testmock"
 	"github.com/sisu-network/sisu/x/sisu/types"
 	"github.com/stretchr/testify/require"
@@ -23,7 +25,7 @@ import (
 
 // This files contains test that connect to a real network. They are skipped in CI mode.
 
-func doTransferIn(t *testing.T, privateKey solanago.PrivateKey, mpcKey solanago.PublicKey,
+func doTestTransferIn(t *testing.T, privateKey solanago.PrivateKey, mpcKey solanago.PublicKey,
 	cfg config.Config, tokenAddr, receiverAta string) {
 	client, wsClient := GetBasicData("localhost")
 	chain := "solana-devnet"
@@ -32,8 +34,6 @@ func doTransferIn(t *testing.T, privateKey solanago.PrivateKey, mpcKey solanago.
 	k := testmock.KeeperTestAfterContractDeployed(ctx)
 	k.SetMpcAddress(ctx, chain, mpcKey.String())
 	k.SetMpcNonce(ctx, &types.MpcNonce{Chain: chain, Nonce: 1})
-	recentHash := getRecentBlockHash(client)
-	k.SetSolanaConfirmedBlock(ctx, chain, "signer", recentHash.Value.Blockhash.String(), int64(recentHash.Context.Slot))
 	m := k.GetTokens(ctx, []string{"SISU"})
 	token := m["SISU"]
 	for i, c := range token.Chains {
@@ -44,7 +44,17 @@ func doTransferIn(t *testing.T, privateKey solanago.PrivateKey, mpcKey solanago.
 	m["SISU"] = token
 	k.SetTokens(ctx, m)
 
-	bridge := NewBridge(chain, "signer", k, cfg).(*defaultBridge)
+	deyesCli := &external.MockDeyesClient{
+		SolanaQueryRecentBlockFunc: func(chain string) (*deyestypes.SolanaQueryRecentBlockResult, error) {
+			result := getRecentBlockHash(client)
+
+			return &deyestypes.SolanaQueryRecentBlockResult{
+				Hash: result.Value.Blockhash.String(),
+			}, nil
+		},
+	}
+
+	bridge := NewBridge(chain, "signer", k, cfg, deyesCli).(*defaultBridge)
 	tx, err := bridge.getTransaction(
 		ctx,
 		[]*types.Token{token},
@@ -123,14 +133,14 @@ func TestTransferIn(t *testing.T) {
 	cfg.Solana.BridgePda = "CvocQ9ivbdz5rUnTh6zBgxaiR4asMNbXRrG2VPUYpoau"       // Bridge pda
 	token := "DEfbTuKfeXxXYkXFU6eGgyzDNbTbsAD9U6z7xexK4nUd"
 	receiverAta := "LkxVSjLH4mjxndDQKrG1a7FYTU7zGFYE5tDzr3PLd3i"
-	doTransferIn(t, admin, mpcKey, cfg, token, receiverAta)
+	doTestTransferIn(t, admin, mpcKey, cfg, token, receiverAta)
 }
 
 func TestSetSpenderAndTransferIn(t *testing.T) {
 	t.Skip()
 	mnemonic := os.Getenv("MNEMONIC") // use your mnemonic here or pass it from the environment
 
-	// private key of pubkey H4MctVS4MUteTAmLLUZfheCy9voAUngCY7zVqYKJQStG. Rember to fundn this
+	// private key of pubkey H4MctVS4MUteTAmLLUZfheCy9voAUngCY7zVqYKJQStG. Rember to fund this
 	// address before running this test.
 	bz, err := hex.DecodeString("3c3a2b82283b7691f3a3b9c11507559c592209a6cbac8416f9cbf2f8d1ed202eee970c04d8411b751449bc231eaf2748756c9c9331273590df2768897088f0c9")
 	require.Nil(t, err)
@@ -146,5 +156,5 @@ func TestSetSpenderAndTransferIn(t *testing.T) {
 
 	spenderPubkey := privKey.PublicKey()
 	doSetSpender(t, mnemonic, cfg, spenderPubkey)
-	doTransferIn(t, privKey, spenderPubkey, cfg, token, receiverAta)
+	doTestTransferIn(t, privKey, spenderPubkey, cfg, token, receiverAta)
 }
