@@ -2,6 +2,7 @@ package gen
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"math"
 	"path/filepath"
@@ -12,7 +13,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	banktypes "github.com/cosmos/cosmos-sdk/x/bank/types"
 	econfig "github.com/sisu-network/deyes/config"
-	libchain "github.com/sisu-network/lib/chain"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
 	"github.com/sisu-network/sisu/config"
@@ -110,71 +110,58 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 	return setting
 }
 
-func getDeyesChains(cmd *cobra.Command, genesisFolder string) []econfig.Chain {
-	cardanoDbConfig, _ := cmd.Flags().GetString(flags.CardanoDbConfig)
-	deyesChains := helper.ReadDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
-
+func getDeyesChains(cmd *cobra.Command, genesisFolder string) econfig.Deyes {
+	deyesCfg := econfig.Load(filepath.Join(genesisFolder, "deyes.toml"))
 	chains := helper.GetChains(filepath.Join(genesisFolder, "chains.json"))
+
+	// Verify that all the ETH hains in chains.json are present in the deyesCfg
+	for _, chain := range chains {
+		if _, ok := deyesCfg.Chains[chain.Id]; !ok {
+			panic(fmt.Errorf("Chain %s is not present in the deyes toml config", chain))
+		}
+	}
 
 	// Add Cardano config
 	if helper.IsCardanoEnabled(genesisFolder) {
-		cardanoConfig := helper.ReadCardanoConfig(genesisFolder)
-		chains = append(chains, &types.Chain{
-			Id: cardanoConfig.Chain,
-		})
+		cardanoCfg := helper.ReadCardanoConfig(genesisFolder)
+		newCfg, ok := deyesCfg.Chains[cardanoCfg.Chain]
+		if !ok {
+			panic(fmt.Errorf("Cardano chain is not present in the deyes config"))
+		}
 
 		var syncDbConfig econfig.SyncDbConfig
 		var clientType econfig.ClientType
 
-		if len(cardanoDbConfig) > 0 {
-			err := json.Unmarshal([]byte(cardanoDbConfig), &syncDbConfig)
-			if err != nil {
-				panic(err)
-			}
+		if len(cardanoCfg.UseSyncDb) > 0 {
 			clientType = econfig.ClientTypeSelfHost
 		} else {
 			clientType = econfig.ClientTypeBlockFrost
 		}
 
-		// Add cardano configuration
-		deyesChains = append(deyesChains, econfig.Chain{
-			Chain:      "cardano-testnet",
-			BlockTime:  10000,
-			AdjustTime: 1000,
-			ClientType: clientType,
-			RpcSecret:  cardanoConfig.Secret,
-			SyncDB:     syncDbConfig,
-		})
+		newCfg.ClientType = clientType
+		newCfg.RpcSecret = cardanoCfg.Secret
+		newCfg.SyncDB = syncDbConfig
+
+		deyesCfg.Chains[cardanoCfg.Chain] = newCfg
 	}
 
 	if helper.IsSolanaEnabled(genesisFolder) {
 		// Read Solana config file.
-		solanaConfig := &helper.CmdSolanaConfig{}
-
-		file, _ := ioutil.ReadFile(filepath.Join(genesisFolder, "solana.json"))
-		err := json.Unmarshal([]byte(file), solanaConfig)
-		if err != nil {
-			panic(err)
-		}
-
-		for _, cfg := range deyesChains {
-			if libchain.IsSolanaChain(cfg.Chain) {
-				deyesChains = append(deyesChains, cfg)
-			}
+		solanaCfg := helper.ReadSolanaConfig(genesisFolder)
+		_, ok := deyesCfg.Chains[solanaCfg.Chain]
+		if !ok {
+			panic(fmt.Errorf("Solana chain is not present in the deyes config"))
 		}
 	}
 
 	if helper.IsLiskEnabled(genesisFolder) {
 		liskCfg := helper.ReadLiskConfig(genesisFolder)
-		deyesChains = append(deyesChains, econfig.Chain{
-			Chain:      liskCfg.Chain,
-			BlockTime:  10000,
-			AdjustTime: 1000,
-			Rpcs:       []string{liskCfg.RPC},
-		})
+		if _, ok := deyesCfg.Chains[liskCfg.Chain]; !ok {
+			panic(fmt.Errorf("Lisk chain is not present in the deyes config"))
+		}
 	}
 
-	return deyesChains
+	return deyesCfg
 }
 
 func getSupportedChains(cmd *cobra.Command, genesisFolder string) []string {
@@ -192,6 +179,15 @@ func getSupportedChains(cmd *cobra.Command, genesisFolder string) []string {
 		chains = append(chains, &types.Chain{
 			Id:          cardanoConfig.Chain,
 			NativeToken: "ADA",
+		})
+	}
+
+	if helper.IsSolanaEnabled(genesisFolder) {
+		solanaCfg := helper.ReadSolanaConfig(genesisFolder)
+		supportedChainsArr = append(supportedChainsArr, solanaCfg.Chain)
+		chains = append(chains, &types.Chain{
+			Id:          solanaCfg.Chain,
+			NativeToken: "SOL",
 		})
 	}
 

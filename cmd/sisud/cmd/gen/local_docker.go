@@ -311,30 +311,17 @@ services:
 	tmos.MustWriteFile(outputPath, buffer.Bytes(), 0644)
 }
 
-func (g *localDockerGenerator) generateEyesToml(deyesChains []econfig.Chain, index int, dir string) {
-	chains := make(map[string]econfig.Chain)
-	for _, cfg := range deyesChains {
-		chains[cfg.Chain] = cfg
-	}
-
+func (g *localDockerGenerator) generateEyesToml(deyesCfg econfig.Deyes, index int, dir string) {
 	priceUrl := os.Getenv("ORACLE_URL")
 	priceSecret := os.Getenv("ORACLE_SECRET")
 
-	deyesConfig := econfig.Deyes{
-		DbHost:        "mysql",
-		DbPort:        3306,
-		DbUsername:    "root",
-		DbPassword:    "password",
-		DbSchema:      fmt.Sprintf("deyes%d", index),
-		SisuServerUrl: fmt.Sprintf("http://sisu%d:25456", index),
+	deyesCfg.DbSchema = fmt.Sprintf("deyes%d", index)
+	deyesCfg.SisuServerUrl = fmt.Sprintf("http://sisu%d:25456", index)
 
-		Chains:            chains,
-		UseExternalRpcsInfo: true,
-		PriceOracleUrl:    priceUrl,
-		PriceOracleSecret: priceSecret,
-	}
+	deyesCfg.PriceOracleUrl = priceUrl
+	deyesCfg.PriceOracleSecret = priceSecret
 
-	writeDeyesConfig(deyesConfig, dir)
+	writeDeyesConfig(deyesCfg, dir)
 }
 
 func (g *localDockerGenerator) generateHeartToml(index int, dir string, dockerConfig DockerNodeConfig,

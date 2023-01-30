@@ -29,9 +29,10 @@ type CmdSolanaConfig struct {
 }
 
 type CardanoConfig struct {
-	Enable bool   `toml:"enable" json:"enable"`
-	Secret string `toml:"secret" json:"secret"`
-	Chain  string `toml:"chain" json:"chain"`
+	Enable    bool   `toml:"enable" json:"enable"`
+	Secret    string `toml:"secret" json:"secret"`
+	Chain     string `toml:"chain" json:"chain"`
+	UseSyncDb string `toml:"use_sync_db" json:"use_sync_db"`
 }
 
 type LiskConfig struct {
@@ -78,6 +79,17 @@ func ReadCardanoConfig(genesisFolder string) CardanoConfig {
 	}
 
 	return cfg
+}
+
+func ReadSolanaConfig(genesisFolder string) CmdSolanaConfig {
+	solanaConfig := CmdSolanaConfig{}
+	file, _ := ioutil.ReadFile(filepath.Join(genesisFolder, "solana.json"))
+	err := json.Unmarshal([]byte(file), &solanaConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	return solanaConfig
 }
 
 func ReadDeyesChainConfigs(path string) []econfig.Chain {
