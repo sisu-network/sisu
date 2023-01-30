@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
+	econfig "github.com/sisu-network/deyes/config"
+
 	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/gagliardetto/solana-go/rpc"
@@ -53,7 +55,9 @@ func GetSolanaClientAndWss(genesisFolder string) ([]*rpc.Client, []*ws.Client) {
 	wsClients := make([]*ws.Client, 0)
 
 	// Read RPCs from deyes_chains
-	deyesChains := ReadDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
+	deyesCfg := econfig.Load(filepath.Join(genesisFolder, "deyes.toml"))
+	deyesChains := deyesCfg.Chains
+
 	for _, chain := range deyesChains {
 		if libchain.IsSolanaChain(chain.Chain) {
 			for i, rpcUrl := range chain.Rpcs {
@@ -76,7 +80,9 @@ func GetSolanaClientAndWss(genesisFolder string) ([]*rpc.Client, []*ws.Client) {
 }
 
 func GetEthClient(genesisFolder string, chain string) *ethclient.Client {
-	deyesChains := ReadDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
+	deyesCfg := econfig.Load(filepath.Join(genesisFolder, "deyes.toml"))
+	deyesChains := deyesCfg.Chains
+
 	for _, cfg := range deyesChains {
 		if cfg.Chain == chain {
 			client, err := ethclient.Dial(cfg.Rpcs[0])

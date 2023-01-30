@@ -9,7 +9,6 @@ import (
 
 	libchain "github.com/sisu-network/lib/chain"
 
-	econfig "github.com/sisu-network/deyes/config"
 	"github.com/sisu-network/sisu/x/sisu/types"
 
 	cardanogo "github.com/echovl/cardano-go"
@@ -90,17 +89,6 @@ func ReadSolanaConfig(genesisFolder string) CmdSolanaConfig {
 	}
 
 	return solanaConfig
-}
-
-func ReadDeyesChainConfigs(path string) []econfig.Chain {
-	deyesChains := make([]econfig.Chain, 0)
-	file, _ := ioutil.ReadFile(path)
-	err := json.Unmarshal([]byte(file), &deyesChains)
-	if err != nil {
-		panic(err)
-	}
-
-	return deyesChains
 }
 
 func ReadVaults(genesisFolder string, chains []string) []string {
