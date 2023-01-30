@@ -175,27 +175,11 @@ func (g *localnetGenerator) getAuthTransactor(client *ethclient.Client, address 
 	return auth, nil
 }
 
-func (g *localnetGenerator) generateEyesToml(outputDir string, chainConfigs []econfig.Chain) {
-	chains := make(map[string]econfig.Chain)
-	for _, cfg := range chainConfigs {
-		chains[cfg.Chain] = cfg
-	}
+func (g *localnetGenerator) generateEyesToml(outputDir string, deyesConfig econfig.Deyes) {
+	deyesConfig.PriceOracleUrl = os.Getenv("ORACLE_URL")
+	deyesConfig.PriceOracleSecret = os.Getenv("ORACLE_SECRET")
 
-	priceUrl := os.Getenv("ORACLE_URL")
-	priceSecret := os.Getenv("ORACLE_SECRET")
-
-	deyesConfig := econfig.Deyes{
-		DbHost:     "localhost",
-		DbPort:     3306,
-		DbUsername: "root",
-		DbPassword: "password",
-		DbSchema:   "deyes",
-
-		Chains:            chains,
-		PriceOracleUrl:    priceUrl,
-		PriceOracleSecret: priceSecret,
-		SisuServerUrl:     fmt.Sprintf("http://%s:25456", "0.0.0.0"),
-	}
+	deyesConfig.SisuServerUrl = fmt.Sprintf("http://%s:25456", "0.0.0.0")
 
 	writeDeyesConfig(deyesConfig, outputDir)
 }

@@ -71,7 +71,8 @@ func StressSwap() *cobra.Command {
 			log.Verbosef("Eth address = %s, solana address = %s", ethAddr.Hex(), solanaAddr.String())
 
 			// Read RPC from the genesis folder.
-			deyesChains := helper.ReadDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
+			deyesCfg := econfig.Load(filepath.Join(genesisFolder, "deyes.toml"))
+			deyesChains := deyesCfg.Chains
 
 			hasSolana := false
 			swapList := make(map[string][]string)
@@ -135,7 +136,7 @@ func StressSwap() *cobra.Command {
 								panic(fmt.Errorf("Unsupported chain dst = %s", dst))
 							}
 
-							c.doSwap(mnemonic, sisuRpc, genesisFolder, deyesUrl, deyesChains, src, dst, token,
+							c.doSwap(mnemonic, sisuRpc, genesisFolder, deyesUrl, src, dst, token,
 								recipient, amount)
 
 							// Sleep a few second for remote rpc to update sender's nonce.
@@ -227,7 +228,7 @@ func (c *stressSwapCmd) getRecipient(chain string, recipients []string) string {
 }
 
 func (c *stressSwapCmd) doSwap(mnemonic, sisuRpc, genesisFolder, deyesUrl string,
-	deyesChains []econfig.Chain, src, dst string, token *types.Token, recipient string, amount int) {
+	src, dst string, token *types.Token, recipient string, amount int) {
 	srcToken := token.GetAddressForChain(src)
 	dstToken := token.GetAddressForChain(src)
 	solanaCfg, err := helper.ReadCmdSolanaConfig(filepath.Join(genesisFolder, "solana.json"))
@@ -254,12 +255,6 @@ func (c *stressSwapCmd) doSwap(mnemonic, sisuRpc, genesisFolder, deyesUrl string
 
 	if libchain.IsETHBasedChain(src) {
 		// Swap from ETH
-		eyesChainCfg := c.getChainConfig(src, deyesChains)
-		if eyesChainCfg == nil {
-			log.Error("Cannot find config for chain ")
-			return
-		}
-
 		clients := getEthClients([]string{src}, genesisFolder)
 		if len(clients) == 0 {
 			log.Error("None of the clients in the genesis folder is healthy")

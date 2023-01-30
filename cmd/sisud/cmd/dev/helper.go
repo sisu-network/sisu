@@ -19,8 +19,8 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	econfig "github.com/sisu-network/deyes/config"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
 	"github.com/sisu-network/sisu/contracts/eth/erc20"
 	"github.com/sisu-network/sisu/utils"
 	hdwallet "github.com/sisu-network/sisu/utils/hdwallet"
@@ -140,7 +140,9 @@ func getEthClients(chains []string, genesisFolder string) []*ethclient.Client {
 		return clients
 	}
 
-	deyesChains := helper.ReadDeyesChainConfigs(filepath.Join(genesisFolder, "deyes_chains.json"))
+	deyesCfg := econfig.Load(filepath.Join(genesisFolder, "deyes.toml"))
+	deyesChains := deyesCfg.Chains
+
 	for _, chain := range chains {
 		found := false
 		for _, c := range deyesChains {
@@ -153,7 +155,7 @@ func getEthClients(chains []string, genesisFolder string) []*ethclient.Client {
 						// Do a sanity call to make sure that this url actually works.
 						num, err := client.BlockNumber(context.Background())
 						if err == nil && num > 0 {
-							log.Verbosef("Use url %s for chainn %s", rpcUrl, chain)
+							log.Verbosef("Use url %s for chain %s", rpcUrl, chain)
 							clients = append(clients, client)
 							found = true
 							break

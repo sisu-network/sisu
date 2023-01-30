@@ -8,11 +8,9 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
-	econfig "github.com/sisu-network/deyes/config"
 	heartconfig "github.com/sisu-network/dheart/core/config"
 	p2ptypes "github.com/sisu-network/dheart/p2p/types"
 	"github.com/sisu-network/lib/log"
@@ -141,7 +139,8 @@ Example:
 					panic(err)
 				}
 
-				nodeConfig := generator.getNodeSettings(i, chainId, keyringBackend, keyringPassphrase, nodes[i], dnaConfig)
+				nodeConfig := generator.getNodeSettings(i, chainId, keyringBackend, keyringPassphrase,
+					nodes[i], dnaConfig)
 				nodeConfigs[i] = nodeConfig
 			}
 
@@ -268,39 +267,28 @@ func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartI
 	writeHeartConfig(outputDir, hConfig)
 }
 
-func (g *TestnetGenerator) generateEyesToml(cmd *cobra.Command, index int, dir string, sisuIp, deyesIp string, sqlConfig SqlConfig,
-	testnetCfg TestnetConfig) {
+func (g *TestnetGenerator) generateEyesToml(cmd *cobra.Command, index int, dir string, sisuIp,
+	deyesIp string, sqlConfig SqlConfig, testnetCfg TestnetConfig) {
 	sqlConfig.Schema = "deyes"
 
 	testnetCfg.LogDNAConfig.HostName = deyesIp
 	testnetCfg.LogDNAConfig.AppName = fmt.Sprintf("deyes%d", index)
 
 	genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
-	deyesChains := getDeyesChains(cmd, genesisFolder)
-	chains := make(map[string]econfig.Chain)
-	for _, cfg := range deyesChains {
-		chains[cfg.Chain] = cfg
-	}
+	deyesCfg := getDeyesChains(cmd, genesisFolder)
 
-	tokens := strings.Split(testnetCfg.Oracle.TokenList, ",")
+	deyesCfg.DbHost = sqlConfig.Host
+	deyesCfg.DbPort = sqlConfig.Port
+	deyesCfg.DbUsername = sqlConfig.Username
+	deyesCfg.DbPassword = sqlConfig.Password
+	deyesCfg.DbSchema = sqlConfig.Schema
+	deyesCfg.UseExternalRpcsInfo = true
 
-	deyesConfig := econfig.Deyes{
-		DbHost:              sqlConfig.Host,
-		DbPort:              sqlConfig.Port,
-		DbUsername:          sqlConfig.Username,
-		DbPassword:          sqlConfig.Password,
-		DbSchema:            sqlConfig.Schema,
-		UseExternalRpcsInfo: true,
+	deyesCfg.PriceOracleUrl = testnetCfg.Oracle.Url
+	deyesCfg.PriceOracleSecret = testnetCfg.Oracle.Secret
 
-		Chains:        chains,
-		SisuServerUrl: fmt.Sprintf("http://%s:25456", sisuIp),
-		LogDNA:        testnetCfg.LogDNAConfig,
+	deyesCfg.LogDNA = testnetCfg.LogDNAConfig
+	deyesCfg.SisuServerUrl = fmt.Sprintf("http://%s:25456", sisuIp)
 
-		PriceOracleUrl:     testnetCfg.Oracle.Url,
-		PriceOracleSecret:  testnetCfg.Oracle.Secret,
-		PricePollFrequency: 1800,
-		PriceTokenList:     tokens,
-	}
-
-	writeDeyesConfig(deyesConfig, dir)
+	writeDeyesConfig(deyesCfg, dir)
 }

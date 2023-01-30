@@ -9,7 +9,6 @@ import (
 
 	libchain "github.com/sisu-network/lib/chain"
 
-	econfig "github.com/sisu-network/deyes/config"
 	"github.com/sisu-network/sisu/x/sisu/types"
 
 	cardanogo "github.com/echovl/cardano-go"
@@ -29,9 +28,10 @@ type CmdSolanaConfig struct {
 }
 
 type CardanoConfig struct {
-	Enable bool   `toml:"enable" json:"enable"`
-	Secret string `toml:"secret" json:"secret"`
-	Chain  string `toml:"chain" json:"chain"`
+	Enable    bool   `toml:"enable" json:"enable"`
+	Secret    string `toml:"secret" json:"secret"`
+	Chain     string `toml:"chain" json:"chain"`
+	UseSyncDb string `toml:"use_sync_db" json:"use_sync_db"`
 }
 
 type LiskConfig struct {
@@ -80,15 +80,15 @@ func ReadCardanoConfig(genesisFolder string) CardanoConfig {
 	return cfg
 }
 
-func ReadDeyesChainConfigs(path string) []econfig.Chain {
-	deyesChains := make([]econfig.Chain, 0)
-	file, _ := ioutil.ReadFile(path)
-	err := json.Unmarshal([]byte(file), &deyesChains)
+func ReadSolanaConfig(genesisFolder string) CmdSolanaConfig {
+	solanaConfig := CmdSolanaConfig{}
+	file, _ := ioutil.ReadFile(filepath.Join(genesisFolder, "solana.json"))
+	err := json.Unmarshal([]byte(file), &solanaConfig)
 	if err != nil {
 		panic(err)
 	}
 
-	return deyesChains
+	return solanaConfig
 }
 
 func ReadVaults(genesisFolder string, chains []string) []string {
