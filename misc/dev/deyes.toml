@@ -1,0 +1,78 @@
+db_host = "localhost"
+db_port = 3306
+db_username = "root"
+db_password = "password"
+db_schema = "deyes"
+
+server_port = 31001
+sisu_server_url = "http://0.0.0.0:25456"
+
+price_oracle_url = ""
+price_oracle_secret = ""
+
+use_external_rpcs_info = false
+eth_rpc="https://rpc.ankr.com/eth"
+
+[log_dna]
+secret = ""
+app_name = ""
+host_name = ""
+flush_interval = "0s"
+max_buffer_len = 0
+log_local = false
+
+[chains]
+[chains.ganache1]
+  chain = "ganache1"
+  block_time = 3000
+  adjust_time = 300
+  starting_block = 0
+  rpcs = ["http://localhost:7545", ]
+  wss = []
+	use_eip_1559 = false
+  rpc_secret = ""
+  client_type = ""
+  solana_bridge_program_id=""
+[chains.ganache2]
+  chain = "ganache2"
+  block_time = 3000
+  adjust_time = 300
+  starting_block = 0
+  rpcs = ["http://localhost:8545", ]
+  wss = []
+	use_eip_1559 = false
+  rpc_secret = ""
+  client_type = ""
+  solana_bridge_program_id=""
+
+[eth_tokens]
+[eth_tokens.AVAX]
+  token1 = "AVAX"
+  token2 = "DAI"
+  address1 = "0x85f138bfee4ef8e540890cfb48f620571d67eda3"
+	address2 = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+[eth_tokens.BNB]
+  token1 = "BNB"
+  token2 = "DAI"
+  address1 = "0xb8c77482e45f1f44de1745f52c74426c631bdd52"
+	address2 = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+[eth_tokens.ETH]
+  token1 = "ETH"
+  token2 = "DAI"
+  address1 = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+	address2 = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+[eth_tokens.FTM]
+  token1 = "FTM"
+  token2 = "DAI"
+  address1 = "0x4e15361fd6b4bb609fa63c81a2be19d873717870"
+	address2 = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+[eth_tokens.MATIC]
+  token1 = "MATIC"
+  token2 = "DAI"
+  address1 = "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0"
+	address2 = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+[eth_tokens.SOL]
+  token1 = "SOL"
+  token2 = "USDC"
+  address1 = "0xd31a59c85ae9d8edefec411d448f90841571b89c"
+	address2 = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"

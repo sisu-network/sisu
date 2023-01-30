@@ -155,7 +155,7 @@ func getEthClients(chains []string, genesisFolder string) []*ethclient.Client {
 						// Do a sanity call to make sure that this url actually works.
 						num, err := client.BlockNumber(context.Background())
 						if err == nil && num > 0 {
-							log.Verbosef("Use url %s for chainn %s", rpcUrl, chain)
+							log.Verbosef("Use url %s for chain %s", rpcUrl, chain)
 							clients = append(clients, client)
 							found = true
 							break
