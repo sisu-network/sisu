@@ -11,7 +11,7 @@ price_oracle_url = ""
 price_oracle_secret = ""
 
 use_external_rpcs_info = false
-eth_rpc="https://rpc.ankr.com/eth"
+eth_rpcs=["https://rpc.ankr.com/eth"]
 
 [log_dna]
 secret = ""

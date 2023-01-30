@@ -60,7 +60,7 @@ price_oracle_url = "{{ .PriceOracleUrl }}"
 price_oracle_secret = "{{ .PriceOracleSecret }}"
 
 use_external_rpcs_info = {{ .UseExternalRpcsInfo }}
-eth_rpc="{{ .EthRpc }}"
+eth_rpcs= [{{ range $i, $rpc := $.EthRpcs }}"{{ $rpc }}", {{end}}]
 
 [log_dna]
 secret = "{{ .LogDNA.Secret }}"
