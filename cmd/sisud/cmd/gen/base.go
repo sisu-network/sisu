@@ -121,9 +121,9 @@ func getDeyesChains(cmd *cobra.Command, genesisFolder string) econfig.Deyes {
 		}
 	}
 
-	// Add Cardano config
-	if helper.IsCardanoEnabled(genesisFolder) {
-		cardanoCfg := helper.ReadCardanoConfig(genesisFolder)
+	// Cardano config
+	cardanoCfg := helper.ReadCardanoConfig(genesisFolder)
+	if cardanoCfg.Enable {
 		newCfg, ok := deyesCfg.Chains[cardanoCfg.Chain]
 		if !ok {
 			panic(fmt.Errorf("Cardano chain is not present in the deyes config"))
@@ -143,22 +143,29 @@ func getDeyesChains(cmd *cobra.Command, genesisFolder string) econfig.Deyes {
 		newCfg.SyncDB = syncDbConfig
 
 		deyesCfg.Chains[cardanoCfg.Chain] = newCfg
+	} else {
+		delete(deyesCfg.Chains, cardanoCfg.Chain)
 	}
 
-	if helper.IsSolanaEnabled(genesisFolder) {
-		// Read Solana config file.
-		solanaCfg := helper.ReadSolanaConfig(genesisFolder)
+	// Solana config
+	solanaCfg := helper.ReadSolanaConfig(genesisFolder)
+	if solanaCfg.Enable {
 		_, ok := deyesCfg.Chains[solanaCfg.Chain]
 		if !ok {
 			panic(fmt.Errorf("Solana chain is not present in the deyes config"))
 		}
+	} else {
+		delete(deyesCfg.Chains, solanaCfg.Chain)
 	}
 
-	if helper.IsLiskEnabled(genesisFolder) {
-		liskCfg := helper.ReadLiskConfig(genesisFolder)
+	// Lisk config
+	liskCfg := helper.ReadLiskConfig(genesisFolder)
+	if liskCfg.Enable {
 		if _, ok := deyesCfg.Chains[liskCfg.Chain]; !ok {
 			panic(fmt.Errorf("Lisk chain is not present in the deyes config"))
 		}
+	} else {
+		delete(deyesCfg.Chains, liskCfg.Chain)
 	}
 
 	return deyesCfg
