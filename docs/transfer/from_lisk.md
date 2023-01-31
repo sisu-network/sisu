@@ -25,3 +25,6 @@ An Ethereum address has a hex format starting with `0x`. For example, `0xc275dc8
     ),
 ```
 The byte array takes much smaller buffer space than the original string.
+
+## Examples
+You can take a look at a JS example of how to swap Lisk token from [Lisk to ETH](https://github.com/sisu-network/transfer-examples/blob/master/Lisk_to_ETH/index.ts) chain.
