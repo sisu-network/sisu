@@ -39,7 +39,6 @@ type Setting struct {
 	algoStr           string
 	numValidators     int
 	cardanoSecret     string
-	cardanoChain      string
 	vaults            []*types.Vault
 
 	nodeConfigs  []config.Config
@@ -60,7 +59,6 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 	algo, _ := cmd.Flags().GetString(flags.Algo)
 	numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 	genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
-	cardanoChain, _ := cmd.Flags().GetString(flags.CardanoChain)
 
 	supportedChainsArr := getSupportedChains(cmd, genesisFolder)
 
@@ -86,10 +84,9 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 			CommissionRate:    10,  // 0.1%
 			ExpirationBlock:   100, // For testing, make it only 100 blocks
 		},
-		cardanoChain: cardanoChain,
-		tokens:       getTokens(filepath.Join(genesisFolder, "tokens.json")),
-		chains:       helper.GetChains(filepath.Join(genesisFolder, "chains.json")),
-		vaults:       getVaults(filepath.Join(genesisFolder, "vault.json")),
+		tokens: getTokens(filepath.Join(genesisFolder, "tokens.json")),
+		chains: helper.GetChains(filepath.Join(genesisFolder, "chains.json")),
+		vaults: getVaults(filepath.Join(genesisFolder, "vault.json")),
 	}
 
 	// Check if solana is enabled
