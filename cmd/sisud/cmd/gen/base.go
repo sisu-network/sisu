@@ -40,7 +40,6 @@ type Setting struct {
 	numValidators     int
 	cardanoSecret     string
 	cardanoChain      string
-	cardanoDbConfig   *econfig.SyncDbConfig
 	vaults            []*types.Vault
 
 	nodeConfigs  []config.Config

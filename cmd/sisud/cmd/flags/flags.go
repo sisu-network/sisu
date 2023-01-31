@@ -9,7 +9,6 @@ const (
 	ChainUrls           = "chain-urls"
 	Chains              = "chains"
 	CardanoChain        = "cardano-chain"
-	CardanoDbConfig     = "cardano-db-config"
 	Contract            = "contract"
 	ContractHash        = "contract-hash"
 	DeyesUrl            = "deyes-url"
