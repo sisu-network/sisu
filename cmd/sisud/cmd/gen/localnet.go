@@ -34,10 +34,8 @@ var (
 	flagOutputDir         = "output-dir"
 	flagNodeDaemonHome    = "node-daemon-home"
 	flagStartingIPAddress = "starting-ip-address"
-	flagTmpDir            = "tmp-dir"
 	flagChainId           = "chain-id"
 	flagConfigString      = "config-string"
-	flagKeyringPassphrase = "keyring-passphrase"
 )
 
 type localnetGenerator struct{}

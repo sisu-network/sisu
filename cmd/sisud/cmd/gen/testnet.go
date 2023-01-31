@@ -30,24 +30,9 @@ import (
 type TestnetGenerator struct {
 }
 
-type LogDNAConfig struct {
-	Secret   string `json:"secret,omitempty"`
-	AppName  string `json:"app_name,omitempty"`
-	HostName string `json:"host_name,omitempty"`
-}
-
-type TestnetOracle struct {
-	Url       string `json:"url"`
-	Secret    string `json:"secret"`
-	TokenList string `json:"token_list"`
-}
-
 type TestnetConfig struct {
-	Nodes           []TestnetNode           `json:"nodes"`
-	DeyesChainsPath string                  `json:"deyes_chains_path"`
-	LogDNAConfig    log.LogDNAConfig        `json:"log_dna_config"`
-	EmailAlert      config.EmailAlertConfig `json:"email_alert"`
-	Oracle          TestnetOracle           `json:"oracle"`
+	Nodes      []TestnetNode           `json:"nodes"`
+	EmailAlert config.EmailAlertConfig `json:"email_alert"`
 }
 
 type SqlConfig struct {
@@ -89,12 +74,6 @@ Example:
 			chainId, _ := cmd.Flags().GetString(flagChainId)
 			numValidators, _ := cmd.Flags().GetInt(flagNumValidators)
 			configString, _ := cmd.Flags().GetString(flagConfigString)
-			keyringBackend, _ := cmd.Flags().GetString(flags.KeyringBackend)
-			keyringPassphrase, _ := cmd.Flags().GetString(flagKeyringPassphrase)
-
-			if keyringPassphrase == keyring.BackendFile && len(keyringPassphrase) == 0 {
-				panic(fmt.Sprintf("Please input the passphrase if you're using keyring backend file by flag %s", keyringPassphrase))
-			}
 
 			testnetConfig := TestnetConfig{}
 			err := json.Unmarshal([]byte(configString), &testnetConfig)
@@ -117,7 +96,6 @@ Example:
 			}
 
 			nodes := testnetConfig.Nodes
-			dnaConfig := testnetConfig.LogDNAConfig
 
 			sisuIps := make([]string, numValidators)
 			eyesIps := make([]string, numValidators)
@@ -132,9 +110,11 @@ Example:
 
 			// Create configuration
 			nodeConfigs := make([]config.Config, numValidators)
+			keyringBackend := os.Getenv("KEYRING_BACKEND")
+			keyringPassphrase := os.Getenv("KEYRING_PASSPHRASE")
+			dnaConfig := generator.getLogDnaConfig()
 			for i := range sisuIps {
 				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
-
 				if err := os.MkdirAll(dir, nodeDirPerm); err != nil {
 					panic(err)
 				}
@@ -169,7 +149,7 @@ Example:
 				generator.generateHeartToml(i, dir, heartIps, peerIds, sisuIps[i], nodes[i].Sql, valPubKeys, dnaConfig)
 
 				// Deyes configs
-				generator.generateEyesToml(cmd, i, dir, sisuIps[i], eyesIps[i], nodes[i].Sql, testnetConfig)
+				generator.generateEyesToml(cmd, i, dir, sisuIps[i], eyesIps[i], nodes[i].Sql, dnaConfig)
 			}
 
 			return err
@@ -180,16 +160,12 @@ Example:
 	cmd.Flags().StringP(flagOutputDir, "o", "./output", "Directory to store initialization data for the localnet")
 	cmd.Flags().String(flagNodeDirPrefix, "node", "Prefix the directory name for each node with (node results in node0, node1, ...)")
 	cmd.Flags().String(flagNodeDaemonHome, "main", "Home directory of the node's daemon configuration")
-	cmd.Flags().String(flagTmpDir, "tmp-dir", "Location of temporary directory that contains list of peers ips and other configs.")
 	cmd.Flags().String(flagChainId, "sisu-talon-01", "Name of the chain")
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.Algo, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
 	cmd.Flags().String(flagConfigString, "", "configuration string for all nodes")
 	cmd.Flags().String(flags.KeyringBackend, keyring.BackendTest, "Keyring backend. file|os|kwallet|pass|test|memory")
-	cmd.Flags().String(flagKeyringPassphrase, "", "Passphrase for keyring backend if using backend file. Leave it empty if use backend test")
 	cmd.Flags().String(flags.GenesisFolder, "./misc/test", "Relative path to the folder that contains genesis configuration.")
-	cmd.Flags().String(flags.CardanoChain, "cardano-testnet", "The cardano chain that Sisu will interact with.")
-	cmd.Flags().String(flags.CardanoDbConfig, "", "Configuration for cardano sync db.")
 	return cmd
 }
 
@@ -240,7 +216,6 @@ func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartI
 	}
 
 	sisuUrl := fmt.Sprintf("http://%s:25456", sisuIp)
-
 	dnaConfig.HostName = heartIps[index]
 	dnaConfig.AppName = fmt.Sprintf("dheart%d", index)
 
@@ -267,12 +242,24 @@ func (g *TestnetGenerator) generateHeartToml(index int, outputDir string, heartI
 	writeHeartConfig(outputDir, hConfig)
 }
 
-func (g *TestnetGenerator) generateEyesToml(cmd *cobra.Command, index int, dir string, sisuIp,
-	deyesIp string, sqlConfig SqlConfig, testnetCfg TestnetConfig) {
-	sqlConfig.Schema = "deyes"
+func (g *TestnetGenerator) getLogDnaConfig() log.LogDNAConfig {
+	cfg := log.LogDNAConfig{}
+	cfg.Secret = os.Getenv("LOG_DNA_SECRET")
 
-	testnetCfg.LogDNAConfig.HostName = deyesIp
-	testnetCfg.LogDNAConfig.AppName = fmt.Sprintf("deyes%d", index)
+	duration, err := time.ParseDuration("5s")
+	if err != nil {
+		panic(err)
+	}
+	cfg.FlushInterval.Duration = duration
+	cfg.MaxBufferLen = 50
+	cfg.LogLocal = true
+
+	return cfg
+}
+
+func (g *TestnetGenerator) generateEyesToml(cmd *cobra.Command, index int, dir string, sisuIp,
+	deyesIp string, sqlConfig SqlConfig, logDnaCfg log.LogDNAConfig) {
+	sqlConfig.Schema = "deyes"
 
 	genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 	deyesCfg := getDeyesChains(cmd, genesisFolder)
@@ -284,10 +271,13 @@ func (g *TestnetGenerator) generateEyesToml(cmd *cobra.Command, index int, dir s
 	deyesCfg.DbSchema = sqlConfig.Schema
 	deyesCfg.UseExternalRpcsInfo = true
 
-	deyesCfg.PriceOracleUrl = testnetCfg.Oracle.Url
-	deyesCfg.PriceOracleSecret = testnetCfg.Oracle.Secret
+	deyesCfg.PriceOracleUrl = os.Getenv("ORACLE_URL")
+	deyesCfg.PriceOracleSecret = os.Getenv("ORACLE_SECRET")
 
-	deyesCfg.LogDNA = testnetCfg.LogDNAConfig
+	deyesCfg.LogDNA = logDnaCfg
+	deyesCfg.LogDNA.HostName = deyesIp
+	deyesCfg.LogDNA.AppName = fmt.Sprintf("deyes%d", index)
+
 	deyesCfg.SisuServerUrl = fmt.Sprintf("http://%s:25456", sisuIp)
 
 	writeDeyesConfig(deyesCfg, dir)

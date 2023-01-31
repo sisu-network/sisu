@@ -54,7 +54,6 @@ transfer params.
 			recipient, _ := cmd.Flags().GetString(flags.Recipient)
 			amount, _ := cmd.Flags().GetInt(flags.Amount)
 			sisuRpc, _ := cmd.Flags().GetString(flags.SisuRpc)
-			cardanoChain, _ := cmd.Flags().GetString(flags.CardanoChain)
 			deyesUrl, _ := cmd.Flags().GetString(flags.DeyesUrl)
 			genesisFolder, _ := cmd.Flags().GetString(flags.GenesisFolder)
 
@@ -90,7 +89,7 @@ transfer params.
 
 				cardanoconfig := helper.ReadCardanoConfig(genesisFolder)
 
-				swapFromCardano(src, dst, token, recipient, vault, amountBigInt, cardanoChain,
+				swapFromCardano(src, dst, token, recipient, vault, amountBigInt, src,
 					cardanoconfig.Secret, mnemonic, deyesUrl)
 
 			} else if libchain.IsSolanaChain(src) {
@@ -116,7 +115,6 @@ transfer params.
 	cmd.Flags().String(flags.Recipient, "", "Recipient address in the destination chain")
 	cmd.Flags().Int(flags.Amount, 1, "The amount of token to be transferred")
 	cmd.Flags().String(flags.DeyesUrl, "http://127.0.0.1:31001", "Url to deyes api server.")
-	cmd.Flags().String(flags.CardanoChain, "", "Cardano chain.")
 	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "Genesis folder that contains configuration files.")
 
 	return cmd
