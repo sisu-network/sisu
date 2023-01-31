@@ -115,7 +115,6 @@ Example:
 			dnaConfig := generator.getLogDnaConfig()
 			for i := range sisuIps {
 				dir := filepath.Join(outputDir, fmt.Sprintf("node%d", i))
-
 				if err := os.MkdirAll(dir, nodeDirPerm); err != nil {
 					panic(err)
 				}
@@ -160,6 +159,7 @@ Example:
 	cmd.Flags().Int(flagNumValidators, 4, "Number of validators to initialize the localnet with")
 	cmd.Flags().StringP(flagOutputDir, "o", "./output", "Directory to store initialization data for the localnet")
 	cmd.Flags().String(flagNodeDirPrefix, "node", "Prefix the directory name for each node with (node results in node0, node1, ...)")
+	cmd.Flags().String(flagNodeDaemonHome, "main", "Home directory of the node's daemon configuration")
 	cmd.Flags().String(flagChainId, "sisu-talon-01", "Name of the chain")
 	cmd.Flags().String(server.FlagMinGasPrices, fmt.Sprintf("0.000006%s", sdk.DefaultBondDenom), "Minimum gas prices to accept for transactions; All fees in a tx must meet this minimum (e.g. 0.01photino,0.001stake)")
 	cmd.Flags().String(flags.Algo, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
