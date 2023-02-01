@@ -306,6 +306,7 @@ func (b *bridge) getGasCost(gasInfo *deyesethtypes.GasInfo, useEip1559 bool, max
 	}
 }
 
+// ParseIncomingTx implements bridge interface
 func (b *bridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byte) ([]*types.TransferDetails, error) {
 	parseResult := ParseVaultTx(ctx, b.keeper, chain, serialized)
 	if parseResult.Error != nil {
@@ -317,4 +318,9 @@ func (b *bridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byt
 	}
 
 	return []*types.TransferDetails{}, nil
+}
+
+// ProcessCommand implements bridge interface
+func (b *bridge) ProcessCommand(ctx sdk.Context, cmd *types.Command) (*types.TxOutMsg, error) {
+	return nil, fmt.Errorf("Invalid command")
 }

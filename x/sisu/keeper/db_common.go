@@ -645,13 +645,13 @@ func getMpcNonce(store cstypes.KVStore, chain string) *types.MpcNonce {
 
 ///// Command Queue
 func setCommandQueue(store cstypes.KVStore, chain string, commands []*types.Command) {
-	cmds := &types.Commands{
-		List: commands,
+	cmds := types.Commands{
+		Cmds: commands,
 	}
 
 	bz, err := cmds.Marshal()
 	if err != nil {
-		log.Error("saveTranferQueue: faield to marshal transfer batch")
+		log.Errorf("Failed to marshal commands on chain %s", chain)
 		return
 	}
 
@@ -661,17 +661,17 @@ func setCommandQueue(store cstypes.KVStore, chain string, commands []*types.Comm
 func getCommandQueue(store cstypes.KVStore, chain string) []*types.Command {
 	bz := store.Get([]byte(chain))
 	if bz == nil {
-		return nil
+		return []*types.Command{}
 	}
 
 	cmds := &types.Commands{}
 	err := cmds.Unmarshal(bz)
 	if err != nil {
-		log.Error("getCommandQueue: failed to unmarshal command")
+		log.Errorf("Failed to unmarshal commands")
 		return nil
 	}
 
-	return cmds.List
+	return cmds.Cmds
 }
 
 ///// Transfer

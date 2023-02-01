@@ -43,8 +43,8 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.txOutProducer = t
 		case components.ValidatorManager:
 			mc.valsManager = t
-		case TransferQueue:
-			mc.transferOutQueue = t
+		case Background:
+			mc.background = t
 		case chains.BridgeManager:
 			mc.bridgeManager = t
 		case keeper.PrivateDb:

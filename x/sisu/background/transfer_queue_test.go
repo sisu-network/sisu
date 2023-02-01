@@ -61,7 +61,7 @@ func TestTransferQueue(t *testing.T) {
 		k := mc.Keeper()
 
 		queue := NewTransferQueue(k, mc.TxOutProducer(), txSubmit,
-			mc.Config().Tss, appKeys, mc.PrivateDb(), mc.ValidatorManager(),
+			appKeys, mc.PrivateDb(), mc.ValidatorManager(),
 			mc.GlobalData()).(*defaultTransferQueue)
 
 		transfer := &types.TransferDetails{

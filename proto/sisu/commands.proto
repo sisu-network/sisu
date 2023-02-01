@@ -1,0 +1,25 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message PauseResumeVault {
+  bool paused = 1;
+}
+
+message Command {
+  oneof type {
+    PauseResumeVault pauseResume = 1;
+  }
+  string chain = 2;
+  int32 index = 3;
+}
+
+message Commands {
+  repeated Command cmds = 1;
+}
+
+message CommandMsg {
+  string signer = 1;
+  Command data = 2;
+}
