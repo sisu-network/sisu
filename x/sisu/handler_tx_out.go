@@ -31,7 +31,13 @@ func NewHandlerTxOut(mc background.ManagerContainer) *HandlerTxOut {
 	}
 }
 
+// There are 2 cases where a TxOut can be finalized:
+// 1) The assigned validator submits the TxOut and it's approved 2/3 of validators
+// 2) The proposed txOut is rejected or it is not produced during a timeout period. At this time,
+// every validator node submits its own txOut and everyone to come up with a consensused txOut.
 func (h *HandlerTxOut) DeliverMsg(ctx sdk.Context, msg *types.TxOutMsg) (*sdk.Result, error) {
+	// TODO: In most cases, different txOuts produced by different validator will have different hash.
+	// We should get the average gas price of all txOuts to calculate the final gas.
 	shouldProcess, hash := h.pmm.ShouldProcessMsg(ctx, msg)
 	if shouldProcess {
 		doTxOut(ctx, h.keeper, h.privateDb, msg.Data)
@@ -83,7 +89,8 @@ func (h *HandlerTxOut) validateTxOut(ctx sdk.Context, msg *types.TxOutMsg) (bool
 	if len(transferIds) > 0 {
 		queue := h.keeper.GetTransferQueue(ctx, msg.Data.Content.OutChain)
 		if len(queue) < len(transferIds) {
-			log.Errorf("Transfers list in the message is longer than the saved transfer queue.")
+			log.Errorf("Transfers list in the message (len = %d) is longer than the saved transfer queue (len = %d).",
+				len(transferIds), len(queue))
 			return false, ""
 		}
 

@@ -41,7 +41,7 @@ func (a *ApiHandler) OnTxIns(txs *eyesTypes.Txs) error {
 
 		transfers, err := bridge.ParseIncomingTx(ctx, txs.Chain, tx.Serialized)
 		if err != nil {
-			log.Verbosef("Failed to parse transfer on chain %s, hash = %s", txs.Chain, tx.Hash)
+			log.Verbosef("Failed to parse transfer on chain %s, hash = %s , err = %s", txs.Chain, tx.Hash, err)
 			continue
 		}
 
