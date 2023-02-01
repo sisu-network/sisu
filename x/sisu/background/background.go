@@ -6,11 +6,13 @@ import (
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/chains"
 	"github.com/sisu-network/sisu/x/sisu/components"
+	"github.com/sisu-network/sisu/x/sisu/external"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type Background interface {
+	Start()
 	Update(ctx sdk.Context)
 }
 
@@ -23,6 +25,8 @@ type defaultBackground struct {
 	newRequestCh     chan TransferRequest
 	valsManager      components.ValidatorManager
 	globalData       components.GlobalData
+	dheartCli        external.DheartClient
+	partyManager     components.PartyManager
 	stopCh           chan bool
 }
 
@@ -34,6 +38,8 @@ func NewBackground(
 	privateDb keeper.PrivateDb,
 	valsManager components.ValidatorManager,
 	globalData components.GlobalData,
+	dheartCli external.DheartClient,
+	partyManager components.PartyManager,
 ) Background {
 	return &defaultBackground{
 		keeper:           keeper,
@@ -45,6 +51,8 @@ func NewBackground(
 		privateDb:        privateDb,
 		valsManager:      valsManager,
 		globalData:       globalData,
+		dheartCli:        dheartCli,
+		partyManager:     partyManager,
 	}
 }
 
@@ -89,6 +97,8 @@ func (b *defaultBackground) Process(ctx sdk.Context) {
 			b.processTranfserQueue(ctx, chain, params)
 		}
 	}
+
+	b.processTxOut(ctx, params)
 }
 
 func (b *defaultBackground) processCmdQueue(ctx sdk.Context, chain string, cmd *types.Command) {
@@ -153,4 +163,25 @@ func (b *defaultBackground) getTransferIds(batch []*types.TransferDetails) []str
 	}
 
 	return ids
+}
+
+func (b *defaultBackground) processTxOut(ctx sdk.Context, params *types.Params) {
+	for _, chain := range params.SupportedChains {
+		if b.privateDb.GetHoldProcessing(types.TxOutHoldKey, chain) {
+			log.Verbosef("Another TxOut is being processed on chain %s", chain)
+			continue
+		}
+
+		queue := b.keeper.GetTxOutQueue(ctx, chain)
+		if len(queue) == 0 {
+			continue
+		}
+
+		b.privateDb.SetHoldProcessing(types.TxOutHoldKey, chain, true)
+
+		txOut := queue[0]
+		if !b.globalData.IsCatchingUp() {
+			SignTxOut(ctx, b.dheartCli, b.partyManager, txOut)
+		}
+	}
 }

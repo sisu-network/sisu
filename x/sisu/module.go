@@ -106,16 +106,15 @@ func (AppModuleBasic) GetQueryCmd() *cobra.Command {
 type AppModule struct {
 	AppModuleBasic
 
-	sisuHandler    *SisuHandler
-	keeper         keeper.Keeper
-	apiHandler     *ApiHandler
-	appKeys        components.AppKeys
-	txSubmit       components.TxSubmit
-	globalData     components.GlobalData
-	valsManager    components.ValidatorManager
-	txTracker      components.TxTracker
-	txOutProcessor background.TxOutProcessor
-	mc             background.ManagerContainer
+	sisuHandler *SisuHandler
+	keeper      keeper.Keeper
+	apiHandler  *ApiHandler
+	appKeys     components.AppKeys
+	txSubmit    components.TxSubmit
+	globalData  components.GlobalData
+	valsManager components.ValidatorManager
+	txTracker   components.TxTracker
+	mc          background.ManagerContainer
 }
 
 func NewAppModule(cdc codec.Marshaler,
@@ -123,7 +122,6 @@ func NewAppModule(cdc codec.Marshaler,
 	keeper keeper.Keeper,
 	apiHandler *ApiHandler,
 	valsManager components.ValidatorManager,
-	txOutProcessor background.TxOutProcessor,
 	mc background.ManagerContainer,
 ) AppModule {
 	return AppModule{
@@ -136,7 +134,6 @@ func NewAppModule(cdc codec.Marshaler,
 		globalData:     mc.GlobalData(),
 		valsManager:    valsManager,
 		txTracker:      mc.TxTracker(),
-		txOutProcessor: txOutProcessor,
 		mc:             mc,
 	}
 }
@@ -256,9 +253,6 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	am.globalData.SetReadOnlyContext(cloneCtx)
 
 	am.mc.Background().Update(cloneCtx)
-
-	// Process TxOut Queue
-	am.txOutProcessor.ProcessTxOut(cloneCtx)
 
 	return []abci.ValidatorUpdate{}
 }

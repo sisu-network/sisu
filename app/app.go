@@ -274,7 +274,8 @@ func New(
 
 	txOutProducer := chains.NewTxOutputProducer(app.appKeys, app.k, bridgeManager, txTracker)
 	bg := background.NewBackground(app.k, txOutProducer, app.txSubmitter,
-		app.appKeys, privateDb, valsMgr, app.globalData)
+		app.appKeys, privateDb, valsMgr, app.globalData, dheartClient, partyManager)
+	bg.Start()
 
 	mc := background.NewManagerContainer(components.NewPostedMessageManager(app.k),
 		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg,
@@ -286,10 +287,6 @@ func New(
 	sisuHandler := tss.NewSisuHandler(mc)
 	externalHandler := rest.NewExternalHandler(app.k, app.globalData, deyesClient)
 	app.externalHandler = externalHandler
-
-	txOutProcessor := background.NewTxOutProcessor(app.k, privateDb, app.globalData, dheartClient,
-		partyManager)
-	txOutProcessor.Start()
 
 	modules := []module.AppModule{
 		genutil.NewAppModule(
@@ -304,7 +301,7 @@ func New(
 		params.NewAppModule(app.ParamsKeeper),
 		transferModule,
 
-		tss.NewAppModule(appCodec, sisuHandler, app.k, apiHandler, valsMgr, txOutProcessor, mc),
+		tss.NewAppModule(appCodec, sisuHandler, app.k, apiHandler, valsMgr, mc),
 	}
 
 	app.apiHandler = apiHandler
