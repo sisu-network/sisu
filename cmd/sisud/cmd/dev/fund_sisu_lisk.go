@@ -37,7 +37,7 @@ func transferLisk(genesisFolder, mnemonic string, mpcPubKey []byte, amount uint6
 	faucetPubKey := liskcrypto.GetPublicKeyFromSecret(mnemonic)
 
 	lisk32 := liskcrypto.GetLisk32AddressFromPublickey(faucetPubKey)
-	log.Verbosef("Lisk32 = ", lisk32)
+	log.Verbosef("Lisk32 of the faucet = %s", lisk32)
 	acc, err := client.GetAccount(lisk32)
 	if err != nil {
 		panic(err)
