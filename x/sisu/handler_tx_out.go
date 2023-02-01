@@ -89,7 +89,8 @@ func (h *HandlerTxOut) validateTxOut(ctx sdk.Context, msg *types.TxOutMsg) (bool
 	if len(transferIds) > 0 {
 		queue := h.keeper.GetTransferQueue(ctx, msg.Data.Content.OutChain)
 		if len(queue) < len(transferIds) {
-			log.Errorf("Transfers list in the message is longer than the saved transfer queue.")
+			log.Errorf("Transfers list in the message (len = %d) is longer than the saved transfer queue (len = %d).",
+				len(transferIds), len(queue))
 			return false, ""
 		}
 
