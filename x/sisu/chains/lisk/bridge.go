@@ -194,3 +194,9 @@ func (b *bridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byt
 		},
 	}, nil
 }
+
+func (b *bridge) ProcessCommand(ctx sdk.Context, cmd *types.Command) (*types.TxOutMsg, error) {
+	// TODO: Implement this
+	return nil, types.NewErrNotImplemented(
+		fmt.Sprintf("ProcessCommand not implemented for chain %s", b.chain))
+}

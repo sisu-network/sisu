@@ -24,53 +24,53 @@ type ManagerContainer interface {
 	TxTracker() components.TxTracker
 	Keeper() keeper.Keeper
 	ValidatorManager() components.ValidatorManager
-	TransferQueue() TransferQueue
 	BridgeManager() chains.BridgeManager
 	PrivateDb() keeper.PrivateDb
+	Background() Background
 }
 
 type DefaultManagerContainer struct {
 	readOnlyContext atomic.Value
 
-	pmm              components.PostedMessageManager
-	partyManager     components.PartyManager
-	dheartClient     external.DheartClient
-	deyesClient      external.DeyesClient
-	globalData       components.GlobalData
-	txSubmit         components.TxSubmit
-	config           config.Config
-	appKeys          components.AppKeys
-	txOutProducer    chains.TxOutputProducer
-	txTracker        components.TxTracker
-	keeper           keeper.Keeper
-	valsManager      components.ValidatorManager
-	transferOutQueue TransferQueue
-	bridgeManager    chains.BridgeManager
-	privateDb        keeper.PrivateDb
+	pmm           components.PostedMessageManager
+	partyManager  components.PartyManager
+	dheartClient  external.DheartClient
+	deyesClient   external.DeyesClient
+	globalData    components.GlobalData
+	txSubmit      components.TxSubmit
+	config        config.Config
+	appKeys       components.AppKeys
+	txOutProducer chains.TxOutputProducer
+	txTracker     components.TxTracker
+	keeper        keeper.Keeper
+	valsManager   components.ValidatorManager
+	bridgeManager chains.BridgeManager
+	background    Background
+	privateDb     keeper.PrivateDb
 }
 
 func NewManagerContainer(pmm components.PostedMessageManager, partyManager components.PartyManager,
 	dheartClient external.DheartClient, deyesClient external.DeyesClient,
 	globalData components.GlobalData, txSubmit components.TxSubmit, cfg config.Config,
 	appKeys components.AppKeys, txOutProducer chains.TxOutputProducer, txTracker components.TxTracker,
-	keeper keeper.Keeper, valsManager components.ValidatorManager, txInQueue TransferQueue,
+	keeper keeper.Keeper, valsManager components.ValidatorManager, background Background,
 	bridgeManager chains.BridgeManager, privateDb keeper.PrivateDb) ManagerContainer {
 	return &DefaultManagerContainer{
-		pmm:              pmm,
-		partyManager:     partyManager,
-		dheartClient:     dheartClient,
-		deyesClient:      deyesClient,
-		globalData:       globalData,
-		txSubmit:         txSubmit,
-		config:           cfg,
-		appKeys:          appKeys,
-		txOutProducer:    txOutProducer,
-		txTracker:        txTracker,
-		keeper:           keeper,
-		valsManager:      valsManager,
-		transferOutQueue: txInQueue,
-		bridgeManager:    bridgeManager,
-		privateDb:        privateDb,
+		pmm:           pmm,
+		partyManager:  partyManager,
+		dheartClient:  dheartClient,
+		deyesClient:   deyesClient,
+		globalData:    globalData,
+		txSubmit:      txSubmit,
+		config:        cfg,
+		appKeys:       appKeys,
+		txOutProducer: txOutProducer,
+		txTracker:     txTracker,
+		keeper:        keeper,
+		valsManager:   valsManager,
+		background:    background,
+		bridgeManager: bridgeManager,
+		privateDb:     privateDb,
 	}
 }
 
@@ -122,14 +122,14 @@ func (mc *DefaultManagerContainer) ValidatorManager() components.ValidatorManage
 	return mc.valsManager
 }
 
-func (mc *DefaultManagerContainer) TransferQueue() TransferQueue {
-	return mc.transferOutQueue
-}
-
 func (mc *DefaultManagerContainer) BridgeManager() chains.BridgeManager {
 	return mc.bridgeManager
 }
 
 func (mc *DefaultManagerContainer) PrivateDb() keeper.PrivateDb {
 	return mc.privateDb
+}
+
+func (mc *DefaultManagerContainer) Background() Background {
+	return mc.background
 }

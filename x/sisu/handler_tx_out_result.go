@@ -12,7 +12,6 @@ import (
 type HandlerTxOutResult struct {
 	pmm       components.PostedMessageManager
 	keeper    keeper.Keeper
-	transferQ background.TransferQueue
 	privateDb keeper.PrivateDb
 }
 
@@ -20,7 +19,6 @@ func NewHandlerTxOutResult(mc background.ManagerContainer) *HandlerTxOutResult {
 	return &HandlerTxOutResult{
 		keeper:    mc.Keeper(),
 		pmm:       mc.PostedMessageManager(),
-		transferQ: mc.TransferQueue(),
 		privateDb: mc.PrivateDb(),
 	}
 }

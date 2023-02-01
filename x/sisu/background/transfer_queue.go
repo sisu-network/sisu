@@ -7,7 +7,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
-	"github.com/sisu-network/sisu/config"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/components"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
@@ -41,7 +40,6 @@ func NewTransferQueue(
 	keeper keeper.Keeper,
 	txOutputProducer chains.TxOutputProducer,
 	txSubmit components.TxSubmit,
-	tssConfig config.TssConfig,
 	appKeys components.AppKeys,
 	privateDb keeper.PrivateDb,
 	valsManager components.ValidatorManager,

@@ -273,12 +273,12 @@ func New(
 	bridgeManager := chains.NewBridgeManager(app.appKeys.GetSignerAddress().String(), app.k, deyesClient, cfg)
 
 	txOutProducer := chains.NewTxOutputProducer(app.appKeys, app.k, bridgeManager, txTracker)
-	transferQueue := background.NewTransferQueue(app.k, txOutProducer, app.txSubmitter, cfg.Tss,
+	bg := background.NewBackground(app.k, txOutProducer, app.txSubmitter,
 		app.appKeys, privateDb, valsMgr, app.globalData)
 
 	mc := background.NewManagerContainer(components.NewPostedMessageManager(app.k),
 		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg,
-		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, transferQueue, bridgeManager, privateDb)
+		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, bg, bridgeManager, privateDb)
 
 	apiHandler := tss.NewApiHandler(privateDb, mc)
 	app.apiEndPoint.SetAppLogicListener(apiHandler)

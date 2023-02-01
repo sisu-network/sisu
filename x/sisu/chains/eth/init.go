@@ -15,6 +15,7 @@ const (
 	MethodTransferIn         = "transferIn"
 	MethodTransferInMultiple = "transferInMultiple"
 	MethodTransferOut        = "transferOut"
+	MethodSetNotPausedChain  = "setNotPausedChain"
 )
 
 type ContractInfo struct {

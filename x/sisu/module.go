@@ -239,7 +239,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	if !am.globalData.AppInitialized() {
 		cloneCtx := utils.CloneSdkContext(ctx)
 		am.globalData.SetAppInitialized()
-		am.mc.TransferQueue().Start(cloneCtx)
+		am.mc.Background().Update(cloneCtx)
 	}
 
 	am.beginBlock(ctx, req.Header.Height)
@@ -255,8 +255,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	cloneCtx := utils.CloneSdkContext(ctx)
 	am.globalData.SetReadOnlyContext(cloneCtx)
 
-	// Process pending transfers
-	am.mc.TransferQueue().ProcessTransfers(cloneCtx)
+	am.mc.Background().Update(cloneCtx)
 
 	// Process TxOut Queue
 	am.txOutProcessor.ProcessTxOut(cloneCtx)
