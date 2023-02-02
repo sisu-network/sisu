@@ -1,6 +1,8 @@
 package background
 
 import (
+	"sync"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/utils"
@@ -14,6 +16,7 @@ import (
 type Background interface {
 	Start()
 	Update(ctx sdk.Context)
+	AddVoteTxOut(height int64, msg *types.TxOutMsg)
 }
 
 type defaultBackground struct {
@@ -28,6 +31,9 @@ type defaultBackground struct {
 	dheartCli        external.DheartClient
 	partyManager     components.PartyManager
 	stopCh           chan bool
+
+	voteQ map[int64][]*types.TxOutMsg
+	lock  *sync.RWMutex
 }
 
 func NewBackground(
@@ -53,6 +59,8 @@ func NewBackground(
 		globalData:       globalData,
 		dheartCli:        dheartCli,
 		partyManager:     partyManager,
+		voteQ:            make(map[int64][]*types.TxOutMsg),
+		lock:             &sync.RWMutex{},
 	}
 }
 
@@ -85,6 +93,8 @@ func (q *defaultBackground) Update(ctx sdk.Context) {
 }
 
 func (b *defaultBackground) Process(ctx sdk.Context) {
+	// 1. Do voting for all TxOut that have been added in the last block.
+
 	params := b.keeper.GetParams(ctx)
 	for _, chain := range params.SupportedChains {
 		// Process admin commands queue.
@@ -184,4 +194,83 @@ func (b *defaultBackground) processTxOut(ctx sdk.Context, params *types.Params) 
 			SignTxOut(ctx, b.dheartCli, b.partyManager, txOut)
 		}
 	}
+}
+
+func (b *defaultBackground) AddVoteTxOut(height int64, msg *types.TxOutMsg) {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	if b.voteQ[height] == nil {
+		b.voteQ[height] = make([]*types.TxOutMsg, 0)
+	}
+
+	b.voteQ[height] = append(b.voteQ[height], msg)
+}
+
+func (b *defaultBackground) processTxOutVote(ctx sdk.Context) {
+	b.lock.Lock()
+	list := b.voteQ[ctx.BlockHeight()]
+	delete(b.voteQ, ctx.BlockHeight())
+	b.lock.Unlock()
+
+	for _, msg := range list {
+		ok, assignedVal := b.validateTxOut(ctx, msg)
+		vote := types.VoteResult_APPROVE
+		if !ok {
+			vote = types.VoteResult_REJECT
+		}
+
+		// Submit the TxOut confirm
+		txOutConfirmMsg := types.NewTxOutVoteMsg(
+			b.appKeys.GetSignerAddress().String(),
+			&types.TxOutVote{
+				AssignedValidator: assignedVal,
+				TxOutId:           msg.Data.GetId(),
+				Vote:              vote,
+			},
+		)
+
+		b.txSubmit.SubmitMessageAsync(txOutConfirmMsg)
+	}
+}
+
+func (h *defaultBackground) validateTxOut(ctx sdk.Context, msg *types.TxOutMsg) (bool, string) {
+	// Check if this is the message from assigned validator.
+	// TODO: Do a validation to verify that the this TxOut is still within the allowed time interval
+	// since confirmed transfers.
+	// TODO: if this is a transfer, make sure that the first transfer matches the first transfer in
+	// Transfer queue
+	transferIds := msg.Data.Input.TransferIds
+	if len(transferIds) > 0 {
+		queue := h.keeper.GetTransferQueue(ctx, msg.Data.Content.OutChain)
+		if len(queue) < len(transferIds) {
+			log.Errorf("Transfers list in the message (len = %d) is longer than the saved transfer queue (len = %d).",
+				len(transferIds), len(queue))
+			return false, ""
+		}
+
+		if len(queue) > 0 {
+			// Make sure that all transfers Ids are the first ids in the queue
+			for i, transfer := range queue {
+				if i >= len(transferIds) {
+					break
+				}
+
+				if transfer.Id != transferIds[i] {
+					log.Errorf(
+						"Transfer ids do not match for index %s, id in the mesage = %s, id in the queue = %s",
+						i, transferIds[i], transfer.Id,
+					)
+					return false, ""
+				}
+			}
+
+			assignedNode := h.valsManager.GetAssignedValidator(ctx, queue[0].Id)
+			if assignedNode.AccAddress == msg.Signer {
+				return true, assignedNode.AccAddress
+			}
+		}
+	}
+
+	return false, ""
 }

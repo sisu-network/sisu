@@ -17,6 +17,7 @@ type HandlerTxOut struct {
 	txSubmit    components.TxSubmit
 	appKeys     components.AppKeys
 	privateDb   keeper.PrivateDb
+	bacground   background.Background
 }
 
 func NewHandlerTxOut(mc background.ManagerContainer) *HandlerTxOut {
@@ -28,6 +29,7 @@ func NewHandlerTxOut(mc background.ManagerContainer) *HandlerTxOut {
 		txSubmit:    mc.TxSubmit(),
 		appKeys:     mc.AppKeys(),
 		privateDb:   mc.PrivateDb(),
+		bacground:   mc.Background(),
 	}
 }
 
@@ -52,72 +54,11 @@ func (h *HandlerTxOut) DeliverMsg(ctx sdk.Context, msg *types.TxOutMsg) (*sdk.Re
 	}
 
 	h.keeper.AddProposedTxOut(ctx, msg.Signer, msg.Data)
-	// TODO: In case there every one does not approve the assigned node's transaction, we have to
-	// use the proposed txOuts from everyone to calculate the final TxOut.
 
-	// do message validation. This work can be done in the background.
-	ok, assignedVal := h.validateTxOut(ctx, msg)
-	vote := types.VoteResult_APPROVE
-	if !ok {
-		vote = types.VoteResult_REJECT
-	}
-
-	// Submit the TxOut confirm
-	txOutConfirmMsg := types.NewTxOutVoteMsg(
-		h.appKeys.GetSignerAddress().String(),
-		&types.TxOutVote{
-			AssignedValidator: assignedVal,
-			TxOutId:           msg.Data.GetId(),
-			Vote:              vote,
-		},
-	)
-
-	h.txSubmit.SubmitMessageAsync(txOutConfirmMsg)
+	// Add this message to the validation queue.
+	h.bacground.AddVoteTxOut(ctx.BlockHeight(), msg)
 
 	return &sdk.Result{}, nil
-}
-
-// validateTxOut checks if a TxOutMsg comes from the assigned validator. If this is true,
-// we can submit the confirm TxOut message.
-func (h *HandlerTxOut) validateTxOut(ctx sdk.Context, msg *types.TxOutMsg) (bool, string) {
-	// Check if this is the message from assigned validator.
-	// TODO: Do a validation to verify that the this TxOut is still within the allowed time interval
-	// since confirmed transfers.
-	// TODO: if this is a transfer, make sure that the first transfer matches the first transfer in
-	// Transfer queue
-	transferIds := msg.Data.Input.TransferIds
-	if len(transferIds) > 0 {
-		queue := h.keeper.GetTransferQueue(ctx, msg.Data.Content.OutChain)
-		if len(queue) < len(transferIds) {
-			log.Errorf("Transfers list in the message (len = %d) is longer than the saved transfer queue (len = %d).",
-				len(transferIds), len(queue))
-			return false, ""
-		}
-
-		if len(queue) > 0 {
-			// Make sure that all transfers Ids are the first ids in the queue
-			for i, transfer := range queue {
-				if i >= len(transferIds) {
-					break
-				}
-
-				if transfer.Id != transferIds[i] {
-					log.Errorf(
-						"Transfer ids do not match for index %s, id in the mesage = %s, id in the queue = %s",
-						i, transferIds[i], transfer.Id,
-					)
-					return false, ""
-				}
-			}
-
-			assignedNode := h.valsManager.GetAssignedValidator(ctx, queue[0].Id)
-			if assignedNode.AccAddress == msg.Signer {
-				return true, assignedNode.AccAddress
-			}
-		}
-	}
-
-	return false, ""
 }
 
 // doTxOut saves a TxOut in the keeper and add it the TxOut Queue.
