@@ -40,9 +40,9 @@ func NewBridge(chain string, signer string, keeper keeper.Keeper, deyesClient ex
 	}
 }
 
-func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDetails) ([]*types.TxOutMsg, error) {
+func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDetails) ([]*types.TxOut, error) {
 	// Find the highest block where majority of the validator nodes has reach to.
-	outMgs := make([]*types.TxOutMsg, 0)
+	outMgs := make([]*types.TxOut, 0)
 	inHashes := make([]string, len(transfers))
 
 	for _, transfer := range transfers {
@@ -84,18 +84,18 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 		return nil, err
 	}
 
-	outMsg := types.NewTxOutMsg(
-		b.signer,
-		types.TxOutType_TRANSFER_OUT,
-		&types.TxOutContent{
+	outMsg := &types.TxOut{
+		TxType: types.TxOutType_TRANSFER_OUT,
+		Content: &types.TxOutContent{
 			OutChain: b.chain,
 			OutHash:  hash.String(),
 			OutBytes: bz,
 		},
-		&types.TxOutInput{
+		Input: &types.TxOutInput{
 			TransferIds: inHashes,
 		},
-	)
+	}
+
 	outMgs = append(outMgs, outMsg)
 
 	return outMgs, nil
@@ -281,7 +281,7 @@ func (b *bridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byt
 	return ret, nil
 }
 
-func (b *bridge) ProcessCommand(ctx sdk.Context, cmd *types.Command) (*types.TxOutMsg, error) {
+func (b *bridge) ProcessCommand(ctx sdk.Context, cmd *types.Command) (*types.TxOut, error) {
 	// TODO: Implement this
 	return nil, types.NewErrNotImplemented(
 		fmt.Sprintf("ProcessCommand not implemented for chain %s", b.chain))

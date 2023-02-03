@@ -58,7 +58,7 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 ////// TxOutputProducer
 
 type MockTxOutputProducer struct {
-	GetTxOutsFunc                     func(ctx sdk.Context, chain string, transfers []*types.TransferDetails) ([]*types.TxOutMsg, error)
+	GetTxOutsFunc                     func(ctx sdk.Context, chain string, transfers []*types.TransferDetails) ([]*types.TxOut, error)
 	PauseContractFunc                 func(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error)
 	ResumeContractFunc                func(ctx sdk.Context, chain string, hash string) (*types.TxOutMsg, error)
 	ContractChangeOwnershipFunc       func(ctx sdk.Context, chain, contractHash, newOwner string) (*types.TxOutMsg, error)
@@ -66,7 +66,7 @@ type MockTxOutputProducer struct {
 	ContractEmergencyWithdrawFundFunc func(ctx sdk.Context, chain, contractHash string, tokens []string, newOwner string) (*types.TxOutMsg, error)
 }
 
-func (m *MockTxOutputProducer) GetTxOuts(ctx sdk.Context, chain string, transfers []*types.TransferDetails) ([]*types.TxOutMsg, error) {
+func (m *MockTxOutputProducer) GetTxOuts(ctx sdk.Context, chain string, transfers []*types.TransferDetails) ([]*types.TxOut, error) {
 	if m.GetTxOutsFunc != nil {
 		return m.GetTxOutsFunc(ctx, chain, transfers)
 	}
@@ -112,4 +112,30 @@ func (m *MockTxOutputProducer) ContractEmergencyWithdrawFund(ctx sdk.Context, ch
 	}
 
 	return nil, nil
+}
+
+////// Background
+
+type MockBackground struct {
+	StartFunc        func()
+	UpdateFunc       func(ctx sdk.Context)
+	AddVoteTxOutFunc func(height int64, msg *types.TxOutMsg)
+}
+
+func (m *MockBackground) Start() {
+	if m.StartFunc != nil {
+		m.StartFunc()
+	}
+}
+
+func (m *MockBackground) Update(ctx sdk.Context) {
+	if m.UpdateFunc != nil {
+		m.UpdateFunc(ctx)
+	}
+}
+
+func (m *MockBackground) AddVoteTxOut(height int64, msg *types.TxOutMsg) {
+	if m.AddVoteTxOutFunc != nil {
+		m.AddVoteTxOutFunc(height, msg)
+	}
 }

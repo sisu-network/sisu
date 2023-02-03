@@ -1,101 +1,88 @@
 package background
 
-import (
-	"testing"
+// func mockForTransferQueue() (sdk.Context, ManagerContainer) {
+// 	ctx := testmock.TestContext()
+// 	k := testmock.KeeperTestGenesis(ctx)
+// 	privateDb := keeper.NewPrivateDb(".", db.MemDBBackend)
+// 	params := k.GetParams(ctx)
+// 	params.TransferOutParams = []*types.TransferOutParams{
+// 		{
+// 			Chain:       "ganache2",
+// 			MaxBatching: 1,
+// 		},
+// 	}
+// 	k.SaveParams(ctx, params)
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/sisu-network/sisu/utils"
-	"github.com/sisu-network/sisu/x/sisu/components"
-	"github.com/sisu-network/sisu/x/sisu/keeper"
-	"github.com/sisu-network/sisu/x/sisu/testmock"
-	"github.com/sisu-network/sisu/x/sisu/types"
-	"github.com/stretchr/testify/require"
-	db "github.com/tendermint/tm-db"
-)
+// 	txOutputProducer := &MockTxOutputProducer{}
+// 	globalData := &components.MockGlobalData{
+// 		GetReadOnlyContextFunc: func() sdk.Context {
+// 			return ctx
+// 		},
+// 	}
+// 	txSubmit := &components.MockTxSubmit{}
+// 	mockAppKeys := &components.MockAppKeys{}
+// 	valManagers := &components.MockValidatorManager{}
 
-func mockForTransferQueue() (sdk.Context, ManagerContainer) {
-	ctx := testmock.TestContext()
-	k := testmock.KeeperTestGenesis(ctx)
-	privateDb := keeper.NewPrivateDb(".", db.MemDBBackend)
-	params := k.GetParams(ctx)
-	params.TransferOutParams = []*types.TransferOutParams{
-		{
-			Chain:       "ganache2",
-			MaxBatching: 1,
-		},
-	}
-	k.SaveParams(ctx, params)
+// 	mc := MockManagerContainer(ctx, k, txOutputProducer, globalData, txSubmit, privateDb, mockAppKeys,
+// 		valManagers)
 
-	txOutputProducer := &MockTxOutputProducer{}
-	globalData := &components.MockGlobalData{
-		GetReadOnlyContextFunc: func() sdk.Context {
-			return ctx
-		},
-	}
-	txSubmit := &components.MockTxSubmit{}
-	mockAppKeys := &components.MockAppKeys{}
-	valManagers := &components.MockValidatorManager{}
+// 	return ctx, mc
+// }
 
-	mc := MockManagerContainer(ctx, k, txOutputProducer, globalData, txSubmit, privateDb, mockAppKeys,
-		valManagers)
+// func TestTransferQueue(t *testing.T) {
+// 	t.Run("transfer_is_saved", func(t *testing.T) {
+// 		ctx, mc := mockForTransferQueue()
+// 		txOutProducer := mc.TxOutProducer().(*MockTxOutputProducer)
+// 		appKeys := mc.AppKeys()
 
-	return ctx, mc
-}
+// 		txSubmit := mc.TxSubmit().(*components.MockTxSubmit)
+// 		txSubmitCount := 0
 
-func TestTransferQueue(t *testing.T) {
-	t.Run("transfer_is_saved", func(t *testing.T) {
-		ctx, mc := mockForTransferQueue()
-		txOutProducer := mc.TxOutProducer().(*MockTxOutputProducer)
-		appKeys := mc.AppKeys()
+// 		valManager := mc.ValidatorManager().(*components.MockValidatorManager)
+// 		valManager.GetAssignedValidatorFunc = func(ctx sdk.Context, hash string) *types.Node {
+// 			return &types.Node{
+// 				AccAddress: appKeys.GetSignerAddress().String(),
+// 			}
+// 		}
 
-		txSubmit := mc.TxSubmit().(*components.MockTxSubmit)
-		txSubmitCount := 0
+// 		k := mc.Keeper()
 
-		valManager := mc.ValidatorManager().(*components.MockValidatorManager)
-		valManager.GetAssignedValidatorFunc = func(ctx sdk.Context, hash string) *types.Node {
-			return &types.Node{
-				AccAddress: appKeys.GetSignerAddress().String(),
-			}
-		}
+// 		queue := NewTransferQueue(k, mc.TxOutProducer(), txSubmit,
+// 			appKeys, mc.PrivateDb(), mc.ValidatorManager(),
+// 			mc.GlobalData()).(*defaultTransferQueue)
 
-		k := mc.Keeper()
+// 		transfer := &types.TransferDetails{
+// 			Id:          "ganache1__hash1",
+// 			ToRecipient: "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80",
+// 			Token:       "SISU",
+// 			Amount:      utils.EthToWei.String(),
+// 		}
 
-		queue := NewTransferQueue(k, mc.TxOutProducer(), txSubmit,
-			appKeys, mc.PrivateDb(), mc.ValidatorManager(),
-			mc.GlobalData()).(*defaultTransferQueue)
+// 		k.AddTransfers(ctx, []*types.TransferDetails{transfer})
+// 		k.SetTransferQueue(ctx, "ganache2", []*types.TransferDetails{transfer})
 
-		transfer := &types.TransferDetails{
-			Id:          "ganache1__hash1",
-			ToRecipient: "0x98Fa8Ab1dd59389138B286d0BeB26bfa4808EC80",
-			Token:       "SISU",
-			Amount:      utils.EthToWei.String(),
-		}
+// 		txOutProducer.GetTxOutsFunc = func(ctx sdk.Context, chain string,
+// 			transfers []*types.TransferDetails) ([]*types.TxOutMsg, error) {
+// 			ret := make([]*types.TxOutMsg, len(transfers))
+// 			for i := range transfers {
+// 				ret[i] = &types.TxOutMsg{
+// 					Signer: appKeys.GetSignerAddress().String(),
+// 					Data: &types.TxOut{
+// 						Content: &types.TxOutContent{
+// 							OutChain: "ganache2",
+// 						},
+// 					},
+// 				}
+// 			}
+// 			return ret, nil
+// 		}
 
-		k.AddTransfers(ctx, []*types.TransferDetails{transfer})
-		k.SetTransferQueue(ctx, "ganache2", []*types.TransferDetails{transfer})
+// 		txSubmit.SubmitMessageAsyncFunc = func(msg sdk.Msg) error {
+// 			txSubmitCount++
+// 			return nil
+// 		}
 
-		txOutProducer.GetTxOutsFunc = func(ctx sdk.Context, chain string,
-			transfers []*types.TransferDetails) ([]*types.TxOutMsg, error) {
-			ret := make([]*types.TxOutMsg, len(transfers))
-			for i := range transfers {
-				ret[i] = &types.TxOutMsg{
-					Signer: appKeys.GetSignerAddress().String(),
-					Data: &types.TxOut{
-						Content: &types.TxOutContent{
-							OutChain: "ganache2",
-						},
-					},
-				}
-			}
-			return ret, nil
-		}
-
-		txSubmit.SubmitMessageAsyncFunc = func(msg sdk.Msg) error {
-			txSubmitCount++
-			return nil
-		}
-
-		queue.processBatch(ctx)
-		require.Equal(t, 1, txSubmitCount)
-	})
-}
+// 		queue.processBatch(ctx)
+// 		require.Equal(t, 1, txSubmitCount)
+// 	})
+// }

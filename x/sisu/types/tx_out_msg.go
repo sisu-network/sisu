@@ -15,15 +15,10 @@ const (
 
 var _ sdk.Msg = &TxOutMsg{}
 
-func NewTxOutMsg(signer string, txType TxOutType,
-	content *TxOutContent, input *TxOutInput) *TxOutMsg {
+func NewTxOutMsg(signer string, txOut *TxOut) *TxOutMsg {
 	return &TxOutMsg{
 		Signer: signer,
-		Data: &TxOut{
-			TxType:  txType,
-			Content: content,
-			Input:   input,
-		},
+		Data:   txOut,
 	}
 }
 

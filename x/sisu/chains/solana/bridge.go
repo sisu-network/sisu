@@ -47,7 +47,8 @@ func NewBridge(chain, signer string, keeper keeper.Keeper, cfg config.Config,
 	}
 }
 
-func (b *defaultBridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDetails) ([]*types.TxOutMsg, error) {
+func (b *defaultBridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDetails) (
+	[]*types.TxOut, error) {
 	allTokens := b.keeper.GetAllTokens(ctx)
 	tokens := make([]*types.Token, 0, len(transfers))
 	recipients := make([]string, 0, len(transfers))
@@ -79,20 +80,19 @@ func (b *defaultBridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Tra
 		return nil, err
 	}
 
-	outMsg := types.NewTxOutMsg(
-		b.signer,
-		types.TxOutType_TRANSFER_OUT,
-		&types.TxOutContent{
+	outMsg := &types.TxOut{
+		TxType: types.TxOutType_TRANSFER_OUT,
+		Content: &types.TxOutContent{
 			OutChain: b.chain,
 			OutHash:  utils.KeccakHash32(string(responseTx.RawBytes)),
 			OutBytes: responseTx.RawBytes,
 		},
-		&types.TxOutInput{
+		Input: &types.TxOutInput{
 			TransferIds: inHashes,
 		},
-	)
+	}
 
-	return []*types.TxOutMsg{outMsg}, nil
+	return []*types.TxOut{outMsg}, nil
 }
 
 func (b *defaultBridge) buildTransferInResponse(
@@ -292,7 +292,7 @@ func (b *defaultBridge) ParseIncomingTx(ctx sdk.Context, chain string, serialize
 	return ret, nil
 }
 
-func (b *defaultBridge) ProcessCommand(ctx sdk.Context, cmd *types.Command) (*types.TxOutMsg, error) {
+func (b *defaultBridge) ProcessCommand(ctx sdk.Context, cmd *types.Command) (*types.TxOut, error) {
 	// TODO: Implement this
 	return nil, types.NewErrNotImplemented(
 		fmt.Sprintf("ProcessCommand not implemented for chain %s", b.chain))
