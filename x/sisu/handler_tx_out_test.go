@@ -29,7 +29,7 @@ func mockForHandlerTxOut() (sdk.Context, background.ManagerContainer) {
 	mockAppKeys := components.NewMockAppKeys()
 
 	mc := background.MockManagerContainer(k, pmm, &MockTxOutQueue{}, valsManager, mockAppKeys,
-		keeper.NewPrivateDb(".", db.MemDBBackend))
+		keeper.NewPrivateDb(".", db.MemDBBackend), &background.MockBackground{})
 	return ctx, mc
 }
 
