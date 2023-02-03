@@ -27,9 +27,8 @@ func mockForHandlerTxOut() (sdk.Context, background.ManagerContainer) {
 		},
 	}
 	mockAppKeys := components.NewMockAppKeys()
-	txSubmit := &components.MockTxSubmit{}
 
-	mc := background.MockManagerContainer(k, pmm, &MockTxOutQueue{}, txSubmit, valsManager, mockAppKeys,
+	mc := background.MockManagerContainer(k, pmm, &MockTxOutQueue{}, valsManager, mockAppKeys,
 		keeper.NewPrivateDb(".", db.MemDBBackend))
 	return ctx, mc
 }
@@ -37,12 +36,11 @@ func mockForHandlerTxOut() (sdk.Context, background.ManagerContainer) {
 func TestTxOut_MultipleSigners(t *testing.T) {
 	ctx, mc := mockForHandlerTxOut()
 	k := mc.Keeper()
-	txSubmit := mc.TxSubmit().(*components.MockTxSubmit)
-	submitCount := 0
 
-	txSubmit.SubmitMessageAsyncFunc = func(msg sdk.Msg) error {
-		submitCount++
-		return nil
+	voteCount := 0
+	bg := mc.Background().(*background.MockBackground)
+	bg.AddVoteTxOutFunc = func(height int64, msg *types.TxOutMsg) {
+		voteCount++
 	}
 
 	params := k.GetParams(ctx)
@@ -94,12 +92,8 @@ func TestTxOut_MultipleSigners(t *testing.T) {
 		msg.Signer = fmt.Sprintf("signer%d", i)
 		_, err := handler.DeliverMsg(ctx, &msg)
 		require.Nil(t, err)
-
-		if i < 4 {
-			require.Equal(t, i, submitCount)
-		} else {
-			// There is no fourth message since with 3 messages, the TxOut is already processed.
-			require.Equal(t, 3, submitCount)
-		}
 	}
+
+	// Make sure the background only add 1 TxOut for vote.
+	require.Equal(t, 1, voteCount)
 }

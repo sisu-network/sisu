@@ -113,3 +113,29 @@ func (m *MockTxOutputProducer) ContractEmergencyWithdrawFund(ctx sdk.Context, ch
 
 	return nil, nil
 }
+
+////// Background
+
+type MockBackground struct {
+	StartFunc        func()
+	UpdateFunc       func(ctx sdk.Context)
+	AddVoteTxOutFunc func(height int64, msg *types.TxOutMsg)
+}
+
+func (m *MockBackground) Start() {
+	if m.StartFunc != nil {
+		m.StartFunc()
+	}
+}
+
+func (m *MockBackground) Update(ctx sdk.Context) {
+	if m.UpdateFunc != nil {
+		m.UpdateFunc(ctx)
+	}
+}
+
+func (m *MockBackground) AddVoteTxOut(height int64, msg *types.TxOutMsg) {
+	if m.AddVoteTxOutFunc != nil {
+		m.AddVoteTxOutFunc(height, msg)
+	}
+}
