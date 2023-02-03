@@ -46,7 +46,7 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager components.
 			return NewHandlerKeygenResult(mc).DeliverMsg(ctx, msg)
 
 		case *types.TxOutMsg:
-			return NewHandlerTxOut(mc).DeliverMsg(ctx, msg)
+			return NewHandlerTxOutProposal(mc).DeliverMsg(ctx, msg)
 
 		case *types.TxOutResultMsg:
 			return NewHandlerTxOutResult(mc).DeliverMsg(ctx, msg)

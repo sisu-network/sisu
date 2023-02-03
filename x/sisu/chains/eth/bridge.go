@@ -36,7 +36,7 @@ func NewBridge(chain string, signer string, k keeper.Keeper, deyesClient externa
 	}
 }
 
-func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDetails) ([]*types.TxOutMsg, error) {
+func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDetails) ([]*types.TxOut, error) {
 	gasInfo, err := b.deyesClient.GetGasInfo(b.chain)
 	if err != nil {
 		return nil, err
@@ -94,20 +94,19 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 		return nil, err
 	}
 
-	outMsg := types.NewTxOutMsg(
-		b.signer,
-		types.TxOutType_TRANSFER_OUT,
-		&types.TxOutContent{
+	outMsg := &types.TxOut{
+		TxType: types.TxOutType_TRANSFER_OUT,
+		Content: &types.TxOutContent{
 			OutChain: b.chain,
 			OutHash:  responseTx.EthTx.Hash().String(),
 			OutBytes: responseTx.RawBytes,
 		},
-		&types.TxOutInput{
+		Input: &types.TxOutInput{
 			TransferIds: inHashes,
 		},
-	)
+	}
 
-	return []*types.TxOutMsg{outMsg}, nil
+	return []*types.TxOut{outMsg}, nil
 }
 
 func (b *bridge) getTransferIn(
@@ -321,6 +320,6 @@ func (b *bridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byt
 }
 
 // ProcessCommand implements bridge interface
-func (b *bridge) ProcessCommand(ctx sdk.Context, cmd *types.Command) (*types.TxOutMsg, error) {
+func (b *bridge) ProcessCommand(ctx sdk.Context, cmd *types.Command) (*types.TxOut, error) {
 	return nil, fmt.Errorf("Invalid command")
 }

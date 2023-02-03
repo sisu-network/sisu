@@ -1,6 +1,7 @@
 package background
 
 import (
+	"fmt"
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -19,13 +20,17 @@ type Background interface {
 	AddVoteTxOut(height int64, msg *types.TxOutMsg)
 }
 
+type UpdateRequest struct {
+	ctx sdk.Context
+}
+
 type defaultBackground struct {
 	keeper           keeper.Keeper
 	txOutputProducer chains.TxOutputProducer
 	txSubmit         components.TxSubmit
 	appKeys          components.AppKeys
 	privateDb        keeper.PrivateDb
-	newRequestCh     chan TransferRequest
+	newRequestCh     chan UpdateRequest
 	valsManager      components.ValidatorManager
 	globalData       components.GlobalData
 	dheartCli        external.DheartClient
@@ -51,7 +56,7 @@ func NewBackground(
 		keeper:           keeper,
 		txOutputProducer: txOutputProducer,
 		txSubmit:         txSubmit,
-		newRequestCh:     make(chan TransferRequest, 10),
+		newRequestCh:     make(chan UpdateRequest, 10),
 		stopCh:           make(chan bool),
 		appKeys:          appKeys,
 		privateDb:        privateDb,
@@ -87,27 +92,30 @@ func (b *defaultBackground) Stop() {
 }
 
 func (q *defaultBackground) Update(ctx sdk.Context) {
-	q.newRequestCh <- TransferRequest{
+	q.newRequestCh <- UpdateRequest{
 		ctx: ctx,
 	}
 }
 
 func (b *defaultBackground) Process(ctx sdk.Context) {
 	// 1. Do voting for all TxOut that have been added in the last block.
+	b.processTxOutVote(ctx)
 
+	// 2. Process new transfers, commands.
 	params := b.keeper.GetParams(ctx)
 	for _, chain := range params.SupportedChains {
 		// Process admin commands queue.
 		cmdQ := b.keeper.GetCommandQueue(ctx, chain)
 		if len(cmdQ) > 0 {
-			// Admin command has higher priority
-
+			// Admin command has higher priority than transfer.
+			// TODO: Add processing admin commands here.
 		} else {
 			// Process transfer queue
-			b.processTranfserQueue(ctx, chain, params)
+			b.processTransferQueue(ctx, chain, params)
 		}
 	}
 
+	// 3. Process (sign) tx out that have been finalized by the network.
 	b.processTxOut(ctx, params)
 }
 
@@ -117,9 +125,17 @@ func (b *defaultBackground) processCmdQueue(ctx sdk.Context, chain string, cmd *
 	}
 }
 
-func (b *defaultBackground) processTranfserQueue(ctx sdk.Context, chain string, params *types.Params) {
+// processTransferQueue processes transfers for a single chain. If the current node is the assigned
+// validator for the first transfer, it will produce a TxOut. Otherwise, this function simply
+// returns.
+func (b *defaultBackground) processTransferQueue(ctx sdk.Context, chain string, params *types.Params) {
 	if b.globalData.IsCatchingUp() {
 		// This app is still catching up with block. Do nothing here.
+		return
+	}
+
+	if b.privateDb.GetHoldProcessing(types.TransferHoldKey, chain) {
+		fmt.Println("Another transfer is being processed")
 		return
 	}
 
@@ -158,7 +174,12 @@ func (b *defaultBackground) processTranfserQueue(ctx sdk.Context, chain string, 
 	if len(txOutMsgs) > 0 {
 		log.Infof("Broadcasting txout with length %d on chain %s", len(txOutMsgs), chain)
 		for _, txOutMsg := range txOutMsgs {
-			b.txSubmit.SubmitMessageAsync(txOutMsg)
+			b.txSubmit.SubmitMessageAsync(
+				types.NewTxOutMsg(
+					b.appKeys.GetSignerAddress().String(),
+					txOutMsg,
+				),
+			)
 		}
 
 		b.privateDb.SetHoldProcessing(types.TransferHoldKey, chain, true)
@@ -196,7 +217,9 @@ func (b *defaultBackground) processTxOut(ctx sdk.Context, params *types.Params) 
 	}
 }
 
+// AddVoteTxOut adds a TxOut message for later vote at the end of the block.
 func (b *defaultBackground) AddVoteTxOut(height int64, msg *types.TxOutMsg) {
+	fmt.Println("Adding txout vote....")
 	b.lock.Lock()
 	defer b.lock.Unlock()
 

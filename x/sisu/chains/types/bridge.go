@@ -7,7 +7,7 @@ import (
 )
 
 type Bridge interface {
-	ProcessCommand(ctx sdk.Context, cmd *types.Command) (*types.TxOutMsg, error)
-	ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDetails) ([]*types.TxOutMsg, error)
+	ProcessCommand(ctx sdk.Context, cmd *types.Command) (*types.TxOut, error)
+	ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDetails) ([]*types.TxOut, error)
 	ParseIncomingTx(ctx sdk.Context, chain string, serialized []byte) ([]*types.TransferDetails, error)
 }

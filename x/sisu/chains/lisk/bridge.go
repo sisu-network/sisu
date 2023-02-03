@@ -39,7 +39,7 @@ func NewBridge(chain string, signer string, keeper keeper.Keeper, deyesClient ex
 }
 
 func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDetails) (
-	[]*types.TxOutMsg, error) {
+	[]*types.TxOut, error) {
 	// Lisk only accept 1 recipient
 	if len(transfers) != 1 {
 		return nil, fmt.Errorf("Lisk only accept 1 recipient")
@@ -120,20 +120,19 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 		return nil, err
 	}
 
-	outMsg := types.NewTxOutMsg(
-		b.signer,
-		types.TxOutType_TRANSFER_OUT,
-		&types.TxOutContent{
+	outMsg := &types.TxOut{
+		TxType: types.TxOutType_TRANSFER_OUT,
+		Content: &types.TxOutContent{
 			OutChain: b.chain,
 			OutHash:  hash,
 			OutBytes: bz,
 		},
-		&types.TxOutInput{
+		Input: &types.TxOutInput{
 			TransferIds: []string{transfer.Id},
 		},
-	)
+	}
 
-	return []*types.TxOutMsg{outMsg}, nil
+	return []*types.TxOut{outMsg}, nil
 }
 
 func (b *bridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byte) (
@@ -195,7 +194,7 @@ func (b *bridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byt
 	}, nil
 }
 
-func (b *bridge) ProcessCommand(ctx sdk.Context, cmd *types.Command) (*types.TxOutMsg, error) {
+func (b *bridge) ProcessCommand(ctx sdk.Context, cmd *types.Command) (*types.TxOut, error) {
 	// TODO: Implement this
 	return nil, types.NewErrNotImplemented(
 		fmt.Sprintf("ProcessCommand not implemented for chain %s", b.chain))

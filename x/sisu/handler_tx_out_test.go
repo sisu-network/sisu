@@ -87,7 +87,7 @@ func TestTxOut_MultipleSigners(t *testing.T) {
 		}
 	}
 
-	handler := NewHandlerTxOut(mc)
+	handler := NewHandlerTxOutProposal(mc)
 
 	for i := 1; i <= 4; i++ {
 		msg := *txOutMsg1

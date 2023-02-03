@@ -127,7 +127,7 @@ func TestProcessTransfer(t *testing.T) {
 
 	// Let's deserialize the tx
 	message := solanago.Message{}
-	err = message.UnmarshalLegacy(bin.NewCompactU16Decoder(msgs[0].Data.Content.OutBytes))
+	err = message.UnmarshalLegacy(bin.NewCompactU16Decoder(msgs[0].Content.OutBytes))
 	require.Nil(t, err)
 
 	// Verify message accounts

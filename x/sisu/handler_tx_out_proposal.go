@@ -9,7 +9,7 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
-type HandlerTxOut struct {
+type HandlerTxOutProposal struct {
 	pmm         components.PostedMessageManager
 	keeper      keeper.Keeper
 	valsManager components.ValidatorManager
@@ -17,11 +17,11 @@ type HandlerTxOut struct {
 	txSubmit    components.TxSubmit
 	appKeys     components.AppKeys
 	privateDb   keeper.PrivateDb
-	bacground   background.Background
+	background  background.Background
 }
 
-func NewHandlerTxOut(mc background.ManagerContainer) *HandlerTxOut {
-	return &HandlerTxOut{
+func NewHandlerTxOutProposal(mc background.ManagerContainer) *HandlerTxOutProposal {
+	return &HandlerTxOutProposal{
 		keeper:      mc.Keeper(),
 		pmm:         mc.PostedMessageManager(),
 		valsManager: mc.ValidatorManager(),
@@ -29,7 +29,7 @@ func NewHandlerTxOut(mc background.ManagerContainer) *HandlerTxOut {
 		txSubmit:    mc.TxSubmit(),
 		appKeys:     mc.AppKeys(),
 		privateDb:   mc.PrivateDb(),
-		bacground:   mc.Background(),
+		background:  mc.Background(),
 	}
 }
 
@@ -37,26 +37,23 @@ func NewHandlerTxOut(mc background.ManagerContainer) *HandlerTxOut {
 // 1) The assigned validator submits the TxOut and it's approved 2/3 of validators
 // 2) The proposed txOut is rejected or it is not produced during a timeout period. At this time,
 // every validator node submits its own txOut and everyone to come up with a consensused txOut.
-func (h *HandlerTxOut) DeliverMsg(ctx sdk.Context, msg *types.TxOutMsg) (*sdk.Result, error) {
-	// TODO: In most cases, different txOuts produced by different validator will have different hash.
-	// We should get the average gas price of all txOuts to calculate the final gas.
-	shouldProcess, hash := h.pmm.ShouldProcessMsg(ctx, msg)
-	if shouldProcess {
-		doTxOut(ctx, h.keeper, h.privateDb, msg.Data)
-		h.keeper.ProcessTxRecord(ctx, hash)
+func (h *HandlerTxOutProposal) DeliverMsg(ctx sdk.Context, msg *types.TxOutMsg) (*sdk.Result, error) {
+	txOut := msg.Data
 
+	validatorId := txOut.GetValidatorId()
+	if len(validatorId) == 0 {
+		log.Errorf("Validator id is empty for txout")
 		return &sdk.Result{}, nil
 	}
 
-	if h.keeper.IsTxRecordProcessed(ctx, hash) {
-		// This msg has been processed before.
-		return &sdk.Result{}, nil
+	assignedNode := h.valsManager.GetAssignedValidator(ctx, validatorId)
+	if assignedNode.AccAddress == msg.Signer {
+		// This is the proposed TxOut from the assigned validator.
+		h.keeper.AddProposedTxOut(ctx, msg.Signer, msg.Data)
+
+		// Add this message to the validation queue.
+		h.background.AddVoteTxOut(ctx.BlockHeight(), msg)
 	}
-
-	h.keeper.AddProposedTxOut(ctx, msg.Signer, msg.Data)
-
-	// Add this message to the validation queue.
-	h.bacground.AddVoteTxOut(ctx.BlockHeight(), msg)
 
 	return &sdk.Result{}, nil
 }
