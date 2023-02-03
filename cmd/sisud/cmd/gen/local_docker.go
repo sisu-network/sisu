@@ -316,6 +316,7 @@ func (g *localDockerGenerator) generateEyesToml(deyesCfg econfig.Deyes, index in
 	priceSecret := os.Getenv("ORACLE_SECRET")
 
 	deyesCfg.DbSchema = fmt.Sprintf("deyes%d", index)
+	deyesCfg.DbHost = "mysql"
 	deyesCfg.SisuServerUrl = fmt.Sprintf("http://sisu%d:25456", index)
 
 	deyesCfg.PriceOracleUrl = priceUrl

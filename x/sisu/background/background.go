@@ -135,7 +135,6 @@ func (b *defaultBackground) processTransferQueue(ctx sdk.Context, chain string, 
 	}
 
 	if b.privateDb.GetHoldProcessing(types.TransferHoldKey, chain) {
-		fmt.Println("Another transfer is being processed")
 		return
 	}
 

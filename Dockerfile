@@ -32,7 +32,6 @@ COPY --from=builder /tmp/go-app/out/sisu /app/sisu
 RUN mkdir -p ~/.sisu
 
 # Copy config into the container.
-COPY docker-config/local-tss.toml /root/.sisu/tss/tss.toml
-COPY docker-config/app-config.toml /root/.sisu/main/config/config.toml
+COPY misc/docker/app-config.toml /root/.sisu/main/config/config.toml
 
 CMD ["./sisu","start"]
