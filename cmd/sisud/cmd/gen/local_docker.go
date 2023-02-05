@@ -312,8 +312,7 @@ services:
 }
 
 func (g *localDockerGenerator) generateEyesToml(deyesCfg econfig.Deyes, index int, dir string) {
-	// priceUrl := os.Getenv("ORACLE_URL")
-	// priceSecret := os.Getenv("ORACLE_SECRET")
+	deyesCfg = updateOracleSecret(deyesCfg)
 
 	deyesCfg.DbSchema = fmt.Sprintf("deyes%d", index)
 	deyesCfg.DbHost = "mysql"

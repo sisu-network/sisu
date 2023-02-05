@@ -271,8 +271,7 @@ func (g *TestnetGenerator) generateEyesToml(cmd *cobra.Command, index int, dir s
 	deyesCfg.DbSchema = sqlConfig.Schema
 	deyesCfg.UseExternalRpcsInfo = true
 
-	// deyesCfg.PriceOracleUrl = os.Getenv("ORACLE_URL")
-	// deyesCfg.PriceOracleSecret = os.Getenv("ORACLE_SECRET")
+	deyesCfg = updateOracleSecret(deyesCfg)
 
 	deyesCfg.LogDNA = logDnaCfg
 	deyesCfg.LogDNA.HostName = deyesIp

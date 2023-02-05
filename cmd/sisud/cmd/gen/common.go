@@ -164,6 +164,23 @@ log_local = {{ .LogDNA.LogLocal }}
 	tmos.MustWriteFile(filepath.Join(dir, "dheart.toml"), buffer.Bytes(), 0644)
 }
 
+func updateOracleSecret(deyesCfg econfig.Deyes) econfig.Deyes {
+	for name, provider := range deyesCfg.PriceProviders {
+		if len(provider.Secret) != 0 {
+			continue
+		}
+
+		switch name {
+		case "coin_cap":
+			provider.Secret = os.Getenv("COIN_CAP_SECRET")
+		case "coin_market_cap":
+			provider.Secret = os.Getenv("COIN_MARKET_CAP_SECRET")
+		}
+	}
+
+	return deyesCfg
+}
+
 func getTokens(file string) []*types.Token {
 	tokens := []*types.Token{}
 
