@@ -176,6 +176,8 @@ func updateOracleSecret(deyesCfg econfig.Deyes) econfig.Deyes {
 		case "coin_market_cap":
 			provider.Secret = os.Getenv("COIN_MARKET_CAP_SECRET")
 		}
+
+		deyesCfg.PriceProviders[name] = provider
 	}
 
 	return deyesCfg
