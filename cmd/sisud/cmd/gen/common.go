@@ -56,11 +56,7 @@ db_schema = "{{ .DbSchema }}"
 server_port = 31001
 sisu_server_url = "{{ .SisuServerUrl }}"
 
-price_oracle_url = "{{ .PriceOracleUrl }}"
-price_oracle_secret = "{{ .PriceOracleSecret }}"
-
 use_external_rpcs_info = {{ .UseExternalRpcsInfo }}
-eth_rpcs= [{{ range $i, $rpc := $.EthRpcs }}"{{ $rpc }}", {{end}}]
 
 [log_dna]
 secret = "{{ .LogDNA.Secret }}"
@@ -69,6 +65,16 @@ host_name = "{{ .LogDNA.HostName }}"
 flush_interval = "{{ .LogDNA.FlushInterval }}"
 max_buffer_len = {{ .LogDNA.MaxBufferLen }}
 log_local = {{ .LogDNA.LogLocal }}
+
+[price_providers]{{ range $name, $provider := .PriceProviders }}
+[price_providers.{{ $name }}]
+  url = "{{ $provider.Url }}"
+	secrets = "{{ $provider.Secrets }}"{{ end }}
+
+[tokens]{{ range $name, $token := .Tokens }}
+[tokens.{{ $name }}]
+  symbol = "{{ $token.Symbol }}"
+  name_lower_case = "{{ $token.NameLowerCase }}"{{ end }}
 
 [chains]{{ range $k, $chain := .Chains }}
 [chains.{{ $chain.Chain }}]
@@ -89,13 +95,6 @@ log_local = {{ .LogDNA.LogLocal }}
     db_name = "{{ $chain.SyncDB.DbName }}"
     submit_url = "{{ $chain.SyncDB.SubmitURL }}"{{end}}
   solana_bridge_program_id="{{ $chain.SolanaBridgeProgramId }}"{{ end }}
-
-[eth_tokens]{{ range $token, $tokenPair := .EthTokens }}
-[eth_tokens.{{ $token }}]
-  token1 = "{{ $tokenPair.Token1 }}"
-  token2 = "{{ $tokenPair.Token2 }}"
-  address1 = "{{ $tokenPair.Address1 }}"
-	address2 = "{{ $tokenPair.Address2 }}"{{ end }}
 `
 
 	tmpl := template.New("eyesToml")
@@ -163,6 +162,25 @@ log_local = {{ .LogDNA.LogLocal }}
 	err = configTemplate.Execute(&buffer, heartConfig)
 
 	tmos.MustWriteFile(filepath.Join(dir, "dheart.toml"), buffer.Bytes(), 0644)
+}
+
+func updateOracleSecret(deyesCfg econfig.Deyes) econfig.Deyes {
+	for name, provider := range deyesCfg.PriceProviders {
+		if len(provider.Secrets) != 0 {
+			continue
+		}
+
+		switch name {
+		case "coin_cap":
+			provider.Secrets = os.Getenv("COIN_CAP_SECRET")
+		case "coin_market_cap":
+			provider.Secrets = os.Getenv("COIN_MARKET_CAP_SECRET")
+		}
+
+		deyesCfg.PriceProviders[name] = provider
+	}
+
+	return deyesCfg
 }
 
 func getTokens(file string) []*types.Token {
