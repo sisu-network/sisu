@@ -69,7 +69,7 @@ log_local = {{ .LogDNA.LogLocal }}
 [price_providers]{{ range $name, $provider := .PriceProviders }}
 [price_providers.{{ $name }}]
   url = "{{ $provider.Url }}"
-	secret = "{{ $provider.Secret }}"{{ end }}
+	secrets = "{{ $provider.Secrets }}"{{ end }}
 
 [tokens]{{ range $name, $token := .Tokens }}
 [tokens.{{ $name }}]
@@ -166,15 +166,15 @@ log_local = {{ .LogDNA.LogLocal }}
 
 func updateOracleSecret(deyesCfg econfig.Deyes) econfig.Deyes {
 	for name, provider := range deyesCfg.PriceProviders {
-		if len(provider.Secret) != 0 {
+		if len(provider.Secrets) != 0 {
 			continue
 		}
 
 		switch name {
 		case "coin_cap":
-			provider.Secret = os.Getenv("COIN_CAP_SECRET")
+			provider.Secrets = os.Getenv("COIN_CAP_SECRET")
 		case "coin_market_cap":
-			provider.Secret = os.Getenv("COIN_MARKET_CAP_SECRET")
+			provider.Secrets = os.Getenv("COIN_MARKET_CAP_SECRET")
 		}
 
 		deyesCfg.PriceProviders[name] = provider
