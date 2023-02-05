@@ -1,6 +1,8 @@
 package sisu
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/background"
@@ -79,6 +81,7 @@ func removeTxOut(ctx sdk.Context, privateDb keeper.PrivateDb, k keeper.Keeper,
 	log.Verbosef("Removing txout %s on chain %s", id, txOut.Content.OutChain)
 	// Remove the TxOut from the TxOutQueue
 	q := k.GetTxOutQueue(ctx, txOut.Content.OutChain)
+	fmt.Println("Queue length 1 = ", len(q))
 	if len(q) == 0 || q[0].GetId() != id {
 		// This is a rare case but it is possible to happen. The tx out is removed because it passes
 		// expiration block. When this TxOut is confirmed, this queue does not have the txOut inside.
@@ -92,6 +95,7 @@ func removeTxOut(ctx sdk.Context, privateDb keeper.PrivateDb, k keeper.Keeper,
 	}
 
 	q = q[1:]
+	fmt.Println("Queue length 2 = ", len(q))
 	k.SetTxOutQueue(ctx, txOut.Content.OutChain, q)
 
 	// Unset the hold prcessing flag so that sisu can continue processing transfer/txout on this chain

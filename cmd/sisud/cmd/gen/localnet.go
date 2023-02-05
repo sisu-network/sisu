@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/big"
 	"net"
-	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -174,8 +173,8 @@ func (g *localnetGenerator) getAuthTransactor(client *ethclient.Client, address 
 }
 
 func (g *localnetGenerator) generateEyesToml(outputDir string, deyesConfig econfig.Deyes) {
-	deyesConfig.PriceOracleUrl = os.Getenv("ORACLE_URL")
-	deyesConfig.PriceOracleSecret = os.Getenv("ORACLE_SECRET")
+	// deyesConfig.PriceOracleUrl = os.Getenv("ORACLE_URL")
+	// deyesConfig.PriceOracleSecret = os.Getenv("ORACLE_SECRET")
 
 	deyesConfig.SisuServerUrl = fmt.Sprintf("http://%s:25456", "0.0.0.0")
 

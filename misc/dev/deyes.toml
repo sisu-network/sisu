@@ -7,11 +7,7 @@ db_schema = "deyes"
 server_port = 31001
 sisu_server_url = "http://0.0.0.0:25456"
 
-price_oracle_url = ""
-price_oracle_secret = ""
-
 use_external_rpcs_info = false
-eth_rpcs=["https://rpc.ankr.com/eth"]
 
 [log_dna]
 secret = ""
