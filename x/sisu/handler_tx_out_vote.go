@@ -2,6 +2,7 @@ package sisu
 
 import (
 	"fmt"
+
 	"github.com/sisu-network/sisu/x/sisu/components"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -62,7 +63,12 @@ func (h *HandlerTxOutVote) checkVoteResult(ctx sdk.Context, txOutId, assignedVal
 		if txOut == nil {
 			log.Errorf("checkVoteResult: TxOut is nil, txOutId = %s", txOutId)
 		} else {
-			doTxOut(ctx, h.keeper, h.privateDb, txOut)
+			finalizedTxOut := h.keeper.GetFinalizedTxOut(ctx, txOutId)
+			if finalizedTxOut == nil {
+				doTxOut(ctx, h.keeper, h.privateDb, txOut)
+			} else {
+				log.Verbosef("Finalized TxOut has been processed for txOut with id %s", txOutId)
+			}
 		}
 	} else {
 		// TODO: handler the case or do timeout in the module.go

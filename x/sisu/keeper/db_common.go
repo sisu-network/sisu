@@ -538,7 +538,7 @@ func getAllVaultsForChain(store cstypes.KVStore, chain string) []*types.Vault {
 	return vaults
 }
 
-///// MPC Address
+///// Any Key-Value pair
 
 func setKeyValue(store cstypes.KVStore, key []byte, value []byte) {
 	store.Set(key, value)

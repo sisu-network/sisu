@@ -75,7 +75,7 @@ func TestHandlerTxOutResult(t *testing.T) {
 			},
 			Input: &types.TxOutInput{},
 		}
-		k.SaveTxOut(ctx, txOut)
+		k.SetFinalizedTxOut(ctx, txOut.GetId(), txOut)
 		k.SetTxOutQueue(ctx, outChain, []*types.TxOut{txOut})
 		privateDb.SetHoldProcessing(types.TransferHoldKey, outChain, true)
 
@@ -112,7 +112,7 @@ func TestHandlerTxOutResult(t *testing.T) {
 				TransferIds: []string{transfers[0].Id, transfers[1].Id},
 			},
 		}
-		k.SaveTxOut(ctx, txOut)
+		k.SetFinalizedTxOut(ctx, txOut.GetId(), txOut)
 		k.SetTxOutQueue(ctx, outChain, []*types.TxOut{txOut})
 		privateDb.SetHoldProcessing(types.TransferHoldKey, outChain, true)
 

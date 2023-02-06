@@ -32,6 +32,7 @@ var (
 	prefixProposedTxOut          = []byte{0x1A}
 	prefixMpcPublicKey           = []byte{0x1B}
 	prefixExpirationBlock        = []byte{0x1C}
+	prefixFinalizedTxOut         = []byte{0x1D}
 )
 
 var _ Keeper = (*DefaultKeeper)(nil)
@@ -58,10 +59,6 @@ type Keeper interface {
 	// Keygen Result
 	SaveKeygenResult(ctx sdk.Context, signerMsg *types.KeygenResultWithSigner)
 	GetAllKeygenResult(ctx sdk.Context, keygenType string, index int32) []*types.KeygenResultWithSigner
-
-	// TxOut
-	SaveTxOut(ctx sdk.Context, msg *types.TxOut)
-	GetTxOut(ctx sdk.Context, outChain, hash string) *types.TxOut
 
 	// Chain
 	SaveChain(ctx sdk.Context, chain *types.Chain)
@@ -132,6 +129,10 @@ type Keeper interface {
 	AddProposedTxOut(ctx sdk.Context, signer string, msg *types.TxOut)
 	GetProposedTxOut(ctx sdk.Context, id string, signer string) *types.TxOut
 	GetProposedTxOutCount(ctx sdk.Context, id string) int
+
+	// Finalized TxOut
+	SetFinalizedTxOut(ctx sdk.Context, id string, txOut *types.TxOut)
+	GetFinalizedTxOut(ctx sdk.Context, id string) *types.TxOut
 
 	// Expiration block
 	SetExpirationBlock(ctx sdk.Context, opType string, key string, height int64)
@@ -205,17 +206,6 @@ func (k *DefaultKeeper) SaveKeygenResult(ctx sdk.Context, signerMsg *types.Keyge
 func (k *DefaultKeeper) GetAllKeygenResult(ctx sdk.Context, keygenType string, index int32) []*types.KeygenResultWithSigner {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeygenResultWithSigner)
 	return getAllKeygenResult(store, keygenType, index)
-}
-
-///// TxOut
-func (k *DefaultKeeper) SaveTxOut(ctx sdk.Context, msg *types.TxOut) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
-	saveTxOut(store, msg)
-}
-
-func (k *DefaultKeeper) GetTxOut(ctx sdk.Context, outChain, hash string) *types.TxOut {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOut)
-	return getTxOut(store, outChain, hash)
 }
 
 ///// Network gas price
@@ -425,6 +415,8 @@ func (k *DefaultKeeper) GetVoteResults(ctx sdk.Context, hash string) map[string]
 	return getVoteResults(store, hash)
 }
 
+///// Proposed TxOut
+
 func (k *DefaultKeeper) AddProposedTxOut(ctx sdk.Context, signer string, txOut *types.TxOut) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixProposedTxOut)
 	addProposedTxOut(store, signer, txOut)
@@ -438,6 +430,36 @@ func (k *DefaultKeeper) GetProposedTxOut(ctx sdk.Context, id string, signer stri
 func (k *DefaultKeeper) GetProposedTxOutCount(ctx sdk.Context, id string) int {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixProposedTxOut)
 	return getProposedTxOutCount(store, id)
+}
+
+///// Finalized TxOut
+func (k *DefaultKeeper) SetFinalizedTxOut(ctx sdk.Context, id string, txOut *types.TxOut) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixFinalizedTxOut)
+	bz, err := txOut.Marshal()
+	if err != nil {
+		log.Errorf("Failed to marshal txout, err = %s", err)
+		return
+	}
+
+	setKeyValue(store, []byte(id), bz)
+}
+
+func (k *DefaultKeeper) GetFinalizedTxOut(ctx sdk.Context, id string) *types.TxOut {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixFinalizedTxOut)
+
+	bz := store.Get([]byte(id))
+	if bz == nil {
+		return nil
+	}
+
+	txOut := &types.TxOut{}
+	err := txOut.Unmarshal(bz)
+	if err != nil {
+		log.Errorf("Failed to unmarshal txout, err = %s", err)
+		return nil
+	}
+
+	return txOut
 }
 
 ///// Expiration block
