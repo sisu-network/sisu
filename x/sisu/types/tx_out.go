@@ -33,3 +33,7 @@ func (t *TxOut) GetValidatorId() string {
 		return ""
 	}
 }
+
+func GetTxOutIdFromChainAndHash(chain, hash string) string {
+	return fmt.Sprintf("%s__%s", chain, hash)
+}

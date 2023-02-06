@@ -23,15 +23,17 @@ func TestKeeper_SaveAndGetTxOut(t *testing.T) {
 		},
 	}
 
-	keeper.SaveTxOut(ctx, original)
-	txOut := keeper.GetTxOut(ctx, chain, hash)
+	keeper.SetFinalizedTxOut(ctx, original.GetId(), original)
+	txOut := keeper.GetFinalizedTxOut(ctx, types.GetTxOutIdFromChainAndHash(chain, hash))
 	require.Equal(t, original, txOut)
 
 	// Any chain in OutChain, BlockHeight, OutBytes would not retrieve the txOut.
-	txOut = keeper.GetTxOut(ctx, "eth", hash)
+	txOut = keeper.GetFinalizedTxOut(ctx, types.GetTxOutIdFromChainAndHash("eth", hash))
 	require.Nil(t, txOut)
 
-	txOut = keeper.GetTxOut(ctx, chain, utils.RandomHeximalString(48))
+	txOut = keeper.GetFinalizedTxOut(ctx,
+		types.GetTxOutIdFromChainAndHash(chain, utils.RandomHeximalString(48)),
+	)
 	require.Nil(t, txOut)
 }
 

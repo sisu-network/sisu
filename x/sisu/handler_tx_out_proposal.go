@@ -64,7 +64,7 @@ func doTxOut(ctx sdk.Context, k keeper.Keeper, privateDb keeper.PrivateDb,
 	log.Info("Delivering TxOut")
 
 	// Save this to KVStore
-	k.SaveTxOut(ctx, txOut)
+	k.SetFinalizedTxOut(ctx, txOut.GetId(), txOut)
 
 	// If this is a txOut deployment, mark the contract as being deployed.
 	switch txOut.TxType {

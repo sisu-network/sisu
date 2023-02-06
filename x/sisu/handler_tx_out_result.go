@@ -40,7 +40,9 @@ func (h *HandlerTxOutResult) doTxOutResult(ctx sdk.Context, msg *types.TxOutResu
 	log.Info("Delivering TxOutResult")
 
 	result := msg.Data
-	txOut := h.keeper.GetTxOut(ctx, result.OutChain, result.OutHash)
+	txOut := h.keeper.GetFinalizedTxOut(ctx,
+		types.GetTxOutIdFromChainAndHash(result.OutChain, result.OutHash),
+	)
 
 	defer func(result *types.TxOutResult) {
 		removeTxOut(ctx, h.privateDb, h.keeper, txOut)

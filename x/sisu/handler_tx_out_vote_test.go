@@ -79,13 +79,13 @@ func TestHandlerTxOutVote(t *testing.T) {
 
 		// The TxOut is not processed yet. It needs second vote
 		h.DeliverMsg(ctx, msg1)
-		txOut := k.GetTxOut(ctx, toChain, outHash)
+		txOut := k.GetFinalizedTxOut(ctx, types.GetTxOutIdFromChainAndHash(toChain, outHash))
 		require.Nil(t, txOut)
 
 		msg2 := *msg1
 		msg2.Signer = "signer2"
 		h.DeliverMsg(ctx, &msg2)
-		txOut = k.GetTxOut(ctx, toChain, outHash)
+		txOut = k.GetFinalizedTxOut(ctx, types.GetTxOutIdFromChainAndHash(toChain, outHash))
 		require.NotNil(t, txOut)
 		require.Equal(t, proposedTxOut.Data.Input, txOut.Input)
 		require.Equal(t, proposedTxOut.Data.Content, txOut.Content)
