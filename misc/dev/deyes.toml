@@ -45,34 +45,58 @@ log_local = false
   client_type = ""
   solana_bridge_program_id=""
 
-[eth_tokens]
-[eth_tokens.AVAX]
-  token1 = "AVAX"
-  token2 = "DAI"
-  address1 = "0x85f138bfee4ef8e540890cfb48f620571d67eda3"
-	address2 = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-[eth_tokens.BNB]
-  token1 = "BNB"
-  token2 = "DAI"
-  address1 = "0xb8c77482e45f1f44de1745f52c74426c631bdd52"
-	address2 = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-[eth_tokens.ETH]
-  token1 = "ETH"
-  token2 = "DAI"
-  address1 = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
-	address2 = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-[eth_tokens.FTM]
-  token1 = "FTM"
-  token2 = "DAI"
-  address1 = "0x4e15361fd6b4bb609fa63c81a2be19d873717870"
-	address2 = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-[eth_tokens.MATIC]
-  token1 = "MATIC"
-  token2 = "DAI"
-  address1 = "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0"
-	address2 = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-[eth_tokens.SOL]
-  token1 = "SOL"
-  token2 = "USDC"
-  address1 = "0xd31a59c85ae9d8edefec411d448f90841571b89c"
-	address2 = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+
+[tokens]
+[tokens.AVAX]
+  symbol = "AVAX"
+  name_lower_case = "avalanche"
+  chain_id = "43114"
+  address = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"
+  chain_name="avalanche"
+[tokens.BNB]
+  symbol = "BNB"
+  name_lower_case = "binance-coin"
+  chain_id = "56"
+  address = "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+  chain_name="bsc"
+[tokens.ETH]
+  symbol = "ETH"
+  name_lower_case = "ethereum"
+  chain_id = "1"
+  address = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+  chain_name="ethereum"
+[tokens.FTM]
+  symbol = "FTM"
+  name_lower_case = "fantom"
+  chain_id = "1"
+  address = "0x4E15361FD6b4BB609Fa63C81A2be19d873717870"
+  chain_name="ethereum"
+[tokens.MATIC]
+  symbol = "MATIC"
+  name_lower_case = "polygon"
+  chain_id = "1"
+  address = "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0"
+  chain_name="ethereum"
+[tokens.SOL]
+  symbol = "SOL"
+  name_lower_case = "solana"
+  chain_id = "56"
+  address = "0x570A5D26f7765Ecb712C0924E4De545B89fD43dF"
+  chain_name="bsc"
+
+
+
+[price_providers]
+[price_providers.coin_cap]
+  url= "https://api.coincap.io/v2/rates"
+  secrets= "0426cc1a-2517-47b4-a4fc-16aa14281506,0d0cd537-2509-4386-bddf-ac07505804f0,c43ff826-9bb2-4cc3-b56f-a8fd797a0cda,2572d53f-3046-4e91-808d-8f85a1a83001,7f8914f4-ea8b-460a-ab8e-626b2c5c9b72,e4dfe4be-f925-4861-b7f4-2101651a0f21,40d8f2f8-53ad-45fa-8f53-9c2951a79ffc,1794ff1f-9b1d-4cbd-a45b-4b8978086eb8,a3ad182e-dfb5-4c59-8c1f-80a2662c33c7"
+[price_providers.coin_market_cap]
+  url= "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest"
+  secrets= "1d021473-1b46-4154-90a1-26ef3ea3bcbf,f40d33eb-a169-46cc-9f5e-17a0f65c79d2,06fd5ac9-e2cf-498d-b95e-cf8fed091876,8907ada5-fbe6-479e-aa4a-6b8a8991bcd2,91752827-394a-4491-bfc5-34316f0bd4ff,e5c19fca-cc0d-4cdf-bc93-2484223aac7b,0a09c4d0-895a-4372-a917-1691addf6df6,9e8fe532-bae9-43b3-8a2f-2c534ea29759,7c3bb690-0118-4922-8092-7ab3993d63bc"
+[price_providers.coin_brain]
+  url="https://api.coinbrain.com/public/coin-info"
+[price_providers.coingecko]
+  url="https://api.coingecko.com/api/v3/simple/price"
+[price_providers.portal_fi]
+  url="https://api.portals.fi/v2/tokens"
+  
