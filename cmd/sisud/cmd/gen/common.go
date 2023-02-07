@@ -82,7 +82,7 @@ log_local = {{ .LogDNA.LogLocal }}
   block_time = {{ $chain.BlockTime }}
   adjust_time = {{ $chain.AdjustTime }}
   starting_block = 0
-  rpcs = [{{ range $j, $rpc := $chain.Rpcs }}"{{ $rpc }}", {{end}}]
+  
   wss = [{{ range $j, $ws := $chain.Wss }}"{{ $ws }}", {{end}}]
 	use_eip_1559 = {{ $chain.UseEip1559 }}
   rpc_secret = "{{ $chain.RpcSecret }}"
@@ -95,6 +95,19 @@ log_local = {{ .LogDNA.LogLocal }}
     db_name = "{{ $chain.SyncDB.DbName }}"
     submit_url = "{{ $chain.SyncDB.SubmitURL }}"{{end}}
   solana_bridge_program_id="{{ $chain.SolanaBridgeProgramId }}"{{ end }}
+
+[tokens]{{ range $token, $tokenInfo := .Tokens }}
+[tokens.{{ $token }}]
+  symbol = "{{ $tokenInfo.Symbol }}"
+  name_lower_case = "{{ $tokenInfo.NameLowerCase }}"
+  chain_id = "{{ $tokenInfo.ChainId }}"
+  chain_name = "{{ $tokenInfo.ChainName }}"
+  address = "{{ $tokenInfo.Address }}"{{ end }}
+
+[price_providers]{{ range $source, $rpc := .PriceProviders }}
+[price_providers.{{ $source }}]
+  url = "{{ $rpc.Url }}"
+  secrets = "{{ $rpc.Secrets }}"{{ end }}
 `
 
 	tmpl := template.New("eyesToml")
