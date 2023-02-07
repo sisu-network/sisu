@@ -45,7 +45,8 @@ func SignTxOut(ctx sdk.Context, dheartClient external.DheartClient,
 // signEthTx sends a TxOut to dheart for TSS signing.
 func signEthTx(ctx sdk.Context, dheartClient external.DheartClient, pubKeys []cosmoscrypto.PubKey,
 	tx *types.TxOut) error {
-	log.Info("Delivering TXOUT for chain ", tx.Content.OutChain, " tx hash = ", tx.Content.OutHash)
+	log.Infof("Signing transaction for chain %s (not signed) hash = %s", tx.Content.OutChain,
+		tx.Content.OutHash)
 	ethTx := &ethtypes.Transaction{}
 	err := ethTx.UnmarshalBinary(tx.Content.OutBytes)
 	if err != nil {

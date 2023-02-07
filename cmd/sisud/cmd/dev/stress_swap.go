@@ -40,12 +40,11 @@ var (
 		"avaxc-testnet__binance-testnet",
 		"avaxc-testnet__goerli-testnet",
 		"avaxc-testnet__polygon-testnet",
-		// "avaxc-testnet__solana-devnet",
 
-		// "binance-testnet__fantom-testnet",
-		// "binance-testnet__avaxc-testnet",
-		// "binance-testnet__goerli-testnet",
+		// "avaxc-testnet__polygon-testnet",
 		// "binance-testnet__polygon-testnet",
+		// "goerli-testnet__polygon-testnet",
+		// "polygon-testnet__polygon-testnet",
 		// "binance-testnet__solana-devnet",
 	}
 )
