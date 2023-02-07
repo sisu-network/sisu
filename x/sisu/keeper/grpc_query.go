@@ -7,6 +7,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/types"
+
+	libchain "github.com/sisu-network/lib/chain"
 )
 
 type GrpcQuerier struct {
@@ -23,6 +25,9 @@ func (k *GrpcQuerier) AllPubKeys(goCtx context.Context, req *types.QueryAllPubKe
 	log.Verbose("Fetching all pub keys.")
 
 	allPubKeys := k.keeper.GetAllKeygenPubkeys(ctx)
+	if allPubKeys[libchain.KEY_TYPE_ECDSA] == nil || allPubKeys[libchain.KEY_TYPE_EDDSA] == nil {
+		return nil, fmt.Errorf("Pubkey is not ready")
+	}
 
 	return &types.QueryAllPubKeysResponse{
 		Pubkeys: allPubKeys,

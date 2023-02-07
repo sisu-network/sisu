@@ -61,7 +61,7 @@ func (h *HandlerTxOutProposal) DeliverMsg(ctx sdk.Context, msg *types.TxOutMsg) 
 // doTxOut saves a TxOut in the keeper and add it the TxOut Queue.
 func doTxOut(ctx sdk.Context, k keeper.Keeper, privateDb keeper.PrivateDb,
 	txOut *types.TxOut) ([]byte, error) {
-	log.Info("Delivering TxOut")
+	log.Info("Finalizing TxOut, id = ", txOut.GetId())
 
 	// Save this to KVStore
 	k.SetFinalizedTxOut(ctx, txOut.GetId(), txOut)

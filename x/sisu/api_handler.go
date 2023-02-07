@@ -200,8 +200,18 @@ func (a *ApiHandler) OnKeysignResult(result *dhtypes.KeysignResult) {
 	}
 
 	if result.Outcome == dhtypes.OutcomeFailure {
-		// TODO: Report failure and culprits here.
-		log.Warn("Dheart signing failed")
+		// TODO: find the culprits here.
+		for _, keysignMsg := range result.Request.KeysignMessages {
+			log.Warn("Dheart signing failed for chain %s, hash = %s", keysignMsg.OutChain,
+				keysignMsg.OutHash)
+			txOutResult := &types.TxOutResult{
+				Result:   types.TxOutResultType_IN_BLOCK_FAILURE,
+				TxOutId:  types.GetTxOutIdFromChainAndHash(keysignMsg.OutChain, keysignMsg.OutHash),
+				OutChain: keysignMsg.OutChain,
+				OutHash:  keysignMsg.OutHash,
+			}
+			a.submitTxOutResult(txOutResult)
+		}
 		return
 	}
 
