@@ -33,6 +33,7 @@ var (
 	prefixMpcPublicKey           = []byte{0x1B}
 	prefixExpirationBlock        = []byte{0x1C}
 	prefixFinalizedTxOut         = []byte{0x1D}
+	prefixKeySignRetryCount      = []byte{0x1E}
 )
 
 var _ Keeper = (*DefaultKeeper)(nil)
@@ -138,6 +139,10 @@ type Keeper interface {
 	SetExpirationBlock(ctx sdk.Context, opType string, key string, height int64)
 	GetExpirationBlock(ctx sdk.Context, opType string, key string) int64
 	RemoveExpirationBlock(ctx sdk.Context, opType string, id string)
+
+	// Keysign retry count.
+	SetKeySignRetryCount(ctx sdk.Context, txOutId string, count int)
+	GetKeySignRetryCount(ctx sdk.Context, txOutId string) int
 }
 
 type DefaultKeeper struct {
@@ -477,6 +482,22 @@ func (k *DefaultKeeper) GetExpirationBlock(ctx sdk.Context, objectType string, i
 func (k *DefaultKeeper) RemoveExpirationBlock(ctx sdk.Context, objectType string, id string) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixExpirationBlock)
 	removeExpirationBlock(store, objectType, id)
+}
+
+///// Keysign retry count.
+func (k *DefaultKeeper) SetKeySignRetryCount(ctx sdk.Context, txOutId string, count int) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeySignRetryCount)
+	store.Set([]byte(txOutId), []byte{byte(count)})
+}
+
+func (k *DefaultKeeper) GetKeySignRetryCount(ctx sdk.Context, txOutId string) int {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixKeySignRetryCount)
+	bz := store.Get([]byte(txOutId))
+	if bz == nil || len(bz) != 1 {
+		return 0
+	}
+
+	return int(bz[0])
 }
 
 ///// Debug

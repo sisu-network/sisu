@@ -148,7 +148,7 @@ func StressSwap() *cobra.Command {
 				wg.Wait()
 			}
 
-			sleepSec := 40
+			sleepSec := 120
 			log.Verbose(fmt.Sprintf(
 				"Sleeping %d second for all trannsaction to finalize. You can increase sleep time if needed ...",
 				sleepSec,

@@ -18,6 +18,7 @@ type Background interface {
 	Start()
 	Update(ctx sdk.Context)
 	AddVoteTxOut(height int64, msg *types.TxOutMsg)
+	AddRetryTxOut(height int64, txOut *types.TxOut)
 }
 
 type UpdateRequest struct {
@@ -37,8 +38,9 @@ type defaultBackground struct {
 	partyManager     components.PartyManager
 	stopCh           chan bool
 
-	voteQ map[int64][]*types.TxOutMsg
-	lock  *sync.RWMutex
+	voteQ         map[int64][]*types.TxOutMsg
+	retryKeysignQ []*types.TxOut
+	lock          *sync.RWMutex
 }
 
 func NewBackground(
@@ -100,6 +102,9 @@ func (q *defaultBackground) Update(ctx sdk.Context) {
 func (b *defaultBackground) Process(ctx sdk.Context) {
 	// 1. Do voting for all TxOut that have been added in the last block.
 	b.processTxOutVote(ctx)
+
+	// 2. Retry all failed TxOut because of keysign failure.
+	b.processRetryKeysign(ctx)
 
 	// 2. Process new transfers, commands.
 	params := b.keeper.GetParams(ctx)
@@ -295,4 +300,25 @@ func (h *defaultBackground) validateTxOut(ctx sdk.Context, msg *types.TxOutMsg) 
 	}
 
 	return false, ""
+}
+
+func (b *defaultBackground) AddRetryTxOut(height int64, txOut *types.TxOut) {
+	b.lock.Lock()
+	defer b.lock.Unlock()
+
+	b.retryKeysignQ = append(b.retryKeysignQ, txOut)
+}
+
+func (b *defaultBackground) processRetryKeysign(ctx sdk.Context) {
+	b.lock.Lock()
+	q := b.retryKeysignQ
+	b.retryKeysignQ = make([]*types.TxOut, 0)
+	b.lock.Unlock()
+
+	// TODO: Filter all TxOut that has been timed out.
+	if !b.globalData.IsCatchingUp() {
+		for _, txOut := range q {
+			SignTxOut(ctx, b.dheartCli, b.partyManager, txOut)
+		}
+	}
 }

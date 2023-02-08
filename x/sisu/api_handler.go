@@ -202,16 +202,19 @@ func (a *ApiHandler) OnKeysignResult(result *dhtypes.KeysignResult) {
 	if result.Outcome == dhtypes.OutcomeFailure {
 		// TODO: find the culprits here.
 		for _, keysignMsg := range result.Request.KeysignMessages {
-			log.Warn("Dheart signing failed for chain %s, hash = %s", keysignMsg.OutChain,
+			log.Warnf("Dheart signing failed for chain %s, hash = %s", keysignMsg.OutChain,
 				keysignMsg.OutHash)
-			txOutResult := &types.TxOutResult{
-				Result:   types.TxOutResultType_IN_BLOCK_FAILURE,
-				TxOutId:  types.GetTxOutIdFromChainAndHash(keysignMsg.OutChain, keysignMsg.OutHash),
-				OutChain: keysignMsg.OutChain,
-				OutHash:  keysignMsg.OutHash,
-			}
-			a.submitTxOutResult(txOutResult)
+
+			msg := types.NewKeysignResult(
+				a.appKeys.GetSignerAddress().String(),
+				types.GetTxOutIdFromChainAndHash(keysignMsg.OutChain, keysignMsg.OutHash),
+				false,
+				nil,
+			)
+
+			a.txSubmit.SubmitMessageAsync(msg)
 		}
+
 		return
 	}
 
@@ -223,8 +226,7 @@ func (a *ApiHandler) OnKeysignResult(result *dhtypes.KeysignResult) {
 	for i, keysignMsg := range request.KeysignMessages {
 		msg := types.NewKeysignResult(
 			a.appKeys.GetSignerAddress().String(),
-			keysignMsg.OutChain,
-			keysignMsg.OutHash,
+			types.GetTxOutIdFromChainAndHash(keysignMsg.OutChain, keysignMsg.OutHash),
 			result.Outcome == dhtypes.OutcomeSuccess,
 			result.Signatures[i],
 		)

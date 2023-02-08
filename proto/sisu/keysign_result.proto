@@ -1,0 +1,15 @@
+syntax = "proto3";
+package types;
+
+option go_package = "github.com/sisu-network/sisu/x/sisu/types";
+
+message KeysignResult {
+  string tx_out_id = 1;
+  bool success = 2;
+  bytes signature = 3;
+}
+
+message KeysignResultMsg {
+  string signer = 1;
+  KeysignResult data = 2;
+}
