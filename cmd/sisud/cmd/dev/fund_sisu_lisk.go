@@ -89,7 +89,7 @@ func transferLisk(genesisFolder, mnemonic string, mpcPubKey []byte, amount uint6
 
 	hash := sha256.Sum256(signedBz)
 	log.Verbosef("Calculated hash = %s", hex.EncodeToString(hash[:]))
-	log.Infof("Funding Sisu from account %s to account %s= ", lisk32,
+	log.Infof("Funding Sisu from account %s to account %s", lisk32,
 		liskcrypto.GetLisk32AddressFromPublickey(mpcPubKey))
 
 	txHash, err := client.CreateTransaction(hex.EncodeToString(signedBz))

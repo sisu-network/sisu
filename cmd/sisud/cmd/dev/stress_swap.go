@@ -41,6 +41,11 @@ var (
 		"avaxc-testnet__goerli-testnet",
 		"avaxc-testnet__polygon-testnet",
 
+		"polygon-testnet__fantom-testnet",
+		"polygon-testnet__binance-testnet",
+		"polygon-testnet__goerli-testnet",
+		"polygon-testnet__polygon-testnet",
+
 		// "avaxc-testnet__polygon-testnet",
 		// "binance-testnet__polygon-testnet",
 		// "goerli-testnet__polygon-testnet",
@@ -148,7 +153,7 @@ func StressSwap() *cobra.Command {
 				wg.Wait()
 			}
 
-			sleepSec := 40
+			sleepSec := 120
 			log.Verbose(fmt.Sprintf(
 				"Sleeping %d second for all trannsaction to finalize. You can increase sleep time if needed ...",
 				sleepSec,

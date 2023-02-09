@@ -83,6 +83,7 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 			SupportedChains:   supportedChainsArr,
 			CommissionRate:    10,  // 0.1%
 			ExpirationBlock:   100, // For testing, make it only 100 blocks
+			MaxKeysignRetry:   2,
 		},
 		tokens: getTokens(filepath.Join(genesisFolder, "tokens.json")),
 		chains: helper.GetChains(filepath.Join(genesisFolder, "chains.json")),

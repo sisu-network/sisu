@@ -51,7 +51,7 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager components.
 		case *types.TxOutResultMsg:
 			return NewHandlerTxOutResult(mc).DeliverMsg(ctx, msg)
 
-		case *types.KeysignResult:
+		case *types.KeysignResultMsg:
 			return NewHandlerKeysignResult(mc).DeliverMsg(ctx, msg)
 
 		case *types.BlockHeightMsg:

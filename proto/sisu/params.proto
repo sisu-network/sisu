@@ -20,4 +20,7 @@ message Params {
 
   // Expiration Ablock
   int32 expiration_block = 5;
+
+  // Maximum number of retry when a txout fails to sign.
+  int32 max_keysign_retry = 6;
 }
