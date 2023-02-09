@@ -286,3 +286,8 @@ func (b *bridge) ProcessCommand(ctx sdk.Context, cmd *types.Command) (*types.TxO
 	return nil, types.NewErrNotImplemented(
 		fmt.Sprintf("ProcessCommand not implemented for chain %s", b.chain))
 }
+
+func (b *bridge) ValidateTxOut(ctx sdk.Context, txOut *types.TxOut, transfers []*types.TransferDetails) error {
+	// TODO: Implement this.
+	return nil
+}

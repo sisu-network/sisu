@@ -228,20 +228,27 @@ func (g *localDockerGenerator) generateDockerCompose(outputPath string, ips []st
 services:
   ganache1:
     image: ganache
+    container_name: ganache1
     environment:
       - port=7545
       - networkId=189985
+    expose:
+      - 7545
     ports:
       - 7545:7545
   ganache2:
     image: ganache
+    container_name: ganache2
     environment:
-      - port=7545
+      - port=8545
       - networkId=189986
+    expose:
+      - 8545
     ports:
-      - 8545:7545
+      - 8545:8545
   mysql:
     image: mysql:8.0.19
+    container_name: mysql
     command: "--default-authentication-plugin=mysql_native_password"
     restart: always
     environment:
@@ -277,6 +284,7 @@ services:
       - ./node{{ $k }}:/root/.sisu
   dheart{{ $k }}:
     image: dheart
+    container_name: dheart{{ $k }}
     expose:
       - 28300
       - 5678
@@ -287,6 +295,7 @@ services:
       - ./node{{ $k }}/dheart.toml:/root/dheart.toml
   deyes{{ $k }}:
     image: deyes
+    container_name: deyes{{ $k }}
     expose:
     - 31001
     restart: on-failure

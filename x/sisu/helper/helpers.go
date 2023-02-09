@@ -46,8 +46,6 @@ func GetChainGasCostInToken(ctx sdk.Context, k keeper.Keeper, deyesClient extern
 
 	// 3. Calculate how many token needed to use to cover the gas cost.
 	gasCostInToken, err := GasCostInToken(totalGasCost, tokenPrice, nativeTokenPrice)
-	log.Verbose("totalGas, tokenPrice, nativeTokenPrice, gasCostInToken = ", totalGasCost, tokenPrice,
-		nativeTokenPrice, gasCostInToken)
 	if err != nil {
 		return nil, err
 	}
@@ -60,5 +58,21 @@ func GasCostInToken(gasCost, tokenPrice, nativeTokenPrice *big.Int) (*big.Int, e
 	gasInToken := new(big.Int).Mul(gasCost, nativeTokenPrice)
 	gasInToken = new(big.Int).Div(gasInToken, tokenPrice)
 
+	log.Verbose("totalGas, tokenPrice, nativeTokenPrice, gasCostInToken = ", gasCost, tokenPrice,
+		nativeTokenPrice, gasInToken)
+
 	return gasInToken, nil
+}
+
+func Difference(a, b *big.Int) float64 {
+	x := a
+	if a.Cmp(b) == -1 {
+		x = b
+	}
+
+	diff := new(big.Int).Abs(new(big.Int).Sub(a, b))
+	diffPercentage := new(big.Float).Quo(new(big.Float).SetInt(diff), new(big.Float).SetInt(x))
+
+	p, _ := diffPercentage.Float64()
+	return p
 }

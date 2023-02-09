@@ -28,6 +28,8 @@ message TxOutContent {
 message TxOutInput {
   // For transferOut
   repeated string transferIds = 1;
+  string nativeTokenPrice = 2;
+  repeated string tokenPrices = 3;
 }
 
 // TxOut with and full transaction hash (including signature) to look up TxOut when a new tx comes in.

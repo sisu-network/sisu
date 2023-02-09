@@ -37,6 +37,7 @@ type defaultBackground struct {
 	dheartCli        external.DheartClient
 	partyManager     components.PartyManager
 	stopCh           chan bool
+	bridgeManager    chains.BridgeManager
 
 	voteQ         map[int64][]*types.TxOutMsg
 	retryKeysignQ []*types.TxOut
@@ -53,6 +54,7 @@ func NewBackground(
 	globalData components.GlobalData,
 	dheartCli external.DheartClient,
 	partyManager components.PartyManager,
+	bridgeManager chains.BridgeManager,
 ) Background {
 	return &defaultBackground{
 		keeper:           keeper,
@@ -66,6 +68,7 @@ func NewBackground(
 		globalData:       globalData,
 		dheartCli:        dheartCli,
 		partyManager:     partyManager,
+		bridgeManager:    bridgeManager,
 		voteQ:            make(map[int64][]*types.TxOutMsg),
 		lock:             &sync.RWMutex{},
 	}
@@ -268,38 +271,47 @@ func (h *defaultBackground) validateTxOut(ctx sdk.Context, msg *types.TxOutMsg) 
 	// TODO: if this is a transfer, make sure that the first transfer matches the first transfer in
 	// Transfer queue
 	transferIds := msg.Data.Input.TransferIds
-	if len(transferIds) > 0 {
-		queue := h.keeper.GetTransferQueue(ctx, msg.Data.Content.OutChain)
-		if len(queue) < len(transferIds) {
-			log.Errorf("Transfers list in the message (len = %d) is longer than the saved transfer queue (len = %d).",
-				len(transferIds), len(queue))
-			return false, ""
+	if len(transferIds) == 0 {
+		return false, ""
+	}
+
+	queue := h.keeper.GetTransferQueue(ctx, msg.Data.Content.OutChain)
+	if len(queue) < len(transferIds) {
+		log.Errorf("Transfers list in the message (len = %d) is longer than the saved transfer queue (len = %d).",
+			len(transferIds), len(queue))
+		return false, ""
+	}
+
+	if len(queue) == 0 {
+		return false, ""
+	}
+
+	// Make sure that all transfers Ids are the first ids in the queue
+	for i, transfer := range queue {
+		if i >= len(transferIds) {
+			break
 		}
 
-		if len(queue) > 0 {
-			// Make sure that all transfers Ids are the first ids in the queue
-			for i, transfer := range queue {
-				if i >= len(transferIds) {
-					break
-				}
-
-				if transfer.Id != transferIds[i] {
-					log.Errorf(
-						"Transfer ids do not match for index %s, id in the mesage = %s, id in the queue = %s",
-						i, transferIds[i], transfer.Id,
-					)
-					return false, ""
-				}
-			}
-
-			assignedNode := h.valsManager.GetAssignedValidator(ctx, queue[0].Id)
-			if assignedNode.AccAddress == msg.Signer {
-				return true, assignedNode.AccAddress
-			}
+		if transfer.Id != transferIds[i] {
+			log.Errorf(
+				"Transfer ids do not match for index %s, id in the mesage = %s, id in the queue = %s",
+				i, transferIds[i], transfer.Id,
+			)
+			return false, ""
 		}
 	}
 
-	return false, ""
+	if err := h.bridgeManager.GetBridge(ctx, queue[0].ToChain).ValidateTxOut(ctx, msg.Data, queue); err != nil {
+		log.Error("Validate txout failed, err = ", err)
+		return false, ""
+	}
+
+	assignedNode := h.valsManager.GetAssignedValidator(ctx, queue[0].Id)
+	if assignedNode.AccAddress != msg.Signer {
+		return false, ""
+	}
+
+	return true, assignedNode.AccAddress
 }
 
 func (b *defaultBackground) AddRetryTxOut(height int64, txOut *types.TxOut) {

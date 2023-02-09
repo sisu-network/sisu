@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGasCostInToken(t *testing.T) {
+func TestGetChainGasCostInToken(t *testing.T) {
 	ctx := testmock.TestContext()
 	k := keeper.NewKeeper(testmock.TestKeyStore)
 
@@ -56,6 +56,19 @@ func TestGasCostInToken(t *testing.T) {
 	gas := big.NewInt(8_000_000)
 	amount, err := GetChainGasCostInToken(ctx, k, mockDeyes, token, chain,
 		gas.Mul(gas, big.NewInt(10*1_000_000_000)))
+
+	require.Equal(t, nil, err)
+
+	// amount = 0.008 * 10 * 2 / 4 ~ 0.04. Since 1 ETH = 10^18 wei, 0.04 ETH is 40_000_000_000_000_000 wei.
+	require.Equal(t, big.NewInt(40_000_000_000_000_000), amount)
+}
+
+func TestGasCostInToken(t *testing.T) {
+	gas := big.NewInt(8_000_000)
+	gasCost := gas.Mul(gas, big.NewInt(10*1_000_000_000))
+	tokenPrice := big.NewInt(utils.OneEtherInWei * 4)
+	nativePriceToken := big.NewInt(utils.OneEtherInWei * 2)
+	amount, err := GasCostInToken(gasCost, tokenPrice, nativePriceToken)
 
 	require.Equal(t, nil, err)
 
