@@ -47,7 +47,8 @@ func (h *HandlerKeysignResult) doKeysignResult(ctx sdk.Context, keysignResult *t
 		txOutId := keysignResult.TxOutId
 		retryCount := h.keeper.GetKeySignRetryCount(ctx, txOutId)
 		log.Verbosef("Keysign failed, doing retry number %d for tx out %s", retryCount, txOutId)
-		if retryCount < 2 { // We can make 2 in the config?
+		params := h.keeper.GetParams(ctx)
+		if retryCount < int(params.MaxKeysignRetry) { // We can make 2 in the config?
 			// Do retry signing txOut again.
 			txOut := h.keeper.GetFinalizedTxOut(ctx, txOutId)
 			if txOut == nil {
