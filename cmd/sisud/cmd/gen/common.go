@@ -69,12 +69,13 @@ log_local = {{ .LogDNA.LogLocal }}
 [price_providers]{{ range $name, $provider := .PriceProviders }}
 [price_providers.{{ $name }}]
   url = "{{ $provider.Url }}"
-	secrets = "{{ $provider.Secrets }}"{{ end }}
+  secrets = "{{ $provider.Secrets }}"{{ end }}
 
 [tokens]{{ range $name, $token := .Tokens }}
 [tokens.{{ $name }}]
   symbol = "{{ $token.Symbol }}"
-  name_lower_case = "{{ $token.NameLowerCase }}"{{ end }}
+  coin_cap_name = "{{ $token.CoincapName }}"
+  coin_gecko_name = "{{ $token.CoinGeckoName }}"{{ end }}
 
 [chains]{{ range $k, $chain := .Chains }}
 [chains.{{ $chain.Chain }}]
@@ -82,9 +83,9 @@ log_local = {{ .LogDNA.LogLocal }}
   block_time = {{ $chain.BlockTime }}
   adjust_time = {{ $chain.AdjustTime }}
   starting_block = 0
-  
+  rpcs = [{{ range $j, $rpc := $chain.Rpcs }}"{{ $rpc }}", {{end}}]
   wss = [{{ range $j, $ws := $chain.Wss }}"{{ $ws }}", {{end}}]
-	use_eip_1559 = {{ $chain.UseEip1559 }}
+  use_eip_1559 = {{ $chain.UseEip1559 }}
   rpc_secret = "{{ $chain.RpcSecret }}"
   client_type = "{{ $chain.ClientType }}"{{ if $chain.SyncDB.Host }}
   [chains.{{ $chain.Chain }}.sync_db]
@@ -95,19 +96,6 @@ log_local = {{ .LogDNA.LogLocal }}
     db_name = "{{ $chain.SyncDB.DbName }}"
     submit_url = "{{ $chain.SyncDB.SubmitURL }}"{{end}}
   solana_bridge_program_id="{{ $chain.SolanaBridgeProgramId }}"{{ end }}
-
-[tokens]{{ range $token, $tokenInfo := .Tokens }}
-[tokens.{{ $token }}]
-  symbol = "{{ $tokenInfo.Symbol }}"
-  name_lower_case = "{{ $tokenInfo.NameLowerCase }}"
-  chain_id = "{{ $tokenInfo.ChainId }}"
-  chain_name = "{{ $tokenInfo.ChainName }}"
-  address = "{{ $tokenInfo.Address }}"{{ end }}
-
-[price_providers]{{ range $source, $rpc := .PriceProviders }}
-[price_providers.{{ $source }}]
-  url = "{{ $rpc.Url }}"
-  secrets = "{{ $rpc.Secrets }}"{{ end }}
 `
 
 	tmpl := template.New("eyesToml")
