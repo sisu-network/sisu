@@ -69,12 +69,13 @@ log_local = {{ .LogDNA.LogLocal }}
 [price_providers]{{ range $name, $provider := .PriceProviders }}
 [price_providers.{{ $name }}]
   url = "{{ $provider.Url }}"
-	secrets = "{{ $provider.Secrets }}"{{ end }}
+  secrets = "{{ $provider.Secrets }}"{{ end }}
 
 [tokens]{{ range $name, $token := .Tokens }}
 [tokens.{{ $name }}]
   symbol = "{{ $token.Symbol }}"
-  name_lower_case = "{{ $token.NameLowerCase }}"{{ end }}
+  coin_cap_name = "{{ $token.CoincapName }}"
+  coin_gecko_name = "{{ $token.CoinGeckoName }}"{{ end }}
 
 [chains]{{ range $k, $chain := .Chains }}
 [chains.{{ $chain.Chain }}]
@@ -84,7 +85,7 @@ log_local = {{ .LogDNA.LogLocal }}
   starting_block = 0
   rpcs = [{{ range $j, $rpc := $chain.Rpcs }}"{{ $rpc }}", {{end}}]
   wss = [{{ range $j, $ws := $chain.Wss }}"{{ $ws }}", {{end}}]
-	use_eip_1559 = {{ $chain.UseEip1559 }}
+  use_eip_1559 = {{ $chain.UseEip1559 }}
   rpc_secret = "{{ $chain.RpcSecret }}"
   client_type = "{{ $chain.ClientType }}"{{ if $chain.SyncDB.Host }}
   [chains.{{ $chain.Chain }}.sync_db]

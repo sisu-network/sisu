@@ -41,34 +41,35 @@ log_local = false
   client_type = ""
   solana_bridge_program_id=""
 
-[eth_tokens]
-[eth_tokens.AVAX]
-  token1 = "AVAX"
-  token2 = "DAI"
-  address1 = "0x85f138bfee4ef8e540890cfb48f620571d67eda3"
-	address2 = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-[eth_tokens.BNB]
-  token1 = "BNB"
-  token2 = "DAI"
-  address1 = "0xb8c77482e45f1f44de1745f52c74426c631bdd52"
-	address2 = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-[eth_tokens.ETH]
-  token1 = "ETH"
-  token2 = "DAI"
-  address1 = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
-	address2 = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-[eth_tokens.FTM]
-  token1 = "FTM"
-  token2 = "DAI"
-  address1 = "0x4e15361fd6b4bb609fa63c81a2be19d873717870"
-	address2 = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-[eth_tokens.MATIC]
-  token1 = "MATIC"
-  token2 = "DAI"
-  address1 = "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0"
-	address2 = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-[eth_tokens.SOL]
-  token1 = "SOL"
-  token2 = "USDC"
-  address1 = "0xd31a59c85ae9d8edefec411d448f90841571b89c"
-	address2 = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
+[tokens]
+[tokens.ETH]
+  symbol = "ETH"
+  coin_cap_name = "ethereum"
+  coin_gecko_name = "ethereum"
+[tokens.AVAX]
+  symbol = "AVAX"
+  coin_cap_name = "avalanche-2"
+[tokens.BNB]
+  symbol = "BNB"
+  coin_cap_name = "binance-coin"
+  coin_gecko_name = "binancecoin"
+[tokens.FTM]
+  symbol = "FTM"
+  coin_cap_name = "fantom"
+  coin_gecko_name = "fantom"
+[tokens.MATIC]
+  symbol = "MATIC"
+  coin_cap_name = "polygon"
+  coin_gecko_name = "matic-network"
+[tokens.ADA]
+  symbol = "ADA"
+  coin_cap_name = "cardano"
+  coin_gecko_name = "cardano"
+[tokens.SOL]
+  symbol = "SOL"
+  coin_cap_name = "solana"
+  coin_gecko_name = "solana"
+[tokens.LSK]
+  symbol = "LSK"
+  coin_cap_name = "lisk"
+  coin_gecko_name = "lisk"
