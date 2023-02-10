@@ -33,7 +33,6 @@ func doTestTransferIn(t *testing.T, privateKey solanago.PrivateKey, mpcKey solan
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestAfterContractDeployed(ctx)
 	k.SetMpcAddress(ctx, chain, mpcKey.String())
-	k.SetMpcNonce(ctx, &types.MpcNonce{Chain: chain, Nonce: 1})
 	m := k.GetTokens(ctx, []string{"SISU"})
 	token := m["SISU"]
 	for i, c := range token.Chains {

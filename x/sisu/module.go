@@ -198,11 +198,6 @@ func (am AppModule) InitGenesis(ctx sdk.Context, cdc codec.JSONMarshaler, gs jso
 	savedParams := am.keeper.GetParams(ctx)
 	log.Info("Tss params: ", savedParams)
 
-	// Save Checkpoints
-	for _, mpcNonce := range genState.MpcNonces {
-		am.keeper.SetMpcNonce(ctx, mpcNonce)
-	}
-
 	// Create validator nodes
 	valsMgr := am.valsManager
 	validators := make([]abci.ValidatorUpdate, len(genState.Nodes))

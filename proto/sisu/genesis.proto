@@ -8,7 +8,6 @@ import "sisu/token.proto";
 import "sisu/chain.proto";
 import "sisu/vault.proto";
 import "sisu/params.proto";
-import "sisu/mpc_nonce.proto";
 
 message GenesisState {
   repeated Node nodes = 1;
@@ -16,5 +15,4 @@ message GenesisState {
   repeated Chain chains = 3;
   repeated Vault vaults = 4;
   Params params = 5;
-  repeated MpcNonce mpcNonces = 6;
 }

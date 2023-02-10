@@ -21,7 +21,6 @@ var (
 	prefixVault                  = []byte{0x0B}
 	prefixParams                 = []byte{0x0C}
 	prefixMpcAddress             = []byte{0x0D}
-	prefixMpcNonces              = []byte{0x0E}
 	prefixTxOutQueue             = []byte{0x10}
 	prefixCommandQueue           = []byte{0x11}
 	prefixTransfer               = []byte{0x12}
@@ -96,10 +95,6 @@ type Keeper interface {
 	// Reported Mpc Nonce by each signer.
 	SetSignerNonce(ctx sdk.Context, chain string, signer string, nonce uint64)
 	GetAllSignerNonces(ctx sdk.Context, chain string) []uint64
-
-	// Calculated Mpc nonces
-	SetMpcNonce(ctx sdk.Context, mpcNonce *types.MpcNonce)
-	GetMpcNonce(ctx sdk.Context, chain string) *types.MpcNonce
 
 	// Command Queue
 	SetCommandQueue(ctx sdk.Context, chain string, commands []*types.Command)
@@ -325,17 +320,6 @@ func (k *DefaultKeeper) SetSignerNonce(ctx sdk.Context, chain string, signer str
 func (k *DefaultKeeper) GetAllSignerNonces(ctx sdk.Context, chain string) []uint64 {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixSignerNonce)
 	return getSignerNonces(store, chain)
-}
-
-///// Mpc nonce
-func (k *DefaultKeeper) SetMpcNonce(ctx sdk.Context, mpcNonce *types.MpcNonce) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixMpcNonces)
-	setMpcNonce(store, mpcNonce)
-}
-
-func (k *DefaultKeeper) GetMpcNonce(ctx sdk.Context, chain string) *types.MpcNonce {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixMpcNonces)
-	return getMpcNonce(store, chain)
 }
 
 ///// Command Queue
