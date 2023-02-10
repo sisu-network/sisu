@@ -143,11 +143,6 @@ func (b *defaultBridge) getTransaction(
 		tokenAddrs = append(tokenAddrs, addr)
 	}
 
-	nonce := b.keeper.GetMpcNonce(ctx, chain)
-	if nonce == nil {
-		return nil, fmt.Errorf("Nonce is nil for chain %s", chain)
-	}
-
 	// Convert amount into token with correct decimal
 	solAmounts := make([]uint64, 0)
 	commissionRate := b.keeper.GetParams(ctx).CommissionRate
@@ -178,7 +173,7 @@ func (b *defaultBridge) getTransaction(
 	transferInIx, err := solanatypes.NewTransferInIx(
 		b.config.Solana.BridgeProgramId,
 		mpcAddr,
-		uint64(nonce.Nonce),
+		0, // Temporarily set the nonce to be 0. We need to change the solana contract
 		"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
 		b.config.Solana.BridgePda,
 		tokenAddrs,
