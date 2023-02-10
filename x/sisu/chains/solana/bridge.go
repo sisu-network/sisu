@@ -204,7 +204,8 @@ func (b *defaultBridge) getTransaction(
 	return tx, err
 }
 
-func (b *defaultBridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byte) ([]*types.TransferDetails, error) {
+func (b *defaultBridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byte) (
+	[]*types.TransferDetails, error) {
 	log.Verbose("Parsing solana incomgin tx...")
 	ret := make([]*types.TransferDetails, 0)
 
@@ -214,15 +215,21 @@ func (b *defaultBridge) ParseIncomingTx(ctx sdk.Context, chain string, serialize
 		return nil, err
 	}
 
-	if outerTx.TransactionInner == nil || outerTx.TransactionInner.Message == nil || outerTx.TransactionInner.Message.AccountKeys == nil {
+	if len(outerTx.TransactionInner.Signatures) == 0 {
+		return nil, fmt.Errorf("Signatures array is empty")
+	}
+
+	if outerTx.TransactionInner == nil || outerTx.TransactionInner.Message == nil ||
+		outerTx.TransactionInner.Message.AccountKeys == nil {
 		return nil, fmt.Errorf("Invalid outerTx")
 	}
 
 	accounts := outerTx.TransactionInner.Message.AccountKeys
 
 	allTokens := b.keeper.GetAllTokens(ctx)
+	signature := outerTx.TransactionInner.Signatures[0]
 	// Check that there is at least one instruction sent to the program id
-	for _, ix := range outerTx.TransactionInner.Message.Instructions {
+	for i, ix := range outerTx.TransactionInner.Message.Instructions {
 		if accounts[ix.ProgramIdIndex] != b.config.Solana.BridgeProgramId {
 			continue
 		}
@@ -265,6 +272,7 @@ func (b *defaultBridge) ParseIncomingTx(ctx sdk.Context, chain string, serialize
 			}
 
 			ret = append(ret, &types.TransferDetails{
+				Id:          types.GetTransferId(chain, fmt.Sprintf("%s__%d", signature, i)),
 				FromChain:   chain,
 				FromHash:    outerTx.TransactionInner.Signatures[0],
 				Token:       token.Id,
