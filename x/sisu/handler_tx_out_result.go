@@ -97,7 +97,7 @@ func removeTxOut(ctx sdk.Context, privateDb keeper.PrivateDb, k keeper.Keeper,
 	}
 
 	q = q[1:]
-	fmt.Println("Queue length 2 = ", len(q))
+	log.Verbosef("TxOut queue length after removing a TxOut = ", len(q))
 	k.SetTxOutQueue(ctx, txOut.Content.OutChain, q)
 
 	// Unset the hold prcessing flag so that sisu can continue processing transfer/txout on this chain

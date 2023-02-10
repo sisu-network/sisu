@@ -97,12 +97,10 @@ func TestProcessTransfer(t *testing.T) {
 	chain := "solana-devnet"
 	mpcAddress := "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
 	tokenProgramId := "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
-	nonce := 1
 	amountInt := 5
 
 	ctx, k := mockForBridgeTest()
 	k.SetMpcAddress(ctx, chain, mpcAddress)
-	k.SetMpcNonce(ctx, &types.MpcNonce{Chain: chain, Nonce: int64(nonce)})
 
 	tokens := k.GetTokens(ctx, []string{"SISU"})
 	tokenAddr := tokens["SISU"].GetAddressForChain(chain)
@@ -164,7 +162,6 @@ func TestProcessTransfer(t *testing.T) {
 	transferIn := solanatypes.TransferInData{}
 	err = borsh.Deserialize(&transferIn, instruction.Data)
 	require.Nil(t, err)
-	require.Equal(t, uint64(nonce), transferIn.Nonce)
 	require.Equal(t, []uint64{uint64(amountInt * 100_000_000)}, transferIn.Amounts)
 }
 
@@ -191,7 +188,6 @@ func TestDeserializeTx(t *testing.T) {
 	ctx := testmock.TestContext()
 	k := testmock.KeeperTestAfterContractDeployed(ctx)
 	k.SetMpcAddress(ctx, chain, mpcKey.String())
-	k.SetMpcNonce(ctx, &types.MpcNonce{Chain: chain, Nonce: 1})
 	m := k.GetTokens(ctx, []string{"SISU"})
 	token := m["SISU"]
 	for i, c := range token.Chains {

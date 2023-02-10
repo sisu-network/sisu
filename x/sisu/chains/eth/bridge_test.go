@@ -16,11 +16,6 @@ import (
 func mockForGetTransferIn(ctx sdk.Context, tokenPrice *big.Int, amountIn *big.Int) (keeper.Keeper,
 	external.DeyesClient, *types.TransferDetails) {
 	k := testmock.KeeperTestAfterContractDeployed(ctx)
-	k.SetMpcNonce(ctx, &types.MpcNonce{
-		Chain: "ganache2",
-		Nonce: 1,
-	})
-
 	token := &types.Token{
 		Id:        "SISU",
 		Price:     tokenPrice.String(),

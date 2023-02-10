@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"runtime/debug"
 
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/sisu-network/lib/log"
@@ -13,6 +14,8 @@ import (
 func LogStackTraceOnRunTxFail(recoveryObj interface{}) error {
 	log.Errorf("type of recoveryObj: %T\n", recoveryObj)
 	log.Error("recoveryObj: ", recoveryObj)
+	log.Errorf(string(debug.Stack()))
+
 	err, ok := recoveryObj.(error)
 	if !ok {
 		return nil

@@ -38,7 +38,7 @@ func NewHandlerTxIn(
 
 func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, msg *types.TxInMsg) (*sdk.Result, error) {
 	if shouldProcess, hash := h.pmm.ShouldProcessMsg(ctx, msg); shouldProcess {
-		h.doTxIn(ctx, h.keeper, msg)
+		h.doTxIn(ctx, msg)
 		h.keeper.ProcessTxRecord(ctx, hash)
 
 		return &sdk.Result{}, nil
@@ -47,7 +47,7 @@ func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, msg *types.TxInMsg) (*sdk.Resu
 	return &sdk.Result{}, nil
 }
 
-func (h *HandlerTxIn) doTxIn(ctx sdk.Context, k keeper.Keeper, msg *types.TxInMsg) {
+func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msg *types.TxInMsg) {
 	log.Verbosef("Process doTxIn with TxIn id %s", msg.Data.Id)
 
 	hash, _, err := keeper.GetTxRecordHash(msg)
@@ -56,25 +56,25 @@ func (h *HandlerTxIn) doTxIn(ctx sdk.Context, k keeper.Keeper, msg *types.TxInMs
 		return
 	}
 
-	k.ProcessTxRecord(ctx, hash)
+	h.keeper.ProcessTxRecord(ctx, hash)
 
 	// Save the transfers
-	h.saveTransfers(ctx, k, msg.Data.Transfers)
+	h.saveTransfers(ctx, msg.Data.Transfers)
 }
 
-func (h *HandlerTxIn) saveTransfers(ctx sdk.Context, k keeper.Keeper, transfers []*types.TransferDetails) {
+func (h *HandlerTxIn) saveTransfers(ctx sdk.Context, transfers []*types.TransferDetails) {
 	if len(transfers) == 0 {
 		log.Warnf("There is no transfer in the TxIn message.")
 		return
 	}
-	k.AddTransfers(ctx, transfers)
+	h.keeper.AddTransfers(ctx, transfers)
 
 	chain := transfers[0].ToChain
-	queue := k.GetTransferQueue(ctx, chain)
+	queue := h.keeper.GetTransferQueue(ctx, chain)
 	for _, transfer := range transfers {
 		// TODO: Optimize this path. We can save single transfer instead of the entire queue.
 		queue = append(queue, transfer)
 	}
 
-	k.SetTransferQueue(ctx, chain, queue)
+	h.keeper.SetTransferQueue(ctx, chain, queue)
 }
