@@ -66,8 +66,7 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 	for _, transfer := range transfers {
 		token := allTokens[transfer.Token]
 		if token == nil {
-			log.Warn("cannot find token", transfer.Token)
-			break
+			return nil, fmt.Errorf("token %s is invalid	", transfer.Token)
 		}
 
 		tokenPrice, err := b.deyesClient.GetTokenPrice(token.Id)
@@ -81,14 +80,7 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 		dstToken, amountOut, err := b.getTransferIn(ctx, allTokens[transfer.Token],
 			transfer, gasCost, tokenPrice, nativeTokenPrice)
 		if err != nil {
-			log.Errorf("Failed to get transfer in, err = %s", err)
-			break
-		}
-
-		amount, ok := new(big.Int).SetString(transfer.Amount, 10)
-		if !ok {
-			log.Warn("Cannot create big.Int value from amout ", transfer.Amount)
-			break
+			return nil, err
 		}
 
 		finalTokens = append(finalTokens, dstToken)
@@ -97,6 +89,10 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 		inHashes = append(inHashes, transfer.Id)
 		tokenPrices = append(tokenPrices, tokenPrice.String())
 
+		amount, ok := new(big.Int).SetString(transfer.Amount, 10)
+		if !ok {
+			log.Warn("Cannot create big.Int value from amout ", transfer.Amount)
+		}
 		log.Verbosef("Processing transfer in: id = %s, token = %s, recipient = %s, amount = %s, "+
 			"inHash = %s, toChain = %s, toRecipient = %s",
 			transfer.Id, token.Id, transfer.ToRecipient, amount, transfer.Id, transfer.ToChain,
@@ -363,54 +359,28 @@ func (b *bridge) ValidateTxOut(ctx sdk.Context, txOut *types.TxOut, transfers []
 	}
 
 	txGasCost, _, _ := b.getGasCost(txGasInfo, ethCfg.UseEip_1559, gasUnitPerSwap)
-	if percentage := helper.Difference(txGasCost, currentGasCost); percentage > 3.00 {
+	log.Info("Validating gas cost, CurrentGasCost = %s, GasCostInTransaction=%s", currentGasCost, txGasCost)
+	if ratio, ok := helper.CheckRatioThreshold(txGasCost, currentGasCost, 3.00); !ok {
 		return fmt.Errorf(
-			"cannot accept the transaction with too large difference in gas cost, diff=%d%%",
-			int(percentage*100))
+			"cannot accept the transaction with too large difference in gas cost, ratio=%d%%",
+			int(ratio*100))
 	}
 
 	// 2. Validate native token price.
-	currentNativeTokenPrice, err := b.deyesClient.GetTokenPrice(chainCfg.NativeToken)
-	if err != nil {
-		return err
-	}
-
 	txNativeTokenPrice, ok := new(big.Int).SetString(txOut.Input.NativeTokenPrice, 10)
 	if !ok {
 		return fmt.Errorf("cannot convert nativeTokenPrice (%s) to big int", txOut.Input.NativeTokenPrice)
 	}
-
-	if percentage := helper.Difference(currentNativeTokenPrice, txNativeTokenPrice); percentage > 0.1 {
-		return fmt.Errorf(
-			"cannot accept the transaction with too large difference in native token price, diff=%d%%",
-			int(percentage*100))
+	if err = b.checkDifferenceTokenPrice(chainCfg.NativeToken, txNativeTokenPrice); err != nil {
+		return err
 	}
 
 	// 3. Validate token price and amountOut.
 	targetContractName := ContractVault
 	vaultInfo := SupportedContracts[targetContractName]
-
-	_, params, err := DecodeTxParams(vaultInfo.Abi, tx.Data())
+	txAmountOuts, err := GetAmountOutFromTransaction(vaultInfo.Abi, tx, len(transfers))
 	if err != nil {
 		return err
-	}
-
-	amountParam, ok := params["amount"]
-	if !ok {
-		return fmt.Errorf("key amount not found, params = %v", params)
-	}
-
-	txAmountOuts := make([]*big.Int, len(transfers))
-	if len(transfers) == 1 {
-		txAmountOuts[0], ok = amountParam.(*big.Int)
-		if !ok {
-			return fmt.Errorf("received a single amountOut with invalid type, amountParam = %v", amountParam)
-		}
-	} else {
-		txAmountOuts, ok = amountParam.([]*big.Int)
-		if !ok {
-			return fmt.Errorf("received a multiple amountOut with invalid type, amountParam = %v", amountParam)
-		}
 	}
 
 	allTokens := b.keeper.GetAllTokens(ctx)
@@ -420,16 +390,8 @@ func (b *bridge) ValidateTxOut(ctx sdk.Context, txOut *types.TxOut, transfers []
 		if !ok {
 			return fmt.Errorf("cannot convert tokenPrice (%s) to big int", txOut.Input.TokenPrices[i])
 		}
-
-		currentTokenPrice, err := b.deyesClient.GetTokenPrice(transfer.Token)
-		if err != nil {
+		if err = b.checkDifferenceTokenPrice(transfer.Token, txTokenPrice); err != nil {
 			return err
-		}
-
-		if percentage := helper.Difference(txTokenPrice, currentTokenPrice); percentage > 0.1 {
-			return fmt.Errorf(
-				"cannot accept the transaction with too large difference in token price, diff=%d%%",
-				int(percentage*100))
 		}
 
 		// 3b. Validate amoutOut.
@@ -444,6 +406,21 @@ func (b *bridge) ValidateTxOut(ctx sdk.Context, txOut *types.TxOut, transfers []
 				"cannot accept the transaction with incorrect amountOut, got %s, expected %s",
 				txAmountOuts[i], amountOut)
 		}
+	}
+
+	return nil
+}
+
+func (b *bridge) checkDifferenceTokenPrice(token string, txPrice *big.Int) error {
+	currentPrice, err := b.deyesClient.GetTokenPrice(token)
+	if err != nil {
+		return err
+	}
+
+	if ratio, ok := helper.CheckRatioThreshold(currentPrice, txPrice, 1.1); !ok {
+		return fmt.Errorf(
+			"cannot accept the transaction with too large difference in token %s price, ratio=%d%%",
+			token, int(ratio*100))
 	}
 
 	return nil

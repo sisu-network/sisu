@@ -286,10 +286,16 @@ func (h *defaultBackground) validateTxOut(ctx sdk.Context, msg *types.TxOutMsg) 
 		return false, ""
 	}
 
-	// Make sure that all transfers Ids are the first ids in the queue
+	// Make sure that all transfers Ids are the first ids in the queue.
 	for i, transfer := range queue {
 		if i >= len(transferIds) {
 			break
+		}
+
+		if transfer.ToChain != queue[0].ToChain {
+			log.Errorf("Receive transfers with mismatched ToChain, transfer[0]=%s != transfer[%d]=%s",
+				queue[0].ToChain, i, transfer.ToChain)
+			return false, ""
 		}
 
 		if transfer.Id != transferIds[i] {
@@ -301,7 +307,13 @@ func (h *defaultBackground) validateTxOut(ctx sdk.Context, msg *types.TxOutMsg) 
 		}
 	}
 
-	if err := h.bridgeManager.GetBridge(ctx, queue[0].ToChain).ValidateTxOut(ctx, msg.Data, queue); err != nil {
+	bridge := h.bridgeManager.GetBridge(ctx, queue[0].ToChain)
+	if bridge == nil {
+		log.Errorf("Cannot find the bridge %s", queue[0].ToChain)
+		return false, ""
+	}
+
+	if err := bridge.ValidateTxOut(ctx, msg.Data, queue); err != nil {
 		log.Error("Validate txout failed, err = ", err)
 		return false, ""
 	}

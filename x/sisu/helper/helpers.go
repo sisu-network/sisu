@@ -64,15 +64,18 @@ func GasCostInToken(gasCost, tokenPrice, nativeTokenPrice *big.Int) (*big.Int, e
 	return gasInToken, nil
 }
 
-func Difference(a, b *big.Int) float64 {
-	x := a
-	if a.Cmp(b) == -1 {
-		x = b
+func CheckRatioThreshold(a, b *big.Int, threshold float64) (float64, bool) {
+	if b.Int64() == 0 {
+		return 0, false
 	}
 
-	diff := new(big.Int).Abs(new(big.Int).Sub(a, b))
-	diffPercentage := new(big.Float).Quo(new(big.Float).SetInt(diff), new(big.Float).SetInt(x))
+	fa := new(big.Float).SetInt(a)
+	fb := new(big.Float).SetInt(b)
+	r := new(big.Float).Quo(fa, fb)
 
-	p, _ := diffPercentage.Float64()
-	return p
+	upperBound := new(big.Float).SetFloat64(threshold)
+	lowerBound := new(big.Float).SetFloat64(1 / threshold)
+
+	ratio, _ := r.Float64()
+	return ratio, r.Cmp(lowerBound) > -1 && r.Cmp(upperBound) < 1
 }
