@@ -133,7 +133,7 @@ func (a *ApiHandler) OnKeygenResult(result dhtypes.KeygenResult) {
 // OnTxDeploymentResult is a callback after there is a deployment result from deyes.
 func (a *ApiHandler) OnTxDeploymentResult(result *etypes.DispatchedTxResult) {
 	if !result.Success {
-		log.Verbosef("Result from deyes: failed to deploy tx, chain = %s, signed hash = %s, error = %s",
+		log.Verbosef("Result from deyes: failed to deploy tx, chain = %s, signed hash = %s, error = %d",
 			result.Chain, result.TxHash, result.Err)
 		txOut := a.getTxOutFromSignedHash(result.Chain, result.TxHash)
 

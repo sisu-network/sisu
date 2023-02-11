@@ -275,7 +275,7 @@ func New(
 
 	txOutProducer := chains.NewTxOutputProducer(app.appKeys, app.k, bridgeManager, txTracker)
 	bg := background.NewBackground(app.k, txOutProducer, app.txSubmitter,
-		app.appKeys, privateDb, valsMgr, app.globalData, dheartClient, partyManager)
+		app.appKeys, privateDb, valsMgr, app.globalData, dheartClient, partyManager, bridgeManager)
 	bg.Start()
 
 	mc := background.NewManagerContainer(components.NewPostedMessageManager(app.k),

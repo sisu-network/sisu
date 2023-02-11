@@ -46,8 +46,6 @@ func GetChainGasCostInToken(ctx sdk.Context, k keeper.Keeper, deyesClient extern
 
 	// 3. Calculate how many token needed to use to cover the gas cost.
 	gasCostInToken, err := GasCostInToken(totalGasCost, tokenPrice, nativeTokenPrice)
-	log.Verbose("totalGas, tokenPrice, nativeTokenPrice, gasCostInToken = ", totalGasCost, tokenPrice,
-		nativeTokenPrice, gasCostInToken)
 	if err != nil {
 		return nil, err
 	}
@@ -60,5 +58,24 @@ func GasCostInToken(gasCost, tokenPrice, nativeTokenPrice *big.Int) (*big.Int, e
 	gasInToken := new(big.Int).Mul(gasCost, nativeTokenPrice)
 	gasInToken = new(big.Int).Div(gasInToken, tokenPrice)
 
+	log.Verbose("totalGas, tokenPrice, nativeTokenPrice, gasCostInToken = ", gasCost, tokenPrice,
+		nativeTokenPrice, gasInToken)
+
 	return gasInToken, nil
+}
+
+func CheckRatioThreshold(a, b *big.Int, threshold float64) (float64, bool) {
+	if b.Int64() == 0 {
+		return 0, false
+	}
+
+	fa := new(big.Float).SetInt(a)
+	fb := new(big.Float).SetInt(b)
+	r := new(big.Float).Quo(fa, fb)
+
+	upperBound := new(big.Float).SetFloat64(threshold)
+	lowerBound := new(big.Float).SetFloat64(1 / threshold)
+
+	ratio, _ := r.Float64()
+	return ratio, r.Cmp(lowerBound) > -1 && r.Cmp(upperBound) < 1
 }

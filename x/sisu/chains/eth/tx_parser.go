@@ -163,3 +163,28 @@ func DecodeTxParams(abi abi.ABI, callData []byte) (string, map[string]interface{
 
 	return m.Name, txParams, nil
 }
+
+func GetAmountOutFromTransaction(abi abi.ABI, tx *ethtypes.Transaction, nTransfers int) ([]*big.Int, error) {
+	_, params, err := DecodeTxParams(abi, tx.Data())
+	if err != nil {
+		return nil, err
+	}
+
+	amountParam, ok := params["amount"]
+	if !ok {
+		return nil, fmt.Errorf("key amount not found, params = %v", params)
+	}
+
+	txAmountOuts := make([]*big.Int, nTransfers)
+	if nTransfers == 1 {
+		txAmountOuts[0], ok = amountParam.(*big.Int)
+	} else {
+		txAmountOuts, ok = amountParam.([]*big.Int)
+	}
+	if !ok {
+		return nil, fmt.Errorf("received an invalid amountOut, nTransfers=%d, amountParam = %v",
+			nTransfers, amountParam)
+	}
+
+	return txAmountOuts, nil
+}
