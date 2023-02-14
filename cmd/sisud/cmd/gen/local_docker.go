@@ -316,6 +316,9 @@ services:
 
 	var buffer bytes.Buffer
 	err = configTemplate.Execute(&buffer, dockerConfig)
+	if err != nil {
+		panic(err)
+	}
 
 	tmos.MustWriteFile(outputPath, buffer.Bytes(), 0644)
 }

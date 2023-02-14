@@ -20,10 +20,10 @@ func mockForHandlerTxOut() (sdk.Context, background.ManagerContainer) {
 	k := testmock.KeeperTestGenesis(ctx)
 	pmm := components.NewPostedMessageManager(k)
 	valsManager := &components.MockValidatorManager{
-		GetAssignedValidatorFunc: func(ctx sdk.Context, hash string) *types.Node {
+		GetAssignedValidatorFunc: func(ctx sdk.Context, hash string) (*types.Node, error) {
 			return &types.Node{
 				AccAddress: "signer",
-			}
+			}, nil
 		},
 	}
 	mockAppKeys := components.NewMockAppKeys()
@@ -79,10 +79,10 @@ func TestTxOut_MultipleSigners(t *testing.T) {
 	k.SetTransferQueue(ctx, destChain, transfers)
 
 	valManager := mc.ValidatorManager().(*components.MockValidatorManager)
-	valManager.GetAssignedValidatorFunc = func(ctx sdk.Context, hash string) *types.Node {
+	valManager.GetAssignedValidatorFunc = func(ctx sdk.Context, hash string) (*types.Node, error) {
 		return &types.Node{
 			AccAddress: "signer1",
-		}
+		}, nil
 	}
 
 	handler := NewHandlerTxOutProposal(mc)

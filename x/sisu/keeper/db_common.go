@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	cstypes "github.com/cosmos/cosmos-sdk/store/types"
@@ -708,6 +709,27 @@ func getTransferQueue(queueStore, transferStore cstypes.KVStore, chain string) [
 	return getTransfers(transferStore, ids)
 }
 
+///// Transfer counter
+func incTransferCounter(store cstypes.KVStore, id string) {
+	counter := getTransferCounter(store, id)
+	store.Set([]byte(id), []byte(strconv.Itoa(counter+1)))
+}
+
+func getTransferCounter(store cstypes.KVStore, id string) int {
+	bz := store.Get([]byte(id))
+	if bz == nil {
+		return -1
+	}
+
+	counter, err := strconv.Atoi(string(bz))
+	if err != nil {
+		log.Errorf("Invalid transfer hash counter, raw counter = %s, err = %s", bz, err)
+		return -1
+	}
+
+	return counter
+}
+
 ///// TxOutQueue
 func setTxOutQueue(store cstypes.KVStore, chain string, txOuts []*types.TxOut) {
 	queue := &types.TxOutQueue{
@@ -795,6 +817,19 @@ func getVoteResults(store cstypes.KVStore, hash string) map[string]types.VoteRes
 	}
 
 	return ret
+}
+
+func removeVoteResults(store cstypes.KVStore, hash string) {
+	begin := []byte(fmt.Sprintf("%s__", hash))
+	end := []byte(fmt.Sprintf("%s__~", hash))
+
+	for iter := store.Iterator(begin, end); iter.Valid(); iter.Next() {
+		key := iter.Key()
+		if len(key) <= len(hash)+2 {
+			continue
+		}
+		store.Delete(key)
+	}
 }
 
 ///// Proposed TxOut

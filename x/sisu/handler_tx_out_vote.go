@@ -51,26 +51,44 @@ func (h *HandlerTxOutVote) checkVoteResult(ctx sdk.Context, txOutId, assignedVal
 		return
 	}
 
-	count := 0
+	approveCount := 0
+	rejectCount := 0
 	for _, result := range results {
 		if result == types.VoteResult_APPROVE {
-			count++
+			approveCount++
+		} else {
+			rejectCount++
 		}
 	}
 
-	if count >= int(params.MajorityThreshold) {
-		txOut := h.keeper.GetProposedTxOut(ctx, txOutId, assignedVal)
-		if txOut == nil {
-			log.Errorf("checkVoteResult: TxOut is nil, txOutId = %s", txOutId)
+	threshold := int(params.MajorityThreshold)
+	if approveCount < threshold && rejectCount < threshold {
+		// TODO: handler the case or do timeout in the module.go
+		return
+	}
+
+	txOut := h.keeper.GetProposedTxOut(ctx, txOutId, assignedVal)
+	if txOut == nil {
+		log.Errorf("checkVoteResult: TxOut is nil, txOutId = %s", txOutId)
+		return
+	}
+
+	if approveCount >= threshold {
+		finalizedTxOut := h.keeper.GetFinalizedTxOut(ctx, txOutId)
+		if finalizedTxOut == nil {
+			doTxOut(ctx, h.keeper, h.privateDb, txOut)
 		} else {
-			finalizedTxOut := h.keeper.GetFinalizedTxOut(ctx, txOutId)
-			if finalizedTxOut == nil {
-				doTxOut(ctx, h.keeper, h.privateDb, txOut)
-			} else {
-				log.Verbosef("Finalized TxOut has been processed for txOut with id %s", txOutId)
-			}
+			log.Verbosef("Finalized TxOut has been processed for txOut with id %s", txOutId)
 		}
 	} else {
-		// TODO: handler the case or do timeout in the module.go
+		log.Verbose("TxOut is rejected, txOutId = ", txOutId)
+		transfer := h.keeper.GetTransfer(ctx, txOut.Input.TransferIds[0])
+		if transfer == nil {
+			log.Error("Invalid transfer, id = ", txOut.Input.TransferIds[0])
+		} else {
+			h.keeper.RemoveVoteResults(ctx, prefix)
+			h.keeper.IncTransferCounter(ctx, transfer.Id)
+			h.privateDb.SetHoldProcessing(types.TransferHoldKey, transfer.ToChain, false)
+		}
 	}
 }

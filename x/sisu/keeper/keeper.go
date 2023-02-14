@@ -33,6 +33,7 @@ var (
 	prefixExpirationBlock        = []byte{0x1C}
 	prefixFinalizedTxOut         = []byte{0x1D}
 	prefixKeySignRetryCount      = []byte{0x1E}
+	prefixTransferCounter        = []byte{0x1F}
 )
 
 var _ Keeper = (*DefaultKeeper)(nil)
@@ -109,6 +110,10 @@ type Keeper interface {
 	SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.TransferDetails)
 	GetTransferQueue(ctx sdk.Context, chain string) []*types.TransferDetails
 
+	// Transfer Counter
+	IncTransferCounter(ctx sdk.Context, id string)
+	GetTransferCounter(ctx sdk.Context, id string) int
+
 	// TxOutQueue
 	SetTxOutQueue(ctx sdk.Context, chain string, txOuts []*types.TxOut)
 	GetTxOutQueue(ctx sdk.Context, chain string) []*types.TxOut
@@ -120,6 +125,7 @@ type Keeper interface {
 	// Vote Result
 	AddVoteResult(ctx sdk.Context, key string, signer string, result types.VoteResult)
 	GetVoteResults(ctx sdk.Context, key string) map[string]types.VoteResult
+	RemoveVoteResults(ctx sdk.Context, key string)
 
 	// Proposed TxOut
 	AddProposedTxOut(ctx sdk.Context, signer string, msg *types.TxOut)
@@ -354,6 +360,17 @@ func (k *DefaultKeeper) GetTransfers(ctx sdk.Context, ids []string) []*types.Tra
 	return getTransfers(store, ids)
 }
 
+///// Transfer counter
+func (k *DefaultKeeper) IncTransferCounter(ctx sdk.Context, id string) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferCounter)
+	incTransferCounter(store, id)
+}
+
+func (k *DefaultKeeper) GetTransferCounter(ctx sdk.Context, id string) int {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferCounter)
+	return getTransferCounter(store, id)
+}
+
 ///// TxOutQueue
 func (k *DefaultKeeper) SetTxOutQueue(ctx sdk.Context, chain string, txOuts []*types.TxOut) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTxOutQueue)
@@ -402,6 +419,11 @@ func (k *DefaultKeeper) AddVoteResult(ctx sdk.Context, hash string, signer strin
 func (k *DefaultKeeper) GetVoteResults(ctx sdk.Context, hash string) map[string]types.VoteResult {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixVoteResult)
 	return getVoteResults(store, hash)
+}
+
+func (k *DefaultKeeper) RemoveVoteResults(ctx sdk.Context, hash string) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixVoteResult)
+	removeVoteResults(store, hash)
 }
 
 ///// Proposed TxOut

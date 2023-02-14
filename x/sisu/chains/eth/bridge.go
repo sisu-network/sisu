@@ -359,7 +359,7 @@ func (b *bridge) ValidateTxOut(ctx sdk.Context, txOut *types.TxOut, transfers []
 	}
 
 	txGasCost, _, _ := b.getGasCost(txGasInfo, ethCfg.UseEip_1559, gasUnitPerSwap)
-	log.Info("Validating gas cost, CurrentGasCost = %s, GasCostInTransaction=%s", currentGasCost, txGasCost)
+	log.Infof("Validating gas cost, CurrentGasCost = %s, GasCostInTransaction=%s", currentGasCost, txGasCost)
 	if ratio, ok := helper.CheckRatioThreshold(txGasCost, currentGasCost, 3.00); !ok {
 		return fmt.Errorf(
 			"cannot accept the transaction with too large difference in gas cost, ratio=%d%%",
