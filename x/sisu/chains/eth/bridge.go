@@ -20,6 +20,8 @@ import (
 	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
+const gasUnitPerSwap = 80_000
+
 type bridge struct {
 	signer      string
 	chain       string
@@ -44,7 +46,6 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 	log.Verbosef("Gas info for chain %s %v", b.chain, *gasInfo)
 	chainCfg := b.keeper.GetChain(ctx, b.chain)
 	ethCfg := chainCfg.EthConfig
-	gasUnitPerSwap := 80_000
 	gasCost, _, _ := b.getGasCost(gasInfo, ethCfg.UseEip_1559, gasUnitPerSwap)
 
 	inHashes := make([]string, 0, len(transfers))
@@ -52,31 +53,46 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 	finalRecipients := make([]ethcommon.Address, 0, len(transfers))
 	finalAmounts := make([]*big.Int, 0, len(transfers))
 	allTokens := b.keeper.GetAllTokens(ctx)
+	tokenPrices := make([]string, 0, len(transfers))
+
+	nativeTokenPrice, err := b.deyesClient.GetTokenPrice(chainCfg.NativeToken)
+	if err != nil {
+		return nil, err
+	}
+	if nativeTokenPrice.Cmp(utils.ZeroBigInt) == 0 {
+		return nil, fmt.Errorf("token %s has price 0", chainCfg.NativeToken)
+	}
 
 	for _, transfer := range transfers {
-		dstToken, amountOut, err := b.getTransferIn(ctx, allTokens, transfer, gasCost)
-		if err != nil {
-			log.Errorf("Failed to get transfer in, err = %s", err)
-			break
-		}
-
 		token := allTokens[transfer.Token]
 		if token == nil {
-			log.Warn("cannot find token", transfer.Token)
-			break
+			return nil, fmt.Errorf("token %s is invalid	", transfer.Token)
 		}
 
-		amount, ok := new(big.Int).SetString(transfer.Amount, 10)
-		if !ok {
-			log.Warn("Cannot create big.Int value from amout ", transfer.Amount)
-			break
+		tokenPrice, err := b.deyesClient.GetTokenPrice(token.Id)
+		if err != nil {
+			return nil, err
+		}
+		if tokenPrice.Cmp(utils.ZeroBigInt) == 0 {
+			return nil, fmt.Errorf("token %s has price 0", token.Id)
+		}
+
+		dstToken, amountOut, err := b.getTransferIn(ctx, allTokens[transfer.Token],
+			transfer, gasCost, tokenPrice, nativeTokenPrice)
+		if err != nil {
+			return nil, err
 		}
 
 		finalTokens = append(finalTokens, dstToken)
 		finalRecipients = append(finalRecipients, ethcommon.HexToAddress(transfer.ToRecipient))
 		finalAmounts = append(finalAmounts, amountOut)
 		inHashes = append(inHashes, transfer.Id)
+		tokenPrices = append(tokenPrices, tokenPrice.String())
 
+		amount, ok := new(big.Int).SetString(transfer.Amount, 10)
+		if !ok {
+			log.Warn("Cannot create big.Int value from amout ", transfer.Amount)
+		}
 		log.Verbosef("Processing transfer in: id = %s, token = %s, recipient = %s, amount = %s, "+
 			"inHash = %s, toChain = %s, toRecipient = %s",
 			transfer.Id, token.Id, transfer.ToRecipient, amount, transfer.Id, transfer.ToChain,
@@ -102,7 +118,9 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 			OutBytes: responseTx.RawBytes,
 		},
 		Input: &types.TxOutInput{
-			TransferIds: inHashes,
+			TransferIds:      inHashes,
+			NativeTokenPrice: nativeTokenPrice.String(),
+			TokenPrices:      tokenPrices,
 		},
 	}
 
@@ -111,9 +129,11 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 
 func (b *bridge) getTransferIn(
 	ctx sdk.Context,
-	allTokens map[string]*types.Token,
+	token *types.Token,
 	transfer *types.TransferDetails,
 	gasCost *big.Int,
+	tokenPrice *big.Int,
+	nativeTokenPrice *big.Int,
 ) (ethcommon.Address, *big.Int, error) {
 	targetContractName := ContractVault
 	v := b.keeper.GetVault(ctx, b.chain, "")
@@ -137,7 +157,6 @@ func (b *bridge) getTransferIn(
 		return ethcommon.Address{}, nil, fmt.Errorf("Commission rate is invalid, rate = %d", commissionRate)
 	}
 
-	token := allTokens[transfer.Token]
 	if token == nil {
 		return ethcommon.Address{}, nil, fmt.Errorf("cannot find token %s", transfer.Token)
 	}
@@ -164,17 +183,7 @@ func (b *bridge) getTransferIn(
 	// Subtract commission rate
 	amountOut = utils.SubtractCommissionRate(amountOut, commissionRate)
 
-	price, err := b.deyesClient.GetTokenPrice(token.Id)
-	if err != nil {
-		return ethcommon.Address{}, nil, err
-	}
-
-	if price.Cmp(utils.ZeroBigInt) == 0 {
-		return ethcommon.Address{}, nil, fmt.Errorf("token %s has price 0", token.Id)
-	}
-
-	gasPriceInToken, err := helper.GetChainGasCostInToken(ctx, b.keeper, b.deyesClient, token.Id,
-		b.chain, gasCost)
+	gasPriceInToken, err := helper.GasCostInToken(gasCost, tokenPrice, nativeTokenPrice)
 	if err != nil {
 		return ethcommon.Address{}, nil, fmt.Errorf("Cannot get gas cost in token, err = %s", err)
 	}
@@ -322,4 +331,97 @@ func (b *bridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byt
 // ProcessCommand implements bridge interface
 func (b *bridge) ProcessCommand(ctx sdk.Context, cmd *types.Command) (*types.TxOut, error) {
 	return nil, fmt.Errorf("Invalid command")
+}
+
+func (b *bridge) ValidateTxOut(ctx sdk.Context, txOut *types.TxOut, transfers []*types.TransferDetails) error {
+	// 1. Validate gas cost.
+	gasInfo, err := b.deyesClient.GetGasInfo(b.chain)
+	if err != nil {
+		return err
+	}
+
+	chainCfg := b.keeper.GetChain(ctx, b.chain)
+	ethCfg := chainCfg.EthConfig
+
+	currentGasCost, _, _ := b.getGasCost(gasInfo, ethCfg.UseEip_1559, gasUnitPerSwap)
+
+	tx := &ethtypes.Transaction{}
+	if err := tx.UnmarshalBinary(txOut.Content.OutBytes); err != nil {
+		return err
+	}
+
+	txGasInfo := &deyesethtypes.GasInfo{}
+	if ethCfg.UseEip_1559 {
+		txGasInfo.Tip = tx.GasTipCap().Int64()
+		txGasInfo.BaseFee = tx.GasFeeCap().Int64()
+	} else {
+		txGasInfo.GasPrice = tx.GasPrice().Int64()
+	}
+
+	txGasCost, _, _ := b.getGasCost(txGasInfo, ethCfg.UseEip_1559, gasUnitPerSwap)
+	log.Infof("Validating gas cost, CurrentGasCost = %s, GasCostInTransaction=%s", currentGasCost, txGasCost)
+	if ratio, ok := helper.CheckRatioThreshold(txGasCost, currentGasCost, 3.00); !ok {
+		return fmt.Errorf(
+			"cannot accept the transaction with too large difference in gas cost, ratio=%d%%",
+			int(ratio*100))
+	}
+
+	// 2. Validate native token price.
+	txNativeTokenPrice, ok := new(big.Int).SetString(txOut.Input.NativeTokenPrice, 10)
+	if !ok {
+		return fmt.Errorf("cannot convert nativeTokenPrice (%s) to big int", txOut.Input.NativeTokenPrice)
+	}
+	if err = b.checkDifferenceTokenPrice(chainCfg.NativeToken, txNativeTokenPrice); err != nil {
+		return err
+	}
+
+	// 3. Validate token price and amountOut.
+	targetContractName := ContractVault
+	vaultInfo := SupportedContracts[targetContractName]
+	txAmountOuts, err := GetAmountOutFromTransaction(vaultInfo.Abi, tx, len(transfers))
+	if err != nil {
+		return err
+	}
+
+	allTokens := b.keeper.GetAllTokens(ctx)
+	for i, transfer := range transfers {
+		// 3a. Validate token price.
+		txTokenPrice, ok := new(big.Int).SetString(txOut.Input.TokenPrices[i], 10)
+		if !ok {
+			return fmt.Errorf("cannot convert tokenPrice (%s) to big int", txOut.Input.TokenPrices[i])
+		}
+		if err = b.checkDifferenceTokenPrice(transfer.Token, txTokenPrice); err != nil {
+			return err
+		}
+
+		// 3b. Validate amoutOut.
+		_, amountOut, err := b.getTransferIn(ctx, allTokens[transfer.Token],
+			transfer, txGasCost, txTokenPrice, txNativeTokenPrice)
+		if err != nil {
+			return err
+		}
+
+		if txAmountOuts[i].Cmp(amountOut) != 0 {
+			return fmt.Errorf(
+				"cannot accept the transaction with incorrect amountOut, got %s, expected %s",
+				txAmountOuts[i], amountOut)
+		}
+	}
+
+	return nil
+}
+
+func (b *bridge) checkDifferenceTokenPrice(token string, txPrice *big.Int) error {
+	currentPrice, err := b.deyesClient.GetTokenPrice(token)
+	if err != nil {
+		return err
+	}
+
+	if ratio, ok := helper.CheckRatioThreshold(currentPrice, txPrice, 1.1); !ok {
+		return fmt.Errorf(
+			"cannot accept the transaction with too large difference in token %s price, ratio=%d%%",
+			token, int(ratio*100))
+	}
+
+	return nil
 }

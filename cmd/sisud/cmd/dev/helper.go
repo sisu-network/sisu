@@ -159,6 +159,8 @@ func getEthClients(chains []string, genesisFolder string) []*ethclient.Client {
 							clients = append(clients, client)
 							found = true
 							break
+						} else {
+							log.Error("Cannot call to blocknumber, err = ", err)
 						}
 					}
 				}

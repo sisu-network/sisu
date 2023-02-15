@@ -1,6 +1,8 @@
 package components
 
 import (
+	"fmt"
+	"strconv"
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -14,7 +16,7 @@ type ValidatorManager interface {
 	IsValidator(ctx sdk.Context, signer string) bool
 	GetValidatorLength(ctx sdk.Context) int
 	GetValidators(ctx sdk.Context) []*types.Node
-	GetAssignedValidator(ctx sdk.Context, hash string) *types.Node
+	GetAssignedValidator(ctx sdk.Context, hash string) (*types.Node, error)
 }
 
 type DefaultValidatorManager struct {
@@ -95,9 +97,19 @@ func (m *DefaultValidatorManager) GetValidators(ctx sdk.Context) []*types.Node {
 	return arr
 }
 
-func (m *DefaultValidatorManager) GetAssignedValidator(ctx sdk.Context, hash string) *types.Node {
+func (m *DefaultValidatorManager) GetAssignedValidator(ctx sdk.Context, hash string) (*types.Node, error) {
 	vals := m.GetValidators(ctx)
 
+	counter := m.keeper.GetTransferCounter(ctx, hash)
+	if counter == -1 {
+		return nil, fmt.Errorf("Cannot get transfer counter, hash = %s", hash)
+	}
+
+	if counter > int(m.keeper.GetParams(ctx).GetMaxRejectedTransferRetry()) {
+		return nil, fmt.Errorf("Exceed the maximum number of retry rejected transfer, hash = %s", hash)
+	}
+
+	hash += strconv.Itoa(counter)
 	sorted := utils.GetSortedValidators(hash, vals)
-	return sorted[0]
+	return sorted[0], nil
 }

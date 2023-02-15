@@ -2,6 +2,7 @@ package components
 
 import (
 	"encoding/hex"
+	"errors"
 
 	"github.com/cosmos/cosmos-sdk/client/rpc"
 	keyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
@@ -220,7 +221,7 @@ type MockValidatorManager struct {
 	IsValidatorFunc          func(ctx sdk.Context, signer string) bool
 	GetValidatorLengthFunc   func(ctx sdk.Context) int
 	GetValidatorsFunc        func(ctx sdk.Context) []*types.Node
-	GetAssignedValidatorFunc func(ctx sdk.Context, hash string) *types.Node
+	GetAssignedValidatorFunc func(ctx sdk.Context, hash string) (*types.Node, error)
 }
 
 func (m *MockValidatorManager) AddValidator(ctx sdk.Context, node *types.Node) {
@@ -253,10 +254,10 @@ func (m *MockValidatorManager) GetValidators(ctx sdk.Context) []*types.Node {
 	return nil
 }
 
-func (m *MockValidatorManager) GetAssignedValidator(ctx sdk.Context, hash string) *types.Node {
+func (m *MockValidatorManager) GetAssignedValidator(ctx sdk.Context, hash string) (*types.Node, error) {
 	if m.GetAssignedValidatorFunc != nil {
 		return m.GetAssignedValidatorFunc(ctx, hash)
 	}
 
-	return nil
+	return nil, errors.New("invalid function")
 }

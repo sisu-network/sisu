@@ -46,8 +46,8 @@ func (h *HandlerTxOutProposal) DeliverMsg(ctx sdk.Context, msg *types.TxOutMsg) 
 		return &sdk.Result{}, nil
 	}
 
-	assignedNode := h.valsManager.GetAssignedValidator(ctx, validatorId)
-	if assignedNode.AccAddress == msg.Signer {
+	assignedNode, err := h.valsManager.GetAssignedValidator(ctx, validatorId)
+	if err == nil && assignedNode.AccAddress == msg.Signer {
 		// This is the proposed TxOut from the assigned validator.
 		h.keeper.AddProposedTxOut(ctx, msg.Signer, msg.Data)
 

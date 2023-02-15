@@ -23,4 +23,7 @@ message Params {
 
   // Maximum number of retry when a txout fails to sign.
   int32 max_keysign_retry = 6;
+
+  // Maxinum number of retry when a transfer is rejected.
+  int32 max_rejected_transfer_retry = 7;
 }

@@ -79,11 +79,12 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 		algoStr:        algo,
 		numValidators:  numValidators,
 		params: &types.Params{
-			MajorityThreshold: int32(math.Ceil(float64(numValidators) * 2 / 3)),
-			SupportedChains:   supportedChainsArr,
-			CommissionRate:    10,  // 0.1%
-			ExpirationBlock:   100, // For testing, make it only 100 blocks
-			MaxKeysignRetry:   2,
+			MajorityThreshold:        int32(math.Ceil(float64(numValidators) * 2 / 3)),
+			SupportedChains:          supportedChainsArr,
+			CommissionRate:           10,  // 0.1%
+			ExpirationBlock:          100, // For testing, make it only 100 blocks
+			MaxKeysignRetry:          2,
+			MaxRejectedTransferRetry: 6,
 		},
 		tokens: getTokens(filepath.Join(genesisFolder, "tokens.json")),
 		chains: helper.GetChains(filepath.Join(genesisFolder, "chains.json")),

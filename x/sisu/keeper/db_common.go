@@ -2,6 +2,7 @@ package keeper
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	cstypes "github.com/cosmos/cosmos-sdk/store/types"
@@ -706,6 +707,27 @@ func getTransferQueue(queueStore, transferStore cstypes.KVStore, chain string) [
 	ids := strings.Split(s, ",")
 
 	return getTransfers(transferStore, ids)
+}
+
+///// Transfer counter
+func incTransferCounter(store cstypes.KVStore, id string) {
+	counter := getTransferCounter(store, id)
+	store.Set([]byte(id), []byte(strconv.Itoa(counter+1)))
+}
+
+func getTransferCounter(store cstypes.KVStore, id string) int {
+	bz := store.Get([]byte(id))
+	if bz == nil {
+		return -1
+	}
+
+	counter, err := strconv.Atoi(string(bz))
+	if err != nil {
+		log.Errorf("Invalid transfer hash counter, raw counter = %s, err = %s", bz, err)
+		return -1
+	}
+
+	return counter
 }
 
 ///// TxOutQueue
