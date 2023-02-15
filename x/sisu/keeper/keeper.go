@@ -125,7 +125,6 @@ type Keeper interface {
 	// Vote Result
 	AddVoteResult(ctx sdk.Context, key string, signer string, result types.VoteResult)
 	GetVoteResults(ctx sdk.Context, key string) map[string]types.VoteResult
-	RemoveVoteResults(ctx sdk.Context, key string)
 
 	// Proposed TxOut
 	AddProposedTxOut(ctx sdk.Context, signer string, msg *types.TxOut)
@@ -419,11 +418,6 @@ func (k *DefaultKeeper) AddVoteResult(ctx sdk.Context, hash string, signer strin
 func (k *DefaultKeeper) GetVoteResults(ctx sdk.Context, hash string) map[string]types.VoteResult {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixVoteResult)
 	return getVoteResults(store, hash)
-}
-
-func (k *DefaultKeeper) RemoveVoteResults(ctx sdk.Context, hash string) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixVoteResult)
-	removeVoteResults(store, hash)
 }
 
 ///// Proposed TxOut

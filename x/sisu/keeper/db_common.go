@@ -819,19 +819,6 @@ func getVoteResults(store cstypes.KVStore, hash string) map[string]types.VoteRes
 	return ret
 }
 
-func removeVoteResults(store cstypes.KVStore, hash string) {
-	begin := []byte(fmt.Sprintf("%s__", hash))
-	end := []byte(fmt.Sprintf("%s__~", hash))
-
-	for iter := store.Iterator(begin, end); iter.Valid(); iter.Next() {
-		key := iter.Key()
-		if len(key) <= len(hash)+2 {
-			continue
-		}
-		store.Delete(key)
-	}
-}
-
 ///// Proposed TxOut
 
 func addProposedTxOut(store cstypes.KVStore, signer string, txOut *types.TxOut) {
