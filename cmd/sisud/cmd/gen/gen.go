@@ -235,20 +235,12 @@ func initGenFiles(
 	bankGenState.Balances = genBalances
 	appGenState[banktypes.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(&bankGenState)
 
-	nonces := make([]*types.MpcNonce, 0)
-	for _, chain := range chains {
-		nonces = append(nonces, &types.MpcNonce{
-			Chain: chain.Id,
-		})
-	}
-
 	sisuGenState := types.DefaultGenesis()
 	sisuGenState.Nodes = nodes
 	sisuGenState.Tokens = tokens
 	sisuGenState.Chains = chains
 	sisuGenState.Vaults = vaults
 	sisuGenState.Params = params
-	sisuGenState.MpcNonces = nonces
 
 	appGenState[types.ModuleName] = clientCtx.JSONMarshaler.MustMarshalJSON(sisuGenState)
 

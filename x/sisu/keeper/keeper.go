@@ -33,6 +33,7 @@ var (
 	prefixExpirationBlock        = []byte{0x1C}
 	prefixFinalizedTxOut         = []byte{0x1D}
 	prefixKeySignRetryCount      = []byte{0x1E}
+	prefixTransferCounter        = []byte{0x1F}
 )
 
 var _ Keeper = (*DefaultKeeper)(nil)
@@ -108,6 +109,10 @@ type Keeper interface {
 	// Transfer Queue
 	SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.TransferDetails)
 	GetTransferQueue(ctx sdk.Context, chain string) []*types.TransferDetails
+
+	// Transfer Counter
+	IncTransferCounter(ctx sdk.Context, id string)
+	GetTransferCounter(ctx sdk.Context, id string) int
 
 	// TxOutQueue
 	SetTxOutQueue(ctx sdk.Context, chain string, txOuts []*types.TxOut)
@@ -352,6 +357,17 @@ func (k *DefaultKeeper) GetTransfer(ctx sdk.Context, id string) *types.TransferD
 func (k *DefaultKeeper) GetTransfers(ctx sdk.Context, ids []string) []*types.TransferDetails {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
 	return getTransfers(store, ids)
+}
+
+///// Transfer counter
+func (k *DefaultKeeper) IncTransferCounter(ctx sdk.Context, id string) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferCounter)
+	incTransferCounter(store, id)
+}
+
+func (k *DefaultKeeper) GetTransferCounter(ctx sdk.Context, id string) int {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferCounter)
+	return getTransferCounter(store, id)
 }
 
 ///// TxOutQueue

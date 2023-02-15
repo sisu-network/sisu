@@ -34,16 +34,25 @@ func NewHandlerTxOutConsensed(
 }
 
 func (h *HandlerTxOutVote) DeliverMsg(ctx sdk.Context, msg *types.TxOutVoteMsg) (*sdk.Result, error) {
-	prefix := fmt.Sprintf("%s__%s", VoteKey, msg.Data.TxOutId)
+	txOut := h.keeper.GetProposedTxOut(ctx, msg.Data.TxOutId, msg.Data.AssignedValidator)
+	if txOut == nil {
+		log.Errorf("Cannot get proposed txout, txOutId = %s", msg.Data.TxOutId)
+		return &sdk.Result{}, nil
+	}
+
+	counter := h.keeper.GetTransferCounter(ctx, txOut.Input.TransferIds[0])
+	prefix := fmt.Sprintf("%s__%s__%d", VoteKey, msg.Data.TxOutId, counter)
 	h.keeper.AddVoteResult(ctx, prefix, msg.Signer, msg.Data.Vote)
 
-	h.checkVoteResult(ctx, msg.Data.TxOutId, msg.Data.AssignedValidator)
+	h.checkVoteResult(ctx, txOut, counter)
 
 	return &sdk.Result{}, nil
 }
 
-func (h *HandlerTxOutVote) checkVoteResult(ctx sdk.Context, txOutId, assignedVal string) {
-	prefix := fmt.Sprintf("%s__%s", VoteKey, txOutId)
+func (h *HandlerTxOutVote) checkVoteResult(ctx sdk.Context, txOut *types.TxOut, counter int) {
+	txOutId := txOut.GetId()
+
+	prefix := fmt.Sprintf("%s__%s__%d", VoteKey, txOutId, counter)
 	results := h.keeper.GetVoteResults(ctx, prefix)
 	params := h.keeper.GetParams(ctx)
 	if params == nil {
@@ -51,26 +60,32 @@ func (h *HandlerTxOutVote) checkVoteResult(ctx sdk.Context, txOutId, assignedVal
 		return
 	}
 
-	count := 0
+	approveCount := 0
+	rejectCount := 0
 	for _, result := range results {
 		if result == types.VoteResult_APPROVE {
-			count++
+			approveCount++
+		} else {
+			rejectCount++
 		}
 	}
 
-	if count >= int(params.MajorityThreshold) {
-		txOut := h.keeper.GetProposedTxOut(ctx, txOutId, assignedVal)
-		if txOut == nil {
-			log.Errorf("checkVoteResult: TxOut is nil, txOutId = %s", txOutId)
+	threshold := int(params.MajorityThreshold)
+	if approveCount < threshold && rejectCount < threshold {
+		// TODO: handler the case or do timeout in the module.go
+		return
+	}
+
+	if approveCount >= threshold {
+		finalizedTxOut := h.keeper.GetFinalizedTxOut(ctx, txOutId)
+		if finalizedTxOut == nil {
+			doTxOut(ctx, h.keeper, h.privateDb, txOut)
 		} else {
-			finalizedTxOut := h.keeper.GetFinalizedTxOut(ctx, txOutId)
-			if finalizedTxOut == nil {
-				doTxOut(ctx, h.keeper, h.privateDb, txOut)
-			} else {
-				log.Verbosef("Finalized TxOut has been processed for txOut with id %s", txOutId)
-			}
+			log.Verbosef("Finalized TxOut has been processed for txOut with id %s", txOutId)
 		}
 	} else {
-		// TODO: handler the case or do timeout in the module.go
+		log.Verbose("TxOut is rejected, txOutId = ", txOutId)
+		h.keeper.IncTransferCounter(ctx, txOut.Input.TransferIds[0])
+		h.privateDb.SetHoldProcessing(types.TransferHoldKey, txOut.Content.OutChain, false)
 	}
 }

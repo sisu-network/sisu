@@ -74,6 +74,7 @@ func (h *HandlerTxIn) saveTransfers(ctx sdk.Context, transfers []*types.Transfer
 	for _, transfer := range transfers {
 		// TODO: Optimize this path. We can save single transfer instead of the entire queue.
 		queue = append(queue, transfer)
+		h.keeper.IncTransferCounter(ctx, transfer.Id)
 	}
 
 	h.keeper.SetTransferQueue(ctx, chain, queue)
