@@ -158,6 +158,7 @@ func (b *defaultBackground) processTransferQueue(ctx sdk.Context, chain string, 
 			Ids:     []string{transfer.Id},
 			Chain:   chain,
 			Message: err.Error(),
+			Nonce:   b.keeper.GetFailedTransferNonce(ctx, transfer.Id) + 1,
 		})
 		b.txSubmit.SubmitMessageAsync(msg)
 		return
@@ -181,6 +182,7 @@ func (b *defaultBackground) processTransferQueue(ctx sdk.Context, chain string, 
 			Ids:     ids,
 			Chain:   chain,
 			Message: err.Error(),
+			Nonce:   b.keeper.GetFailedTransferNonce(ctx, transfer.Id) + 1,
 		})
 		b.txSubmit.SubmitMessageAsync(msg)
 

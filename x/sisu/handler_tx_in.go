@@ -50,14 +50,6 @@ func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, msg *types.TxInMsg) (*sdk.Resu
 func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msg *types.TxInMsg) {
 	log.Verbosef("Process doTxIn with TxIn id %s", msg.Data.Id)
 
-	hash, _, err := keeper.GetTxRecordHash(msg)
-	if err != nil {
-		log.Errorf("doTxIn: Failed to get tx record hash for doTxInMsg")
-		return
-	}
-
-	h.keeper.ProcessTxRecord(ctx, hash)
-
 	// Save the transfers
 	h.saveTransfers(ctx, msg.Data.Transfers)
 }
@@ -74,7 +66,7 @@ func (h *HandlerTxIn) saveTransfers(ctx sdk.Context, transfers []*types.Transfer
 	for _, transfer := range transfers {
 		// TODO: Optimize this path. We can save single transfer instead of the entire queue.
 		queue = append(queue, transfer)
-		h.keeper.IncTransferCounter(ctx, transfer.Id)
+		h.keeper.SetTransferCounter(ctx, transfer.Id, 0)
 	}
 
 	h.keeper.SetTransferQueue(ctx, chain, queue)

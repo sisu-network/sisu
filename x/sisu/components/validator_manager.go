@@ -105,7 +105,7 @@ func (m *DefaultValidatorManager) GetAssignedValidator(ctx sdk.Context, hash str
 		return nil, fmt.Errorf("Cannot get transfer counter, hash = %s", hash)
 	}
 
-	if counter > int(m.keeper.GetParams(ctx).GetMaxRejectedTransferRetry()) {
+	if counter >= int(m.keeper.GetParams(ctx).GetMaxRejectedTransferRetry()) {
 		return nil, fmt.Errorf("Exceed the maximum number of retry rejected transfer, hash = %s", hash)
 	}
 

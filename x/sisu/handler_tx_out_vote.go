@@ -33,10 +33,20 @@ func NewHandlerTxOutConsensed(
 	}
 }
 
-func (h *HandlerTxOutVote) DeliverMsg(ctx sdk.Context, msg *types.TxOutVoteMsg) (*sdk.Result, error) {
+func (h *HandlerTxOutVote) DeliverMsg(
+	ctx sdk.Context,
+	msg *types.TxOutVoteMsg,
+) (*sdk.Result, error) {
 	txOut := h.keeper.GetProposedTxOut(ctx, msg.Data.TxOutId, msg.Data.AssignedValidator)
 	if txOut == nil {
 		log.Errorf("Cannot get proposed txout, txOutId = %s", msg.Data.TxOutId)
+		return &sdk.Result{}, nil
+	}
+
+	done := h.keeper.IsTxRecordProcessed(ctx,
+		[]byte(fmt.Sprintf("%s__%s", txOut.GetId(), msg.Data.AssignedValidator)))
+	if done {
+		log.Info("Ignore the completed proposed txout, txOutId = %s", msg.Data.TxOutId)
 		return &sdk.Result{}, nil
 	}
 
@@ -44,12 +54,13 @@ func (h *HandlerTxOutVote) DeliverMsg(ctx sdk.Context, msg *types.TxOutVoteMsg) 
 	prefix := fmt.Sprintf("%s__%s__%d", VoteKey, msg.Data.TxOutId, counter)
 	h.keeper.AddVoteResult(ctx, prefix, msg.Signer, msg.Data.Vote)
 
-	h.checkVoteResult(ctx, txOut, counter)
+	h.checkVoteResult(ctx, txOut, counter, msg.Data.AssignedValidator)
 
 	return &sdk.Result{}, nil
 }
 
-func (h *HandlerTxOutVote) checkVoteResult(ctx sdk.Context, txOut *types.TxOut, counter int) {
+func (h *HandlerTxOutVote) checkVoteResult(ctx sdk.Context, txOut *types.TxOut,
+	counter int, assignedValidator string) {
 	txOutId := txOut.GetId()
 
 	prefix := fmt.Sprintf("%s__%s__%d", VoteKey, txOutId, counter)
@@ -76,6 +87,8 @@ func (h *HandlerTxOutVote) checkVoteResult(ctx sdk.Context, txOut *types.TxOut, 
 		// TODO: handler the case or do timeout in the module.go
 		return
 	}
+
+	h.keeper.ProcessTxRecord(ctx, []byte(txOutId+"__"+assignedValidator))
 
 	if approveCount >= threshold {
 		finalizedTxOut := h.keeper.GetFinalizedTxOut(ctx, txOutId)

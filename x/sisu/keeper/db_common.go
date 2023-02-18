@@ -709,7 +709,38 @@ func getTransferQueue(queueStore, transferStore cstypes.KVStore, chain string) [
 	return getTransfers(transferStore, ids)
 }
 
-///// Transfer counter
+///// Failed Transfer
+func addFailedTransfer(failedStore, transferStore cstypes.KVStore, transferId string) {
+	transfer := getTransfers(transferStore, []string{transferId})
+	if transfer == nil {
+		log.Error("Not found the transfer, transferId = ", transferId)
+		return
+	}
+
+	n := getFailedTransferNonce(failedStore, transferId)
+	failedStore.Set([]byte(transferId), []byte(strconv.FormatInt(n+1, 10)))
+}
+
+func getFailedTransferNonce(store cstypes.KVStore, transferId string) int64 {
+	bz := store.Get([]byte(transferId))
+	if bz == nil {
+		return -1
+	}
+	n, err := strconv.ParseInt(string(bz), 10, 0)
+	if err != nil {
+		log.Errorf("Cannot convert failed transfer value to int, transferId = %s err = %v",
+			transferId, err)
+		return -1
+	}
+
+	return n
+}
+
+///// Transfer Counter
+func setTransferCounter(store cstypes.KVStore, id string, counter int) {
+	store.Set([]byte(id), []byte(strconv.Itoa(counter)))
+}
+
 func incTransferCounter(store cstypes.KVStore, id string) {
 	counter := getTransferCounter(store, id)
 	store.Set([]byte(id), []byte(strconv.Itoa(counter+1)))
@@ -828,7 +859,6 @@ func addProposedTxOut(store cstypes.KVStore, signer string, txOut *types.TxOut) 
 		log.Errorf("addProposedTxOut: Failed to marshal proposed tx out")
 		return
 	}
-
 	store.Set(key, bz)
 }
 

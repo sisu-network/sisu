@@ -34,6 +34,7 @@ var (
 	prefixFinalizedTxOut         = []byte{0x1D}
 	prefixKeySignRetryCount      = []byte{0x1E}
 	prefixTransferCounter        = []byte{0x1F}
+	prefixFailedTransfer         = []byte{0x20}
 )
 
 var _ Keeper = (*DefaultKeeper)(nil)
@@ -111,8 +112,13 @@ type Keeper interface {
 	GetTransferQueue(ctx sdk.Context, chain string) []*types.TransferDetails
 
 	// Transfer Counter
+	SetTransferCounter(ctx sdk.Context, id string, counter int)
 	IncTransferCounter(ctx sdk.Context, id string)
 	GetTransferCounter(ctx sdk.Context, id string) int
+
+	// Failed Transfer
+	AddFailedTransfer(ctx sdk.Context, transferId string) int64
+	GetFailedTransferNonce(ctx sdk.Context, transferId string) int64
 
 	// TxOutQueue
 	SetTxOutQueue(ctx sdk.Context, chain string, txOuts []*types.TxOut)
@@ -360,6 +366,11 @@ func (k *DefaultKeeper) GetTransfers(ctx sdk.Context, ids []string) []*types.Tra
 }
 
 ///// Transfer counter
+func (k *DefaultKeeper) SetTransferCounter(ctx sdk.Context, id string, counter int) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferCounter)
+	setTransferCounter(store, id, counter)
+}
+
 func (k *DefaultKeeper) IncTransferCounter(ctx sdk.Context, id string) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferCounter)
 	incTransferCounter(store, id)
@@ -406,6 +417,19 @@ func (k *DefaultKeeper) GetTransferQueue(ctx sdk.Context, chain string) []*types
 	queueStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferQueue)
 
 	return getTransferQueue(queueStore, transferStore, chain)
+}
+
+///// Failed Transfer Queue
+func (k *DefaultKeeper) AddFailedTransfer(ctx sdk.Context, transferId string) int64 {
+	transferStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
+	failedStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixFailedTransfer)
+	addFailedTransfer(failedStore, transferStore, transferId)
+	return getFailedTransferNonce(failedStore, transferId)
+}
+
+func (k *DefaultKeeper) GetFailedTransferNonce(ctx sdk.Context, transferId string) int64 {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixFailedTransfer)
+	return getFailedTransferNonce(store, transferId)
 }
 
 ///// Vote Result
