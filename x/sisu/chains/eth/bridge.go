@@ -121,6 +121,11 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 			TransferIds:      inHashes,
 			NativeTokenPrice: nativeTokenPrice.String(),
 			TokenPrices:      tokenPrices,
+			EthData: &types.EthData{
+				GasPrice: gasInfo.GasPrice,
+				BaseFee:  gasInfo.BaseFee,
+				Tip:      gasInfo.Tip,
+			},
 		},
 	}
 
@@ -350,12 +355,10 @@ func (b *bridge) ValidateTxOut(ctx sdk.Context, txOut *types.TxOut, transfers []
 		return err
 	}
 
-	txGasInfo := &deyesethtypes.GasInfo{}
-	if ethCfg.UseEip_1559 {
-		txGasInfo.Tip = tx.GasTipCap().Int64()
-		txGasInfo.BaseFee = tx.GasFeeCap().Int64()
-	} else {
-		txGasInfo.GasPrice = tx.GasPrice().Int64()
+	txGasInfo := &deyesethtypes.GasInfo{
+		GasPrice: txOut.Input.EthData.GasPrice,
+		BaseFee:  txOut.Input.EthData.BaseFee,
+		Tip:      txOut.Input.EthData.Tip,
 	}
 
 	txGasCost, _, _ := b.getGasCost(txGasInfo, ethCfg.UseEip_1559, gasUnitPerSwap)
@@ -378,7 +381,7 @@ func (b *bridge) ValidateTxOut(ctx sdk.Context, txOut *types.TxOut, transfers []
 	// 3. Validate token price and amountOut.
 	targetContractName := ContractVault
 	vaultInfo := SupportedContracts[targetContractName]
-	txAmountOuts, err := GetAmountOutFromTransaction(vaultInfo.Abi, tx, len(transfers))
+	txAmountOuts, err := GetAmountOutFromTransaction(ctx, b.keeper, vaultInfo.Abi, tx, transfers)
 	if err != nil {
 		return err
 	}

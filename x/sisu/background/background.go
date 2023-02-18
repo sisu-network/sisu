@@ -1,7 +1,6 @@
 package background
 
 import (
-	"fmt"
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -236,7 +235,6 @@ func (b *defaultBackground) processTxOut(ctx sdk.Context, params *types.Params) 
 
 // AddVoteTxOut adds a TxOut message for later vote at the end of the block.
 func (b *defaultBackground) AddVoteTxOut(height int64, msg *types.TxOutMsg) {
-	fmt.Println("Adding txout vote....")
 	b.lock.Lock()
 	defer b.lock.Unlock()
 
@@ -260,7 +258,7 @@ func (b *defaultBackground) processTxOutVote(ctx sdk.Context) {
 		}
 
 		// Submit the TxOut confirm
-		txOutConfirmMsg := types.NewTxOutVoteMsg(
+		voteMsg := types.NewTxOutVoteMsg(
 			b.appKeys.GetSignerAddress().String(),
 			&types.TxOutVote{
 				AssignedValidator: msg.Signer,
@@ -269,7 +267,7 @@ func (b *defaultBackground) processTxOutVote(ctx sdk.Context) {
 			},
 		)
 
-		b.txSubmit.SubmitMessageAsync(txOutConfirmMsg)
+		b.txSubmit.SubmitMessageAsync(voteMsg)
 	}
 }
 
