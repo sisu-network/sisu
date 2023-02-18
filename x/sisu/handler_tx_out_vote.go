@@ -71,6 +71,7 @@ func (h *HandlerTxOutVote) checkVoteResult(ctx sdk.Context, txOut *types.TxOut, 
 	}
 
 	threshold := int(params.MajorityThreshold)
+
 	if approveCount < threshold && rejectCount < threshold {
 		// TODO: handler the case or do timeout in the module.go
 		return
@@ -84,6 +85,7 @@ func (h *HandlerTxOutVote) checkVoteResult(ctx sdk.Context, txOut *types.TxOut, 
 			log.Verbosef("Finalized TxOut has been processed for txOut with id %s", txOutId)
 		}
 	} else {
+		// TODO: handler should
 		log.Verbose("TxOut is rejected, txOutId = ", txOutId)
 		h.keeper.IncTransferCounter(ctx, txOut.Input.TransferIds[0])
 		h.privateDb.SetHoldProcessing(types.TransferHoldKey, txOut.Content.OutChain, false)

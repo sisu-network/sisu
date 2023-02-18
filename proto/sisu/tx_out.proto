@@ -30,6 +30,13 @@ message TxOutInput {
   repeated string transferIds = 1;
   string nativeTokenPrice = 2;
   repeated string tokenPrices = 3;
+  EthData ethData = 4; // Optional data for ETH transaction.
+}
+
+message EthData {
+  int64 gasPrice = 1;
+  int64 baseFee = 2;
+  int64 tip = 3;
 }
 
 // TxOut with and full transaction hash (including signature) to look up TxOut when a new tx comes in.

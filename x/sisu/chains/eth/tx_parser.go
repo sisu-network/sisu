@@ -67,6 +67,29 @@ func ParseVaultTx(ctx sdk.Context, keeper keeper.Keeper, chain string, serialize
 	return result
 }
 
+func GetAmountOutFromTransaction(ctx sdk.Context, k keeper.Keeper, abi abi.ABI,
+	tx *ethtypes.Transaction, transfers []*types.TransferDetails) ([]*big.Int, error) {
+	methodName, params, err := DecodeTxParams(abi, tx.Data())
+	if err != nil {
+		return nil, err
+	}
+
+	switch methodName {
+	case "transferIn":
+		amount, err := parseTransferIn(ctx, k, params, transfers[0])
+		if err != nil {
+			return nil, err
+		}
+		return []*big.Int{amount}, nil
+
+	case "transferInMultiple":
+		return parseTransferInMultiple(ctx, k, params, transfers)
+
+	default:
+		return nil, fmt.Errorf("Unsupported method %s", methodName)
+	}
+}
+
 func parseTransferOut(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.Transaction, chain string,
 	isEvm bool, txParams map[string]interface{}) ([]*types.TransferDetails, error) {
 	msg, err := ethTx.AsMessage(ethtypes.NewLondonSigner(ethTx.ChainId()), nil)
@@ -132,20 +155,93 @@ func parseTransferOut(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.Tra
 	}, nil
 }
 
-func parseTransferIn(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.Transaction) (map[string]any, error) {
-	vaultAbi, _ := abi.JSON(strings.NewReader(vault.VaultABI))
-	callData := ethTx.Data()
-	if len(callData) < 4 {
-		// This is just a normal transfer
-		return nil, fmt.Errorf("Invalid transferIn data")
+func parseTransferIn(ctx sdk.Context, k keeper.Keeper, params map[string]interface{},
+	transfer *types.TransferDetails) (*big.Int, error) {
+	// 1. Validate amount
+	amountParam, ok := params["amount"]
+	if !ok {
+		return nil, fmt.Errorf("param amount not found, params = %v", params)
+	}
+	amountInt, ok := amountParam.(*big.Int)
+	if !ok {
+		return nil, fmt.Errorf("Amount param is not an integer, amountParam = %s", amountParam)
 	}
 
-	_, txParams, err := DecodeTxParams(vaultAbi, callData)
-	if err != nil {
+	// 2. Validate recipient address
+	if _, ok := params["to"].(ethcommon.Address); !ok {
+		return nil, fmt.Errorf("Invalid recipient address, to = %s", params["to"])
+	}
+
+	// 3. Validate token
+	tokenAddr, ok := params["token"].(ethcommon.Address)
+	if !ok {
+		return nil, fmt.Errorf("Invalid token address, to = %s", params["token"])
+	}
+
+	if err := validateToken(ctx, k, transfer, tokenAddr.String()); err != nil {
 		return nil, err
 	}
 
-	return txParams, nil
+	return amountInt, nil
+}
+
+func parseTransferInMultiple(ctx sdk.Context, keeper keeper.Keeper, params map[string]interface{},
+	transfers []*types.TransferDetails) ([]*big.Int, error) {
+	// 1. Validate amounts array
+	amountsParam, ok := params["amounts"]
+	if !ok {
+		return nil, fmt.Errorf("param amounts not found, params = %v", params)
+	}
+	amounts, ok := amountsParam.([]*big.Int)
+	if !ok {
+		return nil, fmt.Errorf("amountsParam is not an instance of []*bigInt, params = %s", amountsParam)
+	}
+	if len(amounts) != len(transfers) {
+		return nil, fmt.Errorf("Amounts and transfers length do not match, expected %d, actual %d",
+			len(transfers), len(amounts))
+	}
+
+	// 2. Validate recipient addrs
+	tosParam, ok := params["tos"]
+	if !ok {
+		return nil, fmt.Errorf("param tos not found, params = %v", params)
+	}
+	tos, ok := tosParam.([]ethcommon.Address)
+	if len(tos) != len(transfers) {
+		return nil, fmt.Errorf("tos and transfers length do not match, expected %d, actual %d",
+			len(transfers), len(tos))
+	}
+
+	// 3. Validate tokens
+	tokensParam, ok := params["tokens"]
+	if !ok {
+		return nil, fmt.Errorf("param tokens not found, params = %v", params)
+	}
+	tokens, ok := tokensParam.([]ethcommon.Address)
+	for i, token := range tokens {
+		if err := validateToken(ctx, keeper, transfers[i], token.String()); err != nil {
+			return nil, err
+		}
+	}
+
+	return amounts, nil
+}
+
+func validateToken(ctx sdk.Context, k keeper.Keeper, transfer *types.TransferDetails,
+	actualAddr string) error {
+	token := k.GetToken(ctx, transfer.Token)
+	if token == nil {
+		// This is not a proposal's fault. The token validation should be done in at the handler TxIn.
+		return fmt.Errorf("cannot find token %s in the keeper", transfer.Token)
+	}
+
+	expectedAddr := token.GetAddressForChain(transfer.ToChain)
+	if !strings.EqualFold(expectedAddr, actualAddr) {
+		return fmt.Errorf("Token address does not match, expected %s, actual %s", expectedAddr,
+			actualAddr)
+	}
+
+	return nil
 }
 
 func DecodeTxParams(abi abi.ABI, callData []byte) (string, map[string]interface{}, error) {
@@ -162,29 +258,4 @@ func DecodeTxParams(abi abi.ABI, callData []byte) (string, map[string]interface{
 	}
 
 	return m.Name, txParams, nil
-}
-
-func GetAmountOutFromTransaction(abi abi.ABI, tx *ethtypes.Transaction, nTransfers int) ([]*big.Int, error) {
-	_, params, err := DecodeTxParams(abi, tx.Data())
-	if err != nil {
-		return nil, err
-	}
-
-	amountParam, ok := params["amount"]
-	if !ok {
-		return nil, fmt.Errorf("key amount not found, params = %v", params)
-	}
-
-	txAmountOuts := make([]*big.Int, nTransfers)
-	if nTransfers == 1 {
-		txAmountOuts[0], ok = amountParam.(*big.Int)
-	} else {
-		txAmountOuts, ok = amountParam.([]*big.Int)
-	}
-	if !ok {
-		return nil, fmt.Errorf("received an invalid amountOut, nTransfers=%d, amountParam = %v",
-			nTransfers, amountParam)
-	}
-
-	return txAmountOuts, nil
 }

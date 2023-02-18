@@ -1,8 +1,6 @@
 package sisu
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/x/sisu/background"
@@ -26,8 +24,6 @@ func NewHandlerKeysignResult(mc background.ManagerContainer) *HandlerKeysignResu
 }
 
 func (h *HandlerKeysignResult) DeliverMsg(ctx sdk.Context, msg *types.KeysignResultMsg) (*sdk.Result, error) {
-	fmt.Println("There is keysign result from ", msg.Signer, " for ", msg.Data.TxOutId,
-		" success = ", msg.Data.Success)
 	if shouldProcess, hash := h.pmm.ShouldProcessMsg(ctx, msg); shouldProcess {
 		h.doKeysignResult(ctx, msg.Data)
 		h.keeper.ProcessTxRecord(ctx, hash)
