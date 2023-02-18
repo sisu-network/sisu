@@ -33,6 +33,7 @@ type Setting struct {
 	nodeDirPrefix     string
 	nodeDaemonHome    string
 	ips               []string
+	heartIps          []string
 	monikers          []string
 	keyringBackend    string
 	keyringPassphrase string

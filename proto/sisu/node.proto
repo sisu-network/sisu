@@ -12,7 +12,9 @@ message Node {
   // This id field is not used to identify a node. Use the consensusKey to identify a node.
   string id = 1;
   // Cosmos pubkey
-  ValPubkey valPubkey = 2;
-  string accAddress = 3;
-  bool isValidator = 4;
+  ValPubkey val_pubkey = 2;
+  string acc_address = 3;
+  bool is_validator = 4;
+
+  string dheart_peer_addr = 5;
 }

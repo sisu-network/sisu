@@ -43,6 +43,7 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 	nodeDirPrefix := settings.nodeDirPrefix
 	nodeDaemonHome := settings.nodeDaemonHome
 	ips := settings.ips
+	heartIps := settings.heartIps
 	keyringBackend := settings.keyringBackend
 	algoStr := settings.algoStr
 	numValidators := settings.numValidators
@@ -118,7 +119,8 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 			return nil, err
 		}
 
-		node, secret, tendermintKey := getNode(kb, algoStr, nodeDirName, outputDir, tmConfig)
+		node, secret, tendermintKey := getNode(kb, algoStr, nodeDirName, outputDir, tmConfig,
+			heartIps[i])
 		nodes[i] = node
 		valPubKeys[i] = tendermintKey
 
@@ -178,7 +180,7 @@ func InitNetwork(settings *Setting) ([]cryptotypes.PubKey, error) {
 }
 
 func getNode(kb keyring.Keyring, algoStr string, nodeDirName string, outputDir string,
-	tmConfig *tmconfig.Config) (*types.Node, string, cryptotypes.PubKey) {
+	tmConfig *tmconfig.Config, heartIp string) (*types.Node, string, cryptotypes.PubKey) {
 	keyringAlgos, _ := kb.SupportedAlgorithms()
 	algo, err := keyring.NewSigningAlgoFromString(algoStr, keyringAlgos)
 	if err != nil {
@@ -203,8 +205,9 @@ func getNode(kb keyring.Keyring, algoStr string, nodeDirName string, outputDir s
 			Type:  valPubkey.Type(),
 			Bytes: valPubkey.Bytes(),
 		},
-		AccAddress:  addr.String(),
-		IsValidator: true,
+		AccAddress:     addr.String(),
+		IsValidator:    true,
+		DheartPeerAddr: heartIp,
 	}, secret, valPubkey
 }
 

@@ -91,6 +91,10 @@ Example:
 			for i := range ips {
 				ips[i] = fmt.Sprintf("sisu%d", i)
 			}
+			heartIps := make([]string, numValidators)
+			for i := range heartIps {
+				heartIps[i] = fmt.Sprintf(`"dheart%d"`, i)
+			}
 
 			mysqlIp := "192.168.10.4"
 			chainIds := []*big.Int{libchain.GetChainIntFromId("ganache1"), libchain.GetChainIntFromId("ganache2")}
@@ -117,6 +121,7 @@ Example:
 			settings.nodeDirPrefix = nodeDirPrefix
 			settings.keyringBackend = keyringBackend
 			settings.ips = ips
+			settings.heartIps = heartIps
 			settings.nodeConfigs = nodeConfigs
 
 			valPubKeys, err := InitNetwork(settings)

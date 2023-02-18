@@ -1,19 +1,11 @@
 package gen
 
 import (
-	"context"
-	"encoding/hex"
 	"fmt"
-	"math/big"
 	"net"
 	"time"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/spf13/cobra"
-
-	ethcrypto "github.com/ethereum/go-ethereum/crypto"
 
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 
@@ -88,6 +80,7 @@ Example:
 			settings.tmConfig = tmConfig
 			settings.chainID = chainID
 			settings.ips = []string{startingIPAddress}
+			settings.heartIps = []string{"dheart0"}
 			settings.keyringBackend = keyringBackend
 			settings.nodeConfigs = []config.Config{nodeConfig}
 
@@ -131,45 +124,6 @@ func (g *localnetGenerator) calculateIP(ip string, i int) (string, error) {
 	}
 
 	return ipv4.String(), nil
-}
-
-func (g *localnetGenerator) getAuthTransactor(client *ethclient.Client, address common.Address) (*bind.TransactOpts, error) {
-	nonce, err := client.PendingNonceAt(context.Background(), address)
-	if err != nil {
-		return nil, err
-	}
-
-	gasPrice, err := client.SuggestGasPrice(context.Background())
-	if err != nil {
-		return nil, err
-	}
-
-	// This is the private key of the accounts0
-	bz, err := hex.DecodeString("9f575b88940d452da46a6ceec06a108fcd5863885524aec7fb0bc4906eb63ab1")
-	if err != nil {
-		panic(err)
-	}
-
-	privateKey, err := ethcrypto.ToECDSA(bz)
-	if err != nil {
-		panic(err)
-	}
-
-	chainId, err := client.ChainID(context.Background())
-	if err != nil {
-		return nil, err
-	}
-	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainId)
-	if err != nil {
-		return nil, err
-	}
-	auth.Nonce = big.NewInt(int64(nonce))
-	auth.Value = big.NewInt(0)
-	auth.GasPrice = gasPrice
-
-	auth.GasLimit = uint64(10_000_000)
-
-	return auth, nil
 }
 
 func (g *localnetGenerator) generateEyesToml(outputDir string, deyesConfig econfig.Deyes) {

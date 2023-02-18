@@ -132,6 +132,7 @@ Example:
 			settings.keyringBackend = keyringBackend
 			settings.keyringPassphrase = keyringPassphrase
 			settings.ips = sisuIps
+			settings.heartIps = heartIps
 			settings.nodeConfigs = nodeConfigs
 			settings.emailAlert = testnetConfig.EmailAlert
 
