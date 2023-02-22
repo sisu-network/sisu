@@ -117,8 +117,8 @@ type Keeper interface {
 	GetTransferCounter(ctx sdk.Context, id string) int
 
 	// Failed Transfer
-	AddFailedTransfer(ctx sdk.Context, transferId string) int64
-	GetFailedTransferNonce(ctx sdk.Context, transferId string) int64
+	AddFailedTransfer(ctx sdk.Context, transferId string)
+	GetFailedTransferRetryNum(ctx sdk.Context, transferId string) int64
 
 	// TxOutQueue
 	SetTxOutQueue(ctx sdk.Context, chain string, txOuts []*types.TxOut)
@@ -420,16 +420,15 @@ func (k *DefaultKeeper) GetTransferQueue(ctx sdk.Context, chain string) []*types
 }
 
 ///// Failed Transfer Queue
-func (k *DefaultKeeper) AddFailedTransfer(ctx sdk.Context, transferId string) int64 {
+func (k *DefaultKeeper) AddFailedTransfer(ctx sdk.Context, transferId string) {
 	transferStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
 	failedStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixFailedTransfer)
 	addFailedTransfer(failedStore, transferStore, transferId)
-	return getFailedTransferNonce(failedStore, transferId)
 }
 
-func (k *DefaultKeeper) GetFailedTransferNonce(ctx sdk.Context, transferId string) int64 {
+func (k *DefaultKeeper) GetFailedTransferRetryNum(ctx sdk.Context, transferId string) int64 {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixFailedTransfer)
-	return getFailedTransferNonce(store, transferId)
+	return getFailedTransferRetryNum(store, transferId)
 }
 
 ///// Vote Result

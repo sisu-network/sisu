@@ -51,16 +51,17 @@ func (h *HandlerTransferRetry) DeliverMsg(
 }
 
 func (h *HandlerTransferRetry) doRetryTransfer(ctx sdk.Context, msg *types.TransferRetryMsg) {
-	nonce := h.keeper.GetFailedTransferNonce(ctx, msg.Data.TransferId)
-	if nonce == -1 {
+	retryNum := h.keeper.GetFailedTransferRetryNum(ctx, msg.Data.TransferId)
+	if retryNum == -1 {
 		log.Errorf("The transfer isn't failed, transferId = %s", msg.Data.TransferId)
 		return
 	}
 
-	if nonce != msg.Data.Nonce {
+	if retryNum != msg.Data.Index {
 		log.Errorf(
-			"Mismatch nonce, transferId = %s, nonce = %d, retry_transfer_nonce = %d",
-			msg.Data.TransferId, nonce, msg.Data.Nonce)
+			"Mismatch between retry number of failed transfer and index of retried transfer, "+
+				"transferId = %s, retryNum = %d, index = %d",
+			msg.Data.TransferId, retryNum, msg.Data.Index)
 		return
 	}
 

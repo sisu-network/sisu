@@ -5,12 +5,12 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-func NewTransferRetryMsg(signer string, transferId string, nonce int64) *TransferRetryMsg {
+func NewTransferRetryMsg(signer string, transferId string, index int64) *TransferRetryMsg {
 	return &TransferRetryMsg{
 		Signer: signer,
 		Data: &TransferRetry{
 			TransferId: transferId,
-			Nonce:      nonce,
+			Index:      index,
 		},
 	}
 }
@@ -22,7 +22,7 @@ func (msg *TransferRetryMsg) Route() string {
 
 // Type ...
 func (msg *TransferRetryMsg) Type() string {
-	return MsgTxIn
+	return MsgTransferRetry
 }
 
 // GetSigners ...

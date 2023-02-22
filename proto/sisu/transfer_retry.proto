@@ -3,7 +3,6 @@ package types;
 
 option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 
-
 message TransferRetryMsg {
   string signer = 1;
   TransferRetry data = 2;
@@ -11,5 +10,5 @@ message TransferRetryMsg {
 
 message TransferRetry {
   string transfer_id = 1;
-  int64 nonce = 2;
+  int64 index = 2;
 }
