@@ -118,6 +118,7 @@ type Keeper interface {
 
 	// Failed Transfer
 	AddFailedTransfer(ctx sdk.Context, transferId string)
+	RemoveFailedTransfer(ctx sdk.Context, transferId string)
 	GetFailedTransferRetryNum(ctx sdk.Context, transferId string) int64
 
 	// TxOutQueue
@@ -424,6 +425,11 @@ func (k *DefaultKeeper) AddFailedTransfer(ctx sdk.Context, transferId string) {
 	transferStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
 	failedStore := prefix.NewStore(ctx.KVStore(k.storeKey), prefixFailedTransfer)
 	addFailedTransfer(failedStore, transferStore, transferId)
+}
+
+func (k *DefaultKeeper) RemoveFailedTransfer(ctx sdk.Context, transferId string) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixFailedTransfer)
+	removeFailedTransfer(store, transferId)
 }
 
 func (k *DefaultKeeper) GetFailedTransferRetryNum(ctx sdk.Context, transferId string) int64 {

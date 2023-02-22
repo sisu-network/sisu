@@ -721,6 +721,10 @@ func addFailedTransfer(failedStore, transferStore cstypes.KVStore, transferId st
 	failedStore.Set([]byte(transferId), []byte(strconv.FormatInt(n+1, 10)))
 }
 
+func removeFailedTransfer(store cstypes.KVStore, transferId string) {
+	store.Delete([]byte(transferId))
+}
+
 func getFailedTransferRetryNum(store cstypes.KVStore, transferId string) int64 {
 	bz := store.Get([]byte(transferId))
 	if bz == nil {
