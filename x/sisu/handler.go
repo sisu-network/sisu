@@ -64,6 +64,10 @@ func (sh *SisuHandler) NewHandler(processor *ApiHandler, valsManager components.
 			return NewHandlerTxIn(mc.PostedMessageManager(), mc.Keeper(),
 				mc.GlobalData(), mc.BridgeManager(), mc.ValidatorManager(), mc.PrivateDb()).DeliverMsg(ctx, msg)
 
+		case *types.TransferRetryMsg:
+			return NewHandlerTransferRetry(mc.PostedMessageManager(), mc.Keeper(),
+				mc.GlobalData(), mc.BridgeManager(), mc.ValidatorManager(), mc.PrivateDb()).DeliverMsg(ctx, msg)
+
 		case *types.TxOutVoteMsg:
 			return NewHandlerTxOutConsensed(mc.PostedMessageManager(), mc.Keeper(),
 				mc.PrivateDb()).DeliverMsg(ctx, msg)

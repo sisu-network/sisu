@@ -77,12 +77,12 @@ func doTxOut(ctx sdk.Context, k keeper.Keeper, privateDb keeper.PrivateDb,
 
 func handlerTransfer(ctx sdk.Context, k keeper.Keeper, privateDb keeper.PrivateDb,
 	txOut *types.TxOut) {
-	// 1. Update TxOut txOutQ
+	// 1. Update TxOut txOutQ.
 	txOutQ := k.GetTxOutQueue(ctx, txOut.Content.OutChain)
 	txOutQ = append(txOutQ, txOut)
 	k.SetTxOutQueue(ctx, txOut.Content.OutChain, txOutQ)
 
-	// 2. Remove the transfers in txOut from the queue
+	// 2. Remove the transfers in txOut from the queue.
 	transferQ := k.GetTransferQueue(ctx, txOut.Content.OutChain)
 	ids := make(map[string]bool, 0)
 	for _, inHash := range txOut.Input.TransferIds {
@@ -98,10 +98,15 @@ func handlerTransfer(ctx sdk.Context, k keeper.Keeper, privateDb keeper.PrivateD
 
 	k.SetTransferQueue(ctx, txOut.Content.OutChain, newQueue)
 
-	// 3. Update the HoldProcessing for transfer queue so that we do not process any more transfer.
+	// 3. Remove failed transfers (if any).
+	for _, id := range txOut.Input.TransferIds {
+		k.RemoveFailedTransfer(ctx, id)
+	}
+
+	// 4. Update the HoldProcessing for transfer queue so that we do not process any more transfer.
 	privateDb.SetHoldProcessing(types.TransferHoldKey, txOut.Content.OutChain, true)
 
-	// 4. Set Expiration Block
+	// 5. Set Expiration Block.
 	params := k.GetParams(ctx)
 	k.SetExpirationBlock(ctx, types.ExpirationBlock_TxOut, txOut.GetId(),
 		ctx.BlockHeight()+int64(params.ExpirationBlock))

@@ -155,9 +155,10 @@ func (b *defaultBackground) processTransferQueue(ctx sdk.Context, chain string, 
 	assignedNode, err := b.valsManager.GetAssignedValidator(ctx, transfer.Id)
 	if err != nil {
 		msg := types.NewTransferFailureMsg(b.appKeys.GetSignerAddress().String(), &types.TransferFailure{
-			Ids:     []string{transfer.Id},
-			Chain:   chain,
-			Message: err.Error(),
+			Ids:      []string{transfer.Id},
+			Chain:    chain,
+			Message:  err.Error(),
+			RetryNum: b.keeper.GetFailedTransferRetryNum(ctx, transfer.Id) + 1,
 		})
 		b.txSubmit.SubmitMessageAsync(msg)
 		return
@@ -178,9 +179,10 @@ func (b *defaultBackground) processTransferQueue(ctx sdk.Context, chain string, 
 
 		ids := b.getTransferIds(batch)
 		msg := types.NewTransferFailureMsg(b.appKeys.GetSignerAddress().String(), &types.TransferFailure{
-			Ids:     ids,
-			Chain:   chain,
-			Message: err.Error(),
+			Ids:      ids,
+			Chain:    chain,
+			Message:  err.Error(),
+			RetryNum: b.keeper.GetFailedTransferRetryNum(ctx, transfer.Id) + 1,
 		})
 		b.txSubmit.SubmitMessageAsync(msg)
 

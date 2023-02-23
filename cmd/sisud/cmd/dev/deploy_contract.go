@@ -41,7 +41,10 @@ Example:
 			chains := strings.Split(chainString, ",")
 
 			c := &DeployContractCmd{}
-			tokenAddrs := strings.Split(expectedAddrString, ",")
+			tokenAddrs := make([]string, 0)
+			if expectedAddrString != "" {
+				tokenAddrs = strings.Split(expectedAddrString, ",")
+			}
 			c.doDeployment(contract, mnemonic, genesisFolder, chains, tokenAddrs, tokenName, tokenSymbol)
 
 			return nil
