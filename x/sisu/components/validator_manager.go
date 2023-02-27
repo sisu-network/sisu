@@ -1,11 +1,15 @@
 package components
 
 import (
+	"encoding/hex"
 	"fmt"
 	"strconv"
 	"sync"
 
+	sdkcrypto "github.com/cosmos/cosmos-sdk/crypto/types"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/keeper"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -16,6 +20,7 @@ type ValidatorManager interface {
 	IsValidator(ctx sdk.Context, signer string) bool
 	GetValidatorLength(ctx sdk.Context) int
 	GetValidators(ctx sdk.Context) []*types.Node
+	GetValidatorPubkeys(ctx sdk.Context) []sdkcrypto.PubKey
 	GetAssignedValidator(ctx sdk.Context, hash string) (*types.Node, error)
 }
 
@@ -112,4 +117,20 @@ func (m *DefaultValidatorManager) GetAssignedValidator(ctx sdk.Context, hash str
 	hash += strconv.Itoa(counter)
 	sorted := utils.GetSortedValidators(hash, vals)
 	return sorted[0], nil
+}
+
+func (m *DefaultValidatorManager) GetValidatorPubkeys(ctx sdk.Context) []sdkcrypto.PubKey {
+	vals := m.GetValidators(ctx)
+	keys := make([]sdkcrypto.PubKey, 0)
+
+	for _, val := range vals {
+		key, err := utils.GetCosmosPubKey(val.ValPubkey.Type, val.ValPubkey.Bytes)
+		if err != nil {
+			log.Errorf("failed to convert cosmos pubkey, key type = %s, byte hex = %s",
+				val.ValPubkey.Type, hex.EncodeToString(val.ValPubkey.Bytes))
+		}
+		keys = append(keys, key)
+	}
+
+	return keys
 }

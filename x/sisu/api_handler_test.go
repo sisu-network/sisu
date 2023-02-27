@@ -9,7 +9,6 @@ import (
 
 	"github.com/sisu-network/sisu/x/sisu/background"
 
-	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	ethTypes "github.com/ethereum/go-ethereum/core/types"
@@ -48,18 +47,13 @@ func mockForApiHandlerTest() (sdk.Context, background.ManagerContainer) {
 	txSubmit := &components.MockTxSubmit{}
 	txTracker := &MockTxTracker{}
 
-	partyManager := &MockPartyManager{}
-	partyManager.GetActivePartyPubkeysFunc = func() []ctypes.PubKey {
-		return []ctypes.PubKey{}
-	}
-
 	dheartClient := &external.MockDheartClient{}
 	deyesClient := &external.MockDeyesClient{}
 	appKeys := components.NewMockAppKeys()
 
 	bridgeManager := chains.NewBridgeManager("signer", k, deyesClient, config.Config{})
 
-	mc := background.MockManagerContainer(k, pmm, globalData, partyManager, dheartClient, txSubmit, appKeys, ctx,
+	mc := background.MockManagerContainer(k, pmm, globalData, dheartClient, txSubmit, appKeys, ctx,
 		txTracker, bridgeManager, deyesClient)
 	return ctx, mc
 }

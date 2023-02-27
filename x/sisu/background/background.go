@@ -34,7 +34,6 @@ type defaultBackground struct {
 	valsManager      components.ValidatorManager
 	globalData       components.GlobalData
 	dheartCli        external.DheartClient
-	partyManager     components.PartyManager
 	stopCh           chan bool
 	bridgeManager    chains.BridgeManager
 
@@ -52,7 +51,6 @@ func NewBackground(
 	valsManager components.ValidatorManager,
 	globalData components.GlobalData,
 	dheartCli external.DheartClient,
-	partyManager components.PartyManager,
 	bridgeManager chains.BridgeManager,
 ) Background {
 	return &defaultBackground{
@@ -66,7 +64,6 @@ func NewBackground(
 		valsManager:      valsManager,
 		globalData:       globalData,
 		dheartCli:        dheartCli,
-		partyManager:     partyManager,
 		bridgeManager:    bridgeManager,
 		voteQ:            make(map[int64][]*types.TxOutMsg),
 		lock:             &sync.RWMutex{},
@@ -228,7 +225,7 @@ func (b *defaultBackground) processTxOut(ctx sdk.Context, params *types.Params) 
 
 		txOut := queue[0]
 		if !b.globalData.IsCatchingUp() {
-			SignTxOut(ctx, b.dheartCli, b.partyManager, txOut)
+			SignTxOut(ctx, b.dheartCli, b.valsManager, txOut)
 		}
 	}
 }
@@ -343,7 +340,7 @@ func (b *defaultBackground) processRetryKeysign(ctx sdk.Context) {
 	// TODO: Filter all TxOut that has been timed out.
 	if !b.globalData.IsCatchingUp() {
 		for _, txOut := range q {
-			SignTxOut(ctx, b.dheartCli, b.partyManager, txOut)
+			SignTxOut(ctx, b.dheartCli, b.valsManager, txOut)
 		}
 	}
 }

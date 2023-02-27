@@ -4,8 +4,8 @@ import (
 	"encoding/hex"
 	"errors"
 
-	"github.com/cosmos/cosmos-sdk/client/rpc"
 	keyring "github.com/cosmos/cosmos-sdk/crypto/keyring"
+	sdkcrypto "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/types"
@@ -90,7 +90,6 @@ type MockGlobalData struct {
 	UpdateCatchingUpFunc    func() bool
 	UpdateValidatorSetsFunc func()
 	IsCatchingUpFunc        func() bool
-	GetValidatorSetFunc     func() []rpc.ValidatorOutput
 	GetMyPubkeyFunc         func() tcrypto.PubKey
 	SetReadOnlyContextFunc  func(ctx sdk.Context)
 	GetReadOnlyContextFunc  func() sdk.Context
@@ -130,14 +129,6 @@ func (m *MockGlobalData) IsCatchingUp() bool {
 	}
 
 	return false
-}
-
-func (m *MockGlobalData) GetValidatorSet() []rpc.ValidatorOutput {
-	if m.GetValidatorSetFunc != nil {
-		return m.GetValidatorSetFunc()
-	}
-
-	return nil
 }
 
 func (m *MockGlobalData) SetReadOnlyContext(ctx sdk.Context) {
@@ -222,6 +213,7 @@ type MockValidatorManager struct {
 	GetValidatorLengthFunc   func(ctx sdk.Context) int
 	GetValidatorsFunc        func(ctx sdk.Context) []*types.Node
 	GetAssignedValidatorFunc func(ctx sdk.Context, hash string) (*types.Node, error)
+	GetValidatorPubkeysFunc  func(ctx sdk.Context) []sdkcrypto.PubKey
 }
 
 func (m *MockValidatorManager) AddValidator(ctx sdk.Context, node *types.Node) {
@@ -260,4 +252,12 @@ func (m *MockValidatorManager) GetAssignedValidator(ctx sdk.Context, hash string
 	}
 
 	return nil, errors.New("invalid function")
+}
+
+func (m *MockValidatorManager) GetValidatorPubkeys(ctx sdk.Context) []sdkcrypto.PubKey {
+	if m.GetValidatorPubkeysFunc != nil {
+		return m.GetValidatorPubkeysFunc(ctx)
+	}
+
+	return nil
 }

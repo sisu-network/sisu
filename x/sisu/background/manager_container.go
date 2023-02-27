@@ -13,7 +13,6 @@ import (
 
 type ManagerContainer interface {
 	PostedMessageManager() components.PostedMessageManager
-	PartyManager() components.PartyManager
 	DheartClient() external.DheartClient
 	DeyesClient() external.DeyesClient
 	GlobalData() components.GlobalData
@@ -33,7 +32,6 @@ type DefaultManagerContainer struct {
 	readOnlyContext atomic.Value
 
 	pmm           components.PostedMessageManager
-	partyManager  components.PartyManager
 	dheartClient  external.DheartClient
 	deyesClient   external.DeyesClient
 	globalData    components.GlobalData
@@ -49,7 +47,7 @@ type DefaultManagerContainer struct {
 	privateDb     keeper.PrivateDb
 }
 
-func NewManagerContainer(pmm components.PostedMessageManager, partyManager components.PartyManager,
+func NewManagerContainer(pmm components.PostedMessageManager,
 	dheartClient external.DheartClient, deyesClient external.DeyesClient,
 	globalData components.GlobalData, txSubmit components.TxSubmit, cfg config.Config,
 	appKeys components.AppKeys, txOutProducer chains.TxOutputProducer, txTracker components.TxTracker,
@@ -57,7 +55,6 @@ func NewManagerContainer(pmm components.PostedMessageManager, partyManager compo
 	bridgeManager chains.BridgeManager, privateDb keeper.PrivateDb) ManagerContainer {
 	return &DefaultManagerContainer{
 		pmm:           pmm,
-		partyManager:  partyManager,
 		dheartClient:  dheartClient,
 		deyesClient:   deyesClient,
 		globalData:    globalData,
@@ -76,10 +73,6 @@ func NewManagerContainer(pmm components.PostedMessageManager, partyManager compo
 
 func (mc *DefaultManagerContainer) PostedMessageManager() components.PostedMessageManager {
 	return mc.pmm
-}
-
-func (mc *DefaultManagerContainer) PartyManager() components.PartyManager {
-	return mc.partyManager
 }
 
 func (mc *DefaultManagerContainer) DheartClient() external.DheartClient {

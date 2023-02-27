@@ -31,8 +31,6 @@ func MockManagerContainer(args ...interface{}) ManagerContainer {
 			mc.txSubmit = t
 		case components.AppKeys:
 			mc.appKeys = t
-		case components.PartyManager:
-			mc.partyManager = t
 		case components.TxTracker:
 			mc.txTracker = t
 		case keeper.Keeper:

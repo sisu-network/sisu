@@ -1,7 +1,6 @@
 package sisu
 
 import (
-	ctypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/sisu-network/sisu/x/sisu/background"
 	"github.com/sisu-network/sisu/x/sisu/chains"
@@ -16,7 +15,6 @@ func checkMock() {
 	var _ chains.TxOutputProducer = new(background.MockTxOutputProducer)
 	var _ components.TxTracker = new(MockTxTracker)
 	var _ components.PostedMessageManager = new(MockPostedMessageManager)
-	var _ components.PartyManager = new(MockPartyManager)
 }
 
 ///// TxTracker
@@ -71,20 +69,6 @@ func (m *MockPostedMessageManager) ShouldProcessMsg(ctx sdk.Context, msg sdk.Msg
 	}
 
 	return false, nil
-}
-
-///// PartyManager
-
-type MockPartyManager struct {
-	GetActivePartyPubkeysFunc func() []ctypes.PubKey
-}
-
-func (m *MockPartyManager) GetActivePartyPubkeys() []ctypes.PubKey {
-	if m.GetActivePartyPubkeysFunc != nil {
-		return m.GetActivePartyPubkeysFunc()
-	}
-
-	return nil
 }
 
 ///// CardanoNode

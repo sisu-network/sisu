@@ -270,16 +270,15 @@ func New(
 	txTracker := components.NewTxTracker(cfg.Sisu.EmailAlert)
 
 	valsMgr := components.NewValidatorManager(app.k)
-	partyManager := components.NewPartyManager(app.globalData)
 	bridgeManager := chains.NewBridgeManager(app.appKeys.GetSignerAddress().String(), app.k, deyesClient, cfg)
 
 	txOutProducer := chains.NewTxOutputProducer(app.appKeys, app.k, bridgeManager, txTracker)
 	bg := background.NewBackground(app.k, txOutProducer, app.txSubmitter,
-		app.appKeys, privateDb, valsMgr, app.globalData, dheartClient, partyManager, bridgeManager)
+		app.appKeys, privateDb, valsMgr, app.globalData, dheartClient, bridgeManager)
 	bg.Start()
 
 	mc := background.NewManagerContainer(components.NewPostedMessageManager(app.k),
-		partyManager, dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg,
+		dheartClient, deyesClient, app.globalData, app.txSubmitter, cfg,
 		app.appKeys, txOutProducer, txTracker, app.k, valsMgr, bg, bridgeManager, privateDb)
 
 	apiHandler := tss.NewApiHandler(privateDb, mc)

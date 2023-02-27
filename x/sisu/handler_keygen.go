@@ -48,21 +48,21 @@ func (h *HandlerKeygen) doKeygen(ctx sdk.Context, signerMsg *types.KeygenWithSig
 	}
 
 	// Invoke TSS keygen in dheart
-	h.doTss(msg, ctx.BlockHeight())
+	h.doTss(ctx, msg)
 
 	return []byte{}, nil
 }
 
-func (h *HandlerKeygen) doTss(msg *types.Keygen, blockHeight int64) {
+func (h *HandlerKeygen) doTss(ctx sdk.Context, msg *types.Keygen) {
 	log.Info("doing keygen tss...")
 
-	partyManager := h.mc.PartyManager()
+	valsMag := h.mc.ValidatorManager()
 	dheartClient := h.mc.DheartClient()
 
 	// Send a signal to Dheart to start keygen process.
 	log.Info("Sending keygen request to Dheart. KeyType =", msg.KeyType)
-	pubKeys := partyManager.GetActivePartyPubkeys()
-	keygenId := helper.GetKeygenId(msg.KeyType, blockHeight, pubKeys)
+	pubKeys := valsMag.GetValidatorPubkeys(ctx)
+	keygenId := helper.GetKeygenId(msg.KeyType, ctx.BlockHeight(), pubKeys)
 
 	err := dheartClient.KeyGen(keygenId, msg.KeyType, pubKeys)
 	if err != nil {

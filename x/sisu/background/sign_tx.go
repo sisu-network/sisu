@@ -22,8 +22,8 @@ import (
 )
 
 func SignTxOut(ctx sdk.Context, dheartClient external.DheartClient,
-	partyManager components.PartyManager, txOut *types.TxOut) {
-	pubKeys := partyManager.GetActivePartyPubkeys()
+	valsMag components.ValidatorManager, txOut *types.TxOut) {
+	pubKeys := valsMag.GetValidatorPubkeys(ctx)
 
 	if libchain.IsETHBasedChain(txOut.Content.OutChain) {
 		signEthTx(ctx, dheartClient, pubKeys, txOut)

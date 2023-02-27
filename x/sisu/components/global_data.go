@@ -31,7 +31,6 @@ type GlobalData interface {
 	UpdateValidatorSets()
 	IsCatchingUp() bool
 	GetMyPubkey() tcrypto.PubKey
-	GetValidatorSet() []rpc.ValidatorOutput
 	SetReadOnlyContext(ctx sdk.Context)
 	GetReadOnlyContext() sdk.Context
 	AppInitialized() bool
@@ -167,15 +166,6 @@ func (a *GlobalDataDefault) UpdateValidatorSets() {
 
 	// TODO: make this atomic
 	a.validatorSets = response
-}
-
-// Returns the latest validator set.
-func (a *GlobalDataDefault) GetValidatorSet() []rpc.ValidatorOutput {
-	a.lock.RLock()
-	defer a.lock.RUnlock()
-
-	copy := a.validatorSets.Validators
-	return copy
 }
 
 func (a *GlobalDataDefault) IsCatchingUp() bool {

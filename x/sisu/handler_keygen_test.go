@@ -21,14 +21,14 @@ func mockForHandlerKeygen() (sdk.Context, background.ManagerContainer) {
 	globalData := &components.MockGlobalData{}
 	pmm := components.NewPostedMessageManager(k)
 
-	partyManager := &MockPartyManager{}
-	partyManager.GetActivePartyPubkeysFunc = func() []ctypes.PubKey {
+	valsMag := &components.MockValidatorManager{}
+	valsMag.GetValidatorPubkeysFunc = func(ctx sdk.Context) []ctypes.PubKey {
 		return []ctypes.PubKey{}
 	}
 
 	dheartClient := &external.MockDheartClient{}
 
-	mc := background.MockManagerContainer(k, pmm, globalData, partyManager, dheartClient)
+	mc := background.MockManagerContainer(k, pmm, globalData, valsMag, dheartClient)
 
 	return ctx, mc
 }
