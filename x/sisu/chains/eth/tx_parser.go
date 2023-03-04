@@ -151,6 +151,7 @@ func parseTransferOut(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.Tra
 			Amount:      amount.String(),
 			ToChain:     to,
 			ToRecipient: recipient,
+			RetryNum:    0,
 		},
 	}, nil
 }

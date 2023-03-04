@@ -21,19 +21,40 @@ func TestKeeper_SaveAndGetTxOut(t *testing.T) {
 			OutHash:  hash,
 			OutBytes: []byte("Hash"),
 		},
+		Input: &types.TxOutInput{
+			TransferUniqIds: []string{"uniqid"},
+		},
 	}
 
-	keeper.SetFinalizedTxOut(ctx, original.GetId(), original)
-	txOut := keeper.GetFinalizedTxOut(ctx, types.GetTxOutIdFromChainAndHash(chain, hash))
+	keeper.SetFinalizedTxOut(ctx, original)
+	txOut := keeper.GetFinalizedTxOut(ctx, original.GetId())
 	require.Equal(t, original, txOut)
 
 	// Any chain in OutChain, BlockHeight, OutBytes would not retrieve the txOut.
-	txOut = keeper.GetFinalizedTxOut(ctx, types.GetTxOutIdFromChainAndHash("eth", hash))
+	ethTxOut := &types.TxOut{
+		Content: &types.TxOutContent{
+			OutChain: "eth",
+			OutHash:  hash,
+			OutBytes: []byte("Hash"),
+		},
+		Input: &types.TxOutInput{
+			TransferUniqIds: []string{"uniqid"},
+		},
+	}
+	txOut = keeper.GetFinalizedTxOut(ctx, ethTxOut.GetId())
 	require.Nil(t, txOut)
 
-	txOut = keeper.GetFinalizedTxOut(ctx,
-		types.GetTxOutIdFromChainAndHash(chain, utils.RandomHeximalString(48)),
-	)
+	randomTxOut := &types.TxOut{
+		Content: &types.TxOutContent{
+			OutChain: chain,
+			OutHash:  utils.RandomHeximalString(48),
+			OutBytes: []byte("Hash"),
+		},
+		Input: &types.TxOutInput{
+			TransferUniqIds: []string{"uniqid"},
+		},
+	}
+	txOut = keeper.GetFinalizedTxOut(ctx, randomTxOut.GetId())
 	require.Nil(t, txOut)
 }
 

@@ -2,7 +2,6 @@ package components
 
 import (
 	"fmt"
-	"strconv"
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,7 +15,7 @@ type ValidatorManager interface {
 	IsValidator(ctx sdk.Context, signer string) bool
 	GetValidatorLength(ctx sdk.Context) int
 	GetValidators(ctx sdk.Context) []*types.Node
-	GetAssignedValidator(ctx sdk.Context, hash string) (*types.Node, error)
+	GetAssignedValidator(ctx sdk.Context, uniqId string) (*types.Node, error)
 }
 
 type DefaultValidatorManager struct {
@@ -97,19 +96,13 @@ func (m *DefaultValidatorManager) GetValidators(ctx sdk.Context) []*types.Node {
 	return arr
 }
 
-func (m *DefaultValidatorManager) GetAssignedValidator(ctx sdk.Context, hash string) (*types.Node, error) {
-	vals := m.GetValidators(ctx)
-
-	counter := m.keeper.GetTransferCounter(ctx, hash)
-	if counter == -1 {
-		return nil, fmt.Errorf("Cannot get transfer counter, hash = %s", hash)
+func (m *DefaultValidatorManager) GetAssignedValidator(ctx sdk.Context, uniqId string) (*types.Node, error) {
+	transferId, retryNum := types.GetIdFromUniqId(uniqId)
+	threshold := int(m.keeper.GetParams(ctx).GetMaxRejectedTransferRetry())
+	if retryNum%threshold == 0 && retryNum > 0 {
+		return nil, fmt.Errorf("Exceed the maximum number of retry rejected transfer, id = %s", transferId)
 	}
 
-	if counter >= int(m.keeper.GetParams(ctx).GetMaxRejectedTransferRetry()) {
-		return nil, fmt.Errorf("Exceed the maximum number of retry rejected transfer, hash = %s", hash)
-	}
-
-	hash += strconv.Itoa(counter)
-	sorted := utils.GetSortedValidators(hash, vals)
+	sorted := utils.GetSortedValidators(uniqId, m.GetValidators(ctx))
 	return sorted[0], nil
 }

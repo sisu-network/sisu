@@ -10,7 +10,6 @@ message TransferFailureMsg {
 
 message TransferFailure {
   string chain = 1;
-  repeated string ids = 2;
+  repeated string uniqIds = 2;
   string message = 3;
-  int64 retry_num = 4;
 }

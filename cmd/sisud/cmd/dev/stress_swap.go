@@ -44,7 +44,7 @@ var (
 		"polygon-testnet__fantom-testnet",
 		"polygon-testnet__binance-testnet",
 		"polygon-testnet__goerli-testnet",
-		"polygon-testnet__polygon-testnet",
+		"polygon-testnet__avaxc-testnet",
 
 		// "avaxc-testnet__polygon-testnet",
 		// "binance-testnet__polygon-testnet",

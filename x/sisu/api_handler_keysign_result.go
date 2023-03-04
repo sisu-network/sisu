@@ -22,9 +22,7 @@ import (
 func (a *ApiHandler) processETHSigningResult(ctx sdk.Context, result *dhtypes.KeysignResult,
 	signMsg *dhtypes.KeysignMessage, index int) error {
 	// Find the tx in txout table
-	txOut := a.keeper.GetFinalizedTxOut(ctx,
-		types.GetTxOutIdFromChainAndHash(signMsg.OutChain, signMsg.OutHash),
-	)
+	txOut := a.keeper.GetFinalizedTxOutFromHash(ctx, signMsg.OutChain, signMsg.OutHash)
 	if txOut == nil {
 		return fmt.Errorf("Cannot find tx out with hash %s", signMsg.OutHash)
 	}
@@ -70,9 +68,7 @@ func (a *ApiHandler) processETHSigningResult(ctx sdk.Context, result *dhtypes.Ke
 func (a *ApiHandler) processCardanoSigningResult(ctx sdk.Context, result *dhtypes.KeysignResult,
 	signMsg *dhtypes.KeysignMessage, index int) error {
 	log.Info("Processing Cardano signing result ...")
-	txOut := a.keeper.GetFinalizedTxOut(ctx,
-		types.GetTxOutIdFromChainAndHash(signMsg.OutChain, signMsg.OutHash),
-	)
+	txOut := a.keeper.GetFinalizedTxOutFromHash(ctx, signMsg.OutChain, signMsg.OutHash)
 	if txOut == nil {
 		err := fmt.Errorf("cannot find tx out with hash %s", signMsg.OutHash)
 		log.Error(err)

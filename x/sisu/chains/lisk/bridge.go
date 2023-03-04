@@ -121,14 +121,14 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 	}
 
 	outMsg := &types.TxOut{
-		TxType: types.TxOutType_TRANSFER_OUT,
+		TxType: types.TxOutType_TRANSFER,
 		Content: &types.TxOutContent{
 			OutChain: b.chain,
 			OutHash:  hash,
 			OutBytes: bz,
 		},
 		Input: &types.TxOutInput{
-			TransferIds: []string{transfer.Id},
+			TransferUniqIds: []string{transfer.GetUniqId()},
 		},
 	}
 

@@ -182,7 +182,7 @@ func (a *ApiHandler) getTxOutFromSignedHash(chain, signedHash string) *types.TxO
 	}
 
 	ctx := a.globalData.GetReadOnlyContext()
-	txOut := a.keeper.GetFinalizedTxOut(ctx, types.GetTxOutIdFromChainAndHash(chain, txOutSig.HashNoSig))
+	txOut := a.keeper.GetFinalizedTxOutFromHash(ctx, chain, txOutSig.HashNoSig)
 	if txOut == nil {
 		log.Verbose("cannot find txOut with hash (with no sig): ", txOutSig.HashNoSig)
 	}

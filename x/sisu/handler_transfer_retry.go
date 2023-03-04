@@ -51,33 +51,24 @@ func (h *HandlerTransferRetry) DeliverMsg(
 }
 
 func (h *HandlerTransferRetry) doRetryTransfer(ctx sdk.Context, msg *types.TransferRetryMsg) {
-	retryNum := h.keeper.GetFailedTransferRetryNum(ctx, msg.Data.TransferId)
-	if retryNum == -1 {
-		log.Errorf("The transfer isn't failed, transferId = %s", msg.Data.TransferId)
+	if !h.keeper.HasFailedTransfer(ctx, msg.Data.UniqId) {
+		log.Error("The transfer is not failed, transferUniqIds = ", msg.Data.UniqId)
 		return
 	}
 
-	if retryNum != msg.Data.Index {
-		log.Errorf(
-			"Mismatch between retry number of failed transfer and index of retried transfer, "+
-				"transferId = %s, retryNum = %d, index = %d",
-			msg.Data.TransferId, retryNum, msg.Data.Index)
-		return
-	}
-
-	transfer := h.keeper.GetTransfer(ctx, msg.Data.TransferId)
+	transferId, _ := types.GetIdFromUniqId(msg.Data.UniqId)
+	transfer := h.keeper.GetTransfer(ctx, transferId)
 	if transfer == nil {
-		log.Error("Cannot get the transfer, transferId = ", msg.Data.TransferId)
+		log.Error("Cannot get the transfer, transferId = ", transferId)
 		return
 	}
 
-	h.saveTransfers(ctx, transfer)
+	h.saveTransfer(ctx, transfer)
 }
 
-func (h *HandlerTransferRetry) saveTransfers(ctx sdk.Context, transfer *types.TransferDetails) {
+func (h *HandlerTransferRetry) saveTransfer(ctx sdk.Context, transfer *types.TransferDetails) {
 	queue := h.keeper.GetTransferQueue(ctx, transfer.ToChain)
 	queue = append(queue, transfer)
 
-	h.keeper.SetTransferCounter(ctx, transfer.Id, 0)
 	h.keeper.SetTransferQueue(ctx, transfer.ToChain, queue)
 }
