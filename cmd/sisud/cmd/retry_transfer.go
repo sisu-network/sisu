@@ -18,19 +18,18 @@ func RetryTransferCmd() *cobra.Command {
 		Use: "retry-transfer",
 		Long: `Retry a failed transfer.
 Usage:
-retry-transfer --transferId [transferId] --index [index]
+retry-transfer --transferId [transferId]
 
 Example:
-./sisu retry-transfer --index 0
+./sisu retry-transfer
 --transferId ganache1__0xe36b3b53f67eea926a629963e1e74bf14eb3bd6cb8f9c01f03453496364db8b4
 --keyring-backend test --from node0 --chain-id=sisu-local
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			transferId, _ := cmd.Flags().GetString(flags.TransferId)
-			index, _ := cmd.Flags().GetInt64(flags.Index)
 
 			if len(transferId) == 0 {
-				return fmt.Errorf("invalid transfer id")
+				return fmt.Errorf("invalid transfer uniq id")
 			}
 
 			clientCtx, err := client.GetClientTxContext(cmd)
@@ -38,7 +37,7 @@ Example:
 				return err
 			}
 
-			msg := types.NewTransferRetryMsg(clientCtx.GetFromAddress().String(), transferId, index)
+			msg := types.NewTransferRetryMsg(clientCtx.GetFromAddress().String(), transferId)
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}
@@ -49,8 +48,6 @@ Example:
 
 	sdkflags.AddTxFlagsToCmd(cmd)
 	cmd.Flags().String(sdkflags.FlagChainID, "", "name of the sisu chain")
-	cmd.Flags().String(flags.TransferId, "", "the failed transfer id")
-	cmd.Flags().Int64(flags.Index, 0, "index of the command. This index is used to differentiate "+
-		"calling this contract multiple times")
+	cmd.Flags().String(flags.TransferId, "", "the failed transfer unique id")
 	return cmd
 }

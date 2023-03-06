@@ -9,6 +9,5 @@ message TransferRetryMsg {
 }
 
 message TransferRetry {
-  string transfer_id = 1;
-  int64 index = 2;
+  string transferRetryId = 1;
 }

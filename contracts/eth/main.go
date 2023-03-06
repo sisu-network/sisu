@@ -3,17 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 )
 
-func compileContract(name string) {
-	name = strings.ToLower(name)
-
+func compileContract(name, contract string) {
 	// solc --abi name.sol --overwrite -o name
-	_, err := exec.Command(
+	output, err := exec.Command(
 		"solc",
 		"--abi",
 		fmt.Sprintf("%s.sol", name),
@@ -22,56 +18,38 @@ func compileContract(name string) {
 		fmt.Sprintf("%s", name),
 	).Output()
 	if err != nil {
-		panic(err)
+		panic(string(output))
 	}
 
 	// solc --bin name.sol --overwrite -o name
-	_, err = exec.Command(
+	output, err = exec.Command(
 		"solc",
-		"--bin",
-		fmt.Sprintf("%s.sol", name),
+		"--bin", fmt.Sprintf("%s.sol", name),
 		"--overwrite",
-		"-o",
-		fmt.Sprintf("%s", strings.ToLower(name)),
+		"-o", name,
 	).Output()
 	if err != nil {
-		panic(err)
+		panic(string(output))
 	}
 
-	// abigen --bin=name/name.bin --abi=name/name.abi --pkg=name --out=name/name.go
-	_, err = exec.Command(
+	// abigen --bin=name/contract.bin --abi=name/contract.abi --pkg=name --out=name/name.go
+	output, err = exec.Command(
 		"abigen",
-		fmt.Sprintf("--bin=%s/%s.bin", name, name),
-		fmt.Sprintf("--abi=%s/%s.abi", name, name),
+		fmt.Sprintf("--bin=%s/%s.bin", name, contract),
+		fmt.Sprintf("--abi=%s/%s.abi", name, contract),
 		fmt.Sprintf("--pkg=%s", name),
-		fmt.Sprintf("--out=%s/%s.go", strings.ToLower(name), strings.ToLower(name)),
+		fmt.Sprintf("--out=%s/%s.go", name, strings.ToLower(name)),
 	).Output()
 	if err != nil {
-		panic(err)
+		panic(string(output))
 	}
 }
 
 // Generates contracts
 func main() {
-	target := flag.String("target", "", "Name of the target contract. Use empty string to generate all contract data.")
+	name := flag.String("name", "", "Name of the solidity file (without the extension).")
+	contract := flag.String("contract", "", "Name of contract in solidity file.")
 
 	flag.Parse()
-
-	filepath.Walk(".", func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() {
-			return nil
-		}
-
-		if filepath.Ext(path) != ".sol" {
-			return nil
-		}
-
-		parts := strings.Split(path, ".")
-
-		if *target == "" || *target == parts[0] {
-			compileContract(parts[0])
-		}
-
-		return nil
-	})
+	compileContract(*name, *contract)
 }

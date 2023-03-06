@@ -4,7 +4,7 @@ package types;
 option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 
 enum TxOutType {
-  TRANSFER_OUT = 0;
+  TRANSFER = 0;
 }
 
 message TxOutMsg {
@@ -27,7 +27,7 @@ message TxOutContent {
 
 message TxOutInput {
   // For transferOut
-  repeated string transferIds = 1;
+  repeated string transferRetryIds = 1;
   string nativeTokenPrice = 2;
   repeated string tokenPrices = 3;
   EthData ethData = 4; // Optional data for ETH transaction.

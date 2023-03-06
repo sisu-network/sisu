@@ -52,13 +52,13 @@ func TestTxOut_MultipleSigners(t *testing.T) {
 	txOutMsg1 := &types.TxOutMsg{
 		Signer: "signer1",
 		Data: &types.TxOut{
-			TxType: types.TxOutType_TRANSFER_OUT,
+			TxType: types.TxOutType_TRANSFER,
 			Content: &types.TxOutContent{
 				OutChain: destChain,
 				OutBytes: []byte{},
 			},
 			Input: &types.TxOutInput{
-				TransferIds: []string{fmt.Sprintf("%s__%s", "ganache1", "hash1")},
+				TransferRetryIds: []string{fmt.Sprintf("%s__%s__1", "ganache1", "hash1")},
 			},
 		},
 	}

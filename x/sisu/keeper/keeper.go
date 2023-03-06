@@ -1,6 +1,8 @@
 package keeper
 
 import (
+	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/store/prefix"
 	cstypes "github.com/cosmos/cosmos-sdk/store/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -104,6 +106,7 @@ type Keeper interface {
 
 	// Transfer
 	AddTransfers(ctx sdk.Context, transfers []*types.TransferDetails)
+	IncTransferRetryNum(ctx sdk.Context, transferId string)
 	GetTransfer(ctx sdk.Context, id string) *types.TransferDetails
 	GetTransfers(ctx sdk.Context, ids []string) []*types.TransferDetails
 
@@ -111,15 +114,10 @@ type Keeper interface {
 	SetTransferQueue(ctx sdk.Context, chain string, transfers []*types.TransferDetails)
 	GetTransferQueue(ctx sdk.Context, chain string) []*types.TransferDetails
 
-	// Transfer Counter
-	SetTransferCounter(ctx sdk.Context, id string, counter int)
-	IncTransferCounter(ctx sdk.Context, id string)
-	GetTransferCounter(ctx sdk.Context, id string) int
-
 	// Failed Transfer
 	AddFailedTransfer(ctx sdk.Context, transferId string)
 	RemoveFailedTransfer(ctx sdk.Context, transferId string)
-	GetFailedTransferRetryNum(ctx sdk.Context, transferId string) int64
+	HasFailedTransfer(ctx sdk.Context, transferId string) bool
 
 	// TxOutQueue
 	SetTxOutQueue(ctx sdk.Context, chain string, txOuts []*types.TxOut)
@@ -130,17 +128,17 @@ type Keeper interface {
 	GetBlockHeight(ctx sdk.Context, chain string) *types.BlockHeight
 
 	// Vote Result
-	AddVoteResult(ctx sdk.Context, key string, signer string, result types.VoteResult)
-	GetVoteResults(ctx sdk.Context, key string) map[string]types.VoteResult
+	AddVoteResult(ctx sdk.Context, txOutId string, signer string, result types.VoteResult)
+	GetVoteResults(ctx sdk.Context, txOutId string) map[string]types.VoteResult
 
 	// Proposed TxOut
-	AddProposedTxOut(ctx sdk.Context, signer string, msg *types.TxOut)
-	GetProposedTxOut(ctx sdk.Context, id string, signer string) *types.TxOut
-	GetProposedTxOutCount(ctx sdk.Context, id string) int
+	AddProposedTxOut(ctx sdk.Context, msg *types.TxOut)
+	GetProposedTxOut(ctx sdk.Context, id string) *types.TxOut
 
 	// Finalized TxOut
-	SetFinalizedTxOut(ctx sdk.Context, id string, txOut *types.TxOut)
+	SetFinalizedTxOut(ctx sdk.Context, txOut *types.TxOut)
 	GetFinalizedTxOut(ctx sdk.Context, id string) *types.TxOut
+	GetFinalizedTxOutFromHash(ctx sdk.Context, chain, hash string) *types.TxOut
 
 	// Expiration block
 	SetExpirationBlock(ctx sdk.Context, opType string, key string, height int64)
@@ -351,6 +349,17 @@ func (k *DefaultKeeper) AddTransfers(ctx sdk.Context, transfers []*types.Transfe
 	addTransfers(store, transfers)
 }
 
+func (k *DefaultKeeper) IncTransferRetryNum(ctx sdk.Context, transferId string) {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
+	transfers := getTransfers(store, []string{transferId})
+	if len(transfers) == 0 {
+		return
+	}
+
+	transfers[0].RetryNum++
+	addTransfers(store, transfers)
+}
+
 func (k *DefaultKeeper) GetTransfer(ctx sdk.Context, id string) *types.TransferDetails {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
 	transfers := getTransfers(store, []string{id})
@@ -364,22 +373,6 @@ func (k *DefaultKeeper) GetTransfer(ctx sdk.Context, id string) *types.TransferD
 func (k *DefaultKeeper) GetTransfers(ctx sdk.Context, ids []string) []*types.TransferDetails {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
 	return getTransfers(store, ids)
-}
-
-///// Transfer counter
-func (k *DefaultKeeper) SetTransferCounter(ctx sdk.Context, id string, counter int) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferCounter)
-	setTransferCounter(store, id, counter)
-}
-
-func (k *DefaultKeeper) IncTransferCounter(ctx sdk.Context, id string) {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferCounter)
-	incTransferCounter(store, id)
-}
-
-func (k *DefaultKeeper) GetTransferCounter(ctx sdk.Context, id string) int {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransferCounter)
-	return getTransferCounter(store, id)
 }
 
 ///// TxOutQueue
@@ -432,50 +425,50 @@ func (k *DefaultKeeper) RemoveFailedTransfer(ctx sdk.Context, transferId string)
 	removeFailedTransfer(store, transferId)
 }
 
-func (k *DefaultKeeper) GetFailedTransferRetryNum(ctx sdk.Context, transferId string) int64 {
+func (k *DefaultKeeper) HasFailedTransfer(ctx sdk.Context, transferId string) bool {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixFailedTransfer)
-	return getFailedTransferRetryNum(store, transferId)
+	return hasFailedTransfer(store, transferId)
 }
 
 ///// Vote Result
-func (k *DefaultKeeper) AddVoteResult(ctx sdk.Context, hash string, signer string,
+func (k *DefaultKeeper) AddVoteResult(ctx sdk.Context, txOutId string, signer string,
 	result types.VoteResult) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixVoteResult)
-	addVoteResult(store, hash, signer, result)
+	addVoteResult(store, txOutId, signer, result)
 }
 
-func (k *DefaultKeeper) GetVoteResults(ctx sdk.Context, hash string) map[string]types.VoteResult {
+func (k *DefaultKeeper) GetVoteResults(ctx sdk.Context, txOutId string) map[string]types.VoteResult {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixVoteResult)
-	return getVoteResults(store, hash)
+	return getVoteResults(store, txOutId)
 }
 
 ///// Proposed TxOut
 
-func (k *DefaultKeeper) AddProposedTxOut(ctx sdk.Context, signer string, txOut *types.TxOut) {
+func (k *DefaultKeeper) AddProposedTxOut(ctx sdk.Context, txOut *types.TxOut) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixProposedTxOut)
-	addProposedTxOut(store, signer, txOut)
+	addProposedTxOut(store, txOut)
 }
 
-func (k *DefaultKeeper) GetProposedTxOut(ctx sdk.Context, id string, signer string) *types.TxOut {
+func (k *DefaultKeeper) GetProposedTxOut(ctx sdk.Context, id string) *types.TxOut {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixProposedTxOut)
-	return getProposedTxOut(store, id, signer)
-}
-
-func (k *DefaultKeeper) GetProposedTxOutCount(ctx sdk.Context, id string) int {
-	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixProposedTxOut)
-	return getProposedTxOutCount(store, id)
+	return getProposedTxOut(store, id)
 }
 
 ///// Finalized TxOut
-func (k *DefaultKeeper) SetFinalizedTxOut(ctx sdk.Context, id string, txOut *types.TxOut) {
+func (k *DefaultKeeper) SetFinalizedTxOut(ctx sdk.Context, txOut *types.TxOut) {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixFinalizedTxOut)
+	currentTxOut := k.GetFinalizedTxOutFromHash(ctx, txOut.Content.OutChain, txOut.Content.OutHash)
+	if currentTxOut != nil {
+		store.Delete([]byte(currentTxOut.GetId()))
+	}
+
 	bz, err := txOut.Marshal()
 	if err != nil {
 		log.Errorf("Failed to marshal txout, err = %s", err)
 		return
 	}
 
-	setKeyValue(store, []byte(id), bz)
+	setKeyValue(store, []byte(txOut.GetId()), bz)
 }
 
 func (k *DefaultKeeper) GetFinalizedTxOut(ctx sdk.Context, id string) *types.TxOut {
@@ -494,6 +487,31 @@ func (k *DefaultKeeper) GetFinalizedTxOut(ctx sdk.Context, id string) *types.TxO
 	}
 
 	return txOut
+}
+
+func (k *DefaultKeeper) GetFinalizedTxOutFromHash(ctx sdk.Context, chain, hash string) *types.TxOut {
+	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixFinalizedTxOut)
+
+	begin := []byte(fmt.Sprintf("%s__%s__", chain, hash))
+	end := []byte(fmt.Sprintf("%s__%s__~", chain, hash))
+
+	counter := 0
+	var id []byte
+	for iter := store.Iterator(begin, end); iter.Valid(); iter.Next() {
+		counter++
+		id = iter.Key()
+	}
+
+	if counter == 0 {
+		return nil
+	}
+
+	if counter > 1 {
+		log.Errorf("Have %d txouts with outchain = %s, outhash = %s", counter, chain, hash)
+		return nil
+	}
+
+	return k.GetFinalizedTxOut(ctx, string(id))
 }
 
 ///// Expiration block

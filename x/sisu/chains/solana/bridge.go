@@ -71,7 +71,7 @@ func (b *defaultBridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Tra
 		tokens = append(tokens, token)
 		recipients = append(recipients, transfer.ToRecipient)
 		amounts = append(amounts, amount)
-		inHashes = append(inHashes, transfer.Id)
+		inHashes = append(inHashes, transfer.GetRetryId())
 	}
 
 	responseTx, err := b.buildTransferInResponse(ctx, tokens, recipients, amounts)
@@ -81,14 +81,14 @@ func (b *defaultBridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Tra
 	}
 
 	outMsg := &types.TxOut{
-		TxType: types.TxOutType_TRANSFER_OUT,
+		TxType: types.TxOutType_TRANSFER,
 		Content: &types.TxOutContent{
 			OutChain: b.chain,
 			OutHash:  utils.KeccakHash32(string(responseTx.RawBytes)),
 			OutBytes: responseTx.RawBytes,
 		},
 		Input: &types.TxOutInput{
-			TransferIds: inHashes,
+			TransferRetryIds: inHashes,
 		},
 	}
 

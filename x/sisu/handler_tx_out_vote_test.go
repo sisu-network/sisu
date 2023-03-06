@@ -50,18 +50,18 @@ func TestHandlerTxOutVote(t *testing.T) {
 		proposedTxOut := &types.TxOutMsg{
 			Signer: "signer1",
 			Data: &types.TxOut{
-				TxType: types.TxOutType_TRANSFER_OUT,
+				TxType: types.TxOutType_TRANSFER,
 				Content: &types.TxOutContent{
 					OutChain: toChain,
 					OutBytes: []byte{0x00},
 					OutHash:  outHash,
 				},
 				Input: &types.TxOutInput{
-					TransferIds: []string{fmt.Sprintf("%s__%s", "ganache1", "hash1")},
+					TransferRetryIds: []string{fmt.Sprintf("%s__%s___1", "ganache1", "hash1")},
 				},
 			},
 		}
-		k.AddProposedTxOut(ctx, "signer1", proposedTxOut.Data)
+		k.AddProposedTxOut(ctx, proposedTxOut.Data)
 
 		k.AddTransfers(ctx, transfers)
 		k.SetTransferQueue(ctx, "ganache2", transfers)
@@ -79,13 +79,13 @@ func TestHandlerTxOutVote(t *testing.T) {
 
 		// The TxOut is not processed yet. It needs second vote
 		h.DeliverMsg(ctx, msg1)
-		txOut := k.GetFinalizedTxOut(ctx, types.GetTxOutIdFromChainAndHash(toChain, outHash))
+		txOut := k.GetFinalizedTxOut(ctx, proposedTxOut.Data.GetId())
 		require.Nil(t, txOut)
 
 		msg2 := *msg1
 		msg2.Signer = "signer2"
 		h.DeliverMsg(ctx, &msg2)
-		txOut = k.GetFinalizedTxOut(ctx, types.GetTxOutIdFromChainAndHash(toChain, outHash))
+		txOut = k.GetFinalizedTxOut(ctx, proposedTxOut.Data.GetId())
 		require.NotNil(t, txOut)
 		require.Equal(t, proposedTxOut.Data.Input, txOut.Input)
 		require.Equal(t, proposedTxOut.Data.Content, txOut.Content)

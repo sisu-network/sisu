@@ -150,15 +150,14 @@ func (b *defaultBackground) processTransferQueue(ctx sdk.Context, chain string, 
 		return
 	}
 
-	// Check if the this node is the assigned node for the first transfer in the queue.
-	transfer := queue[0]
-	assignedNode, err := b.valsManager.GetAssignedValidator(ctx, transfer.Id)
+	// Check if the this node is the assigned node for the first Transfer in the queue.
+	firstTransfer := queue[0]
+	assignedNode, err := b.valsManager.GetAssignedValidator(ctx, firstTransfer.GetRetryId())
 	if err != nil {
 		msg := types.NewTransferFailureMsg(b.appKeys.GetSignerAddress().String(), &types.TransferFailure{
-			Ids:      []string{transfer.Id},
-			Chain:    chain,
-			Message:  err.Error(),
-			RetryNum: b.keeper.GetFailedTransferRetryNum(ctx, transfer.Id) + 1,
+			TransferRetryIds: []string{firstTransfer.GetRetryId()},
+			Chain:            chain,
+			Message:          err.Error(),
 		})
 		b.txSubmit.SubmitMessageAsync(msg)
 		return
@@ -168,7 +167,7 @@ func (b *defaultBackground) processTransferQueue(ctx sdk.Context, chain string, 
 		return
 	}
 
-	log.Verbosef("Assigned node for transfer %s is %s", transfer.Id, assignedNode.AccAddress)
+	log.Verbosef("Assigned node for transfer %s is %s", firstTransfer.Id, assignedNode.AccAddress)
 
 	batchSize := utils.MinInt(params.GetMaxTransferOutBatch(chain), len(queue))
 	batch := queue[0:batchSize]
@@ -177,12 +176,11 @@ func (b *defaultBackground) processTransferQueue(ctx sdk.Context, chain string, 
 	if err != nil {
 		log.Error("Failed to get txOut on chain ", chain, ", err = ", err)
 
-		ids := b.getTransferIds(batch)
+		retryIds := b.getTransferRetryIds(batch)
 		msg := types.NewTransferFailureMsg(b.appKeys.GetSignerAddress().String(), &types.TransferFailure{
-			Ids:      ids,
-			Chain:    chain,
-			Message:  err.Error(),
-			RetryNum: b.keeper.GetFailedTransferRetryNum(ctx, transfer.Id) + 1,
+			TransferRetryIds: retryIds,
+			Chain:            chain,
+			Message:          err.Error(),
 		})
 		b.txSubmit.SubmitMessageAsync(msg)
 
@@ -204,11 +202,11 @@ func (b *defaultBackground) processTransferQueue(ctx sdk.Context, chain string, 
 	}
 }
 
-func (b *defaultBackground) getTransferIds(batch []*types.TransferDetails) []string {
+func (b *defaultBackground) getTransferRetryIds(batch []*types.TransferDetails) []string {
 	ids := make([]string, len(batch))
 
 	for i, transfer := range batch {
-		ids[i] = transfer.Id
+		ids[i] = transfer.GetRetryId()
 	}
 
 	return ids
@@ -279,7 +277,7 @@ func (h *defaultBackground) validateTxOut(ctx sdk.Context, msg *types.TxOutMsg) 
 	// since confirmed transfers.
 	// TODO: if this is a transfer, make sure that the first transfer matches the first transfer in
 	// Transfer queue
-	transferIds := msg.Data.Input.TransferIds
+	transferIds := types.GetIdsFromRetryIds(msg.Data.Input.TransferRetryIds)
 	if len(transferIds) == 0 {
 		return false
 	}
@@ -310,7 +308,7 @@ func (h *defaultBackground) validateTxOut(ctx sdk.Context, msg *types.TxOutMsg) 
 		}
 	}
 
-	assignedNode, err := h.valsManager.GetAssignedValidator(ctx, queue[0].Id)
+	assignedNode, err := h.valsManager.GetAssignedValidator(ctx, queue[0].GetRetryId())
 	if err != nil || assignedNode.AccAddress != msg.Signer {
 		return false
 	}

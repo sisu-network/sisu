@@ -2,7 +2,6 @@ package keeper
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	cstypes "github.com/cosmos/cosmos-sdk/store/types"
@@ -65,10 +64,6 @@ func getGasPriceKey(chain, signer string) []byte {
 
 func getVoteResultKey(hash, signer string) []byte {
 	return []byte(fmt.Sprintf("%s__%s", hash, signer))
-}
-
-func getProposedTxOutKey(id, signer string) []byte {
-	return []byte(fmt.Sprintf("%s__%s", id, signer))
 }
 
 func getHoldProcessingKey(jobType, chain string) []byte {
@@ -717,52 +712,16 @@ func addFailedTransfer(failedStore, transferStore cstypes.KVStore, transferId st
 		return
 	}
 
-	n := getFailedTransferRetryNum(failedStore, transferId)
-	failedStore.Set([]byte(transferId), []byte(strconv.FormatInt(n+1, 10)))
+	failedStore.Set([]byte(transferId), []byte{0})
 }
 
 func removeFailedTransfer(store cstypes.KVStore, transferId string) {
 	store.Delete([]byte(transferId))
 }
 
-func getFailedTransferRetryNum(store cstypes.KVStore, transferId string) int64 {
+func hasFailedTransfer(store cstypes.KVStore, transferId string) bool {
 	bz := store.Get([]byte(transferId))
-	if bz == nil {
-		return -1
-	}
-	n, err := strconv.ParseInt(string(bz), 10, 0)
-	if err != nil {
-		log.Errorf("Cannot convert failed transfer value to int, transferId = %s err = %v",
-			transferId, err)
-		return -1
-	}
-
-	return n
-}
-
-///// Transfer Counter
-func setTransferCounter(store cstypes.KVStore, id string, counter int) {
-	store.Set([]byte(id), []byte(strconv.Itoa(counter)))
-}
-
-func incTransferCounter(store cstypes.KVStore, id string) {
-	counter := getTransferCounter(store, id)
-	store.Set([]byte(id), []byte(strconv.Itoa(counter+1)))
-}
-
-func getTransferCounter(store cstypes.KVStore, id string) int {
-	bz := store.Get([]byte(id))
-	if bz == nil {
-		return -1
-	}
-
-	counter, err := strconv.Atoi(string(bz))
-	if err != nil {
-		log.Errorf("Invalid transfer hash counter, raw counter = %s, err = %s", bz, err)
-		return -1
-	}
-
-	return counter
+	return bz != nil
 }
 
 ///// TxOutQueue
@@ -823,29 +782,29 @@ func getBlockHeight(store cstypes.KVStore, chain string) *types.BlockHeight {
 }
 
 ///// Vote Result
-func addVoteResult(store cstypes.KVStore, hash string, signer string, result types.VoteResult) {
+func addVoteResult(store cstypes.KVStore, txOutId string, signer string, result types.VoteResult) {
 	bz := utils.ToByte(result)
 	if bz == nil {
 		log.Errorf("addVoteResult: failed to convert result to byte")
 		return
 	}
 
-	key := getVoteResultKey(hash, signer)
+	key := getVoteResultKey(txOutId, signer)
 	store.Set(key, bz)
 }
 
-func getVoteResults(store cstypes.KVStore, hash string) map[string]types.VoteResult {
-	begin := []byte(fmt.Sprintf("%s__", hash))
-	end := []byte(fmt.Sprintf("%s__~", hash))
+func getVoteResults(store cstypes.KVStore, txOutId string) map[string]types.VoteResult {
+	begin := []byte(fmt.Sprintf("%s__", txOutId))
+	end := []byte(fmt.Sprintf("%s__~", txOutId))
 
 	ret := make(map[string]types.VoteResult)
 	for iter := store.Iterator(begin, end); iter.Valid(); iter.Next() {
 		key := string(iter.Key())
-		if len(key) <= len(hash)+2 {
+		if len(key) <= len(txOutId)+2 {
 			continue
 		}
 
-		signer := key[len(hash)+2:]
+		signer := key[len(txOutId)+2:]
 		bz := utils.FromByteToInt(iter.Value())
 		result := types.VoteResult(bz)
 		ret[signer] = result
@@ -856,8 +815,8 @@ func getVoteResults(store cstypes.KVStore, hash string) map[string]types.VoteRes
 
 ///// Proposed TxOut
 
-func addProposedTxOut(store cstypes.KVStore, signer string, txOut *types.TxOut) {
-	key := getProposedTxOutKey(txOut.GetId(), signer)
+func addProposedTxOut(store cstypes.KVStore, txOut *types.TxOut) {
+	key := []byte(txOut.GetId())
 	bz, err := txOut.Marshal()
 	if err != nil {
 		log.Errorf("addProposedTxOut: Failed to marshal proposed tx out")
@@ -866,8 +825,8 @@ func addProposedTxOut(store cstypes.KVStore, signer string, txOut *types.TxOut) 
 	store.Set(key, bz)
 }
 
-func getProposedTxOut(store cstypes.KVStore, id, signer string) *types.TxOut {
-	key := getProposedTxOutKey(id, signer)
+func getProposedTxOut(store cstypes.KVStore, id string) *types.TxOut {
+	key := []byte(id)
 	bz := store.Get(key)
 	if bz == nil {
 		return nil
@@ -881,18 +840,6 @@ func getProposedTxOut(store cstypes.KVStore, id, signer string) *types.TxOut {
 	}
 
 	return txOut
-}
-
-func getProposedTxOutCount(store cstypes.KVStore, id string) int {
-	begin := []byte(fmt.Sprintf("%s__", id))
-	end := []byte(fmt.Sprintf("%s__~", id))
-
-	count := 0
-	for iter := store.Iterator(begin, end); iter.Valid(); iter.Next() {
-		count++
-	}
-
-	return count
 }
 
 ///// State

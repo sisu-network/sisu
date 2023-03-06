@@ -68,14 +68,14 @@ func TestHandlerTxOutResult(t *testing.T) {
 		outChain := "ganache2"
 
 		txOut := &types.TxOut{
-			TxType: types.TxOutType_TRANSFER_OUT,
+			TxType: types.TxOutType_TRANSFER,
 			Content: &types.TxOutContent{
 				OutChain: outChain,
 				OutHash:  "TxOutHash",
 			},
 			Input: &types.TxOutInput{},
 		}
-		k.SetFinalizedTxOut(ctx, txOut.GetId(), txOut)
+		k.SetFinalizedTxOut(ctx, txOut)
 		k.SetTxOutQueue(ctx, outChain, []*types.TxOut{txOut})
 		privateDb.SetHoldProcessing(types.TransferHoldKey, outChain, true)
 
@@ -103,16 +103,16 @@ func TestHandlerTxOutResult(t *testing.T) {
 		outChain := "ganache2"
 
 		txOut := &types.TxOut{
-			TxType: types.TxOutType_TRANSFER_OUT,
+			TxType: types.TxOutType_TRANSFER,
 			Content: &types.TxOutContent{
 				OutChain: outChain,
 				OutHash:  "TxOutHash",
 			},
 			Input: &types.TxOutInput{
-				TransferIds: []string{transfers[0].Id, transfers[1].Id},
+				TransferRetryIds: []string{transfers[0].GetRetryId(), transfers[1].GetRetryId()},
 			},
 		}
-		k.SetFinalizedTxOut(ctx, txOut.GetId(), txOut)
+		k.SetFinalizedTxOut(ctx, txOut)
 		k.SetTxOutQueue(ctx, outChain, []*types.TxOut{txOut})
 		privateDb.SetHoldProcessing(types.TransferHoldKey, outChain, true)
 
