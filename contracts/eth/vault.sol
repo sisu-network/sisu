@@ -183,10 +183,7 @@ contract Vault {
     // Retry transfer fails.
     event Code502();
 
-    // TODO:
-    event remoteCalled(bytes32 id, uint256 callerChain, address caller, uint256 appChain,
-        address app, bytes message, uint256 nonce, uint256 callGasLimit);
-    // event remoteExecuting(uint256 id);
+    // remoteExecuted will be emitted if the execution is success on dst chain.
     event remoteExecuted(uint8 code, bytes exception);
 
     constructor() {
@@ -229,9 +226,7 @@ contract Vault {
     ////////////////////////////////////////////////////////////////
     // App Config
     ////////////////////////////////////////////////////////////////
-    /**
-     * @dev TODO
-     */
+
     function createApp(address app, address _admin, address[] calldata whitelist)
         onlyAdmin external
     {
@@ -514,14 +509,13 @@ contract Vault {
         balances[token][acc] += amount;
     }
 
-    // function getId(uint256 callerChain, address caller, uint256 appChain, address app, uint256 _nonce)
-    //     private pure returns (bytes32)
-    // {
-    //     return keccak256(abi.encode(callerChain, caller, appChain, app, _nonce));
-    // }
-
+    /**
+     * @dev Call to a remote contract in another chain with the given message. The contract must be
+     * a implementation of BaseContract. The user needs to determine gas limit of onReceive()
+     * function on the contract before submitting this method.
+     */
     function remoteCall(uint256 appChain, address app, bytes calldata message, uint64 callGasLimit)
-        public // returns (bytes32 id)
+        public
     {
         require(!notPausedChains[appChain], "CHAIN_IS_PAUSED");
         AppConfig storage cfg = appConfigs[app];
@@ -529,11 +523,12 @@ contract Vault {
         require(cfg.isAllow, "Not allowed app: FORBIDDEN");
         require(cfg.isAllowAnyCaller || cfg.whitelistedCallers[msg.sender],
             "Not whitelisted caller: FORBIDDEN");
-        //nonce++;
-        //id = getId(currentChain, msg.sender, appChain, app, nonce);
-        //emit remoteCalled(id, currentChain, msg.sender, appChain, app, message, nonce, callGasLimit);
     }
 
+    /**
+     * @dev remoteExecute will trigger the onReceive function of the contract (app). This method is
+     * only called by SISU when there is a successful suitable remoteCall.
+     */
     function remoteExecute(
         uint256 callerChain,
         address caller,
@@ -548,8 +543,6 @@ contract Vault {
         uint256 gasStart = gasleft();
         require(balances[native][caller] >= _calcFee(gasStart, commission),
             "caller is not enough balance");
-
-        // emit remoteExecuting(id);
 
         uint8 code = 0;
         bytes memory exception;
@@ -574,6 +567,10 @@ contract Vault {
         _dec(native, caller, _calcFee(gasStart - gasleft(), commission));
     }
 
+
+    /**
+     * @dev remoteExecuteMultiple runs multiple remoteExecute methods in the same time.
+     */
     function remoteExecuteMultiple(
         uint256[] calldata callerChains,
         address[] calldata callers,
@@ -598,6 +595,6 @@ contract Vault {
     }
 
     function _calcFee(uint256 gasUsed, uint256 commission) private view returns (uint256) {
-        return (tx.gasprice + commission) * gasUsed;
+        return tx.gasprice * gasUsed + commission;
     }
 }
