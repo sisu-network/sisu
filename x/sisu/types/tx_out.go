@@ -15,7 +15,7 @@ func (t *TxOut) GetId() string {
 	switch t.TxType {
 	case TxOutType_TRANSFER:
 		hash := sha3.NewLegacyKeccak256()
-		hash.Write([]byte(strings.Join(t.Input.TransferUniqIds, "")))
+		hash.Write([]byte(strings.Join(t.Input.TransferRetryIds, "")))
 		return fmt.Sprintf("%s__%s__%s",
 			t.Content.OutChain,
 			t.Content.OutHash,
@@ -31,12 +31,12 @@ func (t *TxOut) GetId() string {
 func (t *TxOut) GetValidatorId() string {
 	switch t.TxType {
 	case TxOutType_TRANSFER:
-		if len(t.Input.TransferUniqIds) == 0 {
+		if len(t.Input.TransferRetryIds) == 0 {
 			log.Errorf("TxOut transfer out does not have associated transfer input")
 			return ""
 		}
 
-		return t.Input.TransferUniqIds[0]
+		return t.Input.TransferRetryIds[0]
 	default:
 		log.Errorf("TxOut GetValidatorId is not implemented for type %s", t.TxType.String())
 		return ""

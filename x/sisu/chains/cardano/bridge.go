@@ -46,7 +46,7 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 	inHashes := make([]string, len(transfers))
 
 	for _, transfer := range transfers {
-		inHashes = append(inHashes, transfer.GetUniqId())
+		inHashes = append(inHashes, transfer.GetRetryId())
 	}
 
 	pubkey := b.keeper.GetKeygenPubkey(ctx, libchain.KEY_TYPE_EDDSA)
@@ -92,7 +92,7 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 			OutBytes: bz,
 		},
 		Input: &types.TxOutInput{
-			TransferUniqIds: inHashes,
+			TransferRetryIds: inHashes,
 		},
 	}
 

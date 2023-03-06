@@ -51,12 +51,12 @@ func (h *HandlerTransferRetry) DeliverMsg(
 }
 
 func (h *HandlerTransferRetry) doRetryTransfer(ctx sdk.Context, msg *types.TransferRetryMsg) {
-	if !h.keeper.HasFailedTransfer(ctx, msg.Data.UniqId) {
-		log.Error("The transfer is not failed, transferUniqIds = ", msg.Data.UniqId)
+	if !h.keeper.HasFailedTransfer(ctx, msg.Data.TransferRetryId) {
+		log.Error("The transfer is not failed, transferRetryIds = ", msg.Data.TransferRetryId)
 		return
 	}
 
-	transferId, _ := types.GetIdFromUniqId(msg.Data.UniqId)
+	transferId, _ := types.GetIdFromRetryId(msg.Data.TransferRetryId)
 	transfer := h.keeper.GetTransfer(ctx, transferId)
 	if transfer == nil {
 		log.Error("Cannot get the transfer, transferId = ", transferId)

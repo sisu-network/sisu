@@ -58,7 +58,7 @@ func TestTxOut_MultipleSigners(t *testing.T) {
 				OutBytes: []byte{},
 			},
 			Input: &types.TxOutInput{
-				TransferUniqIds: []string{fmt.Sprintf("%s__%s__1", "ganache1", "hash1")},
+				TransferRetryIds: []string{fmt.Sprintf("%s__%s__1", "ganache1", "hash1")},
 			},
 		},
 	}

@@ -57,7 +57,7 @@ func TestHandlerTxOutVote(t *testing.T) {
 					OutHash:  outHash,
 				},
 				Input: &types.TxOutInput{
-					TransferUniqIds: []string{fmt.Sprintf("%s__%s___1", "ganache1", "hash1")},
+					TransferRetryIds: []string{fmt.Sprintf("%s__%s___1", "ganache1", "hash1")},
 				},
 			},
 		}

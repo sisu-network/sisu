@@ -9,5 +9,5 @@ message TransferRetryMsg {
 }
 
 message TransferRetry {
-  string uniqId = 1;
+  string transferRetryId = 1;
 }

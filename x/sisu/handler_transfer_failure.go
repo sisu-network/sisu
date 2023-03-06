@@ -41,7 +41,7 @@ func (h *HanlderTransferFailure) doTransferFailure(
 	data *types.TransferFailure,
 ) error {
 	ids := make(map[string]bool)
-	transferIds := types.GetIdsFromUniqIds(data.UniqIds)
+	transferIds := types.GetIdsFromRetryIds(data.TransferRetryIds)
 	for _, id := range transferIds {
 		ids[id] = true
 	}
@@ -55,9 +55,9 @@ func (h *HanlderTransferFailure) doTransferFailure(
 			newQ = append(newQ, t)
 		} else {
 			h.keeper.IncTransferRetryNum(ctx, t.Id)
-			h.keeper.AddFailedTransfer(ctx, t.GetUniqId())
-			log.Verbosef("Removing failed transfer from queue, transferUniqId = %s, chain = %s",
-				t.GetUniqId(), data.Chain)
+			h.keeper.AddFailedTransfer(ctx, t.GetRetryId())
+			log.Verbosef("Removing failed transfer from queue, transferRetryId = %s, chain = %s",
+				t.GetRetryId(), data.Chain)
 		}
 	}
 

@@ -22,7 +22,7 @@ func TestKeeper_SaveAndGetTxOut(t *testing.T) {
 			OutBytes: []byte("Hash"),
 		},
 		Input: &types.TxOutInput{
-			TransferUniqIds: []string{"uniqid"},
+			TransferRetryIds: []string{"retry_id"},
 		},
 	}
 
@@ -38,7 +38,7 @@ func TestKeeper_SaveAndGetTxOut(t *testing.T) {
 			OutBytes: []byte("Hash"),
 		},
 		Input: &types.TxOutInput{
-			TransferUniqIds: []string{"uniqid"},
+			TransferRetryIds: []string{"retry_id"},
 		},
 	}
 	txOut = keeper.GetFinalizedTxOut(ctx, ethTxOut.GetId())
@@ -51,7 +51,7 @@ func TestKeeper_SaveAndGetTxOut(t *testing.T) {
 			OutBytes: []byte("Hash"),
 		},
 		Input: &types.TxOutInput{
-			TransferUniqIds: []string{"uniqid"},
+			TransferRetryIds: []string{"retry_id"},
 		},
 	}
 	txOut = keeper.GetFinalizedTxOut(ctx, randomTxOut.GetId())

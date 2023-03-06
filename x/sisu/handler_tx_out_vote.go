@@ -85,7 +85,7 @@ func (h *HandlerTxOutVote) checkVoteResult(ctx sdk.Context, txOut *types.TxOut) 
 		}
 	} else {
 		log.Verbose("TxOut is rejected, txOutId = ", txOutId)
-		transferId, _ := types.GetIdFromUniqId(txOut.Input.TransferUniqIds[0])
+		transferId, _ := types.GetIdFromRetryId(txOut.Input.TransferRetryIds[0])
 		h.keeper.IncTransferRetryNum(ctx, transferId)
 		h.privateDb.SetHoldProcessing(types.TransferHoldKey, txOut.Content.OutChain, false)
 	}
@@ -117,7 +117,7 @@ func (h *HandlerTxOutVote) handlerTransfer(ctx sdk.Context, k keeper.Keeper, pri
 
 	// 2. Remove the transfers in txOut from the queue.
 	transferQ := k.GetTransferQueue(ctx, txOut.Content.OutChain)
-	txOutTransferIds := types.GetIdsFromUniqIds(txOut.Input.TransferUniqIds)
+	txOutTransferIds := types.GetIdsFromRetryIds(txOut.Input.TransferRetryIds)
 	ids := make(map[string]bool, 0)
 	for _, transferId := range txOutTransferIds {
 		ids[transferId] = true

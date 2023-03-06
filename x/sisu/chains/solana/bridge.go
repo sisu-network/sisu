@@ -71,7 +71,7 @@ func (b *defaultBridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Tra
 		tokens = append(tokens, token)
 		recipients = append(recipients, transfer.ToRecipient)
 		amounts = append(amounts, amount)
-		inHashes = append(inHashes, transfer.GetUniqId())
+		inHashes = append(inHashes, transfer.GetRetryId())
 	}
 
 	responseTx, err := b.buildTransferInResponse(ctx, tokens, recipients, amounts)
@@ -88,7 +88,7 @@ func (b *defaultBridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Tra
 			OutBytes: responseTx.RawBytes,
 		},
 		Input: &types.TxOutInput{
-			TransferUniqIds: inHashes,
+			TransferRetryIds: inHashes,
 		},
 	}
 

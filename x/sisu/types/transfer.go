@@ -10,11 +10,11 @@ func GetTransferId(chain, inHash string) string {
 	return fmt.Sprintf("%s__%s", chain, inHash)
 }
 
-func (t *TransferDetails) GetUniqId() string {
+func (t *TransferDetails) GetRetryId() string {
 	return fmt.Sprintf("%s___%d", t.Id, t.RetryNum)
 }
 
-func GetIdFromUniqId(uniq string) (string, int) {
+func GetIdFromRetryId(uniq string) (string, int) {
 	parts := strings.SplitN(uniq, "___", 2)
 	num, err := strconv.Atoi(parts[1])
 	if err != nil {
@@ -24,10 +24,10 @@ func GetIdFromUniqId(uniq string) (string, int) {
 	return parts[0], num
 }
 
-func GetIdsFromUniqIds(uniqs []string) []string {
+func GetIdsFromRetryIds(uniqs []string) []string {
 	ids := make([]string, len(uniqs))
 	for i, uniq := range uniqs {
-		ids[i], _ = GetIdFromUniqId(uniq)
+		ids[i], _ = GetIdFromRetryId(uniq)
 	}
 	return ids
 }

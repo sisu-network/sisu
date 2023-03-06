@@ -152,12 +152,12 @@ func (b *defaultBackground) processTransferQueue(ctx sdk.Context, chain string, 
 
 	// Check if the this node is the assigned node for the first Transfer in the queue.
 	firstTransfer := queue[0]
-	assignedNode, err := b.valsManager.GetAssignedValidator(ctx, firstTransfer.GetUniqId())
+	assignedNode, err := b.valsManager.GetAssignedValidator(ctx, firstTransfer.GetRetryId())
 	if err != nil {
 		msg := types.NewTransferFailureMsg(b.appKeys.GetSignerAddress().String(), &types.TransferFailure{
-			UniqIds: []string{firstTransfer.GetUniqId()},
-			Chain:   chain,
-			Message: err.Error(),
+			TransferRetryIds: []string{firstTransfer.GetRetryId()},
+			Chain:            chain,
+			Message:          err.Error(),
 		})
 		b.txSubmit.SubmitMessageAsync(msg)
 		return
@@ -176,11 +176,11 @@ func (b *defaultBackground) processTransferQueue(ctx sdk.Context, chain string, 
 	if err != nil {
 		log.Error("Failed to get txOut on chain ", chain, ", err = ", err)
 
-		uniqIds := b.getTransferUniqIds(batch)
+		retryIds := b.getTransferRetryIds(batch)
 		msg := types.NewTransferFailureMsg(b.appKeys.GetSignerAddress().String(), &types.TransferFailure{
-			UniqIds: uniqIds,
-			Chain:   chain,
-			Message: err.Error(),
+			TransferRetryIds: retryIds,
+			Chain:            chain,
+			Message:          err.Error(),
 		})
 		b.txSubmit.SubmitMessageAsync(msg)
 
@@ -202,11 +202,11 @@ func (b *defaultBackground) processTransferQueue(ctx sdk.Context, chain string, 
 	}
 }
 
-func (b *defaultBackground) getTransferUniqIds(batch []*types.TransferDetails) []string {
+func (b *defaultBackground) getTransferRetryIds(batch []*types.TransferDetails) []string {
 	ids := make([]string, len(batch))
 
 	for i, transfer := range batch {
-		ids[i] = transfer.GetUniqId()
+		ids[i] = transfer.GetRetryId()
 	}
 
 	return ids
@@ -277,7 +277,7 @@ func (h *defaultBackground) validateTxOut(ctx sdk.Context, msg *types.TxOutMsg) 
 	// since confirmed transfers.
 	// TODO: if this is a transfer, make sure that the first transfer matches the first transfer in
 	// Transfer queue
-	transferIds := types.GetIdsFromUniqIds(msg.Data.Input.TransferUniqIds)
+	transferIds := types.GetIdsFromRetryIds(msg.Data.Input.TransferRetryIds)
 	if len(transferIds) == 0 {
 		return false
 	}
@@ -308,7 +308,7 @@ func (h *defaultBackground) validateTxOut(ctx sdk.Context, msg *types.TxOutMsg) 
 		}
 	}
 
-	assignedNode, err := h.valsManager.GetAssignedValidator(ctx, queue[0].GetUniqId())
+	assignedNode, err := h.valsManager.GetAssignedValidator(ctx, queue[0].GetRetryId())
 	if err != nil || assignedNode.AccAddress != msg.Signer {
 		return false
 	}

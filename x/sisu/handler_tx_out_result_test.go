@@ -109,7 +109,7 @@ func TestHandlerTxOutResult(t *testing.T) {
 				OutHash:  "TxOutHash",
 			},
 			Input: &types.TxOutInput{
-				TransferUniqIds: []string{transfers[0].GetUniqId(), transfers[1].GetUniqId()},
+				TransferRetryIds: []string{transfers[0].GetRetryId(), transfers[1].GetRetryId()},
 			},
 		}
 		k.SetFinalizedTxOut(ctx, txOut)

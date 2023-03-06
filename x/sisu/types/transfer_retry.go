@@ -5,10 +5,10 @@ import (
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
-func NewTransferRetryMsg(signer string, uniqId string) *TransferRetryMsg {
+func NewTransferRetryMsg(signer string, retryId string) *TransferRetryMsg {
 	return &TransferRetryMsg{
 		Signer: signer,
-		Data:   &TransferRetry{UniqId: uniqId},
+		Data:   &TransferRetry{TransferRetryId: retryId},
 	}
 }
 

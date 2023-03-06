@@ -128,7 +128,7 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 			OutBytes: bz,
 		},
 		Input: &types.TxOutInput{
-			TransferUniqIds: []string{transfer.GetUniqId()},
+			TransferRetryIds: []string{transfer.GetRetryId()},
 		},
 	}
 

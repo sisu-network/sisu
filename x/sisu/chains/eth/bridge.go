@@ -86,7 +86,7 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 		finalTokens = append(finalTokens, dstToken)
 		finalRecipients = append(finalRecipients, ethcommon.HexToAddress(transfer.ToRecipient))
 		finalAmounts = append(finalAmounts, amountOut)
-		inHashes = append(inHashes, transfer.GetUniqId())
+		inHashes = append(inHashes, transfer.GetRetryId())
 		tokenPrices = append(tokenPrices, tokenPrice.String())
 
 		amount, ok := new(big.Int).SetString(transfer.Amount, 10)
@@ -118,7 +118,7 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 			OutBytes: responseTx.RawBytes,
 		},
 		Input: &types.TxOutInput{
-			TransferUniqIds:  inHashes,
+			TransferRetryIds: inHashes,
 			NativeTokenPrice: nativeTokenPrice.String(),
 			TokenPrices:      tokenPrices,
 			EthData: &types.EthData{
