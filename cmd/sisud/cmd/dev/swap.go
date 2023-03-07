@@ -154,32 +154,6 @@ func getTokenAddrsFromSisu(tokenId string, srcChain string, dstChain string, sis
 	return token, src, dest
 }
 
-func getEthVaultAddress(context context.Context, chain string, sisuRpc string) string {
-	grpcConn, err := grpc.Dial(
-		sisuRpc,
-		grpc.WithInsecure(),
-	)
-	defer grpcConn.Close()
-	if err != nil {
-		panic(err)
-	}
-
-	queryClient := tssTypes.NewTssQueryClient(grpcConn)
-	res, err := queryClient.QueryVault(context, &tssTypes.QueryVaultRequest{
-		Chain: chain,
-	})
-
-	if err != nil {
-		panic(err)
-	}
-
-	if len(res.Vault.Address) == 0 {
-		panic("gateway contract address is empty")
-	}
-
-	return res.Vault.Address
-}
-
 // swapFromEth creates an ETH transaction and sends to gateway contract.
 func swapFromEth(client *ethclient.Client, mnemonic string, vaultAddr string, dstChain string,
 	srcToken string, dstToken string, recipient string, amount *big.Int) {

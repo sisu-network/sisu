@@ -21,6 +21,8 @@ func DevCmd() *cobra.Command {
 	cmd.AddCommand(Swap())
 	cmd.AddCommand(StressSwap())
 	cmd.AddCommand(Query())
+	cmd.AddCommand(RemoteCall())
+	cmd.AddCommand(DeployExampleContract())
 
 	return cmd
 }
