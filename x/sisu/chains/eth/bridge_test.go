@@ -13,15 +13,35 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func mockForGetTransferIn(ctx sdk.Context, amountIn *big.Int) (keeper.Keeper, *types.TransferDetails) {
+func mockForGetTransferIn(ctx sdk.Context, tokenPrice *big.Int, amountIn *big.Int) (keeper.Keeper,
+	external.DeyesClient, *types.TransferDetails) {
 	k := testmock.KeeperTestAfterContractDeployed(ctx)
+	token := &types.Token{
+		Id:        "SISU",
+		Price:     tokenPrice.String(),
+		Chains:    []string{"ganache1", "ganache2"},
+		Addresses: []string{testmock.TestErc20TokenAddress, testmock.TestErc20TokenAddress},
+	}
+	k.SetTokens(ctx, map[string]*types.Token{"SISU": token})
+
+	nativeTokenPrice := big.NewInt(utils.OneEtherInWei * 2)
+	deyesClient := &external.MockDeyesClient{
+		GetTokenPriceFunc: func(id string) (*big.Int, error) {
+			if id == "NATIVE_GANACHE2" {
+				return nativeTokenPrice, nil
+			}
+
+			return tokenPrice, nil
+		},
+	}
+
 	transfer := &types.TransferDetails{
 		Token:       "SISU",
 		Amount:      amountIn.String(),
 		ToRecipient: "0x08BAB502c5e7125fD558B19a98D14907CF7f7E93",
 	}
 
-	return k, transfer
+	return k, deyesClient, transfer
 }
 
 func TestBridge_GetTransferIn(t *testing.T) {
@@ -32,15 +52,13 @@ func TestBridge_GetTransferIn(t *testing.T) {
 		ctx := testmock.TestContext()
 		tokenPrice := new(big.Int).Mul(big.NewInt(10_000_000), utils.GweiToWei)
 		amountIn := new(big.Int).Set(utils.EthToWei)
-		keeper, transfer := mockForGetTransferIn(ctx, amountIn)
+		keeper, deyesClient, transfer := mockForGetTransferIn(ctx, tokenPrice, amountIn)
 
-		bridge := NewBridge("ganache2", "", keeper, &external.MockDeyesClient{}).(*bridge)
-		_, amount, err := bridge.getTransferIn(
+		bridge := NewBridge("ganache2", "", keeper, deyesClient).(*bridge)
+		_, amount, _, err := bridge.getTransferIn(
 			ctx,
-			keeper.GetAllTokens(ctx)[transfer.Token],
 			transfer,
 			gasCost,
-			tokenPrice,
 			nativeTokenPrice,
 		)
 		require.Nil(t, err)
@@ -54,15 +72,13 @@ func TestBridge_GetTransferIn(t *testing.T) {
 		ctx := testmock.TestContext()
 		tokenPrice := new(big.Int).Mul(big.NewInt(100), utils.EthToWei)
 		amountIn := new(big.Int).Set(utils.EthToWei)
-		keeper, transfer := mockForGetTransferIn(ctx, amountIn)
+		keeper, deyesClient, transfer := mockForGetTransferIn(ctx, tokenPrice, amountIn)
 
-		bridge := NewBridge("ganache2", "", keeper, &external.MockDeyesClient{}).(*bridge)
-		_, amount, err := bridge.getTransferIn(
+		bridge := NewBridge("ganache2", "", keeper, deyesClient).(*bridge)
+		_, amount, _, err := bridge.getTransferIn(
 			ctx,
-			keeper.GetAllTokens(ctx)[transfer.Token],
 			transfer,
 			gasCost,
-			tokenPrice,
 			nativeTokenPrice,
 		)
 		require.Nil(t, err)
@@ -76,20 +92,18 @@ func TestBridge_GetTransferIn(t *testing.T) {
 		ctx := testmock.TestContext()
 		tokenPrice := utils.EtherToWei(big.NewInt(100))
 		amountIn := new(big.Int).Set(utils.EthToWei)
-		keeper, transfer := mockForGetTransferIn(ctx, amountIn)
+		keeper, deyesClient, transfer := mockForGetTransferIn(ctx, tokenPrice, amountIn)
 
 		// Set commission rate = 0.1%
 		params := keeper.GetParams(ctx)
-		params.CommissionRate = 10
+		params.TransferCommissionRate = 10
 		keeper.SaveParams(ctx, params)
 
-		bridge := NewBridge("ganache2", "", keeper, &external.MockDeyesClient{}).(*bridge)
-		_, amount, err := bridge.getTransferIn(
+		bridge := NewBridge("ganache2", "", keeper, deyesClient).(*bridge)
+		_, amount, _, err := bridge.getTransferIn(
 			ctx,
-			keeper.GetAllTokens(ctx)[transfer.Token],
 			transfer,
 			gasCost,
-			tokenPrice,
 			nativeTokenPrice,
 		)
 		require.Nil(t, err)
@@ -109,14 +123,12 @@ func TestBridge_GetTransferIn(t *testing.T) {
 	t.Run("insufficient_fund", func(t *testing.T) {
 		ctx := testmock.TestContext()
 		amountIn := big.NewInt(10_000_000_000)
-		keeper, transfer := mockForGetTransferIn(ctx, amountIn)
-		bridge := NewBridge("ganache2", "", keeper, &external.MockDeyesClient{}).(*bridge)
-		_, _, err := bridge.getTransferIn(
+		keeper, deyesClient, transfer := mockForGetTransferIn(ctx, new(big.Int), amountIn)
+		bridge := NewBridge("ganache2", "", keeper, deyesClient).(*bridge)
+		_, _, _, err := bridge.getTransferIn(
 			ctx,
-			keeper.GetAllTokens(ctx)[transfer.Token],
 			transfer,
 			gasCost,
-			new(big.Int).SetInt64(8),
 			nativeTokenPrice,
 		)
 		require.NotNil(t, err)

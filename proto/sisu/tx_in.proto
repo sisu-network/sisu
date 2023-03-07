@@ -5,6 +5,7 @@ option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 
 enum TxInType {
   TOKEN_TRANSFER = 0;
+  REMOTE_CALL = 1;
 }
 
 message TxIn {
@@ -32,21 +33,26 @@ message Transfers {
 
 message TransferDetails {
   string id = 1;
-  string tx_in_id = 2;
+  TxInType tx_type = 2;
+  string tx_in_id = 3;
 
   // Source
-  string from_chain = 3;
-  int64 from_block_height = 4;
-  string from_hash = 5;
-  string from_sender = 6;
+  string from_chain = 4;
+  int64 from_block_height = 5;
+  string from_hash = 6;
+  string from_sender = 7;
 
-  string token = 7;
-  string amount = 8;
+  string token = 8;
+  string amount = 9;
 
   // Destination
-  string to_chain = 9;
-  string to_recipient = 10;
+  string to_chain = 10;
+  string to_recipient = 11;
 
   // Retry number
-  int32 retryNum = 11;
+  int32 retryNum = 12;
+
+  // Remote call
+  bytes message = 13;
+  uint64 call_gas_limit = 14;
 }
