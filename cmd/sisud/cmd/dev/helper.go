@@ -129,7 +129,7 @@ func getAuthTransactor(client *ethclient.Client, mnemonic string) (*bind.Transac
 	auth.Value = big.NewInt(0)
 	auth.GasPrice = gasPrice
 
-	auth.GasLimit = uint64(3_000_000)
+	auth.GasLimit = uint64(6_000_000)
 
 	return auth, nil
 }
