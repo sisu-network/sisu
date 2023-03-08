@@ -354,10 +354,6 @@ func (b *bridge) ProcessCommand(ctx sdk.Context, cmd *types.Command) (*types.TxO
 }
 
 func (b *bridge) ValidateTxOut(ctx sdk.Context, txOut *types.TxOut, transfers []*types.TransferDetails) error {
-	if transfers[0].TxType != types.TxInType_TOKEN_TRANSFER {
-		return nil
-	}
-
 	// 1. Validate gas cost.
 	gasInfo, err := b.deyesClient.GetGasInfo(b.chain)
 	if err != nil {
@@ -386,6 +382,11 @@ func (b *bridge) ValidateTxOut(ctx sdk.Context, txOut *types.TxOut, transfers []
 		return fmt.Errorf(
 			"cannot accept the transaction with too large difference in gas cost, ratio=%d%%",
 			int(ratio*100))
+	}
+
+	// These below steps are only availabe for TOKEN_TRANSFER.
+	if transfers[0].TxType != types.TxInType_TOKEN_TRANSFER {
+		return nil
 	}
 
 	// 2. Validate native token price.
