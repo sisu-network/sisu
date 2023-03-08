@@ -364,7 +364,7 @@ func buildTransferIn(
 
 func buildRemoteExecute(
 	ctx sdk.Context,
-	commission int64,
+	commission *big.Int,
 	finalCallerChains []*big.Int,
 	finalCallers []ethcommon.Address,
 	finalApps []ethcommon.Address,

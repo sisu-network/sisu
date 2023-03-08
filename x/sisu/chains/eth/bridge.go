@@ -221,7 +221,8 @@ func (b *bridge) processRemoteCall(ctx sdk.Context, gasInfo *deyesethtypes.GasIn
 		return nil, fmt.Errorf("invalid commission value %d", commission)
 	}
 
-	data, err := buildRemoteExecute(ctx, commission, finalCallerChains, finalCallers, finalApps,
+	bigCommission := new(big.Int).Mul(big.NewInt(commission), utils.Gwei)
+	data, err := buildRemoteExecute(ctx, bigCommission, finalCallerChains, finalCallers, finalApps,
 		finalGasLimits, finalMessages)
 	if err != nil {
 		log.Error("Failed to build erc20 transfer in, err = ", err)
