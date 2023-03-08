@@ -75,7 +75,7 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 	}
 
 	// Subtract commission rate
-	commissionRate := b.keeper.GetParams(ctx).CommissionRate
+	commissionRate := b.keeper.GetParams(ctx).TransferCommissionRate
 	if commissionRate < 0 || commissionRate > 10_000 {
 		return nil, fmt.Errorf("commission rate is invalid, rate = %d", commissionRate)
 	}

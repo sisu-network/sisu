@@ -170,7 +170,15 @@ func (b *defaultBackground) processTransferQueue(ctx sdk.Context, chain string, 
 	log.Verbosef("Assigned node for transfer %s is %s", firstTransfer.Id, assignedNode.AccAddress)
 
 	batchSize := utils.MinInt(params.GetMaxTransferOutBatch(chain), len(queue))
-	batch := queue[0:batchSize]
+	var batch []*types.TransferDetails
+	for _, transfer := range queue {
+		if transfer.TxType == firstTransfer.TxType {
+			batch = append(batch, transfer)
+		}
+		if len(batch) >= batchSize {
+			break
+		}
+	}
 
 	txOutMsgs, err := b.txOutputProducer.GetTxOuts(ctx, chain, batch)
 	if err != nil {
@@ -283,18 +291,25 @@ func (h *defaultBackground) validateTxOut(ctx sdk.Context, msg *types.TxOutMsg) 
 	}
 
 	queue := h.keeper.GetTransferQueue(ctx, msg.Data.Content.OutChain)
-	if len(queue) < len(transferIds) {
+	transfers := make([]*types.TransferDetails, 0)
+	for _, transfer := range queue {
+		if transfer.TxType == queue[0].TxType {
+			transfers = append(transfers, transfer)
+		}
+	}
+
+	if len(transfers) < len(transferIds) {
 		log.Errorf("Transfers list in the message (len = %d) is longer than the saved transfer queue (len = %d).",
 			len(transferIds), len(queue))
 		return false
 	}
 
-	if len(queue) == 0 {
+	if len(transfers) == 0 {
 		return false
 	}
 
 	// Make sure that all transfers Ids are the first ids in the queue.
-	for i, transfer := range queue {
+	for i, transfer := range transfers {
 		if i >= len(transferIds) {
 			break
 		}

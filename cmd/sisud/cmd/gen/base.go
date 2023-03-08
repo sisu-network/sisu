@@ -81,7 +81,8 @@ func buildBaseSettings(cmd *cobra.Command, mbm module.BasicManager,
 		params: &types.Params{
 			MajorityThreshold:        int32(math.Ceil(float64(numValidators) * 2 / 3)),
 			SupportedChains:          supportedChainsArr,
-			CommissionRate:           10,  // 0.1%
+			TransferCommissionRate:   10,  // 0.1%
+			RemoteCallCommission:     100, // 100 gwei per call
 			ExpirationBlock:          100, // For testing, make it only 100 blocks
 			MaxKeysignRetry:          2,
 			MaxRejectedTransferRetry: 6,

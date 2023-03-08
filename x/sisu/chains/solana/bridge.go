@@ -145,7 +145,7 @@ func (b *defaultBridge) getTransaction(
 
 	// Convert amount into token with correct decimal
 	solAmounts := make([]uint64, 0)
-	commissionRate := b.keeper.GetParams(ctx).CommissionRate
+	commissionRate := b.keeper.GetParams(ctx).TransferCommissionRate
 	if commissionRate < 0 || commissionRate > 10_000 {
 		return nil, fmt.Errorf("Commission rate is invalid, rate = %d", commissionRate)
 	}

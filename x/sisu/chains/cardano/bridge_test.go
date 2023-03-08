@@ -75,7 +75,7 @@ func TestBridge_getCardanoTx(t *testing.T) {
 
 	// Set the commission fee
 	params := k.GetParams(ctx)
-	params.CommissionRate = 10 // 0.1%. One unit is 1/10,000
+	params.TransferCommissionRate = 10 // 0.1%. One unit is 1/10,000
 	k.SaveParams(ctx, params)
 
 	var balance *cardano.Value

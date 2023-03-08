@@ -15,15 +15,18 @@ message Params {
   repeated TransferOutParams transfer_out_params = 2;
   repeated string supported_chains = 3;
 
-  // Transaction commission rate with 1 unit = 0.01%
-  int32 commission_rate = 4;
+  // Transfer commission rate with 1 unit = 0.01%
+  int32 transfer_commission_rate = 4;
+
+  // Remote call commission in gwei
+  int64 remote_call_commission = 5;
 
   // Expiration Ablock
-  int32 expiration_block = 5;
+  int32 expiration_block = 6;
 
   // Maximum number of retry when a txout fails to sign.
-  int32 max_keysign_retry = 6;
+  int32 max_keysign_retry = 7;
 
   // Maxinum number of retry when a transfer is rejected.
-  int32 max_rejected_transfer_retry = 7;
+  int32 max_rejected_transfer_retry = 8;
 }
