@@ -1,6 +1,8 @@
 package rest
 
 import (
+	libchain "github.com/sisu-network/lib/chain"
+
 	"encoding/json"
 	"math/big"
 	"net/http"
@@ -8,6 +10,7 @@ import (
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/utils"
 	"github.com/sisu-network/sisu/x/sisu/helper"
+	"github.com/sisu-network/sisu/x/sisu/types"
 )
 
 type gasCostResponse struct {
@@ -65,6 +68,52 @@ func (a *ExternalHandler) newGasCostHandler() http.HandlerFunc {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write(output)
+	}
+}
+
+func (a *ExternalHandler) newPubkeyHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		queryStr := r.URL.Query()
+		chain := queryStr.Get("chain")
+
+		if chain == "" {
+			if _, err := w.Write([]byte("missing chain param")); err != nil {
+				log.Warn(err)
+			}
+			return
+		}
+
+		ctx := a.globalData.GetReadOnlyContext()
+
+		var vault *types.Vault
+		switch {
+		case libchain.IsETHBasedChain(chain),
+			libchain.IsLiskChain(chain),
+			libchain.IsCardanoChain(chain):
+			vault = a.keeper.GetVault(ctx, chain, "")
+		}
+
+		if vault == nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		type response struct {
+			Address string `json:"address"`
+		}
+
+		output, err := json.Marshal(&response{
+			Address: vault.Address,
+		})
+		if err != nil {
+			log.Error(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write(output)
