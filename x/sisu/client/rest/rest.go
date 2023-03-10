@@ -27,6 +27,7 @@ func NewExternalHandler(keeper keeper.Keeper, globalData components.GlobalData,
 
 func (e *ExternalHandler) RegisterRoutes(_ client.Context, r *mux.Router) {
 	r.HandleFunc("/getGasFeeInToken", e.newGasCostHandler()).Methods(http.MethodGet)
+	r.HandleFunc("/getPubKeys", e.newPubkeyHandler()).Methods(http.MethodGet)
 	r.Use(customCORSHeader())
 }
 
