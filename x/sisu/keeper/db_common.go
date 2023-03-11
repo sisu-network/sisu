@@ -707,12 +707,12 @@ func getTransferQueue(queueStore, transferStore cstypes.KVStore, chain string) [
 ///// Failed Transfer
 func addFailedTransfer(failedStore, transferStore cstypes.KVStore, transferId string) {
 	transfer := getTransfers(transferStore, []string{transferId})
-	if transfer == nil {
+	if len(transfer) == 0 {
 		log.Error("Not found the transfer, transferId = ", transferId)
 		return
 	}
 
-	failedStore.Set([]byte(transferId), []byte{0})
+	failedStore.Set([]byte(transfer[0].GetRetryId()), []byte{})
 }
 
 func removeFailedTransfer(store cstypes.KVStore, transferId string) {
@@ -720,8 +720,7 @@ func removeFailedTransfer(store cstypes.KVStore, transferId string) {
 }
 
 func hasFailedTransfer(store cstypes.KVStore, transferId string) bool {
-	bz := store.Get([]byte(transferId))
-	return bz != nil
+	return store.Has([]byte(transferId))
 }
 
 ///// TxOutQueue

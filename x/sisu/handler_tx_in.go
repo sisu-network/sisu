@@ -50,6 +50,10 @@ func (h *HandlerTxIn) DeliverMsg(ctx sdk.Context, msg *types.TxInMsg) (*sdk.Resu
 func (h *HandlerTxIn) doTxIn(ctx sdk.Context, msg *types.TxInMsg) {
 	log.Verbosef("Process doTxIn with TxIn id %s", msg.Data.Id)
 
+	for i := range msg.Data.Transfers {
+		msg.Data.Transfers[i].BlockHeight = ctx.BlockHeight()
+	}
+
 	// Save the transfers
 	h.saveTransfers(ctx, msg.Data.Transfers)
 }

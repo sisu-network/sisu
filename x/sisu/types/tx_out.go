@@ -21,6 +21,8 @@ func (t *TxOut) GetId() string {
 			t.Content.OutHash,
 			hex.EncodeToString(hash.Sum(nil)[:8]),
 		)
+	case TxOutType_FAILURE:
+		return fmt.Sprintf("%s_%s", t.Content.OutChain, t.Input.TransferRetryIds[0])
 	default:
 		log.Errorf("TxOut GetId is not implemented for type %s", t.TxType.String())
 		return ""
@@ -30,7 +32,7 @@ func (t *TxOut) GetId() string {
 // GetValidatorId returns an id string that could be used to find the assigned validator.
 func (t *TxOut) GetValidatorId() string {
 	switch t.TxType {
-	case TxOutType_TRANSFER:
+	case TxOutType_TRANSFER, TxOutType_FAILURE:
 		if len(t.Input.TransferRetryIds) == 0 {
 			log.Errorf("TxOut transfer out does not have associated transfer input")
 			return ""

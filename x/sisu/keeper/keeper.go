@@ -106,7 +106,7 @@ type Keeper interface {
 
 	// Transfer
 	AddTransfers(ctx sdk.Context, transfers []*types.TransferDetails)
-	IncTransferRetryNum(ctx sdk.Context, transferId string)
+	IncTransferRetryNum(ctx sdk.Context, transferId string) *types.TransferDetails
 	GetTransfer(ctx sdk.Context, id string) *types.TransferDetails
 	GetTransfers(ctx sdk.Context, ids []string) []*types.TransferDetails
 
@@ -349,15 +349,16 @@ func (k *DefaultKeeper) AddTransfers(ctx sdk.Context, transfers []*types.Transfe
 	addTransfers(store, transfers)
 }
 
-func (k *DefaultKeeper) IncTransferRetryNum(ctx sdk.Context, transferId string) {
+func (k *DefaultKeeper) IncTransferRetryNum(ctx sdk.Context, transferId string) *types.TransferDetails {
 	store := prefix.NewStore(ctx.KVStore(k.storeKey), prefixTransfer)
 	transfers := getTransfers(store, []string{transferId})
 	if len(transfers) == 0 {
-		return
+		return nil
 	}
 
 	transfers[0].RetryNum++
 	addTransfers(store, transfers)
+	return transfers[0]
 }
 
 func (k *DefaultKeeper) GetTransfer(ctx sdk.Context, id string) *types.TransferDetails {

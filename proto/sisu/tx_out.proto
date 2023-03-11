@@ -5,6 +5,7 @@ option go_package = "github.com/sisu-network/sisu/x/sisu/types";
 
 enum TxOutType {
   TRANSFER = 0;
+  FAILURE = 255;
 }
 
 message TxOutMsg {

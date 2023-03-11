@@ -100,9 +100,18 @@ func (m *DefaultValidatorManager) GetAssignedValidator(ctx sdk.Context, retryId 
 	transferId, retryNum := types.GetIdFromRetryId(retryId)
 	threshold := int(m.keeper.GetParams(ctx).GetMaxRejectedTransferRetry())
 	if retryNum%threshold == 0 && retryNum > 0 {
-		return nil, fmt.Errorf("Exceed the maximum number of retry rejected transfer, id = %s", transferId)
+		return nil, fmt.Errorf("exceed the maximum number of retry rejected transfer, id = %s", transferId)
 	}
 
-	sorted := utils.GetSortedValidators(retryId, m.GetValidators(ctx))
+	params := m.keeper.GetParams(ctx)
+	transfer := m.keeper.GetTransfer(ctx, transferId)
+	if transfer == nil {
+		return nil, fmt.Errorf("invalid transfer, id = %s", transferId)
+	}
+
+	blockDiff := ctx.BlockHeight() - transfer.BlockHeight
+	msg := fmt.Sprintf("%s_%d", retryId, blockDiff/int64(params.TransferTimeoutBlock))
+
+	sorted := utils.GetSortedValidators(msg, m.GetValidators(ctx))
 	return sorted[0], nil
 }

@@ -48,7 +48,7 @@ func NewBridge(chain, signer string, keeper keeper.Keeper, cfg config.Config,
 }
 
 func (b *defaultBridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDetails) (
-	[]*types.TxOut, error) {
+	*types.TxOut, error) {
 	allTokens := b.keeper.GetAllTokens(ctx)
 	tokens := make([]*types.Token, 0, len(transfers))
 	recipients := make([]string, 0, len(transfers))
@@ -92,7 +92,7 @@ func (b *defaultBridge) ProcessTransfers(ctx sdk.Context, transfers []*types.Tra
 		},
 	}
 
-	return []*types.TxOut{outMsg}, nil
+	return outMsg, nil
 }
 
 func (b *defaultBridge) buildTransferInResponse(

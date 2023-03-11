@@ -103,6 +103,9 @@ func (h *HandlerTxOutVote) doTxOut(ctx sdk.Context, k keeper.Keeper, privateDb k
 	switch txOut.TxType {
 	case types.TxOutType_TRANSFER:
 		h.handlerTransfer(ctx, k, privateDb, txOut)
+	case types.TxOutType_FAILURE:
+		doTransferFailure(h.keeper, ctx, txOut.Content.OutChain, txOut.Input.TransferRetryIds)
+		h.privateDb.SetHoldProcessing(types.TransferHoldKey, txOut.Content.OutChain, false)
 	}
 
 	return nil, nil

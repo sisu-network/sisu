@@ -39,7 +39,7 @@ func NewBridge(chain string, signer string, keeper keeper.Keeper, deyesClient ex
 }
 
 func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDetails) (
-	[]*types.TxOut, error) {
+	*types.TxOut, error) {
 	// Lisk only accept 1 recipient
 	if len(transfers) != 1 {
 		return nil, fmt.Errorf("Lisk only accept 1 recipient")
@@ -132,7 +132,7 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 		},
 	}
 
-	return []*types.TxOut{outMsg}, nil
+	return outMsg, nil
 }
 
 func (b *bridge) ParseIncomingTx(ctx sdk.Context, chain string, serialized []byte) (

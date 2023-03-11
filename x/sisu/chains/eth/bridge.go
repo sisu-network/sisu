@@ -38,7 +38,7 @@ func NewBridge(chain string, signer string, k keeper.Keeper, deyesClient externa
 	}
 }
 
-func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDetails) ([]*types.TxOut, error) {
+func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDetails) (*types.TxOut, error) {
 	gasInfo, err := b.deyesClient.GetGasInfo(b.chain)
 	if err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 
 func (b *bridge) processTokenTransfer(ctx sdk.Context, gasInfo *deyesethtypes.GasInfo,
 	chainCfg *types.Chain, transfers []*types.TransferDetails,
-) ([]*types.TxOut, error) {
+) (*types.TxOut, error) {
 	ethCfg := chainCfg.EthConfig
 	gasCost, _, _ := b.getGasCost(gasInfo, ethCfg.UseEip_1559, gasUnitPerSwap)
 
@@ -77,10 +77,13 @@ func (b *bridge) processTokenTransfer(ctx sdk.Context, gasInfo *deyesethtypes.Ga
 		return nil, fmt.Errorf("token %s has price 0", chainCfg.NativeToken)
 	}
 
-	for _, transfer := range transfers {
+	for i, transfer := range transfers {
 		dstToken, amountOut, tokenPrice, err := b.getTransferIn(ctx, transfer, gasCost, nativeTokenPrice)
 		if err != nil {
-			return nil, err
+			if i == 0 {
+				return nil, err
+			}
+			break
 		}
 
 		finalTokens = append(finalTokens, dstToken)
@@ -135,7 +138,7 @@ func (b *bridge) processTokenTransfer(ctx sdk.Context, gasInfo *deyesethtypes.Ga
 		},
 	}
 
-	return []*types.TxOut{outMsg}, nil
+	return outMsg, nil
 }
 
 func (b *bridge) getTransferIn(
@@ -188,7 +191,7 @@ func (b *bridge) getTransferIn(
 
 func (b *bridge) processRemoteCall(ctx sdk.Context, gasInfo *deyesethtypes.GasInfo,
 	chainCfg *types.Chain, transfers []*types.TransferDetails,
-) ([]*types.TxOut, error) {
+) (*types.TxOut, error) {
 	ethCfg := chainCfg.EthConfig
 
 	maxGas := uint64(0)
@@ -252,7 +255,7 @@ func (b *bridge) processRemoteCall(ctx sdk.Context, gasInfo *deyesethtypes.GasIn
 		},
 	}
 
-	return []*types.TxOut{outMsg}, nil
+	return outMsg, nil
 }
 
 func (b *bridge) buildTransaction(
