@@ -111,7 +111,7 @@ func (b *bridge) getCardanoTx(ctx sdk.Context, chain string, transfers []*types.
 	allTokens := b.keeper.GetAllTokens(ctx)
 	receiverAddrs := make([]cardano.Address, 0)
 	amounts := make([]*cardano.Value, 0, len(transfers))
-	commissionRate := b.keeper.GetParams(ctx).CommissionRate
+	commissionRate := b.keeper.GetParams(ctx).TransferCommissionRate
 	if commissionRate < 0 || commissionRate > 10_000 {
 		return nil, fmt.Errorf("Commission rate is invalid, rate = %d", commissionRate)
 	}

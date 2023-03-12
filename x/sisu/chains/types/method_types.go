@@ -8,4 +8,7 @@ const (
 	MethodTransferOut
 	MethodTransferOutNonEvm
 	MethodAddSpender
+	MethodRemoteCall
+	MethodCreateApp
+	MethodSetAppAnyCaller
 )

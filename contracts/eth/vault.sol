@@ -2,6 +2,27 @@
 
 pragma solidity ^0.8.0;
 
+interface BaseContract {
+    /**
+     * @dev Message is the input of onReceive function.
+     * @param vault: address of the vault which sent this transaction.
+     * @param callerChain: the chain id of caller.
+     * @param caller: the caller address.
+     * @param message: the message is sent from sender.
+     */
+    struct Message {
+        uint256 callerChain;
+        address caller;
+        bytes message;
+    }
+
+    /**
+     * @dev onReceive will be triggered if a message is sent to this contract.
+     */
+    function onReceive(Message calldata input) external returns (uint8 code);
+}
+
+
 interface IERC20 {
     function totalSupply() external view returns (uint256);
 
@@ -116,6 +137,13 @@ library SafeERC20 {
 contract Vault {
     using SafeERC20 for IERC20;
 
+    struct AppConfig {
+        bool isAllow;
+        bool isAllowAnyCaller;
+        address admin;
+        mapping(address => bool) whitelistedCallers;
+    }
+
     // delay for timelock functions
     uint256 public constant DELAY = 1 days;
 
@@ -134,7 +162,9 @@ contract Vault {
     address private pendingAdmin;
     uint256 public newAdminTime;
 
-    mapping(address => mapping(address => uint256)) private balances;
+    mapping(address => mapping(address => uint256)) public balances;
+
+    mapping(address => AppConfig) private appConfigs;
 
     modifier onlySpender() {
         require(spenders[msg.sender], "Not spender: FORBIDDEN");
@@ -152,6 +182,9 @@ contract Vault {
 
     // Retry transfer fails.
     event Code502();
+
+    // remoteExecuted will be emitted if the execution is success on dst chain.
+    event remoteExecuted(uint8 code, bytes exception);
 
     constructor() {
         admin = msg.sender;
@@ -188,6 +221,65 @@ contract Vault {
 
     function setNotPausedChain(uint256 chain, bool state) external onlyAdmin {
         notPausedChains[chain] = state;
+    }
+
+    ////////////////////////////////////////////////////////////////
+    // App Config
+    ////////////////////////////////////////////////////////////////
+
+    function createApp(address app, address _admin, address[] calldata whitelist)
+        onlyAdmin external
+    {
+        require(app != address(0), "app address is 0");
+        require(_admin != address(0), "admin address is 0");
+
+        AppConfig storage cfg = appConfigs[app];
+        require(cfg.admin == address(0), "existed app");
+        cfg.isAllow = true;
+        cfg.admin = _admin;
+        if (whitelist.length == 0) {
+            cfg.isAllowAnyCaller = true;
+        } else {
+            cfg.isAllowAnyCaller = false;
+            mapping(address => bool) storage map = cfg.whitelistedCallers;
+            for (uint256 i=0; i<whitelist.length; i++) {
+                map[whitelist[i]] = true;
+            }
+        }
+    }
+
+    function blockApp(address app) onlyAdmin external {
+        AppConfig storage cfg = appConfigs[app];
+        require(cfg.admin != address(0), "Not existed app: FORBIDDEN");
+        require(cfg.isAllow, "Not allowed app: FORBIDDEN");
+        cfg.isAllow = false;
+    }
+
+    function setAppAnyCaller(address app, bool value) external {
+        AppConfig storage cfg = appConfigs[app];
+        require(cfg.admin == msg.sender, "Not app admin: FORBIDDEN");
+        require(cfg.isAllow, "Not allowed app: FORBIDDEN");
+        cfg.isAllowAnyCaller = value;
+    }
+
+    function updateAppAdmin(address app, address newAdmin) external {
+        require(newAdmin != address(0), "admin address is 0");
+        AppConfig storage cfg = appConfigs[app];
+        require(cfg.admin == msg.sender, "Not app admin: FORBIDDEN");
+        require(cfg.isAllow, "Not allowed app: FORBIDDEN");
+        cfg.admin = newAdmin;
+    }
+
+    function setAppWhitelist(address app, address[] calldata whitelist, bool value)
+        external
+    {
+        AppConfig storage cfg = appConfigs[app];
+        require(cfg.admin == msg.sender, "Not app admin: FORBIDDEN");
+        require(cfg.isAllow, "Not allowed app: FORBIDDEN");
+        mapping(address => bool) storage map = cfg.whitelistedCallers;
+        for (uint256 i=0; i<whitelist.length; i++) {
+            map[whitelist[i]] = value;
+        }
     }
 
     ////////////////////////////////////////////////////////////////
@@ -313,35 +405,6 @@ contract Vault {
     }
 
     /**
-     * @dev Transfer multiple tokens out to different destination.
-     */
-    function transferOutNonEvmMultiple(
-        address[] memory tokens,
-        uint256[] memory dstChains,
-        string[] memory tos,
-        uint256[] memory amounts
-    ) external {
-        for (uint32 i = 0; i < tokens.length; i++) {
-            transferOutNonEvm(tokens[i], dstChains[i], tos[i], amounts[i]);
-        }
-    }
-
-    /**
-     * @dev Transfer multiple tokens out to different destination.The `to` recipient is an address
-     * instead of a string.
-     */
-    function transferOutMultiple(
-        address[] memory tokens,
-        uint256[] memory dstChains,
-        address[] memory tos,
-        uint256[] memory amounts
-    ) external {
-        for (uint32 i = 0; i < tokens.length; i++) {
-            transferOut(tokens[i], dstChains[i], tos[i], amounts[i]);
-        }
-    }
-
-    /**
      * @dev Transfer out native token from an account to a new chain.
      */
     function transferOutNative(string memory to, uint256 dstChain)
@@ -447,13 +510,91 @@ contract Vault {
     }
 
     /**
-     * @dev Returns token balance of an account.
+     * @dev Call to a remote contract in another chain with the given message. The contract must be
+     * a implementation of BaseContract. The user needs to determine gas limit of onReceive()
+     * function on the contract before submitting this method.
      */
-    function balanceOf(address token, address account)
-        external
-        view
-        returns (uint256)
+    function remoteCall(uint256 appChain, address app, bytes calldata message, uint64 callGasLimit)
+        public
     {
-        return balances[token][account];
+        require(!notPausedChains[appChain], "CHAIN_IS_PAUSED");
+        AppConfig storage cfg = appConfigs[app];
+        require(cfg.admin != address(0), "Not existed app: FORBIDDEN");
+        require(cfg.isAllow, "Not allowed app: FORBIDDEN");
+        require(cfg.isAllowAnyCaller || cfg.whitelistedCallers[msg.sender],
+            "Not whitelisted caller: FORBIDDEN");
+    }
+
+    /**
+     * @dev remoteExecute will trigger the onReceive function of the contract (app). This method is
+     * only called by SISU when there is a successful suitable remoteCall.
+     */
+    function remoteExecute(
+        uint256 callerChain,
+        address caller,
+        address app,
+        uint64 gasLimit,
+        bytes calldata message,
+        uint256 commission
+    )
+        public
+        onlySpender
+    {
+        uint256 gasStart = gasleft();
+        require(balances[native][caller] >= _calcFee(gasStart, commission),
+            "caller is not enough balance");
+
+        uint8 code = 0;
+        bytes memory exception;
+        try BaseContract(app).onReceive{gas: gasLimit}(
+            BaseContract.Message({
+                callerChain: callerChain,
+                caller: caller,
+                message: message
+        })) returns (uint8 _code) {
+            code = _code;
+        } catch Error(string memory reason) {
+            exception = bytes(reason);
+        } catch (bytes memory reason) {
+            if (reason.length == 0) {
+                reason = "out of gas";
+            }
+            exception = reason;
+        }
+
+        emit remoteExecuted(code, exception);
+
+        _dec(native, caller, _calcFee(gasStart - gasleft(), commission));
+    }
+
+
+    /**
+     * @dev remoteExecuteMultiple runs multiple remoteExecute methods in the same time.
+     */
+    function remoteExecuteMultiple(
+        uint256[] calldata callerChains,
+        address[] calldata callers,
+        address[] calldata apps,
+        uint64[] calldata gasLimits,
+        bytes[] calldata messages,
+        uint256 commission
+    ) 
+        external
+        onlySpender
+    {
+        for (uint256 i=0; i<messages.length; i++) {
+            remoteExecute(
+                callerChains[i],
+                callers[i],
+                apps[i],
+                gasLimits[i],
+                messages[i],
+                commission
+            );
+        }
+    }
+
+    function _calcFee(uint256 gasUsed, uint256 commission) private view returns (uint256) {
+        return tx.gasprice * gasUsed + commission;
     }
 }

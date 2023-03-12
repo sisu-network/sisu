@@ -59,6 +59,13 @@ func ParseVaultTx(ctx sdk.Context, keeper keeper.Keeper, chain string, serialize
 		result.TransferOuts, result.Error = parseTransferOut(ctx, keeper, ethTx, chain, false, txParams)
 	case "addSpender":
 		result.Method = chainstypes.MethodAddSpender
+	case "remoteCall":
+		result.Method = chainstypes.MethodRemoteCall
+		result.TransferOuts, result.Error = parseRemoteCall(ctx, ethTx, chain, true, txParams)
+	case "createApp":
+		result.Method = chainstypes.MethodCreateApp
+	case "setAppAnyCaller":
+		result.Method = chainstypes.MethodSetAppAnyCaller
 	default:
 		result.Method = chainstypes.MethodUnknown
 		result.Error = fmt.Errorf("Unknown method %s", methodName)
@@ -144,6 +151,7 @@ func parseTransferOut(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.Tra
 	return []*types.TransferDetails{
 		{
 			Id:          types.GetTransferId(chain, ethTx.Hash().String()),
+			TxType:      types.TxInType_TOKEN_TRANSFER,
 			FromChain:   chain,
 			FromSender:  msg.From().Hex(),
 			FromHash:    ethTx.Hash().String(),
@@ -151,7 +159,66 @@ func parseTransferOut(ctx sdk.Context, keeper keeper.Keeper, ethTx *ethtypes.Tra
 			Amount:      amount.String(),
 			ToChain:     to,
 			ToRecipient: recipient,
-			RetryNum:    0,
+		},
+	}, nil
+}
+
+func parseRemoteCall(ctx sdk.Context, ethTx *ethtypes.Transaction, chain string,
+	isEvm bool, txParams map[string]interface{}) ([]*types.TransferDetails, error) {
+	msg, err := ethTx.AsMessage(ethtypes.NewLondonSigner(ethTx.ChainId()), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	appChain, ok := txParams["appChain"].(*big.Int)
+	if !ok {
+		err := fmt.Errorf("cannot convert appChain to type *big.Int: %v", txParams)
+		return nil, err
+	}
+	appChainName := libchain.GetChainNameFromInt(appChain)
+	if appChainName == "" {
+		return nil, fmt.Errorf("Unknown destChain %s", appChain)
+	}
+
+	var app string
+	if isEvm {
+		appAddr, ok := txParams["app"].(ethcommon.Address)
+		if !ok {
+			err := fmt.Errorf("cannot convert recipient to type ethcommon.Address: %v", txParams)
+			return nil, err
+		}
+		app = appAddr.String()
+	} else {
+		app, ok = txParams["app"].(string)
+		if !ok {
+			err := fmt.Errorf("cannot convert recipient to type ethcommon.Address: %v", txParams)
+			return nil, err
+		}
+	}
+
+	message, ok := txParams["message"].([]byte)
+	if !ok {
+		err := fmt.Errorf("cannot convert message to type []byte: %v", txParams)
+		return nil, err
+	}
+
+	callGasLimit, ok := txParams["callGasLimit"].(uint64)
+	if !ok {
+		err := fmt.Errorf("cannot convert callGasLimit to type uint64: %v", txParams)
+		return nil, err
+	}
+
+	return []*types.TransferDetails{
+		{
+			Id:           types.GetTransferId(chain, ethTx.Hash().String()),
+			TxType:       types.TxInType_REMOTE_CALL,
+			FromChain:    chain,
+			FromSender:   msg.From().Hex(),
+			FromHash:     ethTx.Hash().String(),
+			ToChain:      appChainName,
+			ToRecipient:  app,
+			Message:      message,
+			CallGasLimit: callGasLimit,
 		},
 	}, nil
 }
@@ -259,4 +326,81 @@ func DecodeTxParams(abi abi.ABI, callData []byte) (string, map[string]interface{
 	}
 
 	return m.Name, txParams, nil
+}
+
+func buildTransferIn(
+	ctx sdk.Context,
+	finalTokenAddrs []ethcommon.Address,
+	finalRecipients []ethcommon.Address,
+	finalAmounts []*big.Int,
+) ([]byte, error) {
+	vaultAbi, err := abi.JSON(strings.NewReader(vault.VaultABI))
+	if err != nil {
+		return nil, err
+	}
+
+	var output []byte
+	if len(finalTokenAddrs) == 1 {
+		output, err = vaultAbi.Pack(
+			MethodTransferIn,
+			finalTokenAddrs[0],
+			finalRecipients[0],
+			finalAmounts[0],
+		)
+	} else {
+		output, err = vaultAbi.Pack(
+			MethodTransferInMultiple,
+			finalTokenAddrs,
+			finalRecipients,
+			finalAmounts,
+		)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return output, nil
+}
+
+func buildRemoteExecute(
+	ctx sdk.Context,
+	commission *big.Int,
+	finalCallerChains []*big.Int,
+	finalCallers []ethcommon.Address,
+	finalApps []ethcommon.Address,
+	finalGasLimits []uint64,
+	finalMessages [][]byte,
+) ([]byte, error) {
+	vaultAbi, err := abi.JSON(strings.NewReader(vault.VaultABI))
+	if err != nil {
+		return nil, err
+	}
+
+	var data []byte
+	if len(finalMessages) == 1 {
+		data, err = vaultAbi.Pack(
+			MethodRemoteExecute,
+			finalCallerChains[0],
+			finalCallers[0],
+			finalApps[0],
+			finalGasLimits[0],
+			finalMessages[0],
+			commission,
+		)
+	} else {
+		data, err = vaultAbi.Pack(
+			MethodRemoteExecuteMultiple,
+			finalCallerChains,
+			finalCallers,
+			finalApps,
+			finalGasLimits,
+			finalMessages,
+			commission,
+		)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }

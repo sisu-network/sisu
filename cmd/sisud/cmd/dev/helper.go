@@ -102,38 +102,6 @@ func getSigner(client *ethclient.Client) etypes.Signer {
 	return etypes.NewLondonSigner(chainId)
 }
 
-func getAuthTransactor(client *ethclient.Client, mnemonic string) (*bind.TransactOpts, error) {
-	// This is the private key of the accounts0
-	privateKey, owner := getPrivateKey(mnemonic)
-	nonce, err := client.PendingNonceAt(context.Background(), owner)
-	if err != nil {
-		return nil, err
-	}
-	gasPrice, err := client.SuggestGasPrice(context.Background())
-	if err != nil {
-		return nil, err
-	}
-
-	// This is the private key of the accounts0
-	chainId, err := client.ChainID(context.Background())
-	if err != nil {
-		return nil, err
-	}
-
-	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainId)
-	if err != nil {
-		return nil, err
-	}
-
-	auth.Nonce = big.NewInt(int64(nonce))
-	auth.Value = big.NewInt(0)
-	auth.GasPrice = gasPrice
-
-	auth.GasLimit = uint64(3_000_000)
-
-	return auth, nil
-}
-
 func getEthClients(chains []string, genesisFolder string) []*ethclient.Client {
 	clients := make([]*ethclient.Client, 0)
 	if len(chains) == 0 {
@@ -263,4 +231,148 @@ func queryToken(ctx context.Context, sisuRpc, tokenId string) *tssTypes.Token {
 	}
 
 	return res.Token
+}
+
+func getEthVaultAddress(context context.Context, chain string, sisuRpc string) string {
+	grpcConn, err := grpc.Dial(
+		sisuRpc,
+		grpc.WithInsecure(),
+	)
+	defer grpcConn.Close()
+	if err != nil {
+		panic(err)
+	}
+
+	queryClient := tssTypes.NewTssQueryClient(grpcConn)
+	res, err := queryClient.QueryVault(context, &tssTypes.QueryVaultRequest{
+		Chain: chain,
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	if len(res.Vault.Address) == 0 {
+		panic("gateway contract address is empty")
+	}
+
+	return res.Vault.Address
+}
+
+type Engine struct {
+	Client *ethclient.Client
+	owner  common.Address
+	opts   *bind.TransactOpts
+}
+
+func NewEngine(client *ethclient.Client, mnemonic string) (*Engine, error) {
+	privateKey, owner := getPrivateKey(mnemonic)
+
+	// This is the private key of the accounts0
+	chainId, err := client.ChainID(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainId)
+	if err != nil {
+		return nil, err
+	}
+
+	auth.Value = big.NewInt(0)
+	auth.GasLimit = 6_000_000
+
+	return &Engine{
+		Client: client,
+		owner:  owner,
+		opts:   auth,
+	}, nil
+}
+
+func (g *Engine) SetValue(value *big.Int) {
+	g.opts.Value = value
+}
+
+func (g *Engine) SetGasLimit(gasLimit uint64) {
+	g.opts.GasLimit = gasLimit
+}
+
+func (g *Engine) Run(f func(opts *bind.TransactOpts) *etypes.Transaction) {
+	nonce, err := g.Client.PendingNonceAt(context.Background(), g.owner)
+	if err != nil {
+		panic(err)
+	}
+	gasPrice, err := g.Client.SuggestGasPrice(context.Background())
+	if err != nil {
+		panic(err)
+	}
+
+	g.opts.Nonce = big.NewInt(int64(nonce))
+	g.opts.GasPrice = gasPrice
+
+	tx := f(g.opts)
+
+	receipt, err := bind.WaitMined(context.Background(), g.Client, tx)
+	if err != nil {
+		panic(err)
+	}
+
+	log.Info("txHash = ", receipt.TxHash.Hex())
+}
+
+func (g *Engine) Deploy(f func(opts *bind.TransactOpts) *etypes.Transaction) common.Address {
+	nonce, err := g.Client.PendingNonceAt(context.Background(), g.owner)
+	if err != nil {
+		panic(err)
+	}
+	gasPrice, err := g.Client.SuggestGasPrice(context.Background())
+	if err != nil {
+		panic(err)
+	}
+
+	g.opts.Nonce = big.NewInt(int64(nonce))
+	g.opts.GasPrice = gasPrice
+
+	tx := f(g.opts)
+
+	log.Info("Deploying contract ...")
+	contractAddr, err := bind.WaitDeployed(context.Background(), g.Client, tx)
+	if err != nil {
+		panic(err)
+	}
+
+	log.Info("Deployed contract successfully, addr: ", contractAddr.String())
+	return contractAddr
+}
+
+func getAuthTransactor(client *ethclient.Client, mnemonic string) (*bind.TransactOpts, error) {
+	// This is the private key of the accounts0
+	privateKey, owner := getPrivateKey(mnemonic)
+	nonce, err := client.PendingNonceAt(context.Background(), owner)
+	if err != nil {
+		return nil, err
+	}
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	// This is the private key of the accounts0
+	chainId, err := client.ChainID(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainId)
+	if err != nil {
+		return nil, err
+	}
+
+	auth.Nonce = big.NewInt(int64(nonce))
+	auth.Value = big.NewInt(0)
+	auth.GasPrice = gasPrice
+
+	auth.GasLimit = uint64(6_000_000)
+
+	return auth, nil
 }

@@ -173,7 +173,7 @@ func StressSwap() *cobra.Command {
 	cmd.Flags().String(flags.Mnemonic, "draft attract behave allow rib raise puzzle frost neck curtain gentle bless letter parrot hold century diet budget paper fetch hat vanish wonder maximum", "Mnemonic used to deploy the contract.")
 	cmd.Flags().String(flags.SisuRpc, "0.0.0.0:9090", "URL to connect to Sisu. Please do NOT include http:// prefix")
 	cmd.Flags().String(flags.Tokens, "TIGER", "The list of tokens to be transferred.")
-	cmd.Flags().Int(flags.Amount, 1, "The amount of token to be transferred")
+	cmd.Flags().Int(flags.Amount, 10, "The amount of token to be transferred")
 	cmd.Flags().String(flags.GenesisFolder, "./misc/dev", "Genesis folder that contains configuration files.")
 
 	return cmd

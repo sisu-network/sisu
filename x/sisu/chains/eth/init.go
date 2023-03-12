@@ -12,10 +12,12 @@ const (
 	ContractVault = "vault"
 
 	// Methods in gateway smart contract
-	MethodTransferIn         = "transferIn"
-	MethodTransferInMultiple = "transferInMultiple"
-	MethodTransferOut        = "transferOut"
-	MethodSetNotPausedChain  = "setNotPausedChain"
+	MethodTransferIn            = "transferIn"
+	MethodTransferInMultiple    = "transferInMultiple"
+	MethodTransferOut           = "transferOut"
+	MethodSetNotPausedChain     = "setNotPausedChain"
+	MethodRemoteExecute         = "remoteExecute"
+	MethodRemoteExecuteMultiple = "remoteExecuteMultiple"
 )
 
 type ContractInfo struct {
