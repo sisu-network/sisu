@@ -40,9 +40,8 @@ func NewBridge(chain string, signer string, keeper keeper.Keeper, deyesClient ex
 	}
 }
 
-func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDetails) ([]*types.TxOut, error) {
+func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDetails) (*types.TxOut, error) {
 	// Find the highest block where majority of the validator nodes has reach to.
-	outMgs := make([]*types.TxOut, 0)
 	inHashes := make([]string, len(transfers))
 
 	for _, transfer := range transfers {
@@ -96,9 +95,7 @@ func (b *bridge) ProcessTransfers(ctx sdk.Context, transfers []*types.TransferDe
 		},
 	}
 
-	outMgs = append(outMgs, outMsg)
-
-	return outMgs, nil
+	return outMsg, nil
 }
 
 // In Cardano chain, transferring multi-asset required at least 1 ADA (10^6 lovelace)

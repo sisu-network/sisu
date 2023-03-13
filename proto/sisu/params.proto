@@ -29,4 +29,7 @@ message Params {
 
   // Maxinum number of retry when a transfer is rejected.
   int32 max_rejected_transfer_retry = 8;
+
+  // Transfer timeout block
+  int32 transfer_timeout_block = 9;
 }

@@ -180,44 +180,30 @@ func (b *defaultBackground) processTransferQueue(ctx sdk.Context, chain string, 
 		}
 	}
 
-	txOutMsgs, err := b.txOutputProducer.GetTxOuts(ctx, chain, batch)
+	txOut, err := b.txOutputProducer.GetTxOut(ctx, chain, batch)
+
 	if err != nil {
 		log.Error("Failed to get txOut on chain ", chain, ", err = ", err)
-
-		retryIds := b.getTransferRetryIds(batch)
-		msg := types.NewTransferFailureMsg(b.appKeys.GetSignerAddress().String(), &types.TransferFailure{
-			TransferRetryIds: retryIds,
-			Chain:            chain,
-			Message:          err.Error(),
-		})
-		b.txSubmit.SubmitMessageAsync(msg)
-
-		return
-	}
-
-	if len(txOutMsgs) > 0 {
-		log.Infof("Broadcasting txout with length %d on chain %s", len(txOutMsgs), chain)
-		for _, txOutMsg := range txOutMsgs {
-			b.txSubmit.SubmitMessageAsync(
-				types.NewTxOutMsg(
-					b.appKeys.GetSignerAddress().String(),
-					txOutMsg,
-				),
-			)
+		txOut = &types.TxOut{
+			TxType: types.TxOutType_FAILURE,
+			Content: &types.TxOutContent{
+				OutChain: chain,
+			},
+			Input: &types.TxOutInput{
+				TransferRetryIds: []string{firstTransfer.GetRetryId()},
+			},
 		}
-
-		b.privateDb.SetHoldProcessing(types.TransferHoldKey, chain, true)
-	}
-}
-
-func (b *defaultBackground) getTransferRetryIds(batch []*types.TransferDetails) []string {
-	ids := make([]string, len(batch))
-
-	for i, transfer := range batch {
-		ids[i] = transfer.GetRetryId()
 	}
 
-	return ids
+	log.Infof("Broadcasting txout %s on chain %s", txOut.GetId(), chain)
+	b.txSubmit.SubmitMessageAsync(
+		types.NewTxOutMsg(
+			b.appKeys.GetSignerAddress().String(),
+			txOut,
+		),
+	)
+
+	b.privateDb.SetHoldProcessing(types.TransferHoldKey, chain, true)
 }
 
 func (b *defaultBackground) processTxOut(ctx sdk.Context, params *types.Params) {
@@ -279,7 +265,7 @@ func (b *defaultBackground) processTxOutVote(ctx sdk.Context) {
 	}
 }
 
-func (h *defaultBackground) validateTxOut(ctx sdk.Context, msg *types.TxOutMsg) bool {
+func (b *defaultBackground) validateTxOut(ctx sdk.Context, msg *types.TxOutMsg) bool {
 	// Check if this is the message from assigned validator.
 	// TODO: Do a validation to verify that the this TxOut is still within the allowed time interval
 	// since confirmed transfers.
@@ -290,7 +276,7 @@ func (h *defaultBackground) validateTxOut(ctx sdk.Context, msg *types.TxOutMsg) 
 		return false
 	}
 
-	queue := h.keeper.GetTransferQueue(ctx, msg.Data.Content.OutChain)
+	queue := b.keeper.GetTransferQueue(ctx, msg.Data.Content.OutChain)
 	transfers := make([]*types.TransferDetails, 0)
 	for _, transfer := range queue {
 		if transfer.TxType == queue[0].TxType {
@@ -323,20 +309,39 @@ func (h *defaultBackground) validateTxOut(ctx sdk.Context, msg *types.TxOutMsg) 
 		}
 	}
 
-	assignedNode, err := h.valsManager.GetAssignedValidator(ctx, queue[0].GetRetryId())
-	if err != nil || assignedNode.AccAddress != msg.Signer {
+	assignedNode, err := b.valsManager.GetAssignedValidator(ctx, queue[0].GetRetryId())
+	if err != nil {
+		log.Warnf("Validating txout, got an error when get assigner validate, err = ", err)
 		return false
 	}
 
-	bridge := h.bridgeManager.GetBridge(ctx, queue[0].ToChain)
-	if bridge == nil {
-		log.Errorf("Cannot find the bridge %s", queue[0].ToChain)
+	if assignedNode.AccAddress != msg.Signer {
 		return false
 	}
 
-	if err := bridge.ValidateTxOut(ctx, msg.Data, queue[:len(transferIds)]); err != nil {
-		log.Error("Validate txout failed, err = ", err)
-		return false
+	switch msg.Data.TxType {
+	case types.TxOutType_TRANSFER:
+		bridge := b.bridgeManager.GetBridge(ctx, queue[0].ToChain)
+		if bridge == nil {
+			log.Errorf("Cannot find the bridge %s", queue[0].ToChain)
+			return false
+		}
+
+		if err := bridge.ValidateTxOut(ctx, msg.Data, queue[:len(transferIds)]); err != nil {
+			log.Error("Validate txout failed, err = ", err)
+			return false
+		}
+	case types.TxOutType_FAILURE:
+		if len(transferIds) != 1 {
+			log.Error("Only handle one failure transfer each vote msg, len = ", len(transferIds))
+			return false
+		}
+
+		_, err := b.txOutputProducer.GetTxOut(ctx, queue[0].ToChain, queue[:len(transferIds)])
+		if err == nil {
+			log.Errorf("Failure TxOut is not really failed")
+			return false
+		}
 	}
 
 	return true

@@ -114,10 +114,10 @@ func TestProcessTransfer(t *testing.T) {
 	}
 
 	bridge := NewBridge(chain, "signer", k, cfg, mockDeyesCli())
-	msgs, err := bridge.ProcessTransfers(ctx, []*types.TransferDetails{transfer})
+	msg, err := bridge.ProcessTransfers(ctx, []*types.TransferDetails{transfer})
 	require.Nil(t, err)
 
-	require.Equal(t, 1, len(msgs))
+	require.NotNil(t, msg)
 
 	// Find the bridge ata
 	bridgeAta, err := solanatypes.GetAtaPubkey(cfg.Solana.BridgePda, tokenAddr)
@@ -125,7 +125,7 @@ func TestProcessTransfer(t *testing.T) {
 
 	// Let's deserialize the tx
 	message := solanago.Message{}
-	err = message.UnmarshalLegacy(bin.NewCompactU16Decoder(msgs[0].Content.OutBytes))
+	err = message.UnmarshalLegacy(bin.NewCompactU16Decoder(msg.Content.OutBytes))
 	require.Nil(t, err)
 
 	// Verify message accounts

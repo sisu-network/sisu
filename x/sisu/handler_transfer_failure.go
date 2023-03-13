@@ -28,39 +28,34 @@ func (h *HanlderTransferFailure) DeliverMsg(
 	msg *types.TransferFailureMsg,
 ) (*sdk.Result, error) {
 	if process, hash := h.pmm.ShouldProcessMsg(ctx, msg); process {
-		err := h.doTransferFailure(ctx, msg.Data)
+		doTransferFailure(h.keeper, ctx, msg.Data.Chain, msg.Data.TransferRetryIds)
 		h.keeper.ProcessTxRecord(ctx, hash)
-		return &sdk.Result{}, err
 	}
 
 	return &sdk.Result{}, nil
 }
 
-func (h *HanlderTransferFailure) doTransferFailure(
-	ctx sdk.Context,
-	data *types.TransferFailure,
-) error {
+func doTransferFailure(keeper keeper.Keeper, ctx sdk.Context, chain string, transferRetryIds []string) {
 	ids := make(map[string]bool)
-	transferIds := types.GetIdsFromRetryIds(data.TransferRetryIds)
+	transferIds := types.GetIdsFromRetryIds(transferRetryIds)
 	for _, id := range transferIds {
 		ids[id] = true
 	}
 
 	// Remove all txout from transfer queue
-	queue := h.keeper.GetTransferQueue(ctx, data.Chain)
+	queue := keeper.GetTransferQueue(ctx, chain)
 	newQ := make([]*types.TransferDetails, 0)
 
 	for _, t := range queue {
 		if !ids[t.Id] {
 			newQ = append(newQ, t)
 		} else {
-			h.keeper.IncTransferRetryNum(ctx, t.Id)
-			h.keeper.AddFailedTransfer(ctx, t.GetRetryId())
+			newTransfer := keeper.IncTransferRetryNum(ctx, t.Id)
+			keeper.AddFailedTransfer(ctx, newTransfer.Id)
 			log.Verbosef("Removing failed transfer from queue, transferRetryId = %s, chain = %s",
-				t.GetRetryId(), data.Chain)
+				newTransfer.GetRetryId(), chain)
 		}
 	}
 
-	h.keeper.SetTransferQueue(ctx, data.Chain, newQ)
-	return nil
+	keeper.SetTransferQueue(ctx, chain, newQ)
 }

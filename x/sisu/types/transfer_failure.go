@@ -21,7 +21,7 @@ func (msg *TransferFailureMsg) Route() string {
 
 // Type ...
 func (msg *TransferFailureMsg) Type() string {
-	return MsgTypeTransferBatch
+	return MsgTypeTransferFailure
 }
 
 // GetSigners ...
