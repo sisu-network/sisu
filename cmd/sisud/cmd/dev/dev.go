@@ -23,6 +23,7 @@ func DevCmd() *cobra.Command {
 	cmd.AddCommand(Query())
 	cmd.AddCommand(RemoteCall())
 	cmd.AddCommand(DeployExampleContract())
+	cmd.AddCommand(LiskBot())
 
 	return cmd
 }
