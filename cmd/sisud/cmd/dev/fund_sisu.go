@@ -3,7 +3,6 @@ package dev
 import (
 	"context"
 	"encoding/hex"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -14,7 +13,6 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-	hutils "github.com/sisu-network/dheart/utils"
 	"github.com/sisu-network/lib/log"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/flags"
 	"github.com/sisu-network/sisu/cmd/sisud/cmd/helper"
@@ -85,42 +83,31 @@ func (c *fundAccountCmd) fundSisuAccounts(ctx context.Context, chainString, mnem
 	time.Sleep(time.Second * 3)
 	allPubKeys := queryPubKeys(ctx, sisuRpc)
 
-	// Fund native cardano.
-	if helper.IsCardanoEnabled(genesisFolder) {
-		cardanoConfig := helper.ReadCardanoConfig(genesisFolder)
-		cardanoKey, ok := allPubKeys[libchain.KEY_TYPE_EDDSA]
-		if !ok {
-			panic("can not find cardano pub key")
-		}
+	// // Fund native cardano.
+	// if helper.IsCardanoEnabled(genesisFolder) {
+	// 	cardanoConfig := helper.ReadCardanoConfig(genesisFolder)
+	// 	cardanoKey, ok := allPubKeys[libchain.KEY_TYPE_EDDSA]
+	// 	if !ok {
+	// 		panic("can not find cardano pub key")
+	// 	}
 
-		cardanoAddr := hutils.GetAddressFromCardanoPubkey(cardanoKey)
-		log.Info("Sisu Cardano Gateway = ", cardanoAddr)
+	// 	cardanoAddr := hutils.GetAddressFromCardanoPubkey(cardanoKey)
+	// 	log.Info("Sisu Cardano Gateway = ", cardanoAddr)
 
-		tokens := helper.GetTokens(filepath.Join(genesisFolder, "tokens.json"))
-		c.fundCardano(genesisFolder, cardanoAddr, mnemonic, cardanoConfig.Secret, sisuRpc, tokens)
-	}
+	// 	tokens := helper.GetTokens(filepath.Join(genesisFolder, "tokens.json"))
+	// 	c.fundCardano(genesisFolder, cardanoAddr, mnemonic, cardanoConfig.Secret, sisuRpc, tokens)
+	// }
 
-	// Fund solana
-	if helper.IsSolanaEnabled(genesisFolder) {
-		wg.Add(1)
+	// // Fund solana
+	// if helper.IsSolanaEnabled(genesisFolder) {
+	// 	wg.Add(1)
 
-		go func() {
-			log.Verbose("Funding on solana chain...")
-			c.fundSolana(genesisFolder, mnemonic, allPubKeys[libchain.KEY_TYPE_EDDSA])
-			wg.Done()
-		}()
-	}
-
-	// Fund Lisk
-	if helper.IsLiskEnabled(genesisFolder) {
-		wg.Add(1)
-
-		go func() {
-			log.Info("Funding on Lisk chain...")
-			c.fundLisk(genesisFolder, mnemonic, allPubKeys[libchain.KEY_TYPE_EDDSA])
-			wg.Done()
-		}()
-	}
+	// 	go func() {
+	// 		log.Verbose("Funding on solana chain...")
+	// 		c.fundSolana(genesisFolder, mnemonic, allPubKeys[libchain.KEY_TYPE_EDDSA])
+	// 		wg.Done()
+	// 	}()
+	// }
 
 	var sisuAccount common.Address
 	if len(clients) > 0 {
